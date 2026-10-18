@@ -14,6 +14,7 @@ import com.assismohanty.awaken.core.data.di.IoDispatcher
 import com.assismohanty.awaken.core.data.repo.LedgerRepository
 import com.assismohanty.awaken.core.domain.CompleteQuestUseCase
 import com.assismohanty.awaken.core.domain.CreateHunterUseCase
+import com.assismohanty.awaken.core.domain.DayRefresher
 import com.assismohanty.awaken.core.domain.RunRolloverUseCase
 import com.assismohanty.awaken.core.domain.HunterState
 import com.assismohanty.awaken.core.domain.ObserveHunterStateUseCase
@@ -36,6 +37,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -79,6 +81,7 @@ class DebugViewModel @Inject constructor(
     private val ledger: LedgerRepository,
     private val createHunter: CreateHunterUseCase,
     private val rollover: RunRolloverUseCase,
+    private val dayRefresher: DayRefresher,
     private val startQuest: StartQuestUseCase,
     private val completeQuest: CompleteQuestUseCase,
     private val undoCompletion: UndoCompletionUseCase,
@@ -132,14 +135,21 @@ class DebugViewModel @Inject constructor(
             "Seeded. ${rollover()}"
         }
         DebugEvent.AddDay -> {
+            val target = settings.offsetDays.value + 1
             settings.addDays(1)
-            "Clock +1 day. Run rollover to finalize yesterday."
+            settings.offsetDays.first { it == target } // the clock reads this flow; wait until it moved
+            // The same refresh the app runs on foreground: rollover, notices, and every screen re-derives "today".
+            dayRefresher.refresh()
+            "Clock +1 day; rollover ran."
         }
         DebugEvent.ResetDays -> {
             settings.reset()
             "Clock offset reset (finalized days stay finalized)."
         }
-        DebugEvent.ForceRollover -> rollover().toString()
+        DebugEvent.ForceRollover -> {
+            dayRefresher.refresh()
+            "Rollover ran."
+        }
         DebugEvent.RebuildBalances -> {
             val matched = ledger.balancesFromLedger() == ledger.balances()
             ledger.rebuildBalancesFromLedger()
