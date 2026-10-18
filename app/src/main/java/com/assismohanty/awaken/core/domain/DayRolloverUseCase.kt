@@ -77,8 +77,15 @@ class DayRolloverUseCase @Inject constructor(
         return RolloverOutcome(today, finalized, penaltyIssued, recalibration)
     }
 
-    private suspend fun finalizeDay(date: LocalDate): DayResult = transactions.run {
+    /** Finalizes one day. Re-entrant: an already-finalized day is returned as recorded, never re-evaluated. */
+    internal suspend fun finalizeDay(date: LocalDate): DayResult = transactions.run {
         val existing = dayRecordDao.get(date)
+        val recordedOutcome = existing?.outcome
+        if (existing?.finalizedAt != null && recordedOutcome != null) {
+            // A concurrent rollover (app start + worker) already did this day; re-running would spend state twice.
+            val (streakAfter, _) = StreakRules.replay(dayRecordDao.finalizedOutcomesThrough(date))
+            return@run DayResult(date, recordedOutcome, streakAfter)
+        }
         questDao.closeOpen(date)
         val record = questDao.getForDate(date)
             .toDayRecord(date, restDay = existing?.restDay ?: false, recovery = existing?.recovery ?: false)

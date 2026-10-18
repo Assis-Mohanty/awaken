@@ -181,6 +181,12 @@ interface DayRecordDao {
     @Query("SELECT outcome FROM day_record WHERE finalized_at IS NOT NULL AND outcome IS NOT NULL ORDER BY game_date")
     suspend fun finalizedOutcomes(): List<DayOutcome>
 
+    @Query(
+        "SELECT outcome FROM day_record WHERE finalized_at IS NOT NULL AND outcome IS NOT NULL " +
+            "AND game_date <= :gameDate ORDER BY game_date",
+    )
+    suspend fun finalizedOutcomesThrough(gameDate: LocalDate): List<DayOutcome>
+
     @Query("SELECT outcome FROM day_record WHERE finalized_at IS NOT NULL AND outcome IS NOT NULL ORDER BY game_date")
     fun observeFinalizedOutcomes(): Flow<List<DayOutcome>>
 

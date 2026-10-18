@@ -186,6 +186,41 @@ class UseCasesTest {
     }
 
     @Test
+    fun finalizingAnAlreadyFinalizedDayChangesNothing() = runTest {
+        graph.seedHunter()
+        graph.rollover()
+        val day1 = graph.today()
+        repeat(3) { graph.completeQuest(graph.fixtureQuest("clear$it").id) }
+        graph.grantShield()
+        graph.clock.advance(Duration.ofDays(2)) // day 2 missed
+        val shielded = requireNotNull(graph.rollover()).finalized.last()
+        val ledgerAfterFirst = ledgerDao.all()
+
+        // Simulates a second rollover (worker + app start) reaching the same day. Without the guard this would see
+        // 0 shields and overwrite SHIELDED with BROKEN.
+        val again = graph.rollover.finalizeDay(day1.plusDays(1))
+
+        assertThat(shielded.outcome).isEqualTo(DayOutcome.SHIELDED)
+        assertThat(again).isEqualTo(shielded)
+        assertThat(ledgerDao.all()).isEqualTo(ledgerAfterFirst)
+        assertThat(graph.db.dayRecordDao().get(day1.plusDays(1))?.outcome).isEqualTo(DayOutcome.SHIELDED)
+        assertThat(graph.reader.finalizedStreak().streak).isEqualTo(1)
+    }
+
+    @Test
+    fun questStaysCompletableUntil0359AndBelongsToTheNextDayAt0400() = runTest {
+        graph.seedHunter()
+        val late = graph.fixtureQuest("late")
+        val tooLate = graph.fixtureQuest("tooLate")
+
+        graph.clock.instant = Instant.parse("2026-10-19T03:59:59Z") // UTC zone, dayStartHour 4 → still 18 Oct
+        assertThat(graph.completeQuest(late.id)).isInstanceOf(CompleteQuestResult.Completed::class.java)
+
+        graph.clock.instant = Instant.parse("2026-10-19T04:00:00Z")
+        assertThat(graph.completeQuest(tooLate.id)).isEqualTo(CompleteQuestResult.WrongDay)
+    }
+
+    @Test
     fun rerollFirstFreeThenCostsGold() = runTest {
         graph.seedHunter()
         graph.rollover()

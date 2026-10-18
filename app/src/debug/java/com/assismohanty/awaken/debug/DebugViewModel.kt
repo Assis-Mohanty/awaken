@@ -28,6 +28,7 @@ import java.time.Instant
 import java.time.LocalDate
 import java.util.UUID
 import javax.inject.Inject
+import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -114,7 +115,13 @@ class DebugViewModel @Inject constructor(
 
     fun onEvent(event: DebugEvent) {
         viewModelScope.launch {
-            lastResult.value = runCatching { handle(event) }.getOrElse { "Error: ${it.message}" }
+            lastResult.value = try {
+                handle(event)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                "Error: ${e.message}"
+            }
         }
     }
 

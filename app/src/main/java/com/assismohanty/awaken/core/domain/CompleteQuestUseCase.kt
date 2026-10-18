@@ -22,6 +22,7 @@ import com.assismohanty.awaken.engine.LevelCurve
 import com.assismohanty.awaken.engine.QuestRules
 import com.assismohanty.awaken.engine.RankRules
 import com.assismohanty.awaken.engine.StreakRules
+import com.assismohanty.awaken.engine.StreakState
 import com.assismohanty.awaken.engine.XpCalculator
 import com.assismohanty.awaken.engine.model.Balances
 import com.assismohanty.awaken.engine.model.BreakdownItem
@@ -161,7 +162,8 @@ class CompleteQuestUseCase @Inject constructor(
     ): List<String> {
         val finalized = reader.finalizedStreak()
         val todayRecord = questDao.getForDate(today).toDayRecord(today)
-        val bestStreak = maxOf(finalized.bestStreak, finalized.streak + if (StreakRules.isCleared(todayRecord)) 1 else 0)
+        val todayStreak = StreakRules.displayStreak(StreakState(streak = finalized.streak), todayRecord)
+        val bestStreak = maxOf(finalized.bestStreak, todayStreak)
         val snapshot = reader.achievementSnapshot(profile, level, balances, bestStreak)
         val ids = AchievementEvaluator.evaluate(snapshot)
         ids.forEach { id ->

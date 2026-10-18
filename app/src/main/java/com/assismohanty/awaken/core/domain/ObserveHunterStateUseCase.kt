@@ -11,6 +11,7 @@ import com.assismohanty.awaken.engine.LevelCurve
 import com.assismohanty.awaken.engine.RankRules
 import com.assismohanty.awaken.engine.StatLevel
 import com.assismohanty.awaken.engine.StreakRules
+import com.assismohanty.awaken.engine.StreakState
 import com.assismohanty.awaken.engine.model.Rank
 import com.assismohanty.awaken.engine.model.Stat
 import java.time.LocalDate
@@ -68,8 +69,9 @@ class ObserveHunterStateUseCase @Inject constructor(
             ) { balances, outcomes, todayQuests, passed ->
                 val progress = LevelCurve.progress(balances.xpTotal)
                 val (streak, best) = StreakRules.replay(outcomes)
-                val todayCleared = StreakRules.isCleared(todayQuests.toDayRecord(today))
-                val displayStreak = streak + if (todayCleared) 1 else 0
+                val todayRecord = todayQuests.toDayRecord(today)
+                val todayCleared = StreakRules.isCleared(todayRecord)
+                val displayStreak = StreakRules.displayStreak(StreakState(streak = streak), todayRecord)
                 val statXp = Stat.entries.associateWith { balances.statXp(it) }
                 HunterState(
                     name = profile.name,
