@@ -60,6 +60,7 @@ data class Directive(
  * @param ownedEquipment equipment ids the hunter owns (settings).
  * @param lastActiveDates last game-date each stat had a completion; missing = never.
  * @param recentTemplateIds template ids used in the novelty window (the 7 game-days before the target date).
+ * @param firstDirective the hunter's first directive (onboarding day).
  */
 data class HunterContext(
     val hunterId: String,
@@ -74,6 +75,8 @@ data class HunterContext(
     val healthAvailable: Boolean = true,
     val lastActiveDates: Map<Stat, LocalDate> = emptyMap(),
     val recentTemplateIds: Set<String> = emptySet(),
+    /** True only for the hunter's first game-day: one side slot becomes an Easy starter quest (GD §6.3). */
+    val firstDirective: Boolean = false,
 ) {
     init {
         require(focusStats.size == 2 && focusStats[0] != focusStats[1]) { "exactly two distinct focus stats required" }

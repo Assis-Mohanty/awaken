@@ -1,0 +1,150 @@
+<resources>
+    <!-- Shared actions -->
+    <string name="action_accept">Accept</string>
+    <string name="action_continue">Continue</string>
+    <string name="action_back">Back</string>
+    <string name="action_connect">Connect</string>
+    <string name="action_not_now">Not now</string>
+    <string name="action_enter">Enter</string>
+    <string name="action_begin">Begin</string>
+    <string name="action_reroll">Reroll</string>
+    <string name="action_reroll_paid">Reroll · %1$d gold</string>
+    <string name="action_undo">Undo</string>
+    <string name="action_save">Save</string>
+    <string name="action_add_habit">Add habit</string>
+    <string name="action_edit_habit">Edit habit</string>
+    <string name="action_archive_habit">Archive habit</string>
+
+    <!-- Awakening (onboarding, DESIGN_SYSTEM §4.1) -->
+    <string name="onboarding_welcome_title">YOU HAVE BEEN CHOSEN.</string>
+    <string name="onboarding_welcome_body">Real effort becomes power here. Ready?</string>
+    <string name="onboarding_name_title">NAME YOUR HUNTER</string>
+    <string name="onboarding_name_label">Hunter name</string>
+    <string name="onboarding_name_error">Use 3 to 20 characters.</string>
+    <string name="onboarding_focus_title">CHOOSE TWO FOCUS STATS</string>
+    <string name="onboarding_focus_body">The System weights your focus stats twice as heavily when it builds your directive.</string>
+    <string name="stat_str_meaning">Training, sport, movement</string>
+    <string name="stat_int_meaning">Study, reading, coding, skill practice</string>
+    <string name="stat_wil_meaning">Discipline, focus, mindfulness</string>
+    <string name="stat_vit_meaning">Sleep, nutrition, hydration, recovery</string>
+    <string name="stat_cha_meaning">Social, communication, relationships</string>
+    <string name="onboarding_calibration_title">CALIBRATION</string>
+    <string name="calibration_training">How often do you train?</string>
+    <string name="calibration_training_low">Rarely</string>
+    <string name="calibration_training_mid">Sometimes</string>
+    <string name="calibration_training_high">Often</string>
+    <string name="calibration_study">Hours of focused study on a normal day?</string>
+    <string name="calibration_study_low">&lt;1</string>
+    <string name="calibration_study_mid">1–3</string>
+    <string name="calibration_study_high">3+</string>
+    <string name="calibration_sleep">Sleep most nights?</string>
+    <string name="calibration_sleep_low">&lt;6h</string>
+    <string name="calibration_sleep_mid">6–7h</string>
+    <string name="calibration_sleep_high">7h+</string>
+    <string name="onboarding_health_title">VERIFIED QUESTS</string>
+    <string name="onboarding_health_body">Let the System see your steps, workouts and sleep from Health Connect. Verified quests earn 30% more XP. Data never leaves this phone.</string>
+    <string name="onboarding_health_coming">Coming in this build.</string>
+    <string name="onboarding_reminder_title">DAILY DIRECTIVE TIME</string>
+    <string name="onboarding_reminder_body">When should the System deliver your directive?</string>
+    <string name="onboarding_complete_title">AWAKENING COMPLETE</string>
+    <string name="onboarding_complete_body">Your first directive is ready.</string>
+
+    <!-- Today (DESIGN_SYSTEM §4.2) -->
+    <string name="system_title_directive_cleared">DIRECTIVE CLEARED</string>
+    <string name="today_progress">%1$d / %2$d</string>
+    <string name="today_habits">Habits</string>
+    <string name="today_no_habits">No habits yet. Add one the System should track.</string>
+    <string name="today_loading">The System is preparing your directive.</string>
+
+    <!-- Quest detail (DESIGN_SYSTEM §4.3) -->
+    <string name="quest_kind_main">MAIN QUEST</string>
+    <string name="quest_kind_side">SIDE QUEST</string>
+    <string name="quest_kind_habit">HABIT</string>
+    <string name="quest_kind_penalty">PENALTY QUEST</string>
+    <string name="quest_kind_trial">TRIAL STAGE</string>
+    <string name="quest_kind_gate">FOCUS GATE</string>
+    <string name="quest_split_primary">%1$s · full XP</string>
+    <string name="quest_split_secondary">%1$s · 30%% bonus</string>
+    <string name="verify_self">Self-reported. Tap Begin, do the work, then complete it.</string>
+    <string name="verify_timer">Timed. Completes when you clear a Focus Gate for it.</string>
+    <string name="verify_health">Verified. Completes automatically from Health Connect data.</string>
+    <string name="quest_min_duration">Can be completed %1$s after you begin.</string>
+    <string name="quest_started">Started. Complete it when you\'re done.</string>
+    <string name="reason_main">Main quest: today\'s focus stat, %1$s.</string>
+    <string name="reason_focus">%1$s is one of your focus stats.</string>
+    <plurals name="reason_neglected">
+        <item quantity="one">%1$s neglected for %2$d day.</item>
+        <item quantity="other">%1$s neglected for %2$d days.</item>
+    </plurals>
+    <string name="reason_new">%1$s hasn\'t been trained yet.</string>
+    <string name="reason_balance">Keeps your stats balanced.</string>
+    <string name="reason_penalty">Your comeback quest.</string>
+    <string name="reason_habit">One of your habits.</string>
+
+    <!-- Completion, undo, reroll messages (System-styled, never a crash) -->
+    <string name="msg_quest_cleared">Quest cleared.</string>
+    <string name="msg_too_soon">Keep going. You can complete it in %1$s.</string>
+    <string name="msg_verification_required">This quest completes automatically once it\'s verified.</string>
+    <string name="msg_wrong_day">This quest belongs to another day.</string>
+    <string name="msg_already_done">Already completed.</string>
+    <string name="msg_undone">Completion undone.</string>
+    <string name="msg_undo_expired">Undo is available for 10 minutes after completing.</string>
+    <string name="msg_undo_day_closed">That day has ended, so it can\'t be undone.</string>
+    <string name="msg_reroll_free">Quest rerolled.</string>
+    <string name="msg_reroll_paid">Quest rerolled for %1$d gold.</string>
+    <string name="msg_reroll_limit">No rerolls left today.</string>
+    <string name="msg_reroll_gold">Not enough gold. A reroll costs %1$d.</string>
+    <string name="msg_reroll_none">No other quest fits your settings today.</string>
+    <string name="msg_error">The System hit an error. Try again.</string>
+    <string name="system_title_achievement">ACHIEVEMENT UNLOCKED</string>
+    <string name="achievement_with_gold">%1$s · +%2$d gold</string>
+
+    <!-- Habit editor (GAME_DESIGN §4.3: SELF habits max Normal, max 8 active) -->
+    <string name="habit_editor_new">NEW HABIT</string>
+    <string name="habit_editor_edit">EDIT HABIT</string>
+    <string name="habit_name">Habit</string>
+    <string name="habit_stat">Stat</string>
+    <string name="habit_difficulty">Difficulty</string>
+    <string name="habit_difficulty_note">Self-reported habits go up to Normal.</string>
+    <string name="habit_days">Days</string>
+    <string name="habit_target">Target</string>
+    <string name="habit_unit">Unit</string>
+    <string name="habit_limit">You can track up to 8 habits.</string>
+    <string name="habit_error_title">Give the habit a name.</string>
+    <string name="habit_error_days">Pick at least one day.</string>
+    <string name="habit_error_target">Target must be at least 1.</string>
+
+    <!-- Achievement names (GAME_DESIGN §10) -->
+    <string name="achievement_first_blood">First Clear</string>
+    <string name="achievement_awakened">Awakened</string>
+    <string name="achievement_lvl5">Level 5</string>
+    <string name="achievement_lvl10">Level 10</string>
+    <string name="achievement_lvl25">Level 25</string>
+    <string name="achievement_lvl50">Level 50</string>
+    <string name="achievement_streak3">Unbroken · 3 days</string>
+    <string name="achievement_streak7">Unbroken · 7 days</string>
+    <string name="achievement_streak30">Unbroken · 30 days</string>
+    <string name="achievement_streak100">Unbroken · 100 days</string>
+    <string name="achievement_crit1">Lucky Strike</string>
+    <string name="achievement_crit25">Fortune\'s Edge</string>
+    <string name="achievement_gate_first">Gatebreaker</string>
+    <string name="achievement_gate_hours10">Gatebreaker · 10 hours</string>
+    <string name="achievement_gate_hours100">Gatebreaker · 100 hours</string>
+    <string name="achievement_verified10">Witnessed · 10</string>
+    <string name="achievement_verified100">Witnessed · 100</string>
+    <string name="achievement_redeemed">The Redeemed</string>
+    <string name="achievement_balanced">Pentagon</string>
+    <string name="achievement_str20">Stat mastery · Strength</string>
+    <string name="achievement_int20">Stat mastery · Intelligence</string>
+    <string name="achievement_wil20">Stat mastery · Willpower</string>
+    <string name="achievement_vit20">Stat mastery · Vitality</string>
+    <string name="achievement_cha20">Stat mastery · Charisma</string>
+    <string name="achievement_rank_d">Promotion · D-Rank</string>
+    <string name="achievement_rank_c">Promotion · C-Rank</string>
+    <string name="achievement_rank_b">Promotion · B-Rank</string>
+    <string name="achievement_rank_a">Promotion · A-Rank</string>
+    <string name="achievement_rank_s">Promotion · S-Rank</string>
+    <string name="achievement_early_bird">Dawn Raid</string>
+    <string name="achievement_night_owl">Midnight Gate</string>
+    <string name="achievement_collector">Relic Hunter</string>
+</resources>

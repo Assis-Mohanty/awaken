@@ -12,6 +12,7 @@ import com.assismohanty.awaken.core.data.repo.GameStateReader
 import com.assismohanty.awaken.core.data.repo.LedgerRepository
 import com.assismohanty.awaken.core.data.repo.TemplateRepository
 import com.assismohanty.awaken.core.data.repo.TransactionRunner
+import com.assismohanty.awaken.core.domain.AchievementUnlocker
 import com.assismohanty.awaken.core.domain.CompleteQuestUseCase
 import com.assismohanty.awaken.core.domain.CreateHunterUseCase
 import com.assismohanty.awaken.core.domain.DayRolloverUseCase
@@ -64,7 +65,8 @@ class TestGraph(val clock: FakeClock = FakeClock(Instant.parse("2026-10-18T10:00
         db.hunterDao(), db.questDao(), db.habitDao(), reader, templates, transactions, clock,
     )
     val completeQuest = CompleteQuestUseCase(
-        db.hunterDao(), db.questDao(), db.completionDao(), db.achievementDao(), db.trialDao(),
+        db.hunterDao(), db.questDao(), db.completionDao(),
+        AchievementUnlocker(db.questDao(), db.achievementDao(), ledger, reader), db.trialDao(),
         ledger, reader, transactions, clock,
     )
     val undoCompletion = UndoCompletionUseCase(

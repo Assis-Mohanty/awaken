@@ -9,6 +9,7 @@ import com.assismohanty.awaken.core.data.repo.TransactionRunner
 import com.assismohanty.awaken.engine.GameDay
 import com.assismohanty.awaken.engine.model.Difficulty
 import com.assismohanty.awaken.engine.model.Stat
+import java.time.LocalTime
 import java.util.UUID
 import javax.inject.Inject
 
@@ -23,6 +24,7 @@ class CreateHunterUseCase @Inject constructor(
         focusStats: List<Stat>,
         baselineTiers: Map<Stat, Difficulty> = emptyMap(),
         dayStartHour: Int = GameDay.DEFAULT_DAY_START_HOUR,
+        reminderTime: LocalTime? = null,
     ): HunterProfileEntity {
         require(focusStats.size == 2 && focusStats[0] != focusStats[1]) { "exactly two distinct focus stats required" }
         val profile = HunterProfileEntity(
@@ -34,6 +36,7 @@ class CreateHunterUseCase @Inject constructor(
             focusStat2 = focusStats[1],
             dayStartHour = dayStartHour,
             onboardingDone = true,
+            reminderTime = reminderTime?.toString(),
         )
         transactions.run {
             hunterDao.upsertProfile(profile)

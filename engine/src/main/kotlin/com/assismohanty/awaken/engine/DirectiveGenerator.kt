@@ -33,6 +33,8 @@ object DirectiveGenerator {
     val INJURY_EXCLUDED_TAGS: Set<String> = setOf("impact", "legs")
     val RECOVERY_STATS: List<Stat> = listOf(Stat.VIT, Stat.WIL)
     const val RECOVERY_EXCLUDED_TAG = "impact"
+    /** A first-day starter must be doable wherever the hunter is when they finish onboarding. */
+    const val STARTER_EXCLUDED_TAG = "outdoor"
 
     /** Game-dates whose template ids form the novelty window for [gameDate]: the 7 days before it. */
     fun noveltyWindow(gameDate: LocalDate): ClosedRange<LocalDate> =
@@ -51,7 +53,18 @@ object DirectiveGenerator {
 
         val used = mutableSetOf<String>().apply { main?.let { add(it.templateId) } }
         val sides = ArrayList<QuestDraft>(SIDE_COUNT)
-        for (index in 0 until SIDE_COUNT) {
+        if (context.firstDirective) {
+            // GD §6.3: the first directive guarantees one Easy quest in a focus stat that can be done right now.
+            val starters = pool.filter {
+                it.stat in context.focusStats && it.verification.source == VerificationSource.SELF &&
+                    STARTER_EXCLUDED_TAG !in it.tags && it.supports(Difficulty.EASY) && it.id !in used
+            }
+            pickWeighted(starters, context, gameDate, rng)?.let { template ->
+                used += template.id
+                sides += draft(template, QuestType.SIDE, Difficulty.EASY, context, gameDate, "side0", rng)
+            }
+        }
+        for (index in sides.size until SIDE_COUNT) {
             val template = pickSide(pool, used, main?.stat, context, gameDate, rng) ?: break
             used += template.id
             sides += draft(template, QuestType.SIDE, context.tier(template.stat), context, gameDate, "side$index", rng)

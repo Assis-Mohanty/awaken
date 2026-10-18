@@ -61,8 +61,12 @@ class GameStateReader @Inject constructor(
             healthAvailable = profile.healthEnabled,
             lastActiveDates = completionDao.lastActivePerStat().associate { it.stat to it.gameDate },
             recentTemplateIds = questDao.templateIdsBetween(window.start, window.endInclusive).toSet(),
+            firstDirective = gameDate == profile.firstGameDate,
         )
     }
+
+    /** Last game-date each stat had a (non-undone) completion. */
+    suspend fun lastActiveDates(): Map<Stat, LocalDate> = completionDao.lastActivePerStat().associate { it.stat to it.gameDate }
 
     suspend fun achievementSnapshot(
         profile: HunterProfileEntity,

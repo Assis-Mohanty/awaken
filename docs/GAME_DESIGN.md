@@ -196,6 +196,8 @@ generateDirective(hunter, gameDate):
 
 Each instance id is a deterministic name-based UUID: `UUID.nameUUIDFromBytes("hunterId|gameDate|slot")` with slot `main`, `side0..2`, `rerollN` or `penalty`. Regenerating the same day yields the same ids, so persistence is idempotent and crits (§4.2) can never be re-rolled. Ledger rows use a per-attempt `completionId` (§9.3).
 
+**First directive** (the onboarding day only): one side slot becomes a starter quest — Easy, in a focus stat, SELF-verified, and not tagged `outdoor` — so the first clear is doable right after onboarding.
+
 **Reroll**: 1 free reroll per day for one side quest; further rerolls cost 40 gold (max 3 paid/day, so 4 rerolls total). Rerolling cannot target the main quest.
 
 ### 6.4 Adaptive difficulty (per stat)

@@ -2,29 +2,22 @@ package com.assismohanty.awaken.core.domain
 
 import com.assismohanty.awaken.core.data.clock.Clock
 import com.assismohanty.awaken.core.data.clock.gameDate
-import com.assismohanty.awaken.core.data.db.dao.AchievementDao
 import com.assismohanty.awaken.core.data.db.dao.CompletionDao
 import com.assismohanty.awaken.core.data.db.dao.HunterDao
 import com.assismohanty.awaken.core.data.db.dao.QuestDao
 import com.assismohanty.awaken.core.data.db.dao.TrialDao
-import com.assismohanty.awaken.core.data.db.entity.AchievementUnlockEntity
 import com.assismohanty.awaken.core.data.db.entity.CompletionEntity
-import com.assismohanty.awaken.core.data.db.entity.HunterProfileEntity
 import com.assismohanty.awaken.core.data.db.entity.LedgerEntryEntity
 import com.assismohanty.awaken.core.data.db.entity.QuestInstanceEntity
 import com.assismohanty.awaken.core.data.repo.GameStateReader
 import com.assismohanty.awaken.core.data.repo.LedgerRepository
 import com.assismohanty.awaken.core.data.repo.TransactionRunner
-import com.assismohanty.awaken.engine.AchievementEvaluator
 import com.assismohanty.awaken.engine.CompletableQuest
 import com.assismohanty.awaken.engine.LedgerMath
 import com.assismohanty.awaken.engine.LevelCurve
 import com.assismohanty.awaken.engine.QuestRules
 import com.assismohanty.awaken.engine.RankRules
-import com.assismohanty.awaken.engine.StreakRules
-import com.assismohanty.awaken.engine.StreakState
 import com.assismohanty.awaken.engine.XpCalculator
-import com.assismohanty.awaken.engine.model.Balances
 import com.assismohanty.awaken.engine.model.BreakdownItem
 import com.assismohanty.awaken.engine.model.LedgerKind
 import com.assismohanty.awaken.engine.model.QuestReward
@@ -70,7 +63,7 @@ class CompleteQuestUseCase @Inject constructor(
     private val hunterDao: HunterDao,
     private val questDao: QuestDao,
     private val completionDao: CompletionDao,
-    private val achievementDao: AchievementDao,
+    private val achievements: AchievementUnlocker,
     private val trialDao: TrialDao,
     private val ledger: LedgerRepository,
     private val reader: GameStateReader,
@@ -133,7 +126,7 @@ class CompleteQuestUseCase @Inject constructor(
 
             val balances = ledger.balances()
             val levelAfter = LevelCurve.level(balances.xpTotal)
-            val unlocked = unlockAchievements(profile, levelAfter, balances, today, now)
+            val unlocked = achievements.unlockNew(profile, today, now) // after the reward is written (GD §10)
             val trialAfter = trialAvailable(levelAfter, passedTrials, now)
 
             CompleteQuestResult.Completed(
@@ -151,41 +144,6 @@ class CompleteQuestUseCase @Inject constructor(
 
     private suspend fun trialAvailable(level: Int, passedTrials: Set<Rank>, now: Instant): Rank? =
         RankRules.trialAvailable(level, passedTrials, trialDao.activeCount() > 0, trialDao.lastFailedAt(), now)
-
-    /** Achievements are evaluated after the reward is written and are never revoked (GD §6.5, §10). */
-    private suspend fun unlockAchievements(
-        profile: HunterProfileEntity,
-        level: Int,
-        balances: Balances,
-        today: LocalDate,
-        now: Instant,
-    ): List<String> {
-        val finalized = reader.finalizedStreak()
-        val todayRecord = questDao.getForDate(today).toDayRecord(today)
-        val todayStreak = StreakRules.displayStreak(StreakState(streak = finalized.streak), todayRecord)
-        val bestStreak = maxOf(finalized.bestStreak, todayStreak)
-        val snapshot = reader.achievementSnapshot(profile, level, balances, bestStreak)
-        val ids = AchievementEvaluator.evaluate(snapshot)
-        ids.forEach { id ->
-            achievementDao.insert(AchievementUnlockEntity(id, now))
-            val gold = AchievementEvaluator.byId.getValue(id).gold
-            if (gold > 0) {
-                ledger.insertIdempotent(
-                    listOf(
-                        LedgerEntryEntity(
-                            kind = LedgerKind.GOLD,
-                            delta = gold.toLong(),
-                            sourceType = SourceType.ACHIEVEMENT,
-                            sourceId = id,
-                            gameDate = today,
-                            createdAt = now,
-                        ),
-                    ),
-                )
-            }
-        }
-        return ids
-    }
 
     private fun QuestInstanceEntity.toCompletable(source: VerificationSource) = CompletableQuest(
         questInstanceId = id,

@@ -18,6 +18,7 @@ import com.assismohanty.awaken.core.data.db.entity.QuestInstanceEntity
 import com.assismohanty.awaken.core.data.db.entity.StatTierEntity
 import com.assismohanty.awaken.core.data.db.entity.TrialEntity
 import com.assismohanty.awaken.engine.DayOutcome
+import com.assismohanty.awaken.engine.model.Difficulty
 import com.assismohanty.awaken.engine.model.QuestStatus
 import com.assismohanty.awaken.engine.model.Rank
 import com.assismohanty.awaken.engine.model.SourceType
@@ -57,6 +58,24 @@ interface QuestDao {
 
     @Query("SELECT * FROM quest_instance WHERE id = :id")
     suspend fun get(id: String): QuestInstanceEntity?
+
+    @Query("SELECT * FROM quest_instance WHERE id = :id")
+    fun observe(id: String): Flow<QuestInstanceEntity?>
+
+    /** Keeps today's still-open instance of an edited habit in step with the habit. */
+    @Query(
+        "UPDATE quest_instance SET title = :title, description = :title, stat = :stat, difficulty = :difficulty, " +
+            "target = :target, unit = :unit WHERE habit_id = :habitId AND game_date = :gameDate AND status IN ('ACTIVE', 'STARTED')",
+    )
+    suspend fun updateOpenHabitInstance(
+        habitId: String,
+        gameDate: LocalDate,
+        title: String,
+        stat: Stat,
+        difficulty: Difficulty,
+        target: Int,
+        unit: String,
+    )
 
     @Query("SELECT * FROM quest_instance WHERE game_date = :gameDate ORDER BY created_at, id")
     suspend fun getForDate(gameDate: LocalDate): List<QuestInstanceEntity>
@@ -110,6 +129,12 @@ interface CompletionDao {
     )
     suspend fun latestActive(questInstanceId: String): CompletionEntity?
 
+    @Query(
+        "SELECT * FROM completion WHERE quest_instance_id = :questInstanceId AND undone_at IS NULL " +
+            "ORDER BY attempt DESC LIMIT 1",
+    )
+    fun observeLatestActive(questInstanceId: String): Flow<CompletionEntity?>
+
     @Query("UPDATE completion SET undone_at = :undoneAt WHERE id = :id")
     suspend fun markUndone(id: String, undoneAt: Instant)
 
@@ -124,6 +149,15 @@ interface CompletionDao {
 interface HabitDao {
     @Query("SELECT * FROM habit WHERE active = 1")
     suspend fun active(): List<HabitEntity>
+
+    @Query("SELECT * FROM habit WHERE active = 1 ORDER BY created_at")
+    fun observeActive(): Flow<List<HabitEntity>>
+
+    @Query("SELECT * FROM habit WHERE id = :id")
+    suspend fun get(id: String): HabitEntity?
+
+    @Query("SELECT COUNT(*) FROM habit WHERE active = 1")
+    suspend fun countActive(): Int
 
     @Upsert
     suspend fun upsert(habit: HabitEntity)

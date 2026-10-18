@@ -1,0 +1,82 @@
+package com.assismohanty.awaken.core.domain
+
+import javax.inject.Inject
+import javax.inject.Singleton
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
+
+/** Something the reward host should present: a completion outcome, or a short message (failure, undo, reroll). */
+sealed interface CompletionEvent {
+    val id: Long
+
+    data class Completed(override val id: Long, val outcome: CompletionOutcome) : CompletionEvent
+    data class Message(override val id: Long, val message: UserMessage, val undoQuestId: String? = null) : CompletionEvent
+}
+
+/** UI-agnostic message; the app maps it to a string resource. */
+sealed interface UserMessage {
+    data class TooSoon(val remainingSeconds: Long) : UserMessage
+    data object VerificationRequired : UserMessage
+    data object WrongDay : UserMessage
+    data object AlreadyDone : UserMessage
+    data object QuestCleared : UserMessage
+    data object Undone : UserMessage
+    data object UndoExpired : UserMessage
+    data object UndoDayClosed : UserMessage
+    data class Rerolled(val cost: Int) : UserMessage
+    data object RerollLimit : UserMessage
+    data class RerollGold(val cost: Int) : UserMessage
+    data object RerollNone : UserMessage
+    data object Error : UserMessage
+}
+
+/**
+ * The single place quest completions start from in the UI (Today rows and Quest detail). Results are queued for the
+ * app-level reward host, so the reward sheet → level-up → toasts chain survives navigating between screens.
+ */
+@Singleton
+class CompletionCenter @Inject constructor(
+    private val completeQuest: CompleteQuestUseCase,
+    private val undoCompletion: UndoCompletionUseCase,
+) {
+    private val queue = MutableStateFlow<List<CompletionEvent>>(emptyList())
+    private var nextId = 0L
+
+    val events: StateFlow<List<CompletionEvent>> = queue.asStateFlow()
+
+    /** Manual (SELF) completion; returns true when the quest was completed. */
+    suspend fun complete(questInstanceId: String): Boolean {
+        val result = completeQuest(questInstanceId)
+        when (result) {
+            is CompleteQuestResult.Completed -> post { CompletionEvent.Completed(it, result.outcome) }
+            is CompleteQuestResult.TooSoon -> message(UserMessage.TooSoon(result.remaining.seconds.coerceAtLeast(1)))
+            CompleteQuestResult.VerificationRequired -> message(UserMessage.VerificationRequired)
+            CompleteQuestResult.WrongDay -> message(UserMessage.WrongDay)
+            is CompleteQuestResult.NotCompletable -> message(UserMessage.AlreadyDone)
+            CompleteQuestResult.NotFound, CompleteQuestResult.NoHunter -> message(UserMessage.Error)
+        }
+        return result is CompleteQuestResult.Completed
+    }
+
+    suspend fun undo(questInstanceId: String) {
+        message(
+            when (undoCompletion(questInstanceId)) {
+                is UndoResult.Undone -> UserMessage.Undone
+                UndoResult.WindowExpired -> UserMessage.UndoExpired
+                UndoResult.DayClosed -> UserMessage.UndoDayClosed
+                UndoResult.NothingToUndo -> UserMessage.Error
+            },
+        )
+    }
+
+    fun message(message: UserMessage, undoQuestId: String? = null) = post { CompletionEvent.Message(it, message, undoQuestId) }
+
+    /** Called by the host once an event has been fully presented. */
+    fun consume(eventId: Long) = queue.update { events -> events.filterNot { it.id == eventId } }
+
+    private fun post(build: (Long) -> CompletionEvent) {
+        queue.update { it + build(nextId++) }
+    }
+}
