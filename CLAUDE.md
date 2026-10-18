@@ -29,7 +29,8 @@ Kotlin 2.x · Jetpack Compose + Material 3 (heavily themed) · Navigation Compos
 8. **No network permission for v1** except what Health Connect needs (none). If you think you need INTERNET, stop and ask.
 
 ## Code conventions
-- Package-by-feature in `:app`: `feature/today`, `feature/quest`, `feature/gate`, `feature/status`, `feature/vault`, `feature/onboarding`, `feature/settings`; shared in `core/designsystem`, `core/data`, `core/domain`.
+- Package-by-feature in `:app`: `feature/today`, `feature/quest`, `feature/trial`, `feature/gate`, `feature/status`, `feature/vault`, `feature/onboarding`, `feature/settings`; shared in `core/designsystem`, `core/data`, `core/domain`, `core/work` (WorkManager workers).
+- Every day rollover goes through `RunRolloverUseCase` (app foreground, day-start tick, `DayRolloverWorker`); it records one-shot System notices in `NoticeStore` (DataStore, UI-only).
 - UDF: `ViewModel` exposes `StateFlow<UiState>` (immutable data class) + `fun onEvent(event)`. Screens are stateless composables taking state + lambdas; a thin `Route` composable wires the ViewModel.
 - Naming: `camelCase` in Kotlin; Room columns `snake_case` via `@ColumnInfo`. One name per concept everywhere (`questInstanceId`, never `qid`/`quest_id` in Kotlin).
 - No `!!`. No `GlobalScope`. No `runBlocking` outside tests. Coroutines: `viewModelScope`, injected `CoroutineDispatcher`s.

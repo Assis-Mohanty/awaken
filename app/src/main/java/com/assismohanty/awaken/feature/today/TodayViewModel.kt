@@ -9,7 +9,11 @@ import com.assismohanty.awaken.core.designsystem.components.QuestRowState
 import com.assismohanty.awaken.core.domain.CompletionCenter
 import com.assismohanty.awaken.core.domain.DayRefresher
 import com.assismohanty.awaken.core.domain.ObserveTodayUseCase
+import com.assismohanty.awaken.core.domain.StartTrialResult
+import com.assismohanty.awaken.core.domain.StartTrialUseCase
 import com.assismohanty.awaken.core.domain.TodayModel
+import com.assismohanty.awaken.core.domain.TrialSummary
+import com.assismohanty.awaken.core.domain.isOpen
 import com.assismohanty.awaken.core.domain.UserMessage
 import com.assismohanty.awaken.engine.model.QuestStatus
 import com.assismohanty.awaken.engine.model.QuestType
@@ -38,10 +42,17 @@ data class TodayUiState(
     /** The day meets the clear rule (GD §7.1): title becomes "DIRECTIVE CLEARED". */
     val cleared: Boolean = false,
     val systemLine: String? = null,
+    /** The Rank Trial slot: available to begin, or running (GD §5). */
+    val trial: TrialSummary? = null,
+    /** Today's open and cleared trial stage quests. */
+    val trialStages: List<QuestRowModel> = emptyList(),
+    /** A penalty quest is still open: Today is tinted ember (GD §7.3, visual only). */
+    val penaltyOpen: Boolean = false,
 )
 
 sealed interface TodayEvent {
     data class Complete(val questInstanceId: String) : TodayEvent
+    data object BeginTrial : TodayEvent
 }
 
 @HiltViewModel
@@ -49,6 +60,7 @@ class TodayViewModel @Inject constructor(
     observeToday: ObserveTodayUseCase,
     dayRefresher: DayRefresher,
     private val completionCenter: CompletionCenter,
+    private val startTrial: StartTrialUseCase,
 ) : ViewModel() {
 
     val uiState: StateFlow<TodayUiState> = observeToday(dayChanges = dayRefresher.ticks)
@@ -66,6 +78,21 @@ class TodayViewModel @Inject constructor(
                     Timber.e(e, "Completion failed")
                     completionCenter.message(UserMessage.Error)
                 }
+            }
+            TodayEvent.BeginTrial -> viewModelScope.launch {
+                val message = try {
+                    when (startTrial()) {
+                        is StartTrialResult.Started -> UserMessage.TrialStarted
+                        StartTrialResult.NoStages -> UserMessage.TrialNoStages
+                        StartTrialResult.NotAvailable -> UserMessage.Error
+                    }
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    Timber.e(e, "Starting the trial failed")
+                    UserMessage.Error
+                }
+                completionCenter.message(message)
             }
         }
     }
@@ -101,6 +128,9 @@ internal fun TodayModel.toUiState(): TodayUiState {
         total = counted.size,
         cleared = hunter.todayCleared,
         systemLine = systemLine,
+        trial = trial,
+        trialStages = quests.filter { it.type == QuestType.TRIAL }.map { it.toRowModel() },
+        penaltyOpen = quests.any { it.type == QuestType.PENALTY && it.isOpen },
     )
 }
 

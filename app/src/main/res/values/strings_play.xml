@@ -1,4 +1,5 @@
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- "gold" is uncountable ("1 gold", "40 gold"), so gold amounts are plain strings: tools:ignore="PluralsCandidate". -->
     <!-- Shared actions -->
     <string name="action_accept">Accept</string>
     <string name="action_continue">Continue</string>
@@ -8,7 +9,7 @@
     <string name="action_enter">Enter</string>
     <string name="action_begin">Begin</string>
     <string name="action_reroll">Reroll</string>
-    <string name="action_reroll_paid">Reroll · %1$d gold</string>
+    <string name="action_reroll_paid" tools:ignore="PluralsCandidate">Reroll · %1$d gold</string>
     <string name="action_undo">Undo</string>
     <string name="action_save">Save</string>
     <string name="action_add_habit">Add habit</string>
@@ -100,13 +101,13 @@
     <string name="msg_undo_expired">Undo is available for 10 minutes after completing.</string>
     <string name="msg_undo_day_closed">That day has ended, so it can\'t be undone.</string>
     <string name="msg_reroll_free">Quest rerolled.</string>
-    <string name="msg_reroll_paid">Quest rerolled for %1$d gold.</string>
+    <string name="msg_reroll_paid" tools:ignore="PluralsCandidate">Quest rerolled for %1$d gold.</string>
     <string name="msg_reroll_limit">No rerolls left today.</string>
     <string name="msg_reroll_gold">Not enough gold. A reroll costs %1$d.</string>
     <string name="msg_reroll_none">No other quest fits your settings today.</string>
     <string name="msg_error">The System hit an error. Try again.</string>
     <string name="system_title_achievement">ACHIEVEMENT UNLOCKED</string>
-    <string name="achievement_with_gold">%1$s · +%2$d gold</string>
+    <string name="achievement_with_gold" tools:ignore="PluralsCandidate">%1$s · +%2$d gold</string>
 
     <!-- Habit editor (GAME_DESIGN §4.3: SELF habits max Normal, max 8 active) -->
     <string name="habit_overview_title">HABITS</string>
@@ -158,4 +159,50 @@
     <string name="achievement_early_bird">Dawn Raid</string>
     <string name="achievement_night_owl">Midnight Gate</string>
     <string name="achievement_collector">Relic Hunter</string>
+
+    <!-- Days, streaks, penalty, trials (Phase 7; GAME_DESIGN §5, §6.4, §7; DESIGN_SYSTEM §5 voice) -->
+    <string name="penalty_warning_body">You missed yesterday. One quest stands between you and redemption.</string>
+    <string name="penalty_warning_detail">Your streak reset. Clear the penalty quest today to mark your comeback.</string>
+    <string name="action_face_it">Face it</string>
+    <string name="notice_shield_title">STREAK SHIELD</string>
+    <string name="notice_shield_body">A shield absorbed yesterday\'s miss.</string>
+    <string name="notice_recalibrated_title">RECALIBRATED</string>
+    <string name="notice_recalibrated_harder">The System has recalibrated. %1$s trials will be harder.</string>
+    <string name="notice_recalibrated_easier">The System has recalibrated. %1$s trials will be easier.</string>
+    <string name="notice_trial_failed_title">TRIAL FAILED</string>
+    <string name="notice_trial_failed_body">The %1$s-rank trial window closed. You can try again in 48 hours.</string>
+    <string name="system_title_rank_up">RANK UP</string>
+    <string name="trial_available">RANK TRIAL · %1$s</string>
+    <string name="trial_available_body">Your level has reached the %1$s band. Clear the trial to be promoted.</string>
+    <string name="action_begin_trial">Begin trial</string>
+    <string name="action_view_trial">View trial</string>
+    <plurals name="trial_progress">
+        <item quantity="one">%1$d of %2$d stage cleared</item>
+        <item quantity="other">%1$d of %2$d stages cleared</item>
+    </plurals>
+    <plurals name="trial_days_left">
+        <item quantity="one">%d day left</item>
+        <item quantity="other">%d days left</item>
+    </plurals>
+    <string name="trial_rule">Clear one Hard stage per day, in any order, within 5 days. Promotion grants the rank title and 500 gold.</string>
+    <string name="trial_window">%1$s – %2$s</string>
+    <string name="trial_stage_cleared">Cleared</string>
+    <string name="trial_stage_tomorrow">Opens tomorrow</string>
+    <string name="trial_none">No trial is running.</string>
+    <string name="msg_undo_promotion">A promotion can\'t be undone.</string>
+    <string name="msg_trial_started">Rank Trial started. Clear one stage a day.</string>
+    <string name="msg_trial_no_stages">No Hard quest fits your equipment or injury settings for every stage, so the trial can\'t start.</string>
+    <string name="action_day_plan">Day plan</string>
+    <string name="day_plan_title">DAY PLAN</string>
+    <string name="rest_day_label">Rest day</string>
+    <string name="rest_day_chip">%1$s %2$d</string>
+    <string name="rest_day_body">Mark one day per week in advance. A rest day keeps your streak.</string>
+    <string name="recovery_label">Recovery mode</string>
+    <string name="recovery_body">Sick or injured? Your streak pauses and quests switch to Vitality and Willpower from tomorrow.</string>
+    <plurals name="recovery_remaining">
+        <item quantity="one">%1$d of %2$d day left this month</item>
+        <item quantity="other">%1$d of %2$d days left this month</item>
+    </plurals>
+    <string name="msg_rest_not_allowed">One rest day per week, set before the day starts.</string>
+    <string name="msg_recovery_none">No recovery days left this month.</string>
 </resources>

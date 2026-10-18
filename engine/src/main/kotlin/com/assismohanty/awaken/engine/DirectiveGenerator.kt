@@ -111,6 +111,23 @@ object DirectiveGenerator {
         return draft(template, QuestType.PENALTY, Difficulty.NORMAL, context, gameDate, "penalty", rng)
     }
 
+    /**
+     * Today's Rank Trial stage quests (GD §5, ENGINE_DECISIONS #31): one Hard TRIAL quest per open stage [stats].
+     * Equipment/injury/Health filters apply; recovery mode and the novelty window do not (a trial is a chosen gate).
+     * SELF templates are preferred so every stage can be cleared by hand; slot `trial-<STAT>` keeps ids stable per day.
+     */
+    fun trialStages(templates: List<QuestTemplate>, context: HunterContext, stats: List<Stat>, gameDate: LocalDate): List<QuestDraft> {
+        val pool = eligible(templates, context.copy(recoveryMode = false)).filter { it.supports(Difficulty.HARD) }
+        return stats.mapNotNull { stat ->
+            val inStat = pool.filter { it.stat == stat }
+            val candidates = inStat.filter { it.verification.source == VerificationSource.SELF }.ifEmpty { inStat }
+            if (candidates.isEmpty()) return@mapNotNull null
+            val slot = "trial-${stat.name}"
+            val rng = SplittableRandom(seed(context.hunterId, gameDate, slot))
+            draft(candidates[rng.nextInt(candidates.size)], QuestType.TRIAL, Difficulty.HARD, context, gameDate, slot, rng)
+        }
+    }
+
     /** Templates usable for normal generation before the novelty filter. */
     fun eligible(templates: List<QuestTemplate>, context: HunterContext): List<QuestTemplate> =
         templates.filter { PENALTY_TAG !in it.tags && it.isAllowed(context) }.sortedBy { it.id }

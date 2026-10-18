@@ -3,6 +3,7 @@ package com.assismohanty.awaken.feature.today
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.assismohanty.awaken.core.designsystem.components.QuestRowState
 import com.assismohanty.awaken.core.designsystem.components.achievementNameRes
+import com.assismohanty.awaken.core.designsystem.components.unitPluralRes
 import com.assismohanty.awaken.engine.AchievementEvaluator
 import com.assismohanty.awaken.engine.model.QuestType
 import com.assismohanty.awaken.testing.TestGraph
@@ -57,5 +58,10 @@ class TodayMappingTest {
     @Test
     fun everyAchievementHasADisplayName() {
         AchievementEvaluator.all.forEach { assertThat(achievementNameRes(it.id)).isNotNull() }
+    }
+
+    @Test
+    fun everyTemplateUnitHasAPlural() = runTest {
+        graph.templates.library().units.forEach { unit -> assertThat(unitPluralRes(unit)).isNotNull() }
     }
 }

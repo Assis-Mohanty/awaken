@@ -107,6 +107,24 @@ interface QuestDao {
     @Query("UPDATE quest_instance SET status = 'STARTED', started_at = :startedAt WHERE id = :id AND status = 'ACTIVE'")
     suspend fun markStarted(id: String, startedAt: Instant): Int
 
+    /** Completed Rank Trial stage quests in a window (ENGINE_DECISIONS #31). */
+    @Query("SELECT * FROM quest_instance WHERE type = 'TRIAL' AND status = 'COMPLETED' AND game_date BETWEEN :from AND :to")
+    suspend fun completedTrialStages(from: LocalDate, to: LocalDate): List<QuestInstanceEntity>
+
+    @Query("SELECT * FROM quest_instance WHERE type = 'TRIAL' AND game_date BETWEEN :from AND :to ORDER BY game_date, created_at")
+    fun observeTrialQuests(from: LocalDate, to: LocalDate): Flow<List<QuestInstanceEntity>>
+
+    /** One stage per day: once one is cleared, today's other stage quests close until tomorrow. */
+    @Query(
+        "UPDATE quest_instance SET status = 'EXPIRED' WHERE type = 'TRIAL' AND game_date = :gameDate " +
+            "AND status IN ('ACTIVE', 'STARTED') AND id != :exceptId",
+    )
+    suspend fun closeOtherTrialStages(gameDate: LocalDate, exceptId: String)
+
+    /** Undoing a stage reopens the day's other stages it closed. */
+    @Query("UPDATE quest_instance SET status = 'ACTIVE', started_at = NULL WHERE type = 'TRIAL' AND game_date = :gameDate AND status = 'EXPIRED'")
+    suspend fun reopenTrialStages(gameDate: LocalDate)
+
     /** Day end (GD §6.5): unfinished generated/system quests expire, habits are missed. */
     @Query(
         "UPDATE quest_instance SET status = CASE WHEN type = 'HABIT' THEN 'MISSED' ELSE 'EXPIRED' END " +
@@ -206,6 +224,15 @@ interface DayRecordDao {
     @Query("SELECT * FROM day_record WHERE game_date = :gameDate")
     suspend fun get(gameDate: LocalDate): DayRecordEntity?
 
+    @Query("SELECT * FROM day_record WHERE game_date = :gameDate")
+    fun observe(gameDate: LocalDate): Flow<DayRecordEntity?>
+
+    @Query("SELECT game_date FROM day_record WHERE rest_day = 1 AND game_date BETWEEN :from AND :to ORDER BY game_date")
+    fun observeRestDays(from: LocalDate, to: LocalDate): Flow<List<LocalDate>>
+
+    @Query("SELECT game_date FROM day_record WHERE rest_day = 1 AND game_date BETWEEN :from AND :to")
+    suspend fun restDays(from: LocalDate, to: LocalDate): List<LocalDate>
+
     @Upsert
     suspend fun upsert(record: DayRecordEntity)
 
@@ -250,6 +277,20 @@ interface TrialDao {
 
     @Query("SELECT MAX(ended_at) FROM trial WHERE status = 'FAILED'")
     suspend fun lastFailedAt(): Instant?
+
+    @Query("SELECT MAX(ended_at) FROM trial WHERE status = 'FAILED'")
+    fun observeLastFailedAt(): Flow<Instant?>
+
+    /** At most one trial is ACTIVE (only the next rank can be challenged). */
+    @Query("SELECT * FROM trial WHERE status = 'ACTIVE' LIMIT 1")
+    suspend fun active(): TrialEntity?
+
+    @Query("SELECT * FROM trial WHERE status = 'ACTIVE' LIMIT 1")
+    fun observeActive(): Flow<TrialEntity?>
+
+    /** The trial whose window contains [gameDate], whatever its status. */
+    @Query("SELECT * FROM trial WHERE :gameDate BETWEEN started_game_date AND expires_game_date ORDER BY started_game_date DESC LIMIT 1")
+    suspend fun covering(gameDate: LocalDate): TrialEntity?
 
     @Upsert
     suspend fun upsert(trial: TrialEntity)

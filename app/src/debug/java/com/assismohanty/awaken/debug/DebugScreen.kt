@@ -95,6 +95,7 @@ fun DebugScreen(
                 OutlinedButton(onClick = { onEvent(DebugEvent.ResetDays) }) { Text(stringResource(R.string.debug_reset_days)) }
                 OutlinedButton(onClick = { onEvent(DebugEvent.RebuildBalances) }) { Text(stringResource(R.string.debug_rebuild)) }
                 OutlinedButton(onClick = { onEvent(DebugEvent.GrantShield) }) { Text(stringResource(R.string.debug_grant_shield)) }
+                OutlinedButton(onClick = { onEvent(DebugEvent.GrantLevel) }) { Text(stringResource(R.string.debug_grant_level)) }
                 OutlinedButton(onClick = { onEvent(DebugEvent.WipeData) }) { Text(stringResource(R.string.debug_wipe)) }
             }
         }

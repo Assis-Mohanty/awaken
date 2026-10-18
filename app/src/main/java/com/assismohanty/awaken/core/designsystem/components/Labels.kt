@@ -1,9 +1,11 @@
 package com.assismohanty.awaken.core.designsystem.components
 
+import androidx.annotation.PluralsRes
 import androidx.annotation.StringRes
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import com.assismohanty.awaken.R
 import com.assismohanty.awaken.engine.model.Difficulty
@@ -27,6 +29,39 @@ fun Difficulty.nameRes(): Int = when (this) {
     Difficulty.HARD -> R.string.difficulty_hard
     Difficulty.EXTREME -> R.string.difficulty_extreme
 }
+
+/** Plural resource for a template unit (the closed `units` vocabulary); null for free-text habit units. */
+@PluralsRes
+fun unitPluralRes(unit: String): Int? = when (unit) {
+    "reps" -> R.plurals.unit_reps
+    "sec" -> R.plurals.unit_sec
+    "min" -> R.plurals.unit_min
+    "km" -> R.plurals.unit_km
+    "floors" -> R.plurals.unit_floors
+    "rounds" -> R.plurals.unit_rounds
+    "sprints" -> R.plurals.unit_sprints
+    "steps" -> R.plurals.unit_steps
+    "hours" -> R.plurals.unit_hours
+    "pages" -> R.plurals.unit_pages
+    "problems" -> R.plurals.unit_problems
+    "cards" -> R.plurals.unit_cards
+    "lessons" -> R.plurals.unit_lessons
+    "words" -> R.plurals.unit_words
+    "items" -> R.plurals.unit_items
+    "puzzles" -> R.plurals.unit_puzzles
+    "glasses" -> R.plurals.unit_glasses
+    "servings" -> R.plurals.unit_servings
+    "meals" -> R.plurals.unit_meals
+    "breaks" -> R.plurals.unit_breaks
+    "people" -> R.plurals.unit_people
+    "messages" -> R.plurals.unit_messages
+    "posts" -> R.plurals.unit_posts
+    else -> null
+}
+
+/** "1 item" / "3 items": template units agree with the count; custom habit units are shown as typed. */
+@Composable
+fun unitLabel(unit: String, count: Int): String = unitPluralRes(unit)?.let { pluralStringResource(it, count) } ?: unit
 
 /** Display name for an engine achievement id (GD §10); null for an id this build doesn't know. */
 @StringRes

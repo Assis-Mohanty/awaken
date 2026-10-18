@@ -40,6 +40,7 @@ import com.assismohanty.awaken.core.designsystem.components.SystemWindow
 import com.assismohanty.awaken.core.designsystem.components.VerifiedBadge
 import com.assismohanty.awaken.core.designsystem.components.formatCount
 import com.assismohanty.awaken.core.designsystem.components.label
+import com.assismohanty.awaken.core.designsystem.components.unitLabel
 import com.assismohanty.awaken.core.designsystem.preview.PhonePreviews
 import com.assismohanty.awaken.core.designsystem.theme.AwakenTheme
 import com.assismohanty.awaken.core.designsystem.theme.Spacing
@@ -100,7 +101,7 @@ private fun QuestDetailContent(state: QuestDetailUiState, onEvent: (QuestDetailE
     SystemWindow(title = stringResource(state.type.kindRes), accent = accent) {
         Text(state.title, style = type.display, color = colors.bone, modifier = Modifier.semantics { heading() })
         Text(
-            text = stringResource(R.string.quest_target_line, formatCount(state.target), state.unit, state.difficulty.label()),
+            text = stringResource(R.string.quest_target_line, formatCount(state.target), unitLabel(state.unit, state.target), state.difficulty.label()),
             style = type.title,
             color = colors.mist,
         )

@@ -163,7 +163,7 @@ fun QuestRow(
                         textDecoration = decoration,
                     )
                     Text(
-                        text = stringResource(R.string.quest_target_line, formatCount(model.target), model.unit, model.difficulty.label()),
+                        text = stringResource(R.string.quest_target_line, formatCount(model.target), unitLabel(model.unit, model.target), model.difficulty.label()),
                         style = type.label,
                         color = if (dimmed) colors.fog else colors.mist,
                         textDecoration = decoration,

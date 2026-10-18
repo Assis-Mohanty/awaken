@@ -21,6 +21,7 @@ import com.assismohanty.awaken.engine.QuestOutcome
 import com.assismohanty.awaken.engine.StreakRules
 import com.assismohanty.awaken.engine.StreakState
 import com.assismohanty.awaken.engine.model.LedgerKind
+import com.assismohanty.awaken.engine.model.Rank
 import com.assismohanty.awaken.engine.model.SourceType
 import com.assismohanty.awaken.engine.model.Stat
 import java.time.Instant
@@ -35,6 +36,8 @@ data class RolloverOutcome(
     val penaltyIssued: Boolean,
     /** Non-empty when this run recalibrated tiers (GD §6.4) and something changed. */
     val recalibration: Map<Stat, DifficultyAdapter.Change>,
+    /** The rank whose trial this run found expired (GD §5), if any. */
+    val trialFailed: Rank? = null,
 )
 
 /**
@@ -49,6 +52,7 @@ class DayRolloverUseCase @Inject constructor(
     private val reader: GameStateReader,
     private val templates: TemplateRepository,
     private val generateDirective: GenerateDirectiveUseCase,
+    private val advanceTrial: AdvanceTrialUseCase,
     private val transactions: TransactionRunner,
     private val clock: Clock,
 ) {
@@ -66,15 +70,31 @@ class DayRolloverUseCase @Inject constructor(
         val finalized = ArrayList<DayResult>()
         var date = maxOf(lastFinalized?.plusDays(1) ?: profile.firstGameDate, profile.firstGameDate)
         while (date < today) {
+            carryRecovery(date)
             finalized += finalizeDay(date)
             date = date.plusDays(1)
         }
+        // Only the run that crosses into a new day carries Recovery into it, so turning it off today sticks.
+        if (finalized.isNotEmpty()) carryRecovery(today)
 
         val recalibration = recalibrateIfDue(today)
         generateDirective(today)
         val brokenDay = finalized.lastOrNull { it.outcome == DayOutcome.BROKEN }?.gameDate
         val penaltyIssued = brokenDay != null && issuePenalty(profile, today, brokenDay)
-        return RolloverOutcome(today, finalized, penaltyIssued, recalibration)
+        val trialFailed = advanceTrial(profile, today)
+        return RolloverOutcome(today, finalized, penaltyIssued, recalibration, trialFailed)
+    }
+
+    /** Recovery Mode carries from the previous day while budget remains (ENGINE_DECISIONS #33). */
+    private suspend fun carryRecovery(date: LocalDate) = transactions.run {
+        if (dayRecordDao.get(date.minusDays(1))?.recovery != true) return@run
+        val existing = dayRecordDao.get(date)
+        if (existing?.finalizedAt != null || existing?.recovery == true) return@run
+        val month = YearMonth.from(date)
+        val used = StreakRules.recoveryUsed(dayRecordDao.finalizedRecoveryDays(month.atDay(1), date.minusDays(1)))
+        if (StreakRules.recoveryContinues(previousDayRecovery = true, usedThisMonth = used)) {
+            dayRecordDao.upsert((existing ?: DayRecordEntity(gameDate = date)).copy(recovery = true))
+        }
     }
 
     /** Finalizes one day. Re-entrant: an already-finalized day is returned as recorded, never re-evaluated. */

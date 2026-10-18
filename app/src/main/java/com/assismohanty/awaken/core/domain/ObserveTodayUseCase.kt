@@ -1,14 +1,18 @@
 package com.assismohanty.awaken.core.domain
 
+import com.assismohanty.awaken.core.data.clock.Clock
 import com.assismohanty.awaken.core.data.db.dao.HunterDao
 import com.assismohanty.awaken.core.data.db.dao.QuestDao
 import com.assismohanty.awaken.core.data.db.dao.TrialDao
 import com.assismohanty.awaken.core.data.db.entity.QuestInstanceEntity
 import com.assismohanty.awaken.core.data.repo.GameStateReader
 import com.assismohanty.awaken.core.data.repo.NarrativeRepository
+import com.assismohanty.awaken.engine.RankRules
 import com.assismohanty.awaken.engine.SystemLines
 import com.assismohanty.awaken.engine.model.QuestStatus
 import com.assismohanty.awaken.engine.model.QuestType
+import com.assismohanty.awaken.engine.model.Rank
+import java.time.temporal.ChronoUnit
 import javax.inject.Inject
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -16,12 +20,20 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.mapLatest
 
+/** The Rank Trial slot on Today (GD §5). */
+sealed interface TrialSummary {
+    /** The level reached the next band and no cooldown applies: the trial can begin. */
+    data class Available(val rank: Rank) : TrialSummary
+    data class Active(val rank: Rank, val cleared: Int, val stages: Int, val daysLeft: Int) : TrialSummary
+}
+
 /** Everything the Today screen shows (DESIGN_SYSTEM §4.2). Rerolled-away quests are already filtered out. */
 data class TodayModel(
     val hunter: HunterState,
     val quests: List<QuestInstanceEntity>,
     /** The daily System line (GD §11); null only if the narrative file has no lines. */
     val systemLine: String?,
+    val trial: TrialSummary? = null,
 )
 
 internal val QuestInstanceEntity.isOpen: Boolean get() = status == QuestStatus.ACTIVE || status == QuestStatus.STARTED
@@ -32,7 +44,9 @@ class ObserveTodayUseCase @Inject constructor(
     private val questDao: QuestDao,
     private val reader: GameStateReader,
     private val trialDao: TrialDao,
+    private val trialReader: TrialReader,
     private val narrative: NarrativeRepository,
+    private val clock: Clock,
 ) {
     @OptIn(ExperimentalCoroutinesApi::class)
     operator fun invoke(dayChanges: Flow<Any>): Flow<TodayModel?> =
@@ -40,9 +54,25 @@ class ObserveTodayUseCase @Inject constructor(
             if (hunter == null) return@flatMapLatest flowOf(null)
             questDao.observeForDate(hunter.gameDate).mapLatest { all ->
                 val quests = all.filter { it.status != QuestStatus.REROLLED }
-                TodayModel(hunter, quests, systemLine(hunter, quests))
+                TodayModel(hunter, quests, systemLine(hunter, quests), trialSummary(hunter))
             }
         }
+
+    private suspend fun trialSummary(hunter: HunterState): TrialSummary? {
+        val active = trialDao.active()
+        if (active != null) {
+            val progress = trialReader.progress(active, hunter.gameDate)
+            val daysLeft = ChronoUnit.DAYS.between(hunter.gameDate, active.expiresGameDate).toInt() + 1
+            return TrialSummary.Active(active.targetRank, progress.cleared.size, RankRules.TRIAL_STAGES, daysLeft.coerceAtLeast(0))
+        }
+        return RankRules.trialAvailable(
+            level = hunter.level,
+            passedTrials = trialDao.passedRanks().toSet(),
+            trialActive = false,
+            lastFailedAt = trialDao.lastFailedAt(),
+            now = clock.now(),
+        )?.let { TrialSummary.Available(it) }
+    }
 
     private suspend fun systemLine(hunter: HunterState, quests: List<QuestInstanceEntity>): String? {
         val profile = hunterDao.getProfile() ?: return null

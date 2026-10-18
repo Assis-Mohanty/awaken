@@ -40,6 +40,7 @@ import com.assismohanty.awaken.feature.quest.QuestDetailRoute as QuestDetailEntr
 import com.assismohanty.awaken.feature.quest.RewardHost
 import com.assismohanty.awaken.feature.status.StatusScreen
 import com.assismohanty.awaken.feature.today.TodayRoute as TodayEntry
+import com.assismohanty.awaken.feature.trial.TrialDetailRoute as TrialDetailEntry
 import com.assismohanty.awaken.feature.vault.VaultScreen
 
 // Feature `*Route` composables are imported as `*Entry`: the serializable route types here share their names.
@@ -50,7 +51,7 @@ fun AwakenNavHost(modifier: Modifier = Modifier, appViewModel: AppViewModel = hi
     val launch by appViewModel.state.collectAsStateWithLifecycle()
     LifecycleStartEffect(appViewModel) {
         appViewModel.onEvent(AppEvent.Started)
-        onStopOrDispose { }
+        onStopOrDispose { appViewModel.onEvent(AppEvent.Stopped) }
     }
     when (val state = launch) {
         // One frame of void while Room answers; no spinner for a local read.
@@ -121,7 +122,10 @@ private fun MainScaffold(
             ) {
                 composable<TodayRoute> {
                     Box(modifier = Modifier.fillMaxSize()) {
-                        TodayEntry(onOpenQuest = { navController.navigate(QuestDetailRoute(it)) })
+                        TodayEntry(
+                            onOpenQuest = { navController.navigate(QuestDetailRoute(it)) },
+                            onOpenTrial = { navController.navigate(TrialRoute) },
+                        )
                         if (DebugEntry.ENABLED) {
                             DebugEntry.LauncherButton(
                                 onClick = { navController.navigate(DebugRoute) },
@@ -132,6 +136,12 @@ private fun MainScaffold(
                     }
                 }
                 composable<QuestDetailRoute> { QuestDetailEntry(onBack = { navController.popBackStack() }) }
+                composable<TrialRoute> {
+                    TrialDetailEntry(
+                        onBack = { navController.popBackStack() },
+                        onOpenQuest = { navController.navigate(QuestDetailRoute(it)) },
+                    )
+                }
                 composable<GatesRoute> { GatesScreen() }
                 composable<StatusRoute> { StatusScreen() }
                 composable<VaultRoute> { VaultScreen() }

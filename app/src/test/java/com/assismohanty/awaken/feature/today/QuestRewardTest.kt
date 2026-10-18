@@ -43,14 +43,21 @@ class QuestRewardTest {
             graph.seedHunter()
             graph.fixtureQuest("Iron Arms")
         }
-        val todayViewModel = TodayViewModel(graph.observeToday, graph.dayRefresher, graph.completionCenter)
-        val hostViewModel = RewardHostViewModel(graph.completionCenter)
+        val todayViewModel = TodayViewModel(graph.observeToday, graph.dayRefresher, graph.completionCenter, graph.startTrial)
+        val hostViewModel = RewardHostViewModel(graph.completionCenter, graph.notices)
 
         composeRule.setContent {
             AwakenTheme {
                 val state by todayViewModel.uiState.collectAsState()
                 val snackbarHostState = remember { SnackbarHostState() }
-                TodayScreen(state = state, onEvent = todayViewModel::onEvent, onOpenQuest = {}, onHabitsEvent = {})
+                TodayScreen(
+                    state = state,
+                    onEvent = todayViewModel::onEvent,
+                    onOpenQuest = {},
+                    onOpenTrial = {},
+                    onHabitsEvent = {},
+                    onDayPlanEvent = {},
+                )
                 SnackbarHost(snackbarHostState)
                 RewardHost(snackbarHostState = snackbarHostState, viewModel = hostViewModel)
             }

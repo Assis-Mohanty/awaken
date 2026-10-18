@@ -151,6 +151,16 @@ object StreakRules {
 
     fun canBuyShield(held: Int): Boolean = held < MAX_SHIELDS
 
+    /** Recovery days still available in a month where [usedThisMonth] were already used. */
+    fun recoveryRemaining(usedThisMonth: Int): Int = (RECOVERY_DAYS_PER_MONTH - usedThisMonth).coerceAtLeast(0)
+
+    /**
+     * Recovery Mode carries over to the next game-day while it was on the day before and budget remains in the new
+     * day's month (ENGINE_DECISIONS #33). It ends when the hunter turns it off or the budget runs out.
+     */
+    fun recoveryContinues(previousDayRecovery: Boolean, usedThisMonth: Int): Boolean =
+        previousDayRecovery && recoveryRemaining(usedThisMonth) > 0
+
     private fun isoWeek(date: LocalDate): Pair<Int, Int> =
         date.get(IsoFields.WEEK_BASED_YEAR) to date.get(IsoFields.WEEK_OF_WEEK_BASED_YEAR)
 }

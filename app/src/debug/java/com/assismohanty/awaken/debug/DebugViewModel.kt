@@ -14,7 +14,7 @@ import com.assismohanty.awaken.core.data.di.IoDispatcher
 import com.assismohanty.awaken.core.data.repo.LedgerRepository
 import com.assismohanty.awaken.core.domain.CompleteQuestUseCase
 import com.assismohanty.awaken.core.domain.CreateHunterUseCase
-import com.assismohanty.awaken.core.domain.DayRolloverUseCase
+import com.assismohanty.awaken.core.domain.RunRolloverUseCase
 import com.assismohanty.awaken.core.domain.HunterState
 import com.assismohanty.awaken.core.domain.ObserveHunterStateUseCase
 import com.assismohanty.awaken.core.domain.RerollQuestUseCase
@@ -60,6 +60,7 @@ sealed interface DebugEvent {
     data object ForceRollover : DebugEvent
     data object RebuildBalances : DebugEvent
     data object GrantShield : DebugEvent
+    data object GrantLevel : DebugEvent
     data object WipeData : DebugEvent
     data class Begin(val questInstanceId: String) : DebugEvent
     data class Complete(val questInstanceId: String) : DebugEvent
@@ -77,7 +78,7 @@ class DebugViewModel @Inject constructor(
     private val clock: Clock,
     private val ledger: LedgerRepository,
     private val createHunter: CreateHunterUseCase,
-    private val rollover: DayRolloverUseCase,
+    private val rollover: RunRolloverUseCase,
     private val startQuest: StartQuestUseCase,
     private val completeQuest: CompleteQuestUseCase,
     private val undoCompletion: UndoCompletionUseCase,
@@ -159,6 +160,23 @@ class DebugViewModel @Inject constructor(
                 ),
             )
             "Granted 1 Streak Shield."
+        } ?: "Seed a hunter first."
+        DebugEvent.GrantLevel -> uiState.value.hunter?.let { hunter ->
+            // Exactly enough XP for the next level; xp_source is empty so it never counts toward the daily caps.
+            val needed = hunter.xpForLevel - hunter.xpIntoLevel
+            ledger.insertIdempotent(
+                listOf(
+                    LedgerEntryEntity(
+                        kind = LedgerKind.XP_TOTAL,
+                        delta = needed,
+                        sourceType = SourceType.QUEST,
+                        sourceId = "debug:${UUID.randomUUID()}",
+                        gameDate = hunter.gameDate,
+                        createdAt = clock.now(),
+                    ),
+                ),
+            )
+            "Granted $needed XP (level ${hunter.level + 1})."
         } ?: "Seed a hunter first."
         DebugEvent.WipeData -> {
             withContext(ioDispatcher) { db.clearAllTables() }

@@ -15,6 +15,9 @@ fun UserMessage.text(resources: Resources): String = when (this) {
     UserMessage.Undone -> resources.getString(R.string.msg_undone)
     UserMessage.UndoExpired -> resources.getString(R.string.msg_undo_expired)
     UserMessage.UndoDayClosed -> resources.getString(R.string.msg_undo_day_closed)
+    UserMessage.UndoPromotion -> resources.getString(R.string.msg_undo_promotion)
+    UserMessage.TrialStarted -> resources.getString(R.string.msg_trial_started)
+    UserMessage.TrialNoStages -> resources.getString(R.string.msg_trial_no_stages)
     is UserMessage.Rerolled ->
         if (cost == 0) resources.getString(R.string.msg_reroll_free) else resources.getString(R.string.msg_reroll_paid, cost)
     UserMessage.RerollLimit -> resources.getString(R.string.msg_reroll_limit)

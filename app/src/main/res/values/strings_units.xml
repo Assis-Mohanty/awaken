@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Quest units (the closed `units` vocabulary in assets/quests/templates.json). The count is formatted separately. -->
+<resources>
+    <plurals name="unit_reps"><item quantity="one">rep</item><item quantity="other">reps</item></plurals>
+    <plurals name="unit_sec"><item quantity="one">sec</item><item quantity="other">sec</item></plurals>
+    <plurals name="unit_min"><item quantity="one">min</item><item quantity="other">min</item></plurals>
+    <plurals name="unit_km"><item quantity="one">km</item><item quantity="other">km</item></plurals>
+    <plurals name="unit_floors"><item quantity="one">floor</item><item quantity="other">floors</item></plurals>
+    <plurals name="unit_rounds"><item quantity="one">round</item><item quantity="other">rounds</item></plurals>
+    <plurals name="unit_sprints"><item quantity="one">sprint</item><item quantity="other">sprints</item></plurals>
+    <plurals name="unit_steps"><item quantity="one">step</item><item quantity="other">steps</item></plurals>
+    <plurals name="unit_hours"><item quantity="one">hour</item><item quantity="other">hours</item></plurals>
+    <plurals name="unit_pages"><item quantity="one">page</item><item quantity="other">pages</item></plurals>
+    <plurals name="unit_problems"><item quantity="one">problem</item><item quantity="other">problems</item></plurals>
+    <plurals name="unit_cards"><item quantity="one">card</item><item quantity="other">cards</item></plurals>
+    <plurals name="unit_lessons"><item quantity="one">lesson</item><item quantity="other">lessons</item></plurals>
+    <plurals name="unit_words"><item quantity="one">word</item><item quantity="other">words</item></plurals>
+    <plurals name="unit_items"><item quantity="one">item</item><item quantity="other">items</item></plurals>
+    <plurals name="unit_puzzles"><item quantity="one">puzzle</item><item quantity="other">puzzles</item></plurals>
+    <plurals name="unit_glasses"><item quantity="one">glass</item><item quantity="other">glasses</item></plurals>
+    <plurals name="unit_servings"><item quantity="one">serving</item><item quantity="other">servings</item></plurals>
+    <plurals name="unit_meals"><item quantity="one">meal</item><item quantity="other">meals</item></plurals>
+    <plurals name="unit_breaks"><item quantity="one">break</item><item quantity="other">breaks</item></plurals>
+    <plurals name="unit_people"><item quantity="one">person</item><item quantity="other">people</item></plurals>
+    <plurals name="unit_messages"><item quantity="one">message</item><item quantity="other">messages</item></plurals>
+    <plurals name="unit_posts"><item quantity="one">post</item><item quantity="other">posts</item></plurals>
+</resources>

@@ -1,6 +1,7 @@
 package com.assismohanty.awaken.testing
 
 import android.content.Context
+import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import com.assismohanty.awaken.core.data.clock.Clock
@@ -11,9 +12,11 @@ import com.assismohanty.awaken.core.data.db.entity.QuestInstanceEntity
 import com.assismohanty.awaken.core.data.repo.GameStateReader
 import com.assismohanty.awaken.core.data.repo.LedgerRepository
 import com.assismohanty.awaken.core.data.repo.NarrativeRepository
+import com.assismohanty.awaken.core.data.repo.NoticeStore
 import com.assismohanty.awaken.core.data.repo.TemplateRepository
 import com.assismohanty.awaken.core.data.repo.TransactionRunner
 import com.assismohanty.awaken.core.domain.AchievementUnlocker
+import com.assismohanty.awaken.core.domain.AdvanceTrialUseCase
 import com.assismohanty.awaken.core.domain.CompleteOnboardingUseCase
 import com.assismohanty.awaken.core.domain.CompleteQuestUseCase
 import com.assismohanty.awaken.core.domain.CompletionCenter
@@ -24,6 +27,11 @@ import com.assismohanty.awaken.core.domain.GenerateDirectiveUseCase
 import com.assismohanty.awaken.core.domain.ObserveHunterStateUseCase
 import com.assismohanty.awaken.core.domain.ObserveTodayUseCase
 import com.assismohanty.awaken.core.domain.RerollQuestUseCase
+import com.assismohanty.awaken.core.domain.RunRolloverUseCase
+import com.assismohanty.awaken.core.domain.SetRecoveryModeUseCase
+import com.assismohanty.awaken.core.domain.SetRestDayUseCase
+import com.assismohanty.awaken.core.domain.StartTrialUseCase
+import com.assismohanty.awaken.core.domain.TrialReader
 import com.assismohanty.awaken.core.domain.UndoCompletionUseCase
 import com.assismohanty.awaken.engine.CritRoller
 import com.assismohanty.awaken.engine.GameDay
@@ -34,12 +42,17 @@ import com.assismohanty.awaken.engine.model.QuestType
 import com.assismohanty.awaken.engine.model.SourceType
 import com.assismohanty.awaken.engine.model.Stat
 import com.assismohanty.awaken.engine.model.Verification
+import java.io.File
 import java.time.Duration
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.ZoneOffset
+import java.util.UUID
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 
 class FakeClock(var instant: Instant, private val zoneId: ZoneId = ZoneOffset.UTC) : Clock {
     override fun now(): Instant = instant
@@ -70,28 +83,41 @@ class TestGraph(val clock: FakeClock = FakeClock(Instant.parse("2026-10-18T10:00
     val generateDirective = GenerateDirectiveUseCase(
         db.hunterDao(), db.questDao(), db.habitDao(), reader, templates, transactions, clock,
     )
+    val trialReader = TrialReader(db.questDao())
+    val achievements = AchievementUnlocker(db.questDao(), db.achievementDao(), ledger, reader)
     val completeQuest = CompleteQuestUseCase(
-        db.hunterDao(), db.questDao(), db.completionDao(),
-        AchievementUnlocker(db.questDao(), db.achievementDao(), ledger, reader), db.trialDao(),
+        db.hunterDao(), db.questDao(), db.completionDao(), achievements, db.trialDao(), trialReader,
         ledger, reader, transactions, clock,
     )
     val undoCompletion = UndoCompletionUseCase(
-        db.hunterDao(), db.questDao(), db.completionDao(), db.ledgerDao(), ledger, transactions, clock,
+        db.hunterDao(), db.questDao(), db.trialDao(), db.completionDao(), db.ledgerDao(), ledger, transactions, clock,
     )
     val rerollQuest = RerollQuestUseCase(db.hunterDao(), db.questDao(), ledger, reader, templates, transactions, clock)
+    val advanceTrial = AdvanceTrialUseCase(db.questDao(), db.trialDao(), trialReader, reader, templates, transactions, clock)
     val rollover = DayRolloverUseCase(
-        db.hunterDao(), db.questDao(), db.dayRecordDao(), ledger, reader, templates, generateDirective, transactions, clock,
+        db.hunterDao(), db.questDao(), db.dayRecordDao(), ledger, reader, templates, generateDirective, advanceTrial,
+        transactions, clock,
     )
+    val startTrial = StartTrialUseCase(db.hunterDao(), db.questDao(), db.trialDao(), ledger, reader, templates, transactions, clock)
 
-    val achievements = AchievementUnlocker(db.questDao(), db.achievementDao(), ledger, reader)
+    /** A fresh DataStore file per graph, so notices never leak between tests. */
+    private val noticeScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    val notices = NoticeStore(
+        PreferenceDataStoreFactory.create(scope = noticeScope) { File(context.filesDir, "notices-${UUID.randomUUID()}.preferences_pb") },
+    )
+    val runRollover = RunRolloverUseCase(rollover, notices)
     val completionCenter = CompletionCenter(completeQuest, undoCompletion)
     val completeOnboarding = CompleteOnboardingUseCase(createHunter, achievements, rollover, transactions, clock)
     val narrative = NarrativeRepository(context, Dispatchers.Unconfined)
     val observeHunterState = ObserveHunterStateUseCase(
         db.hunterDao(), db.questDao(), db.dayRecordDao(), db.trialDao(), ledger, clock,
     )
-    val observeToday = ObserveTodayUseCase(observeHunterState, db.hunterDao(), db.questDao(), reader, db.trialDao(), narrative)
-    val dayRefresher = DayRefresher(rollover)
+    val observeToday = ObserveTodayUseCase(
+        observeHunterState, db.hunterDao(), db.questDao(), reader, db.trialDao(), trialReader, narrative, clock,
+    )
+    val dayRefresher = DayRefresher(runRollover)
+    val setRestDay = SetRestDayUseCase(db.hunterDao(), db.dayRecordDao(), transactions, clock)
+    val setRecoveryMode = SetRecoveryModeUseCase(db.hunterDao(), db.dayRecordDao(), transactions, clock)
 
     fun today(): LocalDate = clock.gameDate(GameDay.DEFAULT_DAY_START_HOUR)
 
@@ -128,5 +154,8 @@ class TestGraph(val clock: FakeClock = FakeClock(Instant.parse("2026-10-18T10:00
         )
     }
 
-    fun close() = db.close()
+    fun close() {
+        noticeScope.cancel()
+        db.close()
+    }
 }

@@ -18,6 +18,10 @@ data object VaultRoute
 @Serializable
 data class QuestDetailRoute(val questInstanceId: String)
 
+/** The running Rank Trial (GD §5), opened from Today. */
+@Serializable
+data object TrialRoute
+
 /** Debug tools (registered only when DebugEntry.ENABLED, i.e. debug builds). */
 @Serializable
 data object DebugRoute

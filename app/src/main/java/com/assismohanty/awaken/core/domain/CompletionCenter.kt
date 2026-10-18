@@ -1,5 +1,6 @@
 package com.assismohanty.awaken.core.domain
 
+import com.assismohanty.awaken.core.data.repo.Notice
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -13,6 +14,9 @@ sealed interface CompletionEvent {
 
     data class Completed(override val id: Long, val outcome: CompletionOutcome) : CompletionEvent
     data class Message(override val id: Long, val message: UserMessage, val undoQuestId: String? = null) : CompletionEvent
+
+    /** A System notice from the day rollover (penalty warning, shield, recalibration, failed trial). */
+    data class SystemNotice(override val id: Long, val notice: Notice) : CompletionEvent
 
     /** Unlocks outside a quest completion (e.g. "Awakened" at the end of onboarding). */
     data class Achievements(override val id: Long, val achievementIds: List<String>) : CompletionEvent
@@ -28,6 +32,9 @@ sealed interface UserMessage {
     data object Undone : UserMessage
     data object UndoExpired : UserMessage
     data object UndoDayClosed : UserMessage
+    data object UndoPromotion : UserMessage
+    data object TrialStarted : UserMessage
+    data object TrialNoStages : UserMessage
     data class Rerolled(val cost: Int) : UserMessage
     data object RerollLimit : UserMessage
     data class RerollGold(val cost: Int) : UserMessage
@@ -69,12 +76,15 @@ class CompletionCenter @Inject constructor(
                 is UndoResult.Undone -> UserMessage.Undone
                 UndoResult.WindowExpired -> UserMessage.UndoExpired
                 UndoResult.DayClosed -> UserMessage.UndoDayClosed
+                UndoResult.TrialPassed -> UserMessage.UndoPromotion
                 UndoResult.NothingToUndo -> UserMessage.Error
             },
         )
     }
 
     fun message(message: UserMessage, undoQuestId: String? = null) = post { CompletionEvent.Message(it, message, undoQuestId) }
+
+    fun notice(notice: Notice) = post { CompletionEvent.SystemNotice(it, notice) }
 
     fun achievements(achievementIds: List<String>) {
         if (achievementIds.isNotEmpty()) post { CompletionEvent.Achievements(it, achievementIds) }

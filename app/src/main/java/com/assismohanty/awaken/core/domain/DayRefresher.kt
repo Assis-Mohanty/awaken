@@ -8,11 +8,11 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 
 /**
- * Runs the day rollover when the app comes to the foreground and tells observers to re-derive "today". This covers
- * crossing the day start while backgrounded and debug time travel; the in-app day-start tick arrives in Phase 7.
+ * Runs the day rollover in-app (foreground, day-start tick) and tells observers to re-derive "today". Background runs
+ * happen in DayRolloverWorker; the foreground refresh picks up whatever they did.
  */
 @Singleton
-class DayRefresher @Inject constructor(private val rollover: DayRolloverUseCase) {
+class DayRefresher @Inject constructor(private val rollover: RunRolloverUseCase) {
     private val refreshes = MutableStateFlow(0L)
 
     /** Emits after each completed refresh; pass it as `dayChanges` to [ObserveHunterStateUseCase]. */

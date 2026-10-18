@@ -45,6 +45,8 @@ data class CompletionOutcome(
     val levelAfter: Int,
     /** The rank whose trial this completion just made available, if any. */
     val rankTrialUnlocked: Rank?,
+    /** Set when this completion cleared the last Rank Trial stage: the hunter was promoted to this rank (GD §5). */
+    val promotedTo: Rank? = null,
     val unlockedAchievements: List<String>,
 ) {
     val leveledUp: Boolean get() = levelAfter > levelBefore
@@ -69,6 +71,7 @@ class CompleteQuestUseCase @Inject constructor(
     private val completionDao: CompletionDao,
     private val achievements: AchievementUnlocker,
     private val trialDao: TrialDao,
+    private val trialReader: TrialReader,
     private val ledger: LedgerRepository,
     private val reader: GameStateReader,
     private val transactions: TransactionRunner,
@@ -127,6 +130,7 @@ class CompleteQuestUseCase @Inject constructor(
                 ),
             )
             ledger.insertIdempotent(reward.toLedgerRows(quest, completionId, source, today, now))
+            val promotedTo = if (quest.type == QuestType.TRIAL) clearTrialStage(quest, today, now) else null
 
             val balances = ledger.balances()
             val levelAfter = LevelCurve.level(balances.xpTotal)
@@ -143,10 +147,24 @@ class CompleteQuestUseCase @Inject constructor(
                     levelBefore = levelBefore,
                     levelAfter = levelAfter,
                     rankTrialUnlocked = trialAfter.takeIf { it != null && it != trialBefore },
+                    promotedTo = promotedTo,
                     unlockedAchievements = unlocked,
                 ),
             )
         }
+
+    /**
+     * A cleared stage closes today's other stages (one per day, ENGINE_DECISIONS #31). If it was the last stage, the
+     * trial passes: status, +500 gold and promotion, all inside the completion's transaction (invariant 3).
+     */
+    private suspend fun clearTrialStage(quest: QuestInstanceEntity, today: LocalDate, now: Instant): Rank? {
+        questDao.closeOtherTrialStages(today, exceptId = quest.id)
+        val trial = trialDao.active() ?: return null
+        if (trialReader.progress(trial, today).status != RankRules.TrialStatus.PASSED) return null
+        trialDao.upsert(trial.copy(status = RankRules.TrialStatus.PASSED, endedAt = now))
+        ledger.insertIdempotent(listOf(trialRewardRow(trial, today, now)))
+        return trial.targetRank
+    }
 
     private suspend fun trialAvailable(level: Int, passedTrials: Set<Rank>, now: Instant): Rank? =
         RankRules.trialAvailable(level, passedTrials, trialDao.activeCount() > 0, trialDao.lastFailedAt(), now)

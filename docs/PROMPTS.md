@@ -13,7 +13,11 @@ Paste these **in order**, one phase per fresh context. Each prompt is self-conta
 
 Your Pro plan's usage resets on a rolling 5-hour window and is shared with the Claude app. Batch your phases so a heavy phase starts right after a reset; while you wait, do the human tasks in `00_START_HERE.md` (screenshots, listing, testers).
 
-**Cut line if you're behind schedule** (move to v1.1, in this order): F16 share card → F15 widget → F10 Rank Trials → F11 adaptive difficulty → F9 Health Connect. Never cut: ledger correctness, rollover/streak, onboarding, Today, completion, Gates, Status radar.
+**Order:** Phases 1–12 build the offline game. Phases 13–15 add AI Paths (engine first, then the proxy, then the app). Phases 16–17 harden and ship. You can push a closed-test build after Phase 12 and ship Paths to testers as an update, or finish 15 first. Either works because Google's 14-day test clock is the long pole.
+
+**Built Phases 1–7 before AI Paths were added to the spec?** Don't redo them. Keep going with 8–12 as written. The retrofits to earlier work (5th nav tab, onboarding step 6, schema columns, RewardSheet chips, rollover hooks, Ktor/Integrity dependencies) are listed explicitly inside Phases 13 and 15, so they land together with the feature that needs them. First, though, copy the updated `CLAUDE.md` and `docs/` into your repo and commit (`docs: add AI Paths spec`), or Claude Code will keep reading the old rules.
+
+**Cut line if you ever need one** (move to a later update, in this order): F16 share card → F15 widget → F10 Rank Trials → F11 adaptive difficulty. Never cut: ledger correctness, rollover/streak, onboarding, Today, completion, Gates, Status radar, **AI Paths** (the headline feature), Health Connect verification.
 
 ---
 
@@ -26,11 +30,13 @@ This is a fresh Android Studio "Empty Activity" Compose project with package com
 Set up the foundation:
 1. Gradle version catalog (gradle/libs.versions.toml) with the latest STABLE versions of: Kotlin, AGP, Compose BOM,
    Material3, Navigation Compose, Hilt + KSP, Room + KSP, DataStore Preferences, WorkManager (+ hilt-work),
-   Glance appwidget, Health Connect client, kotlinx-serialization-json, Timber, JUnit5, Truth, Turbine, coroutines-test,
+   Glance appwidget, Health Connect client, kotlinx-serialization-json, Ktor client (core, okhttp engine,
+   content-negotiation, kotlinx-json), Play Integrity, Timber, JUnit5, Truth, Turbine, coroutines-test,
    Robolectric. minSdk 28, targetSdk 36, compileSdk 36, Java 17.
-2. Create module :engine (kotlin jvm, JUnit5) and make :app depend on it.
-3. :app — @HiltAndroidApp AwakenApp, MainActivity with edge-to-edge, AwakenNavHost with 4 bottom destinations
-   (Today, Gates, Status, Vault) using type-safe routes, plus placeholder screens.
+2. Create module :engine (kotlin jvm, JUnit5) and make :app depend on it. Create empty top-level folders /contracts
+   and /proxy with a README line each (they are filled in Phases 13–14).
+3. :app — @HiltAndroidApp AwakenApp, MainActivity with edge-to-edge, AwakenNavHost with 5 bottom destinations
+   (Today, Paths, Gates, Status, Vault) using type-safe routes, plus placeholder screens.
 4. Clock interface + SystemClock impl + DispatchersModule.
 5. Debug-only Timber tree. R8 enabled for release with sane keep rules for Room/Hilt/serialization.
 6. Release signing reads from keystore.properties (git-ignored). Add .gitignore entries.
@@ -90,35 +96,22 @@ Run the tests.
 ## Phase 4 — Data layer & use cases  *(Day 1, ~2 h)*
 
 ```
-Read CLAUDE.md invariants, ARCHITECTURE.md §2, §3.1, §3.2, §4, §5, §6 and docs/ENGINE_DECISIONS.md (#17, #20–#24).
+Read CLAUDE.md invariants, ARCHITECTURE.md §2, §3.1, §3.2, §5, §6.
 
 Implement in :app core/data + core/domain:
-1. Room AwakenDatabase (exportSchema=true, schemas in app/schemas) with ALL entities in ARCH §2, including `completion`,
-   `ledger_entry.xp_source` and `day_record.outcome`. Ledger uniqueness must not be defeated by NULLs (store '' for absent
-   stat/item_id). DAOs return Flow for observed data.
+1. Room AwakenDatabase (exportSchema=true, schemas in app/schemas) with the entities in ARCH §2. Ledger uniqueness must not
+   be defeated by NULLs (store '' for absent stat/item_id). DAOs return Flow for observed data.
 2. LedgerRepository: insertIdempotent(rows) returns rows actually inserted; balances cache updated in the SAME transaction;
-   rebuildBalancesFromLedger(). Undo rows copy the original's game_date and xp_source.
-3. Use cases:
-   - GenerateDirectiveUseCase (idempotent per game_date; deterministic instance ids make re-inserts no-ops).
-   - CompleteQuestUseCase (ARCH §3.1, returns CompletionOutcome). Each attempt gets completionId = questInstanceId#attemptN;
-     ledger sourceId = completionId; the crit stays seeded by questInstanceId. Daily caps use today's net XP per
-     xp_source. Manual completion is SELF-only (GD §6.5); TIMER/HEALTH completions come through a separate verified entry
-     point used by Gates (Phase 8) and Health sync (Phase 11).
-   - UndoCompletionUseCase (10-min window, reversing rows with sourceId = completionId, sets completion.undone_at,
-     quest back to ACTIVE/STARTED). Achievements are never revoked (GD §6.5).
-   - RerollQuestUseCase (side quests only; 1 free + max 3 paid at 40 gold).
-   - DayRolloverUseCase (ARCH §3.2 catch-up loop; outcome stored per day; DAY_CLEAR +20 gold on CLEARED; shield ITEM -1
-     on SHIELDED; one penalty quest today if any finalized day was BROKEN; DifficultyAdapter when due).
-   - ObserveHunterStateUseCase (combines balances + derived level/rank/streak into one Flow; streak = StreakRules.replay
-     over finalized outcomes, +1 once today is cleared).
-4. TemplateLibrary loader (assets -> engine models, validated) provided by Hilt as a singleton, loaded off the main thread.
+   rebuildBalancesFromLedger().
+3. Use cases: GenerateDirectiveUseCase (idempotent per game_date), CompleteQuestUseCase (ARCH §3.1, returns
+   CompletionOutcome), UndoCompletionUseCase (10-min window, reversing rows), RerollQuestUseCase, DayRolloverUseCase
+   (ARCH §3.2 catch-up loop), ObserveHunterStateUseCase (combines balances + derived level/rank/streak into one Flow).
+4. TemplateLibrary loader (assets -> engine models) provided by Hilt as a singleton.
 5. Tests (Robolectric + in-memory Room + FakeClock): same completion applied twice = one set of rows; undo nets to zero;
-   complete -> undo -> complete = one net reward with the same crit; manual completion of a HEALTH quest is rejected;
    rebuild == cache; rollover across 5 missed days with 1 shield; generation twice same day = no duplicates; level-up
-   detected when crossing threshold; daily cap counts undone XP as zero.
-6. Debug screen (debug source set only): ledger table viewer, balances, today's quests with complete/undo/reroll,
-   buttons: seed test hunter (no onboarding until Phase 6), +1 day (FakeClock offset persisted in DataStore, debug only),
-   force rollover, rebuild balances, wipe data.
+   detected when crossing threshold.
+6. Debug screen (debug source set only): ledger table viewer, balances, buttons: +1 day (FakeClock offset persisted in
+   DataStore, debug only), force rollover, rebuild balances, wipe data.
 Done when all tests pass and debug APK builds.
 ```
 
@@ -151,8 +144,6 @@ Implement:
 3. Quest row interactions: swipe-to-complete, tap -> Quest detail with Begin/Complete/Reroll, undo snackbar (10 min).
 4. RewardSheet with the formula breakdown; chain into level-up ceremony and SystemToasts for achievements.
 5. Custom habits: add/edit/archive sheet (max 8; difficulty capped at Normal for SELF per GD §4.3).
-6. "First directive guarantees one EASY quest in a focus stat" needs an engine change first (the generator currently makes
-   the main quest tier+1). Add it to DirectiveGenerator with a test and a line in GAME_DESIGN §6.3 before building the UI.
 ViewModels follow UDF from CLAUDE.md. Add Compose UI tests: onboarding happy path; completing a quest shows the reward
 sheet with correct XP for a known fixture.
 ```
@@ -218,7 +209,7 @@ Implement HealthConnectGateway (availability check incl. "not installed" -> deep
 contract for READ Steps, ExerciseSession, SleepSession only), the rationale activity/intent filter + privacy policy
 screen required by Health Connect, onboarding step 5 + Settings toggle, HealthSyncWorker (30 min + on open) that
 aggregates today's steps, exercise minutes and last night's sleep and auto-completes matching HEALTH quests via
-CompleteQuestUseCase's verified entry point (ledger sourceId = completionId per GD §9.3). If HC is unavailable, HEALTH templates are excluded
+CompleteQuestUseCase (idempotent: sourceId = questInstanceId). If HC is unavailable, HEALTH templates are excluded
 from generation. Add a fake gateway for tests and a Debug toggle "simulate 9,000 steps".
 ```
 
@@ -233,7 +224,104 @@ with a System-styled pre-prompt. Glance TodayWidget 4x2 per spec, refreshed afte
 Deep links from notifications/widget to Today. Test on Android 13+ (permission) and Android 10.
 ```
 
-## Phase 13 — Hardening & release build  *(Day 3, ~2 h)*
+## Phase 13 — AI Paths: engine + contracts  *(~3 h)*
+
+```
+Read CLAUDE.md (invariants 5, 8, 9), GAME_DESIGN.md §4, §6 (all of it, especially §6.6), §8 and §12 vectors 16–35.
+
+Implement in :engine, package path/, with ZERO Android imports and ZERO network code:
+1. Models: Path, Milestone, Blueprint (raw, as the model returns it), ValidatedBlueprint, PricedBlueprint, PathSlot,
+   ProgressionSignal (UP/HOLD/DOWN), WeekOutcome, plus kotlinx.serialization DTOs for the wire format.
+2. /contracts: write the four JSON Schemas (path_plan + path_week, request + response) exactly matching GD §6.6.2–6.6.3,
+   with maxLength/enum/minimum/maximum constraints. These are the source of truth for the proxy too.
+3. PathValidator (GD §6.6.4 rules V1–V9, in that order; return kept blueprints AND a list of drop reasons for the Debug
+   screen), PathPricing (GATE → gate rank/difficulty/TIMER; SELF → min(effort, NORMAL), minDurationSec),
+   ProgressionSignal (GD §6.6.5), milestone-advance gate (GD §6.6.5), PathScheduler (GD §6.6.6: round-robin assignment,
+   mid-week start, 3-per-day cap with overflow, carry-over once then SKIPPED, reroll from unscheduled blueprints),
+   StatSuggester (keyword table → suggested primary stat; deterministic, no AI).
+4. Extend DirectiveGenerator per GD §6.3: accept today's Path slots, main promotion, sides = max(1, 3 − paths).
+   All existing vectors 1–15 must still pass unchanged.
+   RETROFIT (this engine was written before §6.6 existed): also update the reroll rule (side OR Path quest; never
+   main, including a promoted Path main, GD §6.3) and DifficultyAdapter so it counts template-generated quests only
+   (GD §6.4). Show me the diff of existing engine files separately from the new path/ package.
+5. Tests: every vector 16–35 as a named test with fixtures in src/test/resources/paths/; a test that validates every
+   fixture against the /contracts response schema (use a JSON Schema validator as a test-only dependency); property
+   test: for 1,000 random blueprints (random enums, huge/negative numbers, junk strings), the validator never throws
+   and every kept blueprint satisfies all clamps; property test: no PricedBlueprint with verification SELF has
+   difficulty above NORMAL.
+List any ambiguity in §6.6 with your proposed resolution before coding. Done when ./gradlew :engine:test passes.
+```
+
+## Phase 14 — AI Paths: the Path Oracle proxy  *(~4 h)*
+
+```
+Read CLAUDE.md, ARCHITECTURE.md §3.7–3.8, §5, §6, §7 and GAME_DESIGN.md §6.6. Work only in /proxy and /contracts.
+
+Build a Cloudflare Worker in TypeScript (strict mode), tested with Vitest, configured with Wrangler envs staging and
+production. Look up the CURRENT docs before using an API (Cloudflare Workers, Durable Objects, rate-limiting binding,
+D1; Google Play Integrity decodeIntegrityToken; the LLM provider's Messages API and its structured-output / JSON-schema
+feature). Do not guess method names or model IDs; read them from docs and put the model ID in an env var.
+1. Routes POST /v1/paths/plan, /v1/paths/week, /v1/reports with the 9-step pipeline in ARCH §3.8, in that order,
+   with the exact error codes listed there. zod schemas must be generated from or checked against /contracts
+   (add an npm script `check:contracts` that fails on drift).
+2. Play Integrity verification module (service-account JWT signed with Web Crypto, token cached until expiry).
+   Staging only: accept X-Debug-Key (secret) instead of an integrity token. Production must reject X-Debug-Key.
+3. RateLimiter Durable Object keyed by install ID implementing GD §6.6.7, with requestId de-duplication; per-IP
+   backstop via the rate-limiting binding; BudgetCounter Durable Object (monthly, resets on the 1st UTC) that blocks
+   at 100% and exposes 80% for alerting.
+4. prompts/plan_path.v1.md and prompts/week_quests.v1.md: System voice for titles, plain descriptions, the content
+   rules in ARCH §3.8, the <hunter_data> delimiter rule, how to interpret UP/HOLD/DOWN, "use the hunter's language
+   for descriptions if the goal isn't in English". Responses echo promptVersion.
+5. Logging per ARCH §3.8 (never bodies). Write a test that fails if any request/response field reaches the logger.
+6. Tests with a mocked LLM and mocked Integrity API: one per error code; requestId idempotency; budget exhaustion;
+   model returns invalid JSON twice → 502; three prompt-injection fixtures still yield schema-valid output.
+7. eval/goals.json (30 goals across all 5 stats incl. vague, non-English, adversarial "ignore your rules" and an
+   injured user) and eval/run.ts: calls staging, runs the same validation rules as PathValidator (port V1–V9 to TS,
+   or call a tiny JVM CLI — your choice, explain), prints survival rate and writes all blueprints to eval/out.md for
+   my manual review.
+8. README: setup, secrets to create (LLM key, Google service account, debug key), deploy commands, how to rotate the key.
+Never commit a secret. Done when npm test and check:contracts pass and staging answers a curl with the debug key.
+```
+
+## Phase 15 — AI Paths: Android  *(~5 h)*
+
+```
+Read CLAUDE.md, PRD_MVP.md F19–F21, ARCHITECTURE.md §2 (path tables), §3.7, §4, GAME_DESIGN.md §6.6, §8,
+DESIGN_SYSTEM.md §3 (PathLadder, PathQuestBadge, FeedbackChips, OracleStatus), §4.1 step 6, §4.3, §4.7, §4.8.
+
+0. RETROFIT of code built in Phases 1–7 before AI Paths existed. Do these first and list each change:
+   - gradle/libs.versions.toml: add Ktor client (core, okhttp, content-negotiation, kotlinx-json) and Play Integrity.
+   - Navigation: add the Paths destination as the 2nd of 5 bottom tabs (Today, Paths, Gates, Status, Vault).
+   - Onboarding: insert step 6 "Your first Path" (DESIGN_SYSTEM §4.1) before the directive-time step; Skip has equal
+     weight; the first-quest level-up must still never wait on the network.
+   - RewardSheet: FeedbackChips for Path quests. QuestRow: PathQuestBadge. Quest detail: Path rationale, reroll for
+     Path quests, "Report this quest", [Enter X-Gate] for GATE mode.
+   - DayRolloverUseCase: weekly ProgressionSignal + enqueue PlanWeekWorker; Path carry-over/SKIPPED (GD §6.6.6).
+   - Existing tests from Phases 4, 6 and 7 must stay green; add tests only for the new behaviour.
+1. Room: path, path_milestone, path_week, path_slot, ai_report; quest_instance.path_slot_id. Still schema version 1
+   (we haven't shipped), but regenerate the exported schema. If you already have test data on your phone you care
+   about, export it first (Settings → Export); otherwise uninstall/reinstall is fine at version 1.
+2. core/data/ai: PathOracleClient (Ktor, timeouts 10 s / 45 s, maps every proxy error code to a sealed outcome),
+   IntegrityTokenProvider (Standard API, prepare once per process, requestHash = SHA-256 of the exact bytes sent),
+   FakePathOracle (fixtures from :engine test resources copied to debug assets). BuildConfig base URL: staging for
+   debug, production for release. INTERNET permission + network_security_config with cleartext disabled.
+3. Use cases: CreatePath, UpdatePath, PauseResumeArchivePath, AcceptWeekPlan (ONE transaction, ARCH §3.7),
+   AdvanceMilestone (engine-gated), SubmitFeedback, ReportPathQuest, RevokeAiConsent. DayRolloverUseCase: weekly
+   ProgressionSignal + enqueue PlanWeekWorker; carry-over/SKIPPED per GD §6.6.6. GenerateDirective uses today's slots.
+4. Workers: PlanWeekWorker (unique per path+week, network constraint, backoff, requestId reused across retries),
+   ReportWorker (outbox).
+5. Gate integration: entering a gate from a GATE-mode Path quest fixes rank and stat; on clear, CompleteQuestUseCase
+   pays once as the Path quest (GD vector 33); collapse leaves the quest open.
+6. UI: Paths tab, create/edit sheet, consent sheet, Path detail with PathLadder, OracleStatus states, milestone advance
+   moment, report sheet, PathQuestBadge on QuestRow, FeedbackChips on RewardSheet, onboarding step 6, Settings → AI Paths.
+   Previews for every state, including offline and failed.
+7. Tests: the "Paths (app)" row of ARCH §6; Compose UI tests: create Path with FakePathOracle → quests appear on Today;
+   decline consent → no network call is made (assert on a fake client); report removes the quest.
+Run on a real phone against staging (debug key). Play Integrity only passes for builds installed from Play, so the
+production-proxy test happens after Phase 16: upload to the Internal testing track, install from Play, create a Path.
+```
+
+## Phase 16 — Hardening & release build
 
 ```
 Act as a strict senior Android reviewer. Read CLAUDE.md, PRD_MVP.md §7–9, DESIGN_SYSTEM.md §6.
@@ -244,7 +332,10 @@ Act as a strict senior Android reviewer. Read CLAUDE.md, PRD_MVP.md §7–9, DES
    derivedStateOf for heavy calcs; add a Baseline Profile module if time permits.
 4. Edge cases: process death on every screen (SavedStateHandle), rotation, airplane mode, clock changed backwards,
    timezone change, empty states everywhere.
-5. Verify AndroidManifest has NO INTERNET permission and only the permissions we need; list them for me.
+5. Inspect the MERGED manifest: INTERNET is the only network permission, used only by PathOracleClient (and Play
+   services). List every permission and which library added it. Check the dependency tree for any SDK that makes its
+   own network calls. Confirm the release BuildConfig points at the production proxy and contains no debug key.
+   Turn airplane mode on mid "Charting your week…" and confirm the app degrades cleanly.
 6. App icon (adaptive, monochrome layer for themed icons): an original gate/portal glyph in system blue on void.
    Splash via core-splashscreen.
 7. Build signed release AAB (I will create the keystore: give me the exact keytool command and keystore.properties format).
@@ -252,13 +343,15 @@ Act as a strict senior Android reviewer. Read CLAUDE.md, PRD_MVP.md §7–9, DES
 Output a release-readiness report: what's done, what's risky, what to cut.
 ```
 
-## Phase 14 — Store kit  *(Day 3 evening, ~1 h)*
+## Phase 17 — Store kit
 
 ```
 Read docs/PLAY_STORE_LAUNCH.md.
-1. Create /privacy-policy/index.html (static, GitHub Pages-ready) from the template in that doc, filled for this app.
+1. Create /privacy-policy/index.html (static, GitHub Pages-ready) from the template in that doc, filled for this app,
+   including the AI Paths section (provider name, what is sent, no retention by us, the provider's own retention terms).
 2. Add a debug-only "Screenshot mode" that seeds a realistic demo hunter (LV 24, C-rank, 12-day streak, varied stats,
-   unlocked achievements) so I can capture store screenshots.
+   unlocked achievements, two active Paths with a charted week and one milestone cleared) so I can capture store
+   screenshots.
 3. Generate feature graphic source (1024×500) as an SVG/Compose render using our design system.
 4. Write fastlane-style metadata files under /store/en-US/ (title, short_description, full_description) from the doc.
 ```
@@ -271,7 +364,9 @@ Read docs/PLAY_STORE_LAUNCH.md.
 Switch to reviewer mode. Do not write code yet.
 Review the diff of this phase against CLAUDE.md invariants, GAME_DESIGN numbers, and DESIGN_SYSTEM rules.
 List: (1) invariant violations, (2) wrong numbers/formulas, (3) bugs and edge cases (time, process death, idempotency),
-(4) UI deviations (raw colours/dp, missing previews, accessibility), (5) missing tests.
+(4) UI deviations (raw colours/dp, missing previews, accessibility), (5) missing tests,
+(6) for anything touching AI Paths: any path by which model output or user text could change a reward, skip the
+validator, reach a log, or trigger a network call without consent.
 Rank by severity. Then fix everything severity high/medium and re-run the full test + build commands.
 ```
 

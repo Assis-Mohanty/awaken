@@ -1,6 +1,8 @@
 package com.assismohanty.awaken.feature.today
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -29,6 +31,7 @@ import com.assismohanty.awaken.core.designsystem.components.QuestRowState
 import com.assismohanty.awaken.core.designsystem.components.QuietButton
 import com.assismohanty.awaken.core.designsystem.components.SystemWindow
 import com.assismohanty.awaken.core.designsystem.preview.PhonePreviews
+import com.assismohanty.awaken.core.designsystem.theme.AwakenAlpha
 import com.assismohanty.awaken.core.designsystem.theme.AwakenTheme
 import com.assismohanty.awaken.core.designsystem.theme.Spacing
 import com.assismohanty.awaken.engine.model.Difficulty
@@ -39,29 +42,40 @@ import com.assismohanty.awaken.engine.model.VerificationSource
 @Composable
 fun TodayRoute(
     onOpenQuest: (questInstanceId: String) -> Unit,
+    onOpenTrial: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: TodayViewModel = hiltViewModel(),
     habitsViewModel: HabitsViewModel = hiltViewModel(),
+    dayPlanViewModel: DayPlanViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val habits by habitsViewModel.uiState.collectAsStateWithLifecycle()
+    val dayPlan by dayPlanViewModel.uiState.collectAsStateWithLifecycle()
     TodayScreen(
         state = state,
         onEvent = viewModel::onEvent,
         onOpenQuest = onOpenQuest,
+        onOpenTrial = onOpenTrial,
         onHabitsEvent = habitsViewModel::onEvent,
+        onDayPlanEvent = dayPlanViewModel::onEvent,
         modifier = modifier,
     )
     HabitSheets(state = habits, onEvent = habitsViewModel::onEvent)
+    DayPlanSheet(state = dayPlan, onEvent = dayPlanViewModel::onEvent)
 }
 
-/** Today (DESIGN_SYSTEM §4.2): header, penalty window, the directive, habits, and one System line. */
+/**
+ * Today (DESIGN_SYSTEM §4.2): header, penalty window, Rank Trial slot, the directive, habits, and one System line.
+ * While a penalty quest is open the screen carries an ember tint (GD §7.3: visual pressure only, nothing locked).
+ */
 @Composable
 fun TodayScreen(
     state: TodayUiState,
     onEvent: (TodayEvent) -> Unit,
     onOpenQuest: (String) -> Unit,
+    onOpenTrial: () -> Unit,
     onHabitsEvent: (HabitsEvent) -> Unit,
+    onDayPlanEvent: (DayPlanEvent) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val colors = AwakenTheme.colors
@@ -69,6 +83,7 @@ fun TodayScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
+            .then(if (state.penaltyOpen) Modifier.background(colors.ember.copy(alpha = AwakenAlpha.HAZE)) else Modifier)
             .verticalScroll(rememberScrollState()),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
@@ -85,6 +100,9 @@ fun TodayScreen(
                 return@Column
             }
             HunterHeader(header)
+            Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterEnd) {
+                QuietButton(text = stringResource(R.string.action_day_plan), onClick = { onDayPlanEvent(DayPlanEvent.Open) })
+            }
 
             state.penalty?.let { penalty ->
                 SystemWindow(title = stringResource(R.string.quest_kind_penalty), accent = colors.ember) {
@@ -97,9 +115,20 @@ fun TodayScreen(
                 }
             }
 
+            state.trial?.let { trial ->
+                TrialWindow(
+                    trial = trial,
+                    stages = state.trialStages,
+                    onBegin = { onEvent(TodayEvent.BeginTrial) },
+                    onOpenTrial = onOpenTrial,
+                    onComplete = { onEvent(TodayEvent.Complete(it)) },
+                    onOpenQuest = onOpenQuest,
+                )
+            }
+
             SystemWindow(
                 title = stringResource(if (state.cleared) R.string.system_title_directive_cleared else R.string.system_title_daily_directive),
-                accent = if (state.cleared) colors.crit else colors.rank(state.rank),
+                accent = clearedPulseAccent(state.cleared, base = colors.rank(state.rank)),
                 headerTrailing = {
                     Text(
                         text = stringResource(R.string.today_progress, state.completed, state.total),
@@ -195,7 +224,7 @@ private val previewState = TodayUiState(
 @PhonePreviews
 @Composable
 private fun TodayScreenPreview() {
-    AwakenTheme { TodayScreen(previewState, onEvent = {}, onOpenQuest = {}, onHabitsEvent = {}) }
+    AwakenTheme { TodayScreen(previewState, onEvent = {}, onOpenQuest = {}, onOpenTrial = {}, onHabitsEvent = {}, onDayPlanEvent = {}) }
 }
 
 @PhonePreviews
@@ -210,7 +239,9 @@ private fun TodayScreenClearedPreview() {
             ),
             onEvent = {},
             onOpenQuest = {},
+            onOpenTrial = {},
             onHabitsEvent = {},
+            onDayPlanEvent = {},
         )
     }
 }
