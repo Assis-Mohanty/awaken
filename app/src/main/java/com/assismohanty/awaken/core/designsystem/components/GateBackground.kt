@@ -13,12 +13,13 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import com.assismohanty.awaken.core.designsystem.preview.PhonePreviews
+import com.assismohanty.awaken.core.designsystem.theme.AwakenAlpha
 import com.assismohanty.awaken.core.designsystem.theme.AwakenTheme
 import com.assismohanty.awaken.engine.model.Rank
 
 /**
- * App background (DESIGN_SYSTEM §2.1): `void` with a `depth` radial centre and a soft "gate glow" tinted by the hunter's
- * current rank (or `ember` while the Penalty Zone is active). Tint changes crossfade.
+ * App background (DESIGN_SYSTEM §2.1, premium black): true-black `void`, a faint `depth` lift and a ~5 % haze tinted by
+ * the hunter's current rank (or `ember` while the Penalty Zone is active). Tint changes crossfade.
  */
 @Composable
 fun GateBackground(
@@ -39,7 +40,7 @@ fun GateBackground(
                 drawRect(Brush.radialGradient(listOf(colors.depth, colors.void), center = centre, radius = radius))
                 drawRect(
                     Brush.radialGradient(
-                        listOf(glow.copy(alpha = GLOW_ALPHA), Color.Transparent),
+                        listOf(glow.copy(alpha = AwakenAlpha.HAZE), Color.Transparent),
                         center = centre,
                         radius = size.width * GLOW_RADIUS,
                     ),
@@ -56,7 +57,6 @@ fun GateBackground(rank: Rank, modifier: Modifier = Modifier, content: @Composab
 private const val GLOW_CENTRE_Y = 0.18f
 private const val DEPTH_RADIUS = 0.85f
 private const val GLOW_RADIUS = 0.75f
-private const val GLOW_ALPHA = 0.14f
 
 @PhonePreviews
 @Composable

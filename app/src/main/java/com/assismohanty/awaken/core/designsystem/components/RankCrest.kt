@@ -48,8 +48,7 @@ fun RankCrest(rank: Rank, size: Dp, modifier: Modifier = Modifier) {
                 }
                 close()
             }
-            drawPath(hex, color.copy(alpha = AwakenAlpha.GLOW))
-            drawPath(hex, color.copy(alpha = AwakenAlpha.GLOW), style = Stroke(width = edge.toPx() * GLOW_STROKE_FACTOR))
+            drawPath(hex, color.copy(alpha = AwakenAlpha.TINT))
             drawPath(hex, color, style = Stroke(width = edge.toPx() * EDGE_STROKE_FACTOR))
         }
         Text(
@@ -63,7 +62,6 @@ fun RankCrest(rank: Rank, size: Dp, modifier: Modifier = Modifier) {
 private const val SIDES = 6
 private const val ANGLE_OFFSET = -90.0
 private const val CREST_INSET = 0.92f
-private const val GLOW_STROKE_FACTOR = 6f
 private const val EDGE_STROKE_FACTOR = 1.5f
 
 @ComponentPreview

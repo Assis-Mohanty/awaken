@@ -224,7 +224,7 @@ private fun CatalogContent(
             }
 
             item(key = "directive-$revealKey") {
-                SystemWindow(title = stringResource(R.string.system_title_daily_directive), edgeColor = rankColor) {
+                SystemWindow(title = stringResource(R.string.system_title_daily_directive), accent = rankColor) {
                     quests.forEachIndexed { index, quest ->
                         QuestRow(
                             model = quest,
@@ -244,7 +244,7 @@ private fun CatalogContent(
             }
 
             item(key = "penalty-$revealKey") {
-                SystemWindow(title = stringResource(R.string.system_title_system_warning), edgeColor = colors.ember) {
+                SystemWindow(title = stringResource(R.string.system_title_system_warning), accent = colors.ember) {
                     Text("You missed yesterday. One quest stands between you and your comeback.", style = type.body, color = colors.bone)
                     QuestRow(previewQuests.first().copy(id = "penalty", title = "The Way Back", isMain = false), onComplete = {}, onOpen = {}, showDivider = false)
                 }

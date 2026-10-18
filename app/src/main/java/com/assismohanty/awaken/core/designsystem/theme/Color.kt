@@ -7,17 +7,19 @@ import com.assismohanty.awaken.engine.model.GateRank
 import com.assismohanty.awaken.engine.model.Rank
 import com.assismohanty.awaken.engine.model.Stat
 
-// Raw palette — DESIGN_SYSTEM.md §2.1. Only this file holds hex values; everything else reads AwakenColors.
-val Void = Color(0xFF05080F)
-val Depth = Color(0xFF0A1220)
-val Panel = Color(0xDB0F1A2B) // #0F1A2B @ 86 %
-val PanelRaised = Color(0xFF15233A)
-val Edge = Color(0xFF27405F)
-val Bone = Color(0xFFE7EEF6)
-val Mist = Color(0xFF93A4BA)
-val Fog = Color(0xFF5B6B80)
-val SystemBlue = Color(0xFF5CC2FF)
-val Aether = Color(0xFFB9E4FF)
+// Raw palette — DESIGN_SYSTEM.md §2.1 (premium black). Only this file holds hex values; everything else reads AwakenColors.
+// The chrome is greyscale; rank, stat, crit, verified and ember are the only hues.
+val Void = Color(0xFF000000)
+val Depth = Color(0xFF0A0A0A)
+val Panel = Color(0xFF0E0E0E)
+val PanelRaised = Color(0xFF161616)
+val Edge = Color(0xFF262626)
+val Bone = Color(0xFFEDEDED)
+val Mist = Color(0xFF8A8A8A)
+val Fog = Color(0xFF525252)
+val SystemAccent = Bone // monochrome primary accent
+val Aether = Color(0xFFFFFFFF)
+private val IntBlue = Color(0xFF5CC2FF)
 val Ember = Color(0xFFFF5468)
 val Crit = Color(0xFFFFC94D)
 val Verified = Color(0xFF5BE3B0)
@@ -32,7 +34,7 @@ data class AwakenColors(
     val bone: Color = Bone,
     val mist: Color = Mist,
     val fog: Color = Fog,
-    val system: Color = SystemBlue,
+    val system: Color = SystemAccent,
     val aether: Color = Aether,
     val ember: Color = Ember,
     val crit: Color = Crit,
@@ -44,7 +46,7 @@ data class AwakenColors(
     val rankA: Color = Color(0xFFA97BFF),
     val rankS: Color = Crit,
     val statStr: Color = Color(0xFFFF7A59),
-    val statInt: Color = SystemBlue,
+    val statInt: Color = IntBlue,
     val statWil: Color = Color(0xFFA97BFF),
     val statVit: Color = Verified,
     val statCha: Color = Color(0xFFFFB3D1),
@@ -72,9 +74,13 @@ data class AwakenColors(
 
 /** Alpha steps used repeatedly across components (DESIGN_SYSTEM §2.3, §3). */
 object AwakenAlpha {
+    /** Pill borders. */
     const val EDGE = 0.70f
-    const val GLOW = 0.18f
-    const val RADAR_FILL = 0.25f
+    /** Faint tint behind crests and swipe reveals. */
+    const val TINT = 0.10f
+    /** Background rank haze (~5 %). */
+    const val HAZE = 0.05f
+    const val RADAR_FILL = 0.14f
     const val DIM_SCRIM = 0.90f
     val HEATMAP_STEPS = listOf(0.08f, 0.30f, 0.50f, 0.72f, 1.0f)
 }

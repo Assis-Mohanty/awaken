@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Mirrors the `void` token in core/designsystem/theme/Color.kt for pre-Compose window drawing. -->
-    <color name="void_background">#FF05080F</color>
+    <color name="void_background">#FF000000</color>
 </resources>

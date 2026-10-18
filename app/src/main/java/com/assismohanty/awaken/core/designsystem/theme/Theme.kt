@@ -27,9 +27,11 @@ fun AwakenTheme(
             primary = colors.system,
             onPrimary = colors.void,
             primaryContainer = colors.panelRaised,
-            onPrimaryContainer = colors.aether,
+            onPrimaryContainer = colors.bone,
             secondary = colors.aether,
             onSecondary = colors.void,
+            secondaryContainer = colors.panelRaised, // nav-bar indicator: neutral, not Material tint
+            onSecondaryContainer = colors.bone,
             tertiary = colors.crit,
             onTertiary = colors.void,
             background = colors.void,

@@ -27,6 +27,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
@@ -45,7 +46,7 @@ import kotlinx.coroutines.launch
 
 /**
  * The level-up ceremony (DESIGN_SYSTEM §2.5), ~2.2 s: dim to 90 % void → gate ring expands → the level number rolls from
- * [oldLevel] to [newLevel] → [title] types on → stat gains list in → heavy haptic when the number lands. Tap to skip
+ * [oldLevel] to [newLevel] → [title] types on in [accent] (`crit` gold by default) → stat gains list in → heavy haptic when the number lands. Tap to skip
  * after 600 ms (jumps to the end), tap again to dismiss. Reduce-motion: a static window with the final state.
  *
  * Reused for rank promotion (Phase 7) by passing a different [title] and a [crest].
@@ -58,6 +59,7 @@ fun LevelUpCeremony(
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
     title: String = stringResource(R.string.system_title_level_up),
+    accent: Color = AwakenTheme.colors.crit,
     crest: (@Composable () -> Unit)? = null,
 ) {
     val colors = AwakenTheme.colors
@@ -124,7 +126,7 @@ fun LevelUpCeremony(
             }
             if (alpha > 0f) {
                 drawCircle(
-                    color = colors.system.copy(alpha = alpha),
+                    color = accent.copy(alpha = alpha),
                     radius = size.minDimension / 2f * progress,
                     style = Stroke(width = ringStroke.toPx()),
                 )
@@ -144,7 +146,7 @@ fun LevelUpCeremony(
                 color = colors.bone,
             )
             if (titleVisible) {
-                TypeOnText(text = title, style = type.windowTitle, color = colors.system, animate = animate)
+                TypeOnText(text = title, style = type.windowTitle, color = accent, animate = animate)
             }
             AnimatedVisibility(visible = gainsVisible, enter = fadeIn(tween(motion.duration(motion.standardMs)))) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {

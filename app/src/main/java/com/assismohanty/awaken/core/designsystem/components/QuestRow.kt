@@ -1,12 +1,14 @@
 package com.assismohanty.awaken.core.designsystem.components
 
-import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.animate
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.draggable
+import androidx.compose.foundation.gestures.rememberDraggableState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -23,12 +25,16 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.contentDescription
@@ -43,7 +49,6 @@ import com.assismohanty.awaken.core.designsystem.theme.Spacing
 import com.assismohanty.awaken.engine.model.Difficulty
 import com.assismohanty.awaken.engine.model.Stat
 import com.assismohanty.awaken.engine.model.VerificationSource
-import kotlinx.coroutines.launch
 
 enum class QuestRowState { OPEN, DONE, CLOSED }
 
@@ -83,8 +88,20 @@ fun QuestRow(
     val dimmed = model.state == QuestRowState.CLOSED
     val textColor = if (dimmed) colors.fog else colors.bone
     val decoration = if (dimmed) TextDecoration.LineThrough else TextDecoration.None
-    val offset = remember(model.id) { Animatable(0f) }
-    val scope = rememberCoroutineScope()
+    // Plain state updated synchronously per drag delta; the snap-back animates the same value, so nothing can race.
+    var offset by remember(model.id) { mutableFloatStateOf(0f) }
+    var rowWidth by remember { mutableIntStateOf(0) }
+    var crossed by remember(model.id) { mutableStateOf(false) }
+    val dragState = rememberDraggableState { delta ->
+        val threshold = rowWidth * SWIPE_THRESHOLD
+        offset = (offset + delta).coerceIn(0f, rowWidth * SWIPE_MAX)
+        if (!crossed && offset >= threshold) {
+            crossed = true
+            haptics.tick()
+        } else if (crossed && offset < threshold) {
+            crossed = false
+        }
+    }
     val completeLabel = stringResource(R.string.action_complete_quest)
     val openLabel = stringResource(R.string.action_open_quest)
 
@@ -96,7 +113,7 @@ fun QuestRow(
                 Box(
                     modifier = Modifier
                         .matchParentSize()
-                        .background(colors.system.copy(alpha = AwakenAlpha.GLOW)),
+                        .background(colors.system.copy(alpha = AwakenAlpha.TINT)),
                     contentAlignment = Alignment.CenterStart,
                 ) {
                     Icon(
@@ -110,34 +127,18 @@ fun QuestRow(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .graphicsLayer { translationX = offset.value }
-                    .background(if (canComplete && offset.value > 0f) colors.panelRaised else Color.Transparent)
-                    .then(
-                        if (canComplete) {
-                            Modifier.pointerInput(model.id) {
-                                val threshold = size.width * SWIPE_THRESHOLD
-                                var crossed = false
-                                detectHorizontalDragGestures(
-                                    onDragEnd = {
-                                        val complete = offset.value >= threshold
-                                        scope.launch { offset.animateTo(0f, tween(motion.duration(motion.quickMs))) }
-                                        crossed = false
-                                        if (complete) onComplete()
-                                    },
-                                    onDragCancel = { scope.launch { offset.animateTo(0f) } },
-                                ) { _, dragAmount ->
-                                    val next = (offset.value + dragAmount).coerceIn(0f, size.width * SWIPE_MAX)
-                                    if (!crossed && next >= threshold) {
-                                        crossed = true
-                                        haptics.tick()
-                                    } else if (crossed && next < threshold) {
-                                        crossed = false
-                                    }
-                                    scope.launch { offset.snapTo(next) }
-                                }
-                            }
-                        } else {
-                            Modifier
+                    .onSizeChanged { rowWidth = it.width }
+                    .graphicsLayer { translationX = offset }
+                    .background(if (canComplete && offset > 0f) colors.panelRaised else Color.Transparent)
+                    .draggable(
+                        state = dragState,
+                        orientation = Orientation.Horizontal,
+                        enabled = canComplete,
+                        onDragStopped = {
+                            val complete = crossed
+                            crossed = false
+                            if (complete) onComplete()
+                            animate(offset, 0f, animationSpec = tween(motion.duration(motion.quickMs))) { value, _ -> offset = value }
                         },
                     )
                     .combinedClickable(onClickLabel = openLabel, onClick = onOpen, onLongClick = onOpen)
@@ -224,7 +225,7 @@ internal val previewQuests = listOf(
 @Composable
 private fun QuestRowPreview() {
     AwakenTheme {
-        SystemWindow(title = "DAILY DIRECTIVE", edgeColor = AwakenTheme.colors.rankC, reveal = false, modifier = Modifier.padding(Spacing.gutter)) {
+        SystemWindow(title = "DAILY DIRECTIVE", accent = AwakenTheme.colors.rankC, reveal = false, modifier = Modifier.padding(Spacing.gutter)) {
             previewQuests.forEachIndexed { index, quest -> QuestRow(quest, onComplete = {}, onOpen = {}, showDivider = index > 0) }
         }
     }

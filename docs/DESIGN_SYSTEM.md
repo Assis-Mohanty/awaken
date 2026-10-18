@@ -2,31 +2,33 @@
 
 ## 1. Direction in one paragraph
 
-The app is **the System** from a hunter's world: you don't open a to-do list, you open a window that the System projects in front of you. Dark, cold, precise, a little ominous — and then it *rewards* you with light. Spend the boldness in one place: the **System Window**, a chamfered translucent slab with a lit edge whose colour is your rank. Everything around it (lists, settings, nav) stays quiet and disciplined so the windows and the level-up moment hit hard.
+The app is **the System** from a hunter's world: you don't open a to-do list, you open a window that the System projects in front of you. **Premium black**: true-black OLED background, a few neutral greys, crisp hairlines, and colour used rarely and on purpose (CRED / Aceternity, not an anime fan-page). The UI itself is monochrome; colour arrives only from meaning — your rank, a stat, a crit (gold), verification (green), danger (ember). Spend the boldness in one place: the **System Window**, a chamfered black slab with a grey hairline and a single rank-coloured corner bracket. Everything around it stays quiet so the level-up and crit moments hit hard.
 
 What we are explicitly not: Habitica's pixel-art toybox, a generic Material "productivity" app with a purple FAB, or an anime fan-page with screenshots/characters from Solo Leveling (legal risk, and it looks cheap).
 
 ## 2. Tokens
 
-### 2.1 Colour (dark-only in v1)
+### 2.1 Colour (dark-only in v1, premium black)
 
 | Token | Hex | Use |
 |---|---|---|
-| `void` | `#05080F` | App background |
-| `depth` | `#0A1220` | Background radial-gradient centre (the "gate glow" sits on top) |
-| `panel` | `#0F1A2B` @ 86% alpha | System Window fill |
-| `panelRaised` | `#15233A` | Sheets, pressed states |
-| `edge` | `#27405F` | Hairline borders on quiet surfaces |
-| `bone` | `#E7EEF6` | Primary text |
-| `mist` | `#93A4BA` | Secondary text |
-| `fog` | `#5B6B80` | Disabled / tertiary |
-| `system` | `#5CC2FF` | Primary accent: System edges, primary buttons, XP bar fill |
-| `aether` | `#B9E4FF` | XP bar leading glow, highlights |
+| `void` | `#000000` | App background (true black: pixels off on OLED) |
+| `depth` | `#0A0A0A` | Bottom bar, subtle radial lift behind content |
+| `panel` | `#0E0E0E` | System Window fill |
+| `panelRaised` | `#161616` | Sheets, pressed states |
+| `edge` | `#262626` | Hairline borders, window edges, XP track |
+| `bone` | `#EDEDED` | Primary text (not pure white — avoids OLED glare) |
+| `mist` | `#8A8A8A` | Secondary text |
+| `fog` | `#525252` | Disabled / tertiary |
+| `system` | `#EDEDED` | Primary accent, monochrome: primary buttons, XP fill, checks, radar |
+| `aether` | `#FFFFFF` | Highlights: XP bar leading edge |
 | `ember` | `#FF5468` | Penalty Zone, destructive, breach |
-| `crit` | `#FFC94D` | Crits, gold currency, S-rank |
+| `crit` | `#FFC94D` | Crits, gold currency, level-up, S-rank |
 | `verified` | `#5BE3B0` | Verified badge (Health/Timer) |
 
-Rank edge colours (the window edge + gate glow tint follow the hunter's *current* rank):
+Colour budget: the chrome is greyscale. Rank, stat, `crit`, `verified` and `ember` are the only hues, and each only where it carries meaning.
+
+Rank colours (window corner bracket, window title, crest, and a ~5 % background haze follow the hunter's *current* rank):
 
 | E | D | C | B | A | S |
 |---|---|---|---|---|---|
@@ -34,7 +36,7 @@ Rank edge colours (the window edge + gate glow tint follow the hunter's *current
 
 Stat colours (radar, chips, quest stat marks): STR `#FF7A59`, INT `#5CC2FF`, WIL `#A97BFF`, VIT `#5BE3B0`, CHA `#FFB3D1`.
 
-Contrast: `bone` on `panel` ≥ 12:1; `mist` on `panel` ≥ 5:1; never put body text in `system`. Colour is never the only signal (stat chips carry the 3-letter code; verified has an icon + word).
+Contrast: `bone` on `panel` ≈ 16:1; `mist` on `panel` ≈ 5.6:1 (≥ 5:1 required); `fog` is never used for readable text. Colour is never the only signal (stat chips carry the 3-letter code; verified has an icon + word).
 
 ### 2.2 Typography — two families, clearly distinct (both SIL OFL, bundle in `res/font`)
 
@@ -58,12 +60,12 @@ Rules: UPPERCASE is reserved for `windowTitle` — that's the System speaking. E
 
 ### 2.3 Shape, space, elevation
 
-- **System Window**: `CutCornerShape(topStart = 14.dp, bottomEnd = 14.dp)` (two opposite chamfers — asymmetry is the signature). 1dp edge in rank colour @ 70% + 8dp outer glow (rank colour @ 18%, drawn with `drawBehind` blur or layered strokes — no heavy `Modifier.blur` on API < 31).
+- **System Window**: `CutCornerShape(topStart = 14.dp, bottomEnd = 14.dp)` (two opposite chamfers — asymmetry is the signature). `panel` fill, 1dp `edge` hairline all round, and a 1.5dp **corner bracket** in the accent colour (rank, or `ember` for warnings) tracing the top-start chamfer plus 24dp along each side. No outer glow.
 - **Quest rows**: no card per row. A single window contains the list; rows are separated by 1dp `edge` hairlines with 16dp vertical padding. (Avoid the "identical rounded cards" look.)
 - **Chips/badges**: fully rounded pills (stat, difficulty, verified).
 - **Buttons**: primary = filled `system`, chamfered 8dp one corner; secondary = outlined `edge`; text buttons for low-emphasis.
 - Spacing scale: 4, 8, 12, 16, 24, 32, 48. Screen gutters 20dp. Content max width 560dp (tablets centre it).
-- No drop shadows. Depth = glow + alpha, consistent with a projected interface.
+- No drop shadows, no glows on chrome. Depth = black-on-black panels and hairlines. The background may carry a barely visible rank-tinted haze (~5 %).
 
 ### 2.4 Iconography
 Material Symbols *Sharp* (outlined, weight 300) — matches the chamfered geometry. Custom vector glyphs (draw in Compose `ImageVector`) for: 5 stat sigils, rank crest (hex frame with letter), gate portal, shield, loot fragment.
@@ -77,7 +79,7 @@ Material Symbols *Sharp* (outlined, weight 300) — matches the chamfered geomet
 | `ceremony` | ~2.2 s choreographed | Level-up / rank-up only |
 
 - **One orchestrated moment per event.** Completing a quest: row check → the XP number counts up inside the reward sheet → bar fills with an `aether` leading glow. That's it — no confetti on every tap.
-- **Level-up ceremony** (the memorable thing): background dims to 90% `void` → a ring (gate) expands from the XP bar → `displayXL` level number rolls from old to new → windowTitle "LEVEL UP" types on (30 ms/char) → stat increases list in → heavy haptic on the number landing. Tap anywhere to skip after 600 ms.
+- **Level-up ceremony** (the memorable thing): background dims to 90% `void` → a `crit`-gold ring (gate) expands → `displayXL` level number rolls from old to new → windowTitle "LEVEL UP" types on in `crit` (30 ms/char) → stat increases list in → heavy haptic on the number landing. Tap anywhere to skip after 600 ms.
 - **System text type-on**: only for windowTitles of important events (level-up, penalty, trial, chapter). Never for body text.
 - `reduceMotion` (system setting `ANIMATOR_DURATION_SCALE == 0` OR in-app toggle) → crossfades only, no type-on, no scaling, ceremony becomes a static window.
 
@@ -98,12 +100,12 @@ Off by default in v1 (toggle in settings ready, assets in v1.1). Never ship a so
 |---|---|
 | `SystemWindow(title, rankColor, content)` | The signature slab. Optional `headerTrailing` slot. Opening uses `reveal`. |
 | `HunterHeader` | Rank crest (hex + letter), hunter name, equipped title, level `display`, XP bar, streak flame + count, gold. |
-| `XpBar` | 10dp tall, chamfered ends, track `edge`, fill `system`, leading 24dp gradient to `aether`. Animates delta. Shows "1,240 / 1,434 XP" in `numeric` small. |
+| `XpBar` | 10dp tall, chamfered ends, track `edge`, fill `system` (silver-white), leading 24dp gradient to `aether` (white). Animates delta. Shows "1,240 / 1,434 XP" in `numeric` small. |
 | `QuestRow` | Leading stat sigil (stat colour), title, target line ("40 reps · Normal"), trailing verified badge if applicable + check control. Swipe-right = complete (with haptic tick at threshold), long-press = details. Expired/missed rows dim to `fog` with strike. |
 | `StatChip`, `DifficultyChip`, `VerifiedBadge` | Pills. Verified = `verified` icon + "Verified" / "Timed". |
 | `RewardSheet` | Bottom sheet: windowTitle "QUEST CLEARED" (or "CRITICAL CLEAR" in `crit`), big `+XP` numeric, stat split, gold, the **formula breakdown** row (`40 base × 1.5 Normal × 1.20 streak × 1.30 verified = 94 XP`; SELF quests omit the ×1.00 verification factor), Done button. |
-| `RadarChart` | Canvas pentagon, 5 axes with stat sigils; filled polygon `system` @ 25% with 1.5dp edge; previous-week polygon as dashed `mist` for comparison. |
-| `Heatmap` | 18 weeks × 7 days, cleared intensity 0–4 using `system` alpha steps; rest days outlined; tap shows day summary. |
+| `RadarChart` | Canvas pentagon, 5 axes with stat sigils; filled polygon `system` @ 14% with 1.5dp edge; previous-week polygon as dashed `mist` for comparison. |
+| `Heatmap` | 18 weeks × 7 days, cleared intensity 0–4 using `system` (white) alpha steps; rest days outlined; tap shows day summary. |
 | `GateDial` | Circular countdown for Focus Gate: thick ring in gate rank colour, remaining time `displayXL`, breach budget as a thin inner ring turning `ember`. |
 | `SystemToast` | Top-anchored mini window for achievements ("Title unlocked: Unbroken"). |
 | `EmptyState` | Short System line + one action. E.g., "No habits yet. Add one the System should track." [Add habit] |
@@ -180,4 +182,4 @@ TalkBack labels on every interactive element and chart (radar exposes "Strength 
 
 ## 7. Design prompt to give Claude Code (paste with Phase 2)
 
-> Implement the AWAKEN design system from `docs/DESIGN_SYSTEM.md` in `core/designsystem`. The look is a projected "System" interface: deep `void` background with a soft radial gate-glow tinted by the hunter's rank, translucent chamfered `SystemWindow` slabs with a lit edge in the rank colour, Saira Condensed for the System's voice and numerals, IBM Plex Sans for everything people read. Quiet everywhere except windows and the level-up ceremony. No cards-per-row, no drop shadows, no Material default purple, no monospace, uppercase only for window titles. Build the components in §3 with `@Preview`s for each state (default, pressed, disabled, crit, penalty, reduce-motion). Implement `AwakenTheme` exposing `AwakenColors`, `AwakenType`, `AwakenMotion`, `Haptics` via CompositionLocals; screens must never reference raw hex/dp values. Then build a `DesignSystemCatalog` debug screen that shows every component so I can review them on device.
+> Implement the AWAKEN design system from `docs/DESIGN_SYSTEM.md` in `core/designsystem`. The look is a premium-black "System" interface: true-black `void` background with at most a faint rank-tinted haze, black chamfered `SystemWindow` slabs with a grey hairline and a rank-coloured corner bracket, monochrome chrome with colour only for rank/stat/crit/verified/ember, Saira Condensed for the System's voice and numerals, IBM Plex Sans for everything people read. Quiet everywhere except windows and the level-up ceremony. No cards-per-row, no drop shadows, no Material default purple, no monospace, uppercase only for window titles. Build the components in §3 with `@Preview`s for each state (default, pressed, disabled, crit, penalty, reduce-motion). Implement `AwakenTheme` exposing `AwakenColors`, `AwakenType`, `AwakenMotion`, `Haptics` via CompositionLocals; screens must never reference raw hex/dp values. Then build a `DesignSystemCatalog` debug screen that shows every component so I can review them on device.

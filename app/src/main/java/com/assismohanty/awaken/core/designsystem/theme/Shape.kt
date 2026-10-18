@@ -11,8 +11,9 @@ import androidx.compose.ui.unit.dp
 /** Shapes and fixed component dimensions (DESIGN_SYSTEM §2.3, §3). Screens never hard-code dp. */
 @Immutable
 data class AwakenShapes(
+    val windowChamfer: Dp = 14.dp,
     /** Two opposite chamfers — the asymmetric signature of the System Window. */
-    val window: Shape = CutCornerShape(topStart = 14.dp, bottomEnd = 14.dp),
+    val window: Shape = CutCornerShape(topStart = windowChamfer, bottomEnd = windowChamfer),
     val button: Shape = CutCornerShape(topEnd = 8.dp),
     val pill: Shape = CircleShape,
     val xpBar: Shape = CutCornerShape(topStart = 4.dp, bottomEnd = 4.dp),
@@ -21,7 +22,9 @@ data class AwakenShapes(
 @Immutable
 data class AwakenDimens(
     val edgeWidth: Dp = 1.dp,
-    val glowWidth: Dp = 8.dp,
+    /** Rank-coloured corner bracket on System Windows (premium black, DESIGN_SYSTEM §2.3). */
+    val accentWidth: Dp = 1.5.dp,
+    val bracketLength: Dp = 24.dp,
     val hairline: Dp = 1.dp,
     val touchTarget: Dp = 48.dp,
     val xpBarHeight: Dp = 10.dp,

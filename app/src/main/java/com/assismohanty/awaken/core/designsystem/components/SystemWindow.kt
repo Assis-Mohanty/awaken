@@ -22,6 +22,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathMeasure
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.addOutline
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
@@ -29,26 +31,27 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
 import com.assismohanty.awaken.core.designsystem.preview.ComponentPreview
-import com.assismohanty.awaken.core.designsystem.theme.AwakenAlpha
 import com.assismohanty.awaken.core.designsystem.theme.AwakenTheme
 import com.assismohanty.awaken.core.designsystem.theme.Spacing
 
 /**
- * The signature slab (DESIGN_SYSTEM §2.3): translucent `panel` fill, two opposite chamfers, a 1dp edge in [edgeColor] at
- * 70 % and a soft outer glow built from layered strokes (no blur, so it works on every API level). On first composition
- * the window scales 0.96 → 1 while its edge draws around the perimeter (`reveal`); with reduce-motion it just appears.
+ * The signature slab (DESIGN_SYSTEM §2.3, premium black): `panel` fill, two opposite chamfers, a 1dp neutral `edge`
+ * hairline, and a single corner bracket in [accent] (rank colour, or `ember` for warnings) on the top-start chamfer. The
+ * title is set in [accent] too. On first composition the window scales 0.96 → 1 while its hairline draws around the
+ * perimeter (`reveal`); with reduce-motion it just appears.
  */
 @Composable
 fun SystemWindow(
     title: String?,
-    edgeColor: Color,
+    accent: Color,
     modifier: Modifier = Modifier,
     reveal: Boolean = true,
     headerTrailing: (@Composable RowScope.() -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val motion = AwakenTheme.motion
-    val shape = AwakenTheme.shapes.window
+    val shapes = AwakenTheme.shapes
+    val dimens = AwakenTheme.dimens
     val animate = reveal && !motion.reduceMotion
     val progress = remember { Animatable(if (animate) 0f else 1f) }
     LaunchedEffect(animate) {
@@ -63,9 +66,17 @@ fun SystemWindow(
                 scaleY = scale
                 alpha = if (animate) progress.value.coerceAtLeast(MIN_REVEAL_ALPHA) else 1f
             }
-            .windowEdge(shape, edgeColor, AwakenTheme.dimens.edgeWidth, AwakenTheme.dimens.glowWidth) { progress.value }
-            .clip(shape)
+            .clip(shapes.window)
             .background(AwakenTheme.colors.panel)
+            .windowEdge(
+                shape = shapes.window,
+                edgeColor = AwakenTheme.colors.edge,
+                edgeWidth = dimens.edgeWidth,
+                accent = accent,
+                accentWidth = dimens.accentWidth,
+                chamfer = shapes.windowChamfer,
+                bracketLength = dimens.bracketLength,
+            ) { progress.value }
             .padding(Spacing.md),
         verticalArrangement = Arrangement.spacedBy(Spacing.sm),
     ) {
@@ -75,7 +86,7 @@ fun SystemWindow(
                     Text(
                         text = title,
                         style = AwakenTheme.type.windowTitle,
-                        color = edgeColor,
+                        color = accent,
                         modifier = Modifier
                             .weight(1f)
                             .semantics { heading() },
@@ -89,55 +100,65 @@ fun SystemWindow(
 }
 
 /**
- * Lit edge + glow around [shape]. [drawnFraction] (0..1) draws the edge progressively from the top-left chamfer, which is
- * the `reveal` animation; read inside the draw phase so animating it never recomposes.
+ * Neutral hairline around [shape] plus the accent corner bracket on the top-start chamfer. [drawnFraction] (0..1) draws
+ * the hairline progressively (the `reveal`); it is read in the draw phase, so animating it never recomposes.
  */
 fun Modifier.windowEdge(
     shape: Shape,
-    color: Color,
+    edgeColor: Color,
     edgeWidth: Dp,
-    glowWidth: Dp,
+    accent: Color,
+    accentWidth: Dp,
+    chamfer: Dp,
+    bracketLength: Dp,
     drawnFraction: () -> Float = { 1f },
 ): Modifier = drawWithCache {
     val outlinePath = Path().apply { addOutline(shape.createOutline(size, layoutDirection, this@drawWithCache)) }
     val measure = PathMeasure().apply { setPath(outlinePath, forceClosed = true) }
     val edgePx = edgeWidth.toPx()
-    val glowPx = glowWidth.toPx()
+    val accentPx = accentWidth.toPx()
+    // Inset by half the stroke so the bracket sits on the hairline instead of being clipped.
+    val inset = accentPx / 2f
+    val c = chamfer.toPx()
+    val arm = bracketLength.toPx()
+    val bracket = Path().apply {
+        moveTo(inset, c + arm)
+        lineTo(inset, c)
+        lineTo(c, inset)
+        lineTo(c + arm, inset)
+    }
     val segment = Path()
-    onDrawBehind {
+    onDrawWithContent {
+        drawContent()
         val fraction = drawnFraction().coerceIn(0f, 1f)
-        val path = if (fraction >= 1f) {
+        val edge = if (fraction >= 1f) {
             outlinePath
         } else {
             segment.reset()
             measure.getSegment(0f, measure.length * fraction, segment, startWithMoveTo = true)
             segment
         }
-        // Glow: a few wide, faint strokes centred on the edge approximate an 8dp outer glow.
-        for (step in GLOW_STEPS downTo 1) {
-            drawPath(
-                path = path,
-                color = color.copy(alpha = AwakenAlpha.GLOW / GLOW_STEPS * fraction),
-                style = Stroke(width = glowPx * 2 * step / GLOW_STEPS),
-            )
-        }
-        drawPath(path = path, color = color.copy(alpha = AwakenAlpha.EDGE), style = Stroke(width = edgePx))
+        drawPath(edge, edgeColor, style = Stroke(width = edgePx * 2f)) // half is clipped by the window shape
+        drawPath(
+            bracket,
+            accent.copy(alpha = fraction),
+            style = Stroke(width = accentPx, cap = StrokeCap.Square, join = StrokeJoin.Miter),
+        )
     }
 }
 
 private const val REVEAL_START_SCALE = 0.96f
 private const val MIN_REVEAL_ALPHA = 0.001f
-private const val GLOW_STEPS = 4
 
 @ComponentPreview
 @Composable
 private fun SystemWindowPreview() {
     AwakenTheme {
         Column(modifier = Modifier.padding(Spacing.gutter), verticalArrangement = Arrangement.spacedBy(Spacing.lg)) {
-            SystemWindow(title = "DAILY DIRECTIVE", edgeColor = AwakenTheme.colors.rankC, reveal = false) {
+            SystemWindow(title = "DAILY DIRECTIVE", accent = AwakenTheme.colors.rankC, reveal = false) {
                 Text("Quests appear here.", style = AwakenTheme.type.body, color = AwakenTheme.colors.bone)
             }
-            SystemWindow(title = "SYSTEM WARNING", edgeColor = AwakenTheme.colors.ember, reveal = false) {
+            SystemWindow(title = "SYSTEM WARNING", accent = AwakenTheme.colors.ember, reveal = false) {
                 Text("You missed yesterday.", style = AwakenTheme.type.body, color = AwakenTheme.colors.bone)
             }
         }

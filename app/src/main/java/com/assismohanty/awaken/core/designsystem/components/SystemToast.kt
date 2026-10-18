@@ -37,7 +37,7 @@ fun SystemToast(
     title: String,
     message: String,
     modifier: Modifier = Modifier,
-    edgeColor: Color = AwakenTheme.colors.crit,
+    accent: Color = AwakenTheme.colors.crit,
     icon: ImageVector = AwakenGlyphs.VerifiedSeal,
 ) {
     val motion = AwakenTheme.motion
@@ -49,7 +49,7 @@ fun SystemToast(
     ) {
         SystemWindow(
             title = null,
-            edgeColor = edgeColor,
+            accent = accent,
             reveal = false,
             modifier = Modifier
                 .widthIn(max = AwakenTheme.dimens.toastMaxWidth)
@@ -58,9 +58,9 @@ fun SystemToast(
                 .semantics { liveRegion = LiveRegionMode.Polite },
         ) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-                Icon(icon, contentDescription = null, tint = edgeColor, modifier = Modifier.size(AwakenTheme.dimens.icon))
+                Icon(icon, contentDescription = null, tint = accent, modifier = Modifier.size(AwakenTheme.dimens.icon))
                 Column {
-                    Text(title, style = AwakenTheme.type.windowTitle, color = edgeColor)
+                    Text(title, style = AwakenTheme.type.windowTitle, color = accent)
                     Text(message, style = AwakenTheme.type.body, color = AwakenTheme.colors.bone)
                 }
             }
