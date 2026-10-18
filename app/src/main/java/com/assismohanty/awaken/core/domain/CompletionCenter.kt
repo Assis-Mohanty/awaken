@@ -13,6 +13,9 @@ sealed interface CompletionEvent {
 
     data class Completed(override val id: Long, val outcome: CompletionOutcome) : CompletionEvent
     data class Message(override val id: Long, val message: UserMessage, val undoQuestId: String? = null) : CompletionEvent
+
+    /** Unlocks outside a quest completion (e.g. "Awakened" at the end of onboarding). */
+    data class Achievements(override val id: Long, val achievementIds: List<String>) : CompletionEvent
 }
 
 /** UI-agnostic message; the app maps it to a string resource. */
@@ -72,6 +75,10 @@ class CompletionCenter @Inject constructor(
     }
 
     fun message(message: UserMessage, undoQuestId: String? = null) = post { CompletionEvent.Message(it, message, undoQuestId) }
+
+    fun achievements(achievementIds: List<String>) {
+        if (achievementIds.isNotEmpty()) post { CompletionEvent.Achievements(it, achievementIds) }
+    }
 
     /** Called by the host once an event has been fully presented. */
     fun consume(eventId: Long) = queue.update { events -> events.filterNot { it.id == eventId } }

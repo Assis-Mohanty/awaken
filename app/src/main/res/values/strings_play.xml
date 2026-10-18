@@ -16,6 +16,7 @@
     <string name="action_archive_habit">Archive habit</string>
 
     <!-- Awakening (onboarding, DESIGN_SYSTEM §4.1) -->
+    <string name="onboarding_step">Step %1$d of %2$d</string>
     <string name="onboarding_welcome_title">YOU HAVE BEEN CHOSEN.</string>
     <string name="onboarding_welcome_body">Real effort becomes power here. Ready?</string>
     <string name="onboarding_name_title">NAME YOUR HUNTER</string>
@@ -23,6 +24,7 @@
     <string name="onboarding_name_error">Use 3 to 20 characters.</string>
     <string name="onboarding_focus_title">CHOOSE TWO FOCUS STATS</string>
     <string name="onboarding_focus_body">The System weights your focus stats twice as heavily when it builds your directive.</string>
+    <string name="onboarding_focus_option">%1$s · %2$s</string>
     <string name="stat_str_meaning">Training, sport, movement</string>
     <string name="stat_int_meaning">Study, reading, coding, skill practice</string>
     <string name="stat_wil_meaning">Discipline, focus, mindfulness</string>
@@ -55,6 +57,11 @@
     <string name="today_habits">Habits</string>
     <string name="today_no_habits">No habits yet. Add one the System should track.</string>
     <string name="today_loading">The System is preparing your directive.</string>
+    <string name="action_manage_habits">Manage habits</string>
+    <plurals name="habit_count">
+        <item quantity="one">%1$d of %2$d habit</item>
+        <item quantity="other">%1$d of %2$d habits</item>
+    </plurals>
 
     <!-- Quest detail (DESIGN_SYSTEM §4.3) -->
     <string name="quest_kind_main">MAIN QUEST</string>
@@ -70,6 +77,8 @@
     <string name="verify_health">Verified. Completes automatically from Health Connect data.</string>
     <string name="quest_min_duration">Can be completed %1$s after you begin.</string>
     <string name="quest_started">Started. Complete it when you\'re done.</string>
+    <string name="quest_ready_in">You can complete it in %1$s.</string>
+    <string name="quest_reason_label">Why this quest?</string>
     <string name="reason_main">Main quest: today\'s focus stat, %1$s.</string>
     <string name="reason_focus">%1$s is one of your focus stats.</string>
     <plurals name="reason_neglected">
@@ -100,6 +109,8 @@
     <string name="achievement_with_gold">%1$s · +%2$d gold</string>
 
     <!-- Habit editor (GAME_DESIGN §4.3: SELF habits max Normal, max 8 active) -->
+    <string name="habit_overview_title">HABITS</string>
+    <string name="habit_schedule_line">%1$s · %2$s</string>
     <string name="habit_editor_new">NEW HABIT</string>
     <string name="habit_editor_edit">EDIT HABIT</string>
     <string name="habit_name">Habit</string>

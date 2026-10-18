@@ -28,6 +28,44 @@ fun Difficulty.nameRes(): Int = when (this) {
     Difficulty.EXTREME -> R.string.difficulty_extreme
 }
 
+/** Display name for an engine achievement id (GD §10); null for an id this build doesn't know. */
+@StringRes
+fun achievementNameRes(achievementId: String): Int? = when (achievementId) {
+    "first_blood" -> R.string.achievement_first_blood
+    "awakened" -> R.string.achievement_awakened
+    "lvl5" -> R.string.achievement_lvl5
+    "lvl10" -> R.string.achievement_lvl10
+    "lvl25" -> R.string.achievement_lvl25
+    "lvl50" -> R.string.achievement_lvl50
+    "streak3" -> R.string.achievement_streak3
+    "streak7" -> R.string.achievement_streak7
+    "streak30" -> R.string.achievement_streak30
+    "streak100" -> R.string.achievement_streak100
+    "crit1" -> R.string.achievement_crit1
+    "crit25" -> R.string.achievement_crit25
+    "gate_first" -> R.string.achievement_gate_first
+    "gate_hours10" -> R.string.achievement_gate_hours10
+    "gate_hours100" -> R.string.achievement_gate_hours100
+    "verified10" -> R.string.achievement_verified10
+    "verified100" -> R.string.achievement_verified100
+    "redeemed" -> R.string.achievement_redeemed
+    "balanced" -> R.string.achievement_balanced
+    "str20" -> R.string.achievement_str20
+    "int20" -> R.string.achievement_int20
+    "wil20" -> R.string.achievement_wil20
+    "vit20" -> R.string.achievement_vit20
+    "cha20" -> R.string.achievement_cha20
+    "rank_d" -> R.string.achievement_rank_d
+    "rank_c" -> R.string.achievement_rank_c
+    "rank_b" -> R.string.achievement_rank_b
+    "rank_a" -> R.string.achievement_rank_a
+    "rank_s" -> R.string.achievement_rank_s
+    "early_bird" -> R.string.achievement_early_bird
+    "night_owl" -> R.string.achievement_night_owl
+    "collector" -> R.string.achievement_collector
+    else -> null
+}
+
 @Composable
 @ReadOnlyComposable
 fun Stat.label(): String = stringResource(nameRes())

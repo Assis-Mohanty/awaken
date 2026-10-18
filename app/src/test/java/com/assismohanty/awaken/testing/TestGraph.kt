@@ -10,13 +10,19 @@ import com.assismohanty.awaken.core.data.db.entity.LedgerEntryEntity
 import com.assismohanty.awaken.core.data.db.entity.QuestInstanceEntity
 import com.assismohanty.awaken.core.data.repo.GameStateReader
 import com.assismohanty.awaken.core.data.repo.LedgerRepository
+import com.assismohanty.awaken.core.data.repo.NarrativeRepository
 import com.assismohanty.awaken.core.data.repo.TemplateRepository
 import com.assismohanty.awaken.core.data.repo.TransactionRunner
 import com.assismohanty.awaken.core.domain.AchievementUnlocker
+import com.assismohanty.awaken.core.domain.CompleteOnboardingUseCase
 import com.assismohanty.awaken.core.domain.CompleteQuestUseCase
+import com.assismohanty.awaken.core.domain.CompletionCenter
 import com.assismohanty.awaken.core.domain.CreateHunterUseCase
+import com.assismohanty.awaken.core.domain.DayRefresher
 import com.assismohanty.awaken.core.domain.DayRolloverUseCase
 import com.assismohanty.awaken.core.domain.GenerateDirectiveUseCase
+import com.assismohanty.awaken.core.domain.ObserveHunterStateUseCase
+import com.assismohanty.awaken.core.domain.ObserveTodayUseCase
 import com.assismohanty.awaken.core.domain.RerollQuestUseCase
 import com.assismohanty.awaken.core.domain.UndoCompletionUseCase
 import com.assismohanty.awaken.engine.CritRoller
@@ -76,6 +82,16 @@ class TestGraph(val clock: FakeClock = FakeClock(Instant.parse("2026-10-18T10:00
     val rollover = DayRolloverUseCase(
         db.hunterDao(), db.questDao(), db.dayRecordDao(), ledger, reader, templates, generateDirective, transactions, clock,
     )
+
+    val achievements = AchievementUnlocker(db.questDao(), db.achievementDao(), ledger, reader)
+    val completionCenter = CompletionCenter(completeQuest, undoCompletion)
+    val completeOnboarding = CompleteOnboardingUseCase(createHunter, achievements, rollover, transactions, clock)
+    val narrative = NarrativeRepository(context, Dispatchers.Unconfined)
+    val observeHunterState = ObserveHunterStateUseCase(
+        db.hunterDao(), db.questDao(), db.dayRecordDao(), db.trialDao(), ledger, clock,
+    )
+    val observeToday = ObserveTodayUseCase(observeHunterState, db.hunterDao(), db.questDao(), reader, db.trialDao(), narrative)
+    val dayRefresher = DayRefresher(rollover)
 
     fun today(): LocalDate = clock.gameDate(GameDay.DEFAULT_DAY_START_HOUR)
 

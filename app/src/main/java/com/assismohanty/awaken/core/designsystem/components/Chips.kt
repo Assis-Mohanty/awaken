@@ -1,5 +1,6 @@
 package com.assismohanty.awaken.core.designsystem.components
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -7,6 +8,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -15,6 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import com.assismohanty.awaken.R
@@ -47,6 +51,45 @@ fun Pill(
     ) {
         if (icon != null) Icon(icon, contentDescription = null, tint = color, modifier = Modifier.size(dimens.iconSmall))
         Text(text = text, style = AwakenTheme.type.label, color = color)
+    }
+}
+
+/**
+ * A selectable choice (onboarding answers, habit editor). [multiSelect] = checkbox semantics, else radio. Meets the
+ * 48dp touch target; selection is shown by a filled tint and full-strength edge, never by colour alone (the check).
+ */
+@Composable
+fun ChoiceChip(
+    text: String,
+    selected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    color: Color = AwakenTheme.colors.system,
+    icon: ImageVector? = null,
+    multiSelect: Boolean = false,
+    enabled: Boolean = true,
+) {
+    val colors = AwakenTheme.colors
+    val dimens = AwakenTheme.dimens
+    val shape = AwakenTheme.shapes.button
+    val selection = if (multiSelect) {
+        Modifier.toggleable(value = selected, enabled = enabled, role = Role.Checkbox, onValueChange = { onClick() })
+    } else {
+        Modifier.selectable(selected = selected, enabled = enabled, role = Role.RadioButton, onClick = onClick)
+    }
+    Row(
+        modifier = modifier
+            .defaultMinSize(minHeight = dimens.touchTarget)
+            .background(if (selected) color.copy(alpha = AwakenAlpha.TINT) else Color.Transparent, shape)
+            .border(dimens.hairline, if (selected) color else colors.edge, shape)
+            .then(selection)
+            .padding(horizontal = Spacing.sm, vertical = Spacing.xs),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(Spacing.xs, Alignment.CenterHorizontally),
+    ) {
+        if (icon != null) Icon(icon, contentDescription = null, tint = color, modifier = Modifier.size(dimens.iconSmall))
+        Text(text = text, style = AwakenTheme.type.label, color = if (enabled) colors.bone else colors.fog)
+        if (selected) Icon(AwakenGlyphs.Check, contentDescription = null, tint = color, modifier = Modifier.size(dimens.iconSmall))
     }
 }
 

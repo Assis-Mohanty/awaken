@@ -19,6 +19,7 @@ import com.assismohanty.awaken.engine.QuestRules
 import com.assismohanty.awaken.engine.RankRules
 import com.assismohanty.awaken.engine.XpCalculator
 import com.assismohanty.awaken.engine.model.BreakdownItem
+import com.assismohanty.awaken.engine.model.Difficulty
 import com.assismohanty.awaken.engine.model.LedgerKind
 import com.assismohanty.awaken.engine.model.QuestReward
 import com.assismohanty.awaken.engine.model.QuestStatus
@@ -37,6 +38,9 @@ data class CompletionOutcome(
     val questInstanceId: String,
     val completionId: String,
     val reward: QuestReward,
+    /** The completed quest's difficulty and verifier, for the reward sheet's breakdown labels. */
+    val difficulty: Difficulty,
+    val verification: VerificationSource,
     val levelBefore: Int,
     val levelAfter: Int,
     /** The rank whose trial this completion just made available, if any. */
@@ -134,6 +138,8 @@ class CompleteQuestUseCase @Inject constructor(
                     questInstanceId = quest.id,
                     completionId = completionId,
                     reward = reward,
+                    difficulty = quest.difficulty,
+                    verification = source,
                     levelBefore = levelBefore,
                     levelAfter = levelAfter,
                     rankTrialUnlocked = trialAfter.takeIf { it != null && it != trialBefore },

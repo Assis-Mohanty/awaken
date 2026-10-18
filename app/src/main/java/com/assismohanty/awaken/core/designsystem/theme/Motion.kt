@@ -21,6 +21,8 @@ data class AwakenMotion(
     val ceremonyMs: Int = 2_200,
     val typeOnCharMs: Long = 30,
     val ceremonySkippableAfterMs: Long = 600,
+    /** How long a SystemToast stays up (reading time, so not shortened by reduce-motion). */
+    val toastHoldMs: Long = 3_000,
     val quickEasing: Easing = FastOutSlowInEasing,
     /** Material "emphasized decelerate". */
     val standardEasing: Easing = CubicBezierEasing(0.05f, 0.7f, 0.1f, 1f),
