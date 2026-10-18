@@ -1,5 +1,6 @@
 package com.assismohanty.awaken.navigation
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Icon
@@ -9,6 +10,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.navigation.NavDestination.Companion.hasRoute
@@ -19,6 +21,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.assismohanty.awaken.debug.DebugEntry
 import com.assismohanty.awaken.feature.gate.GatesScreen
 import com.assismohanty.awaken.feature.status.StatusScreen
 import com.assismohanty.awaken.feature.today.TodayScreen
@@ -64,10 +67,23 @@ fun AwakenNavHost(
             startDestination = TodayRoute,
             modifier = Modifier.padding(innerPadding),
         ) {
-            composable<TodayRoute> { TodayScreen() }
+            composable<TodayRoute> {
+                Box(modifier = Modifier.fillMaxSize()) {
+                    TodayScreen()
+                    if (DebugEntry.ENABLED) {
+                        DebugEntry.LauncherButton(
+                            onClick = { navController.navigate(DebugRoute) },
+                            modifier = Modifier.align(Alignment.TopEnd),
+                        )
+                    }
+                }
+            }
             composable<GatesRoute> { GatesScreen() }
             composable<StatusRoute> { StatusScreen() }
             composable<VaultRoute> { VaultScreen() }
+            if (DebugEntry.ENABLED) {
+                composable<DebugRoute> { DebugEntry.Screen(onBack = { navController.popBackStack() }) }
+            }
         }
     }
 }

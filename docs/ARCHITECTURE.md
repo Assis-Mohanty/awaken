@@ -67,8 +67,11 @@ Package name: `com.assismohanty.awaken` (permanent once published — note: `in.
 All IDs are `String` UUIDs unless noted. Timestamps `Long` epoch millis UTC. `game_date` = ISO `yyyy-MM-dd` string.
 
 ```sql
-hunter_profile(id PK='me', name, created_at, focus_stat_1, focus_stat_2, day_start_hour,
-               reminder_time, equipped_title_id NULL, theme_id, onboarding_done)
+hunter_profile(id PK='me', hunter_id,                 -- hunter_id: random UUID, seeds generation (GD §6.3)
+               name, created_at, first_game_date, focus_stat_1, focus_stat_2, day_start_hour,
+               reminder_time NULL, equipped_title_id NULL, theme_id, onboarding_done,
+               owned_equipment TEXT,                 -- comma-separated equipment ids (GD §6.3 filter)
+               injury_mode BOOL, health_enabled BOOL, last_recalibrated_on NULL)
 
 stat_tier(stat PK, tier TEXT)                         -- EASY..EXTREME, adaptive (GD §6.4)
 
@@ -78,6 +81,12 @@ quest_instance(id PK, game_date, type, template_id NULL, habit_id NULL,
                status,                               -- ACTIVE|STARTED|COMPLETED|EXPIRED|MISSED|REROLLED
                started_at NULL, completed_at NULL, created_at,
                INDEX(game_date), INDEX(status))
+
+-- One row per completion attempt (GD §9.3). id = completionId = questInstanceId#attemptN. Not a ledger table:
+-- undone_at is set on undo. Feeds the undo window, re-completion attempt numbers and achievement counts.
+completion(id PK, quest_instance_id, attempt INT, game_date, quest_type, stat, verification_source,  -- SELF|TIMER|HEALTH
+           crit BOOL, xp INT, completed_at, undone_at NULL,
+           UNIQUE(quest_instance_id, attempt), INDEX(game_date))
 
 habit(id PK, title, stat, difficulty, verification, days_of_week_mask INT, target, unit,
       active BOOL, created_at)
@@ -90,7 +99,9 @@ ledger_entry(id INTEGER PK AUTOINCREMENT,
              delta INTEGER,
              source_type TEXT, -- QUEST | GATE | TRIAL | ACHIEVEMENT | DAY_CLEAR | SHOP | UNDO | SHIELD_USE | CACHE_OPEN
              source_id TEXT,
-             game_date TEXT, created_at,
+             game_date TEXT,   -- undo rows copy the ORIGINAL row's game_date so daily caps net out
+             xp_source TEXT,   -- SELF|TIMER|HEALTH on quest XP rows (daily caps), '' otherwise
+             created_at,
              breakdown_json TEXT NULL,               -- formula breakdown for the UI
              UNIQUE(source_type, source_id, kind, stat, item_id))
 
@@ -98,18 +109,22 @@ balance_cache(key PK, value INTEGER)                  -- 'xp_total','gold','xp_S
                                                        -- updated in same txn; rebuildable from ledger
 
 day_record(game_date PK, cleared BOOL, rest_day BOOL, recovery BOOL,
+           outcome TEXT NULL,                        -- CLEARED|REST|RECOVERY|SHIELDED|BROKEN once finalized
            shield_used BOOL, penalty_issued BOOL, finalized_at NULL)
+-- The streak is derived by replaying finalized outcomes (StreakRules.replay); no shield history is needed.
 
 gate_run(id PK, gate_rank, stat, label NULL, planned_sec, started_at, ended_at NULL,
          background_ms INTEGER, pauses INTEGER, status)   -- RUNNING|CLEARED|COLLAPSED|ABANDONED
 
-trial(id PK, target_rank, started_game_date, expires_game_date, status)   -- ACTIVE|PASSED|FAILED
+trial(id PK, target_rank, started_game_date, expires_game_date, status, ended_at NULL)   -- ACTIVE|PASSED|FAILED; ended_at drives the 48 h retry
 achievement_unlock(achievement_id PK, unlocked_at)
 owned_cosmetic(cosmetic_id PK, acquired_at, source)
 health_sync_state(record_type PK, last_change_token NULL, last_synced_at)
 ```
 
 UNIQUE with nullable columns: SQLite treats NULLs as distinct → store `''` instead of NULL for `stat`/`item_id` in the ledger to keep the uniqueness guarantee. (This is a classic bug; add a test.)
+
+Ledger sourceIds: QUEST/GATE → completionId; UNDO → the undone row's sourceId; DAY_CLEAR and SHIELD_USE → game_date; ACHIEVEMENT → achievement id; SHOP → purchase UUID (rerolls: `reroll:<game_date>#n`).
 
 Migrations: `exportSchema = true`, schemas committed under `app/schemas/`. v1 ships at version 1; every later change needs a `Migration` + `MigrationTestHelper` test. **No destructive fallback in release.**
 
@@ -139,8 +154,8 @@ QuestScreen ─onEvent(Complete)─▶ QuestViewModel
 
 Runs on app start, on resume, and via `DayRolloverWorker` (periodic 1 h + exact-ish at day start). For every game-date between `lastFinalized+1` and `yesterday`:
 1. Expire ACTIVE/STARTED generated quests, mark habits MISSED.
-2. `cleared = StreakRules.isCleared(day)`; if not cleared and not rest/recovery → consume shield (ledger `ITEM -1, SHIELD_USE`) or flag penalty.
-3. Finalize `day_record`.
+2. `StreakRules.finalizeDay` → CLEARED (ledger `GOLD +20, DAY_CLEAR`), REST, RECOVERY, SHIELDED (ledger `ITEM -1, SHIELD_USE`) or BROKEN (flag penalty).
+3. Finalize `day_record` with the outcome. Each day is its own transaction.
 Then for today: `GenerateDirective` (idempotent per game_date — check before insert), add penalty quest if flagged, run DifficultyAdapter on Mondays.
 
 Phone was off for 5 days → loop handles all 5. Clock moved backwards → never "un-finalize"; log and ignore.

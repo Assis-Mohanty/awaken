@@ -118,6 +118,29 @@ object StreakRules {
         return StreakFold(state, results)
     }
 
+    /**
+     * Rebuilds streak and best streak from finalized outcomes in date order (ENGINE_DECISIONS #23). This matches
+     * [fold] exactly because the outcome already encodes which protection (if any) applied.
+     */
+    fun replay(outcomes: List<DayOutcome>): Pair<Int, Int> {
+        var streak = 0
+        var best = 0
+        for (outcome in outcomes) {
+            when (outcome) {
+                DayOutcome.CLEARED -> {
+                    streak++
+                    best = maxOf(best, streak)
+                }
+                DayOutcome.REST, DayOutcome.RECOVERY, DayOutcome.SHIELDED -> Unit
+                DayOutcome.BROKEN -> streak = 0
+            }
+        }
+        return streak to best
+    }
+
+    /** Recovery days already used in a month, from finalized recovery-flagged days (budget-capped like [finalizeDay]). */
+    fun recoveryUsed(finalizedRecoveryDays: Int): Int = minOf(finalizedRecoveryDays, RECOVERY_DAYS_PER_MONTH)
+
     /** Streak to display today: finalized streak, +1 once today is already cleared. */
     fun displayStreak(finalized: StreakState, today: DayRecord): Int =
         finalized.streak + if (isCleared(today)) 1 else 0

@@ -48,19 +48,22 @@ object LedgerMath {
         return original.copy(delta = -original.delta, sourceType = SourceType.UNDO)
     }
 
+    /** The `balance_cache` key a row contributes to. */
+    fun balanceKey(kind: LedgerKind, stat: String, itemId: String): String = when (kind) {
+        LedgerKind.XP_TOTAL -> Balances.XP_TOTAL
+        LedgerKind.XP_STAT -> "xp_$stat"
+        LedgerKind.GOLD -> Balances.GOLD
+        LedgerKind.ITEM -> Balances.itemKey(itemId)
+        LedgerKind.FRAGMENT -> Balances.FRAGMENTS
+    }
+
     /** Balances = SUM(delta) per balance key. Duplicate keys are counted once, matching the UNIQUE constraint. */
     fun balances(ledger: List<LedgerEntry>): Balances {
         val seen = HashSet<LedgerEntry.Key>()
         val values = HashMap<String, Long>()
         for (row in ledger) {
             if (!seen.add(row.key)) continue
-            val key = when (row.kind) {
-                LedgerKind.XP_TOTAL -> Balances.XP_TOTAL
-                LedgerKind.XP_STAT -> "xp_${row.stat}"
-                LedgerKind.GOLD -> Balances.GOLD
-                LedgerKind.ITEM -> Balances.itemKey(row.itemId)
-                LedgerKind.FRAGMENT -> Balances.FRAGMENTS
-            }
+            val key = balanceKey(row.kind, row.stat, row.itemId)
             values[key] = (values[key] ?: 0L) + row.delta
         }
         return Balances(values)

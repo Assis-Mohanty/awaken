@@ -100,6 +100,19 @@ class StreakRulesTest {
     }
 
     @Test
+    fun `replay of recorded outcomes matches the fold`() {
+        val days = listOf(cleared(start), cleared(start.plusDays(1))) +
+            listOf(DayRecord(start.plusDays(2), restDay = true), cleared(start.plusDays(3))) +
+            (4L..9L).map { DayRecord(start.plusDays(it)) } + listOf(cleared(start.plusDays(10)))
+        val fold = StreakRules.fold(StreakState(shields = 1), days)
+
+        val (streak, best) = StreakRules.replay(fold.days.map { it.outcome })
+        assertThat(streak).isEqualTo(fold.state.streak)
+        assertThat(best).isEqualTo(fold.state.bestStreak)
+        assertThat(best).isEqualTo(3)
+    }
+
+    @Test
     fun `shield cap is 2`() {
         assertThat(StreakRules.canBuyShield(1)).isTrue()
         assertThat(StreakRules.canBuyShield(2)).isFalse()

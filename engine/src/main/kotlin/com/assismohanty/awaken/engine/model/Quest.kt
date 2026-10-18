@@ -84,6 +84,7 @@ data class HunterContext(
 }
 
 /** One factor of the explainable XP formula (GD §1 pillar 4). The UI localises [kind]. */
+@Serializable
 data class BreakdownItem(val kind: Kind, val value: Double) {
     enum class Kind { BASE, DIFFICULTY, STREAK, VERIFICATION, CRIT, DAILY_CAP }
 }

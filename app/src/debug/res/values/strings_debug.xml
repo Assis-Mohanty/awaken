@@ -1,0 +1,25 @@
+<resources>
+    <!-- Debug screen (debug builds only, Phase 4) -->
+    <string name="debug_open">Debug</string>
+    <string name="debug_open_description">Open debug tools</string>
+    <string name="debug_back">Back</string>
+    <string name="debug_title">Debug</string>
+    <string name="debug_no_hunter">No hunter yet. Seed one to start.</string>
+    <string name="debug_section_hunter">Hunter</string>
+    <string name="debug_section_clock">Clock</string>
+    <string name="debug_section_actions">Actions</string>
+    <string name="debug_section_quests">Today\'s quests</string>
+    <string name="debug_section_balances">Balances (cache)</string>
+    <string name="debug_section_ledger">Ledger (latest 100)</string>
+    <string name="debug_seed_hunter">Seed test hunter</string>
+    <string name="debug_add_day">+1 day</string>
+    <string name="debug_rollover">Force rollover</string>
+    <string name="debug_reset_days">Reset clock</string>
+    <string name="debug_rebuild">Rebuild balances</string>
+    <string name="debug_grant_shield">Grant shield</string>
+    <string name="debug_wipe">Wipe data</string>
+    <string name="debug_begin">Begin</string>
+    <string name="debug_complete">Complete</string>
+    <string name="debug_undo">Undo</string>
+    <string name="debug_reroll">Reroll</string>
+</resources>

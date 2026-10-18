@@ -13,3 +13,7 @@ data object StatusRoute
 
 @Serializable
 data object VaultRoute
+
+/** Debug tools (registered only when DebugEntry.ENABLED, i.e. debug builds). */
+@Serializable
+data object DebugRoute

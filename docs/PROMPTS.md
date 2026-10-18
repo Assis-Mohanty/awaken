@@ -90,22 +90,35 @@ Run the tests.
 ## Phase 4 — Data layer & use cases  *(Day 1, ~2 h)*
 
 ```
-Read CLAUDE.md invariants, ARCHITECTURE.md §2, §3.1, §3.2, §5, §6.
+Read CLAUDE.md invariants, ARCHITECTURE.md §2, §3.1, §3.2, §4, §5, §6 and docs/ENGINE_DECISIONS.md (#17, #20–#24).
 
 Implement in :app core/data + core/domain:
-1. Room AwakenDatabase (exportSchema=true, schemas in app/schemas) with the entities in ARCH §2. Ledger uniqueness must not
-   be defeated by NULLs (store '' for absent stat/item_id). DAOs return Flow for observed data.
+1. Room AwakenDatabase (exportSchema=true, schemas in app/schemas) with ALL entities in ARCH §2, including `completion`,
+   `ledger_entry.xp_source` and `day_record.outcome`. Ledger uniqueness must not be defeated by NULLs (store '' for absent
+   stat/item_id). DAOs return Flow for observed data.
 2. LedgerRepository: insertIdempotent(rows) returns rows actually inserted; balances cache updated in the SAME transaction;
-   rebuildBalancesFromLedger().
-3. Use cases: GenerateDirectiveUseCase (idempotent per game_date), CompleteQuestUseCase (ARCH §3.1, returns
-   CompletionOutcome), UndoCompletionUseCase (10-min window, reversing rows), RerollQuestUseCase, DayRolloverUseCase
-   (ARCH §3.2 catch-up loop), ObserveHunterStateUseCase (combines balances + derived level/rank/streak into one Flow).
-4. TemplateLibrary loader (assets -> engine models) provided by Hilt as a singleton.
+   rebuildBalancesFromLedger(). Undo rows copy the original's game_date and xp_source.
+3. Use cases:
+   - GenerateDirectiveUseCase (idempotent per game_date; deterministic instance ids make re-inserts no-ops).
+   - CompleteQuestUseCase (ARCH §3.1, returns CompletionOutcome). Each attempt gets completionId = questInstanceId#attemptN;
+     ledger sourceId = completionId; the crit stays seeded by questInstanceId. Daily caps use today's net XP per
+     xp_source. Manual completion is SELF-only (GD §6.5); TIMER/HEALTH completions come through a separate verified entry
+     point used by Gates (Phase 8) and Health sync (Phase 11).
+   - UndoCompletionUseCase (10-min window, reversing rows with sourceId = completionId, sets completion.undone_at,
+     quest back to ACTIVE/STARTED). Achievements are never revoked (GD §6.5).
+   - RerollQuestUseCase (side quests only; 1 free + max 3 paid at 40 gold).
+   - DayRolloverUseCase (ARCH §3.2 catch-up loop; outcome stored per day; DAY_CLEAR +20 gold on CLEARED; shield ITEM -1
+     on SHIELDED; one penalty quest today if any finalized day was BROKEN; DifficultyAdapter when due).
+   - ObserveHunterStateUseCase (combines balances + derived level/rank/streak into one Flow; streak = StreakRules.replay
+     over finalized outcomes, +1 once today is cleared).
+4. TemplateLibrary loader (assets -> engine models, validated) provided by Hilt as a singleton, loaded off the main thread.
 5. Tests (Robolectric + in-memory Room + FakeClock): same completion applied twice = one set of rows; undo nets to zero;
+   complete -> undo -> complete = one net reward with the same crit; manual completion of a HEALTH quest is rejected;
    rebuild == cache; rollover across 5 missed days with 1 shield; generation twice same day = no duplicates; level-up
-   detected when crossing threshold.
-6. Debug screen (debug source set only): ledger table viewer, balances, buttons: +1 day (FakeClock offset persisted in
-   DataStore, debug only), force rollover, rebuild balances, wipe data.
+   detected when crossing threshold; daily cap counts undone XP as zero.
+6. Debug screen (debug source set only): ledger table viewer, balances, today's quests with complete/undo/reroll,
+   buttons: seed test hunter (no onboarding until Phase 6), +1 day (FakeClock offset persisted in DataStore, debug only),
+   force rollover, rebuild balances, wipe data.
 Done when all tests pass and debug APK builds.
 ```
 
@@ -138,6 +151,8 @@ Implement:
 3. Quest row interactions: swipe-to-complete, tap -> Quest detail with Begin/Complete/Reroll, undo snackbar (10 min).
 4. RewardSheet with the formula breakdown; chain into level-up ceremony and SystemToasts for achievements.
 5. Custom habits: add/edit/archive sheet (max 8; difficulty capped at Normal for SELF per GD §4.3).
+6. "First directive guarantees one EASY quest in a focus stat" needs an engine change first (the generator currently makes
+   the main quest tier+1). Add it to DirectiveGenerator with a test and a line in GAME_DESIGN §6.3 before building the UI.
 ViewModels follow UDF from CLAUDE.md. Add Compose UI tests: onboarding happy path; completing a quest shows the reward
 sheet with correct XP for a known fixture.
 ```
@@ -203,7 +218,7 @@ Implement HealthConnectGateway (availability check incl. "not installed" -> deep
 contract for READ Steps, ExerciseSession, SleepSession only), the rationale activity/intent filter + privacy policy
 screen required by Health Connect, onboarding step 5 + Settings toggle, HealthSyncWorker (30 min + on open) that
 aggregates today's steps, exercise minutes and last night's sleep and auto-completes matching HEALTH quests via
-CompleteQuestUseCase (idempotent: sourceId = questInstanceId). If HC is unavailable, HEALTH templates are excluded
+CompleteQuestUseCase's verified entry point (ledger sourceId = completionId per GD §9.3). If HC is unavailable, HEALTH templates are excluded
 from generation. Add a fake gateway for tests and a Debug toggle "simulate 9,000 steps".
 ```
 

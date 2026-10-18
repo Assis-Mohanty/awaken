@@ -7,6 +7,7 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt)
+    alias(libs.plugins.room)
 }
 
 // Release signing is read from keystore.properties (git-ignored). Absent file => unsigned release build.
@@ -75,6 +76,10 @@ kotlin {
     }
 }
 
+room {
+    schemaDirectory("$projectDir/schemas")
+}
+
 dependencies {
     implementation(project(":engine"))
 
@@ -95,6 +100,11 @@ dependencies {
     ksp(libs.hilt.compiler)
     implementation(libs.androidx.hilt.lifecycle.viewmodel.compose)
 
+    implementation(libs.androidx.room.runtime)
+    implementation(libs.androidx.room.ktx)
+    ksp(libs.androidx.room.compiler)
+    implementation(libs.androidx.datastore.preferences)
+
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.timber)
@@ -104,6 +114,7 @@ dependencies {
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.turbine)
     testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.test.junit)
 
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)

@@ -36,6 +36,7 @@ Kotlin 2.x · Jetpack Compose + Material 3 (heavily themed) · Navigation Compos
 - Errors: repositories return `Result`/sealed outcomes; UI shows a System-styled error, never a crash.
 - Strings in `strings.xml`. Content descriptions on all icons. Touch targets ≥ 48dp.
 - Every screen has `@Preview`s (light content irrelevant — app is dark-only in v1) at phone + small phone sizes.
+- Debug-only code lives in `app/src/debug` (Debug screen, `DebugClock` time travel) with a no-op twin in `app/src/release` (`DebugEntry`, `ClockModule`). Never reference debug classes from `src/main` except through `DebugEntry`.
 
 ## Workflow rules for you (Claude Code)
 - Start each phase in **plan mode**; list files you'll touch; then implement.

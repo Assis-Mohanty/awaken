@@ -213,7 +213,8 @@ Side quests use the stat's tier; the main quest uses `tier + 1` (capped). Shown 
 ### 6.5 Completion rules
 
 - `minDurationSec`: a SELF quest cannot be completed sooner than N seconds after it was *started* (tap "Begin"). If the user never tapped Begin, they can still complete, but `V` stays 1.0 and it counts toward the self cap. Keep it low-friction; this is a soft speed bump, not a jail.
-- Completions are **undoable for 10 minutes** (writes a reversing ledger entry with the same idempotency group; never deletes).
+- Completions are **undoable for 10 minutes** (writes a reversing ledger entry with the same idempotency group; never deletes). Undo never revokes achievements: unlocks and their gold are permanent.
+- HEALTH and TIMER quests cannot be completed by hand. HEALTH quests complete only from Health Connect data, TIMER quests only by clearing a Focus Gate. Only SELF quests have a manual Complete button.
 - After the day ends, unfinished generated quests become `EXPIRED`. Habits become `MISSED`.
 
 ---
@@ -273,7 +274,7 @@ The in-app-verified quest type. Turns study/deep-work into a dungeon run.
 | Quest completion | `round(questXp × 0.5)` (0 beyond daily cap) |
 | Rank Trial cleared | 500 |
 | Achievement unlocked | per achievement (10–200) |
-| Day cleared | 20 |
+| Day cleared | 20 (awarded when the day is finalized at rollover) |
 
 ### 9.2 Sinks
 
