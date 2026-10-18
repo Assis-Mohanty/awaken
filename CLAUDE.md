@@ -11,7 +11,7 @@ Read only the sections relevant to the current task; don't dump whole files into
 
 ## Stack (do not swap without asking)
 Kotlin 2.x · Jetpack Compose + Material 3 (heavily themed) · Navigation Compose (type-safe routes) · Hilt (KSP) · Room (KSP) · DataStore · WorkManager · Glance (widget) · Health Connect client · kotlinx.serialization · java.time · JUnit5/Truth/Turbine for tests.
-`minSdk 28`, `targetSdk 36`, `compileSdk 36`. Use the latest *stable* versions via `gradle/libs.versions.toml`. No alpha/beta libraries unless stated here.
+`minSdk 28`, `targetSdk 36`, `compileSdk 37` (compile against 37 so current AndroidX resolves). AGP 9 uses built-in Kotlin — do not add the `kotlin-android` plugin. Java 17 bytecode. Use the latest *stable* versions via `gradle/libs.versions.toml`. No alpha/beta libraries unless stated here.
 
 ## Modules
 - `:engine` — pure Kotlin/JVM. ALL game rules (XP, levels, ranks, streaks, caps, crits, directive generation, achievements, adaptive difficulty). Zero Android imports. 100% of GAME_DESIGN §12 test vectors live here.

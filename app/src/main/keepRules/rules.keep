@@ -1,12 +1,34 @@
-# Add project specific R8 rules here.
-# AGP will combine all keep rule files in src/main/keepRules to pass to R8
-#
-# For more details, see
-#   https://d.android.com/r/tools/r8/keep-rules
+# AWAKEN R8 keep rules. AGP combines all files in src/main/keepRules.
+# Hilt, Room, Navigation, Compose and kotlinx.serialization ship consumer rules; these cover our own code.
 
-# If your project uses WebView with JS, uncomment the following
-# and specify the fully qualified class name to the JavaScript interface
-# class:
-#-keepclassmembers class fqcn.of.javascript.interface.for.webview {
-#   public *;
-#}
+# --- kotlinx.serialization ---
+# Keep generated serializers for our @Serializable classes (nav routes, template/content models, export JSON).
+-keepattributes *Annotation*, InnerClasses
+-dontnote kotlinx.serialization.**
+-keep,includedescriptorclasses class com.assismohanty.awaken.**$$serializer { *; }
+-keepclassmembers class com.assismohanty.awaken.** {
+    *** Companion;
+}
+-keepclasseswithmembers class com.assismohanty.awaken.** {
+    kotlinx.serialization.KSerializer serializer(...);
+}
+# @Serializable objects (type-safe nav routes are data objects).
+-keepclassmembers @kotlinx.serialization.Serializable class com.assismohanty.awaken.** {
+    public static ** INSTANCE;
+}
+
+# --- Room ---
+# Generated *_Impl classes are instantiated reflectively by Room.databaseBuilder.
+-keep class * extends androidx.room.RoomDatabase { <init>(); }
+-keep @androidx.room.Entity class com.assismohanty.awaken.** { *; }
+
+# --- Hilt ---
+# Hilt's consumer rules cover generated components; keep our application entry point explicit.
+-keep class com.assismohanty.awaken.AwakenApp
+
+# --- Timber ---
+# Strip verbose/debug logs from release (DebugTree is only planted in debug anyway).
+-assumenosideeffects class timber.log.Timber {
+    public static void v(...);
+    public static void d(...);
+}

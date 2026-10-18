@@ -24,3 +24,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "AWAKEN"
 include(":app")
+include(":engine")
