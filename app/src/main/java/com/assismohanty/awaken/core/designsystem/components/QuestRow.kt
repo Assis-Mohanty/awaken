@@ -108,8 +108,8 @@ fun QuestRow(
     Column(modifier = modifier.fillMaxWidth()) {
         if (showDivider) HorizontalDivider(thickness = dimens.hairline, color = colors.edge)
         Box {
-            // Revealed behind the row while swiping.
-            if (canComplete) {
+            // Revealed behind the row only while swiping; at rest the transparent row must not show it.
+            if (canComplete && offset > 0f) {
                 Box(
                     modifier = Modifier
                         .matchParentSize()

@@ -125,7 +125,8 @@ private fun MainScaffold(
                         if (DebugEntry.ENABLED) {
                             DebugEntry.LauncherButton(
                                 onClick = { navController.navigate(DebugRoute) },
-                                modifier = Modifier.align(Alignment.TopEnd),
+                                // Bottom corner: the HunterHeader owns the top of Today.
+                                modifier = Modifier.align(Alignment.BottomEnd),
                             )
                         }
                     }
