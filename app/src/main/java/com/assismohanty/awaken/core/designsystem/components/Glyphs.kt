@@ -119,6 +119,31 @@ object AwakenGlyphs {
         }
     }
 
+    // Bottom-bar destinations (DESIGN_SYSTEM §2.4: sharp line icons instead of Material defaults).
+    val Directive: ImageVector by lazy {
+        glyph("Directive") {
+            moveTo(4f, 6f); lineTo(6f, 8f); lineTo(9f, 4.5f)
+            moveTo(12f, 6.5f); lineTo(20f, 6.5f)
+            moveTo(4f, 12f); lineTo(9f, 12f); moveTo(12f, 12f); lineTo(20f, 12f)
+            moveTo(4f, 17.5f); lineTo(9f, 17.5f); moveTo(12f, 17.5f); lineTo(20f, 17.5f)
+        }
+    }
+
+    val Pentagon: ImageVector by lazy {
+        glyph("Status") {
+            moveTo(12f, 3f); lineTo(20.5f, 9.2f); lineTo(17.3f, 19.5f); lineTo(6.7f, 19.5f); lineTo(3.5f, 9.2f); close()
+            moveTo(12f, 8f); lineTo(16f, 11f); lineTo(14.5f, 16f); lineTo(9.5f, 16f); lineTo(8f, 11f); close()
+        }
+    }
+
+    val Vault: ImageVector by lazy {
+        glyph("Vault") {
+            moveTo(3.5f, 8f); lineTo(20.5f, 8f); lineTo(20.5f, 20f); lineTo(3.5f, 20f); close()
+            moveTo(5.5f, 4f); lineTo(18.5f, 4f); lineTo(20.5f, 8f); moveTo(5.5f, 4f); lineTo(3.5f, 8f)
+            moveTo(10f, 12f); lineTo(14f, 12f); lineTo(14f, 15f); lineTo(10f, 15f); close()
+        }
+    }
+
     fun stat(stat: Stat): ImageVector = when (stat) {
         Stat.STR -> Strength
         Stat.INT -> Intelligence

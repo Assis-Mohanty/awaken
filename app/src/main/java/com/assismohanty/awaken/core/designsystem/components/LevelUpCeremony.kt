@@ -33,6 +33,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import com.assismohanty.awaken.R
 import com.assismohanty.awaken.core.designsystem.preview.PhonePreviews
 import com.assismohanty.awaken.core.designsystem.theme.AwakenAlpha
@@ -76,7 +78,7 @@ fun LevelUpCeremony(
     var skippable by remember { mutableStateOf(!animate) }
     var finished by remember { mutableStateOf(!animate) }
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(oldLevel, newLevel) {
         if (!animate) {
             haptics.levelUp()
             return@LaunchedEffect
@@ -181,5 +183,35 @@ private fun LevelUpCeremonyPreview() {
                 RankCrest(Rank.D, AwakenTheme.dimens.crestLarge)
             })
         }
+    }
+}
+
+/**
+ * The ceremony in its own full-screen window: blocks touch and TalkBack focus on the screen underneath, and Back
+ * dismisses it. Screens should use this rather than placing [LevelUpCeremony] in their own layout.
+ */
+@Composable
+fun LevelUpDialog(
+    oldLevel: Int,
+    newLevel: Int,
+    statGains: Map<Stat, Int>,
+    onDismiss: () -> Unit,
+    title: String = stringResource(R.string.system_title_level_up),
+    accent: Color = AwakenTheme.colors.crit,
+    crest: (@Composable () -> Unit)? = null,
+) {
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false),
+    ) {
+        LevelUpCeremony(
+            oldLevel = oldLevel,
+            newLevel = newLevel,
+            statGains = statGains,
+            onDismiss = onDismiss,
+            title = title,
+            accent = accent,
+            crest = crest,
+        )
     }
 }

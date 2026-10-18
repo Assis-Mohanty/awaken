@@ -21,7 +21,10 @@ fun AwakenTheme(
 ) {
     val colors = remember { AwakenColors() }
     val type = remember { AwakenType() }
-    val motion = AwakenMotion(reduceMotion = reduceMotion || systemReduceMotion())
+    val reduce = reduceMotion || systemReduceMotion()
+    val motion = remember(reduce) { AwakenMotion(reduceMotion = reduce) }
+    val shapes = remember { AwakenShapes() }
+    val dimens = remember { AwakenDimens() }
     val colorScheme = remember(colors) {
         darkColorScheme(
             primary = colors.system,
@@ -54,8 +57,8 @@ fun AwakenTheme(
         LocalAwakenColors provides colors,
         LocalAwakenType provides type,
         LocalAwakenMotion provides motion,
-        LocalAwakenShapes provides AwakenShapes(),
-        LocalAwakenDimens provides AwakenDimens(),
+        LocalAwakenShapes provides shapes,
+        LocalAwakenDimens provides dimens,
         LocalHaptics provides rememberHaptics(hapticsEnabled),
     ) {
         MaterialTheme(

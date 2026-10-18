@@ -39,7 +39,7 @@ import com.assismohanty.awaken.core.designsystem.components.GateDial
 import com.assismohanty.awaken.core.designsystem.components.Heatmap
 import com.assismohanty.awaken.core.designsystem.components.HeatmapDay
 import com.assismohanty.awaken.core.designsystem.components.HunterHeader
-import com.assismohanty.awaken.core.designsystem.components.LevelUpCeremony
+import com.assismohanty.awaken.core.designsystem.components.LevelUpDialog
 import com.assismohanty.awaken.core.designsystem.components.Pill
 import com.assismohanty.awaken.core.designsystem.components.PrimaryButton
 import com.assismohanty.awaken.core.designsystem.components.QuestRow
@@ -290,7 +290,7 @@ private fun CatalogContent(
                 .padding(top = Spacing.md),
         )
         if (levelUp) {
-            LevelUpCeremony(
+            LevelUpDialog(
                 oldLevel = 9,
                 newLevel = 10,
                 statGains = mapOf(Stat.STR to 94, Stat.WIL to 28),
