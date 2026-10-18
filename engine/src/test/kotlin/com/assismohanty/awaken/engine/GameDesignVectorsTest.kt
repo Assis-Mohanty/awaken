@@ -93,9 +93,10 @@ class GameDesignVectorsTest {
     @Test
     fun `vector 12 - completion then undo nets XP gold and stat XP to zero with both rows kept`() {
         val quest = nonCritQuest(Difficulty.NORMAL, VerificationSource.SELF).copy(secondaryStat = Stat.WIL)
-        val rows = LedgerMath.rowsFor(XpCalculator.forCompletion(quest, context), SourceType.QUEST, quest.questInstanceId)
+        val completionId = LedgerMath.completionId(quest.questInstanceId, attempt = 1)
+        val rows = LedgerMath.rowsFor(XpCalculator.forCompletion(quest, context), SourceType.QUEST, completionId)
         val (completed, _) = LedgerMath.append(emptyList(), rows)
-        val reversals = completed.mapIndexed { rowId, row -> LedgerMath.reversal(row, rowId.toString()) }
+        val reversals = completed.map(LedgerMath::reversal)
         val (undone, inserted) = LedgerMath.append(completed, reversals)
 
         assertThat(inserted).hasSize(rows.size)

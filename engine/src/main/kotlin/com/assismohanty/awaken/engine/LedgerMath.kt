@@ -9,7 +9,17 @@ import com.assismohanty.awaken.engine.model.SourceType
 /** Pure ledger semantics (GD §9.3): idempotent apply, reversing undo, balances = SUM(delta). The app mirrors this in Room. */
 object LedgerMath {
 
-    /** Ledger rows for a quest reward. Zero deltas are omitted (nothing to record). */
+    /**
+     * Id of one completion attempt of a quest: `questInstanceId#attemptN`, with [attempt] starting at 1. Ledger rows use
+     * it as their sourceId so a re-completion after undo gets fresh idempotency keys. The crit seed stays the
+     * questInstanceId, so re-completing never re-rolls a crit.
+     */
+    fun completionId(questInstanceId: String, attempt: Int): String {
+        require(attempt >= 1) { "attempt must be >= 1" }
+        return "$questInstanceId#$attempt"
+    }
+
+    /** Ledger rows for a quest reward; [sourceId] is the [completionId]. Zero deltas are omitted (nothing to record). */
     fun rowsFor(reward: QuestReward, sourceType: SourceType, sourceId: String): List<LedgerEntry> = buildList {
         if (reward.xp != 0) add(LedgerEntry(LedgerKind.XP_TOTAL, reward.xp.toLong(), sourceType, sourceId))
         reward.statXp.forEach { (stat, xp) ->
@@ -29,12 +39,14 @@ object LedgerMath {
         return (ledger + inserted) to inserted
     }
 
-    /** The reversing row for [original]; [originalRowId] is the original row's primary key (GD §9.3). */
-    fun reversal(original: LedgerEntry, originalRowId: String): LedgerEntry = original.copy(
-        delta = -original.delta,
-        sourceType = SourceType.UNDO,
-        sourceId = originalRowId,
-    )
+    /**
+     * The reversing row for [original] (GD §9.3): `sourceType = UNDO`, `sourceId` = the original's completionId, same
+     * kind/stat/item. Undoing the same completion twice is therefore a no-op.
+     */
+    fun reversal(original: LedgerEntry): LedgerEntry {
+        require(original.sourceType != SourceType.UNDO) { "cannot reverse an undo row" }
+        return original.copy(delta = -original.delta, sourceType = SourceType.UNDO)
+    }
 
     /** Balances = SUM(delta) per balance key. Duplicate keys are counted once, matching the UNIQUE constraint. */
     fun balances(ledger: List<LedgerEntry>): Balances {

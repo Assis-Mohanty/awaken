@@ -81,11 +81,11 @@ Rounding: `kotlin.math.round` on the final product only (half-even is NOT used; 
 Crits are variable for the user but **reproducible** for the system:
 
 ```
-seed = fnv1a64( questInstanceId )         // instance id is a UUID created when the quest is generated
+seed = fnv1a64( questInstanceId )         // deterministic UUID derived from (hunterId, gameDate, slot) — §6.3
 crit = (seed mod 10_000) < 800            // 8.00 %
 ```
 
-- Because the seed is the instance id (fixed at generation), un-completing and re-completing cannot re-roll a crit.
+- Because the seed is the instance id (fixed at generation, never the per-attempt completionId), un-completing and re-completing cannot re-roll a crit.
 - Crit also grants +1 Loot Fragment (cosmetic progression, §9).
 - Penalty quests and Rank Trial stages cannot crit.
 
@@ -194,9 +194,9 @@ generateDirective(hunter, gameDate):
   title = template.titles[rng]   ;   target = template.targets[difficulty]
 ```
 
-Each instance gets a fresh UUID → used as crit seed and ledger idempotency key.
+Each instance id is a deterministic name-based UUID: `UUID.nameUUIDFromBytes("hunterId|gameDate|slot")` with slot `main`, `side0..2`, `rerollN` or `penalty`. Regenerating the same day yields the same ids, so persistence is idempotent and crits (§4.2) can never be re-rolled. Ledger rows use a per-attempt `completionId` (§9.3).
 
-**Reroll**: 1 free reroll per day for one side quest; further rerolls cost 40 gold (max 3/day). Rerolling cannot target the main quest.
+**Reroll**: 1 free reroll per day for one side quest; further rerolls cost 40 gold (max 3 paid/day, so 4 rerolls total). Rerolling cannot target the main quest.
 
 ### 6.4 Adaptive difficulty (per stat)
 
@@ -295,12 +295,13 @@ The in-app-verified quest type. Turns study/deep-work into a dungeon run.
 
 - Balances (XP, stat XP, gold, items, fragments) = `SUM(delta)` over an **append-only ledger**.
 - Every ledger row has `(sourceType, sourceId, kind)` → UNIQUE. Re-applying the same event is a no-op (idempotency).
-- Undo = insert a reversing row (`sourceType = UNDO`, `sourceId = original row id`). Never `UPDATE`/`DELETE` ledger rows.
+- Each completion attempt has its own `completionId = questInstanceId#attemptN` (N from 1); quest ledger rows use it as `sourceId`, so re-completing after an undo gets fresh keys. Re-completion is priced normally, including daily caps.
+- Undo = insert a reversing row (`sourceType = UNDO`, `sourceId = completionId`, same kind/stat/item). Undoing the same completion twice is a no-op. Never `UPDATE`/`DELETE` ledger rows.
 - A cached `balances` table may exist for speed, updated in the **same transaction**, and must be rebuildable from the ledger (`Settings → Advanced → Rebuild from ledger` dev option + a test).
 
 ---
 
-## 10. Achievements & titles (launch set: 30)
+## 10. Achievements & titles (launch set: 32)
 
 Each unlock: toast + haptic + gold reward. Titles are equippable; one shows under the hunter name.
 

@@ -126,7 +126,7 @@ QuestScreen ─onEvent(Complete)─▶ QuestViewModel
          result = engine.XpCalculator.forCompletion(q, ctx, CritRoller(q.id))
                  → QuestReward(xp, statXp[], gold, crit, capped, fragments, breakdown)
          questDao.markCompleted(id, now)
-         ledger.insertAll(result.toLedgerRows(sourceType=QUEST, sourceId=id))   // IGNORE on conflict
+         ledger.insertAll(result.toLedgerRows(sourceType=QUEST, sourceId=completionId))   // id#attemptN; IGNORE on conflict
          balances.apply(rowsActuallyInserted)
          newLevel = LevelCurve.level(balances.xpTotal)
          unlocks = AchievementEvaluator.evaluate(snapshot)  → insert unlocks + reward rows
