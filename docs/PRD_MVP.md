@@ -43,7 +43,7 @@ Habit/RPG apps are a crowded but low-quality niche on Play: Habitica (aging, pun
 | F9 | Health Connect verified quests (Steps, ExerciseSession, SleepSession; read-only; optional) | ARCH §3.4 |
 | F10 | Rank Trials (3-stage gate to promote) | GD §5 |
 | F11 | Adaptive difficulty per stat (weekly) | GD §6.4 |
-| F12 | Status: radar (this vs last week), stat list, 18-week heatmap, achievements & titles (30), chapters (6) | GD §10–11; DS §4.5 |
+| F12 | Status: radar (this vs last week), stat list, 18-week heatmap, achievements & titles (32), chapters (6) | GD §10–11; DS §4.5 |
 | F13 | Vault: gold shop (shields, rerolls, themes, frames, sigils), Relic Cache from fragments | GD §9 |
 | F14 | Notifications (max 2/day + gate), asked after first completion | ARCH §3.5 |
 | F15 | Home-screen widget (Glance) | ARCH §3.6 |

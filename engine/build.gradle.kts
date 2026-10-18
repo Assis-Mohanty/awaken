@@ -35,3 +35,15 @@ dependencies {
 tasks.test {
     useJUnitPlatform()
 }
+
+// Content assets live in :app; copy them into the engine's test resources so content is validated against the engine.
+val copyContentAssets by tasks.registering(Copy::class) {
+    from(rootProject.layout.projectDirectory.dir("app/src/main/assets")) {
+        include("quests/**", "narrative/**")
+    }
+    into(layout.buildDirectory.dir("generated/contentAssets"))
+}
+
+sourceSets.test {
+    resources.srcDir(copyContentAssets)
+}

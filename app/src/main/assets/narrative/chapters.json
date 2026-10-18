@@ -1,0 +1,41 @@
+{
+  "version": 1,
+  "chapters": [
+    {
+      "id": "ch1_the_window",
+      "unlockLevel": 1,
+      "title": "The Window",
+      "body": "You were not chosen. You were noticed. Somewhere between the alarm you ignored and the promise you made yourself, a window opened that no one else can see. It speaks in short sentences. It counts what you do, not what you intend. The world is full of Gates, it says: thresholds that open wherever effort is withheld. Most people walk past them for a lifetime. You have been given a ledger, a rank, and one instruction. Clear what is in front of you. The System does not care how you feel today. It cares whether you act. Begin."
+    },
+    {
+      "id": "ch2_the_first_gate",
+      "unlockLevel": 5,
+      "title": "The First Gate",
+      "body": "By the fifth level you see it: the Gates were always here. The unread book. The run you postponed. The call you kept meaning to make. Each is a threshold with something waiting on the other side, and each closes a little more every day you ignore it. The System cannot open them for you. It can only light them, one at a time, and record when you walk through. You have walked through many times now. The ledger remembers every one. Behind you, a door you once thought permanent has quietly gone dark."
+    },
+    {
+      "id": "ch3_the_sealed_door",
+      "unlockLevel": 10,
+      "title": "The Sealed Door",
+      "body": "Rank is not given. It is tested. At the tenth level the System shows you a sealed door marked D. Behind it wait three trials, each aimed at the place you are weakest. This is the rule the System keeps above all others: strength that avoids its own gaps is not strength. Hunters who stall here are not weak. They are unwilling to look at what they avoid. You have five days. You have already proven you can show up. Now prove you can show up where it is uncomfortable."
+    },
+    {
+      "id": "ch4_the_ledger",
+      "unlockLevel": 20,
+      "title": "The Ledger",
+      "body": "Every number in your window traces back to a line in the ledger. Nothing is erased. Failures are not subtracted; they are followed by comebacks, and the comebacks are recorded too. Now you understand why the System is built this way. A hunter who fears losing everything stops entering Gates. A hunter who knows nothing can be taken away keeps going. Twenty levels. Thousands of lines. Read them back and you will find someone you would not have recognised at level one."
+    },
+    {
+      "id": "ch5_the_long_road",
+      "unlockLevel": 35,
+      "title": "The Long Road",
+      "body": "At this depth the Gates change. They no longer test whether you will act. They test whether you will act when no one is watching, when the streak is long and the novelty is gone. This is where most hunters slip, not from failure but from boredom. The System's answer has not changed: clear what is in front of you. And you have learned something it never said aloud. Discipline is not a feeling you wait for. It is a ledger you keep writing, one line at a time."
+    },
+    {
+      "id": "ch6_no_final_gate",
+      "unlockLevel": 50,
+      "title": "No Final Gate",
+      "body": "Fifty levels. The window still speaks in short sentences, but you hear something new in them now: respect. The Gates you face are ones you chose. Nobody assigned them. Somewhere, a version of you is still walking past every threshold, waiting to feel ready. You left that version behind one quest at a time. The System will keep counting. It always will. But you no longer need it to tell you who you are. The record already does. There is no final Gate. There is only the next one."
+    }
+  ]
+}

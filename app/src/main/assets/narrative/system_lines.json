@@ -1,0 +1,86 @@
+{
+  "version": 1,
+  "placeholders": ["{streak}"],
+  "lines": {
+    "generic": [
+      "The System is watching. Act accordingly.",
+      "A new day. The Gates are open.",
+      "Your directive is ready. Begin with the hardest one.",
+      "Effort is the only currency the System accepts.",
+      "Intentions are not recorded. Actions are.",
+      "The ledger is waiting for today's first line.",
+      "No one else can clear your Gates.",
+      "Small quests, cleared daily, outrank grand plans.",
+      "Start before you feel ready. The System does not wait.",
+      "Every level began as a single quest.",
+      "Your stats reflect your days. Choose today's carefully.",
+      "Momentum is built, not found.",
+      "The System has no opinion of you. Only a record.",
+      "One quest is enough to begin."
+    ],
+    "streak_milestone": [
+      "{streak} days unbroken. The System has noticed your persistence.",
+      "Streak: {streak}. Consistency is becoming character.",
+      "{streak} consecutive days. Few hunters reach this far.",
+      "The chain holds at {streak}. Protect it.",
+      "{streak} days. The System records a pattern, not a fluke.",
+      "Streak {streak}. Discipline is no longer an effort. It is a habit.",
+      "{streak} days cleared. You are harder to stop than you were.",
+      "{streak} days. The record speaks for itself."
+    ],
+    "comeback": [
+      "You missed yesterday. One quest stands between you and your comeback.",
+      "The streak broke. You did not. Clear the penalty quest.",
+      "A missed day is a record, not a verdict. Return.",
+      "The System does not punish. It waits for your answer.",
+      "Yesterday is closed. Today's Gate is open.",
+      "Falling is logged. So is rising. Choose what comes next.",
+      "Comeback quest assigned. It is short. Begin now.",
+      "Every hunter misses a day. Few return the next. Be one of them."
+    ],
+    "neglected_str": [
+      "Your STR has gone quiet. The body forgets what it is not asked to do.",
+      "No STR quests in days. One set is enough to restart.",
+      "STR is fading from your record. Move today."
+    ],
+    "neglected_int": [
+      "Your INT has gone quiet. Open a book, open a Gate.",
+      "No INT quests in days. Twenty minutes of focus will do.",
+      "INT is fading from your record. Learn one thing today."
+    ],
+    "neglected_wil": [
+      "Your WIL has gone quiet. Discipline weakens when unused.",
+      "No WIL quests in days. Sit still for five minutes.",
+      "WIL is fading from your record. Refuse one easy thing today."
+    ],
+    "neglected_vit": [
+      "Your VIT has gone quiet. Recovery is training too.",
+      "No VIT quests in days. Water, sleep, sunlight. Pick one.",
+      "VIT is fading from your record. Tend to the vessel today."
+    ],
+    "neglected_cha": [
+      "Your CHA has gone quiet. Someone would be glad to hear from you.",
+      "No CHA quests in days. One message is enough.",
+      "CHA is fading from your record. Reach out today."
+    ],
+    "trial_active": [
+      "Rank Trial active. The sealed door does not open on its own.",
+      "A trial stage awaits. It targets your weakest stat. Face it.",
+      "The Rank Trial window is closing. Clear today's stage.",
+      "Promotion is earned in the stats you avoid.",
+      "Trial in progress. One stage per day. Today's is ready.",
+      "The System is testing your gaps, not your strengths.",
+      "Clear the trial. The next rank is waiting."
+    ],
+    "cleared_day": [
+      "Day cleared. The ledger records your effort.",
+      "Directive complete. Rest is earned.",
+      "Today is cleared. The streak holds.",
+      "All objectives met. The System acknowledges you.",
+      "Cleared. Tomorrow, the Gates open again.",
+      "Day cleared. Your past self would not recognise this pace.",
+      "Quest log complete. Recover well.",
+      "The day is yours. Recorded and cleared."
+    ]
+  }
+}
