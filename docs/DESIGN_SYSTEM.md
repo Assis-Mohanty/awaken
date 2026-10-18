@@ -101,7 +101,7 @@ Off by default in v1 (toggle in settings ready, assets in v1.1). Never ship a so
 | `XpBar` | 10dp tall, chamfered ends, track `edge`, fill `system`, leading 24dp gradient to `aether`. Animates delta. Shows "1,240 / 1,434 XP" in `numeric` small. |
 | `QuestRow` | Leading stat sigil (stat colour), title, target line ("40 reps · Normal"), trailing verified badge if applicable + check control. Swipe-right = complete (with haptic tick at threshold), long-press = details. Expired/missed rows dim to `fog` with strike. |
 | `StatChip`, `DifficultyChip`, `VerifiedBadge` | Pills. Verified = `verified` icon + "Verified" / "Timed". |
-| `RewardSheet` | Bottom sheet: windowTitle "QUEST CLEARED" (or "CRITICAL CLEAR" in `crit`), big `+XP` numeric, stat split, gold, the **formula breakdown** row (`60 × 1.5 Normal × 1.20 streak × 1.30 verified`), Done button. |
+| `RewardSheet` | Bottom sheet: windowTitle "QUEST CLEARED" (or "CRITICAL CLEAR" in `crit`), big `+XP` numeric, stat split, gold, the **formula breakdown** row (`40 base × 1.5 Normal × 1.20 streak × 1.30 verified = 94 XP`; SELF quests omit the ×1.00 verification factor), Done button. |
 | `RadarChart` | Canvas pentagon, 5 axes with stat sigils; filled polygon `system` @ 25% with 1.5dp edge; previous-week polygon as dashed `mist` for comparison. |
 | `Heatmap` | 18 weeks × 7 days, cleared intensity 0–4 using `system` alpha steps; rest days outlined; tap shows day summary. |
 | `GateDial` | Circular countdown for Focus Gate: thick ring in gate rank colour, remaining time `displayXL`, breach budget as a thin inner ring turning `ember`. |

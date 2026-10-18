@@ -22,4 +22,25 @@
     <string name="debug_complete">Complete</string>
     <string name="debug_undo">Undo</string>
     <string name="debug_reroll">Reroll</string>
+    <string name="debug_open_catalog">Design system</string>
+
+    <!-- Design system catalog (Phase 5) -->
+    <string name="catalog_title">Design system</string>
+    <string name="catalog_controls">Controls</string>
+    <string name="catalog_reduce_motion">Reduce motion</string>
+    <string name="catalog_replay_reveal">Replay window reveal</string>
+    <string name="catalog_reward">Reward sheet</string>
+    <string name="catalog_reward_crit">Crit reward</string>
+    <string name="catalog_level_up">Level-up ceremony</string>
+    <string name="catalog_toast">Toast</string>
+    <string name="catalog_add_xp">+150 XP</string>
+    <string name="catalog_reset_quests">Reset quests</string>
+    <string name="catalog_type">Typography</string>
+    <string name="catalog_colours">Colours</string>
+    <string name="catalog_glyphs">Glyphs and crests</string>
+    <string name="catalog_buttons_chips">Buttons and chips</string>
+    <string name="catalog_header">Hunter header and XP</string>
+    <string name="catalog_charts">Radar and heatmap</string>
+    <string name="catalog_gates">Gate dials</string>
+    <string name="catalog_misc">Empty state and share card</string>
 </resources>

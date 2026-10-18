@@ -11,7 +11,7 @@
 1. **Effort is the only currency.** XP comes from real actions, never from taps, logins or purchases.
 2. **Verified beats claimed.** Actions the phone can observe (Health Connect, in-app focus timer) earn more than self-reported ones. This is our moat — every competitor is honor-system only.
 3. **Hard, never cruel.** Failure creates a *comeback quest*, not a wipe. No XP loss, no level loss, no public shaming. (Habitica's biggest complaint is its punishment death-spiral.)
-4. **Every number is explainable.** The completion sheet shows the formula breakdown: `60 base × 1.5 Normal × 1.23 streak × 1.30 verified = 144 XP`.
+4. **Every number is explainable.** The completion sheet shows the formula breakdown: `40 base × 1.5 Normal × 1.20 streak × 1.30 verified = 94 XP` (BASE is 40, §4.1).
 5. **The phone should feel like a System window**, not a to-do list with a skin.
 
 ---

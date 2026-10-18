@@ -19,7 +19,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontFamily
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.assismohanty.awaken.R
@@ -41,9 +40,9 @@ import java.time.Instant
 import java.time.LocalDate
 
 @Composable
-fun DebugRoute(onBack: () -> Unit, viewModel: DebugViewModel = hiltViewModel()) {
+fun DebugRoute(onBack: () -> Unit, onOpenCatalog: () -> Unit, viewModel: DebugViewModel = hiltViewModel()) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
-    DebugScreen(state = state, onEvent = viewModel::onEvent, onBack = onBack)
+    DebugScreen(state = state, onEvent = viewModel::onEvent, onBack = onBack, onOpenCatalog = onOpenCatalog)
 }
 
 /** Developer tool (debug builds only). Deliberately plain: the real UI arrives with the design system in Phase 5. */
@@ -53,6 +52,7 @@ fun DebugScreen(
     state: DebugUiState,
     onEvent: (DebugEvent) -> Unit,
     onBack: () -> Unit,
+    onOpenCatalog: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     LazyColumn(
@@ -88,6 +88,7 @@ fun DebugScreen(
         item { SectionTitle(R.string.debug_section_actions) }
         item {
             FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+                Button(onClick = onOpenCatalog) { Text(stringResource(R.string.debug_open_catalog)) }
                 Button(onClick = { onEvent(DebugEvent.SeedHunter) }) { Text(stringResource(R.string.debug_seed_hunter)) }
                 Button(onClick = { onEvent(DebugEvent.AddDay) }) { Text(stringResource(R.string.debug_add_day)) }
                 Button(onClick = { onEvent(DebugEvent.ForceRollover) }) { Text(stringResource(R.string.debug_rollover)) }
@@ -141,7 +142,7 @@ private fun SectionTitle(titleRes: Int) {
 
 @Composable
 private fun Mono(text: String) {
-    Text(text = text, style = MaterialTheme.typography.bodySmall, fontFamily = FontFamily.Monospace)
+    Text(text = text, style = AwakenTheme.type.caption, color = AwakenTheme.colors.bone)
 }
 
 private fun LedgerEntryEntity.describe(): String =
@@ -181,6 +182,7 @@ private fun DebugScreenPreview() {
             ),
             onEvent = {},
             onBack = {},
+            onOpenCatalog = {},
         )
     }
 }

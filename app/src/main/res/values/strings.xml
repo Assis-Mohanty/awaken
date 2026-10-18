@@ -12,4 +12,74 @@
     <string name="placeholder_gates">Focus Gates will open here.</string>
     <string name="placeholder_status">Your hunter status will appear here.</string>
     <string name="placeholder_vault">The Vault is sealed for now.</string>
+
+    <!-- System window titles: UPPERCASE is reserved for the System speaking (DESIGN_SYSTEM §2.2) -->
+    <string name="system_title_daily_directive">DAILY DIRECTIVE</string>
+    <string name="system_title_quest_cleared">QUEST CLEARED</string>
+    <string name="system_title_critical_clear">CRITICAL CLEAR</string>
+    <string name="system_title_level_up">LEVEL UP</string>
+    <string name="system_title_system_warning">SYSTEM WARNING</string>
+    <string name="system_title_title_unlocked">TITLE UNLOCKED</string>
+
+    <!-- Stats and difficulty -->
+    <string name="stat_str">Strength</string>
+    <string name="stat_int">Intelligence</string>
+    <string name="stat_wil">Willpower</string>
+    <string name="stat_vit">Vitality</string>
+    <string name="stat_cha">Charisma</string>
+    <string name="difficulty_easy">Easy</string>
+    <string name="difficulty_normal">Normal</string>
+    <string name="difficulty_hard">Hard</string>
+    <string name="difficulty_extreme">Extreme</string>
+    <string name="badge_verified">Verified</string>
+    <string name="badge_timed">Timed</string>
+    <string name="chip_main">Main</string>
+
+    <!-- Hunter header, XP, currency -->
+    <string name="level_short">LV %1$d</string>
+    <string name="xp_progress">%1$s / %2$s XP</string>
+    <string name="xp_gain">+%1$s XP</string>
+    <string name="gold_gain">+%1$s gold</string>
+    <string name="stat_gain">%1$s +%2$s</string>
+    <plurals name="fragment_gain">
+        <item quantity="one">+%1$d loot fragment</item>
+        <item quantity="other">+%1$d loot fragments</item>
+    </plurals>
+    <string name="cd_rank_crest">Rank %1$s</string>
+    <plurals name="cd_streak">
+        <item quantity="one">Streak, %1$d day</item>
+        <item quantity="other">Streak, %1$d days</item>
+    </plurals>
+    <string name="cd_gold">%1$s gold</string>
+    <string name="cd_xp_bar">Level %1$d, %2$s of %3$s XP</string>
+
+    <!-- Quest row -->
+    <string name="quest_target_line">%1$s %2$s · %3$s</string>
+    <string name="cd_complete_quest">Complete %1$s</string>
+    <string name="cd_quest_done">%1$s, completed</string>
+    <string name="action_complete_quest">Complete quest</string>
+    <string name="action_open_quest">Open quest details</string>
+
+    <!-- Reward sheet: formula breakdown (GAME_DESIGN §1 pillar 4) -->
+    <string name="breakdown_base">%1$s base</string>
+    <string name="breakdown_difficulty">%1$s %2$s</string>
+    <string name="breakdown_streak">%1$s streak</string>
+    <string name="breakdown_verified">%1$s verified</string>
+    <string name="breakdown_timed">%1$s timed</string>
+    <string name="breakdown_crit">%1$s crit</string>
+    <string name="breakdown_cap">%1$s self-report limit</string>
+    <string name="breakdown_total">= %1$s XP</string>
+    <string name="cap_reached_note">Self-report limit reached — verified quests still count fully.</string>
+    <string name="action_done">Done</string>
+
+    <!-- Charts and gate dial -->
+    <string name="cd_radar_item">%1$s level %2$d</string>
+    <plurals name="cd_heatmap">
+        <item quantity="one">Activity over the last %1$d weeks: %2$d day cleared</item>
+        <item quantity="other">Activity over the last %1$d weeks: %2$d days cleared</item>
+    </plurals>
+    <string name="cd_gate_dial">%1$s remaining. Background time %2$s of %3$s allowed.</string>
+
+    <!-- Level-up ceremony -->
+    <string name="level_up_continue">Tap to continue</string>
 </resources>

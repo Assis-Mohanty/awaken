@@ -2,7 +2,12 @@ package com.assismohanty.awaken.debug
 
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.Text
+import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
@@ -23,6 +28,12 @@ object DebugEntry {
 
     @Composable
     fun Screen(onBack: () -> Unit) {
-        DebugRoute(onBack = onBack)
+        var showCatalog by rememberSaveable { mutableStateOf(false) }
+        if (showCatalog) {
+            BackHandler { showCatalog = false }
+            DesignSystemCatalog(onBack = { showCatalog = false })
+        } else {
+            DebugRoute(onBack = onBack, onOpenCatalog = { showCatalog = true })
+        }
     }
 }
