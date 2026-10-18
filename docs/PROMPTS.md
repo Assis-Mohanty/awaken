@@ -209,7 +209,7 @@ Implement HealthConnectGateway (availability check incl. "not installed" -> deep
 contract for READ Steps, ExerciseSession, SleepSession only), the rationale activity/intent filter + privacy policy
 screen required by Health Connect, onboarding step 5 + Settings toggle, HealthSyncWorker (30 min + on open) that
 aggregates today's steps, exercise minutes and last night's sleep and auto-completes matching HEALTH quests via
-CompleteQuestUseCase (idempotent: sourceId = questInstanceId). If HC is unavailable, HEALTH templates are excluded
+CompleteQuestUseCase's verified entry point (ledger sourceId = completionId per GD §9.3, ENGINE_DECISIONS #17). If HC is unavailable, HEALTH templates are excluded
 from generation. Add a fake gateway for tests and a Debug toggle "simulate 9,000 steps".
 ```
 
