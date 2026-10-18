@@ -7,6 +7,7 @@ You are building **AWAKEN**, an offline-first Android app that turns real-world 
 - `docs/GAME_DESIGN.md` — every number and formula. **Source of truth.** Never invent a number.
 - `docs/ARCHITECTURE.md` — modules, packages, schema, data flow.
 - `docs/DESIGN_SYSTEM.md` — tokens, components, motion. Never hard-code a colour/size in a screen.
+- `docs/ENGINE_DECISIONS.md` — how `:engine` resolves GAME_DESIGN ambiguities. Check before changing a rule.
 Read only the sections relevant to the current task; don't dump whole files into context.
 
 ## Stack (do not swap without asking)

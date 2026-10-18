@@ -1,0 +1,28 @@
+# Engine decisions — resolutions of GAME_DESIGN ambiguities
+
+GAME_DESIGN.md stays the source of truth for numbers. This file records how `:engine` resolves places where the spec is
+silent or self-contradictory. No new numbers are introduced here. If a decision is overturned, change the engine and
+its tests, and delete the line.
+
+| # | Topic | Spec says | Engine does |
+|---|---|---|---|
+| 1 | Main/side difficulty | §6.3 "HARD adjusted by tier" and §6.1 "Side: Normal"; §6.4 "main uses tier+1" | Side = `tier(stat)`, main = `tier(stat)+1` capped at EXTREME. Default tier NORMAL gives Normal sides and a Hard main. |
+| 2 | Streak for `S` | "streakDays" | The streak folded over **finalized** days. Completions today never raise their own multiplier. |
+| 3 | Cap vs crit | — | The cap test uses the full XP *including* crit. A capped quest gets `round(xp×0.25)`, 0 gold, and stat XP from the reduced XP. A crit fragment is still granted (cosmetic). |
+| 4 | `HEALTH_*` verification | §6.2 lists 3 variants | All map to `V = 1.30`, uncapped. |
+| 5 | Secondary stat | "30 %" | `round(awardedXp × 0.3)`, half-up like all rounding. |
+| 6 | Weights | "focus 2.0, neglected 1.5, else 1.0" | Weights multiply (focus + neglected = 3.0). Neglected = no completion in that stat for ≥ 3 game-days, or never. Two-stage pick: a stat by weight, then a template uniformly within it, so stats with more templates aren't favoured. |
+| 7 | Main stat fallback | `focusStats[gameDay % 2]` | `gameDay` = `epochDay`. If that stat has no eligible templates, pick from the whole pool by weight. Sides avoid the main stat when possible and never repeat a template. Filters (equipment, injury, health, novelty) are never relaxed; the generator returns fewer than 4 only when the filtered pool is smaller. |
+| 8 | Instance ids | "fresh UUID" | `UUID.nameUUIDFromBytes("hunterId\|gameDate\|slot")`, which is deterministic. Regeneration is idempotent and crits can't be re-rolled. Slots: `main`, `side0..2`, `rerollN`, `penalty`. |
+| 9 | Hashes | `hash(hunterId, gameDate)` | `fnv1a64("hunterId\|yyyy-MM-dd\|purpose")`, where purpose ∈ directive / rerollN / penalty. The crit hash is over the lower-cased id's UTF-8 bytes; `mod 10 000` is unsigned. |
+| 10 | Rerolls | "1 free … further cost 40 (max 3/day)" | The first reroll is free; reroll numbers 2–4 cost 40 each. "Max 3" counts paid rerolls, matching the §9.2 shop row. |
+| 11 | Injury / recovery / penalty pools | "e.g. impact, legs"; "VIT/WIL low-impact"; "penalty template set" | Injury excludes tags `impact`, `legs`. Recovery keeps only VIT/WIL templates without `impact`, and the main quest rotates VIT/WIL. The penalty set is templates tagged `penalty`, which are never used for normal generation. |
+| 12 | Streak fold | §7.2 | A cleared day is always +1, even on a rest or recovery day. For an uncleared day, protections apply in this order: rest → recovery (monthly budget) → shield → BROKEN (reset + penalty flag). A shield is used only when streak > 0. Every recovery-flagged day uses up budget. Unopened days are treated as uncleared, empty days. |
+| 13 | Cleared-day items | "any type" | Counts main, side, habit, penalty, trial and gate completions. |
+| 14 | Rank Trial | §5 | Only the next rank can be challenged. Stages = two weakest stats by XP plus the first focus stat not among them; if both focus stats are among the weakest, the third stage uses the third-weakest stat. Ties go by enum order. One stage per game-day, inside a 5-game-day window. A retry is allowed 48 h (wall clock) after the failure. |
+| 15 | Achievements | "launch set: 30" | The §10 table lists **32**; all are implemented. Streak achievements use the best streak. Dawn Raid = local time in `[dayStartHour, 07:00)`; Midnight Gate = `≥ 23:00` or before `dayStartHour`. `rank_*` award 0 gold (the trial pays 500). Titles are ids; display text lives in `strings.xml`. |
+| 16 | Adaptive window | "previous 7 days" | The 7 game-days before the recalibration Monday, even when the first open is later in the week. REROLLED quests are ignored. |
+
+## Open for the data phase
+
+- **Undo → re-complete:** a re-completion would reuse the `(QUEST, questInstanceId, kind)` keys of the undone rows and be silently ignored. Proposal: suffix the sourceId per completion attempt (`<id>#2`). Decide before building `CompleteQuestUseCase`.
