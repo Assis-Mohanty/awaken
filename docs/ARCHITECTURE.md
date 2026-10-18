@@ -49,7 +49,7 @@ awaken/
 └─ app/
    └─ src/main/
       ├─ assets/quests/templates.json   assets/narrative/chapters.json, system_lines.json
-      ├─ res/font/  (Chakra Petch, Inter, JetBrains Mono — OFL)
+      ├─ res/font/  (Saira Condensed, IBM Plex Sans — OFL; see DESIGN_SYSTEM §2.2)
       └─ java/com/assismohanty/awaken/
          ├─ AwakenApp.kt (@HiltAndroidApp)  MainActivity.kt
          ├─ core/designsystem/  theme/ (Color, Type, Shape, Motion, Haptics), components/
