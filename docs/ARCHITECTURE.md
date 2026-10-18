@@ -113,8 +113,10 @@ day_record(game_date PK, cleared BOOL, rest_day BOOL, recovery BOOL,
            shield_used BOOL, penalty_issued BOOL, finalized_at NULL)
 -- The streak is derived by replaying finalized outcomes (StreakRules.replay); no shield history is needed.
 
-gate_run(id PK, gate_rank, stat, label NULL, planned_sec, started_at, ended_at NULL,
-         background_ms INTEGER, pauses INTEGER, status)   -- RUNNING|CLEARED|COLLAPSED|ABANDONED
+gate_run(id PK, quest_instance_id, gate_rank, stat, label NULL, planned_sec, started_at, ended_at NULL,
+         background_ms INTEGER, paused_at NULL, resumed_at NULL,          -- the one pause (ENGINE_DECISIONS #34)
+         last_stop_at NULL, last_stop_elapsed_ms NULL, boot_count,        -- open background stretch (#37)
+         status, collapse_reason NULL)   -- RUNNING|CLEARED|COLLAPSED|ABANDONED; BREACH|DEVICE_RESTARTED|DAY_RESET
 
 trial(id PK, target_rank, started_game_date, expires_game_date, status, ended_at NULL)   -- ACTIVE|PASSED|FAILED; ended_at drives the 48 h retry
 achievement_unlock(achievement_id PK, unlocked_at)

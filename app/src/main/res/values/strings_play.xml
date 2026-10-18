@@ -205,4 +205,37 @@
     </plurals>
     <string name="msg_rest_not_allowed">One rest day per week, set before the day starts.</string>
     <string name="msg_recovery_none">No recovery days left this month.</string>
+    <!-- Focus Gates (GD §8, DESIGN_SYSTEM §4.4) -->
+    <string name="gates_title">FOCUS GATES</string>
+    <string name="gates_body">Pick a gate and stay with it. Time away from the app adds up: more than %1$s in total and the gate collapses.</string>
+    <string name="gate_name">%1$s-Gate</string>
+    <string name="gate_minutes">%1$d min</string>
+    <string name="gate_tile_late">Not enough time before the day resets.</string>
+    <string name="cd_gate_tile">%1$s, %2$s</string>
+    <string name="cd_gate_tile_late">%1$s, %2$s, not enough time before the day resets</string>
+    <string name="gate_stat_label">Stat to train</string>
+    <string name="gate_label_hint">Label (optional)</string>
+    <string name="gate_rule">One pause of up to 5 minutes. Time away while paused is free. Away more than %1$s otherwise and the gate collapses.</string>
+    <string name="action_enter_gate">Start gate</string>
+    <string name="action_pause">Pause (%1$s)</string>
+    <string name="action_resume">Resume</string>
+    <string name="action_abandon_gate">Abandon gate</string>
+    <string name="action_keep_going">Keep going</string>
+    <string name="gate_breach_line">Time away %1$s of %2$s</string>
+    <string name="gate_paused_left">Paused. Resumes on its own in %1$s.</string>
+    <string name="gate_pause_used">Pause used.</string>
+    <string name="gate_abandon_confirm">Abandon this gate? It gives no XP.</string>
+    <string name="gate_collapsed_body">GATE COLLAPSED</string>
+    <string name="gate_collapsed_breach">Background time %1$s exceeded the %2$s limit.</string>
+    <string name="gate_collapsed_restarted">Device restarted. Time away could not be measured.</string>
+    <string name="gate_collapsed_day_reset">The day reset before the gate was claimed.</string>
+    <string name="msg_undo_gate">A cleared gate can\'t be undone.</string>
+    <string name="msg_gate_too_late">Not enough time before the day resets for that gate.</string>
+    <string name="gate_channel_name">Focus Gates</string>
+    <string name="gate_channel_description">Countdown while a gate is open, and a reminder when it clears.</string>
+    <string name="gate_notif_title">Gate in progress · %1$s-Gate</string>
+    <string name="gate_notif_running">Return within %1$s or the gate collapses.</string>
+    <string name="gate_notif_paused">Gate paused. It resumes on its own.</string>
+    <string name="gate_notif_ended_title">%1$s-Gate cleared</string>
+    <string name="gate_notif_ended_body">Return to claim your reward.</string>
 </resources>

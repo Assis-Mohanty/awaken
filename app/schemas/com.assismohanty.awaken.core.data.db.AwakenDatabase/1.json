@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "986dea80f0770f6dd97821e93c60d27a",
+    "identityHash": "2c34077eefa2fefc2a5e4a8239e5792c",
     "entities": [
       {
         "tableName": "hunter_profile",
@@ -624,11 +624,17 @@
       },
       {
         "tableName": "gate_run",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `gate_rank` TEXT NOT NULL, `stat` TEXT NOT NULL, `label` TEXT, `planned_sec` INTEGER NOT NULL, `started_at` INTEGER NOT NULL, `ended_at` INTEGER, `background_ms` INTEGER NOT NULL, `pauses` INTEGER NOT NULL, `status` TEXT NOT NULL, PRIMARY KEY(`id`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `quest_instance_id` TEXT NOT NULL, `gate_rank` TEXT NOT NULL, `stat` TEXT NOT NULL, `label` TEXT, `planned_sec` INTEGER NOT NULL, `started_at` INTEGER NOT NULL, `ended_at` INTEGER, `background_ms` INTEGER NOT NULL, `paused_at` INTEGER, `resumed_at` INTEGER, `last_stop_at` INTEGER, `last_stop_elapsed_ms` INTEGER, `boot_count` INTEGER NOT NULL, `status` TEXT NOT NULL, `collapse_reason` TEXT, PRIMARY KEY(`id`))",
         "fields": [
           {
             "fieldPath": "id",
             "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "questInstanceId",
+            "columnName": "quest_instance_id",
             "affinity": "TEXT",
             "notNull": true
           },
@@ -673,8 +679,28 @@
             "notNull": true
           },
           {
-            "fieldPath": "pauses",
-            "columnName": "pauses",
+            "fieldPath": "pausedAt",
+            "columnName": "paused_at",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "resumedAt",
+            "columnName": "resumed_at",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "lastStopAt",
+            "columnName": "last_stop_at",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "lastStopElapsedMs",
+            "columnName": "last_stop_elapsed_ms",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "bootCount",
+            "columnName": "boot_count",
             "affinity": "INTEGER",
             "notNull": true
           },
@@ -683,6 +709,11 @@
             "columnName": "status",
             "affinity": "TEXT",
             "notNull": true
+          },
+          {
+            "fieldPath": "collapseReason",
+            "columnName": "collapse_reason",
+            "affinity": "TEXT"
           }
         ],
         "primaryKey": {
@@ -690,7 +721,27 @@
           "columnNames": [
             "id"
           ]
-        }
+        },
+        "indices": [
+          {
+            "name": "index_gate_run_status",
+            "unique": false,
+            "columnNames": [
+              "status"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_gate_run_status` ON `${TABLE_NAME}` (`status`)"
+          },
+          {
+            "name": "index_gate_run_quest_instance_id",
+            "unique": false,
+            "columnNames": [
+              "quest_instance_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_gate_run_quest_instance_id` ON `${TABLE_NAME}` (`quest_instance_id`)"
+          }
+        ]
       },
       {
         "tableName": "trial",
@@ -824,7 +875,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '986dea80f0770f6dd97821e93c60d27a')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '2c34077eefa2fefc2a5e4a8239e5792c')"
     ]
   }
 }

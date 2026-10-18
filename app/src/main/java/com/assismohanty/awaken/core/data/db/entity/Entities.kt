@@ -5,6 +5,8 @@ import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
 import com.assismohanty.awaken.engine.DayOutcome
+import com.assismohanty.awaken.engine.GateCollapseReason
+import com.assismohanty.awaken.engine.GateTiming
 import com.assismohanty.awaken.engine.RankRules
 import com.assismohanty.awaken.engine.model.Difficulty
 import com.assismohanty.awaken.engine.model.GateRank
@@ -157,19 +159,32 @@ data class DayRecordEntity(
 
 enum class GateRunStatus { RUNNING, CLEARED, COLLAPSED, ABANDONED }
 
-@Entity(tableName = "gate_run")
+/**
+ * One Focus Gate run (ARCH §3.3). Nothing ticks it: progress derives from these timestamps via `GateRunMath`. The single
+ * pause is [pausedAt]..[resumedAt] (auto-resumes after 5 min). [lastStopAt]/[lastStopElapsedMs] mark the app going to the
+ * background; they are cleared once that stretch is accounted on return. [bootCount] detects a reboot in between.
+ */
+@Entity(tableName = "gate_run", indices = [Index("status"), Index("quest_instance_id")])
 data class GateRunEntity(
     @PrimaryKey val id: String,
+    @ColumnInfo(name = "quest_instance_id") val questInstanceId: String,
     @ColumnInfo(name = "gate_rank") val gateRank: GateRank,
     val stat: Stat,
     val label: String?,
     @ColumnInfo(name = "planned_sec") val plannedSec: Int,
     @ColumnInfo(name = "started_at") val startedAt: Instant,
-    @ColumnInfo(name = "ended_at") val endedAt: Instant?,
-    @ColumnInfo(name = "background_ms") val backgroundMs: Long,
-    val pauses: Int,
+    @ColumnInfo(name = "ended_at") val endedAt: Instant? = null,
+    @ColumnInfo(name = "background_ms") val backgroundMs: Long = 0,
+    @ColumnInfo(name = "paused_at") val pausedAt: Instant? = null,
+    @ColumnInfo(name = "resumed_at") val resumedAt: Instant? = null,
+    @ColumnInfo(name = "last_stop_at") val lastStopAt: Instant? = null,
+    @ColumnInfo(name = "last_stop_elapsed_ms") val lastStopElapsedMs: Long? = null,
+    @ColumnInfo(name = "boot_count") val bootCount: Int,
     val status: GateRunStatus,
-)
+    @ColumnInfo(name = "collapse_reason") val collapseReason: GateCollapseReason? = null,
+) {
+    val timing: GateTiming get() = GateTiming(startedAt, plannedSec, pausedAt, resumedAt, backgroundMs)
+}
 
 @Entity(tableName = "trial")
 data class TrialEntity(

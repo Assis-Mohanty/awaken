@@ -262,6 +262,26 @@ interface DayRecordDao {
 interface GateRunDao {
     @Query("SELECT * FROM gate_run WHERE status = 'CLEARED'")
     suspend fun cleared(): List<GateRunEntity>
+
+    @Upsert
+    suspend fun upsert(run: GateRunEntity)
+
+    @Query("SELECT * FROM gate_run WHERE id = :id")
+    suspend fun get(id: String): GateRunEntity?
+
+    @Query("SELECT * FROM gate_run WHERE quest_instance_id = :questInstanceId")
+    suspend fun forQuest(questInstanceId: String): GateRunEntity?
+
+    /** At most one run is RUNNING at a time (StartGateUseCase). */
+    @Query("SELECT * FROM gate_run WHERE status = 'RUNNING' LIMIT 1")
+    suspend fun running(): GateRunEntity?
+
+    @Query("SELECT * FROM gate_run WHERE status = 'RUNNING' LIMIT 1")
+    fun observeRunning(): Flow<GateRunEntity?>
+
+    /** The most recent run, so the screen can show how the last gate ended. */
+    @Query("SELECT * FROM gate_run ORDER BY started_at DESC LIMIT 1")
+    fun observeLatest(): Flow<GateRunEntity?>
 }
 
 @Dao

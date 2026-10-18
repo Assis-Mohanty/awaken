@@ -2,6 +2,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <!-- Focus Gate countdown and "return to claim" notifications (ARCH §3.3). Requested when a gate opens. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
     <application
         android:name=".AwakenApp"
         android:allowBackup="true"

@@ -41,6 +41,7 @@ data class AwakenDimens(
     val gateDialSize: Dp = 280.dp,
     val gateDialRing: Dp = 14.dp,
     val gateDialInnerRing: Dp = 3.dp,
+    val gateTileHeight: Dp = 128.dp,
     val ceremonyRing: Dp = 2.dp,
     val questRowPadding: Dp = 16.dp,
     val chipHeight: Dp = 24.dp,

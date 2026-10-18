@@ -34,7 +34,7 @@ import com.assismohanty.awaken.core.designsystem.components.GateBackground
 import com.assismohanty.awaken.core.designsystem.theme.AwakenTheme
 import com.assismohanty.awaken.debug.DebugEntry
 import com.assismohanty.awaken.engine.model.Rank
-import com.assismohanty.awaken.feature.gate.GatesScreen
+import com.assismohanty.awaken.feature.gate.GatesEntry
 import com.assismohanty.awaken.feature.onboarding.OnboardingRoute as OnboardingEntry
 import com.assismohanty.awaken.feature.quest.QuestDetailRoute as QuestDetailEntry
 import com.assismohanty.awaken.feature.quest.RewardHost
@@ -142,7 +142,7 @@ private fun MainScaffold(
                         onOpenQuest = { navController.navigate(QuestDetailRoute(it)) },
                     )
                 }
-                composable<GatesRoute> { GatesScreen() }
+                composable<GatesRoute> { GatesEntry() }
                 composable<StatusRoute> { StatusScreen() }
                 composable<VaultRoute> { VaultScreen() }
                 if (DebugEntry.ENABLED) {

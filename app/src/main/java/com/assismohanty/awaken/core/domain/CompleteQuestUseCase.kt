@@ -48,6 +48,8 @@ data class CompletionOutcome(
     /** Set when this completion cleared the last Rank Trial stage: the hunter was promoted to this rank (GD §5). */
     val promotedTo: Rank? = null,
     val unlockedAchievements: List<String>,
+    /** False for a cleared Focus Gate, which is final (ENGINE_DECISIONS #36). */
+    val undoable: Boolean = true,
 ) {
     val leveledUp: Boolean get() = levelAfter > levelBefore
 }
@@ -149,6 +151,7 @@ class CompleteQuestUseCase @Inject constructor(
                     rankTrialUnlocked = trialAfter.takeIf { it != null && it != trialBefore },
                     promotedTo = promotedTo,
                     unlockedAchievements = unlocked,
+                    undoable = quest.type != QuestType.GATE,
                 ),
             )
         }

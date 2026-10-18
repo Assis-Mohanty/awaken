@@ -1,6 +1,7 @@
 package com.assismohanty.awaken.core.domain
 
 import com.assismohanty.awaken.core.data.repo.Notice
+import com.assismohanty.awaken.engine.GateCollapseReason
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -20,6 +21,9 @@ sealed interface CompletionEvent {
 
     /** Unlocks outside a quest completion (e.g. "Awakened" at the end of onboarding). */
     data class Achievements(override val id: Long, val achievementIds: List<String>) : CompletionEvent
+
+    /** A Focus Gate collapsed: the ember window (DESIGN_SYSTEM §4.4). */
+    data class GateCollapsed(override val id: Long, val reason: GateCollapseReason, val backgroundMs: Long) : CompletionEvent
 }
 
 /** UI-agnostic message; the app maps it to a string resource. */
@@ -33,6 +37,8 @@ sealed interface UserMessage {
     data object UndoExpired : UserMessage
     data object UndoDayClosed : UserMessage
     data object UndoPromotion : UserMessage
+    data object UndoGate : UserMessage
+    data object GateTooLate : UserMessage
     data object TrialStarted : UserMessage
     data object TrialNoStages : UserMessage
     data class Rerolled(val cost: Int) : UserMessage
@@ -77,6 +83,7 @@ class CompletionCenter @Inject constructor(
                 UndoResult.WindowExpired -> UserMessage.UndoExpired
                 UndoResult.DayClosed -> UserMessage.UndoDayClosed
                 UndoResult.TrialPassed -> UserMessage.UndoPromotion
+                UndoResult.GateClear -> UserMessage.UndoGate
                 UndoResult.NothingToUndo -> UserMessage.Error
             },
         )
@@ -85,6 +92,12 @@ class CompletionCenter @Inject constructor(
     fun message(message: UserMessage, undoQuestId: String? = null) = post { CompletionEvent.Message(it, message, undoQuestId) }
 
     fun notice(notice: Notice) = post { CompletionEvent.SystemNotice(it, notice) }
+
+    /** A completion made by a verifier (a cleared Focus Gate) rather than by [complete]. */
+    fun completed(outcome: CompletionOutcome) = post { CompletionEvent.Completed(it, outcome) }
+
+    fun gateCollapsed(reason: GateCollapseReason, backgroundMs: Long) =
+        post { CompletionEvent.GateCollapsed(it, reason, backgroundMs) }
 
     fun achievements(achievementIds: List<String>) {
         if (achievementIds.isNotEmpty()) post { CompletionEvent.Achievements(it, achievementIds) }

@@ -25,6 +25,8 @@ sealed interface UndoResult {
     data object DayClosed : UndoResult
     /** The stage that passed a Rank Trial: promotion is permanent (ENGINE_DECISIONS #32). */
     data object TrialPassed : UndoResult
+    /** A cleared Focus Gate is timer-verified and final (ENGINE_DECISIONS #36). */
+    data object GateClear : UndoResult
 }
 
 /**
@@ -43,6 +45,7 @@ class UndoCompletionUseCase @Inject constructor(
 ) {
     suspend operator fun invoke(questInstanceId: String): UndoResult = transactions.run {
         val completion = completionDao.latestActive(questInstanceId) ?: return@run UndoResult.NothingToUndo
+        if (completion.questType == QuestType.GATE) return@run UndoResult.GateClear
         val now = clock.now()
         if (!QuestRules.canUndo(completion.completedAt, now)) return@run UndoResult.WindowExpired
         val profile = hunterDao.getProfile() ?: return@run UndoResult.NothingToUndo

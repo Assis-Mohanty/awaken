@@ -5,6 +5,7 @@ import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import com.assismohanty.awaken.core.data.clock.Clock
+import com.assismohanty.awaken.core.data.clock.DeviceUptime
 import com.assismohanty.awaken.core.data.clock.gameDate
 import com.assismohanty.awaken.core.data.db.AwakenDatabase
 import com.assismohanty.awaken.core.data.db.entity.LedgerEntryEntity
@@ -23,6 +24,7 @@ import com.assismohanty.awaken.core.domain.CompletionCenter
 import com.assismohanty.awaken.core.domain.CreateHunterUseCase
 import com.assismohanty.awaken.core.domain.DayRefresher
 import com.assismohanty.awaken.core.domain.DayRolloverUseCase
+import com.assismohanty.awaken.core.domain.GateRunController
 import com.assismohanty.awaken.core.domain.GenerateDirectiveUseCase
 import com.assismohanty.awaken.core.domain.ObserveHunterStateUseCase
 import com.assismohanty.awaken.core.domain.ObserveTodayUseCase
@@ -30,6 +32,7 @@ import com.assismohanty.awaken.core.domain.RerollQuestUseCase
 import com.assismohanty.awaken.core.domain.RunRolloverUseCase
 import com.assismohanty.awaken.core.domain.SetRecoveryModeUseCase
 import com.assismohanty.awaken.core.domain.SetRestDayUseCase
+import com.assismohanty.awaken.core.domain.StartGateUseCase
 import com.assismohanty.awaken.core.domain.StartTrialUseCase
 import com.assismohanty.awaken.core.domain.TrialReader
 import com.assismohanty.awaken.core.domain.UndoCompletionUseCase
@@ -63,8 +66,22 @@ class FakeClock(var instant: Instant, private val zoneId: ZoneId = ZoneOffset.UT
     }
 }
 
+/** Elapsed realtime moves only when a test says so; [reboot] restarts it on a new boot. */
+class FakeDeviceUptime(var elapsedMs: Long = 1_000_000, var boot: Int = 1) : DeviceUptime {
+    override fun elapsedRealtimeMs(): Long = elapsedMs
+    override fun bootCount(): Int = boot
+
+    fun reboot() {
+        boot += 1
+        elapsedMs = 5_000
+    }
+}
+
 /** Real Room (in-memory) + real assets + FakeClock, wired by hand the way Hilt wires production. */
-class TestGraph(val clock: FakeClock = FakeClock(Instant.parse("2026-10-18T10:00:00Z"))) {
+class TestGraph(
+    val clock: FakeClock = FakeClock(Instant.parse("2026-10-18T10:00:00Z")),
+    val uptime: FakeDeviceUptime = FakeDeviceUptime(),
+) {
     private val context: Context = ApplicationProvider.getApplicationContext()
 
     val db: AwakenDatabase = Room.inMemoryDatabaseBuilder(context, AwakenDatabase::class.java)
@@ -118,6 +135,8 @@ class TestGraph(val clock: FakeClock = FakeClock(Instant.parse("2026-10-18T10:00
     val dayRefresher = DayRefresher(runRollover)
     val setRestDay = SetRestDayUseCase(db.hunterDao(), db.dayRecordDao(), transactions, clock)
     val setRecoveryMode = SetRecoveryModeUseCase(db.hunterDao(), db.dayRecordDao(), transactions, clock)
+    val startGate = StartGateUseCase(db.hunterDao(), db.questDao(), db.gateRunDao(), transactions, uptime, clock)
+    val gateRuns = GateRunController(db.questDao(), db.gateRunDao(), completeQuest, transactions, uptime, clock)
 
     fun today(): LocalDate = clock.gameDate(GameDay.DEFAULT_DAY_START_HOUR)
 

@@ -130,7 +130,7 @@ fun RewardHost(snackbarHostState: SnackbarHostState, modifier: Modifier = Modifi
             event = current,
             onFinished = {
                 queueAchievements(current.outcome.unlockedAchievements, current.id)
-                showMessage(UserMessage.QuestCleared, undoQuestId = current.outcome.questInstanceId)
+                showMessage(UserMessage.QuestCleared, undoQuestId = current.outcome.questInstanceId.takeIf { current.outcome.undoable })
                 viewModel.consume(current.id)
             },
         )
@@ -155,6 +155,12 @@ fun RewardHost(snackbarHostState: SnackbarHostState, modifier: Modifier = Modifi
                 viewModel.consume(current.id)
             }
         }
+        is CompletionEvent.GateCollapsed -> SystemWarningDialog(
+            body = stringResource(R.string.gate_collapsed_body),
+            detail = collapseDetail(current.reason, current.backgroundMs, resources),
+            actionLabel = stringResource(R.string.action_continue),
+            onDismiss = { viewModel.consume(current.id) },
+        )
         null -> Unit
     }
 
