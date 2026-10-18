@@ -68,6 +68,8 @@ android {
     testOptions {
         unitTests.isIncludeAndroidResources = true
     }
+    // MigrationTestHelper (Robolectric) reads the exported Room schemas from the variant assets: debug only, never release.
+    sourceSets.getByName("debug").assets.directories.add("$projectDir/schemas")
 }
 
 kotlin {

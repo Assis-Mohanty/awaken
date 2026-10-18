@@ -8,8 +8,11 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import com.assismohanty.awaken.core.data.clock.Clock
+import com.assismohanty.awaken.core.data.clock.DeviceUptime
 import com.assismohanty.awaken.core.data.db.dao.GateRunDao
+import com.assismohanty.awaken.engine.BackgroundDelta
 import com.assismohanty.awaken.engine.GatePhase
+import com.assismohanty.awaken.engine.GateRules
 import com.assismohanty.awaken.engine.GateRunMath
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
@@ -26,15 +29,22 @@ class GateEndWorker @AssistedInject constructor(
     @Assisted params: WorkerParameters,
     private val gateRunDao: GateRunDao,
     private val notifications: GateNotifications,
+    private val uptime: DeviceUptime,
     private val clock: Clock,
 ) : CoroutineWorker(context, params) {
 
     override suspend fun doWork(): Result {
-        // Still in the foreground (no stop recorded): the screen claims it, no notification needed.
-        val run = gateRunDao.running()?.takeIf { it.lastStopAt != null } ?: return Result.success()
+        val run = gateRunDao.running() ?: return Result.success()
+        val stopAt = run.lastStopAt ?: return Result.success()
+        val stopElapsed = run.lastStopElapsedMs ?: return Result.success()
         val now = clock.now()
         if (GateRunMath.phase(run.timing, now) == GatePhase.Finished) {
-            notifications.showEnded(run.gateRank.name)
+            // Only promise a reward if the time away so far is within budget; otherwise it collapses on return.
+            val nowElapsed = uptime.elapsedRealtimeMs()
+            val sameBoot = uptime.bootCount() == run.bootCount && nowElapsed >= stopElapsed
+            val delta = GateRunMath.backgroundOnResume(run.timing, stopAt, stopElapsed, nowElapsed, sameBoot)
+            val cleared = delta is BackgroundDelta.Counted && !GateRules.isCollapsed(run.backgroundMs + delta.addedMs)
+            if (cleared) notifications.showEnded(run.gateRank.name) else notifications.cancelRunning()
         } else {
             schedule(WorkManager.getInstance(applicationContext), Duration.between(now, GateRunMath.endAt(run.timing, now)))
         }

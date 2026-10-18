@@ -2,6 +2,7 @@ package com.assismohanty.awaken.core.data.di
 
 import android.content.Context
 import androidx.room.Room
+import com.assismohanty.awaken.core.data.db.ALL_MIGRATIONS
 import com.assismohanty.awaken.core.data.db.AwakenDatabase
 import dagger.Module
 import dagger.Provides
@@ -13,11 +14,13 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 object DatabaseModule {
-    // No destructive migration fallback: v1 ships at version 1 and every later change needs a Migration (ARCH §2).
+    // No destructive migration fallback: every schema change ships a Migration (ARCH §2), so hunters never lose data.
     @Provides
     @Singleton
     fun provideDatabase(@ApplicationContext context: Context): AwakenDatabase =
-        Room.databaseBuilder(context, AwakenDatabase::class.java, AwakenDatabase.NAME).build()
+        Room.databaseBuilder(context, AwakenDatabase::class.java, AwakenDatabase.NAME)
+            .addMigrations(*ALL_MIGRATIONS)
+            .build()
 
     @Provides fun provideHunterDao(db: AwakenDatabase) = db.hunterDao()
     @Provides fun provideQuestDao(db: AwakenDatabase) = db.questDao()

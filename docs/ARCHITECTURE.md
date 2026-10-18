@@ -128,7 +128,7 @@ UNIQUE with nullable columns: SQLite treats NULLs as distinct → store `''` ins
 
 Ledger sourceIds: QUEST/GATE → completionId; UNDO → the undone row's sourceId; DAY_CLEAR and SHIELD_USE → game_date; ACHIEVEMENT → achievement id; SHOP → purchase UUID (rerolls: `reroll:<game_date>#n`).
 
-Migrations: `exportSchema = true`, schemas committed under `app/schemas/`. v1 ships at version 1; every later change needs a `Migration` + `MigrationTestHelper` test. **No destructive fallback in release.**
+Migrations: `exportSchema = true`, schemas committed under `app/schemas/`. Every schema change bumps the version and adds a `Migration` (`core/data/db/Migrations.kt`, listed in `ALL_MIGRATIONS`) plus a case in `MigrationTest`, which builds the old database from its exported JSON (the schemas are debug-only assets) and opens it with the current Room, so Room validates the result. (`MigrationTestHelper` is not used: its `createDatabase` rejects Robolectric database paths on Windows.) Current version: 2 (v1→v2 rebuilt the then-empty `gate_run` for Focus Gates). **No destructive fallback, ever: hunters never lose data.**
 
 ## 3. Core flows
 
@@ -204,7 +204,7 @@ This avoids foreground-service-type policy declarations entirely. The process ma
 | Layer | Tooling | What |
 |---|---|---|
 | `:engine` | JUnit5 + Truth (+ kotest-property optional) | All GD §12 vectors; level monotonicity; caps; streak edge cases (rest, recovery, shield, multi-day gap); generator determinism & novelty window; crit rate ≈ 8% over 100k seeds (±0.5%) |
-| Data | Room in-memory + Robolectric or instrumented | Ledger idempotency (same event twice), NULL-uniqueness bug, undo, rebuild-from-ledger == cache, migration tests later |
+| Data | Room in-memory + Robolectric or instrumented | Ledger idempotency (same event twice), NULL-uniqueness bug, undo, rebuild-from-ledger == cache, migrations (`MigrationTest`) |
 | Use cases | Fakes + FakeClock | Complete→level-up; rollover over 5 missed days; DST boundary; day-start 04:00 edge (03:59 vs 04:00) |
 | UI | Compose UI test | Onboarding happy path; complete quest shows reward; gate collapse state |
 | Manual | `docs/QA_CHECKLIST.md` | Real device: notifications, widget, HC permission flow, backgrounding a gate, airplane mode, font scale 200%, TalkBack on main flows |

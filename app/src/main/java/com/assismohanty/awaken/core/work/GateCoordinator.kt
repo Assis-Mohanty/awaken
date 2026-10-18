@@ -23,6 +23,7 @@ import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 import timber.log.Timber
 
@@ -46,6 +47,23 @@ class GateCoordinator @Inject constructor(
 
     // Screen ticks must not account background time: only the process lifecycle does, on return.
     @Volatile private var inForeground = false
+
+    // Lifecycle callbacks are handled strictly in order, one at a time. Launching each one separately on a
+    // multi-threaded scope could run a quick return before the stop it follows, leaving a stale stop on the run
+    // that would later count foreground time as background.
+    private val lifecycleEvents = Channel<Boolean>(Channel.UNLIMITED).also { events ->
+        appScope.launch {
+            for (started in events) {
+                try {
+                    if (started) handleStart() else handleStop()
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    Timber.e(e, "Gate lifecycle event failed")
+                }
+            }
+        }
+    }
 
     suspend fun start(rank: GateRank, stat: Stat, label: String?): StartGateResult {
         val result = startGate(rank, stat, label)
@@ -83,25 +101,29 @@ class GateCoordinator @Inject constructor(
 
     override fun onStart(owner: LifecycleOwner) {
         inForeground = true
-        launchSafely("Gate check on start") {
-            notifications.cancelRunning()
-            check()
-        }
+        lifecycleEvents.trySend(true)
     }
 
     override fun onStop(owner: LifecycleOwner) {
         inForeground = false
-        launchSafely("Gate stop") {
-            val run = controller.onAppStopped() ?: return@launchSafely
-            val now = clock.now()
-            notifications.showRunning(
-                gateName = run.gateRank.name,
-                endAt = GateRunMath.endAt(run.timing, now),
-                breachLeft = GateRunMath.breachLeft(run.backgroundMs),
-                paused = GateRunMath.isPaused(run.timing, now),
-                pauseEndsAt = GateRunMath.pauseEndsAt(run.timing),
-            )
-        }
+        lifecycleEvents.trySend(false)
+    }
+
+    private suspend fun handleStart() {
+        notifications.cancelRunning()
+        check()
+    }
+
+    private suspend fun handleStop() {
+        val run = controller.onAppStopped() ?: return
+        val now = clock.now()
+        notifications.showRunning(
+            gateName = run.gateRank.name,
+            endAt = GateRunMath.endAt(run.timing, now),
+            breachLeft = GateRunMath.breachLeft(run.backgroundMs),
+            paused = GateRunMath.isPaused(run.timing, now),
+            pauseEndsAt = GateRunMath.pauseEndsAt(run.timing),
+        )
     }
 
     private fun report(check: GateCheck) {
@@ -133,17 +155,5 @@ class GateCoordinator @Inject constructor(
     private fun scheduleEnd(run: GateRunEntity) {
         val now = clock.now()
         GateEndWorker.schedule(workManager, Duration.between(now, GateRunMath.endAt(run.timing, now)))
-    }
-
-    private fun launchSafely(what: String, block: suspend () -> Unit) {
-        appScope.launch {
-            try {
-                block()
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                Timber.e(e, "%s failed", what)
-            }
-        }
     }
 }

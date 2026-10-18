@@ -27,7 +27,7 @@ import com.assismohanty.awaken.core.data.db.entity.StatTierEntity
 import com.assismohanty.awaken.core.data.db.entity.TrialEntity
 
 @Database(
-    version = 1,
+    version = 2,
     exportSchema = true,
     entities = [
         HunterProfileEntity::class,
