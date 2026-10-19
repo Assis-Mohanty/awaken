@@ -110,6 +110,7 @@ dependencies {
     implementation(libs.androidx.work.runtime.ktx)
     implementation(libs.androidx.hilt.work)
     implementation(libs.androidx.health.connect.client)
+    implementation(libs.androidx.glance.appwidget)
     ksp(libs.androidx.hilt.compiler)
 
     implementation(libs.kotlinx.serialization.json)

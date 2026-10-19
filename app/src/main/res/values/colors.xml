@@ -2,4 +2,6 @@
 <resources>
     <!-- Mirrors the `void` token in core/designsystem/theme/Color.kt for pre-Compose window drawing. -->
     <color name="void_background">#FF000000</color>
+    <!-- Mirrors the `panel` token; the widget's first frame before Glance renders. -->
+    <color name="panel_background">#FF0E0E0E</color>
 </resources>

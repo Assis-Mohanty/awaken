@@ -489,4 +489,13 @@
     <string name="action_allow_reminders">Allow reminders</string>
     <string name="settings_notifications_blocked">Notifications are blocked, so reminders can\'t reach you.</string>
     <string name="action_open_notification_settings">Open notification settings</string>
+
+    <!-- Widget (Phase 12) -->
+    <string name="widget_name">AWAKEN · Today</string>
+    <string name="widget_description">Your rank, streak and today\'s progress at a glance. Tap to open Today.</string>
+    <string name="widget_empty">Open AWAKEN to begin.</string>
+    <string name="widget_progress" tools:ignore="PluralsCandidate">%1$d/%2$d cleared</string>
+    <string name="widget_next">Next: %1$s</string>
+    <string name="widget_all_done">Everything is done for today.</string>
+    <string name="widget_cd" tools:ignore="PluralsCandidate">Rank %1$s, level %2$d, streak %3$d, %4$d of %5$d cleared. Next: %6$s</string>
 </resources>

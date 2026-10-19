@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The streak flame (AwakenGlyphs.Flame) for the home-screen widget; tinted at the call site. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:pathData="M12,2.5C16,7 18.5,10.5 18.5,14.5C18.5,18.5 15.5,21.5 12,21.5C8.5,21.5 5.5,18.5 5.5,14.5C5.5,11.5 7.5,9.5 9,8C9,10.5 10,12 11.5,12.5C11,9 11.5,5.5 12,2.5Z"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="1.75"
+        android:strokeLineJoin="miter" />
+</vector>
