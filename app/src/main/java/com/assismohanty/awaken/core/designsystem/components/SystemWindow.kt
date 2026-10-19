@@ -52,6 +52,9 @@ fun SystemWindow(
     val motion = AwakenTheme.motion
     val shapes = AwakenTheme.shapes
     val dimens = AwakenTheme.dimens
+    val colors = AwakenTheme.colors
+    // A Vault theme replaces the rank accent; warnings stay ember (GD §9.2: themes never override the crest or alerts).
+    val windowAccent = if (accent == colors.ember) accent else AwakenTheme.themeTint ?: accent
     val animate = reveal && !motion.reduceMotion
     val progress = remember { Animatable(if (animate) 0f else 1f) }
     LaunchedEffect(animate) {
@@ -72,7 +75,7 @@ fun SystemWindow(
                 shape = shapes.window,
                 edgeColor = AwakenTheme.colors.edge,
                 edgeWidth = dimens.edgeWidth,
-                accent = accent,
+                accent = windowAccent,
                 accentWidth = dimens.accentWidth,
                 chamfer = shapes.windowChamfer,
                 bracketLength = dimens.bracketLength,
@@ -86,7 +89,7 @@ fun SystemWindow(
                     Text(
                         text = title,
                         style = AwakenTheme.type.windowTitle,
-                        color = accent,
+                        color = windowAccent,
                         modifier = Modifier
                             .weight(1f)
                             .semantics { heading() },

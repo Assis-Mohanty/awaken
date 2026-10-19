@@ -22,5 +22,16 @@ val MIGRATION_1_2 = object : Migration(1, 2) {
     }
 }
 
+/**
+ * v2 → v3 (Phase 10, Vault): the hunter profile gains the equipped title frame and hunter sigil. Both are nullable, so
+ * existing rows need no backfill and nothing is rebuilt.
+ */
+val MIGRATION_2_3 = object : Migration(2, 3) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE `hunter_profile` ADD COLUMN `equipped_frame_id` TEXT")
+        db.execSQL("ALTER TABLE `hunter_profile` ADD COLUMN `equipped_sigil_id` TEXT")
+    }
+}
+
 /** Every migration, in order. The database builder and the migration test both use this list. */
-val ALL_MIGRATIONS: Array<Migration> = arrayOf(MIGRATION_1_2)
+val ALL_MIGRATIONS: Array<Migration> = arrayOf(MIGRATION_1_2, MIGRATION_2_3)

@@ -10,6 +10,7 @@ import com.assismohanty.awaken.core.data.db.dao.GateRunDao
 import com.assismohanty.awaken.core.data.db.dao.HabitDao
 import com.assismohanty.awaken.core.data.db.dao.HunterDao
 import com.assismohanty.awaken.core.data.db.dao.LedgerDao
+import com.assismohanty.awaken.core.data.db.dao.OwnedCosmeticDao
 import com.assismohanty.awaken.core.data.db.dao.QuestDao
 import com.assismohanty.awaken.core.data.db.dao.TrialDao
 import com.assismohanty.awaken.core.data.db.entity.AchievementUnlockEntity
@@ -27,7 +28,7 @@ import com.assismohanty.awaken.core.data.db.entity.StatTierEntity
 import com.assismohanty.awaken.core.data.db.entity.TrialEntity
 
 @Database(
-    version = 2,
+    version = 3,
     exportSchema = true,
     entities = [
         HunterProfileEntity::class,
@@ -56,6 +57,7 @@ abstract class AwakenDatabase : RoomDatabase() {
     abstract fun gateRunDao(): GateRunDao
     abstract fun trialDao(): TrialDao
     abstract fun achievementDao(): AchievementDao
+    abstract fun ownedCosmeticDao(): OwnedCosmeticDao
 
     companion object {
         const val NAME = "awaken.db"

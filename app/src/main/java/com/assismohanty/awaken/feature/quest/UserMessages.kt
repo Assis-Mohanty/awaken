@@ -3,6 +3,7 @@ package com.assismohanty.awaken.feature.quest
 import android.content.res.Resources
 import android.text.format.DateUtils
 import com.assismohanty.awaken.R
+import com.assismohanty.awaken.core.designsystem.components.shopItemNameRes
 import com.assismohanty.awaken.core.domain.UserMessage
 import com.assismohanty.awaken.engine.GateCollapseReason
 import com.assismohanty.awaken.engine.GateRules
@@ -27,6 +28,9 @@ fun shortClock(ms: Long): String {
 
 private const val SECONDS_PER_MINUTE = 60L
 
+private fun shopItemName(itemId: String, resources: Resources): String =
+    shopItemNameRes(itemId)?.let(resources::getString) ?: itemId
+
 /** System-voice text for a domain message (DESIGN_SYSTEM §5): what happened, and what to do. */
 fun UserMessage.text(resources: Resources): String = when (this) {
     is UserMessage.TooSoon -> resources.getString(R.string.msg_too_soon, DateUtils.formatElapsedTime(remainingSeconds))
@@ -48,5 +52,10 @@ fun UserMessage.text(resources: Resources): String = when (this) {
     is UserMessage.RerollGold -> resources.getString(R.string.msg_reroll_gold, cost)
     UserMessage.RerollNone -> resources.getString(R.string.msg_reroll_none)
     UserMessage.ShareFailed -> resources.getString(R.string.msg_share_failed)
+    is UserMessage.VaultBought -> resources.getString(R.string.msg_vault_bought, shopItemName(itemId, resources))
+    is UserMessage.VaultEquipped -> resources.getString(R.string.msg_vault_equipped, shopItemName(itemId, resources))
+    UserMessage.VaultDuplicate -> resources.getString(R.string.msg_vault_duplicate)
+    UserMessage.VaultNoFragments -> resources.getString(R.string.msg_vault_no_fragments)
+    UserMessage.VaultPoolEmpty -> resources.getString(R.string.msg_vault_pool_empty)
     UserMessage.Error -> resources.getString(R.string.msg_error)
 }

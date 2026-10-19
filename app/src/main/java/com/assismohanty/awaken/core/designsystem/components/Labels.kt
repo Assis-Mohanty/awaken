@@ -196,3 +196,25 @@ fun formatMultiplier(value: Double, fixed: Boolean): String {
     }
     return format.format(value)
 }
+
+/** Vault item display name (GD §9.2); null for an id this build doesn't know. */
+@StringRes
+fun shopItemNameRes(itemId: String): Int? = when (itemId) {
+    "streak_shield" -> R.string.shop_streak_shield
+    "theme_crimson_gate" -> R.string.shop_theme_crimson_gate
+    "theme_abyssal_violet" -> R.string.shop_theme_abyssal_violet
+    "theme_sovereign_gold" -> R.string.shop_theme_sovereign_gold
+    "frame_iron" -> R.string.shop_frame_iron
+    "frame_ember" -> R.string.shop_frame_ember
+    "frame_umbral" -> R.string.shop_frame_umbral
+    "frame_regal" -> R.string.shop_frame_regal
+    "sigil_blade" -> R.string.shop_sigil_blade
+    "sigil_flame" -> R.string.shop_sigil_flame
+    "sigil_eye" -> R.string.shop_sigil_eye
+    "sigil_wolf" -> R.string.shop_sigil_wolf
+    "sigil_crown" -> R.string.shop_sigil_crown
+    "sigil_hourglass" -> R.string.shop_sigil_hourglass
+    "sigil_star" -> R.string.shop_sigil_star
+    "sigil_gate" -> R.string.shop_sigil_gate
+    else -> null
+}

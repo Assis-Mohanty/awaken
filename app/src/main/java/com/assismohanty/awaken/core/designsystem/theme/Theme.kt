@@ -6,17 +6,21 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.compositionLocalOf
+import androidx.compose.ui.graphics.Color
 
 /**
  * Dark-only in v1 (DESIGN_SYSTEM.md). No dynamic colour: the System has one look.
  *
  * @param reduceMotion the in-app toggle; the system "Remove animations" setting is OR-ed in (§2.5).
  * @param hapticsEnabled the in-app toggle (§2.6).
+ * @param themeId the equipped Vault theme (GD §9.2); re-tints the background glow and window accents only.
  */
 @Composable
 fun AwakenTheme(
     reduceMotion: Boolean = false,
     hapticsEnabled: Boolean = true,
+    themeId: String = "default",
     content: @Composable () -> Unit,
 ) {
     val colors = remember { AwakenColors() }
@@ -60,6 +64,7 @@ fun AwakenTheme(
         LocalAwakenShapes provides shapes,
         LocalAwakenDimens provides dimens,
         LocalHaptics provides rememberHaptics(hapticsEnabled),
+        LocalThemeTint provides colors.theme(themeId),
     ) {
         MaterialTheme(
             colorScheme = colorScheme,
@@ -77,4 +82,8 @@ object AwakenTheme {
     val shapes: AwakenShapes @Composable @ReadOnlyComposable get() = LocalAwakenShapes.current
     val dimens: AwakenDimens @Composable @ReadOnlyComposable get() = LocalAwakenDimens.current
     val haptics: Haptics @Composable @ReadOnlyComposable get() = LocalHaptics.current
+    /** The equipped theme accent, or null on the default theme. */
+    val themeTint: Color? @Composable @ReadOnlyComposable get() = LocalThemeTint.current
 }
+
+val LocalThemeTint = compositionLocalOf<Color?> { null }

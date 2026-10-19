@@ -287,7 +287,7 @@ The in-app-verified quest type. Turns study/deep-work into a dungeon run.
 | Theme: *Crimson Gate* | 1,500 | once | identity |
 | Theme: *Abyssal Violet* | 1,500 | once | identity |
 | Theme: *Sovereign Gold* (requires rank S) | 3,000 | once | status |
-| Title frames (×4) | 600–1,200 | once | identity |
+| Title frames (×4) | 600 / 800 / 1,000 / 1,200 | once | identity |
 | Hunter sigils (×8 icon badges) | 400 | once | identity |
 
 **No XP boosters for gold. No XP for gold. No real-money anything in v1.** A healthy economy needs sinks that don't touch progression; cosmetics + insurance do that.

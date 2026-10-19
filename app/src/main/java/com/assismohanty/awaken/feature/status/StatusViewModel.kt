@@ -152,6 +152,8 @@ private fun StatusModel.toUiState(local: LocalState): StatusUiState = StatusUiSt
         xpForLevel = hunter.xpForLevel,
         streak = hunter.streak,
         gold = hunter.gold,
+        frameId = hunter.equippedFrameId,
+        sigilId = hunter.equippedSigilId,
     ),
     equippedTitleId = hunter.equippedTitleId,
     rank = hunter.rank,

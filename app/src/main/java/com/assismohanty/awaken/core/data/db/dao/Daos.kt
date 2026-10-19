@@ -14,6 +14,7 @@ import com.assismohanty.awaken.core.data.db.entity.GateRunEntity
 import com.assismohanty.awaken.core.data.db.entity.HabitEntity
 import com.assismohanty.awaken.core.data.db.entity.HunterProfileEntity
 import com.assismohanty.awaken.core.data.db.entity.LedgerEntryEntity
+import com.assismohanty.awaken.core.data.db.entity.OwnedCosmeticEntity
 import com.assismohanty.awaken.core.data.db.entity.QuestInstanceEntity
 import com.assismohanty.awaken.core.data.db.entity.StatTierEntity
 import com.assismohanty.awaken.core.data.db.entity.TrialEntity
@@ -40,6 +41,15 @@ interface HunterDao {
 
     @Query("UPDATE hunter_profile SET equipped_title_id = :titleId WHERE id = 'me'")
     suspend fun setEquippedTitle(titleId: String?)
+
+    @Query("UPDATE hunter_profile SET theme_id = :themeId WHERE id = 'me'")
+    suspend fun setTheme(themeId: String)
+
+    @Query("UPDATE hunter_profile SET equipped_frame_id = :frameId WHERE id = 'me'")
+    suspend fun setEquippedFrame(frameId: String?)
+
+    @Query("UPDATE hunter_profile SET equipped_sigil_id = :sigilId WHERE id = 'me'")
+    suspend fun setEquippedSigil(sigilId: String?)
 
     @Query("SELECT * FROM stat_tier")
     suspend fun getTiers(): List<StatTierEntity>
@@ -366,4 +376,17 @@ interface AchievementDao {
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insert(unlock: AchievementUnlockEntity): Long
+}
+
+@Dao
+interface OwnedCosmeticDao {
+    /** Returns -1 when the cosmetic is already owned (a replayed purchase or cache open is a no-op). */
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insert(cosmetic: OwnedCosmeticEntity): Long
+
+    @Query("SELECT cosmetic_id FROM owned_cosmetic")
+    suspend fun ownedIds(): List<String>
+
+    @Query("SELECT cosmetic_id FROM owned_cosmetic")
+    fun observeOwnedIds(): Flow<List<String>>
 }

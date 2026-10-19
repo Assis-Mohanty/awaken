@@ -62,6 +62,8 @@ sealed interface DebugEvent {
     data object ForceRollover : DebugEvent
     data object RebuildBalances : DebugEvent
     data object GrantShield : DebugEvent
+    data object GrantGold : DebugEvent
+    data object GrantFragments : DebugEvent
     data object GrantLevel : DebugEvent
     data object WipeData : DebugEvent
     data class Begin(val questInstanceId: String) : DebugEvent
@@ -171,6 +173,8 @@ class DebugViewModel @Inject constructor(
             )
             "Granted 1 Streak Shield."
         } ?: "Seed a hunter first."
+        DebugEvent.GrantGold -> grantCurrency(LedgerKind.GOLD, DEBUG_GOLD, "Granted $DEBUG_GOLD gold.")
+        DebugEvent.GrantFragments -> grantCurrency(LedgerKind.FRAGMENT, DEBUG_FRAGMENTS, "Granted $DEBUG_FRAGMENTS fragments.")
         DebugEvent.GrantLevel -> uiState.value.hunter?.let { hunter ->
             // Exactly enough XP for the next level; xp_source is empty so it never counts toward the daily caps.
             val needed = hunter.xpForLevel - hunter.xpIntoLevel
@@ -199,8 +203,28 @@ class DebugViewModel @Inject constructor(
         is DebugEvent.Reroll -> rerollQuest(event.questInstanceId).toString()
     }
 
+    /** Debug faucet: a currency credit with a fresh idempotency key (never used by release code). */
+    private suspend fun grantCurrency(kind: LedgerKind, amount: Long, message: String): String =
+        uiState.value.gameDate?.let { today ->
+            ledger.insertIdempotent(
+                listOf(
+                    LedgerEntryEntity(
+                        kind = kind,
+                        delta = amount,
+                        sourceType = SourceType.ACHIEVEMENT,
+                        sourceId = "debug:${UUID.randomUUID()}",
+                        gameDate = today,
+                        createdAt = clock.now(),
+                    ),
+                ),
+            )
+            message
+        } ?: "Seed a hunter first."
+
     private companion object {
         const val LEDGER_ROWS = 100
+        const val DEBUG_GOLD = 2_000L
+        const val DEBUG_FRAGMENTS = 10L
         const val STOP_TIMEOUT_MS = 5_000L
     }
 }

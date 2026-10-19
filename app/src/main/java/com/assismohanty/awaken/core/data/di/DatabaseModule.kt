@@ -31,4 +31,5 @@ object DatabaseModule {
     @Provides fun provideGateRunDao(db: AwakenDatabase) = db.gateRunDao()
     @Provides fun provideTrialDao(db: AwakenDatabase) = db.trialDao()
     @Provides fun provideAchievementDao(db: AwakenDatabase) = db.achievementDao()
+    @Provides fun provideOwnedCosmeticDao(db: AwakenDatabase) = db.ownedCosmeticDao()
 }

@@ -36,6 +36,8 @@ data class HunterProfileEntity(
     @ColumnInfo(name = "reminder_time") val reminderTime: String? = null,
     @ColumnInfo(name = "equipped_title_id") val equippedTitleId: String? = null,
     @ColumnInfo(name = "theme_id") val themeId: String = DEFAULT_THEME_ID,
+    @ColumnInfo(name = "equipped_frame_id") val equippedFrameId: String? = null,
+    @ColumnInfo(name = "equipped_sigil_id") val equippedSigilId: String? = null,
     @ColumnInfo(name = "onboarding_done") val onboardingDone: Boolean,
     @ColumnInfo(name = "owned_equipment") val ownedEquipment: Set<String> = emptySet(),
     @ColumnInfo(name = "injury_mode") val injuryMode: Boolean = false,

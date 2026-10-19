@@ -17,6 +17,8 @@
     <string name="debug_reset_days">Reset clock</string>
     <string name="debug_rebuild">Rebuild balances</string>
     <string name="debug_grant_shield">Grant shield</string>
+    <string name="debug_grant_gold">+2,000 gold</string>
+    <string name="debug_grant_fragments">+10 fragments</string>
     <string name="debug_grant_level">+1 level</string>
     <string name="debug_wipe">Wipe data</string>
     <string name="debug_begin">Begin</string>

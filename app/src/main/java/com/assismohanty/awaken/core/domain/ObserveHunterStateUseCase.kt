@@ -44,6 +44,8 @@ data class HunterState(
     val todayCleared: Boolean,
     /** Equipped title id (GD §10); display text is resolved in the UI. */
     val equippedTitleId: String? = null,
+    val equippedFrameId: String? = null,
+    val equippedSigilId: String? = null,
 )
 
 class ObserveHunterStateUseCase @Inject constructor(
@@ -93,6 +95,8 @@ class ObserveHunterStateUseCase @Inject constructor(
                     bestStreak = maxOf(best, displayStreak),
                     todayCleared = todayCleared,
                     equippedTitleId = profile.equippedTitleId,
+                    equippedFrameId = profile.equippedFrameId,
+                    equippedSigilId = profile.equippedSigilId,
                 )
             }
         }

@@ -50,6 +50,15 @@ data class AwakenColors(
     val statWil: Color = Color(0xFFA97BFF),
     val statVit: Color = Verified,
     val statCha: Color = Color(0xFFFFB3D1),
+    // Vault themes (GD §9.2): re-tint the background glow and window accents, never the rank crest.
+    val themeCrimson: Color = Color(0xFFE0364B),
+    val themeViolet: Color = Color(0xFF8E5CFF),
+    val themeGold: Color = Color(0xFFD9AE3C),
+    // Title frame outlines (GD §9.2), cheapest to most prestigious.
+    val frameIron: Color = Color(0xFFB4BCC8),
+    val frameEmber: Color = Color(0xFFFF7A59),
+    val frameUmbral: Color = Color(0xFFA97BFF),
+    val frameRegal: Color = Color(0xFFFFC94D),
 ) {
     fun rank(rank: Rank): Color = when (rank) {
         Rank.E -> rankE
@@ -62,6 +71,21 @@ data class AwakenColors(
 
     /** Gates share the colour of the rank with the same letter. */
     fun gate(gate: GateRank): Color = rank(Rank.valueOf(gate.name))
+
+    /** Accent override for a Vault theme id; null for the default theme (rank colours apply). */
+    fun theme(themeId: String): Color? = when (themeId) {
+        "theme_crimson_gate" -> themeCrimson
+        "theme_abyssal_violet" -> themeViolet
+        "theme_sovereign_gold" -> themeGold
+        else -> null
+    }
+
+    fun frame(frameId: String): Color = when (frameId) {
+        "frame_iron" -> frameIron
+        "frame_ember" -> frameEmber
+        "frame_umbral" -> frameUmbral
+        else -> frameRegal
+    }
 
     fun stat(stat: Stat): Color = when (stat) {
         Stat.STR -> statStr

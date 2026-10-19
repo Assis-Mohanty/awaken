@@ -61,7 +61,34 @@ class MigrationTest {
         try {
             assertThat(db.ledgerDao().all().sumOf { it.delta }).isEqualTo(120)
             assertThat(db.gateRunDao().running()).isNull()
-            assertThat(db.openHelper.readableDatabase.version).isEqualTo(2)
+            assertThat(db.openHelper.readableDatabase.version).isEqualTo(3)
+        } finally {
+            db.close()
+        }
+    }
+
+    @Test
+    fun v2To3AddsTheEquippedFrameAndSigilWithoutTouchingTheProfile() = runTest {
+        val path = createFromSchema(2)
+        SQLiteDatabase.openDatabase(path, null, SQLiteDatabase.OPEN_READWRITE).use { db ->
+            db.execSQL(
+                "INSERT INTO hunter_profile (id, hunter_id, name, created_at, first_game_date, focus_stat_1, focus_stat_2, " +
+                    "day_start_hour, equipped_title_id, theme_id, onboarding_done, owned_equipment, injury_mode, health_enabled) " +
+                    "VALUES ('me', 'h1', 'Assis', 0, '2026-10-18', 'STR', 'INT', 4, 'veteran', 'default', 1, '', 0, 0)",
+            )
+        }
+
+        val db = Room.databaseBuilder(context, AwakenDatabase::class.java, path)
+            .addMigrations(*ALL_MIGRATIONS)
+            .allowMainThreadQueries()
+            .build()
+        try {
+            val profile = db.hunterDao().getProfile()
+            assertThat(profile?.name).isEqualTo("Assis")
+            assertThat(profile?.equippedTitleId).isEqualTo("veteran")
+            assertThat(profile?.equippedFrameId).isNull()
+            assertThat(profile?.equippedSigilId).isNull()
+            assertThat(db.openHelper.readableDatabase.version).isEqualTo(3)
         } finally {
             db.close()
         }

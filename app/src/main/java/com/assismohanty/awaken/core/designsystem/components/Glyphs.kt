@@ -144,6 +144,65 @@ object AwakenGlyphs {
         }
     }
 
+    // Hunter sigils (Vault, GD §9.2): eight line badges; flame and hourglass reuse the HUD glyphs.
+    val Blade: ImageVector by lazy {
+        glyph("Blade") {
+            moveTo(12f, 2f); lineTo(15f, 14f); lineTo(12f, 16f); lineTo(9f, 14f); close()
+            moveTo(7f, 16f); lineTo(17f, 16f)
+            moveTo(12f, 16f); lineTo(12f, 22f)
+        }
+    }
+
+    val Eye: ImageVector by lazy {
+        glyph("Eye") {
+            moveTo(2f, 12f); lineTo(12f, 5f); lineTo(22f, 12f); lineTo(12f, 19f); close()
+            moveTo(9f, 12f); lineTo(12f, 9f); lineTo(15f, 12f); lineTo(12f, 15f); close()
+        }
+    }
+
+    val Wolf: ImageVector by lazy {
+        glyph("Wolf") {
+            moveTo(4f, 4f); lineTo(9f, 8f); lineTo(15f, 8f); lineTo(20f, 4f); lineTo(19f, 13f)
+            lineTo(14f, 20f); lineTo(12f, 21f); lineTo(10f, 20f); lineTo(5f, 13f); close()
+            moveTo(8f, 12f); lineTo(10f, 13f)
+            moveTo(16f, 12f); lineTo(14f, 13f)
+        }
+    }
+
+    val Crown: ImageVector by lazy {
+        glyph("Crown") {
+            moveTo(3f, 18f); lineTo(3f, 8f); lineTo(8f, 12f); lineTo(12f, 5f); lineTo(16f, 12f)
+            lineTo(21f, 8f); lineTo(21f, 18f); close()
+        }
+    }
+
+    val Star: ImageVector by lazy {
+        glyph("Star") {
+            moveTo(12f, 2f); lineTo(14f, 10f); lineTo(22f, 12f); lineTo(14f, 14f)
+            lineTo(12f, 22f); lineTo(10f, 14f); lineTo(2f, 12f); lineTo(10f, 10f); close()
+        }
+    }
+
+    val Gate: ImageVector by lazy {
+        glyph("Gate") {
+            moveTo(5f, 21f); lineTo(5f, 8f); lineTo(12f, 3f); lineTo(19f, 8f); lineTo(19f, 21f)
+            moveTo(9f, 21f); lineTo(9f, 12f); lineTo(15f, 12f); lineTo(15f, 21f)
+        }
+    }
+
+    /** Glyph for a sigil id from the shop catalogue; null for an id this build doesn't know. */
+    fun sigil(sigilId: String): ImageVector? = when (sigilId) {
+        "sigil_blade" -> Blade
+        "sigil_flame" -> Flame
+        "sigil_eye" -> Eye
+        "sigil_wolf" -> Wolf
+        "sigil_crown" -> Crown
+        "sigil_hourglass" -> Hourglass
+        "sigil_star" -> Star
+        "sigil_gate" -> Gate
+        else -> null
+    }
+
     fun stat(stat: Stat): ImageVector = when (stat) {
         Stat.STR -> Strength
         Stat.INT -> Intelligence

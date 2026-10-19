@@ -1,5 +1,6 @@
 package com.assismohanty.awaken.core.designsystem.components
 
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -36,6 +37,9 @@ data class HunterHeaderModel(
     val xpForLevel: Long,
     val streak: Int,
     val gold: Long,
+    /** Equipped Vault cosmetics (GD §9.2): a sigil badge beside the name and a frame around the name block. */
+    val frameId: String? = null,
+    val sigilId: String? = null,
 )
 
 /** Crest, name, title, level, XP bar, streak flame and gold (DESIGN_SYSTEM §3, §4.2). [large] is the Status variant. */
@@ -47,8 +51,25 @@ fun HunterHeader(model: HunterHeaderModel, modifier: Modifier = Modifier, large:
     Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
             RankCrest(model.rank, if (large) dimens.crestLarge else dimens.crestSmall)
-            Column(modifier = Modifier.weight(1f)) {
-                Text(model.name, style = type.title, color = colors.bone, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            val frameModifier = model.frameId?.let { frame ->
+                Modifier
+                    .border(dimens.hairline, colors.frame(frame), AwakenTheme.shapes.button)
+                    .padding(horizontal = Spacing.xs, vertical = Spacing.xxs)
+            } ?: Modifier
+            Column(modifier = Modifier.weight(1f).then(frameModifier)) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.xxs)) {
+                    model.sigilId?.let { sigilId ->
+                        AwakenGlyphs.sigil(sigilId)?.let { glyph ->
+                            Icon(
+                                imageVector = glyph,
+                                contentDescription = shopItemNameRes(sigilId)?.let { stringResource(it) },
+                                tint = colors.system,
+                                modifier = Modifier.size(dimens.iconSmall),
+                            )
+                        }
+                    }
+                    Text(model.name, style = type.title, color = colors.bone, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                }
                 model.title?.let { Text(it, style = type.label, color = colors.mist) }
             }
             Counter(

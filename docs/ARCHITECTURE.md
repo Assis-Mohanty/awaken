@@ -69,7 +69,7 @@ All IDs are `String` UUIDs unless noted. Timestamps `Long` epoch millis UTC. `ga
 ```sql
 hunter_profile(id PK='me', hunter_id,                 -- hunter_id: random UUID, seeds generation (GD §6.3)
                name, created_at, first_game_date, focus_stat_1, focus_stat_2, day_start_hour,
-               reminder_time NULL, equipped_title_id NULL, theme_id, onboarding_done,
+               reminder_time NULL, equipped_title_id NULL, theme_id, equipped_frame_id NULL, equipped_sigil_id NULL, onboarding_done,
                owned_equipment TEXT,                 -- comma-separated equipment ids (GD §6.3 filter)
                injury_mode BOOL, health_enabled BOOL, last_recalibrated_on NULL)
 
@@ -128,7 +128,7 @@ UNIQUE with nullable columns: SQLite treats NULLs as distinct → store `''` ins
 
 Ledger sourceIds: QUEST/GATE → completionId; UNDO → the undone row's sourceId; DAY_CLEAR and SHIELD_USE → game_date; ACHIEVEMENT → achievement id; SHOP → purchase UUID (rerolls: `reroll:<game_date>#n`).
 
-Migrations: `exportSchema = true`, schemas committed under `app/schemas/`. Every schema change bumps the version and adds a `Migration` (`core/data/db/Migrations.kt`, listed in `ALL_MIGRATIONS`) plus a case in `MigrationTest`, which builds the old database from its exported JSON (the schemas are debug-only assets) and opens it with the current Room, so Room validates the result. (`MigrationTestHelper` is not used: its `createDatabase` rejects Robolectric database paths on Windows.) Current version: 2 (v1→v2 rebuilt the then-empty `gate_run` for Focus Gates). **No destructive fallback, ever: hunters never lose data.**
+Migrations: `exportSchema = true`, schemas committed under `app/schemas/`. Every schema change bumps the version and adds a `Migration` (`core/data/db/Migrations.kt`, listed in `ALL_MIGRATIONS`) plus a case in `MigrationTest`, which builds the old database from its exported JSON (the schemas are debug-only assets) and opens it with the current Room, so Room validates the result. (`MigrationTestHelper` is not used: its `createDatabase` rejects Robolectric database paths on Windows.) Current version: 3 (v1→v2 rebuilt the then-empty `gate_run` for Focus Gates; v2→v3 added `hunter_profile.equipped_frame_id` and `equipped_sigil_id` for the Vault). **No destructive fallback, ever: hunters never lose data.**
 
 ## 3. Core flows
 

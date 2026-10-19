@@ -46,6 +46,11 @@ sealed interface UserMessage {
     data class RerollGold(val cost: Int) : UserMessage
     data object RerollNone : UserMessage
     data object ShareFailed : UserMessage
+    data class VaultBought(val itemId: String) : UserMessage
+    data class VaultEquipped(val itemId: String) : UserMessage
+    data object VaultDuplicate : UserMessage
+    data object VaultNoFragments : UserMessage
+    data object VaultPoolEmpty : UserMessage
     data object Error : UserMessage
 }
 

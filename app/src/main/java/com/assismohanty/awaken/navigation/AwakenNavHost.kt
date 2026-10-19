@@ -41,7 +41,7 @@ import com.assismohanty.awaken.feature.quest.RewardHost
 import com.assismohanty.awaken.feature.status.StatusRoute as StatusEntry
 import com.assismohanty.awaken.feature.today.TodayRoute as TodayEntry
 import com.assismohanty.awaken.feature.trial.TrialDetailRoute as TrialDetailEntry
-import com.assismohanty.awaken.feature.vault.VaultScreen
+import com.assismohanty.awaken.feature.vault.VaultRoute as VaultEntry
 
 // Feature `*Route` composables are imported as `*Entry`: the serializable route types here share their names.
 
@@ -144,7 +144,7 @@ private fun MainScaffold(
                 }
                 composable<GatesRoute> { GatesEntry() }
                 composable<StatusRoute> { StatusEntry() }
-                composable<VaultRoute> { VaultScreen() }
+                composable<VaultRoute> { VaultEntry() }
                 if (DebugEntry.ENABLED) {
                     composable<DebugRoute> { DebugEntry.Screen(onBack = { navController.popBackStack() }) }
                 }

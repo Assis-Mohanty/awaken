@@ -25,6 +25,10 @@ import com.assismohanty.awaken.core.domain.CreateHunterUseCase
 import com.assismohanty.awaken.core.domain.DayRefresher
 import com.assismohanty.awaken.core.domain.DayRolloverUseCase
 import com.assismohanty.awaken.core.domain.GateRunController
+import com.assismohanty.awaken.core.domain.EquipCosmeticUseCase
+import com.assismohanty.awaken.core.domain.ObserveVaultUseCase
+import com.assismohanty.awaken.core.domain.OpenRelicCacheUseCase
+import com.assismohanty.awaken.core.domain.PurchaseItemUseCase
 import com.assismohanty.awaken.core.domain.GenerateDirectiveUseCase
 import com.assismohanty.awaken.core.domain.ObserveHunterStateUseCase
 import com.assismohanty.awaken.core.domain.ObserveTodayUseCase
@@ -137,6 +141,10 @@ class TestGraph(
     val setRecoveryMode = SetRecoveryModeUseCase(db.hunterDao(), db.dayRecordDao(), transactions, clock)
     val startGate = StartGateUseCase(db.hunterDao(), db.questDao(), db.gateRunDao(), transactions, uptime, clock)
     val gateRuns = GateRunController(db.questDao(), db.gateRunDao(), completeQuest, transactions, uptime, clock)
+    val purchaseItem = PurchaseItemUseCase(db.hunterDao(), db.ownedCosmeticDao(), db.trialDao(), ledger, transactions, clock)
+    val openRelicCache = OpenRelicCacheUseCase(db.hunterDao(), db.ownedCosmeticDao(), ledger, transactions, clock)
+    val equipCosmetic = EquipCosmeticUseCase(db.hunterDao(), db.ownedCosmeticDao())
+    val observeVault = ObserveVaultUseCase(db.hunterDao(), db.ownedCosmeticDao(), db.trialDao(), ledger)
 
     fun today(): LocalDate = clock.gameDate(GameDay.DEFAULT_DAY_START_HOUR)
 
@@ -160,6 +168,18 @@ class TestGraph(
         )
         db.questDao().insertAll(listOf(quest))
         return quest
+    }
+
+    /** Test-only faucet: a GOLD or FRAGMENT credit with its own idempotency key. */
+    suspend fun grant(kind: LedgerKind, amount: Long, key: String) {
+        ledger.insertIdempotent(
+            listOf(
+                LedgerEntryEntity(
+                    kind = kind, delta = amount, sourceType = SourceType.ACHIEVEMENT, sourceId = key,
+                    gameDate = today(), createdAt = clock.now(),
+                ),
+            ),
+        )
     }
 
     suspend fun grantShield() {
