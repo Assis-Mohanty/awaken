@@ -17,7 +17,11 @@ class BackupFiles @Inject constructor(
     @IoDispatcher private val ioDispatcher: CoroutineDispatcher,
 ) {
     suspend fun write(uri: Uri, text: String) = withContext(ioDispatcher) {
-        val out = checkNotNull(context.contentResolver.openOutputStream(uri, "wt")) { "No output stream for $uri" }
+        // "wt" truncates an existing file; some document providers only accept "w".
+        val resolver = context.contentResolver
+        val out = checkNotNull(runCatching { resolver.openOutputStream(uri, "wt") }.getOrNull() ?: resolver.openOutputStream(uri, "w")) {
+            "No output stream for $uri"
+        }
         out.use { it.write(text.toByteArray(Charsets.UTF_8)) }
     }
 

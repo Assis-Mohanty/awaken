@@ -99,7 +99,7 @@ private fun TrialContent(state: TrialDetailUiState, onEvent: (TrialDetailEvent) 
     val formatter = DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).withLocale(LocalConfiguration.current.locales[0])
     SystemWindow(
         title = stringResource(R.string.trial_available, state.rank.name),
-        accent = colors.rank(state.rank),
+        accent = AwakenTheme.rankAccent(state.rank),
         headerTrailing = { RankCrest(rank = state.rank, size = AwakenTheme.dimens.crestSmall) },
     ) {
         val start = state.start

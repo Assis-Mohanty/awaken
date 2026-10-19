@@ -163,7 +163,7 @@ fun StatusScreen(
 @Composable
 private fun RadarWindow(state: StatusUiState) {
     val colors = AwakenTheme.colors
-    SystemWindow(title = stringResource(R.string.status_window_radar), accent = colors.rank(state.rank), reveal = false) {
+    SystemWindow(title = stringResource(R.string.status_window_radar), accent = AwakenTheme.rankAccent(state.rank), reveal = false) {
         Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
             RadarChart(values = state.radarNow, maxValue = state.radarMax, previous = state.radarLastWeek)
         }
@@ -175,7 +175,7 @@ private fun RadarWindow(state: StatusUiState) {
 private fun StatsWindow(rank: Rank, stats: List<StatProgress>) {
     val colors = AwakenTheme.colors
     val type = AwakenTheme.type
-    SystemWindow(title = stringResource(R.string.status_window_stats), accent = colors.rank(rank), reveal = false) {
+    SystemWindow(title = stringResource(R.string.status_window_stats), accent = AwakenTheme.rankAccent(rank), reveal = false) {
         Column(verticalArrangement = Arrangement.spacedBy(Spacing.md)) {
             stats.forEach { stat ->
                 Column(verticalArrangement = Arrangement.spacedBy(Spacing.xxs)) {
@@ -194,7 +194,7 @@ private fun StatsWindow(rank: Rank, stats: List<StatProgress>) {
 private fun ActivityWindow(state: StatusUiState, onEvent: (StatusEvent) -> Unit) {
     val colors = AwakenTheme.colors
     val type = AwakenTheme.type
-    SystemWindow(title = stringResource(R.string.status_window_activity), accent = colors.rank(state.rank), reveal = false) {
+    SystemWindow(title = stringResource(R.string.status_window_activity), accent = AwakenTheme.rankAccent(state.rank), reveal = false) {
         Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
             Heatmap(days = state.heatmap, onDayClick = { onEvent(StatusEvent.SelectDay(it.date)) })
         }
@@ -227,7 +227,7 @@ private fun AchievementsWindow(
     val colors = AwakenTheme.colors
     SystemWindow(
         title = stringResource(R.string.status_window_achievements),
-        accent = colors.rank(rank),
+        accent = AwakenTheme.rankAccent(rank),
         reveal = false,
         headerTrailing = {
             Text(
@@ -289,7 +289,7 @@ private fun AchievementCell(entry: AchievementEntry, equipped: Boolean, onEvent:
 private fun ChaptersWindow(rank: Rank, chapters: List<ChapterEntry>, onEvent: (StatusEvent) -> Unit) {
     val colors = AwakenTheme.colors
     val type = AwakenTheme.type
-    SystemWindow(title = stringResource(R.string.status_window_chapters), accent = colors.rank(rank), reveal = false) {
+    SystemWindow(title = stringResource(R.string.status_window_chapters), accent = AwakenTheme.rankAccent(rank), reveal = false) {
         chapters.forEachIndexed { index, entry ->
             val number = stringResource(R.string.status_chapter_number, index + 1)
             val readLabel = stringResource(R.string.action_read_chapter)
@@ -330,7 +330,7 @@ private fun WeeklyWindow(state: StatusUiState, onEvent: (StatusEvent) -> Unit) {
     val colors = AwakenTheme.colors
     val type = AwakenTheme.type
     val report = state.weeklyReport ?: return
-    SystemWindow(title = stringResource(R.string.status_window_weekly), accent = colors.rank(state.rank), reveal = false) {
+    SystemWindow(title = stringResource(R.string.status_window_weekly), accent = AwakenTheme.rankAccent(state.rank), reveal = false) {
         Text(
             stringResource(R.string.status_weekly_range, formatDate(report.week.monday), formatDate(report.week.sunday)),
             style = type.caption,

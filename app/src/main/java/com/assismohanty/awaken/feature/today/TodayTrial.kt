@@ -49,7 +49,7 @@ fun TrialWindow(
     }
     SystemWindow(
         title = stringResource(R.string.trial_available, rank.name),
-        accent = colors.rank(rank),
+        accent = AwakenTheme.rankAccent(rank),
         modifier = modifier,
         headerTrailing = { RankCrest(rank = rank, size = AwakenTheme.dimens.icon) },
     ) {

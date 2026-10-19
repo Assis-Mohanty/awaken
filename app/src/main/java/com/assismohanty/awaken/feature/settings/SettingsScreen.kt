@@ -28,6 +28,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -391,7 +392,7 @@ private fun textFieldColors() = OutlinedTextFieldDefaults.colors(
 
 @Composable
 private fun formatTime(time: LocalTime): String =
-    DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT).format(time)
+    DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT).withLocale(LocalConfiguration.current.locales[0]).format(time)
 
 private val DEFAULT_REMINDER: LocalTime = LocalTime.of(8, 0)
 private const val BACKUP_MIME = "application/json"

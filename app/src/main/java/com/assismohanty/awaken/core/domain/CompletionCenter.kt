@@ -2,6 +2,7 @@ package com.assismohanty.awaken.core.domain
 
 import com.assismohanty.awaken.core.data.export.ImportProblem
 import com.assismohanty.awaken.core.data.repo.Notice
+import com.assismohanty.awaken.engine.BuyCheck
 import com.assismohanty.awaken.engine.GateCollapseReason
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -50,6 +51,7 @@ sealed interface UserMessage {
     data class VaultBought(val itemId: String) : UserMessage
     data class VaultEquipped(val itemId: String) : UserMessage
     data object VaultDuplicate : UserMessage
+    data class VaultRejected(val check: BuyCheck) : UserMessage
     data object VaultNoFragments : UserMessage
     data object VaultPoolEmpty : UserMessage
     data object DayStartBlocked : UserMessage

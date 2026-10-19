@@ -384,6 +384,8 @@
     <string name="msg_vault_duplicate">That purchase was already completed.</string>
     <string name="msg_vault_no_fragments">You need 10 fragments to open a cache.</string>
     <string name="msg_vault_pool_empty">You own every sigil and frame. Your fragments are kept.</string>
+    <string name="cd_vault_action">%1$s: %2$s</string>
+    <string name="msg_vault_already_owned">You already own that.</string>
 
     <!-- Settings (Phase 10b) -->
     <string name="settings_title">SETTINGS</string>

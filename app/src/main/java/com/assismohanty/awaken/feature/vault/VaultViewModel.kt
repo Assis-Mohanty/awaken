@@ -116,8 +116,9 @@ class VaultViewModel @Inject constructor(
                 when (val result = purchaseItem(pending.state.item.id, pending.purchaseId)) {
                     is PurchaseResult.Purchased -> completionCenter.message(UserMessage.VaultBought(result.item.id))
                     PurchaseResult.Duplicate -> completionCenter.message(UserMessage.VaultDuplicate)
-                    // The button was enabled from a stale state; the refreshed rows now show why.
-                    is PurchaseResult.Rejected, PurchaseResult.UnknownItem, PurchaseResult.NoHunter ->
+                    // The button can be enabled from a stale state (gold spent elsewhere); say exactly why it failed.
+                    is PurchaseResult.Rejected -> completionCenter.message(UserMessage.VaultRejected(result.check))
+                    PurchaseResult.UnknownItem, PurchaseResult.NoHunter ->
                         completionCenter.message(UserMessage.Error)
                 }
             } catch (e: CancellationException) {

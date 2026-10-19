@@ -130,7 +130,7 @@ fun TodayScreen(
 
             SystemWindow(
                 title = stringResource(if (state.cleared) R.string.system_title_directive_cleared else R.string.system_title_daily_directive),
-                accent = clearedPulseAccent(state.cleared, base = colors.rank(state.rank)),
+                accent = clearedPulseAccent(state.cleared, base = AwakenTheme.rankAccent(state.rank)),
                 headerTrailing = {
                     Text(
                         text = stringResource(R.string.today_progress, state.completed, state.total),

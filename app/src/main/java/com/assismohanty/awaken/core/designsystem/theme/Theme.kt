@@ -8,13 +8,14 @@ import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.ui.graphics.Color
+import com.assismohanty.awaken.engine.model.Rank
 
 /**
  * Dark-only in v1 (DESIGN_SYSTEM.md). No dynamic colour: the System has one look.
  *
  * @param reduceMotion the in-app toggle; the system "Remove animations" setting is OR-ed in (§2.5).
  * @param hapticsEnabled the in-app toggle (§2.6).
- * @param themeId the equipped Vault theme (GD §9.2); re-tints the background glow and window accents only.
+ * @param themeId the equipped Vault theme (GD §9.2); re-tints the background glow and rank-coloured window accents ([AwakenTheme.rankAccent]) only.
  */
 @Composable
 fun AwakenTheme(
@@ -84,6 +85,11 @@ object AwakenTheme {
     val haptics: Haptics @Composable @ReadOnlyComposable get() = LocalHaptics.current
     /** The equipped theme accent, or null on the default theme. */
     val themeTint: Color? @Composable @ReadOnlyComposable get() = LocalThemeTint.current
+
+    /** Accent for a rank-coloured window: the equipped theme tint (GD §9.2), else the rank colour. Never for the crest. */
+    @Composable
+    @ReadOnlyComposable
+    fun rankAccent(rank: Rank): Color = LocalThemeTint.current ?: LocalAwakenColors.current.rank(rank)
 }
 
 val LocalThemeTint = compositionLocalOf<Color?> { null }

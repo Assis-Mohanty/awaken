@@ -25,6 +25,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.window.Dialog
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -88,7 +90,7 @@ fun VaultScreen(state: VaultUiState, onEvent: (VaultEvent) -> Unit, modifier: Mo
 private fun BalanceWindow(state: VaultUiState) {
     val colors = AwakenTheme.colors
     val type = AwakenTheme.type
-    SystemWindow(title = stringResource(R.string.vault_window_balance), accent = colors.rank(state.rank), reveal = false) {
+    SystemWindow(title = stringResource(R.string.vault_window_balance), accent = AwakenTheme.rankAccent(state.rank), reveal = false) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
             Icon(AwakenGlyphs.Coin, contentDescription = null, tint = colors.crit, modifier = Modifier.size(AwakenTheme.dimens.icon))
             Text(stringResource(R.string.vault_gold, formatCount(state.gold)), style = type.numeric, color = colors.bone)
@@ -101,7 +103,7 @@ private fun BalanceWindow(state: VaultUiState) {
 private fun CacheWindow(state: VaultUiState, onEvent: (VaultEvent) -> Unit) {
     val colors = AwakenTheme.colors
     val type = AwakenTheme.type
-    SystemWindow(title = stringResource(R.string.vault_window_cache), accent = colors.rank(state.rank), reveal = false) {
+    SystemWindow(title = stringResource(R.string.vault_window_cache), accent = AwakenTheme.rankAccent(state.rank), reveal = false) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
             Icon(AwakenGlyphs.Fragment, contentDescription = null, tint = colors.system, modifier = Modifier.size(AwakenTheme.dimens.icon))
             Text(
@@ -127,7 +129,7 @@ private fun CacheWindow(state: VaultUiState, onEvent: (VaultEvent) -> Unit) {
 @Composable
 private fun ShieldWindow(state: VaultUiState, onEvent: (VaultEvent) -> Unit) {
     val colors = AwakenTheme.colors
-    SystemWindow(title = stringResource(R.string.vault_window_shield), accent = colors.rank(state.rank), reveal = false) {
+    SystemWindow(title = stringResource(R.string.vault_window_shield), accent = AwakenTheme.rankAccent(state.rank), reveal = false) {
         Text(stringResource(R.string.vault_shield_body), style = AwakenTheme.type.caption, color = colors.mist)
         state.shield?.let { ItemRow(it, state, onEvent) }
         Text(stringResource(R.string.vault_reroll_body), style = AwakenTheme.type.caption, color = colors.mist)
@@ -137,7 +139,7 @@ private fun ShieldWindow(state: VaultUiState, onEvent: (VaultEvent) -> Unit) {
 @Composable
 private fun ThemesWindow(state: VaultUiState, onEvent: (VaultEvent) -> Unit) {
     val colors = AwakenTheme.colors
-    SystemWindow(title = stringResource(R.string.vault_window_themes), accent = colors.rank(state.rank), reveal = false) {
+    SystemWindow(title = stringResource(R.string.vault_window_themes), accent = AwakenTheme.rankAccent(state.rank), reveal = false) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -161,7 +163,7 @@ private fun ThemesWindow(state: VaultUiState, onEvent: (VaultEvent) -> Unit) {
 
 @Composable
 private fun ItemsWindow(titleRes: Int, items: List<VaultItemState>, state: VaultUiState, onEvent: (VaultEvent) -> Unit) {
-    SystemWindow(title = stringResource(titleRes), accent = AwakenTheme.colors.rank(state.rank), reveal = false) {
+    SystemWindow(title = stringResource(titleRes), accent = AwakenTheme.rankAccent(state.rank), reveal = false) {
         items.forEach { ItemRow(it, state, onEvent) }
     }
 }
@@ -192,23 +194,42 @@ private fun ItemRow(item: VaultItemState, state: VaultUiState, onEvent: (VaultEv
         }
         val equippable = item.item.kind != ShopKind.SHIELD
         when {
-            item.equipped -> SecondaryButton(
-                text = stringResource(R.string.action_unequip),
-                onClick = { onEvent(VaultEvent.Equip(item.item.kind, null)) },
-            )
-            item.owned && equippable -> SecondaryButton(
-                text = stringResource(R.string.action_equip),
-                onClick = { onEvent(VaultEvent.Equip(item.item.kind, item.item.id)) },
-            )
-            else -> PrimaryButton(
-                text = stringResource(R.string.action_buy),
-                onClick = { onEvent(VaultEvent.Buy(item.item.id)) },
-                enabled = item.check == BuyCheck.Buyable && !state.busy,
-            )
+            item.equipped -> {
+                val action = stringResource(R.string.action_unequip)
+                SecondaryButton(
+                    text = action,
+                    onClick = { onEvent(VaultEvent.Equip(item.item.kind, null)) },
+                    modifier = Modifier.actionLabel(action, name),
+                )
+            }
+            item.owned && equippable -> {
+                val action = stringResource(R.string.action_equip)
+                SecondaryButton(
+                    text = action,
+                    onClick = { onEvent(VaultEvent.Equip(item.item.kind, item.item.id)) },
+                    modifier = Modifier.actionLabel(action, name),
+                )
+            }
+            else -> {
+                val action = stringResource(R.string.action_buy)
+                PrimaryButton(
+                    text = action,
+                    onClick = { onEvent(VaultEvent.Buy(item.item.id)) },
+                    enabled = item.check == BuyCheck.Buyable && !state.busy,
+                    modifier = Modifier.actionLabel(action, name),
+                )
+            }
         }
     }
 }
 
+
+/** Every row has a "Buy"/"Equip" button, so TalkBack hears which item it acts on: "Buy: Iron Frame". */
+@Composable
+private fun Modifier.actionLabel(action: String, itemName: String): Modifier {
+    val label = stringResource(R.string.cd_vault_action, action, itemName)
+    return semantics { contentDescription = label }
+}
 @Composable
 private fun blockReason(check: BuyCheck): String? = when (check) {
     BuyCheck.Buyable, BuyCheck.AlreadyOwned -> null

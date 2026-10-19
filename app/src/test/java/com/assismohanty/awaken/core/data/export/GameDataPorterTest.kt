@@ -191,4 +191,27 @@ class GameDataPorterTest {
         assertThat(target.ledger.balances().xpTotal).isGreaterThan(before)
         assertThat(target.db.hunterDao().getTiers().map { it.stat }).containsExactlyElementsIn(Stat.entries)
     }
+
+    @Test
+    fun anUnknownEnumValueIsRejectedBeforeItCanCrashTheApp() = runTest {
+        playSomeGame()
+        val good = source.porter.export()
+        val badStatus = mutateTable(good, "quest_instance") { rows ->
+            rows.mapIndexed { i, row -> if (i == 0) JsonObject(row + ("status" to JsonPrimitive("HALF_DONE"))) else row }
+        }
+        assertRejectedAndUntouched(badStatus, ImportProblem.InvalidRow("quest_instance"))
+        val badStat = mutateTable(good, "stat_tier") { rows ->
+            rows.mapIndexed { i, row -> if (i == 0) JsonObject(row + ("stat" to JsonPrimitive("LUCK"))) else row }
+        }
+        assertRejectedAndUntouched(badStat, ImportProblem.InvalidRow("stat_tier"))
+    }
+
+    @Test
+    fun aProfileWithAnotherIdIsRejected() = runTest {
+        playSomeGame()
+        val otherId = mutateTable(source.porter.export(), "hunter_profile") { rows ->
+            rows.map { JsonObject(it + ("id" to JsonPrimitive("someone_else"))) }
+        }
+        assertRejectedAndUntouched(otherId, ImportProblem.NoHunter)
+    }
 }

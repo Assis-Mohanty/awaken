@@ -6,8 +6,10 @@ import com.assismohanty.awaken.R
 import com.assismohanty.awaken.core.data.export.ImportProblem
 import com.assismohanty.awaken.core.designsystem.components.shopItemNameRes
 import com.assismohanty.awaken.core.domain.UserMessage
+import com.assismohanty.awaken.engine.BuyCheck
 import com.assismohanty.awaken.engine.GateCollapseReason
 import com.assismohanty.awaken.engine.GateRules
+import java.text.NumberFormat
 import java.time.Duration
 
 /** Why a Focus Gate collapsed, e.g. "Background time 1:42 exceeded the 1:30 limit." (DESIGN_SYSTEM §4.4). */
@@ -56,6 +58,12 @@ fun UserMessage.text(resources: Resources): String = when (this) {
     is UserMessage.VaultBought -> resources.getString(R.string.msg_vault_bought, shopItemName(itemId, resources))
     is UserMessage.VaultEquipped -> resources.getString(R.string.msg_vault_equipped, shopItemName(itemId, resources))
     UserMessage.VaultDuplicate -> resources.getString(R.string.msg_vault_duplicate)
+    is UserMessage.VaultRejected -> when (val reason = check) {
+        is BuyCheck.InsufficientGold -> resources.getString(R.string.vault_missing_gold, NumberFormat.getIntegerInstance(resources.configuration.locales[0]).format(reason.missing))
+        BuyCheck.ShieldLimit -> resources.getString(R.string.vault_shield_limit)
+        is BuyCheck.RankRequired -> resources.getString(R.string.vault_requires_rank, reason.rank.name)
+        BuyCheck.AlreadyOwned, BuyCheck.Buyable -> resources.getString(R.string.msg_vault_already_owned)
+    }
     UserMessage.VaultNoFragments -> resources.getString(R.string.msg_vault_no_fragments)
     UserMessage.VaultPoolEmpty -> resources.getString(R.string.msg_vault_pool_empty)
     UserMessage.DayStartBlocked -> resources.getString(R.string.msg_day_start_blocked)
