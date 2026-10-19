@@ -71,7 +71,7 @@ hunter_profile(id PK='me', hunter_id,                 -- hunter_id: random UUID,
                name, created_at, first_game_date, focus_stat_1, focus_stat_2, day_start_hour,
                reminder_time NULL, equipped_title_id NULL, theme_id, equipped_frame_id NULL, equipped_sigil_id NULL, onboarding_done,
                owned_equipment TEXT,                 -- comma-separated equipment ids (GD §6.3 filter)
-               injury_mode BOOL, health_enabled BOOL, last_recalibrated_on NULL)
+               injury_mode BOOL, injury_tags (default impact,legs), health_enabled BOOL, last_recalibrated_on NULL)
 
 stat_tier(stat PK, tier TEXT)                         -- EASY..EXTREME, adaptive (GD §6.4)
 
@@ -128,7 +128,7 @@ UNIQUE with nullable columns: SQLite treats NULLs as distinct → store `''` ins
 
 Ledger sourceIds: QUEST/GATE → completionId; UNDO → the undone row's sourceId; DAY_CLEAR and SHIELD_USE → game_date; ACHIEVEMENT → achievement id; SHOP → purchase UUID (rerolls: `reroll:<game_date>#n`).
 
-Migrations: `exportSchema = true`, schemas committed under `app/schemas/`. Every schema change bumps the version and adds a `Migration` (`core/data/db/Migrations.kt`, listed in `ALL_MIGRATIONS`) plus a case in `MigrationTest`, which builds the old database from its exported JSON (the schemas are debug-only assets) and opens it with the current Room, so Room validates the result. (`MigrationTestHelper` is not used: its `createDatabase` rejects Robolectric database paths on Windows.) Current version: 3 (v1→v2 rebuilt the then-empty `gate_run` for Focus Gates; v2→v3 added `hunter_profile.equipped_frame_id` and `equipped_sigil_id` for the Vault). **No destructive fallback, ever: hunters never lose data.**
+Migrations: `exportSchema = true`, schemas committed under `app/schemas/`. Every schema change bumps the version and adds a `Migration` (`core/data/db/Migrations.kt`, listed in `ALL_MIGRATIONS`) plus a case in `MigrationTest`, which builds the old database from its exported JSON (the schemas are debug-only assets) and opens it with the current Room, so Room validates the result. (`MigrationTestHelper` is not used: its `createDatabase` rejects Robolectric database paths on Windows.) Current version: 4 (v1→v2 rebuilt the then-empty `gate_run` for Focus Gates; v2→v3 added `hunter_profile.equipped_frame_id` and `equipped_sigil_id` for the Vault; v3→v4 added `injury_tags` for Settings). **No destructive fallback, ever: hunters never lose data.**
 
 ## 3. Core flows
 
@@ -191,6 +191,9 @@ This avoids foreground-service-type policy declarations entirely. The process ma
 
 ### 3.9 Status & Weekly Report share
 `ObserveStatusUseCase` derives everything Status shows from Room flows: radar (current stat levels vs levels from ledger rows before this Monday), 18-week heatmap (active completions per game-day), the 32 achievements, chapters (`level ≥ unlockLevel`), and the Weekly Report with a projected recalibration. Equipping a title updates `hunter_profile.equipped_title_id` only, never the ledger. To share, `ShareCard` is laid out offscreen at 360×450dp with density 3, recorded into a `GraphicsLayer` (1080×1350px), written by `ShareImageWriter` to `cache/share/` (one file, overwritten), and handed to `ACTION_SEND` through `androidx.core.content.FileProvider` (authority `${applicationId}.share`, cache path only, with a per-share read grant). No network.
+
+### 3.10 Vault, Settings and export/import
+`PurchaseItemUseCase` and `OpenRelicCacheUseCase` each run in one transaction and are idempotent on a client-generated id (`SHOP` / `CACHE_OPEN` ledger sources). `ShopRules` (engine) owns the catalogue, prices and the deterministic cache drop. Settings edits go through `UpdateSettingsUseCase` (profile row only); haptics and reduce-motion live in a DataStore (`UiPrefsRepository`) and feed `AwakenTheme` with the equipped theme via `AppearanceViewModel`. `GameDataPorter` exports the raw rows of 12 tables as JSON (SAF, no permission, no network) and imports them atomically (ENGINE_DECISIONS #48).
 
 ## 4. State & DI
 - Hilt modules: `DatabaseModule`, `DispatchersModule` (`@IoDispatcher`, `@DefaultDispatcher`), `ClockModule` (`Clock` interface; `SystemClock` in prod, `FakeClock` in tests), `EngineModule` (provides engine objects + loaded template library).

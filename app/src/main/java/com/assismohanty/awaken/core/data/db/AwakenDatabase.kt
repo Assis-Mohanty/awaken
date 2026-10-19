@@ -28,7 +28,7 @@ import com.assismohanty.awaken.core.data.db.entity.StatTierEntity
 import com.assismohanty.awaken.core.data.db.entity.TrialEntity
 
 @Database(
-    version = 3,
+    version = AwakenDatabase.SCHEMA_VERSION,
     exportSchema = true,
     entities = [
         HunterProfileEntity::class,
@@ -61,5 +61,8 @@ abstract class AwakenDatabase : RoomDatabase() {
 
     companion object {
         const val NAME = "awaken.db"
+
+        /** Also the export format version: an export is only importable into the schema it was written from. */
+        const val SCHEMA_VERSION = 4
     }
 }

@@ -1,5 +1,6 @@
 package com.assismohanty.awaken.core.domain
 
+import com.assismohanty.awaken.core.data.export.ImportProblem
 import com.assismohanty.awaken.core.data.repo.Notice
 import com.assismohanty.awaken.engine.GateCollapseReason
 import javax.inject.Inject
@@ -51,6 +52,12 @@ sealed interface UserMessage {
     data object VaultDuplicate : UserMessage
     data object VaultNoFragments : UserMessage
     data object VaultPoolEmpty : UserMessage
+    data object DayStartBlocked : UserMessage
+    data object ExportDone : UserMessage
+    data object ExportFailed : UserMessage
+    data object ImportUnreadable : UserMessage
+    data class ImportRejected(val problem: ImportProblem) : UserMessage
+    data object SettingsSaved : UserMessage
     data object Error : UserMessage
 }
 

@@ -41,6 +41,8 @@ data class HunterProfileEntity(
     @ColumnInfo(name = "onboarding_done") val onboardingDone: Boolean,
     @ColumnInfo(name = "owned_equipment") val ownedEquipment: Set<String> = emptySet(),
     @ColumnInfo(name = "injury_mode") val injuryMode: Boolean = false,
+    /** Template tags avoided while [injuryMode] is on (DS §4.7); defaults to impact + legs (ENGINE_DECISIONS #46). */
+    @ColumnInfo(name = "injury_tags", defaultValue = "impact,legs") val injuryTags: Set<String> = setOf("impact", "legs"),
     @ColumnInfo(name = "health_enabled") val healthEnabled: Boolean = false,
     @ColumnInfo(name = "last_recalibrated_on") val lastRecalibratedOn: LocalDate? = null,
 ) {

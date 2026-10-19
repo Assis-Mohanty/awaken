@@ -3,6 +3,7 @@ package com.assismohanty.awaken.feature.quest
 import android.content.res.Resources
 import android.text.format.DateUtils
 import com.assismohanty.awaken.R
+import com.assismohanty.awaken.core.data.export.ImportProblem
 import com.assismohanty.awaken.core.designsystem.components.shopItemNameRes
 import com.assismohanty.awaken.core.domain.UserMessage
 import com.assismohanty.awaken.engine.GateCollapseReason
@@ -57,5 +58,19 @@ fun UserMessage.text(resources: Resources): String = when (this) {
     UserMessage.VaultDuplicate -> resources.getString(R.string.msg_vault_duplicate)
     UserMessage.VaultNoFragments -> resources.getString(R.string.msg_vault_no_fragments)
     UserMessage.VaultPoolEmpty -> resources.getString(R.string.msg_vault_pool_empty)
+    UserMessage.DayStartBlocked -> resources.getString(R.string.msg_day_start_blocked)
+    UserMessage.ExportDone -> resources.getString(R.string.msg_export_done)
+    UserMessage.ExportFailed -> resources.getString(R.string.msg_export_failed)
+    UserMessage.ImportUnreadable -> resources.getString(R.string.msg_import_unreadable)
+    is UserMessage.ImportRejected -> resources.getString(problem.messageRes())
+    UserMessage.SettingsSaved -> resources.getString(R.string.msg_settings_saved)
     UserMessage.Error -> resources.getString(R.string.msg_error)
+}
+
+private fun ImportProblem.messageRes(): Int = when (this) {
+    ImportProblem.NotAwakenFile, ImportProblem.Malformed -> R.string.msg_import_not_backup
+    is ImportProblem.NewerVersion -> R.string.msg_import_newer
+    is ImportProblem.OlderVersion -> R.string.msg_import_older
+    is ImportProblem.MissingTable, ImportProblem.NoHunter, is ImportProblem.InvalidLedgerRow, is ImportProblem.InvalidRow ->
+        R.string.msg_import_damaged
 }

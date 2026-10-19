@@ -26,8 +26,8 @@ class MainActivity : ComponentActivity() {
             navigationBarStyle = SystemBarStyle.dark(Color.TRANSPARENT),
         )
         setContent {
-            val themeId by appearance.themeId.collectAsStateWithLifecycle()
-            AwakenTheme(themeId = themeId) {
+            val look by appearance.appearance.collectAsStateWithLifecycle()
+            AwakenTheme(reduceMotion = look.reduceMotion, hapticsEnabled = look.hapticsEnabled, themeId = look.themeId) {
                 AwakenNavHost()
             }
         }

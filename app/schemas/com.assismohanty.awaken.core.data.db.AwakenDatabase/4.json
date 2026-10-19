@@ -1,0 +1,898 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 4,
+    "identityHash": "9d9dd7ce81abf78a85674c8154032f40",
+    "entities": [
+      {
+        "tableName": "hunter_profile",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `hunter_id` TEXT NOT NULL, `name` TEXT NOT NULL, `created_at` INTEGER NOT NULL, `first_game_date` TEXT NOT NULL, `focus_stat_1` TEXT NOT NULL, `focus_stat_2` TEXT NOT NULL, `day_start_hour` INTEGER NOT NULL, `reminder_time` TEXT, `equipped_title_id` TEXT, `theme_id` TEXT NOT NULL, `equipped_frame_id` TEXT, `equipped_sigil_id` TEXT, `onboarding_done` INTEGER NOT NULL, `owned_equipment` TEXT NOT NULL, `injury_mode` INTEGER NOT NULL, `injury_tags` TEXT NOT NULL DEFAULT 'impact,legs', `health_enabled` INTEGER NOT NULL, `last_recalibrated_on` TEXT, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "hunterId",
+            "columnName": "hunter_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "name",
+            "columnName": "name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "created_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "firstGameDate",
+            "columnName": "first_game_date",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "focusStat1",
+            "columnName": "focus_stat_1",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "focusStat2",
+            "columnName": "focus_stat_2",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "dayStartHour",
+            "columnName": "day_start_hour",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "reminderTime",
+            "columnName": "reminder_time",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "equippedTitleId",
+            "columnName": "equipped_title_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "themeId",
+            "columnName": "theme_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "equippedFrameId",
+            "columnName": "equipped_frame_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "equippedSigilId",
+            "columnName": "equipped_sigil_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "onboardingDone",
+            "columnName": "onboarding_done",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "ownedEquipment",
+            "columnName": "owned_equipment",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "injuryMode",
+            "columnName": "injury_mode",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "injuryTags",
+            "columnName": "injury_tags",
+            "affinity": "TEXT",
+            "notNull": true,
+            "defaultValue": "'impact,legs'"
+          },
+          {
+            "fieldPath": "healthEnabled",
+            "columnName": "health_enabled",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lastRecalibratedOn",
+            "columnName": "last_recalibrated_on",
+            "affinity": "TEXT"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        }
+      },
+      {
+        "tableName": "stat_tier",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`stat` TEXT NOT NULL, `tier` TEXT NOT NULL, PRIMARY KEY(`stat`))",
+        "fields": [
+          {
+            "fieldPath": "stat",
+            "columnName": "stat",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "tier",
+            "columnName": "tier",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "stat"
+          ]
+        }
+      },
+      {
+        "tableName": "quest_instance",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `game_date` TEXT NOT NULL, `type` TEXT NOT NULL, `template_id` TEXT, `habit_id` TEXT, `stat` TEXT NOT NULL, `secondary_stat` TEXT, `title` TEXT NOT NULL, `description` TEXT NOT NULL, `unit` TEXT NOT NULL, `target` INTEGER NOT NULL, `difficulty` TEXT NOT NULL, `verification` TEXT NOT NULL, `min_duration_sec` INTEGER NOT NULL, `status` TEXT NOT NULL, `started_at` INTEGER, `completed_at` INTEGER, `created_at` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "gameDate",
+            "columnName": "game_date",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "type",
+            "columnName": "type",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "templateId",
+            "columnName": "template_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "habitId",
+            "columnName": "habit_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "stat",
+            "columnName": "stat",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "secondaryStat",
+            "columnName": "secondary_stat",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "title",
+            "columnName": "title",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "description",
+            "columnName": "description",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "unit",
+            "columnName": "unit",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "target",
+            "columnName": "target",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "difficulty",
+            "columnName": "difficulty",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "verification",
+            "columnName": "verification",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "minDurationSec",
+            "columnName": "min_duration_sec",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "status",
+            "columnName": "status",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "startedAt",
+            "columnName": "started_at",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "completedAt",
+            "columnName": "completed_at",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "created_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_quest_instance_game_date",
+            "unique": false,
+            "columnNames": [
+              "game_date"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_quest_instance_game_date` ON `${TABLE_NAME}` (`game_date`)"
+          },
+          {
+            "name": "index_quest_instance_status",
+            "unique": false,
+            "columnNames": [
+              "status"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_quest_instance_status` ON `${TABLE_NAME}` (`status`)"
+          }
+        ]
+      },
+      {
+        "tableName": "completion",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `quest_instance_id` TEXT NOT NULL, `attempt` INTEGER NOT NULL, `game_date` TEXT NOT NULL, `quest_type` TEXT NOT NULL, `stat` TEXT NOT NULL, `verification_source` TEXT NOT NULL, `crit` INTEGER NOT NULL, `xp` INTEGER NOT NULL, `completed_at` INTEGER NOT NULL, `undone_at` INTEGER, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "questInstanceId",
+            "columnName": "quest_instance_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "attempt",
+            "columnName": "attempt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "gameDate",
+            "columnName": "game_date",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "questType",
+            "columnName": "quest_type",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "stat",
+            "columnName": "stat",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "verificationSource",
+            "columnName": "verification_source",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "crit",
+            "columnName": "crit",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "xp",
+            "columnName": "xp",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "completedAt",
+            "columnName": "completed_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "undoneAt",
+            "columnName": "undone_at",
+            "affinity": "INTEGER"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_completion_quest_instance_id_attempt",
+            "unique": true,
+            "columnNames": [
+              "quest_instance_id",
+              "attempt"
+            ],
+            "orders": [],
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_completion_quest_instance_id_attempt` ON `${TABLE_NAME}` (`quest_instance_id`, `attempt`)"
+          },
+          {
+            "name": "index_completion_game_date",
+            "unique": false,
+            "columnNames": [
+              "game_date"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_completion_game_date` ON `${TABLE_NAME}` (`game_date`)"
+          }
+        ]
+      },
+      {
+        "tableName": "habit",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `title` TEXT NOT NULL, `stat` TEXT NOT NULL, `difficulty` TEXT NOT NULL, `verification` TEXT NOT NULL, `days_of_week_mask` INTEGER NOT NULL, `target` INTEGER NOT NULL, `unit` TEXT NOT NULL, `active` INTEGER NOT NULL, `created_at` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "title",
+            "columnName": "title",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "stat",
+            "columnName": "stat",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "difficulty",
+            "columnName": "difficulty",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "verification",
+            "columnName": "verification",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "daysOfWeekMask",
+            "columnName": "days_of_week_mask",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "target",
+            "columnName": "target",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "unit",
+            "columnName": "unit",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "active",
+            "columnName": "active",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "created_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        }
+      },
+      {
+        "tableName": "ledger_entry",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `kind` TEXT NOT NULL, `stat` TEXT NOT NULL, `item_id` TEXT NOT NULL, `delta` INTEGER NOT NULL, `source_type` TEXT NOT NULL, `source_id` TEXT NOT NULL, `game_date` TEXT NOT NULL, `xp_source` TEXT NOT NULL, `created_at` INTEGER NOT NULL, `breakdown_json` TEXT)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "kind",
+            "columnName": "kind",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "stat",
+            "columnName": "stat",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "itemId",
+            "columnName": "item_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "delta",
+            "columnName": "delta",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sourceType",
+            "columnName": "source_type",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sourceId",
+            "columnName": "source_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "gameDate",
+            "columnName": "game_date",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "xpSource",
+            "columnName": "xp_source",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "created_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "breakdownJson",
+            "columnName": "breakdown_json",
+            "affinity": "TEXT"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_ledger_entry_source_type_source_id_kind_stat_item_id",
+            "unique": true,
+            "columnNames": [
+              "source_type",
+              "source_id",
+              "kind",
+              "stat",
+              "item_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_ledger_entry_source_type_source_id_kind_stat_item_id` ON `${TABLE_NAME}` (`source_type`, `source_id`, `kind`, `stat`, `item_id`)"
+          },
+          {
+            "name": "index_ledger_entry_game_date_xp_source",
+            "unique": false,
+            "columnNames": [
+              "game_date",
+              "xp_source"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_ledger_entry_game_date_xp_source` ON `${TABLE_NAME}` (`game_date`, `xp_source`)"
+          }
+        ]
+      },
+      {
+        "tableName": "balance_cache",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`key` TEXT NOT NULL, `value` INTEGER NOT NULL, PRIMARY KEY(`key`))",
+        "fields": [
+          {
+            "fieldPath": "key",
+            "columnName": "key",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "value",
+            "columnName": "value",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "key"
+          ]
+        }
+      },
+      {
+        "tableName": "day_record",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`game_date` TEXT NOT NULL, `cleared` INTEGER NOT NULL, `rest_day` INTEGER NOT NULL, `recovery` INTEGER NOT NULL, `outcome` TEXT, `shield_used` INTEGER NOT NULL, `penalty_issued` INTEGER NOT NULL, `finalized_at` INTEGER, PRIMARY KEY(`game_date`))",
+        "fields": [
+          {
+            "fieldPath": "gameDate",
+            "columnName": "game_date",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "cleared",
+            "columnName": "cleared",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "restDay",
+            "columnName": "rest_day",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "recovery",
+            "columnName": "recovery",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "outcome",
+            "columnName": "outcome",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "shieldUsed",
+            "columnName": "shield_used",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "penaltyIssued",
+            "columnName": "penalty_issued",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "finalizedAt",
+            "columnName": "finalized_at",
+            "affinity": "INTEGER"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "game_date"
+          ]
+        }
+      },
+      {
+        "tableName": "gate_run",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `quest_instance_id` TEXT NOT NULL, `gate_rank` TEXT NOT NULL, `stat` TEXT NOT NULL, `label` TEXT, `planned_sec` INTEGER NOT NULL, `started_at` INTEGER NOT NULL, `ended_at` INTEGER, `background_ms` INTEGER NOT NULL, `paused_at` INTEGER, `resumed_at` INTEGER, `last_stop_at` INTEGER, `last_stop_elapsed_ms` INTEGER, `boot_count` INTEGER NOT NULL, `status` TEXT NOT NULL, `collapse_reason` TEXT, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "questInstanceId",
+            "columnName": "quest_instance_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "gateRank",
+            "columnName": "gate_rank",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "stat",
+            "columnName": "stat",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "label",
+            "columnName": "label",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "plannedSec",
+            "columnName": "planned_sec",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "startedAt",
+            "columnName": "started_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "endedAt",
+            "columnName": "ended_at",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "backgroundMs",
+            "columnName": "background_ms",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "pausedAt",
+            "columnName": "paused_at",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "resumedAt",
+            "columnName": "resumed_at",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "lastStopAt",
+            "columnName": "last_stop_at",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "lastStopElapsedMs",
+            "columnName": "last_stop_elapsed_ms",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "bootCount",
+            "columnName": "boot_count",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "status",
+            "columnName": "status",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "collapseReason",
+            "columnName": "collapse_reason",
+            "affinity": "TEXT"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_gate_run_status",
+            "unique": false,
+            "columnNames": [
+              "status"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_gate_run_status` ON `${TABLE_NAME}` (`status`)"
+          },
+          {
+            "name": "index_gate_run_quest_instance_id",
+            "unique": false,
+            "columnNames": [
+              "quest_instance_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_gate_run_quest_instance_id` ON `${TABLE_NAME}` (`quest_instance_id`)"
+          }
+        ]
+      },
+      {
+        "tableName": "trial",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `target_rank` TEXT NOT NULL, `started_game_date` TEXT NOT NULL, `expires_game_date` TEXT NOT NULL, `status` TEXT NOT NULL, `ended_at` INTEGER, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "targetRank",
+            "columnName": "target_rank",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "startedGameDate",
+            "columnName": "started_game_date",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "expiresGameDate",
+            "columnName": "expires_game_date",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "status",
+            "columnName": "status",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "endedAt",
+            "columnName": "ended_at",
+            "affinity": "INTEGER"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        }
+      },
+      {
+        "tableName": "achievement_unlock",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`achievement_id` TEXT NOT NULL, `unlocked_at` INTEGER NOT NULL, PRIMARY KEY(`achievement_id`))",
+        "fields": [
+          {
+            "fieldPath": "achievementId",
+            "columnName": "achievement_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "unlockedAt",
+            "columnName": "unlocked_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "achievement_id"
+          ]
+        }
+      },
+      {
+        "tableName": "owned_cosmetic",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`cosmetic_id` TEXT NOT NULL, `acquired_at` INTEGER NOT NULL, `source` TEXT NOT NULL, PRIMARY KEY(`cosmetic_id`))",
+        "fields": [
+          {
+            "fieldPath": "cosmeticId",
+            "columnName": "cosmetic_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "acquiredAt",
+            "columnName": "acquired_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "source",
+            "columnName": "source",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "cosmetic_id"
+          ]
+        }
+      },
+      {
+        "tableName": "health_sync_state",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`record_type` TEXT NOT NULL, `last_change_token` TEXT, `last_synced_at` INTEGER, PRIMARY KEY(`record_type`))",
+        "fields": [
+          {
+            "fieldPath": "recordType",
+            "columnName": "record_type",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lastChangeToken",
+            "columnName": "last_change_token",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "lastSyncedAt",
+            "columnName": "last_synced_at",
+            "affinity": "INTEGER"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "record_type"
+          ]
+        }
+      }
+    ],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '9d9dd7ce81abf78a85674c8154032f40')"
+    ]
+  }
+}

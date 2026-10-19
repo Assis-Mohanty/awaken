@@ -82,13 +82,13 @@ class ContentAssetsTest {
 
     @Test
     fun `penalty quest is available even with injury mode on and no health connect`() {
-        val context = HunterContext("h", focusStats = listOf(Stat.STR, Stat.INT), injuryMode = true, healthAvailable = false)
+        val context = HunterContext("h", focusStats = listOf(Stat.STR, Stat.INT), injuryTags = DirectiveGenerator.DEFAULT_INJURY_TAGS, healthAvailable = false)
         assertThat(DirectiveGenerator.penaltyQuest(library.templates, context, LocalDate.of(2026, 10, 18))).isNotNull()
     }
 
     @Test
     fun `real library supports a full directive under restrictive settings for 30 days`() {
-        val restrictive = HunterContext("h", focusStats = listOf(Stat.STR, Stat.CHA), injuryMode = true, healthAvailable = false)
+        val restrictive = HunterContext("h", focusStats = listOf(Stat.STR, Stat.CHA), injuryTags = DirectiveGenerator.DEFAULT_INJURY_TAGS, healthAvailable = false)
         val history = ArrayList<com.assismohanty.awaken.engine.model.Directive>()
         val start = LocalDate.of(2026, 10, 1)
         repeat(30) { i ->

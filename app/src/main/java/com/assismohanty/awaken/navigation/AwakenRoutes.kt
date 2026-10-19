@@ -25,3 +25,7 @@ data object TrialRoute
 /** Debug tools (registered only when DebugEntry.ENABLED, i.e. debug builds). */
 @Serializable
 data object DebugRoute
+
+/** Settings (DESIGN_SYSTEM §4.7), opened from the Status header. */
+@Serializable
+data object SettingsRoute

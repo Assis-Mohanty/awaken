@@ -33,5 +33,15 @@ val MIGRATION_2_3 = object : Migration(2, 3) {
     }
 }
 
+/**
+ * v3 → v4 (Phase 10, Settings): Injury Mode can exclude a chosen set of body-area tags. Existing rows get the previous
+ * fixed rule (impact + legs), so nothing changes for anyone who already had it on.
+ */
+val MIGRATION_3_4 = object : Migration(3, 4) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE `hunter_profile` ADD COLUMN `injury_tags` TEXT NOT NULL DEFAULT 'impact,legs'")
+    }
+}
+
 /** Every migration, in order. The database builder and the migration test both use this list. */
-val ALL_MIGRATIONS: Array<Migration> = arrayOf(MIGRATION_1_2, MIGRATION_2_3)
+val ALL_MIGRATIONS: Array<Migration> = arrayOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)

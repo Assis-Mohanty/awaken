@@ -17,6 +17,8 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -42,6 +44,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.assismohanty.awaken.R
 import com.assismohanty.awaken.core.data.repo.Chapter
+import com.assismohanty.awaken.core.designsystem.components.AwakenGlyphs
 import com.assismohanty.awaken.core.designsystem.components.ChapterRevealDialog
 import com.assismohanty.awaken.core.designsystem.components.Heatmap
 import com.assismohanty.awaken.core.designsystem.components.HeatmapDay
@@ -81,7 +84,7 @@ import java.time.format.FormatStyle
 import kotlin.coroutines.cancellation.CancellationException
 
 @Composable
-fun StatusRoute(modifier: Modifier = Modifier, viewModel: StatusViewModel = hiltViewModel()) {
+fun StatusRoute(onOpenSettings: () -> Unit, modifier: Modifier = Modifier, viewModel: StatusViewModel = hiltViewModel()) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val chooserTitle = stringResource(R.string.share_report_chooser)
@@ -96,12 +99,17 @@ fun StatusRoute(modifier: Modifier = Modifier, viewModel: StatusViewModel = hilt
         context.startActivity(Intent.createChooser(send, chooserTitle))
         viewModel.onEvent(StatusEvent.ShareHandled)
     }
-    StatusScreen(state = state, onEvent = viewModel::onEvent, modifier = modifier)
+    StatusScreen(state = state, onEvent = viewModel::onEvent, onOpenSettings = onOpenSettings, modifier = modifier)
 }
 
 /** Status (DESIGN_SYSTEM §4.5): header → radar → stats → heatmap → titles & achievements → chapters → weekly report. */
 @Composable
-fun StatusScreen(state: StatusUiState, onEvent: (StatusEvent) -> Unit, modifier: Modifier = Modifier) {
+fun StatusScreen(
+    state: StatusUiState,
+    onEvent: (StatusEvent) -> Unit,
+    modifier: Modifier = Modifier,
+    onOpenSettings: () -> Unit = {},
+) {
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -117,6 +125,15 @@ fun StatusScreen(state: StatusUiState, onEvent: (StatusEvent) -> Unit, modifier:
             verticalArrangement = Arrangement.spacedBy(Spacing.lg),
         ) {
             val title = state.equippedTitleId?.let(::titleNameRes)?.let { stringResource(it) }
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                IconButton(onClick = onOpenSettings) {
+                    Icon(
+                        imageVector = AwakenGlyphs.Settings,
+                        contentDescription = stringResource(R.string.cd_open_settings),
+                        tint = AwakenTheme.colors.mist,
+                    )
+                }
+            }
             HunterHeader(header.copy(title = title), large = true)
             RadarWindow(state)
             StatsWindow(state.rank, state.stats)

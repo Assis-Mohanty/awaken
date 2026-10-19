@@ -25,6 +25,9 @@ import com.assismohanty.awaken.core.domain.CreateHunterUseCase
 import com.assismohanty.awaken.core.domain.DayRefresher
 import com.assismohanty.awaken.core.domain.DayRolloverUseCase
 import com.assismohanty.awaken.core.domain.GateRunController
+import com.assismohanty.awaken.core.data.export.GameDataPorter
+import com.assismohanty.awaken.core.domain.ObserveSettingsUseCase
+import com.assismohanty.awaken.core.domain.UpdateSettingsUseCase
 import com.assismohanty.awaken.core.domain.EquipCosmeticUseCase
 import com.assismohanty.awaken.core.domain.ObserveVaultUseCase
 import com.assismohanty.awaken.core.domain.OpenRelicCacheUseCase
@@ -145,6 +148,9 @@ class TestGraph(
     val openRelicCache = OpenRelicCacheUseCase(db.hunterDao(), db.ownedCosmeticDao(), ledger, transactions, clock)
     val equipCosmetic = EquipCosmeticUseCase(db.hunterDao(), db.ownedCosmeticDao())
     val observeVault = ObserveVaultUseCase(db.hunterDao(), db.ownedCosmeticDao(), db.trialDao(), ledger)
+    val porter = GameDataPorter(db, ledger, transactions, clock, Dispatchers.Unconfined)
+    val updateSettings = UpdateSettingsUseCase(db.hunterDao(), templates, clock)
+    val observeSettings = ObserveSettingsUseCase(db.hunterDao(), templates)
 
     fun today(): LocalDate = clock.gameDate(GameDay.DEFAULT_DAY_START_HOUR)
 

@@ -51,6 +51,24 @@ interface HunterDao {
     @Query("UPDATE hunter_profile SET equipped_sigil_id = :sigilId WHERE id = 'me'")
     suspend fun setEquippedSigil(sigilId: String?)
 
+    @Query("UPDATE hunter_profile SET name = :name WHERE id = 'me'")
+    suspend fun setName(name: String)
+
+    @Query("UPDATE hunter_profile SET focus_stat_1 = :first, focus_stat_2 = :second WHERE id = 'me'")
+    suspend fun setFocusStats(first: Stat, second: Stat)
+
+    @Query("UPDATE hunter_profile SET day_start_hour = :hour WHERE id = 'me'")
+    suspend fun setDayStartHour(hour: Int)
+
+    @Query("UPDATE hunter_profile SET reminder_time = :time WHERE id = 'me'")
+    suspend fun setReminderTime(time: String?)
+
+    @Query("UPDATE hunter_profile SET owned_equipment = :equipment WHERE id = 'me'")
+    suspend fun setOwnedEquipment(equipment: Set<String>)
+
+    @Query("UPDATE hunter_profile SET injury_mode = :enabled, injury_tags = :tags WHERE id = 'me'")
+    suspend fun setInjury(enabled: Boolean, tags: Set<String>)
+
     @Query("SELECT * FROM stat_tier")
     suspend fun getTiers(): List<StatTierEntity>
 

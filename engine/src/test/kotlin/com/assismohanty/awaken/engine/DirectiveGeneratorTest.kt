@@ -92,7 +92,7 @@ class DirectiveGeneratorTest {
 
     @Test
     fun `injury mode excludes impact and legs tags`() {
-        val injured = context.copy(injuryMode = true)
+        val injured = context.copy(injuryTags = DirectiveGenerator.DEFAULT_INJURY_TAGS)
         val picked = (0L until 30L).flatMap { DirectiveGenerator.generate(templates, injured, date.plusDays(it)).quests }
         val byId = templates.associateBy { it.id }
         picked.forEach { draft ->
@@ -181,5 +181,14 @@ class DirectiveGeneratorTest {
         assertThat(draft.type).isEqualTo(QuestType.PENALTY)
         val normal = (0L until 60L).flatMap { DirectiveGenerator.generate(library, context, date.plusDays(it)).quests }
         assertThat(normal.map { it.templateId }).doesNotContain("penalty_walk")
+    }
+
+    @Test
+    fun `injury tags exclude exactly the chosen tags`() {
+        val upperOnly = context.copy(injuryTags = setOf("upper"))
+        val byId = templates.associateBy { it.id }
+        val picked = (0L until 30L).flatMap { DirectiveGenerator.generate(templates, upperOnly, date.plusDays(it)).quests }
+        picked.forEach { assertThat(byId.getValue(it.templateId).tags).doesNotContain("upper") }
+        assertThat(picked.any { byId.getValue(it.templateId).tags.contains("legs") }).isTrue()
     }
 }

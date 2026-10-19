@@ -30,7 +30,9 @@ object DirectiveGenerator {
     const val FREE_REROLLS_PER_DAY = 1
     const val PAID_REROLLS_PER_DAY = 3
     const val REROLL_COST_GOLD = 40
-    val INJURY_EXCLUDED_TAGS: Set<String> = setOf("impact", "legs")
+    /** Body-area tags Injury Mode can exclude (DS §4.7), and the default pair (ENGINE_DECISIONS #11, #46). */
+    val INJURY_TAGS: List<String> = listOf("impact", "legs", "upper")
+    val DEFAULT_INJURY_TAGS: Set<String> = setOf("impact", "legs")
     val RECOVERY_STATS: List<Stat> = listOf(Stat.VIT, Stat.WIL)
     const val RECOVERY_EXCLUDED_TAG = "impact"
     /** A first-day starter must be doable wherever the hunter is when they finish onboarding. */
@@ -134,7 +136,7 @@ object DirectiveGenerator {
 
     private fun QuestTemplate.isAllowed(context: HunterContext): Boolean {
         if (!context.ownedEquipment.containsAll(equipment)) return false
-        if (context.injuryMode && tags.any { it in INJURY_EXCLUDED_TAGS }) return false
+        if (tags.any { it in context.injuryTags }) return false
         if (!context.healthAvailable && verification.source == VerificationSource.HEALTH) return false
         if (context.recoveryMode && (stat !in RECOVERY_STATS || RECOVERY_EXCLUDED_TAG in tags)) return false
         return true

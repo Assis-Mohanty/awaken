@@ -218,3 +218,25 @@ fun shopItemNameRes(itemId: String): Int? = when (itemId) {
     "sigil_gate" -> R.string.shop_sigil_gate
     else -> null
 }
+
+/** Equipment display name for a template-vocabulary id; null for an id this build doesn't know. */
+@StringRes
+fun equipmentNameRes(equipmentId: String): Int? = when (equipmentId) {
+    "dumbbells" -> R.string.equipment_dumbbells
+    "kettlebell" -> R.string.equipment_kettlebell
+    "pullup_bar" -> R.string.equipment_pullup_bar
+    "resistance_band" -> R.string.equipment_resistance_band
+    "jump_rope" -> R.string.equipment_jump_rope
+    "gym_access" -> R.string.equipment_gym_access
+    "bicycle" -> R.string.equipment_bicycle
+    else -> null
+}
+
+/** Injury-mode tag display name; null for an id this build doesn't know. */
+@StringRes
+fun injuryTagNameRes(tag: String): Int? = when (tag) {
+    "impact" -> R.string.injury_tag_impact
+    "legs" -> R.string.injury_tag_legs
+    "upper" -> R.string.injury_tag_upper
+    else -> null
+}

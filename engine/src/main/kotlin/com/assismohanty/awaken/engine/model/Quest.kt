@@ -70,7 +70,8 @@ data class HunterContext(
     val tiers: Map<Stat, Difficulty> = emptyMap(),
     val focusStats: List<Stat>,
     val ownedEquipment: Set<String> = emptySet(),
-    val injuryMode: Boolean = false,
+    /** Template tags to avoid: empty when Injury Mode is off, else the hunter's chosen tags (settings). */
+    val injuryTags: Set<String> = emptySet(),
     val recoveryMode: Boolean = false,
     val healthAvailable: Boolean = true,
     val lastActiveDates: Map<Stat, LocalDate> = emptyMap(),

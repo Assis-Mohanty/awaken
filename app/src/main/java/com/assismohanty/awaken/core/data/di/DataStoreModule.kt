@@ -19,6 +19,11 @@ import kotlinx.coroutines.CoroutineScope
 @Retention(AnnotationRetention.BINARY)
 annotation class NoticePrefs
 
+/** In-app look-and-feel toggles: haptics, reduce motion (DS §2.5, §2.6). */
+@Qualifier
+@Retention(AnnotationRetention.BINARY)
+annotation class UiPrefsStore
+
 @Module
 @InstallIn(SingletonComponent::class)
 object DataStoreModule {
@@ -30,5 +35,15 @@ object DataStoreModule {
         @ApplicationScope scope: CoroutineScope,
     ): DataStore<Preferences> = PreferenceDataStoreFactory.create(scope = scope) {
         context.preferencesDataStoreFile("notices")
+    }
+
+    @Provides
+    @Singleton
+    @UiPrefsStore
+    fun provideUiPrefs(
+        @ApplicationContext context: Context,
+        @ApplicationScope scope: CoroutineScope,
+    ): DataStore<Preferences> = PreferenceDataStoreFactory.create(scope = scope) {
+        context.preferencesDataStoreFile("ui_prefs")
     }
 }

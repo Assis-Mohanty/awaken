@@ -61,7 +61,7 @@ class MigrationTest {
         try {
             assertThat(db.ledgerDao().all().sumOf { it.delta }).isEqualTo(120)
             assertThat(db.gateRunDao().running()).isNull()
-            assertThat(db.openHelper.readableDatabase.version).isEqualTo(3)
+            assertThat(db.openHelper.readableDatabase.version).isEqualTo(4)
         } finally {
             db.close()
         }
@@ -88,7 +88,33 @@ class MigrationTest {
             assertThat(profile?.equippedTitleId).isEqualTo("veteran")
             assertThat(profile?.equippedFrameId).isNull()
             assertThat(profile?.equippedSigilId).isNull()
-            assertThat(db.openHelper.readableDatabase.version).isEqualTo(3)
+            assertThat(db.openHelper.readableDatabase.version).isEqualTo(4)
+        } finally {
+            db.close()
+        }
+    }
+
+    @Test
+    fun v3To4GivesExistingHuntersTheOldInjuryRule() = runTest {
+        val path = createFromSchema(3)
+        SQLiteDatabase.openDatabase(path, null, SQLiteDatabase.OPEN_READWRITE).use { db ->
+            db.execSQL(
+                "INSERT INTO hunter_profile (id, hunter_id, name, created_at, first_game_date, focus_stat_1, focus_stat_2, " +
+                    "day_start_hour, theme_id, onboarding_done, owned_equipment, injury_mode, health_enabled) " +
+                    "VALUES ('me', 'h1', 'Assis', 0, '2026-10-18', 'STR', 'INT', 4, 'default', 1, 'dumbbells', 1, 0)",
+            )
+        }
+
+        val db = Room.databaseBuilder(context, AwakenDatabase::class.java, path)
+            .addMigrations(*ALL_MIGRATIONS)
+            .allowMainThreadQueries()
+            .build()
+        try {
+            val profile = db.hunterDao().getProfile()
+            assertThat(profile?.injuryMode).isTrue()
+            assertThat(profile?.injuryTags).containsExactly("impact", "legs")
+            assertThat(profile?.ownedEquipment).containsExactly("dumbbells")
+            assertThat(db.openHelper.readableDatabase.version).isEqualTo(4)
         } finally {
             db.close()
         }

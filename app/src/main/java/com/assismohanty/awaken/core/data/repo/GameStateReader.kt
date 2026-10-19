@@ -56,7 +56,7 @@ class GameStateReader @Inject constructor(
             tiers = hunterDao.getTiers().associate { it.stat to it.tier },
             focusStats = profile.focusStats,
             ownedEquipment = profile.ownedEquipment,
-            injuryMode = profile.injuryMode,
+            injuryTags = if (profile.injuryMode) profile.injuryTags else emptySet(),
             recoveryMode = dayRecordDao.get(gameDate)?.recovery ?: false,
             healthAvailable = profile.healthEnabled,
             lastActiveDates = completionDao.lastActivePerStat().associate { it.stat to it.gameDate },

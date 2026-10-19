@@ -144,6 +144,13 @@ object AwakenGlyphs {
         }
     }
 
+    val Settings: ImageVector by lazy {
+        glyph("Settings") {
+            moveTo(12f, 3f); lineTo(19f, 7f); lineTo(19f, 17f); lineTo(12f, 21f); lineTo(5f, 17f); lineTo(5f, 7f); close()
+            moveTo(9f, 12f); arcToRelative(3f, 3f, 0f, true, true, 6f, 0f); arcToRelative(3f, 3f, 0f, true, true, -6f, 0f)
+        }
+    }
+
     // Hunter sigils (Vault, GD §9.2): eight line badges; flame and hourglass reuse the HUD glyphs.
     val Blade: ImageVector by lazy {
         glyph("Blade") {
