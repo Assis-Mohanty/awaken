@@ -13,6 +13,7 @@ import com.assismohanty.awaken.core.data.repo.TransactionRunner
 import com.assismohanty.awaken.engine.QuestRules
 import com.assismohanty.awaken.engine.RankRules
 import com.assismohanty.awaken.engine.model.QuestType
+import com.assismohanty.awaken.engine.model.VerificationSource
 import com.assismohanty.awaken.engine.model.QuestStatus
 import javax.inject.Inject
 
@@ -27,6 +28,8 @@ sealed interface UndoResult {
     data object TrialPassed : UndoResult
     /** A cleared Focus Gate is timer-verified and final (ENGINE_DECISIONS #36). */
     data object GateClear : UndoResult
+    /** A Health Connect completion: the same data would re-complete it on the next sync (ENGINE_DECISIONS #52). */
+    data object HealthVerified : UndoResult
 }
 
 /**
@@ -46,6 +49,7 @@ class UndoCompletionUseCase @Inject constructor(
     suspend operator fun invoke(questInstanceId: String): UndoResult = transactions.run {
         val completion = completionDao.latestActive(questInstanceId) ?: return@run UndoResult.NothingToUndo
         if (completion.questType == QuestType.GATE) return@run UndoResult.GateClear
+        if (completion.verificationSource == VerificationSource.HEALTH) return@run UndoResult.HealthVerified
         val now = clock.now()
         if (!QuestRules.canUndo(completion.completedAt, now)) return@run UndoResult.WindowExpired
         val profile = hunterDao.getProfile() ?: return@run UndoResult.NothingToUndo

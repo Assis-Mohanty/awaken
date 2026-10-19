@@ -8,6 +8,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.assismohanty.awaken.core.data.health.HealthStatus
 import com.assismohanty.awaken.core.designsystem.theme.AwakenTheme
 import com.assismohanty.awaken.engine.model.Stat
 import com.google.common.truth.Truth.assertThat
@@ -21,10 +22,15 @@ class SettingsScreenTest {
     @get:Rule
     val composeRule = createComposeRule()
 
-    private fun show(state: SettingsUiState, events: MutableList<SettingsEvent> = mutableListOf(), onBack: () -> Unit = {}) {
+    private fun show(
+        state: SettingsUiState,
+        events: MutableList<SettingsEvent> = mutableListOf(),
+        onBack: () -> Unit = {},
+        onOpenPrivacy: () -> Unit = {},
+    ) {
         composeRule.setContent {
             AwakenTheme(reduceMotion = true) {
-                SettingsScreen(state = state, onEvent = { events += it }, onBack = onBack, onExport = {}, onImport = {})
+                SettingsScreen(state = state, onEvent = { events += it }, onBack = onBack, onExport = {}, onImport = {}, onOpenPrivacy = onOpenPrivacy)
             }
         }
     }
@@ -112,5 +118,45 @@ class SettingsScreenTest {
         show(previewSettingsState(), onBack = { backs++ })
         composeRule.onNodeWithText("Back").performClick()
         assertThat(backs).isEqualTo(1)
+    }
+
+    @Test
+    fun healthConnectOffersConnectThenDisconnect() {
+        val events = mutableListOf<SettingsEvent>()
+        show(previewSettingsState().copy(healthStatus = HealthStatus.AVAILABLE), events)
+        composeRule.onNodeWithText("Off. Verified quests earn 30% more XP.").performScrollTo().assertIsDisplayed()
+        composeRule.onNodeWithText("Connect").performScrollTo().performClick()
+        assertThat(events).containsExactly(SettingsEvent.ConnectHealth)
+    }
+
+    @Test
+    fun aConnectedHunterCanDisconnect() {
+        val events = mutableListOf<SettingsEvent>()
+        show(previewSettingsState().copy(healthConnected = true, healthStatus = HealthStatus.AVAILABLE), events)
+        composeRule.onNodeWithText("Disconnect").performScrollTo().performClick()
+        assertThat(events).containsExactly(SettingsEvent.DisconnectHealth)
+    }
+
+    @Test
+    fun missingHealthConnectSaysHowToGetIt() {
+        show(previewSettingsState().copy(healthStatus = HealthStatus.NOT_INSTALLED))
+        composeRule.onNodeWithText("Health Connect isn't installed. Install it from Play Store to verify steps automatically.")
+            .performScrollTo().assertIsDisplayed()
+    }
+
+    @Test
+    fun theRationaleComesBeforeThePermissionSheet() {
+        val events = mutableListOf<SettingsEvent>()
+        show(previewSettingsState().copy(healthAction = HealthAction.SHOW_RATIONALE), events)
+        composeRule.onNodeWithText("AWAKEN reads only Steps, Exercise sessions and Sleep sessions, on this phone. It never writes to Health Connect.")
+            .assertIsDisplayed()
+    }
+
+    @Test
+    fun thePrivacyPolicyOpensFromSettings() {
+        var opened = 0
+        show(previewSettingsState(), onOpenPrivacy = { opened++ })
+        composeRule.onNodeWithText("Privacy policy").performScrollTo().performClick()
+        assertThat(opened).isEqualTo(1)
     }
 }

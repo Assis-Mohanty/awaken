@@ -3,6 +3,7 @@ package com.assismohanty.awaken.debug
 import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
@@ -43,12 +44,22 @@ class DebugSettings @Inject constructor(
         store.edit { it[OFFSET_DAYS] = (it[OFFSET_DAYS] ?: 0L) + days }
     }
 
+    /** Debug-only: pretend Health Connect is connected and reports 9,000 steps today ([DebugHealthGateway]) (Phase 11). */
+    val simulateSteps: StateFlow<Boolean> = store.data
+        .map { it[SIMULATE_STEPS] ?: false }
+        .stateIn(scope, SharingStarted.Eagerly, false)
+
+    suspend fun setSimulateSteps(enabled: Boolean) {
+        store.edit { it[SIMULATE_STEPS] = enabled }
+    }
+
     suspend fun reset() {
         store.edit { it.remove(OFFSET_DAYS) }
     }
 
     private companion object {
         val OFFSET_DAYS = longPreferencesKey("offset_days")
+        val SIMULATE_STEPS = booleanPreferencesKey("simulate_steps")
     }
 }
 

@@ -46,6 +46,7 @@ fun UserMessage.text(resources: Resources): String = when (this) {
     UserMessage.UndoDayClosed -> resources.getString(R.string.msg_undo_day_closed)
     UserMessage.UndoPromotion -> resources.getString(R.string.msg_undo_promotion)
     UserMessage.UndoGate -> resources.getString(R.string.msg_undo_gate)
+    UserMessage.UndoHealth -> resources.getString(R.string.msg_undo_health)
     UserMessage.GateTooLate -> resources.getString(R.string.msg_gate_too_late)
     UserMessage.TrialStarted -> resources.getString(R.string.msg_trial_started)
     UserMessage.TrialNoStages -> resources.getString(R.string.msg_trial_no_stages)
@@ -72,6 +73,9 @@ fun UserMessage.text(resources: Resources): String = when (this) {
     UserMessage.ImportUnreadable -> resources.getString(R.string.msg_import_unreadable)
     is UserMessage.ImportRejected -> resources.getString(problem.messageRes())
     UserMessage.SettingsSaved -> resources.getString(R.string.msg_settings_saved)
+    UserMessage.HealthConnected -> resources.getString(R.string.msg_health_connected)
+    UserMessage.HealthDeclined -> resources.getString(R.string.health_declined)
+    UserMessage.HealthNotInstalled -> resources.getString(R.string.health_not_installed)
     UserMessage.Error -> resources.getString(R.string.msg_error)
 }
 

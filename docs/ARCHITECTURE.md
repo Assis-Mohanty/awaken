@@ -175,7 +175,8 @@ This avoids foreground-service-type policy declarations entirely. The process ma
 
 - Permissions requested **only** at the moment the user enables "Verified quests" (onboarding step or Settings), with a rationale screen first. Read-only: `Steps`, `ExerciseSession`, `SleepSession`. Nothing else.
 - Must declare `<activity-alias>` / intent filter for `androidx.health.ACTION_SHOW_PERMISSIONS_RATIONALE` and the privacy-policy screen per Health Connect docs.
-- `HealthSyncWorker` every 30 min (+ on app open): reads today's aggregates (`aggregate(StepsRecord.COUNT_TOTAL)`; exercise sessions minutes; last night's sleep) and auto-completes HEALTH-verified quests whose target is met → same CompleteQuest pipeline with `V=HEALTH`.
+- **Foreground-only sync** (ENGINE_DECISIONS #51): `HealthSyncCoordinator` on `ProcessLifecycleOwner` syncs on every app start and every 30 min while visible. Health Connect refuses background reads without `READ_HEALTH_DATA_IN_BACKGROUND`, which we do not request, so there is no background worker. `HealthSyncUseCase` reads the game-day window (`aggregate(StepsRecord.COUNT_TOTAL)`, exercise sessions, last night's sleep), matches with `HealthRules` (engine, #50) and completes via `CompleteQuestUseCase.completeVerified(id, HEALTH)`. Health completions are not undoable (#52).
+- `HealthGateway` (real: `HealthConnectGateway`, connect-client 1.1.0; debug: `DebugHealthGateway` with "Simulate 9,000 steps"; tests: `FakeHealthGateway`).
 - If HC unavailable/not installed/denied: HEALTH templates are excluded from generation; no nagging.
 - Never write to Health Connect in v1.
 

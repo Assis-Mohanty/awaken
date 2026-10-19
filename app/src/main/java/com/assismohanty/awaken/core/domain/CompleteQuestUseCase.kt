@@ -151,7 +151,7 @@ class CompleteQuestUseCase @Inject constructor(
                     rankTrialUnlocked = trialAfter.takeIf { it != null && it != trialBefore },
                     promotedTo = promotedTo,
                     unlockedAchievements = unlocked,
-                    undoable = quest.type != QuestType.GATE,
+                    undoable = quest.type != QuestType.GATE && source != VerificationSource.HEALTH,
                 ),
             )
         }

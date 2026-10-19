@@ -19,6 +19,9 @@
     <string name="debug_grant_shield">Grant shield</string>
     <string name="debug_grant_gold">+2,000 gold</string>
     <string name="debug_grant_fragments">+10 fragments</string>
+    <string name="debug_simulate_steps_on">Simulate 9,000 steps</string>
+    <string name="debug_simulate_steps_off">Stop simulating steps</string>
+    <string name="debug_health_sync">Sync Health now</string>
     <string name="debug_grant_level">+1 level</string>
     <string name="debug_wipe">Wipe data</string>
     <string name="debug_begin">Begin</string>

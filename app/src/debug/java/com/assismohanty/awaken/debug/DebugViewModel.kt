@@ -15,6 +15,8 @@ import com.assismohanty.awaken.core.data.repo.LedgerRepository
 import com.assismohanty.awaken.core.domain.CompleteQuestUseCase
 import com.assismohanty.awaken.core.domain.CreateHunterUseCase
 import com.assismohanty.awaken.core.domain.DayRefresher
+import com.assismohanty.awaken.core.domain.EnableHealthUseCase
+import com.assismohanty.awaken.core.domain.HealthSyncUseCase
 import com.assismohanty.awaken.core.domain.RunRolloverUseCase
 import com.assismohanty.awaken.core.domain.HunterState
 import com.assismohanty.awaken.core.domain.ObserveHunterStateUseCase
@@ -53,6 +55,7 @@ data class DebugUiState(
     val ledger: List<LedgerEntryEntity> = emptyList(),
     /** Raw result of the last action — this is a developer tool, so results are shown as-is. */
     val lastResult: String? = null,
+    val simulateSteps: Boolean = false,
 )
 
 sealed interface DebugEvent {
@@ -64,6 +67,8 @@ sealed interface DebugEvent {
     data object GrantShield : DebugEvent
     data object GrantGold : DebugEvent
     data object GrantFragments : DebugEvent
+    data class SimulateSteps(val enabled: Boolean) : DebugEvent
+    data object SyncHealth : DebugEvent
     data object GrantLevel : DebugEvent
     data object WipeData : DebugEvent
     data class Begin(val questInstanceId: String) : DebugEvent
@@ -88,6 +93,8 @@ class DebugViewModel @Inject constructor(
     private val completeQuest: CompleteQuestUseCase,
     private val undoCompletion: UndoCompletionUseCase,
     private val rerollQuest: RerollQuestUseCase,
+    private val enableHealth: EnableHealthUseCase,
+    private val healthSync: HealthSyncUseCase,
     private val db: AwakenDatabase,
     @IoDispatcher private val ioDispatcher: CoroutineDispatcher,
 ) : ViewModel() {
@@ -105,8 +112,8 @@ class DebugViewModel @Inject constructor(
         todayQuests,
         ledger.observeBalances(),
         ledgerDao.observeRecent(LEDGER_ROWS),
-        combine(settings.offsetDays, lastResult) { offset, result -> offset to result },
-    ) { hunter, quests, balances, rows, (offset, result) ->
+        combine(settings.offsetDays, lastResult, settings.simulateSteps) { offset, result, simulate -> Triple(offset, result, simulate) },
+    ) { hunter, quests, balances, rows, (offset, result, simulate) ->
         DebugUiState(
             hunter = hunter,
             now = clock.now(),
@@ -116,6 +123,7 @@ class DebugViewModel @Inject constructor(
             balances = balances.values.toSortedMap(),
             ledger = rows,
             lastResult = result,
+            simulateSteps = simulate,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), DebugUiState())
 
@@ -173,6 +181,12 @@ class DebugViewModel @Inject constructor(
             )
             "Granted 1 Streak Shield."
         } ?: "Seed a hunter first."
+        is DebugEvent.SimulateSteps -> {
+            settings.setSimulateSteps(event.enabled)
+            // Turning it on also connects verified quests, as if the permission sheet had been accepted.
+            if (event.enabled) "Simulating 9,000 steps: ${enableHealth()}" else "Simulation off (next sync re-checks the real Health Connect)."
+        }
+        DebugEvent.SyncHealth -> "Health sync: ${healthSync()}"
         DebugEvent.GrantGold -> grantCurrency(LedgerKind.GOLD, DEBUG_GOLD, "Granted $DEBUG_GOLD gold.")
         DebugEvent.GrantFragments -> grantCurrency(LedgerKind.FRAGMENT, DEBUG_FRAGMENTS, "Granted $DEBUG_FRAGMENTS fragments.")
         DebugEvent.GrantLevel -> uiState.value.hunter?.let { hunter ->

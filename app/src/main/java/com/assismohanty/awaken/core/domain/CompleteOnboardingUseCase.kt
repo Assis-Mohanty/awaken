@@ -17,7 +17,8 @@ sealed interface OnboardingResult {
 
 /**
  * Awakening (DESIGN_SYSTEM §4.1): creates the hunter with calibrated baseline tiers, grants "Awakened", then runs the
- * first rollover, which generates the first directive (with its Easy starter quest, GD §6.3).
+ * first rollover, which generates the first directive (with its Easy starter quest, GD §6.3). Health is enabled before
+ * that rollover, so day one can already offer verified quests.
  */
 class CompleteOnboardingUseCase @Inject constructor(
     private val createHunter: CreateHunterUseCase,
@@ -33,6 +34,8 @@ class CompleteOnboardingUseCase @Inject constructor(
         study: Awakening.Answer,
         sleep: Awakening.Answer,
         reminderTime: LocalTime,
+        /** All three Health Connect read permissions were granted during step 5 (ARCH §3.4). */
+        healthEnabled: Boolean = false,
     ): OnboardingResult {
         if (!Awakening.isValidName(name)) return OnboardingResult.InvalidName
         if (focusStats.size != 2) return OnboardingResult.InvalidFocus
@@ -42,6 +45,7 @@ class CompleteOnboardingUseCase @Inject constructor(
                 focusStats = Stat.entries.filter { it in focusStats },
                 baselineTiers = Awakening.baselineTiers(training, study, sleep),
                 reminderTime = reminderTime,
+                healthEnabled = healthEnabled,
             )
             achievements.unlockNew(profile, clock.gameDate(profile.dayStartHour), clock.now())
         }

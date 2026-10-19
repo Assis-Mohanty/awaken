@@ -9,7 +9,12 @@ import com.assismohanty.awaken.core.data.export.ImportResult
 import com.assismohanty.awaken.core.data.export.ImportSummary
 import com.assismohanty.awaken.core.data.repo.UiPrefs
 import com.assismohanty.awaken.core.data.repo.UiPrefsRepository
+import com.assismohanty.awaken.core.data.health.HealthGateway
+import com.assismohanty.awaken.core.data.health.HealthStatus
 import com.assismohanty.awaken.core.domain.CompletionCenter
+import com.assismohanty.awaken.core.domain.DisableHealthUseCase
+import com.assismohanty.awaken.core.domain.EnableHealthResult
+import com.assismohanty.awaken.core.domain.EnableHealthUseCase
 import com.assismohanty.awaken.core.domain.DayRefresher
 import com.assismohanty.awaken.core.domain.ObserveSettingsUseCase
 import com.assismohanty.awaken.core.domain.SettingsModel
@@ -57,6 +62,11 @@ data class SettingsUiState(
     val importPending: Boolean = false,
     val busy: Boolean = false,
     val importSummary: ImportSummary? = null,
+    val healthConnected: Boolean = false,
+    /** Null until the first status check returns. */
+    val healthStatus: HealthStatus? = null,
+    val healthAction: HealthAction? = null,
+    val healthPermissions: Set<String> = emptySet(),
 ) {
     val canSaveName: Boolean get() = nameDraft.trim() != savedName && nameDraft.isNotBlank()
     val canSaveFocus: Boolean get() = focusDraft.size == 2 && focusDraft.toSet() != savedFocus.toSet()
@@ -81,6 +91,12 @@ sealed interface SettingsEvent {
     data object ConfirmImport : SettingsEvent
     data object CancelImport : SettingsEvent
     data object DismissImportSummary : SettingsEvent
+    data object ConnectHealth : SettingsEvent
+    data object HealthRationaleAccepted : SettingsEvent
+    data object HealthActionHandled : SettingsEvent
+    data class HealthPermissionsResult(val granted: Set<String>) : SettingsEvent
+    data object DisconnectHealth : SettingsEvent
+    data object DismissHealthRationale : SettingsEvent
 }
 
 private data class Drafts(
@@ -90,6 +106,9 @@ private data class Drafts(
     val pendingImport: String? = null,
     val busy: Boolean = false,
     val summary: ImportSummary? = null,
+    val healthStatus: HealthStatus? = null,
+    val healthAction: HealthAction? = null,
+    val healthPermissions: Set<String> = emptySet(),
 )
 
 @HiltViewModel
@@ -102,6 +121,9 @@ class SettingsViewModel @Inject constructor(
     private val dayRefresher: DayRefresher,
     private val dayStartScheduler: DayStartScheduler,
     private val completionCenter: CompletionCenter,
+    private val healthGateway: HealthGateway,
+    private val enableHealth: EnableHealthUseCase,
+    private val disableHealth: DisableHealthUseCase,
 ) : ViewModel() {
 
     private val drafts = MutableStateFlow(Drafts())
@@ -156,9 +178,56 @@ class SettingsViewModel @Inject constructor(
             SettingsEvent.ConfirmImport -> confirmImport()
             SettingsEvent.CancelImport -> drafts.update { it.copy(pendingImport = null) }
             SettingsEvent.DismissImportSummary -> drafts.update { it.copy(summary = null) }
+            SettingsEvent.ConnectHealth -> connectHealth()
+            SettingsEvent.HealthRationaleAccepted -> drafts.update {
+                it.copy(healthAction = HealthAction.REQUEST_PERMISSIONS, healthPermissions = healthGateway.requiredPermissions)
+            }
+            SettingsEvent.HealthActionHandled -> drafts.update {
+                if (it.healthAction == HealthAction.SHOW_RATIONALE) it else it.copy(healthAction = null)
+            }
+            is SettingsEvent.HealthPermissionsResult -> launchHealth {
+                when (enableHealth()) {
+                    EnableHealthResult.Enabled -> completionCenter.message(UserMessage.HealthConnected)
+                    EnableHealthResult.PermissionsMissing -> completionCenter.message(UserMessage.HealthDeclined)
+                    EnableHealthResult.Unavailable -> completionCenter.message(UserMessage.HealthNotInstalled)
+                }
+            }
+            SettingsEvent.DisconnectHealth -> launchHealth { disableHealth() }
+            SettingsEvent.DismissHealthRationale -> drafts.update { it.copy(healthAction = null) }
         }
     }
 
+
+    init {
+        refreshHealthStatus()
+    }
+
+    private fun refreshHealthStatus() = launchHealth { drafts.update { it.copy(healthStatus = healthGateway.status()) } }
+
+    /** Not installed → Play Store; otherwise the rationale first, then Health Connect's sheet (ARCH §3.4). */
+    private fun connectHealth() = launchHealth {
+        val status = healthGateway.status()
+        drafts.update {
+            it.copy(
+                healthStatus = status,
+                healthAction = if (status == HealthStatus.AVAILABLE) HealthAction.SHOW_RATIONALE else HealthAction.OPEN_STORE,
+            )
+        }
+    }
+
+
+    private fun launchHealth(block: suspend () -> Unit) {
+        viewModelScope.launch {
+            try {
+                block()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Timber.e(e, "Health Connect action failed")
+                completionCenter.message(UserMessage.Error)
+            }
+        }
+    }
     /** Suggested name for the export document the system file picker opens with. */
     fun backupFileName(): String = porter.suggestedFileName()
 
@@ -266,4 +335,8 @@ private fun SettingsModel.toUiState(prefs: UiPrefs, drafts: Drafts) = SettingsUi
     importPending = drafts.pendingImport != null,
     busy = drafts.busy,
     importSummary = drafts.summary,
+    healthConnected = healthEnabled,
+    healthStatus = drafts.healthStatus,
+    healthAction = drafts.healthAction,
+    healthPermissions = drafts.healthPermissions,
 )

@@ -46,7 +46,9 @@
     <string name="calibration_sleep_high">7h+</string>
     <string name="onboarding_health_title">VERIFIED QUESTS</string>
     <string name="onboarding_health_body">Let the System see your steps, workouts and sleep from Health Connect. Verified quests earn 30% more XP. Data never leaves this phone.</string>
-    <string name="onboarding_health_coming">Coming in this build.</string>
+    <string name="health_not_installed">Health Connect isn\'t installed. Install it from Play Store to verify steps automatically.</string>
+    <string name="health_declined">Verified quests stay off. You can connect later in Settings.</string>
+    <string name="health_rationale_scope">AWAKEN reads only Steps, Exercise sessions and Sleep sessions, on this phone. It never writes to Health Connect.</string>
     <string name="onboarding_reminder_title">DAILY DIRECTIVE TIME</string>
     <string name="onboarding_reminder_body">When should the System deliver your directive?</string>
     <string name="onboarding_complete_title">AWAKENING COMPLETE</string>
@@ -230,6 +232,7 @@
     <string name="gate_collapsed_restarted">Device restarted. Time away could not be measured.</string>
     <string name="gate_collapsed_day_reset">The day reset before the gate was claimed.</string>
     <string name="msg_undo_gate">A cleared gate can\'t be undone.</string>
+    <string name="msg_undo_health">Health Connect verified this quest, so it can\'t be undone.</string>
     <string name="msg_gate_too_late">Not enough time before the day resets for that gate.</string>
     <string name="gate_channel_name">Focus Gates</string>
     <string name="gate_channel_description">Countdown while a gate is open, and a reminder when it clears.</string>
@@ -448,4 +451,22 @@
     <string name="msg_import_damaged">The backup is damaged. Nothing was changed.</string>
     <string name="msg_day_start_blocked">That would move today back. Try again after the new start time.</string>
     <string name="msg_settings_saved">Saved.</string>
+
+    <!-- Health Connect + privacy (Phase 11) -->
+    <string name="msg_health_connected">Health Connect connected. Verified quests will appear in your directives.</string>
+    <string name="settings_health_title">Health Connect</string>
+    <string name="settings_health_on">Connected. Steps, workouts and sleep complete verified quests while AWAKEN is open.</string>
+    <string name="settings_health_off">Off. Verified quests earn 30% more XP.</string>
+    <string name="settings_health_checking">Checking Health Connect…</string>
+    <string name="action_disconnect">Disconnect</string>
+    <string name="action_privacy_policy">Privacy policy</string>
+    <string name="privacy_title">PRIVACY POLICY</string>
+    <!-- TODO(Phase 16): replace the bracketed placeholders and keep this text identical to the hosted policy. -->
+    <string name="privacy_effective">AWAKEN Privacy Policy, effective [date]</string>
+    <string name="privacy_developer">AWAKEN ("the app") is developed by [your name], [city], India. Contact: [email].</string>
+    <string name="privacy_storage">What the app stores: your hunter profile, quests, habits, progress and settings are stored only on your device. The app has no account system and no internet access. We do not collect, transmit, sell, or share personal data.</string>
+    <string name="privacy_health">Health Connect: if you choose to enable verified quests, the app reads Steps, Exercise sessions and Sleep sessions from Health Connect on your device to mark matching quests complete. This data is processed on-device only, is never uploaded, and is not used for advertising. You can revoke access anytime in Health Connect settings. Use of information received from Health Connect adheres to the Health Connect Permissions policy, including the Limited Use requirements.</string>
+    <string name="privacy_backups">Backups: Android may include app data in your Google account device backup according to your phone\'s backup settings. You can export or delete all data from Settings → Your data. Uninstalling the app deletes its data from the device.</string>
+    <string name="privacy_children">Children: the app is not directed to children under 13.</string>
+    <string name="privacy_changes">Changes: we will update this page and the effective date if this policy changes.</string>
 </resources>

@@ -1,5 +1,6 @@
 package com.assismohanty.awaken.feature.settings
 
+import android.content.Intent
 import android.text.format.DateFormat
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -41,6 +42,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.assismohanty.awaken.R
+import com.assismohanty.awaken.core.data.health.HealthStatus
 import com.assismohanty.awaken.core.designsystem.components.ChoiceChip
 import com.assismohanty.awaken.core.designsystem.components.GateBackground
 import com.assismohanty.awaken.core.designsystem.components.PrimaryButton
@@ -68,6 +70,13 @@ fun SettingsRoute(onBack: () -> Unit, modifier: Modifier = Modifier, viewModel: 
     val importLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         uri?.let { viewModel.onEvent(SettingsEvent.ImportPicked(it)) }
     }
+    val context = LocalContext.current
+    HealthActionEffect(
+        action = state.healthAction,
+        permissions = state.healthPermissions,
+        onPermissionsResult = { viewModel.onEvent(SettingsEvent.HealthPermissionsResult(it)) },
+        onHandled = { viewModel.onEvent(SettingsEvent.HealthActionHandled) },
+    )
     SettingsScreen(
         state = state,
         onEvent = viewModel::onEvent,
@@ -75,6 +84,7 @@ fun SettingsRoute(onBack: () -> Unit, modifier: Modifier = Modifier, viewModel: 
         onExport = { exportLauncher.launch(viewModel.backupFileName()) },
         // Backups are plain JSON, but file managers label them inconsistently, so any type may be picked.
         onImport = { importLauncher.launch(arrayOf("*/*")) },
+        onOpenPrivacy = { context.startActivity(Intent(context, PrivacyPolicyActivity::class.java)) },
         modifier = modifier,
     )
 }
@@ -88,6 +98,7 @@ fun SettingsScreen(
     onExport: () -> Unit,
     onImport: () -> Unit,
     modifier: Modifier = Modifier,
+    onOpenPrivacy: () -> Unit = {},
 ) {
     GateBackground(rank = Rank.E, modifier = modifier) {
         Column(
@@ -119,13 +130,19 @@ fun SettingsScreen(
                     DayWindow(state, onEvent)
                     TrainingWindow(state, onEvent)
                     ComfortWindow(state, onEvent)
-                    DataWindow(state, onExport, onImport)
+                    DataWindow(state, onExport, onImport, onOpenPrivacy)
                 }
             }
         }
     }
     if (state.showReminderPicker) ReminderDialog(state.reminder, onEvent)
     if (state.importPending) ImportConfirmDialog(onEvent)
+    if (state.healthAction == HealthAction.SHOW_RATIONALE) {
+        HealthRationaleDialog(
+            onContinue = { onEvent(SettingsEvent.HealthRationaleAccepted) },
+            onDismiss = { onEvent(SettingsEvent.DismissHealthRationale) },
+        )
+    }
     state.importSummary?.let { summary -> ImportDoneDialog(summary) { onEvent(SettingsEvent.DismissImportSummary) } }
 }
 
@@ -217,6 +234,7 @@ private fun TrainingWindow(state: SettingsUiState, onEvent: (SettingsEvent) -> U
     val colors = AwakenTheme.colors
     val type = AwakenTheme.type
     SystemWindow(title = stringResource(R.string.settings_window_training), accent = accent(), reveal = false) {
+        HealthRow(state, onEvent)
         Text(stringResource(R.string.settings_equipment_title), style = type.label, color = colors.bone)
         FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.xs), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
             state.equipmentOptions.forEach { id ->
@@ -251,6 +269,34 @@ private fun TrainingWindow(state: SettingsUiState, onEvent: (SettingsEvent) -> U
     }
 }
 
+
+@Composable
+private fun HealthRow(state: SettingsUiState, onEvent: (SettingsEvent) -> Unit) {
+    val colors = AwakenTheme.colors
+    val type = AwakenTheme.type
+    Text(stringResource(R.string.settings_health_title), style = type.label, color = colors.bone)
+    val status = when {
+        state.healthConnected -> R.string.settings_health_on
+        state.healthStatus == null -> R.string.settings_health_checking
+        state.healthStatus != HealthStatus.AVAILABLE -> R.string.health_not_installed
+        else -> R.string.settings_health_off
+    }
+    Text(stringResource(status), style = type.caption, color = if (state.healthConnected) colors.verified else colors.mist)
+    if (state.healthConnected) {
+        SecondaryButton(
+            text = stringResource(R.string.action_disconnect),
+            onClick = { onEvent(SettingsEvent.DisconnectHealth) },
+            modifier = Modifier.fillMaxWidth(),
+        )
+    } else {
+        PrimaryButton(
+            text = stringResource(R.string.action_connect),
+            onClick = { onEvent(SettingsEvent.ConnectHealth) },
+            color = colors.verified,
+            modifier = Modifier.fillMaxWidth(),
+        )
+    }
+}
 @Composable
 private fun ComfortWindow(state: SettingsUiState, onEvent: (SettingsEvent) -> Unit) {
     SystemWindow(title = stringResource(R.string.settings_window_comfort), accent = accent(), reveal = false) {
@@ -270,7 +316,7 @@ private fun ComfortWindow(state: SettingsUiState, onEvent: (SettingsEvent) -> Un
 }
 
 @Composable
-private fun DataWindow(state: SettingsUiState, onExport: () -> Unit, onImport: () -> Unit) {
+private fun DataWindow(state: SettingsUiState, onExport: () -> Unit, onImport: () -> Unit, onOpenPrivacy: () -> Unit) {
     val colors = AwakenTheme.colors
     SystemWindow(title = stringResource(R.string.settings_window_data), accent = accent(), reveal = false) {
         Text(stringResource(R.string.settings_data_note), style = AwakenTheme.type.caption, color = colors.mist)
@@ -289,6 +335,7 @@ private fun DataWindow(state: SettingsUiState, onExport: () -> Unit, onImport: (
         val version = LocalContext.current.let { context ->
             runCatching { context.packageManager.getPackageInfo(context.packageName, 0).versionName }.getOrNull().orEmpty()
         }
+        QuietButton(text = stringResource(R.string.action_privacy_policy), onClick = onOpenPrivacy, modifier = Modifier.fillMaxWidth())
         Text(stringResource(R.string.settings_about, version), style = AwakenTheme.type.caption, color = colors.fog)
     }
 }

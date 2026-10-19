@@ -109,6 +109,7 @@ dependencies {
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.androidx.work.runtime.ktx)
     implementation(libs.androidx.hilt.work)
+    implementation(libs.androidx.health.connect.client)
     ksp(libs.androidx.hilt.compiler)
 
     implementation(libs.kotlinx.serialization.json)

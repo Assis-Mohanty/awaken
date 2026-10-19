@@ -40,6 +40,7 @@ sealed interface UserMessage {
     data object UndoDayClosed : UserMessage
     data object UndoPromotion : UserMessage
     data object UndoGate : UserMessage
+    data object UndoHealth : UserMessage
     data object GateTooLate : UserMessage
     data object TrialStarted : UserMessage
     data object TrialNoStages : UserMessage
@@ -60,6 +61,9 @@ sealed interface UserMessage {
     data object ImportUnreadable : UserMessage
     data class ImportRejected(val problem: ImportProblem) : UserMessage
     data object SettingsSaved : UserMessage
+    data object HealthConnected : UserMessage
+    data object HealthDeclined : UserMessage
+    data object HealthNotInstalled : UserMessage
     data object Error : UserMessage
 }
 
@@ -99,6 +103,7 @@ class CompletionCenter @Inject constructor(
                 UndoResult.DayClosed -> UserMessage.UndoDayClosed
                 UndoResult.TrialPassed -> UserMessage.UndoPromotion
                 UndoResult.GateClear -> UserMessage.UndoGate
+                UndoResult.HealthVerified -> UserMessage.UndoHealth
                 UndoResult.NothingToUndo -> UserMessage.Error
             },
         )

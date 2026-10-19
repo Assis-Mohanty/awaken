@@ -2,11 +2,14 @@ package com.assismohanty.awaken.feature.onboarding
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.assismohanty.awaken.core.data.health.HealthGateway
+import com.assismohanty.awaken.core.data.health.HealthStatus
 import com.assismohanty.awaken.core.domain.CompleteOnboardingUseCase
 import com.assismohanty.awaken.core.domain.CompletionCenter
 import com.assismohanty.awaken.core.domain.OnboardingResult
 import com.assismohanty.awaken.engine.Awakening
 import com.assismohanty.awaken.engine.model.Stat
+import com.assismohanty.awaken.feature.settings.HealthAction
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.LocalTime
 import javax.inject.Inject
@@ -29,8 +32,14 @@ data class OnboardingUiState(
     val showNameError: Boolean = false,
     val focus: Set<Stat> = emptySet(),
     val answers: Map<CalibrationQuestion, Awakening.Answer> = emptyMap(),
-    /** Health Connect is wired in Phase 11; until then Connect only shows a notice. */
-    val healthNoticeShown: Boolean = false,
+    /** All three Health Connect read permissions were granted in step 5; saved on the profile at Finish. */
+    val healthConnected: Boolean = false,
+    /** Health Connect is missing or outdated: the Play Store page was opened (DESIGN_SYSTEM §5 copy shown). */
+    val healthNotInstalled: Boolean = false,
+    /** Some permissions were declined; verified quests stay off and the hunter can carry on. */
+    val healthDeclined: Boolean = false,
+    val healthAction: HealthAction? = null,
+    val healthPermissions: Set<String> = emptySet(),
     val reminder: LocalTime = DEFAULT_REMINDER,
     val submitting: Boolean = false,
     val failed: Boolean = false,
@@ -56,6 +65,8 @@ sealed interface OnboardingEvent {
     data class FocusToggled(val stat: Stat) : OnboardingEvent
     data class Answered(val question: CalibrationQuestion, val answer: Awakening.Answer) : OnboardingEvent
     data object ConnectHealth : OnboardingEvent
+    data class HealthPermissionsResult(val granted: Set<String>) : OnboardingEvent
+    data object HealthActionHandled : OnboardingEvent
     data class ReminderChanged(val time: LocalTime) : OnboardingEvent
     /** "Enter" on the final window: creates the hunter and the first directive. */
     data object Finish : OnboardingEvent
@@ -65,6 +76,7 @@ sealed interface OnboardingEvent {
 class OnboardingViewModel @Inject constructor(
     private val completeOnboarding: CompleteOnboardingUseCase,
     private val completionCenter: CompletionCenter,
+    private val healthGateway: HealthGateway,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(OnboardingUiState())
@@ -85,12 +97,40 @@ class OnboardingViewModel @Inject constructor(
                 }
             }
             is OnboardingEvent.Answered -> _uiState.update { it.copy(answers = it.answers + (event.question to event.answer)) }
-            OnboardingEvent.ConnectHealth -> _uiState.update { it.copy(healthNoticeShown = true) }
+            OnboardingEvent.ConnectHealth -> connectHealth()
+            is OnboardingEvent.HealthPermissionsResult -> onHealthResult(event.granted)
+            OnboardingEvent.HealthActionHandled -> _uiState.update { it.copy(healthAction = null) }
             is OnboardingEvent.ReminderChanged -> _uiState.update { it.copy(reminder = event.time) }
             OnboardingEvent.Finish -> finish()
         }
     }
 
+
+    private fun connectHealth() {
+        viewModelScope.launch {
+            val available = try {
+                healthGateway.status() == HealthStatus.AVAILABLE
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Timber.e(e, "Health Connect status failed")
+                false
+            }
+            _uiState.update {
+                if (available) {
+                    it.copy(healthAction = HealthAction.REQUEST_PERMISSIONS, healthPermissions = healthGateway.requiredPermissions)
+                } else {
+                    it.copy(healthAction = HealthAction.OPEN_STORE, healthNotInstalled = true)
+                }
+            }
+        }
+    }
+
+    private fun onHealthResult(granted: Set<String>) {
+        val connected = granted.containsAll(healthGateway.requiredPermissions)
+        _uiState.update { it.copy(healthConnected = connected, healthDeclined = !connected, healthNotInstalled = false) }
+        if (connected) next()
+    }
     private fun next() = _uiState.update { state ->
         when {
             state.step == OnboardingStep.NAME && !Awakening.isValidName(state.name) -> state.copy(showNameError = true)
@@ -109,7 +149,7 @@ class OnboardingViewModel @Inject constructor(
         _uiState.update { it.copy(submitting = true, failed = false) }
         viewModelScope.launch {
             val result = try {
-                completeOnboarding(state.name, state.focus, training, study, sleep, state.reminder)
+                completeOnboarding(state.name, state.focus, training, study, sleep, state.reminder, state.healthConnected)
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {

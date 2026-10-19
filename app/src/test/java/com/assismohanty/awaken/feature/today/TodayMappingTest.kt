@@ -6,6 +6,7 @@ import com.assismohanty.awaken.core.designsystem.components.achievementNameRes
 import com.assismohanty.awaken.core.designsystem.components.unitPluralRes
 import com.assismohanty.awaken.engine.AchievementEvaluator
 import com.assismohanty.awaken.engine.model.QuestType
+import com.assismohanty.awaken.engine.model.Verification
 import com.assismohanty.awaken.testing.TestGraph
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.flow.filterNotNull
@@ -26,7 +27,8 @@ class TodayMappingTest {
     fun directiveMapsToMainSidesAndProgress() = runTest {
         graph.seedHunter()
         graph.generateDirective(graph.today())
-        val side = graph.db.questDao().getForDate(graph.today()).first { it.type == QuestType.SIDE }
+        // A SELF side quest: the generator may also pick TIMER/HEALTH sides, which can't be completed by hand (GD §6.5).
+        val side = graph.db.questDao().getForDate(graph.today()).first { it.type == QuestType.SIDE && it.verification == Verification.SELF }
         graph.completeQuest(side.id)
 
         val state = graph.observeToday(graph.dayRefresher.ticks).filterNotNull().first().toUiState()

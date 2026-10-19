@@ -22,6 +22,8 @@ data class SettingsModel(
     val equipmentOptions: List<String>,
     val injuryMode: Boolean,
     val injuryTags: Set<String>,
+    /** Verified quests are on (Health Connect connected and granted). */
+    val healthEnabled: Boolean = false,
 )
 
 class ObserveSettingsUseCase @Inject constructor(
@@ -39,6 +41,7 @@ class ObserveSettingsUseCase @Inject constructor(
                 equipmentOptions = templates.library().equipment,
                 injuryMode = it.injuryMode,
                 injuryTags = it.injuryTags,
+                healthEnabled = it.healthEnabled,
             )
         }
     }

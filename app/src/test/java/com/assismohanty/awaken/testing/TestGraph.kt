@@ -26,6 +26,9 @@ import com.assismohanty.awaken.core.domain.DayRefresher
 import com.assismohanty.awaken.core.domain.DayRolloverUseCase
 import com.assismohanty.awaken.core.domain.GateRunController
 import com.assismohanty.awaken.core.data.export.GameDataPorter
+import com.assismohanty.awaken.core.domain.DisableHealthUseCase
+import com.assismohanty.awaken.core.domain.EnableHealthUseCase
+import com.assismohanty.awaken.core.domain.HealthSyncUseCase
 import com.assismohanty.awaken.core.domain.ObserveSettingsUseCase
 import com.assismohanty.awaken.core.domain.UpdateSettingsUseCase
 import com.assismohanty.awaken.core.domain.EquipCosmeticUseCase
@@ -132,6 +135,7 @@ class TestGraph(
     val runRollover = RunRolloverUseCase(rollover, notices)
     val completionCenter = CompletionCenter(completeQuest, undoCompletion)
     val completeOnboarding = CompleteOnboardingUseCase(createHunter, achievements, rollover, transactions, clock)
+    val health = FakeHealthGateway()
     val narrative = NarrativeRepository(context, Dispatchers.Unconfined)
     val observeHunterState = ObserveHunterStateUseCase(
         db.hunterDao(), db.questDao(), db.dayRecordDao(), db.trialDao(), ledger, clock,
@@ -151,6 +155,9 @@ class TestGraph(
     val porter = GameDataPorter(db, ledger, transactions, clock, Dispatchers.Unconfined)
     val updateSettings = UpdateSettingsUseCase(db.hunterDao(), templates, clock)
     val observeSettings = ObserveSettingsUseCase(db.hunterDao(), templates)
+    val healthSync = HealthSyncUseCase(db.hunterDao(), db.questDao(), health, completeQuest, completionCenter, clock)
+    val enableHealth = EnableHealthUseCase(db.hunterDao(), health, healthSync)
+    val disableHealth = DisableHealthUseCase(db.hunterDao(), health)
 
     fun today(): LocalDate = clock.gameDate(GameDay.DEFAULT_DAY_START_HOUR)
 
@@ -163,13 +170,14 @@ class TestGraph(
         name: String,
         difficulty: Difficulty = Difficulty.NORMAL,
         verification: Verification = Verification.SELF,
+        target: Int = 10,
         type: QuestType = QuestType.SIDE,
         crit: Boolean = false,
     ): QuestInstanceEntity {
         val id = generateSequence(0) { it + 1 }.map { "$name-$it" }.first { CritRoller.isCrit(it) == crit }
         val quest = QuestInstanceEntity(
             id = id, gameDate = today(), type = type, templateId = null, habitId = null, stat = Stat.STR,
-            secondaryStat = null, title = name, description = name, unit = "reps", target = 10, difficulty = difficulty,
+            secondaryStat = null, title = name, description = name, unit = "reps", target = target, difficulty = difficulty,
             verification = verification, minDurationSec = 0, status = QuestStatus.ACTIVE, createdAt = clock.now(),
         )
         db.questDao().insertAll(listOf(quest))

@@ -25,6 +25,7 @@ class CreateHunterUseCase @Inject constructor(
         baselineTiers: Map<Stat, Difficulty> = emptyMap(),
         dayStartHour: Int = GameDay.DEFAULT_DAY_START_HOUR,
         reminderTime: LocalTime? = null,
+        healthEnabled: Boolean = false,
     ): HunterProfileEntity {
         require(focusStats.size == 2 && focusStats[0] != focusStats[1]) { "exactly two distinct focus stats required" }
         val profile = HunterProfileEntity(
@@ -37,6 +38,7 @@ class CreateHunterUseCase @Inject constructor(
             dayStartHour = dayStartHour,
             onboardingDone = true,
             reminderTime = reminderTime?.toString(),
+            healthEnabled = healthEnabled,
         )
         transactions.run {
             hunterDao.upsertProfile(profile)

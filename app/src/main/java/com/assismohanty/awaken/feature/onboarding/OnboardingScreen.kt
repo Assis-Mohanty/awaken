@@ -57,12 +57,19 @@ import com.assismohanty.awaken.core.designsystem.preview.PhonePreviews
 import com.assismohanty.awaken.core.designsystem.theme.AwakenTheme
 import com.assismohanty.awaken.core.designsystem.theme.Spacing
 import com.assismohanty.awaken.engine.Awakening
+import com.assismohanty.awaken.feature.settings.HealthActionEffect
 import com.assismohanty.awaken.engine.model.Stat
 import java.time.LocalTime
 
 @Composable
 fun OnboardingRoute(modifier: Modifier = Modifier, viewModel: OnboardingViewModel = hiltViewModel()) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    HealthActionEffect(
+        action = state.healthAction,
+        permissions = state.healthPermissions,
+        onPermissionsResult = { viewModel.onEvent(OnboardingEvent.HealthPermissionsResult(it)) },
+        onHandled = { viewModel.onEvent(OnboardingEvent.HealthActionHandled) },
+    )
     OnboardingScreen(state = state, onEvent = viewModel::onEvent, modifier = modifier)
 }
 
@@ -255,8 +262,9 @@ private fun CalibrationQuestion.answerRes(answer: Awakening.Answer): Int = when 
 @Composable
 private fun HealthStep(state: OnboardingUiState, onEvent: (OnboardingEvent) -> Unit) {
     Text(stringResource(R.string.onboarding_health_body), style = AwakenTheme.type.body, color = AwakenTheme.colors.bone)
-    if (state.healthNoticeShown) {
-        Text(stringResource(R.string.onboarding_health_coming), style = AwakenTheme.type.label, color = AwakenTheme.colors.mist)
+    when {
+        state.healthNotInstalled -> Text(stringResource(R.string.health_not_installed), style = AwakenTheme.type.label, color = AwakenTheme.colors.mist)
+        state.healthDeclined -> Text(stringResource(R.string.health_declined), style = AwakenTheme.type.label, color = AwakenTheme.colors.mist)
     }
     Column(
         modifier = Modifier.fillMaxWidth().padding(top = Spacing.md),
@@ -265,7 +273,6 @@ private fun HealthStep(state: OnboardingUiState, onEvent: (OnboardingEvent) -> U
         PrimaryButton(
             text = stringResource(R.string.action_connect),
             onClick = { onEvent(OnboardingEvent.ConnectHealth) },
-            enabled = !state.healthNoticeShown,
             modifier = Modifier.fillMaxWidth(),
         )
         SecondaryButton(
@@ -363,7 +370,7 @@ private fun OnboardingCalibrationPreview() {
 @PhonePreviews
 @Composable
 private fun OnboardingHealthPreview() {
-    AwakenTheme { OnboardingScreen(OnboardingUiState(step = OnboardingStep.HEALTH, healthNoticeShown = true), onEvent = {}) }
+    AwakenTheme { OnboardingScreen(OnboardingUiState(step = OnboardingStep.HEALTH, healthNotInstalled = true), onEvent = {}) }
 }
 
 @PhonePreviews

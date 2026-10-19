@@ -37,7 +37,7 @@ class OnboardingFlowTest {
 
     @Test
     fun awakeningCreatesTheHunterAndTheFirstDirective() {
-        val viewModel = OnboardingViewModel(graph.completeOnboarding, graph.completionCenter)
+        val viewModel = OnboardingViewModel(graph.completeOnboarding, graph.completionCenter, graph.health)
         composeRule.setContent { AwakenTheme { OnboardingRoute(viewModel = viewModel) } }
 
         click("Accept")
@@ -85,7 +85,7 @@ class OnboardingFlowTest {
 
     @Test
     fun nameIsValidatedBeforeMovingOn() {
-        val viewModel = OnboardingViewModel(graph.completeOnboarding, graph.completionCenter)
+        val viewModel = OnboardingViewModel(graph.completeOnboarding, graph.completionCenter, graph.health)
         composeRule.setContent { AwakenTheme { OnboardingRoute(viewModel = viewModel) } }
 
         click("Accept")

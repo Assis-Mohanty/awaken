@@ -97,6 +97,10 @@ fun DebugScreen(
                 OutlinedButton(onClick = { onEvent(DebugEvent.GrantShield) }) { Text(stringResource(R.string.debug_grant_shield)) }
                 OutlinedButton(onClick = { onEvent(DebugEvent.GrantGold) }) { Text(stringResource(R.string.debug_grant_gold)) }
                 OutlinedButton(onClick = { onEvent(DebugEvent.GrantFragments) }) { Text(stringResource(R.string.debug_grant_fragments)) }
+                OutlinedButton(onClick = { onEvent(DebugEvent.SimulateSteps(!state.simulateSteps)) }) {
+                    Text(stringResource(if (state.simulateSteps) R.string.debug_simulate_steps_off else R.string.debug_simulate_steps_on))
+                }
+                OutlinedButton(onClick = { onEvent(DebugEvent.SyncHealth) }) { Text(stringResource(R.string.debug_health_sync)) }
                 OutlinedButton(onClick = { onEvent(DebugEvent.GrantLevel) }) { Text(stringResource(R.string.debug_grant_level)) }
                 OutlinedButton(onClick = { onEvent(DebugEvent.WipeData) }) { Text(stringResource(R.string.debug_wipe)) }
             }
