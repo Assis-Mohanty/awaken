@@ -103,19 +103,23 @@ Off by default in v1 (toggle in settings ready, assets in v1.1). Never ship a so
 | `XpBar` | 10dp tall, chamfered ends, track `edge`, fill `system` (silver-white), leading 24dp gradient to `aether` (white). Animates delta. Shows "1,240 / 1,434 XP" in `numeric` small. |
 | `QuestRow` | Leading stat sigil (stat colour), title, target line ("40 reps · Normal"), trailing verified badge if applicable + check control. Swipe-right = complete (with haptic tick at threshold), long-press = details. Expired/missed rows dim to `fog` with strike. |
 | `StatChip`, `DifficultyChip`, `VerifiedBadge` | Pills. Verified = `verified` icon + "Verified" / "Timed". |
-| `RewardSheet` | Bottom sheet: windowTitle "QUEST CLEARED" (or "CRITICAL CLEAR" in `crit`), big `+XP` numeric, stat split, gold, the **formula breakdown** row (`40 base × 1.5 Normal × 1.20 streak × 1.30 verified = 94 XP`; SELF quests omit the ×1.00 verification factor), Done button. |
+| `RewardSheet` | Bottom sheet: windowTitle "QUEST CLEARED" (or "CRITICAL CLEAR" in `crit`), big `+XP` numeric, stat split, gold, the **formula breakdown** row (`40 base × 1.5 Normal × 1.20 streak × 1.30 verified = 94 XP`; SELF quests omit the ×1.00 verification factor), `FeedbackChips` for Path quests, Done button. |
 | `RadarChart` | Canvas pentagon, 5 axes with stat sigils; filled polygon `system` @ 14% with 1.5dp edge; previous-week polygon as dashed `mist` for comparison. |
 | `Heatmap` | 18 weeks × 7 days, cleared intensity 0–4 using `system` (white) alpha steps; rest days outlined; tap shows day summary. |
 | `GateDial` | Circular countdown for Focus Gate: thick ring in gate rank colour, remaining time `displayXL`, breach budget as a thin inner ring turning `ember`. |
 | `SystemToast` | Top-anchored mini window for achievements ("Title unlocked: Unbroken"). |
 | `EmptyState` | Short System line + one action. E.g., "No habits yet. Add one the System should track." [Add habit] |
 | `ShareCard` | 1080×1350 bitmap: hunter name, rank crest, level, radar, week stats, app name. Generated with `GraphicsLayer.toImageBitmap()` and shared via `ACTION_SEND`. |
+| `PathLadder` | Vertical milestone ladder: cleared milestones as filled chamfered nodes in the Path's primary-stat colour, the current one lit with the rank edge and a progress line ("4 / 6 quests this week"), future ones as `edge` outlines with titles in `mist`. Tap a node → summary + exit criterion. |
+| `PathQuestBadge` | Small pill on a `QuestRow` naming the Path ("◇ Codeforces 1900"), so personal quests are distinguishable from template quests at a glance. GATE-mode quests also show the required gate rank ("C-Gate · 50 min"). |
+| `FeedbackChips` | Three single-select chips on the RewardSheet of a Path quest: *Too easy · Right · Too hard*. Optional, never blocks Done. |
+| `OracleStatus` | Inline state line inside a Path window: "Charting your week…" (with the `reveal` shimmer on the edge), "Week charted", "Offline: your path updates when you reconnect", "The System could not chart this week [Retry]". |
 
 ## 4. Screens & flows
 
-Navigation: bottom bar with 4 destinations — **Today**, **Gates**, **Status**, **Vault**. Settings from Status top-right.
+Navigation: bottom bar with 5 destinations — **Today**, **Paths**, **Gates**, **Status**, **Vault**. Settings from Status top-right.
 
-### 4.1 Awakening (onboarding) — target < 60 seconds, no account
+### 4.1 Awakening (onboarding) — target < 60 seconds without a Path, < 2 minutes with one; no account
 
 ```
 [1] Black screen. System window types on:
@@ -129,10 +133,15 @@ Navigation: bottom bar with 4 destinations — **Today**, **Gates**, **Status**,
 [5] Verified quests (optional)  "Let the System see your steps, workouts and sleep
                                  from Health Connect. Verified quests earn 30% more XP.
                                  Data never leaves this phone."   [Connect] [Not now]
-[6] Daily directive time        time picker (default 07:00)
-[7] "AWAKENING COMPLETE" window → first directive slides in on Today.
+[6] Your first Path (optional) "What are you leveling toward?"  goal field with example chips
+                                ("Reach 1900 on Codeforces", "Run a 10K", "Read 12 books", "Learn Japanese")
+                                → current level field → [Continue] → AI consent sheet (§4.8) → [Enable] / [Not now]
+                                [Skip] is always visible and equal weight to Continue.
+[7] Daily directive time        time picker (default 07:00)
+[8] "AWAKENING COMPLETE" window → first directive slides in on Today. If a Path was created, its window on
+                                Paths shows "Charting your path…" and its quests join the Directive when ready.
 ```
-First quest is guaranteed Easy and doable now (e.g., "Drink a glass of water" VIT / "10 push-ups" STR by focus) → first level-up within 2 minutes of install.
+First quest is guaranteed Easy and doable now (e.g., "Drink a glass of water" VIT / "10 push-ups" STR by focus) → first level-up within 2 minutes of install. This never waits for the AI.
 
 ### 4.2 Today
 ```
@@ -157,7 +166,7 @@ First quest is guaranteed Easy and doable now (e.g., "Drink a glass of water" VI
 - Day cleared → window title becomes "DIRECTIVE CLEARED", edge pulses once.
 
 ### 4.3 Quest detail (long-press / tap title)
-Description, target, stat split, verification method with explanation, [Begin] (starts min-duration timer) / [Complete], reroll (side quests), "Why this quest?" line ("INT neglected for 3 days").
+Description, target, stat split, verification method with explanation, [Begin] (starts min-duration timer) / [Complete], reroll (side and Path quests), "Why this quest?" line ("INT neglected for 3 days"; for Path quests, the model's `rationale`). GATE-mode Path quests replace [Begin]/[Complete] with [Enter C-Gate · 50 min]. Path quests have an overflow menu item "Report this quest".
 
 ### 4.4 Gates
 Grid of 4 gate ranks (E/D/C/B) as portal tiles with duration; pick stat + optional label → `GateDial` full screen. Leaving the app shows the breach budget in the ongoing notification. Clear → RewardSheet. Collapse → `ember` window "GATE COLLAPSED" + "Background time 1:42 exceeded the 1:30 limit."
@@ -169,7 +178,19 @@ HunterHeader (large) → RadarChart (this week vs last) → stat list (level + X
 Gold balance, Streak Shields (owned/2), themes, frames, sigils; Relic Cache (fragments 7/10). Purchase = confirm sheet showing price and resulting balance. Owned items show "Equipped"/"Equip".
 
 ### 4.7 Settings
-Profile (name, focus stats), Day starts at, Reminder times, Rest day (pick next), Recovery mode, Health Connect, Equipment I own (jump rope, dumbbells, pull-up bar, gym access), Injury mode (excludes impact/legs/upper tags), Haptics, Reduce motion, Export/Import data, Privacy policy, About, (debug) Debug screen.
+Profile (name, focus stats), Day starts at, Reminder times, Rest day (pick next), Recovery mode, Health Connect, **AI Paths** (on/off, "What we send", revoke), Equipment I own (jump rope, dumbbells, pull-up bar, gym access), Injury mode (excludes impact/legs/upper tags), Haptics, Reduce motion, Export/Import data, Privacy policy, About, (debug) Debug screen.
+
+### 4.8 Paths
+- **Paths tab:** up to 3 Path windows, each: goal as window title, primary-stat sigil, `PathLadder` (collapsed to the current milestone), this week's quests with outcomes, `OracleStatus`. Empty state: "Name what you're leveling toward. The System will chart the way." [Create path]. Create is disabled with a reason at 3 active Paths.
+- **Create / edit Path sheet:** goal (example chips), current level, notes ("anything the System should avoid?"), primary stat (pre-selected by keyword suggestion, user confirms), optional secondary, active days, quests per day (1/2), weekly time (slider 30–900 min with a live "≈ 45 min per active day" hint). Validation messages inline.
+- **AI consent sheet** (shown once, before the first request):
+  > **The System needs to consult the Oracle.**
+  > To write your Path, AWAKEN sends your goal, current level, notes, and last week's quest results to our AI provider. No name, no account, no health data. Our server doesn't store it.
+  > Rewards are always calculated on your phone by fixed rules. The AI only writes the quests.
+  > [Enable AI Paths]  [Not now]  ·  [What exactly is sent?] → expandable list matching ARCHITECTURE §3.7
+- **Milestone advance moment:** `SystemWindow` "MILESTONE CLEARED" with the next milestone title; [Advance] / [Stay]. No reward numbers on this screen (there are none).
+- **Weekly recalibration line** on the Path window: "The System has raised the bar." (UP) / "Holding steady." (HOLD) / "The System has eased your path." (DOWN).
+- **Report flow:** bottom sheet with reasons (Unsafe · Not relevant · Impossible for me · Offensive · Other) → "Reported. This quest has been removed." The slot leaves today's Directive immediately.
 
 ## 5. Copy voice
 - System lines: terse, second person, present tense. "Quest cleared." "The System has recalibrated your STR trials." "You missed yesterday. One quest stands between you and redemption."

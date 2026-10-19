@@ -2,33 +2,41 @@
 
 ## 0. Why this architecture (and not the 13-microservice one)
 
-v1 has **zero users**. A distributed backend buys nothing yet and costs weeks: auth, hosting, sync conflicts, a privacy policy that now covers server data, and a Play Data-safety form that says "collects data". An offline-first app:
+v1 has **zero users**. A distributed backend buys nothing yet and costs weeks: auth, hosting, sync conflicts, a privacy policy that now covers server data. So the app is **offline-first with exactly one network feature**:
 
-- ships in days, works on a plane, and lets the Data-safety form say **"No data collected"** — a real trust signal competitors can't claim;
-- keeps the *same invariants* the backend design wanted (append-only ledger, idempotency keys, deterministic engine), so syncing later is "upload ledger events, server recomputes" — not a rewrite.
+- All game state lives on the phone. No account, no user database, no sync. It works on a plane.
+- **AI Paths** call one **stateless proxy** (the "Path Oracle", §3.8) that holds the LLM key, authenticates the *install* with Play Integrity instead of a person with a login, rate-limits, forwards to the model, and stores nothing. Losing the proxy degrades personalisation, never the game.
+- The *same invariants* the backend design wanted (append-only ledger, idempotency keys, deterministic engine) hold, so syncing later is "upload ledger events, server recomputes", not a rewrite.
+
+Why not a real backend with accounts for AI? An account system only buys identity, and v1 needs none: rate limiting needs "is this a genuine install of our app" (Play Integrity answers that) and the AI needs only the Path text sent in the request. Every user record we don't store is a record we can't leak.
 
 The existing `userService`/`questService` repo stays as a learning/portfolio project and the future sync target (v1.2+). See `REPO_AUDIT.md`.
 
 ```
 ┌──────────────────────────────── :app (Android) ────────────────────────────────┐
-│  UI (Compose)          feature/today  quest  gate  status  vault  onboarding    │
+│  UI (Compose)     feature/today  quest  paths  gate  status  vault  onboarding  │
 │     │ events ▲ StateFlow<UiState>                                               │
 │  ViewModels (Hilt)                                                              │
 │     │                                                                           │
-│  core/domain  — use cases: CompleteQuest, StartGate, GenerateDirective, ...     │
+│  core/domain  — use cases: CompleteQuest, StartGate, GenerateDirective,         │
+│                 CreatePath, AcceptWeekPlan, ...                                 │
 │     │   calls pure functions ───────────────────────┐                           │
 │  core/data    — Room DAOs, repositories, DataStore,  │                          │
-│                 HealthConnectGateway, Clock          │                          │
-│  workers      — DayRolloverWorker, HealthSyncWorker, ReminderWorker            │
-│  widget       — Glance TodayWidget                   │                          │
-└──────────────────────────────────────────────────────┼──────────────────────────┘
-                                                       ▼
-                                   ┌──────── :engine (pure Kotlin/JVM) ────────┐
-                                   │ XpCalculator  LevelCurve  RankRules        │
-                                   │ StreakRules   DailyCaps   CritRoller       │
-                                   │ DirectiveGenerator  DifficultyAdapter      │
-                                   │ AchievementEvaluator  model/*              │
-                                   └────────────────────────────────────────────┘
+│                 HealthConnectGateway, Clock,         │                          │
+│                 ai/PathOracleClient ─────────────────┼──── HTTPS ──┐            │
+│  workers      — DayRolloverWorker, HealthSyncWorker, │             │            │
+│                 ReminderWorker, PlanWeekWorker       │             │            │
+│  widget       — Glance TodayWidget                   │             │            │
+└──────────────────────────────────────────────────────┼─────────────┼────────────┘
+                                                       ▼             ▼
+                   ┌──────── :engine (pure Kotlin/JVM) ────────┐   ┌──── /proxy (Cloudflare Worker) ────┐
+                   │ XpCalculator  LevelCurve  RankRules        │   │ Play Integrity verify → rate limit │
+                   │ StreakRules   DailyCaps   CritRoller       │   │ → budget check → LLM (structured   │
+                   │ DirectiveGenerator  DifficultyAdapter      │   │ output) → zod validate → respond   │
+                   │ AchievementEvaluator                       │   │ Stores no user data.               │
+                   │ PathValidator  PathScheduler               │   └─────────────────┬──────────────────┘
+                   │ ProgressionSignal  model/*                 │                     ▼
+                   └────────────────────────────────────────────┘               LLM provider API
 ```
 
 ## 1. Project layout
@@ -44,8 +52,18 @@ awaken/
 │     ├─ XpCalculator.kt  LevelCurve.kt  RankRules.kt  StatLevel.kt
 │     ├─ DailyCaps.kt  CritRoller.kt (fnv1a64)  StreakRules.kt
 │     ├─ DirectiveGenerator.kt  DifficultyAdapter.kt  AchievementEvaluator.kt
+│     ├─ path/  PathValidator.kt  PathPricing.kt  PathScheduler.kt  ProgressionSignal.kt  StatSuggester.kt
 │     └─ GameDay.kt  (Instant + zone + dayStartHour -> LocalDate)
 │  └─ src/test/kotlin/...  (GAME_DESIGN §12 vectors + property tests)
+│  └─ src/test/resources/paths/  (hand-written response fixtures for vectors 16–35)
+├─ contracts/
+│  ├─ path_plan.request.schema.json   path_plan.response.schema.json
+│  └─ path_week.request.schema.json   path_week.response.schema.json
+├─ proxy/                          # Cloudflare Worker, TypeScript (deployed independently)
+│  ├─ src/index.ts  routes.ts  integrity.ts  ratelimit.ts (Durable Object)  budget.ts  llm.ts  schemas.ts
+│  ├─ prompts/  plan_path.v1.md  week_quests.v1.md     # versioned; version echoed in every response
+│  ├─ test/  (Vitest, mocked LLM)   eval/goals.json (30 goals)  eval/run.ts
+│  └─ wrangler.toml  (envs: staging, production)
 └─ app/
    └─ src/main/
       ├─ assets/quests/templates.json   assets/narrative/chapters.json, system_lines.json
@@ -53,9 +71,10 @@ awaken/
       └─ java/com/assismohanty/awaken/
          ├─ AwakenApp.kt (@HiltAndroidApp)  MainActivity.kt
          ├─ core/designsystem/  theme/ (Color, Type, Shape, Motion, Haptics), components/
-         ├─ core/data/  db/ (AwakenDatabase, entities, daos), repo/, prefs/, health/, clock/
+         ├─ core/data/  db/ (AwakenDatabase, entities, daos), repo/, prefs/, health/, clock/,
+         │              ai/ (PathOracleClient, IntegrityTokenProvider, dto/, FakePathOracle for debug/tests)
          ├─ core/domain/ usecases
-         ├─ feature/onboarding|today|quest|gate|status|vault|settings/
+         ├─ feature/onboarding|today|quest|paths|gate|status|vault|settings/
          ├─ notifications/  work/  widget/
          └─ navigation/AwakenNavHost.kt
 ```
@@ -75,7 +94,7 @@ hunter_profile(id PK='me', hunter_id,                 -- hunter_id: random UUID,
 
 stat_tier(stat PK, tier TEXT)                         -- EASY..EXTREME, adaptive (GD §6.4)
 
-quest_instance(id PK, game_date, type, template_id NULL, habit_id NULL,
+quest_instance(id PK, game_date, type, template_id NULL, habit_id NULL, path_slot_id NULL,
                stat, secondary_stat NULL, title, description, unit, target INT,
                difficulty, verification, min_duration_sec,
                status,                               -- ACTIVE|STARTED|COMPLETED|EXPIRED|MISSED|REROLLED
@@ -122,7 +141,38 @@ trial(id PK, target_rank, started_game_date, expires_game_date, status, ended_at
 achievement_unlock(achievement_id PK, unlocked_at)
 owned_cosmetic(cosmetic_id PK, acquired_at, source)
 health_sync_state(record_type PK, last_change_token NULL, last_synced_at)
+
+-- AI PATHS (GAME_DESIGN §6.6). None of these tables affect balances directly;
+-- rewards still flow only through quest_instance → CompleteQuest → ledger.
+path(id PK, goal, current_level, notes, primary_stat, secondary_stat NULL,
+     active_days_mask INT, quests_per_day INT, weekly_minutes INT,
+     status,                                   -- PLANNING|ACTIVE|PAUSED|ARCHIVED
+     current_milestone_index INT, milestone_started_game_date, created_at, created_game_date)
+
+path_milestone(path_id, idx, title, summary, exit_criterion, plan_version INT,
+               PRIMARY KEY(path_id, plan_version, idx))
+
+path_week(path_id, iso_week TEXT,               -- e.g. '2026-W43'
+          status,                               -- REQUESTED|READY|EMPTY|FAILED
+          progression_signal,                   -- UP|HOLD|DOWN
+          prompt_version, response_sha256, requested_at, received_at NULL,
+          manual_retries INT, suggest_advance BOOL,
+          PRIMARY KEY(path_id, iso_week))
+
+path_slot(id PK, path_id, iso_week, blueprint_index INT,
+          assigned_game_date, carried_over BOOL,
+          title, description, stat, unit, target INT, est_minutes INT,
+          mode,                                 -- SELF|GATE
+          priced_difficulty, priced_verification, gate_rank NULL, min_duration_sec,
+          tags_json, rationale,
+          outcome,                              -- PENDING|COMPLETED|EXPIRED|SKIPPED|REROLLED|REPORTED
+          feedback NULL,                        -- TOO_EASY|RIGHT|TOO_HARD
+          UNIQUE(path_id, iso_week, blueprint_index))
+
+ai_report(id PK, path_slot_id, reason, created_at, sent_at NULL)   -- outbox for /v1/reports
 ```
+
+`path_slot` holds the *validated, priced* blueprint. `quest_instance` for a Path quest is created from a slot on its game-day by `GenerateDirective`, with `path_slot_id` set; the priced fields are copied, never recomputed from model output.
 
 UNIQUE with nullable columns: SQLite treats NULLs as distinct → store `''` instead of NULL for `stat`/`item_id` in the ledger to keep the uniqueness guarantee. (This is a classic bug; add a test.)
 
@@ -192,6 +242,77 @@ This avoids foreground-service-type policy declarations entirely. The process ma
 `TodayWidget` 4×2: rank badge, level, streak flame, "3/5 cleared", next quest title, tap → app. Refresh on every ledger write (`updateAll`) and at rollover.
 Built in `core/widget`: `WidgetSnapshot` (pure mapping from the Today model), `TodayWidget` + `TodayWidgetReceiver` (Glance 1.2.0, Hilt entry point for data), `WidgetUpdater` (re-renders only when the snapshot changes). ENGINE_DECISIONS #56.
 
+### 3.7 AI Paths: client flow
+
+```
+CreatePathUseCase (consent given?) ──no──▶ show consent sheet (DESIGN_SYSTEM §4.8); stop
+      │ yes
+      ▼
+insert path(status=PLANNING) ─▶ enqueue PlanWeekWorker(pathId, PLAN_THEN_WEEK)
+                                         │  WorkManager: unique name "path-{pathId}-{isoWeek}",
+                                         │  NetworkType.CONNECTED, exponential backoff 30 s, max 5 attempts
+                                         ▼
+PathOracleClient.planPath(req)  ── POST /v1/paths/plan ──▶ proxy
+      ▼ response
+PathValidator.validatePlan(...)  (engine) → insert path_milestone rows → path.status = ACTIVE
+      ▼
+PathOracleClient.weekQuests(req) ── POST /v1/paths/week ──▶ proxy
+      ▼ response
+AcceptWeekPlanUseCase, in ONE transaction:
+   v = PathValidator.validateWeek(response, path, hunterSettings, last14DaysTitles)    // GD §6.6.4
+   priced = PathPricing.price(v)                                                     // GD §6.6.4
+   slots  = PathScheduler.assign(priced, path.activeDays, isoWeek, today)            // GD §6.6.6
+   insert path_slot rows (IGNORE on UNIQUE) ; upsert path_week(status = READY | EMPTY)
+   if today's directive already exists → GenerateDirective.addPathQuestsForToday()   // idempotent
+```
+
+- **Weekly trigger:** `DayRolloverUseCase` on the first rollover of an ISO week computes `ProgressionSignal` per active Path from last week's `path_slot` outcomes (GD §6.6.5) and enqueues `PlanWeekWorker(pathId, WEEK)`.
+- **Request content** (the only data that leaves the phone): `goal`, `currentLevel`, `notes`, stats, `activeDays`, `questsPerDay`, `weeklyMinutes`, current and next milestone titles, `progressionSignal`, and last week's `[{title, outcome, feedback}]`. Plus equipment owned and Injury Mode tags, so the model avoids them up front (the validator enforces it anyway). Never XP, level, gold, streak, Health Connect data, hunter name or device identifiers beyond the random install ID.
+- **Integrity:** `IntegrityTokenProvider` wraps the Play Integrity **Standard API** (`prepareIntegrityToken` once per app process, then `request()` per call with `requestHash = SHA-256(canonical request body)`). Headers: `X-Install-Id` (random UUID in DataStore, created at consent) and `X-Integrity-Token`.
+- **Retries:** each logical request carries a `requestId` UUID that is reused across WorkManager retries; the proxy doesn't charge quota twice for the same `requestId`.
+- **Timeouts:** connect 10 s, total 45 s. Model latency is the long pole.
+- **Failure states** → `path_week.status = FAILED` after max attempts; Paths tab shows the System-styled error with [Retry] (counts toward the manual-retry limit). The Directive never waits on the network: it is generated from whatever slots exist.
+- **Consent revoked** (Settings → AI Paths off): cancel all `PlanWeekWorker`s, delete the install ID, keep existing Paths and slots readable and completable; no new plans.
+- **Reports:** "Report this quest" sets `path_slot.outcome = REPORTED` (removed from today immediately, no reward impact) and inserts an `ai_report` outbox row; `ReportWorker` POSTs it to `/v1/reports`.
+- **Debug builds** use the `staging` proxy env and send `X-Debug-Key` (from `local.properties`, never in release) because sideloaded debug APKs fail Play Integrity. A Debug-screen toggle swaps in `FakePathOracle` (fixture responses) for offline UI work.
+
+### 3.8 The Path Oracle proxy
+
+One Cloudflare Worker, three routes. Why Workers: no servers to patch, a free tier that covers early usage, secrets in the platform, and Durable Objects for strongly consistent per-install counters. (A FastAPI container on Cloud Run is a fine alternative; the contract below doesn't change.)
+
+| Route | Body schema | Notes |
+|---|---|---|
+| `POST /v1/paths/plan` | `contracts/path_plan.request.schema.json` | → milestones |
+| `POST /v1/paths/week` | `contracts/path_week.request.schema.json` | → blueprints + `suggestAdvance` |
+| `POST /v1/reports` | `{ promptVersion, reason, title, description }` | Stored in D1, 90-day TTL. The only thing the proxy stores. No install ID kept with it |
+
+Request pipeline, in order (cheap checks first, the model last):
+
+```
+1. size ≤ 8 KB, content-type JSON                        → 400 invalid_request
+2. zod-validate body against the contract (lengths, enums) → 400 invalid_request
+3. Play Integrity: decode token via Google's decodeIntegrityToken API; require
+   requestPackageName == com.assismohanty.awaken, requestHash == SHA-256(raw body),
+   appRecognitionVerdict == PLAY_RECOGNIZED, deviceRecognitionVerdict ∋ MEETS_DEVICE_INTEGRITY,
+   token timestamp ≤ 5 min old                              → 401 integrity_failed
+4. Rate limit (Durable Object keyed by install ID; GD §6.6.7) + per-IP backstop
+   (Workers rate-limiting binding); same requestId never double-counts → 429 rate_limited + Retry-After
+5. Budget: monthly spend counter (DO singleton, estimated from token usage × configured price)
+                                                            → 503 budget_exhausted
+6. Build prompt: system prompt from prompts/<name>.v<N>.md; user fields inserted ONLY inside a
+   delimited <hunter_data> block with an instruction that its contents are data, not instructions
+7. Call the model with structured output (JSON schema = the response contract), max 2,000 output tokens,
+   temperature low (≈0.4). Model ID from env (a small, fast tier; verify current IDs on the provider's docs)
+8. zod-validate the model output. Invalid → retry once → still invalid             → 502 model_invalid_output
+9. Respond { promptVersion, ...payload }. The app's PathValidator runs again (defence in depth)
+```
+
+**Prompt content rules** (in both prompt files): concrete and measurable tasks only; respect `notes`, equipment and injury tags; never medical, diet, calorie, weight, fasting, supplement or substance advice; nothing illegal, dangerous, sexual or involving money; no contacting strangers; no links. Keep the System voice in `title`, plain language in `description`.
+
+**What the proxy logs:** route, status, latency, model tokens in/out, prompt version, SHA-256 of the install ID (for abuse forensics), validation drop counts. **Never** request or response bodies. Retention 30 days.
+
+**Known limit (state it honestly):** a determined attacker can reinstall to get a fresh install ID. Play Integrity still forces them through a genuine Play-installed app on a real device, the per-IP limit slows bulk abuse, and the monthly budget cap bounds the worst case to a number you chose. That is proportionate for a free feature.
+
 ### 3.9 Status & Weekly Report share
 `ObserveStatusUseCase` derives everything Status shows from Room flows: radar (current stat levels vs levels from ledger rows before this Monday), 18-week heatmap (active completions per game-day), the 32 achievements, chapters (`level ≥ unlockLevel`), and the Weekly Report with a projected recalibration. Equipping a title updates `hunter_profile.equipped_title_id` only, never the ledger. To share, `ShareCard` is laid out offscreen at 360×450dp with density 3, recorded into a `GraphicsLayer` (1080×1350px), written by `ShareImageWriter` to `cache/share/` (one file, overwritten), and handed to `ACTION_SEND` through `androidx.core.content.FileProvider` (authority `${applicationId}.share`, cache path only, with a per-share read grant). No network.
 
@@ -199,12 +320,14 @@ Built in `core/widget`: `WidgetSnapshot` (pure mapping from the Today model), `T
 `PurchaseItemUseCase` and `OpenRelicCacheUseCase` each run in one transaction and are idempotent on a client-generated id (`SHOP` / `CACHE_OPEN` ledger sources). `ShopRules` (engine) owns the catalogue, prices and the deterministic cache drop. Settings edits go through `UpdateSettingsUseCase` (profile row only); haptics and reduce-motion live in a DataStore (`UiPrefsRepository`) and feed `AwakenTheme` with the equipped theme via `AppearanceViewModel`. `GameDataPorter` exports the raw rows of 12 tables as JSON (SAF, no permission, no network) and imports them atomically (ENGINE_DECISIONS #48).
 
 ## 4. State & DI
-- Hilt modules: `DatabaseModule`, `DispatchersModule` (`@IoDispatcher`, `@DefaultDispatcher`), `ClockModule` (`Clock` interface; `SystemClock` in prod, `FakeClock` in tests), `EngineModule` (provides engine objects + loaded template library).
-- DataStore (Preferences) only for UI prefs: reduce motion, haptics on/off, sound on/off.
+- Hilt modules: `DatabaseModule`, `DispatchersModule` (`@IoDispatcher`, `@DefaultDispatcher`), `ClockModule` (`Clock` interface; `SystemClock` in prod, `FakeClock` in tests), `EngineModule` (provides engine objects + loaded template library), `AiModule` (Ktor `HttpClient`, `PathOracleClient` bound to the real or fake implementation, `IntegrityTokenProvider`; base URL from `BuildConfig` per build type).
+- DataStore (Preferences) for UI prefs (reduce motion, haptics on/off, sound on/off) and AI settings (consent given + timestamp, install ID).
 - Everything game-relevant lives in Room (single source of truth, transactional).
 
 ## 5. Security, privacy, abuse
-- No INTERNET permission in v1 → nothing to exfiltrate, no backend to attack.
+- `INTERNET` is used only by `PathOracleClient` (and Play services for Integrity). `network_security_config.xml`: cleartext disabled. No third-party SDKs that make network calls. Phase 16 verifies the merged manifest and dependency list.
+- The proxy is the only server. It holds the LLM key as a Worker secret; the key never exists in the repo, the APK, or CI logs.
+- Threat model for AI Paths, and the control for each: **key theft** → key only on the proxy; **cost abuse** → Play Integrity + per-install and per-IP limits + monthly budget cap; **prompt injection** via goal text → delimited data block + schema-constrained output + engine validator + rewards never derived from model output; **XP farming** via trivial goals → SELF Path quests capped at Normal and the daily self cap (GD §6.6.4); **harmful content** → prompt rules + unit enum without diet/weight units + in-app report; **data leak** → proxy stores no request data and logs no bodies.
 - `android:allowBackup="true"` with `dataExtractionRules` including the Room DB so users don't lose progress on a new phone (Google auto-backup). Plus manual **Export/Import JSON** of the ledger (Settings) — export is a full ledger dump; import validates with the engine and rebuilds caches.
 - Cheating is possible offline (clock changes, self-report). Accept it for v1: it only affects the cheater. Mitigations that matter for later sync: ledger keeps `created_at` + `game_date`; record `SystemClock.elapsedRealtime()` deltas on completions; flag days where wall-clock moved backwards. When leaderboards arrive, **only HEALTH/TIMER-verified XP counts toward ranked boards**, and the server recomputes from events.
 - R8 enabled for release; no secrets in repo; `keystore.properties` git-ignored.
@@ -216,14 +339,21 @@ Built in `core/widget`: `WidgetSnapshot` (pure mapping from the Today model), `T
 | Data | Room in-memory + Robolectric or instrumented | Ledger idempotency (same event twice), NULL-uniqueness bug, undo, rebuild-from-ledger == cache, migrations (`MigrationTest`) |
 | Use cases | Fakes + FakeClock | Complete→level-up; rollover over 5 missed days; DST boundary; day-start 04:00 edge (03:59 vs 04:00) |
 | UI | Compose UI test | Onboarding happy path; complete quest shows reward; gate collapse state |
-| Manual | `docs/QA_CHECKLIST.md` | Real device: notifications, widget, HC permission flow, backgrounding a gate, airplane mode, font scale 200%, TalkBack on main flows |
+| Paths (app) | Fakes + FakeClock + Robolectric | Week accepted twice = no duplicate slots; plan arrives mid-week (only remaining days scheduled); carry-over then SKIPPED at week end; consent revoked mid-request; gate cleared from a Path quest pays once (GD vector 33); worker retries reuse `requestId` |
+| Contract | JSON Schema in `/contracts` | `:engine` tests load every fixture and validate it against the response schema; the proxy's zod schemas are checked against the same files in CI, so client and proxy can't drift |
+| Proxy | Vitest + mocked LLM + mocked Integrity API | Each pipeline step's error code; requestId idempotency; budget exhaustion; injection fixtures ("ignore previous instructions…") still produce schema-valid output; no body ever reaches the logger |
+| Prompt eval | `proxy/eval/run.ts` against staging | 30 goals across all 5 stats (incl. vague, non-English, adversarial, injured-user cases). Pass bar: ≥ 90% of blueprints survive PathValidator, 0 blueprints break the content rules on manual review. Re-run on every prompt version change |
+| Manual | `docs/QA_CHECKLIST.md` | Real device: notifications, widget, HC permission flow, backgrounding a gate, airplane mode (Paths fall back cleanly), consent decline/revoke, report a quest, font scale 200%, TalkBack on main flows |
 
 ## 7. Observability (offline app edition)
 - `Timber` debug tree only in debug builds.
 - In-app **Debug screen** (debug builds): ledger viewer, balance rebuild, FakeClock time-travel (+1 day), force rollover, seed templates check. This is how you (and Claude Code) test day-based logic without waiting a day.
 - Production crash/ANR data: Play Console → Android vitals (no SDK required).
+- Debug screen also shows: each Path's `path_week` rows, raw last response (debug builds only), validator drop reasons, and buttons "Force week re-plan" and "Use FakePathOracle".
+- **Proxy:** Workers analytics + structured logs (fields in §3.8). Dashboards: requests by route and status, p50/p95 model latency, validation drop rate, integrity failures, 429s, spend vs budget. Alerts: spend ≥ 80% of the monthly budget; integrity failures > 20% of traffic for 1 h; `model_invalid_output` > 5% for 1 h.
 
 ## 8. Later (v1.2+): sync & social — sketch only
+When accounts arrive, the proxy gains an authenticated route and Paths can sync like everything else. Until then it stays stateless.
 ```
 App ledger events ──(batched, idempotent, signed session)──▶ Ingest API (your existing Node/TS services)
                                                               │  recompute with the SAME engine rules

@@ -4,15 +4,15 @@
 
 If your Play developer account is a **personal** account created after 13 Nov 2023, Google requires a **closed test with ≥ 12 testers opted in for 14 consecutive days** before you can even *apply* for production; that application review usually takes up to ~7 days. Organisation accounts (need a D-U-N-S number) are exempt but take longer to register.
 
-So "published in 2–3 days" realistically means:
+So the earliest public date is **(day your closed test starts) + 14 days + review (~up to 7 days)**:
 
-| Day | What is public |
+| Step | What is public |
 |---|---|
-| Day 3 | Build in **Internal testing** (instant, up to 100 testers) + **Closed testing** track live for your 12+ testers. Also a signed APK you can share directly. |
-| Day 3 → 17 | Closed test runs. You ship v1.1 updates to testers from feedback. |
-| ~Day 17–24 | Apply for production → review → **public on Play Store**. |
+| Closed test starts (after Phase 12 or Phase 16) | Build in **Internal testing** (instant, up to 100 testers) + **Closed testing** track live for your 12+ testers. Also a signed APK you can share directly (note: AI Paths won't pass Play Integrity on a sideloaded APK). |
+| +0 → +14 days | Closed test runs. Ship updates (including AI Paths if not already in) from feedback. |
+| +14 → ~+21 days | Apply for production → review → **public on Play Store**. |
 
-Start recruiting testers **today**, not on Day 3. A tester who opts out and rejoins restarts their own 14-day clock.
+Start recruiting testers **today**, not when the build is ready. A tester who opts out and rejoins restarts their own 14-day clock.
 
 ### Getting 12+ real testers (in order of quality)
 1. Friends/classmates with Android phones (ask for 20 — some won't opt in). Make a Google Group (personal Gmail-owned group, not Workspace) and add the group as the tester list.
@@ -33,6 +33,7 @@ Ask testers to **open the app on several days**, not just install it.
   - [ ] Content rating questionnaire (expect Everyone/3+ — no violence/gambling; Relic Cache is earned-only, no purchase)
   - [ ] Target audience: 18+ (avoids Families policy obligations; set 13+ only if you're ready for those requirements)
   - [ ] Data safety (see §4)
+  - [ ] AI-generated content: confirm the in-app "Report this quest" flow works without leaving the app, and that the prompt content rules exclude restricted content (Play's AI-Generated Content policy; re-read the current policy page before submitting)
   - [ ] **Health apps declaration**: select Activity & fitness / Sleep; justify each Health Connect data type (§5)
   - [ ] Government app: No; Financial features: No
 - [ ] Store listing (§3), graphics (§6)
@@ -49,6 +50,12 @@ Ask testers to **open the app on several days**, not just install it.
 You have been chosen.
 
 AWAKEN turns your real life into a hunter's progression system. Every workout, study session, early night and hard conversation becomes XP. Level up five stats, clear daily directives, break into Focus Gates, and earn your rank from E to S.
+
+A PATH BUILT FOR YOUR GOAL
+• Tell the System what you're leveling toward: a rating, a race, a language, a book list.
+• It charts milestones and writes each week's quests from what you actually completed.
+• Too easy? Too hard? Say so, and next week adapts.
+• Rewards are calculated on your phone by fixed rules. The AI writes the quests, never the XP.
 
 THE SYSTEM CAN SEE YOUR EFFORT
 • Verified quests: steps, workouts and sleep complete automatically through Health Connect — and earn 30% more XP.
@@ -70,19 +77,31 @@ GROW EVERY STAT
 • Weekly reports you can share.
 
 PRIVATE BY DESIGN
-• No account. Works offline. Your data stays on your phone.
+• No account. Works offline. Your progress stays on your phone.
+• AI Paths are optional. Only your goal and quest results are sent to write your quests, and our server keeps none of it.
 ```
 
 **Category:** Health & Fitness (primary competitor set) — alternative: Productivity. Pick Health & Fitness if Health Connect verification is in the build.
 **Tags:** Habit tracker, Fitness, Productivity, Motivation.
-**ASO keywords to weave naturally into the description:** habit tracker, level up, RPG, daily quests, hunter, rank, gamified, self improvement, workout, study timer, pomodoro, streak, discipline.
+**ASO keywords to weave naturally into the description:** habit tracker, level up, RPG, daily quests, hunter, rank, gamified, self improvement, AI coach, personalised plan, workout, study timer, pomodoro, streak, discipline.
 
-## 4. Data safety form (v1 — offline, no INTERNET permission)
+## 4. Data safety form (v1 — offline game + opt-in AI Paths)
 
-- Does your app collect or share any of the required user data types? → **No.** (Data processed only on-device and never sent off the device is not "collected" under Play's definition.)
-- Health Connect reads happen on-device; nothing is transmitted. Keep it that way in v1 or this answer changes.
-- Encryption in transit: N/A. Deletion: users can wipe data in Settings and by uninstalling — mention it in the policy.
-Re-do this form the moment you add sync, analytics, or crash SDKs.
+Because AI Paths send user-entered text off the device, the answer is no longer "No data collected". Draft answers below; **re-read Play's current Data safety definitions when you fill the form** and make the answers match what the app actually does.
+
+| Data type (Play category) | Collected? | Shared? | Ephemeral? | Required/optional | Purpose |
+|---|---|---|---|---|---|
+| App activity → **Other user-generated content** (Path goal, current level, notes) | Yes | No (sent to our service provider on our behalf) | **Yes**, processed only to answer the request | Optional (AI Paths opt-in) | App functionality |
+| App activity → **Other actions** (last week's Path quest titles, outcomes, feedback) | Yes | No | **Yes** | Optional | App functionality |
+| Device or other IDs (random install ID; Play Integrity verdict) | Yes | No | Install ID hash kept in proxy logs 30 days | Optional | Fraud prevention, security |
+| App activity → reports (only when the user taps "Report this quest") | Yes | No | No, kept 90 days | Optional | App functionality (content safety) |
+| Health data, location, contacts, name, email | **No** | No | — | — | — |
+
+- Encrypted in transit: **Yes** (HTTPS only, cleartext disabled).
+- Users can request deletion: proxy keeps no user data; reports carry no identifier, so explain that in the policy. On-device data: Settings → Data → Wipe, or uninstall.
+- Health Connect reads still happen on-device only and are never sent to the proxy. Keep it that way or this table changes.
+- The LLM provider processes the request as your service provider. Check its current data-retention terms for API traffic and state them in the privacy policy.
+Re-do this form whenever you add sync, analytics, or crash SDKs, or change what the Path request contains.
 
 ## 5. Health apps declaration — justification text (adapt)
 - **Steps (read):** "Used to automatically mark user-chosen step-count quests as complete on-device and award in-app experience points. Not shared or uploaded."
@@ -93,15 +112,16 @@ Request nothing else. The privacy policy link shown inside Health Connect must b
 ## 6. Graphics
 - App icon 512×512 (original portal/gate glyph — no series artwork).
 - Feature graphic 1024×500: dark void, chamfered System Window with "LEVEL UP — 24", tagline "Level up in real life."
-- Phone screenshots (min 2, use 6–8, 9:16, 1080×1920+). Use Screenshot mode (Phase 14). Order = story:
-  1. Today directive with a verified quest ("The System can see your effort")
-  2. Level-up ceremony ("Real effort. Real levels.")
-  3. Reward sheet with formula breakdown ("Every XP explained")
-  4. Focus Gate dial ("Focus Gates: deep work that counts")
-  5. Status radar + heatmap ("Grow five stats")
-  6. Penalty Zone comeback ("Hard, never cruel")
-  7. Rank Trial ("Earn your rank: E → S")
-  8. Widget on home screen
+- Phone screenshots (min 2, use 6–8, 9:16, 1080×1920+). Use Screenshot mode (Phase 17). Order = story:
+  1. Path with milestone ladder and this week's quests ("Tell the System your goal")
+  2. Today directive with a Path quest and a verified quest ("The System can see your effort")
+  3. Level-up ceremony ("Real effort. Real levels.")
+  4. Reward sheet with formula breakdown + feedback chips ("Every XP explained")
+  5. Focus Gate dial ("Focus Gates: deep work that counts")
+  6. Status radar + heatmap ("Grow five stats")
+  7. Penalty Zone comeback ("Hard, never cruel")
+  8. Rank Trial ("Earn your rank: E → S")
+  (Widget screenshot dropped to stay within 8; use it in the promo video.)
 - Optional promo video later (30 s screen recording with captions).
 
 ## 7. Privacy policy template (host at `https://<you>.github.io/awaken/privacy-policy/`)
@@ -110,12 +130,24 @@ AWAKEN Privacy Policy — effective <date>
 
 AWAKEN ("the app") is developed by <your name>, <city, India>. Contact: <email>.
 
-What the app stores: your hunter profile, quests, habits, progress and settings are stored only on your device.
-The app has no account system and no internet access. We do not collect, transmit, sell, or share personal data.
+What the app stores: your hunter profile, quests, habits, Paths, progress and settings are stored only on your device.
+The app has no account system. We do not sell your data or use it for advertising.
+
+AI Paths (optional): if you turn on AI Paths, the app sends the following to our server, which forwards it to our AI
+provider, <provider name>, to write your Path quests: your Path goal, current level and notes as you typed them; your
+chosen stats, active days and weekly time; your equipment and injury settings; and the titles, outcomes and
+"too easy / right / too hard" feedback of last week's Path quests. It does not send your name, health data, XP, level
+or any account information. Requests are checked with Google Play Integrity and identified only by a random install ID.
+Our server does not store the content of requests or responses; it keeps a one-way hash of the install ID with request
+counts for 30 days to prevent abuse. <Provider name> processes requests under its API terms: <state its current
+retention period>. Rewards (XP, gold, levels) are always calculated on your device by fixed rules, never by the AI.
+You can turn AI Paths off anytime in Settings; existing Paths stay on your device.
+Reports: if you report a quest, its text and your chosen reason are sent and kept for up to 90 days to improve safety.
+Reports contain no identifier.
 
 Health Connect: if you choose to enable verified quests, the app reads Steps, Exercise sessions and Sleep sessions
 from Health Connect on your device to mark matching quests complete. This data is processed on-device only, is never
-uploaded, and is not used for advertising. You can revoke access anytime in Health Connect settings.
+uploaded (including to AI Paths), and is not used for advertising. You can revoke access anytime in Health Connect settings.
 Use of information received from Health Connect adheres to the Health Connect Permissions policy, including the
 Limited Use requirements.
 

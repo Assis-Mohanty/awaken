@@ -2,7 +2,7 @@
 
 > Source of truth for every number in the game. If code disagrees with this file, the code is wrong.
 > All formulas live in the pure-Kotlin `:engine` module and are covered by the test vectors in §12.
-> AI never decides a number in this file. Ever.
+> AI never decides a number in this file. Ever. AI Paths (§6.6) may propose *what* to do (task wording, a target like "3 problems"), always clamped by the engine; every reward-relevant number — difficulty, verification, XP, gold, caps — is computed here.
 
 ---
 
@@ -150,13 +150,14 @@ Reaching the first level of a new band does **not** promote you. It unlocks the 
 | Type | Count / day | Source | Notes |
 |---|---|---|---|
 | **Main** | 1 | Generated | Hard, focus stat, rotates through focus stats |
-| **Side** | 3 | Generated | Normal, weighted by focus (2×) and neglect (stat untouched for 3+ days gets 1.5×) |
+| **Side** | 1–3 | Generated | Normal, weighted by focus (2×) and neglect (stat untouched for 3+ days gets 1.5×). Count = `max(1, 3 − pathQuestsToday)` (§6.6.6) |
+| **Path** | 0–3 | AI Path (§6.6) | Personal quests from the hunter's goals. Validated and priced by the engine |
 | **Habit** | user-defined, max 8 | User | Custom recurring quests (days of week) |
 | **Penalty** | 0–1 | System | Appears after a failed day (§7.3) |
 | **Trial** | 1 while active | System | Rank Trial stage (§5) |
 | **Focus Gate** | unlimited | User-started | Timer dungeon (§8). Counts as a quest completion. |
 
-**Daily Directive** = Main + Side + Habits scheduled today. Generated at day start (or on first app open of the day — whichever comes first; idempotent per `(hunterId, gameDate)`).
+**Daily Directive** = Main + Path quests scheduled today + Side + Habits scheduled today. Generated at day start (or on first app open of the day — whichever comes first; idempotent per `(hunterId, gameDate)`).
 
 ### 6.2 Template library (deterministic generation)
 
@@ -189,8 +190,11 @@ generateDirective(hunter, gameDate):
          − equipment the hunter doesn't own (settings)
          − tags excluded by Injury Mode (e.g. "impact", "legs")
          − templates used in the last 7 days (novelty window)
-  main  = weightedPick(pool where stat == focusStats[gameDay % 2], difficulty = HARD adjusted by tier)
-  sides = 3 × weightedPick(pool − main.stat-duplicates-where-possible, weights = focus 2.0, neglected 1.5, else 1.0)
+  paths = PathScheduler.questsFor(gameDate)                  // §6.6.6, 0–3 items, already validated
+  main  = promotedPathQuest(paths, focusStats[gameDay % 2])  // §6.6.6, may be null
+          ?: weightedPick(pool where stat == focusStats[gameDay % 2], difficulty = HARD adjusted by tier)
+  sides = max(1, 3 − paths.size) × weightedPick(pool − main.stat-duplicates-where-possible,
+                                                weights = focus 2.0, neglected 1.5, else 1.0)
   title = template.titles[rng]   ;   target = template.targets[difficulty]
 ```
 
@@ -198,11 +202,11 @@ Each instance id is a deterministic name-based UUID: `UUID.nameUUIDFromBytes("hu
 
 **First directive** (the onboarding day only): one side slot becomes a starter quest — Easy, in a focus stat, SELF-verified, and not tagged `outdoor` — so the first clear is doable right after onboarding.
 
-**Reroll**: 1 free reroll per day for one side quest; further rerolls cost 40 gold (max 3 paid/day, so 4 rerolls total). Rerolling cannot target the main quest.
+**Reroll**: 1 free reroll per day for one side or Path quest; further rerolls cost 40 gold (max 3 paid/day, so 4 rerolls total). Rerolling cannot target the main quest (including a promoted Path quest). Path quest rerolls follow §6.6.6.
 
 ### 6.4 Adaptive difficulty (per stat)
 
-Every Monday (or first open after), per stat over the previous 7 days of *generated* quests in that stat:
+Every Monday (or first open after), per stat over the previous 7 days of *template-generated* quests in that stat (Path quests are excluded; they have their own signal, §6.6.5):
 
 ```
 completionRate ≥ 0.85 and ≥ 4 quests   → tier +1   (max EXTREME)
@@ -217,7 +221,130 @@ Side quests use the stat's tier; the main quest uses `tier + 1` (capped). Shown 
 - `minDurationSec`: a SELF quest cannot be completed sooner than N seconds after it was *started* (tap "Begin"). If the user never tapped Begin, they can still complete, but `V` stays 1.0 and it counts toward the self cap. Keep it low-friction; this is a soft speed bump, not a jail.
 - Completions are **undoable for 10 minutes** (writes a reversing ledger entry with the same idempotency group; never deletes). Undo never revokes achievements: unlocks and their gold are permanent. Undo is also refused once the game-day has ended, even within the 10 minutes.
 - HEALTH and TIMER quests cannot be completed by hand. HEALTH quests complete only from Health Connect data, TIMER quests only by clearing a Focus Gate. Only SELF quests have a manual Complete button.
-- After the day ends, unfinished generated quests become `EXPIRED`. Habits become `MISSED`.
+- After the day ends, unfinished generated quests become `EXPIRED`. Habits become `MISSED`. Path quests follow the carry-over rule in §6.6.6.
+
+### 6.6 AI Paths (personal quest ladders)
+
+The template library handles universal habits (steps, sleep, push-ups, reading time). It cannot know that one hunter is chasing Codeforces 1900 and another is learning Japanese. **Paths** close that gap. The split of responsibility is the whole design:
+
+| Decides | Who | Why |
+|---|---|---|
+| *What* to do: decompose a goal into milestones and concrete tasks | **LLM** (via `/proxy`) | Needs world knowledge; templates can't |
+| *How much harder* next week: the progression signal | **Engine** (§6.6.5) | A formula over completion data, same thresholds as §6.4 |
+| Difficulty, verification, XP, gold, caps | **Engine** (§6.6.4, §4) | Rewards must be deterministic and abuse-resistant |
+
+AI Paths are **opt-in** (consent screen, ARCHITECTURE §3.7). With AI off, offline, or the proxy failing, the Directive is generated exactly as in §6.3 with `paths = []`.
+
+#### 6.6.1 The Path
+
+| Field | Rule |
+|---|---|
+| `goal` | User text, 3–120 chars. e.g. "Reach 1900 on Codeforces" |
+| `currentLevel` | User text, 0–120 chars. e.g. "Rated 1400, weak at graphs and DP" |
+| `notes` | Optional user text, 0–280 chars. Constraints: "no gym", "only evenings" |
+| `primaryStat` | One of the 5 stats, chosen by the user (suggested from the goal by a keyword table in `:engine`, not by AI) |
+| `secondaryStat` | Optional, ≠ primary |
+| `activeDays` | Days-of-week mask, 1–7 days |
+| `questsPerDay` | 1 or 2 |
+| `weeklyMinutes` | 30–900, user-set time budget |
+| `status` | `PLANNING` → `ACTIVE` ⇄ `PAUSED` → `ARCHIVED` |
+
+Limits: **max 3 active Paths**; max 1 Path created per game-day (stops create/delete churn against the proxy).
+
+#### 6.6.2 Two AI calls, both bounded
+
+1. **`PLAN_PATH`** (on creation; user "Re-plan" allowed max 1× per ISO week per Path). Returns a **ladder** of 4–10 milestones, each `{title ≤ 48, summary ≤ 200, exitCriterion ≤ 140}`. Milestones are narrative structure only; they carry no rewards. Plan validation: V2 string cleaning on every field; drop milestones with an empty title; keep the first 10; fewer than 4 left → the plan request counts as failed (Path stays `PLANNING`, [Retry] shown).
+2. **`WEEK_QUESTS`** (once per Path per ISO week, at the first rollover of the week, or right after `PLAN_PATH`). Input: the Path, the current milestone, the engine's `progressionSignal` (§6.6.5), and last week's per-quest outcomes. Output: up to `n = activeDays × questsPerDay` **blueprints** plus an optional `suggestAdvance: Boolean`.
+
+The model never sees the hunter's XP, level, gold or streak; it doesn't need them and they would invite it to "balance" rewards.
+
+#### 6.6.3 Blueprint schema (wire contract: `/contracts/path_week.response.schema.json`)
+
+```json
+{
+  "title": "Graph Hunt",
+  "description": "Solve 2 problems tagged 'graphs' rated 1500-1600 on Codeforces. Write one line on the key idea of each.",
+  "stat": "INT",
+  "unit": "PROBLEMS",
+  "target": 2,
+  "effort": "HARD",
+  "estMinutes": 60,
+  "mode": "GATE",
+  "tags": ["quiet", "screen"],
+  "rationale": "Your last two contests lost points on graph problems."
+}
+```
+
+Enums: `unit ∈ {MINUTES, REPS, PAGES, PROBLEMS, ITEMS, SESSIONS, KM}` · `effort ∈ {EASY, NORMAL, HARD, EXTREME}` · `mode ∈ {SELF, GATE}` · `tags ⊆ {impact, legs, upper, outdoor, indoor, social, quiet, screen}`. There is deliberately no unit for calories, body weight, food or money, and the model cannot choose `HEALTH_*` verification.
+
+#### 6.6.4 PathValidator (pure function in `:engine`, runs on every response)
+
+Applied in this order; a blueprint that fails a **drop** rule is discarded, a **clamp** rule repairs it.
+
+| # | Rule | Kind |
+|---|---|---|
+| V1 | JSON doesn't parse, or an enum value is unknown | drop |
+| V2 | Strings: strip control chars and URLs (`https?://\S+`), collapse runs of whitespace to one space, trim, truncate to the limits above (title 48, description 280, rationale 140); title empty after cleaning | drop if empty, else clamp |
+| V3 | `stat ∉ {primaryStat, secondaryStat}` → set to `primaryStat` | clamp |
+| V4 | `target` clamped per unit: MINUTES 5–120 · REPS 5–300 · PAGES 2–100 · PROBLEMS 1–10 · ITEMS 1–20 · SESSIONS 1–3 · KM 1–21 | clamp |
+| V5 | `estMinutes` clamped to 5–120 | clamp |
+| V6 | Any tag excluded by Injury Mode, or title/description mentions equipment the hunter doesn't own (`EquipmentKeywords` table in `:engine`, e.g. "dumbbell", "pull-up bar", "gym", "jump rope") | drop |
+| V7 | Normalised title (lowercase, alphanumerics only) duplicates another blueprint in the batch or any Path quest of this Path in the last 14 days | drop |
+| V8 | Keep blueprints in order while cumulative `estMinutes ≤ round(weeklyMinutes × 1.2)`; drop the rest | drop |
+| V9 | Keep at most `n` (§6.6.2) | drop |
+
+**Reward pricing (the anti-abuse core):**
+
+```
+if mode == GATE:
+    gate        = smallest of E(15) D(25) C(50) B(90) with duration ≥ estMinutes   (estMinutes > 90 → B)
+    difficulty  = gate's base difficulty (§8)
+    verification= TIMER          // completed only by clearing that gate, linked to this quest
+else:  // SELF
+    difficulty  = min(effort, NORMAL)     // same rule as custom quests, §4.3
+    verification= SELF
+    minDurationSec = clamp(estMinutes × 15, 60, 900)   // a quarter of the estimate; soft speed bump per §6.5
+xp, gold = §4.1 / §9.1 unchanged; SELF/TIMER daily caps (§4.3) apply unchanged
+```
+
+The model's `effort` can only *lower* a SELF quest's difficulty, never raise it above Normal. Hard and Extreme Path quests exist only as Focus Gates, where the time is measured. A fake goal ("Goal: blink") produces SELF quests capped at Normal and the 600 XP/day self cap. Gaming the AI earns no more than honest self-report.
+
+If **zero** blueprints survive, the week has no Path quests, the Path shows "The System could not chart this week" with a [Retry] action, and the Directive falls back to §6.3 with `paths = []`.
+
+#### 6.6.5 Progression signal (engine → prompt)
+
+Computed per Path over the previous ISO week's Path quests:
+
+```
+completionRate = completed / (completed + expired + skipped)   // carried-over quests count once, at their final outcome
+feedbackBias   = (#"too easy" − #"too hard") / max(1, #feedback)
+if completionRate ≥ 0.85 and total ≥ 4 and feedbackBias ≥ 0      → UP
+if completionRate ≤ 0.40 and total ≥ 4  or  feedbackBias ≤ −0.5  → DOWN
+else                                                             → HOLD
+```
+
+The prompt turns UP/HOLD/DOWN into instructions ("raise targets or complexity by about one step", "keep the level", "make tasks smaller and more concrete"). Feedback comes from three optional chips on the reward sheet of a Path quest: *Too easy · Right · Too hard*.
+
+**Milestone advance:** the model may set `suggestAdvance`. The app shows *"The System judges you ready for: <next milestone>"* [Advance] [Stay] **only if** the engine also agrees: ≥ 4 Path quests completed since the current milestone began **and** last week's `completionRate ≥ 0.60`. Advancing a milestone grants no XP or gold (narrative only: a "MILESTONE CLEARED" window), so there is nothing to farm.
+
+#### 6.6.6 Scheduling into the Directive
+
+- When a week's blueprints are accepted, `PathScheduler` assigns them, in order, round-robin to the Path's active days of that ISO week (from today onward if the plan arrives mid-week). Assignment is stored, so it's stable.
+- Each game-day, at most **3 Path quests in total** across all Paths. Overflow is ordered by Path creation time, then blueprint order, and moves to that Path's next active day.
+- **Main promotion:** if a Path quest today has `stat == focusStats[gameDay % 2]`, the one with the highest priced difficulty (ties: earliest) becomes the Main quest. Otherwise Main comes from templates (§6.3).
+- **Sides** = `max(1, 3 − pathQuestsToday)`. Total generated items stay ≤ 5 (Main + Paths + Sides), plus habits.
+- **Carry-over:** an unfinished Path quest is re-offered once on the Path's next active day in the same ISO week, then becomes `SKIPPED`. The week boundary ends all carry-over.
+- **Reroll** works on Path quests: it swaps in the next unscheduled blueprint of that Path for this week if one exists; else it falls back to a template side quest. Same reroll costs (§6.3).
+- Idempotency: instance id = UUID created at scheduling; the scheduling key `(pathId, isoWeek, blueprintIndex)` is UNIQUE. Applying the same week response twice creates nothing new.
+
+#### 6.6.7 Rate limits and budgets (enforced by the proxy; the app also enforces locally)
+
+| Call | Limit |
+|---|---|
+| `PLAN_PATH` | 3 per install per game-day, 6 per ISO week |
+| `WEEK_QUESTS` | 1 automatic per Path per ISO week + 2 manual retries per Path per ISO week |
+| Request body | ≤ 8 KB; response capped at 2,000 output tokens |
+| Global | Monthly spend cap; at 100% the proxy returns `503 budget_exhausted` and the app falls back silently to templates |
 
 ---
 
@@ -263,6 +390,7 @@ The in-app-verified quest type. Turns study/deep-work into a dungeon run.
 - Run = timestamps in Room + an ongoing notification with a system-drawn countdown (no foreground service; see ARCHITECTURE §3.3).
 - **Breach rule**: if the app is in background for > 90 seconds cumulative *(phone calls excluded via call state where available; otherwise just the 90 s budget)*, the gate collapses → no XP, a "Gate collapsed" record. Up to 1 pause of ≤ 5 min allowed per run.
 - Clear → `V = TIMER (1.15)`, quest XP via §4.1, + 1 Loot Fragment.
+- **Gates launched from a GATE-mode Path quest** (§6.6.4) have their rank fixed by the quest and the stat fixed to the quest's stat. On clear, the reward is paid **once**, as the Path quest (`sourceType = QUEST`, `sourceId = questInstanceId`), never additionally as a standalone gate. A collapsed run leaves the Path quest open; the hunter may start the gate again the same day.
 - Do NOT use AccessibilityService or usage-stats app blocking in v1 (Play policy review risk + permission friction). The breach budget is enough.
 
 ---
@@ -336,7 +464,7 @@ Achievements are evaluated by a pure function over ledger/state after each write
 - **Daily System Message**: picked from ~60 handwritten lines keyed by context (streak milestone, comeback, neglected stat, trial active). Deterministic by date.
 - **Weekly Report** (Sunday): stats gained, best day, most-neglected stat, next-week recalibration. Shareable as an image card (§ DESIGN_SYSTEM share card).
 
-AI-written flavor (LLM) is **v1.2+ only**, behind a server you control. Never ship an API key in the APK.
+Template quests, chapters and System lines stay hand-written and bundled. AI writes only Path content (§6.6), through the proxy. Never ship an API key in the APK.
 
 ---
 
@@ -359,5 +487,30 @@ AI-written flavor (LLM) is **v1.2+ only**, behind a server you control. Never sh
 | 13 | Day with main incomplete but 3 sides done | **cleared** |
 | 14 | Uncleared day, 1 shield held | streak kept, shields 0, no penalty quest |
 | 15 | Same `(hunterId, gameDate)` generation called twice | identical directive, no duplicates |
+
+**AI Paths (§6.6)** — fixtures live in `engine/src/test/resources/paths/`; the response JSON in each case is a hand-written fixture, not a live model call.
+
+| # | Input | Expected |
+|---|---|---|
+| 16 | SELF blueprint, `effort = EXTREME`, streak 0, no crit | difficulty **NORMAL**, verification SELF → XP **60** (vector 1) |
+| 17 | GATE blueprint, `estMinutes = 40` | requires **C-Gate (50 min)**, difficulty **HARD**, verification **TIMER** |
+| 18 | GATE blueprint, `estMinutes = 5` / `= 120` (clamped from 300) | **E-Gate** / **B-Gate** |
+| 19 | `unit = "CALORIES"` | blueprint **dropped** (V1) |
+| 20 | `unit = REPS`, `target = 500` / `PROBLEMS`, `target = 0` | target **300** / **1** (V4) |
+| 21 | Path primary INT, secondary WIL; blueprint `stat = STR` | stat **INT** (V3) |
+| 22 | `weeklyMinutes = 300`, blueprints `estMinutes` = [120, 120, 90, 60] | keep first **3** (cumulative 330 ≤ 360; adding 60 → 390 > 360) (V8) |
+| 23 | Title "Read: http://evil.example now" | stored title **"Read: now"** (V2; whitespace collapsed) |
+| 24 | Injury Mode excludes `impact`; blueprint tags `[impact, outdoor]` | **dropped** (V6) |
+| 25 | All blueprints dropped | Path has 0 quests this week; the Directive equals the §6.3 output for the same inputs with `paths = []` (3 sides) |
+| 26 | Last week: 6 completed, 1 expired, feedback 1 "too easy" / 0 "too hard" | rate 0.857, total 7 → **UP** |
+| 27 | Last week: 2 completed, 4 skipped | rate 0.333 → **DOWN** |
+| 28 | Last week: 3 completed, 0 other | total 3 < 4 → **HOLD** |
+| 29 | 6 blueprints, active days Mon/Wed/Fri, `questsPerDay = 2`, plan accepted Monday | Mon: #1,#4 · Wed: #2,#5 · Fri: #3,#6 (round-robin in order) |
+| 30 | Today has 2 Path quests (stats INT, WIL), today's focus stat INT | Main = the INT Path quest; Sides = **1**; total generated items = 3 |
+| 31 | Two Paths schedule 2 quests each on the same day | **3** shown (older Path first); the 4th moves to its Path's next active day |
+| 32 | Same week response applied twice | identical scheduled instances; no duplicates (UNIQUE `(pathId, isoWeek, blueprintIndex)`) |
+| 33 | Gate cleared from a GATE-mode Path quest (D-Gate, NORMAL, streak 0, no crit) | exactly **one** reward: `round(40×1.5×1.0×1.15)` = **69 XP**, `sourceType = QUEST`; no separate gate reward |
+| 34 | `suggestAdvance = true`, 3 Path quests completed since milestone start | advance **not** offered (needs ≥ 4) |
+| 35 | SELF blueprint `estMinutes = 2` → clamped 5 / `estMinutes = 120` | `minDurationSec` = **75** / **900** (clamp(5×15, 60, 900) = 75; clamp(1800, 60, 900) = 900) |
 
 > Note on vector 7: the level table in §4.4 lists the *step into* each level (i.e. `xpToNext(L−1)`), so "L10 step 504" = `xpToNext(9)`. Vector 7 is `xpToNext(10)` = 578. Tests are authoritative.

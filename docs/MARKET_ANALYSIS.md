@@ -25,20 +25,24 @@
 
 | Gap | AWAKEN answer | Effort to build |
 |---|---|---|
-| Honor-system XP | Health Connect auto-verified quests + Focus Gates with breach rule, 1.15–1.30× XP | Medium |
+| Generic quests ("20 push-ups" for everyone) | **AI Paths**: the user's own goal → milestone ladder → weekly quests adapted from completions and feedback | High (engine + proxy + app) |
+| Honor-system XP | Health Connect auto-verified quests + Focus Gates with breach rule, 1.15–1.30× XP; hard Path quests run as Focus Gates | Medium |
 | Punishing streaks | Penalty Zone comeback quests, rest days, recovery mode, shields | Low |
 | Rigid workouts | Equipment + injury filters at generation time | Low |
 | No charts | Stat radar (week vs week), heatmap, weekly report | Medium |
-| Account walls / privacy | No account, offline, "No data collected" | Free (it's the architecture) |
+| Account walls / privacy | No account, offline-first; AI Paths opt-in through a proxy that stores nothing | Low (it's the architecture) |
 | Generic UI | System Window design language + level-up ceremony | Medium-high (the design doc is the work) |
 | Opaque rewards | Formula breakdown on every reward | Low |
 
-**What we deliberately do not compete on in v1:** social (guilds/duels/leaderboards), AI chat, huge item catalogues. Competitors already have shallow versions; shallow social on unverified XP is not a moat. Verified XP *is* the foundation that makes social meaningful in v1.2.
+**On AI specifically:** "AI-generated challenges" is already a listing bullet for at least one competitor, so AI by itself is not a moat. The defensible combination is (1) quests anchored to the user's *stated long-term goal* with milestones, (2) progression driven by measured completion data rather than vibes, and (3) rewards priced by deterministic rules, so personal quests can't be farmed and verified effort still matters. Copying "add an LLM" is a weekend; copying the validator, pricing and verification loop is not.
+
+**What we deliberately do not compete on in v1:** social (guilds/duels/leaderboards), open-ended AI chat, huge item catalogues. Competitors already have shallow versions; shallow social on unverified XP is not a moat. Verified XP *is* the foundation that makes social meaningful in v1.2.
 
 ## 4. Risks
 - **IP**: the niche lives off a popular IP. Rights holders do enforce against piracy; a store listing using the name/art is an easy takedown. Original name + art only.
 - **Discovery**: Play search for "solo leveling" is crowded and you can't use that term. Win on screenshots/rating, communities, and short-form video of the level-up ceremony.
-- **Novelty decay**: research on gamified habit apps shows motivational effects shrink after a few weeks — which is why adaptive difficulty, rank trials and chapters (content that unfolds over months) matter more than launch-day features.
+- **Novelty decay**: research on gamified habit apps shows motivational effects shrink after a few weeks — which is why adaptive difficulty, rank trials, chapters and Path milestones (content that unfolds over months) matter more than launch-day features.
+- **AI quality and cost**: a bad week plan is worse than a template. Mitigated by the eval set, validator survival-rate monitoring, the report flow, and template fallback. Cost is bounded by per-install limits and a hard monthly budget; if Paths take off, that budget is the first thing a "Hunter Pass" subscription (v1.4) pays for.
 
 ## Sources
 - Google Play listings: [Solo Hunter: Level Up](https://play.google.com/store/apps/details?id=com.solohunterlevelup.app&hl=en), [Solo Levelling Daily Quests](https://play.google.com/store/apps/details?id=fr.storycom.sololevellingdailyquests&hl=en_US), [MainQuest](https://play.google.com/store/apps/details?id=com.endspec.mainquest&hl=en), [Life RPG: Habit Tracker](https://play.google.com/store/apps/details?id=com.life.rpg.habit.tracker.app&hl=en_US)
