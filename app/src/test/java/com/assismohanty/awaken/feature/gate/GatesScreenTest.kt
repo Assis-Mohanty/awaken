@@ -78,7 +78,7 @@ class GatesScreenTest {
     @Test
     fun aCollapseShowsTheEmberWindowWithTheBackgroundTime() {
         graph.completionCenter.gateCollapsed(GateCollapseReason.BREACH, backgroundMs = 102_000)
-        val viewModel = RewardHostViewModel(graph.completionCenter, graph.notices, graph.narrative)
+        val viewModel = RewardHostViewModel(graph.completionCenter, graph.notices, graph.narrative, graph.notificationAccess, graph.uiPrefs)
         composeRule.setContent {
             AwakenTheme { RewardHost(snackbarHostState = remember { SnackbarHostState() }, viewModel = viewModel) }
         }

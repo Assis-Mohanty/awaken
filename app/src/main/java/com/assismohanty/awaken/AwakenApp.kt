@@ -11,6 +11,7 @@ import com.assismohanty.awaken.core.data.di.ApplicationScope
 import com.assismohanty.awaken.core.work.DayRolloverWorker
 import com.assismohanty.awaken.core.work.GateCoordinator
 import com.assismohanty.awaken.core.work.HealthSyncCoordinator
+import com.assismohanty.awaken.core.work.ReminderCoordinator
 import dagger.hilt.android.HiltAndroidApp
 import javax.inject.Inject
 import kotlin.coroutines.cancellation.CancellationException
@@ -27,6 +28,8 @@ class AwakenApp : Application(), Configuration.Provider {
 
     @Inject lateinit var healthSyncCoordinator: HealthSyncCoordinator
 
+    @Inject lateinit var reminderCoordinator: ReminderCoordinator
+
     @Inject @ApplicationScope
     lateinit var appScope: CoroutineScope
 
@@ -42,6 +45,8 @@ class AwakenApp : Application(), Configuration.Provider {
         ProcessLifecycleOwner.get().lifecycle.addObserver(gateCoordinator)
         // Health Connect reads only while the app is visible (ENGINE_DECISIONS #51).
         ProcessLifecycleOwner.get().lifecycle.addObserver(healthSyncCoordinator)
+        // Keeps the two daily notifications armed for the current reminder time (ARCH §3.5).
+        reminderCoordinator.start()
         appScope.launch {
             try {
                 DayRolloverWorker.schedule(WorkManager.getInstance(this@AwakenApp), hunterDao, clock)

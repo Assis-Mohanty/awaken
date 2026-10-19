@@ -1,6 +1,7 @@
 package com.assismohanty.awaken.feature.settings
 
 import android.content.Intent
+import android.provider.Settings
 import android.text.format.DateFormat
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -40,6 +41,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.window.Dialog
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.assismohanty.awaken.R
 import com.assismohanty.awaken.core.data.health.HealthStatus
@@ -71,6 +73,10 @@ fun SettingsRoute(onBack: () -> Unit, modifier: Modifier = Modifier, viewModel: 
         uri?.let { viewModel.onEvent(SettingsEvent.ImportPicked(it)) }
     }
     val context = LocalContext.current
+    LifecycleResumeEffect(viewModel) {
+        viewModel.onEvent(SettingsEvent.Resumed)
+        onPauseOrDispose { }
+    }
     HealthActionEffect(
         action = state.healthAction,
         permissions = state.healthPermissions,
@@ -85,6 +91,11 @@ fun SettingsRoute(onBack: () -> Unit, modifier: Modifier = Modifier, viewModel: 
         // Backups are plain JSON, but file managers label them inconsistently, so any type may be picked.
         onImport = { importLauncher.launch(arrayOf("*/*")) },
         onOpenPrivacy = { context.startActivity(Intent(context, PrivacyPolicyActivity::class.java)) },
+        onOpenNotificationSettings = {
+            context.startActivity(
+                Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName),
+            )
+        },
         modifier = modifier,
     )
 }
@@ -99,6 +110,7 @@ fun SettingsScreen(
     onImport: () -> Unit,
     modifier: Modifier = Modifier,
     onOpenPrivacy: () -> Unit = {},
+    onOpenNotificationSettings: () -> Unit = {},
 ) {
     GateBackground(rank = Rank.E, modifier = modifier) {
         Column(
@@ -127,7 +139,7 @@ fun SettingsScreen(
                 }
                 if (!state.loading) {
                     ProfileWindow(state, onEvent)
-                    DayWindow(state, onEvent)
+                    DayWindow(state, onEvent, onOpenNotificationSettings)
                     TrainingWindow(state, onEvent)
                     ComfortWindow(state, onEvent)
                     DataWindow(state, onExport, onImport, onOpenPrivacy)
@@ -198,7 +210,7 @@ private fun ProfileWindow(state: SettingsUiState, onEvent: (SettingsEvent) -> Un
 }
 
 @Composable
-private fun DayWindow(state: SettingsUiState, onEvent: (SettingsEvent) -> Unit) {
+private fun DayWindow(state: SettingsUiState, onEvent: (SettingsEvent) -> Unit, onOpenNotificationSettings: () -> Unit) {
     val colors = AwakenTheme.colors
     val type = AwakenTheme.type
     SystemWindow(title = stringResource(R.string.settings_window_day), accent = accent(), reveal = false) {
@@ -226,6 +238,14 @@ private fun DayWindow(state: SettingsUiState, onEvent: (SettingsEvent) -> Unit) 
             }
         }
         Text(stringResource(R.string.settings_reminder_note), style = type.caption, color = colors.mist)
+        if (state.notificationsBlocked) {
+            Text(stringResource(R.string.settings_notifications_blocked), style = type.caption, color = colors.ember)
+            SecondaryButton(
+                text = stringResource(R.string.action_open_notification_settings),
+                onClick = onOpenNotificationSettings,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
     }
 }
 

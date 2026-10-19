@@ -159,4 +159,30 @@ class SettingsScreenTest {
         composeRule.onNodeWithText("Privacy policy").performScrollTo().performClick()
         assertThat(opened).isEqualTo(1)
     }
+
+    @Test
+    fun blockedNotificationsSayWhyAndLinkToSystemSettings() {
+        var opened = 0
+        composeRule.setContent {
+            AwakenTheme(reduceMotion = true) {
+                SettingsScreen(
+                    state = previewSettingsState().copy(notificationsBlocked = true),
+                    onEvent = {},
+                    onBack = {},
+                    onExport = {},
+                    onImport = {},
+                    onOpenNotificationSettings = { opened++ },
+                )
+            }
+        }
+        composeRule.onNodeWithText("Notifications are blocked, so reminders can't reach you.").performScrollTo().assertIsDisplayed()
+        composeRule.onNodeWithText("Open notification settings").performScrollTo().performClick()
+        assertThat(opened).isEqualTo(1)
+    }
+
+    @Test
+    fun noHintWhenNotificationsAreAllowed() {
+        show(previewSettingsState())
+        composeRule.onNodeWithText("Open notification settings").assertDoesNotExist()
+    }
 }

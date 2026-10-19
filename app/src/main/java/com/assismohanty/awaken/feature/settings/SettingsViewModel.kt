@@ -22,6 +22,7 @@ import com.assismohanty.awaken.core.domain.SettingsResult
 import com.assismohanty.awaken.core.domain.UpdateSettingsUseCase
 import com.assismohanty.awaken.core.domain.UserMessage
 import com.assismohanty.awaken.core.work.DayStartScheduler
+import com.assismohanty.awaken.core.work.NotificationAccess
 import com.assismohanty.awaken.engine.Awakening
 import com.assismohanty.awaken.engine.DirectiveGenerator
 import com.assismohanty.awaken.engine.SettingsRules
@@ -67,6 +68,8 @@ data class SettingsUiState(
     val healthStatus: HealthStatus? = null,
     val healthAction: HealthAction? = null,
     val healthPermissions: Set<String> = emptySet(),
+    /** A reminder is set but the system blocks notifications, so it can't reach the hunter. */
+    val notificationsBlocked: Boolean = false,
 ) {
     val canSaveName: Boolean get() = nameDraft.trim() != savedName && nameDraft.isNotBlank()
     val canSaveFocus: Boolean get() = focusDraft.size == 2 && focusDraft.toSet() != savedFocus.toSet()
@@ -97,6 +100,8 @@ sealed interface SettingsEvent {
     data class HealthPermissionsResult(val granted: Set<String>) : SettingsEvent
     data object DisconnectHealth : SettingsEvent
     data object DismissHealthRationale : SettingsEvent
+    /** The screen came back to the foreground (e.g. from system settings): re-check what the system allows. */
+    data object Resumed : SettingsEvent
 }
 
 private data class Drafts(
@@ -109,6 +114,7 @@ private data class Drafts(
     val healthStatus: HealthStatus? = null,
     val healthAction: HealthAction? = null,
     val healthPermissions: Set<String> = emptySet(),
+    val notificationsBlocked: Boolean = false,
 )
 
 @HiltViewModel
@@ -122,6 +128,7 @@ class SettingsViewModel @Inject constructor(
     private val dayStartScheduler: DayStartScheduler,
     private val completionCenter: CompletionCenter,
     private val healthGateway: HealthGateway,
+    private val notificationAccess: NotificationAccess,
     private val enableHealth: EnableHealthUseCase,
     private val disableHealth: DisableHealthUseCase,
 ) : ViewModel() {
@@ -194,13 +201,17 @@ class SettingsViewModel @Inject constructor(
             }
             SettingsEvent.DisconnectHealth -> launchHealth { disableHealth() }
             SettingsEvent.DismissHealthRationale -> drafts.update { it.copy(healthAction = null) }
+            SettingsEvent.Resumed -> refreshNotificationAccess()
         }
     }
 
 
     init {
         refreshHealthStatus()
+        refreshNotificationAccess()
     }
+
+    private fun refreshNotificationAccess() = drafts.update { it.copy(notificationsBlocked = !notificationAccess.isGranted()) }
 
     private fun refreshHealthStatus() = launchHealth { drafts.update { it.copy(healthStatus = healthGateway.status()) } }
 
@@ -339,4 +350,5 @@ private fun SettingsModel.toUiState(prefs: UiPrefs, drafts: Drafts) = SettingsUi
     healthStatus = drafts.healthStatus,
     healthAction = drafts.healthAction,
     healthPermissions = drafts.healthPermissions,
+    notificationsBlocked = drafts.notificationsBlocked && reminder != null,
 )

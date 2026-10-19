@@ -26,6 +26,9 @@ import com.assismohanty.awaken.core.domain.DayRefresher
 import com.assismohanty.awaken.core.domain.DayRolloverUseCase
 import com.assismohanty.awaken.core.domain.GateRunController
 import com.assismohanty.awaken.core.data.export.GameDataPorter
+import com.assismohanty.awaken.core.data.repo.UiPrefsRepository
+import com.assismohanty.awaken.core.work.NotificationAccess
+import com.assismohanty.awaken.core.domain.BuildReminderUseCase
 import com.assismohanty.awaken.core.domain.DisableHealthUseCase
 import com.assismohanty.awaken.core.domain.EnableHealthUseCase
 import com.assismohanty.awaken.core.domain.HealthSyncUseCase
@@ -65,6 +68,7 @@ import java.util.UUID
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.cancel
 
 class FakeClock(var instant: Instant, private val zoneId: ZoneId = ZoneOffset.UTC) : Clock {
@@ -91,6 +95,8 @@ class FakeDeviceUptime(var elapsedMs: Long = 1_000_000, var boot: Int = 1) : Dev
 class TestGraph(
     val clock: FakeClock = FakeClock(Instant.parse("2026-10-18T10:00:00Z")),
     val uptime: FakeDeviceUptime = FakeDeviceUptime(),
+    /** Existing screen tests run with the reminders question already answered; the pre-prompt tests pass false. */
+    notificationsPrompted: Boolean = true,
 ) {
     private val context: Context = ApplicationProvider.getApplicationContext()
 
@@ -132,6 +138,10 @@ class TestGraph(
     val notices = NoticeStore(
         PreferenceDataStoreFactory.create(scope = noticeScope) { File(context.filesDir, "notices-${UUID.randomUUID()}.preferences_pb") },
     )
+    val uiPrefs = UiPrefsRepository(
+        PreferenceDataStoreFactory.create(scope = noticeScope) { File(context.filesDir, "ui-prefs-${UUID.randomUUID()}.preferences_pb") },
+    )
+    val notificationAccess = NotificationAccess(context)
     val runRollover = RunRolloverUseCase(rollover, notices)
     val completionCenter = CompletionCenter(completeQuest, undoCompletion)
     val completeOnboarding = CompleteOnboardingUseCase(createHunter, achievements, rollover, transactions, clock)
@@ -157,7 +167,12 @@ class TestGraph(
     val observeSettings = ObserveSettingsUseCase(db.hunterDao(), templates)
     val healthSync = HealthSyncUseCase(db.hunterDao(), db.questDao(), health, completeQuest, completionCenter, clock)
     val enableHealth = EnableHealthUseCase(db.hunterDao(), health, healthSync)
+    val buildReminder = BuildReminderUseCase(db.hunterDao(), db.questDao(), db.dayRecordDao(), runRollover, clock)
     val disableHealth = DisableHealthUseCase(db.hunterDao(), health)
+
+    init {
+        if (notificationsPrompted) runBlocking { uiPrefs.setNotificationsPrompted() }
+    }
 
     fun today(): LocalDate = clock.gameDate(GameDay.DEFAULT_DAY_START_HOUR)
 

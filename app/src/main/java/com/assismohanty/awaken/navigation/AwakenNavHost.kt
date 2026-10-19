@@ -14,6 +14,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -48,7 +49,7 @@ import com.assismohanty.awaken.feature.vault.VaultRoute as VaultEntry
 
 /** Onboarding until a hunter exists, then the four tabs (DESIGN_SYSTEM §4). */
 @Composable
-fun AwakenNavHost(modifier: Modifier = Modifier, appViewModel: AppViewModel = hiltViewModel()) {
+fun AwakenNavHost(modifier: Modifier = Modifier, openTodayRequests: Int = 0, appViewModel: AppViewModel = hiltViewModel()) {
     val launch by appViewModel.state.collectAsStateWithLifecycle()
     LifecycleStartEffect(appViewModel) {
         appViewModel.onEvent(AppEvent.Started)
@@ -58,12 +59,13 @@ fun AwakenNavHost(modifier: Modifier = Modifier, appViewModel: AppViewModel = hi
         // One frame of void while Room answers; no spinner for a local read.
         LaunchState.Loading -> Box(modifier = modifier.fillMaxSize().background(AwakenTheme.colors.void))
         LaunchState.NeedsOnboarding -> GateBackground(rank = Rank.E, modifier = modifier) { OnboardingEntry() }
-        is LaunchState.Ready -> MainScaffold(rank = state.rank, modifier = modifier)
+        is LaunchState.Ready -> MainScaffold(rank = state.rank, openTodayRequests = openTodayRequests, modifier = modifier)
     }
 }
 
 @Composable
 private fun MainScaffold(
+    openTodayRequests: Int,
     rank: Rank,
     modifier: Modifier = Modifier,
     navController: NavHostController = rememberNavController(),
@@ -71,6 +73,15 @@ private fun MainScaffold(
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = backStackEntry?.destination
     val snackbarHostState = remember { SnackbarHostState() }
+    // A notification or widget tap asks for Today even when another tab or screen was open (ARCH §3.5, §3.6).
+    LaunchedEffect(openTodayRequests) {
+        if (openTodayRequests > 0) {
+            navController.navigate(TodayRoute) {
+                popUpTo<TodayRoute>()
+                launchSingleTop = true
+            }
+        }
+    }
     val showBottomBar = TopLevelDestination.entries.any { destination ->
         currentDestination?.hierarchy?.any { it.hasRoute(destination.route::class) } == true
     }

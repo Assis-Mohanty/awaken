@@ -1,12 +1,17 @@
 package com.assismohanty.awaken.feature.quest
 
+import android.Manifest
 import android.content.res.Resources
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
@@ -21,6 +26,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.window.Dialog
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -30,9 +36,14 @@ import com.assismohanty.awaken.core.data.repo.Chapter
 import com.assismohanty.awaken.core.data.repo.NarrativeRepository
 import com.assismohanty.awaken.core.data.repo.Notice
 import com.assismohanty.awaken.core.data.repo.NoticeStore
+import com.assismohanty.awaken.core.data.repo.UiPrefsRepository
+import com.assismohanty.awaken.core.work.NotificationAccess
 import com.assismohanty.awaken.core.designsystem.components.ChapterRevealDialog
 import com.assismohanty.awaken.core.designsystem.components.LevelUpDialog
 import com.assismohanty.awaken.core.designsystem.components.RankCrest
+import com.assismohanty.awaken.core.designsystem.components.PrimaryButton
+import com.assismohanty.awaken.core.designsystem.components.QuietButton
+import com.assismohanty.awaken.core.designsystem.components.SystemWindow
 import com.assismohanty.awaken.core.designsystem.components.RewardModel
 import com.assismohanty.awaken.core.designsystem.components.RewardSheet
 import com.assismohanty.awaken.core.designsystem.components.SystemToast
@@ -51,6 +62,9 @@ import javax.inject.Inject
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
@@ -61,6 +75,8 @@ class RewardHostViewModel @Inject constructor(
     private val completionCenter: CompletionCenter,
     noticeStore: NoticeStore,
     narrative: NarrativeRepository,
+    private val notificationAccess: NotificationAccess,
+    private val uiPrefs: UiPrefsRepository,
 ) : ViewModel() {
     /** Bundled chapters, for the reveal after a level-up that crosses an unlock level (GD §11). */
     val chapters: StateFlow<List<Chapter>> = flow { emit(narrative.chapters()) }
@@ -81,6 +97,29 @@ class RewardHostViewModel @Inject constructor(
                 }
             }
         }
+    }
+
+    /** True while the reminders pre-prompt is on screen. */
+    private val _notificationPrompt = MutableStateFlow(false)
+
+    /** Set synchronously, so a second completion right after the answer can't ask again before the write lands. */
+    private var answeredThisSession = false
+    val notificationPrompt: StateFlow<Boolean> = _notificationPrompt.asStateFlow()
+
+    /** After a quest completion finishes: ask about reminders once, on Android 13+ and only while not yet allowed. */
+    fun onQuestCompleted() {
+        viewModelScope.launch {
+            if (!answeredThisSession && notificationAccess.canAsk() && !uiPrefs.prefs.first().notificationsPrompted) {
+                _notificationPrompt.value = true
+            }
+        }
+    }
+
+    /** Either answer (or dismissing) ends the question for good. */
+    fun notificationPromptAnswered() {
+        answeredThisSession = true
+        _notificationPrompt.value = false
+        viewModelScope.launch { uiPrefs.setNotificationsPrompted() }
     }
 
     fun consume(eventId: Long) = completionCenter.consume(eventId)
@@ -144,6 +183,7 @@ fun RewardHost(snackbarHostState: SnackbarHostState, modifier: Modifier = Modifi
                 queueAchievements(current.outcome.unlockedAchievements, current.id)
                 showMessage(UserMessage.QuestCleared, undoQuestId = current.outcome.questInstanceId.takeIf { current.outcome.undoable })
                 viewModel.consume(current.id)
+                viewModel.onQuestCompleted()
             },
         )
         is CompletionEvent.Message -> LaunchedEffect(current.id) {
@@ -174,6 +214,25 @@ fun RewardHost(snackbarHostState: SnackbarHostState, modifier: Modifier = Modifi
             onDismiss = { viewModel.consume(current.id) },
         )
         null -> Unit
+    }
+
+    // The reminders pre-prompt (ARCH §3.5): shown once, after the first completed quest, before the system permission.
+    val promptNotifications by viewModel.notificationPrompt.collectAsStateWithLifecycle()
+    val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
+        viewModel.notificationPromptAnswered()
+    }
+    if (promptNotifications) {
+        NotificationPromptDialog(
+            onAllow = {
+                // The system dialog only exists on Android 13+, which is the only place the prompt is shown.
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                } else {
+                    viewModel.notificationPromptAnswered()
+                }
+            },
+            onNotNow = viewModel::notificationPromptAnswered,
+        )
     }
 
     val toast = toasts.firstOrNull()
@@ -287,3 +346,15 @@ internal fun CompletionOutcome.toRewardModel() = RewardModel(
 
 /** Toast keys are unique across events: event id × stride + index within the event. */
 private const val TOAST_KEY_STRIDE = 100L
+
+@Composable
+private fun NotificationPromptDialog(onAllow: () -> Unit, onNotNow: () -> Unit) {
+    val colors = AwakenTheme.colors
+    Dialog(onDismissRequest = onNotNow) {
+        SystemWindow(title = stringResource(R.string.notif_prompt_title), accent = colors.system) {
+            Text(stringResource(R.string.notif_prompt_body), style = AwakenTheme.type.body, color = colors.bone)
+            PrimaryButton(text = stringResource(R.string.action_allow_reminders), onClick = onAllow, modifier = Modifier.fillMaxWidth())
+            QuietButton(text = stringResource(R.string.action_not_now), onClick = onNotNow, modifier = Modifier.fillMaxWidth())
+        }
+    }
+}

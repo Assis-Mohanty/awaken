@@ -184,8 +184,9 @@ This avoids foreground-service-type policy declarations entirely. The process ma
 - Channel `directive` (default importance): 1× daily at `reminder_time` — "Your directive is ready: 4 quests."
 - Channel `last_call` (default): 1× at 21:00 local *only if* the day isn't cleared — "2 quests from clearing the day."
 - Channel `gate` (low): ongoing gate countdown.
-- Channel `system` (low): level-up / trial unlocked when app is backgrounded (rare).
-- Max 2 non-gate notifications/day. Android 13+ `POST_NOTIFICATIONS` asked after the first quest completion, not at launch.
+- Channel `system` (low): level-up / trial unlocked when app is backgrounded (rare). **Not built** (ENGINE_DECISIONS #55): nothing raises that event while the app is away.
+- Max 2 non-gate notifications/day (one of each kind, fixed ids). Android 13+ `POST_NOTIFICATIONS` asked after the first quest completion, not at launch, through a System-styled pre-prompt (once ever).
+- Built as `ReminderScheduler`/`ReminderWorker` (one-shot, self-re-arming, inexact), `ReminderCoordinator` (re-arms on reminder/day-start change), `BuildReminderUseCase` + `ReminderRules` (engine). Reminder off silences both (#53-#55).
 
 ### 3.6 Widget (Glance)
 `TodayWidget` 4×2: rank badge, level, streak flame, "3/5 cleared", next quest title, tap → app. Refresh on every ledger write (`updateAll`) and at rollover.

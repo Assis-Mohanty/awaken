@@ -411,7 +411,7 @@
     <string name="settings_reminder_off">Off</string>
     <string name="action_change_reminder">Change time</string>
     <string name="action_reminder_off">Turn off</string>
-    <string name="settings_reminder_note">Reminders start in an update; your time is saved.</string>
+    <string name="settings_reminder_note">At most two a day: your directive at this time, and a last call at 21:00 only if the day isn\'t cleared.</string>
     <string name="settings_equipment_title">Equipment I own</string>
     <string name="settings_equipment_note">Quests that need equipment you don\'t own are never offered.</string>
     <string name="equipment_dumbbells">Dumbbells</string>
@@ -469,4 +469,24 @@
     <string name="privacy_backups">Backups: Android may include app data in your Google account device backup according to your phone\'s backup settings. You can export or delete all data from Settings → Your data. Uninstalling the app deletes its data from the device.</string>
     <string name="privacy_children">Children: the app is not directed to children under 13.</string>
     <string name="privacy_changes">Changes: we will update this page and the effective date if this policy changes.</string>
+
+    <!-- Notifications (Phase 12) -->
+    <string name="directive_channel_name">Daily directive</string>
+    <string name="directive_channel_description">One notification a day at your reminder time.</string>
+    <string name="last_call_channel_name">Last call</string>
+    <string name="last_call_channel_description">At 21:00, only if the day isn\'t cleared yet.</string>
+    <string name="reminder_last_call_title">LAST CALL</string>
+    <plurals name="reminder_directive">
+        <item quantity="one">Your directive is ready: %d quest.</item>
+        <item quantity="other">Your directive is ready: %d quests.</item>
+    </plurals>
+    <plurals name="reminder_last_call">
+        <item quantity="one">%d quest from clearing the day.</item>
+        <item quantity="other">%d quests from clearing the day.</item>
+    </plurals>
+    <string name="notif_prompt_title">REMINDERS</string>
+    <string name="notif_prompt_body">The System can nudge you twice a day at most: your directive at your reminder time, and a last call at 21:00 only if the day isn\'t cleared.</string>
+    <string name="action_allow_reminders">Allow reminders</string>
+    <string name="settings_notifications_blocked">Notifications are blocked, so reminders can\'t reach you.</string>
+    <string name="action_open_notification_settings">Open notification settings</string>
 </resources>
