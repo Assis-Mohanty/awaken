@@ -47,5 +47,6 @@ fun UserMessage.text(resources: Resources): String = when (this) {
     UserMessage.RerollLimit -> resources.getString(R.string.msg_reroll_limit)
     is UserMessage.RerollGold -> resources.getString(R.string.msg_reroll_gold, cost)
     UserMessage.RerollNone -> resources.getString(R.string.msg_reroll_none)
+    UserMessage.ShareFailed -> resources.getString(R.string.msg_share_failed)
     UserMessage.Error -> resources.getString(R.string.msg_error)
 }

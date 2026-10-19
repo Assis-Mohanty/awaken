@@ -45,6 +45,7 @@ sealed interface UserMessage {
     data object RerollLimit : UserMessage
     data class RerollGold(val cost: Int) : UserMessage
     data object RerollNone : UserMessage
+    data object ShareFailed : UserMessage
     data object Error : UserMessage
 }
 

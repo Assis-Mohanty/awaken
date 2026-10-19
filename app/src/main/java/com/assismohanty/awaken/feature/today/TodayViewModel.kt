@@ -31,6 +31,8 @@ import timber.log.Timber
 data class TodayUiState(
     val loading: Boolean = true,
     val header: HunterHeaderModel? = null,
+    /** Equipped title id; the screen resolves the display text into the header. */
+    val equippedTitleId: String? = null,
     val rank: Rank = Rank.E,
     /** Pinned above the directive in an ember window when a penalty quest exists (DESIGN_SYSTEM §4.2). */
     val penalty: QuestRowModel? = null,
@@ -110,7 +112,6 @@ internal fun TodayModel.toUiState(): TodayUiState {
         loading = false,
         header = HunterHeaderModel(
             name = hunter.name,
-            // Titles are equipped from Status (Phase 9).
             title = null,
             level = hunter.level,
             rank = hunter.rank,
@@ -119,6 +120,7 @@ internal fun TodayModel.toUiState(): TodayUiState {
             streak = hunter.streak,
             gold = hunter.gold,
         ),
+        equippedTitleId = hunter.equippedTitleId,
         rank = hunter.rank,
         penalty = quests.firstOrNull { it.type == QuestType.PENALTY }?.toRowModel(),
         main = directive.firstOrNull { it.type == QuestType.MAIN }?.toRowModel(),

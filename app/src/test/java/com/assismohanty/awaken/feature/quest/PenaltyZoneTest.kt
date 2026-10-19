@@ -33,7 +33,7 @@ class PenaltyZoneTest {
     @Test
     fun penaltyWarningShowsOnceAndIsAcknowledged() {
         runBlocking { graph.notices.add(listOf(Notice.PenaltyWarning("2026-10-18"))) }
-        val viewModel = RewardHostViewModel(graph.completionCenter, graph.notices)
+        val viewModel = RewardHostViewModel(graph.completionCenter, graph.notices, graph.narrative)
         composeRule.setContent {
             AwakenTheme { RewardHost(snackbarHostState = remember { SnackbarHostState() }, viewModel = viewModel) }
         }

@@ -42,6 +42,8 @@ data class HunterState(
     val streak: Int,
     val bestStreak: Int,
     val todayCleared: Boolean,
+    /** Equipped title id (GD §10); display text is resolved in the UI. */
+    val equippedTitleId: String? = null,
 )
 
 class ObserveHunterStateUseCase @Inject constructor(
@@ -90,6 +92,7 @@ class ObserveHunterStateUseCase @Inject constructor(
                     streak = displayStreak,
                     bestStreak = maxOf(best, displayStreak),
                     todayCleared = todayCleared,
+                    equippedTitleId = profile.equippedTitleId,
                 )
             }
         }

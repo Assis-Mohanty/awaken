@@ -8,7 +8,6 @@
     <string name="nav_vault">Vault</string>
 
     <!-- Placeholders (Phase 1 only) -->
-    <string name="placeholder_status">Your hunter status will appear here.</string>
     <string name="placeholder_vault">The Vault is sealed for now.</string>
 
     <!-- System window titles: UPPERCASE is reserved for the System speaking (DESIGN_SYSTEM §2.2) -->

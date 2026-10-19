@@ -38,12 +38,27 @@ interface HunterDao {
     @Upsert
     suspend fun upsertProfile(profile: HunterProfileEntity)
 
+    @Query("UPDATE hunter_profile SET equipped_title_id = :titleId WHERE id = 'me'")
+    suspend fun setEquippedTitle(titleId: String?)
+
     @Query("SELECT * FROM stat_tier")
     suspend fun getTiers(): List<StatTierEntity>
 
     @Upsert
     suspend fun upsertTiers(tiers: List<StatTierEntity>)
 }
+
+/** A per-day aggregate: completions or net XP on a game-date. */
+data class DayTotal(
+    @ColumnInfo(name = "game_date") val gameDate: LocalDate,
+    val total: Long,
+)
+
+/** Net stat XP for one stat (the ledger `stat` column holds the [Stat] name). */
+data class StatTotal(
+    val stat: String,
+    val total: Long,
+)
 
 data class StatLastActive(
     val stat: Stat,
@@ -161,6 +176,13 @@ interface CompletionDao {
 
     @Query("SELECT stat, MAX(game_date) AS game_date FROM completion WHERE undone_at IS NULL GROUP BY stat")
     suspend fun lastActivePerStat(): List<StatLastActive>
+
+    /** Active (not undone) completions per game-day in `[from, to]`: heatmap and weekly counts. */
+    @Query(
+        "SELECT game_date, COUNT(*) AS total FROM completion WHERE undone_at IS NULL " +
+            "AND game_date BETWEEN :from AND :to GROUP BY game_date",
+    )
+    fun observeCountsPerDay(from: LocalDate, to: LocalDate): Flow<List<DayTotal>>
 }
 
 @Dao
@@ -199,6 +221,24 @@ interface LedgerDao {
     /** Net quest XP for a game-day and verification source; undo rows carry the original date and source. */
     @Query("SELECT COALESCE(SUM(delta), 0) FROM ledger_entry WHERE kind = 'XP_TOTAL' AND game_date = :gameDate AND xp_source = :xpSource")
     suspend fun netXp(gameDate: LocalDate, xpSource: String): Long
+
+    /** Net stat XP per stat from rows dated before [before]: last week's radar polygon. */
+    @Query("SELECT stat, SUM(delta) AS total FROM ledger_entry WHERE kind = 'XP_STAT' AND game_date < :before GROUP BY stat")
+    fun observeStatXpBefore(before: LocalDate): Flow<List<StatTotal>>
+
+    /** Net stat XP per stat for `[from, to]`; undo rows carry the original date, so undone work nets out. */
+    @Query(
+        "SELECT stat, SUM(delta) AS total FROM ledger_entry WHERE kind = 'XP_STAT' " +
+            "AND game_date BETWEEN :from AND :to GROUP BY stat",
+    )
+    fun observeStatXpBetween(from: LocalDate, to: LocalDate): Flow<List<StatTotal>>
+
+    /** Net total XP per game-day for `[from, to]`. */
+    @Query(
+        "SELECT game_date, SUM(delta) AS total FROM ledger_entry WHERE kind = 'XP_TOTAL' " +
+            "AND game_date BETWEEN :from AND :to GROUP BY game_date",
+    )
+    fun observeXpPerDay(from: LocalDate, to: LocalDate): Flow<List<DayTotal>>
 
     @Query("SELECT COUNT(DISTINCT source_id) FROM ledger_entry WHERE source_type = 'CACHE_OPEN'")
     suspend fun cachesOpened(): Int
@@ -320,6 +360,9 @@ interface TrialDao {
 interface AchievementDao {
     @Query("SELECT achievement_id FROM achievement_unlock")
     suspend fun unlockedIds(): List<String>
+
+    @Query("SELECT achievement_id FROM achievement_unlock")
+    fun observeUnlockedIds(): Flow<List<String>>
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insert(unlock: AchievementUnlockEntity): Long

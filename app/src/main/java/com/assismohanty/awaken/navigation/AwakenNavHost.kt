@@ -38,7 +38,7 @@ import com.assismohanty.awaken.feature.gate.GatesEntry
 import com.assismohanty.awaken.feature.onboarding.OnboardingRoute as OnboardingEntry
 import com.assismohanty.awaken.feature.quest.QuestDetailRoute as QuestDetailEntry
 import com.assismohanty.awaken.feature.quest.RewardHost
-import com.assismohanty.awaken.feature.status.StatusScreen
+import com.assismohanty.awaken.feature.status.StatusRoute as StatusEntry
 import com.assismohanty.awaken.feature.today.TodayRoute as TodayEntry
 import com.assismohanty.awaken.feature.trial.TrialDetailRoute as TrialDetailEntry
 import com.assismohanty.awaken.feature.vault.VaultScreen
@@ -143,7 +143,7 @@ private fun MainScaffold(
                     )
                 }
                 composable<GatesRoute> { GatesEntry() }
-                composable<StatusRoute> { StatusScreen() }
+                composable<StatusRoute> { StatusEntry() }
                 composable<VaultRoute> { VaultScreen() }
                 if (DebugEntry.ENABLED) {
                     composable<DebugRoute> { DebugEntry.Screen(onBack = { navController.popBackStack() }) }

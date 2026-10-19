@@ -63,6 +63,70 @@ fun unitPluralRes(unit: String): Int? = when (unit) {
 @Composable
 fun unitLabel(unit: String, count: Int): String = unitPluralRes(unit)?.let { pluralStringResource(it, count) } ?: unit
 
+/** Display text for an engine title id (GD §10); null for an id this build doesn't know. */
+@StringRes
+fun titleNameRes(titleId: String): Int? = when (titleId) {
+    "the_awakened" -> R.string.title_the_awakened
+    "rising_hunter" -> R.string.title_rising_hunter
+    "veteran" -> R.string.title_veteran
+    "unbroken" -> R.string.title_unbroken
+    "the_relentless" -> R.string.title_the_relentless
+    "fortunes_favoured" -> R.string.title_fortunes_favoured
+    "gate_sovereign" -> R.string.title_gate_sovereign
+    "proven" -> R.string.title_proven
+    "the_redeemed" -> R.string.title_the_redeemed
+    "balanced" -> R.string.title_balanced
+    "ironborn" -> R.string.title_ironborn
+    "sage" -> R.string.title_sage
+    "stoic" -> R.string.title_stoic
+    "evergreen" -> R.string.title_evergreen
+    "silver_tongue" -> R.string.title_silver_tongue
+    "d_rank_hunter" -> R.string.title_d_rank_hunter
+    "c_rank_hunter" -> R.string.title_c_rank_hunter
+    "b_rank_hunter" -> R.string.title_b_rank_hunter
+    "a_rank_hunter" -> R.string.title_a_rank_hunter
+    "s_rank_hunter" -> R.string.title_s_rank_hunter
+    else -> null
+}
+
+/** Unlock condition shown on a locked achievement (GD §10); null for an id this build doesn't know. */
+@StringRes
+fun achievementConditionRes(achievementId: String): Int? = when (achievementId) {
+    "first_blood" -> R.string.condition_first_blood
+    "awakened" -> R.string.condition_awakened
+    "lvl5" -> R.string.condition_lvl5
+    "lvl10" -> R.string.condition_lvl10
+    "lvl25" -> R.string.condition_lvl25
+    "lvl50" -> R.string.condition_lvl50
+    "streak3" -> R.string.condition_streak3
+    "streak7" -> R.string.condition_streak7
+    "streak30" -> R.string.condition_streak30
+    "streak100" -> R.string.condition_streak100
+    "crit1" -> R.string.condition_crit1
+    "crit25" -> R.string.condition_crit25
+    "gate_first" -> R.string.condition_gate_first
+    "gate_hours10" -> R.string.condition_gate_hours10
+    "gate_hours100" -> R.string.condition_gate_hours100
+    "verified10" -> R.string.condition_verified10
+    "verified100" -> R.string.condition_verified100
+    "redeemed" -> R.string.condition_redeemed
+    "balanced" -> R.string.condition_balanced
+    "str20" -> R.string.condition_str20
+    "int20" -> R.string.condition_int20
+    "wil20" -> R.string.condition_wil20
+    "vit20" -> R.string.condition_vit20
+    "cha20" -> R.string.condition_cha20
+    "rank_d" -> R.string.condition_rank_d
+    "rank_c" -> R.string.condition_rank_c
+    "rank_b" -> R.string.condition_rank_b
+    "rank_a" -> R.string.condition_rank_a
+    "rank_s" -> R.string.condition_rank_s
+    "early_bird" -> R.string.condition_early_bird
+    "night_owl" -> R.string.condition_night_owl
+    "collector" -> R.string.condition_collector
+    else -> null
+}
+
 /** Display name for an engine achievement id (GD §10); null for an id this build doesn't know. */
 @StringRes
 fun achievementNameRes(achievementId: String): Int? = when (achievementId) {

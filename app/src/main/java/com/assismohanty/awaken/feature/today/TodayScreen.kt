@@ -30,6 +30,7 @@ import com.assismohanty.awaken.core.designsystem.components.QuestRowModel
 import com.assismohanty.awaken.core.designsystem.components.QuestRowState
 import com.assismohanty.awaken.core.designsystem.components.QuietButton
 import com.assismohanty.awaken.core.designsystem.components.SystemWindow
+import com.assismohanty.awaken.core.designsystem.components.titleNameRes
 import com.assismohanty.awaken.core.designsystem.preview.PhonePreviews
 import com.assismohanty.awaken.core.designsystem.theme.AwakenAlpha
 import com.assismohanty.awaken.core.designsystem.theme.AwakenTheme
@@ -99,7 +100,8 @@ fun TodayScreen(
                 Text(stringResource(R.string.today_loading), style = type.body, color = colors.mist)
                 return@Column
             }
-            HunterHeader(header)
+            val title = state.equippedTitleId?.let(::titleNameRes)?.let { stringResource(it) }
+            HunterHeader(header.copy(title = title))
             Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterEnd) {
                 QuietButton(text = stringResource(R.string.action_day_plan), onClick = { onDayPlanEvent(DayPlanEvent.Open) })
             }
