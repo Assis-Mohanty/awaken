@@ -1,0 +1,33 @@
+{
+  "name": "awaken-path-oracle",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "The Path Oracle: a stateless Cloudflare Worker that brokers AI Paths' two LLM calls (ARCH §3.8).",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy:staging": "wrangler deploy --env staging",
+    "deploy:production": "wrangler deploy --env production",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.node.json",
+    "test": "vitest run",
+    "check:contracts": "tsx scripts/check-contracts.ts",
+    "eval": "tsx eval/run.ts"
+  },
+  "devDependencies": {
+    "@cloudflare/vitest-plugin": "1.4.5",
+    "@cloudflare/workers-types": "5.20261019.1",
+    "@types/node": "^26.6.5",
+    "ajv": "8.20.0",
+    "tsx": "4.23.15",
+    "typescript": "7.0.2",
+    "vitest": "5.0.5",
+    "wrangler": "4.151.2"
+  },
+  "dependencies": {
+    "zod": "4.6.7"
+  },
+  "allowScripts": {
+    "esbuild@0.28.2": true,
+    "workerd@1.20261019.1": true
+  }
+}
