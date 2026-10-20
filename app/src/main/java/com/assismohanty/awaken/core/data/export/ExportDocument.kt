@@ -22,6 +22,7 @@ data class ExportDocument(
         val TABLES: List<String> = listOf(
             "hunter_profile", "stat_tier", "habit", "quest_instance", "completion", "ledger_entry", "day_record",
             "gate_run", "trial", "achievement_unlock", "owned_cosmetic", "health_sync_state",
+            "path", "path_milestone", "path_week", "path_slot", "ai_report",
         )
 
         /** Rebuilt after import. */

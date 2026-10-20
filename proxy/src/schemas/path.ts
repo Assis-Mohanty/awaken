@@ -29,7 +29,7 @@ const path = z
     currentLevel: z.string().max(120),
     notes: z.string().max(280),
     primaryStat: stat,
-    secondaryStat: stat.nullable(),
+    secondaryStat: stat.nullable().optional(),
     activeDays: z.array(weekday).min(1).max(7),
     questsPerDay: z.int().min(1).max(2),
     weeklyMinutes: z.int().min(30).max(900),

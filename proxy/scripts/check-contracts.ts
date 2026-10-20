@@ -87,6 +87,17 @@ cases.push(
     fixture: { requestId: "0a1b2c3d-0000-4000-8000-0123456789ab", path: validPath, constraints: validConstraints },
   },
   {
+    // The contract does not require secondaryStat; a client that omits it must be accepted by both validators.
+    name: "plan request: secondaryStat omitted",
+    ajvValidate: compiled.planRequest,
+    zodSchema: pathPlanRequestSchema,
+    fixture: {
+      requestId: "0a1b2c3d-0000-4000-8000-0123456789ab",
+      path: Object.fromEntries(Object.entries(validPath).filter(([key]) => key !== "secondaryStat")),
+      constraints: validConstraints,
+    },
+  },
+  {
     name: "plan request: goal too short",
     ajvValidate: compiled.planRequest,
     zodSchema: pathPlanRequestSchema,

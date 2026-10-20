@@ -4,6 +4,7 @@ import com.assismohanty.awaken.core.data.clock.Clock
 import com.assismohanty.awaken.core.data.clock.gameDate
 import com.assismohanty.awaken.core.data.db.dao.CompletionDao
 import com.assismohanty.awaken.core.data.db.dao.HunterDao
+import com.assismohanty.awaken.core.data.db.dao.PathDao
 import com.assismohanty.awaken.core.data.db.dao.QuestDao
 import com.assismohanty.awaken.core.data.db.dao.TrialDao
 import com.assismohanty.awaken.core.data.db.entity.CompletionEntity
@@ -27,6 +28,7 @@ import com.assismohanty.awaken.engine.model.QuestType
 import com.assismohanty.awaken.engine.model.Rank
 import com.assismohanty.awaken.engine.model.SourceType
 import com.assismohanty.awaken.engine.model.VerificationSource
+import com.assismohanty.awaken.engine.path.SlotOutcome
 import java.time.Duration
 import java.time.Instant
 import java.time.LocalDate
@@ -74,6 +76,7 @@ class CompleteQuestUseCase @Inject constructor(
     private val achievements: AchievementUnlocker,
     private val trialDao: TrialDao,
     private val trialReader: TrialReader,
+    private val pathDao: PathDao,
     private val ledger: LedgerRepository,
     private val reader: GameStateReader,
     private val transactions: TransactionRunner,
@@ -117,6 +120,7 @@ class CompleteQuestUseCase @Inject constructor(
             val reward = XpCalculator.forCompletion(quest.toCompletable(source), context)
 
             questDao.setStatus(quest.id, QuestStatus.COMPLETED, completedAt = now)
+            quest.pathSlotId?.let { pathDao.setOutcome(it, SlotOutcome.COMPLETED) }
             completionDao.insert(
                 CompletionEntity(
                     id = completionId,
@@ -151,7 +155,9 @@ class CompleteQuestUseCase @Inject constructor(
                     rankTrialUnlocked = trialAfter.takeIf { it != null && it != trialBefore },
                     promotedTo = promotedTo,
                     unlockedAchievements = unlocked,
-                    undoable = quest.type != QuestType.GATE && source != VerificationSource.HEALTH,
+                    // Timed work is final: a cleared Focus Gate, or a Path quest cleared through its gate (ENGINE_DECISIONS #36, #76).
+                    undoable = quest.type != QuestType.GATE && source != VerificationSource.HEALTH &&
+                        !(source == VerificationSource.TIMER && quest.pathSlotId != null),
                 ),
             )
         }

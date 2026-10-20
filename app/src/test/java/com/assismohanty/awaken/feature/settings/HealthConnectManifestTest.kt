@@ -38,7 +38,12 @@ class HealthConnectManifestTest {
             "android.permission.health.READ_EXERCISE",
             "android.permission.health.READ_SLEEP",
         )
-        assertThat(requested.toList()).doesNotContain("android.permission.INTERNET")
+        // Phase 15: INTERNET is declared for the Path Oracle only (CLAUDE.md invariant 8), and no other sensitive permission.
+        assertThat(requested.toList()).contains("android.permission.INTERNET")
+        assertThat(requested.toList()).containsNoneOf(
+            "android.permission.ACCESS_FINE_LOCATION", "android.permission.ACCESS_COARSE_LOCATION",
+            "android.permission.READ_CONTACTS", "android.permission.RECORD_AUDIO", "android.permission.CAMERA",
+        )
     }
 
     @Test

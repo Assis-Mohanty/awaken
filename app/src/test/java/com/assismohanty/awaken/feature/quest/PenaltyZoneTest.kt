@@ -48,7 +48,11 @@ class PenaltyZoneTest {
             ShadowLooper.idleMainLooper()
             composeRule.onAllNodesWithText("SYSTEM WARNING").fetchSemanticsNodes().isEmpty()
         }
-        assertThat(runBlocking { graph.notices.pending.first() }).isEmpty()
+        // The acknowledgement is written asynchronously; wait for it instead of racing it.
+        composeRule.waitUntil(timeoutMillis = 5_000) {
+            ShadowLooper.idleMainLooper()
+            runBlocking { graph.notices.pending.first() }.isEmpty()
+        }
         assertThat(graph.completionCenter.events.value).isEmpty()
     }
 }

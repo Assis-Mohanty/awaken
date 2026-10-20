@@ -11,9 +11,11 @@ import com.assismohanty.awaken.core.data.db.dao.HabitDao
 import com.assismohanty.awaken.core.data.db.dao.HunterDao
 import com.assismohanty.awaken.core.data.db.dao.LedgerDao
 import com.assismohanty.awaken.core.data.db.dao.OwnedCosmeticDao
+import com.assismohanty.awaken.core.data.db.dao.PathDao
 import com.assismohanty.awaken.core.data.db.dao.QuestDao
 import com.assismohanty.awaken.core.data.db.dao.TrialDao
 import com.assismohanty.awaken.core.data.db.entity.AchievementUnlockEntity
+import com.assismohanty.awaken.core.data.db.entity.AiReportEntity
 import com.assismohanty.awaken.core.data.db.entity.BalanceCacheEntity
 import com.assismohanty.awaken.core.data.db.entity.CompletionEntity
 import com.assismohanty.awaken.core.data.db.entity.DayRecordEntity
@@ -23,6 +25,10 @@ import com.assismohanty.awaken.core.data.db.entity.HealthSyncStateEntity
 import com.assismohanty.awaken.core.data.db.entity.HunterProfileEntity
 import com.assismohanty.awaken.core.data.db.entity.LedgerEntryEntity
 import com.assismohanty.awaken.core.data.db.entity.OwnedCosmeticEntity
+import com.assismohanty.awaken.core.data.db.entity.PathEntity
+import com.assismohanty.awaken.core.data.db.entity.PathMilestoneEntity
+import com.assismohanty.awaken.core.data.db.entity.PathSlotEntity
+import com.assismohanty.awaken.core.data.db.entity.PathWeekEntity
 import com.assismohanty.awaken.core.data.db.entity.QuestInstanceEntity
 import com.assismohanty.awaken.core.data.db.entity.StatTierEntity
 import com.assismohanty.awaken.core.data.db.entity.TrialEntity
@@ -44,6 +50,11 @@ import com.assismohanty.awaken.core.data.db.entity.TrialEntity
         AchievementUnlockEntity::class,
         OwnedCosmeticEntity::class,
         HealthSyncStateEntity::class,
+        PathEntity::class,
+        PathMilestoneEntity::class,
+        PathWeekEntity::class,
+        PathSlotEntity::class,
+        AiReportEntity::class,
     ],
 )
 @TypeConverters(Converters::class)
@@ -58,11 +69,12 @@ abstract class AwakenDatabase : RoomDatabase() {
     abstract fun trialDao(): TrialDao
     abstract fun achievementDao(): AchievementDao
     abstract fun ownedCosmeticDao(): OwnedCosmeticDao
+    abstract fun pathDao(): PathDao
 
     companion object {
         const val NAME = "awaken.db"
 
         /** Also the export format version: an export is only importable into the schema it was written from. */
-        const val SCHEMA_VERSION = 4
+        const val SCHEMA_VERSION = 5
     }
 }

@@ -43,5 +43,53 @@ val MIGRATION_3_4 = object : Migration(3, 4) {
     }
 }
 
+/**
+ * v4 → v5 (Phase 15, AI Paths): the five Path tables and `quest_instance.path_slot_id`. Purely additive, so every
+ * existing row is untouched; the nullable column needs no backfill.
+ */
+val MIGRATION_4_5 = object : Migration(4, 5) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE `quest_instance` ADD COLUMN `path_slot_id` TEXT")
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_quest_instance_path_slot_id` ON `quest_instance` (`path_slot_id`)")
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS `path` (`id` TEXT NOT NULL, `goal` TEXT NOT NULL, `current_level` TEXT NOT NULL, " +
+                "`notes` TEXT NOT NULL, `primary_stat` TEXT NOT NULL, `secondary_stat` TEXT, `active_days_mask` INTEGER NOT NULL, " +
+                "`quests_per_day` INTEGER NOT NULL, `weekly_minutes` INTEGER NOT NULL, `status` TEXT NOT NULL, " +
+                "`current_milestone_index` INTEGER NOT NULL, `milestone_started_game_date` TEXT NOT NULL, " +
+                "`created_at` INTEGER NOT NULL, `created_game_date` TEXT NOT NULL, `last_replan_iso_week` TEXT, PRIMARY KEY(`id`))",
+        )
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS `path_milestone` (`path_id` TEXT NOT NULL, `idx` INTEGER NOT NULL, `title` TEXT NOT NULL, " +
+                "`summary` TEXT NOT NULL, `exit_criterion` TEXT NOT NULL, `plan_version` INTEGER NOT NULL, " +
+                "PRIMARY KEY(`path_id`, `plan_version`, `idx`))",
+        )
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS `path_week` (`path_id` TEXT NOT NULL, `iso_week` TEXT NOT NULL, `status` TEXT NOT NULL, " +
+                "`progression_signal` TEXT NOT NULL, `prompt_version` TEXT NOT NULL, `response_sha256` TEXT NOT NULL, " +
+                "`requested_at` INTEGER NOT NULL, `received_at` INTEGER, `manual_retries` INTEGER NOT NULL, " +
+                "`suggest_advance` INTEGER NOT NULL, PRIMARY KEY(`path_id`, `iso_week`))",
+        )
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS `path_slot` (`id` TEXT NOT NULL, `path_id` TEXT NOT NULL, `iso_week` TEXT NOT NULL, " +
+                "`blueprint_index` INTEGER NOT NULL, `assigned_game_date` TEXT, `carried_over` INTEGER NOT NULL, " +
+                "`title` TEXT NOT NULL, `description` TEXT NOT NULL, `stat` TEXT NOT NULL, `unit` TEXT NOT NULL, " +
+                "`target` INTEGER NOT NULL, `est_minutes` INTEGER NOT NULL, `mode` TEXT NOT NULL, " +
+                "`priced_difficulty` TEXT NOT NULL, `priced_verification` TEXT NOT NULL, `gate_rank` TEXT, " +
+                "`min_duration_sec` INTEGER NOT NULL, `tags_json` TEXT NOT NULL, `rationale` TEXT NOT NULL, " +
+                "`outcome` TEXT NOT NULL, `feedback` TEXT, PRIMARY KEY(`id`))",
+        )
+        db.execSQL(
+            "CREATE UNIQUE INDEX IF NOT EXISTS `index_path_slot_path_id_iso_week_blueprint_index` " +
+                "ON `path_slot` (`path_id`, `iso_week`, `blueprint_index`)",
+        )
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_path_slot_assigned_game_date` ON `path_slot` (`assigned_game_date`)")
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS `ai_report` (`id` TEXT NOT NULL, `path_slot_id` TEXT NOT NULL, `reason` TEXT NOT NULL, " +
+                "`prompt_version` TEXT NOT NULL, `title` TEXT NOT NULL, `description` TEXT NOT NULL, " +
+                "`created_at` INTEGER NOT NULL, `sent_at` INTEGER, PRIMARY KEY(`id`))",
+        )
+    }
+}
+
 /** Every migration, in order. The database builder and the migration test both use this list. */
-val ALL_MIGRATIONS: Array<Migration> = arrayOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
+val ALL_MIGRATIONS: Array<Migration> = arrayOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)

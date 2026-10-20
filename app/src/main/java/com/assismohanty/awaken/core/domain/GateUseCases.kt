@@ -203,7 +203,10 @@ class GateRunController @Inject constructor(
         val closed = run.copy(status = status, endedAt = clock.now(), collapseReason = reason, lastStopAt = null, lastStopElapsedMs = null)
         gateRunDao.upsert(closed)
         val quest = questDao.get(run.questInstanceId)
-        if (quest != null && (quest.status == QuestStatus.STARTED || quest.status == QuestStatus.ACTIVE)) {
+        if (quest?.pathSlotId != null) {
+            // A Path quest outlives its gate attempt: leaving or collapsing reopens it for another go today.
+            questDao.reopen(quest.id)
+        } else if (quest != null && (quest.status == QuestStatus.STARTED || quest.status == QuestStatus.ACTIVE)) {
             questDao.setStatus(quest.id, QuestStatus.EXPIRED, completedAt = null)
         }
         return GateCheck.Collapsed(closed)

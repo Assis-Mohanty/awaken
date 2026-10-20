@@ -4,6 +4,7 @@ import com.assismohanty.awaken.core.data.clock.Clock
 import com.assismohanty.awaken.core.data.clock.gameDate
 import com.assismohanty.awaken.core.data.db.dao.DayRecordDao
 import com.assismohanty.awaken.core.data.db.dao.HunterDao
+import com.assismohanty.awaken.core.data.db.dao.PathDao
 import com.assismohanty.awaken.core.data.db.dao.QuestDao
 import com.assismohanty.awaken.core.data.db.entity.DayRecordEntity
 import com.assismohanty.awaken.core.data.db.entity.HunterProfileEntity
@@ -24,6 +25,7 @@ import com.assismohanty.awaken.engine.model.LedgerKind
 import com.assismohanty.awaken.engine.model.Rank
 import com.assismohanty.awaken.engine.model.SourceType
 import com.assismohanty.awaken.engine.model.Stat
+import com.assismohanty.awaken.engine.path.PathScheduler
 import java.time.Instant
 import java.time.LocalDate
 import java.time.YearMonth
@@ -53,6 +55,8 @@ class DayRolloverUseCase @Inject constructor(
     private val templates: TemplateRepository,
     private val generateDirective: GenerateDirectiveUseCase,
     private val advanceTrial: AdvanceTrialUseCase,
+    private val pathDao: PathDao,
+    private val pathWeeks: PathWeekRequester,
     private val transactions: TransactionRunner,
     private val clock: Clock,
 ) {
@@ -78,11 +82,26 @@ class DayRolloverUseCase @Inject constructor(
         if (finalized.isNotEmpty()) carryRecovery(today)
 
         val recalibration = recalibrateIfDue(today)
+        pathWeeks.requestDue(today)
         generateDirective(today)
         val brokenDay = finalized.lastOrNull { it.outcome == DayOutcome.BROKEN }?.gameDate
         val penaltyIssued = brokenDay != null && issuePenalty(profile, today, brokenDay)
         val trialFailed = advanceTrial(profile, today)
         return RolloverOutcome(today, finalized, penaltyIssued, recalibration, trialFailed)
+    }
+
+    /**
+     * A Path quest left unfinished when [date] closed is re-offered once on the Path's next active day this week, then
+     * becomes SKIPPED; with no day left it EXPIRES (GD §6.6.6, ENGINE_DECISIONS #64). Runs in [finalizeDay]'s transaction.
+     */
+    private suspend fun rolloverPathSlots(date: LocalDate) {
+        val pending = pathDao.pendingOn(date)
+        if (pending.isEmpty()) return
+        val paths = pathDao.all().associate { it.id to it.toPath() }
+        pending.forEach { entity ->
+            val path = paths[entity.pathId] ?: return@forEach
+            pathDao.upsertSlot(PathScheduler.rollover(entity.toSlot(), path, date).toEntity())
+        }
     }
 
     /** Recovery Mode carries from the previous day while budget remains (ENGINE_DECISIONS #33). */
@@ -106,6 +125,7 @@ class DayRolloverUseCase @Inject constructor(
             val (streakAfter, _) = StreakRules.replay(dayRecordDao.finalizedOutcomesThrough(date))
             return@run DayResult(date, recordedOutcome, streakAfter)
         }
+        rolloverPathSlots(date)
         questDao.closeOpen(date)
         val record = questDao.getForDate(date)
             .toDayRecord(date, restDay = existing?.restDay ?: false, recovery = existing?.recovery ?: false)
@@ -168,7 +188,7 @@ class DayRolloverUseCase @Inject constructor(
         if (!DifficultyAdapter.isDue(today, profile.lastRecalibratedOn)) return@run emptyMap()
         val monday = DifficultyAdapter.recalibrationDate(today)
         val outcomes = questDao.generatedBetween(monday.minusDays(DifficultyAdapter.WINDOW_DAYS), monday.minusDays(1))
-            .map { QuestOutcome(it.gameDate, it.type, it.stat, it.status) }
+            .map { QuestOutcome(it.gameDate, it.type, it.stat, it.status, it.pathSlotId) }
         val current = hunterDao.getTiers().associate { it.stat to it.tier }
         val result = DifficultyAdapter.recalibrate(current, outcomes, today)
         hunterDao.upsertTiers(result.tiers.map { (stat, tier) -> StatTierEntity(stat, tier) })

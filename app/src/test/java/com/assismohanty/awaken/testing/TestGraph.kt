@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
+import com.assismohanty.awaken.core.data.ai.AiPrefsRepository
 import com.assismohanty.awaken.core.data.clock.Clock
 import com.assismohanty.awaken.core.data.clock.DeviceUptime
 import com.assismohanty.awaken.core.data.clock.gameDate
@@ -16,7 +17,26 @@ import com.assismohanty.awaken.core.data.repo.NarrativeRepository
 import com.assismohanty.awaken.core.data.repo.NoticeStore
 import com.assismohanty.awaken.core.data.repo.TemplateRepository
 import com.assismohanty.awaken.core.data.repo.TransactionRunner
+import com.assismohanty.awaken.core.domain.AcceptPlanUseCase
+import com.assismohanty.awaken.core.domain.AcceptWeekPlanUseCase
 import com.assismohanty.awaken.core.domain.AchievementUnlocker
+import com.assismohanty.awaken.core.domain.AdvanceMilestoneUseCase
+import com.assismohanty.awaken.core.domain.ChangePathStatusUseCase
+import com.assismohanty.awaken.core.domain.CreatePathUseCase
+import com.assismohanty.awaken.core.domain.GrantAiConsentUseCase
+import com.assismohanty.awaken.core.domain.PathQuestPlanner
+import com.assismohanty.awaken.core.domain.PathRequests
+import com.assismohanty.awaken.core.domain.PathWeekRequester
+import com.assismohanty.awaken.core.domain.ReportPathQuestUseCase
+import com.assismohanty.awaken.core.domain.RetryPathUseCase
+import com.assismohanty.awaken.core.domain.RevokeAiConsentUseCase
+import com.assismohanty.awaken.core.domain.RunPathRequestUseCase
+import com.assismohanty.awaken.core.domain.SendReportsUseCase
+import com.assismohanty.awaken.core.domain.StartPathGateUseCase
+import com.assismohanty.awaken.core.domain.SubmitFeedbackUseCase
+import com.assismohanty.awaken.core.domain.UpdatePathUseCase
+import com.assismohanty.awaken.core.data.ai.OracleTrace
+import com.assismohanty.awaken.debug.FakePathOracle
 import com.assismohanty.awaken.core.domain.AdvanceTrialUseCase
 import com.assismohanty.awaken.core.domain.CompleteOnboardingUseCase
 import com.assismohanty.awaken.core.domain.CompleteQuestUseCase
@@ -112,23 +132,31 @@ class TestGraph(
         db.gateRunDao(), db.trialDao(), db.achievementDao(), clock,
     )
 
+    val pathDao = db.pathDao()
+    val pathPlanner = PathQuestPlanner(pathDao, db.questDao())
     val createHunter = CreateHunterUseCase(db.hunterDao(), transactions, clock)
     val generateDirective = GenerateDirectiveUseCase(
-        db.hunterDao(), db.questDao(), db.habitDao(), reader, templates, transactions, clock,
+        db.hunterDao(), db.questDao(), db.habitDao(), reader, templates, pathPlanner, transactions, clock,
     )
     val trialReader = TrialReader(db.questDao())
     val achievements = AchievementUnlocker(db.questDao(), db.achievementDao(), ledger, reader)
     val completeQuest = CompleteQuestUseCase(
-        db.hunterDao(), db.questDao(), db.completionDao(), achievements, db.trialDao(), trialReader,
+        db.hunterDao(), db.questDao(), db.completionDao(), achievements, db.trialDao(), trialReader, pathDao,
         ledger, reader, transactions, clock,
     )
     val undoCompletion = UndoCompletionUseCase(
-        db.hunterDao(), db.questDao(), db.trialDao(), db.completionDao(), db.ledgerDao(), ledger, transactions, clock,
+        db.hunterDao(), db.questDao(), db.trialDao(), db.completionDao(), db.ledgerDao(), pathDao, ledger, transactions, clock,
     )
-    val rerollQuest = RerollQuestUseCase(db.hunterDao(), db.questDao(), ledger, reader, templates, transactions, clock)
+    val rerollQuest = RerollQuestUseCase(db.hunterDao(), db.questDao(), pathDao, ledger, reader, templates, transactions, clock)
     val advanceTrial = AdvanceTrialUseCase(db.questDao(), db.trialDao(), trialReader, reader, templates, transactions, clock)
+    private val aiScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    val aiPrefs = AiPrefsRepository(
+        PreferenceDataStoreFactory.create(scope = aiScope) { File(context.filesDir, "ai-prefs-${UUID.randomUUID()}.preferences_pb") },
+    )
+    val pathWork = RecordingPathWorkScheduler()
+    val pathWeeks = PathWeekRequester(pathDao, aiPrefs, pathWork, transactions, clock)
     val rollover = DayRolloverUseCase(
-        db.hunterDao(), db.questDao(), db.dayRecordDao(), ledger, reader, templates, generateDirective, advanceTrial,
+        db.hunterDao(), db.questDao(), db.dayRecordDao(), ledger, reader, templates, generateDirective, advanceTrial, pathDao, pathWeeks,
         transactions, clock,
     )
     val startTrial = StartTrialUseCase(db.hunterDao(), db.questDao(), db.trialDao(), ledger, reader, templates, transactions, clock)
@@ -169,6 +197,27 @@ class TestGraph(
     val enableHealth = EnableHealthUseCase(db.hunterDao(), health, healthSync)
     val buildReminder = BuildReminderUseCase(db.hunterDao(), db.questDao(), db.dayRecordDao(), runRollover, clock)
     val disableHealth = DisableHealthUseCase(db.hunterDao(), health)
+
+    // AI Paths. `oracle` records calls, so tests can assert "no network request was made".
+    val oracle = FakePathOracle()
+    val oracleTrace = OracleTrace()
+    val grantConsent = GrantAiConsentUseCase(aiPrefs, clock)
+    val revokeConsent = RevokeAiConsentUseCase(aiPrefs, pathDao, pathWork, transactions)
+    val createPath = CreatePathUseCase(db.hunterDao(), pathDao, aiPrefs, pathWork, transactions, clock)
+    val updatePath = UpdatePathUseCase(db.hunterDao(), pathDao, aiPrefs, pathWork, transactions, clock)
+    val changePathStatus = ChangePathStatusUseCase(db.hunterDao(), pathDao, pathWeeks, transactions, clock)
+    val retryPath = RetryPathUseCase(db.hunterDao(), pathDao, aiPrefs, pathWork, transactions, clock)
+    val acceptPlan = AcceptPlanUseCase(db.hunterDao(), pathDao, oracleTrace, transactions, clock)
+    val acceptWeek = AcceptWeekPlanUseCase(db.hunterDao(), pathDao, db.questDao(), pathPlanner, oracleTrace, transactions, clock)
+    val advanceMilestone = AdvanceMilestoneUseCase(db.hunterDao(), pathDao, transactions, clock)
+    val submitFeedback = SubmitFeedbackUseCase(db.questDao(), pathDao, transactions)
+    val reportPathQuest = ReportPathQuestUseCase(db.questDao(), pathDao, pathWork, transactions, clock)
+    val pathRequests = PathRequests(db.hunterDao(), pathDao, clock)
+    val runPathRequest = RunPathRequestUseCase(
+        db.hunterDao(), pathDao, pathRequests, oracle, acceptPlan, acceptWeek, aiPrefs, transactions, clock,
+    )
+    val sendReports = SendReportsUseCase(pathDao, oracle, clock)
+    val startPathGate = StartPathGateUseCase(db.hunterDao(), db.questDao(), pathDao, db.gateRunDao(), transactions, uptime, clock)
 
     init {
         if (notificationsPrompted) runBlocking { uiPrefs.setNotificationsPrompted() }
@@ -224,6 +273,7 @@ class TestGraph(
 
     fun close() {
         noticeScope.cancel()
+        aiScope.cancel()
         db.close()
     }
 }

@@ -7,6 +7,7 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import com.assismohanty.awaken.BuildConfig
 import com.assismohanty.awaken.core.data.clock.Clock
 import com.assismohanty.awaken.core.data.di.ApplicationScope
 import dagger.Binds
@@ -53,6 +54,18 @@ class DebugSettings @Inject constructor(
         store.edit { it[SIMULATE_STEPS] = enabled }
     }
 
+    /**
+     * Debug-only: answer Path Oracle calls from [FakePathOracle] instead of the network (Phase 15). Until the hunter flips
+     * it, it follows whether a staging URL is configured, so a fresh checkout works offline.
+     */
+    val useFakeOracle: StateFlow<Boolean> = store.data
+        .map { it[USE_FAKE_ORACLE] ?: !BuildConfig.ORACLE_BASE_URL.startsWith("https://") }
+        .stateIn(scope, SharingStarted.Eagerly, !BuildConfig.ORACLE_BASE_URL.startsWith("https://"))
+
+    suspend fun setUseFakeOracle(enabled: Boolean) {
+        store.edit { it[USE_FAKE_ORACLE] = enabled }
+    }
+
     suspend fun reset() {
         store.edit { it.remove(OFFSET_DAYS) }
     }
@@ -60,6 +73,7 @@ class DebugSettings @Inject constructor(
     private companion object {
         val OFFSET_DAYS = longPreferencesKey("offset_days")
         val SIMULATE_STEPS = booleanPreferencesKey("simulate_steps")
+        val USE_FAKE_ORACLE = booleanPreferencesKey("use_fake_oracle")
     }
 }
 

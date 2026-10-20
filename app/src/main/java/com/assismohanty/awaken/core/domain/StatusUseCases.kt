@@ -138,7 +138,7 @@ class ObserveStatusUseCase @Inject constructor(
 
     private suspend fun projectRecalibration(week: GameWeek): Map<Stat, DifficultyAdapter.Change> {
         val outcomes = questDao.generatedBetween(week.monday, week.sunday)
-            .map { QuestOutcome(it.gameDate, it.type, it.stat, it.status) }
+            .map { QuestOutcome(it.gameDate, it.type, it.stat, it.status, it.pathSlotId) }
         val current = hunterDao.getTiers().associate { it.stat to it.tier }
         val nextMonday = week.monday.plusDays(GameWeek.DAYS_PER_WEEK)
         return DifficultyAdapter.recalibrate(current, outcomes, nextMonday).changes

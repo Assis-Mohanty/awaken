@@ -53,7 +53,7 @@ class ObserveTodayUseCase @Inject constructor(
         observeHunterState(dayChanges).flatMapLatest { hunter ->
             if (hunter == null) return@flatMapLatest flowOf(null)
             questDao.observeForDate(hunter.gameDate).mapLatest { all ->
-                val quests = all.filter { it.status != QuestStatus.REROLLED }
+                val quests = all.filter { !it.status.isHidden }
                 TodayModel(hunter, quests, systemLine(hunter, quests), trialSummary(hunter))
             }
         }

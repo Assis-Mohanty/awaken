@@ -129,7 +129,7 @@ class GameDataPorterTest {
         playSomeGame()
         val good = source.porter.export()
         assertRejectedAndUntouched(mutate(good) { it["schemaVersion"] = JsonPrimitive(AwakenDatabase.SCHEMA_VERSION + 1) }, ImportProblem.NewerVersion(AwakenDatabase.SCHEMA_VERSION + 1))
-        assertRejectedAndUntouched(mutate(good) { it["schemaVersion"] = JsonPrimitive(AwakenDatabase.SCHEMA_VERSION - 1) }, ImportProblem.OlderVersion(AwakenDatabase.SCHEMA_VERSION - 1))
+        assertRejectedAndUntouched(mutate(good) { it["schemaVersion"] = JsonPrimitive(3) }, ImportProblem.OlderVersion(3))
     }
 
     @Test
@@ -213,5 +213,50 @@ class GameDataPorterTest {
             rows.map { JsonObject(it + ("id" to JsonPrimitive("someone_else"))) }
         }
         assertRejectedAndUntouched(otherId, ImportProblem.NoHunter)
+    }
+
+    @Test
+    fun aBackupFromBeforeTheSchemaGainedPathsStillImports() = runTest {
+        playSomeGame()
+        val v5 = source.porter.export()
+        val pathTables = setOf("path", "path_milestone", "path_week", "path_slot", "ai_report")
+        // What a v4 app wrote: no Path tables, no path_slot_id column on quests.
+        val v4 = mutate(v5) { root ->
+            root["schemaVersion"] = JsonPrimitive(4)
+            root["tables"] = JsonObject(
+                root.getValue("tables").jsonObject.filterKeys { it !in pathTables }.mapValues { (table, rows) ->
+                    if (table != "quest_instance") rows else JsonArray(rows.jsonArray.map { JsonObject(it.jsonObject - "path_slot_id") })
+                },
+            )
+        }
+
+        val result = target.porter.import(v4)
+
+        assertThat(result).isInstanceOf(ImportResult.Imported::class.java)
+        assertThat(target.ledger.balances()).isEqualTo(source.ledger.balances())
+        assertThat(target.pathDao.all()).isEmpty()
+        assertThat(tablesOf(target.porter.export())).isEqualTo(tablesOf(v5))
+    }
+
+    @Test
+    fun pathsRoundTripThroughExportAndImport() = runTest {
+        source.seedHunter()
+        source.grantConsent()
+        val created = source.createPath(
+            com.assismohanty.awaken.engine.path.PathInput(
+                "Learn to juggle", "", "", Stat.STR, null, setOf(java.time.DayOfWeek.MONDAY), 1, 60,
+            ),
+        ) as com.assismohanty.awaken.core.domain.CreatePathResult.Created
+        source.runPathRequest(
+            com.assismohanty.awaken.core.domain.PathJob(created.pathId, com.assismohanty.awaken.core.domain.PathRequestMode.PLAN_THEN_WEEK, "r"),
+            attempt = 0,
+        )
+        val exported = source.porter.export()
+
+        assertThat(target.porter.import(exported)).isInstanceOf(ImportResult.Imported::class.java)
+
+        assertThat(target.pathDao.all()).isEqualTo(source.pathDao.all())
+        assertThat(target.pathDao.currentMilestones(created.pathId)).isEqualTo(source.pathDao.currentMilestones(created.pathId))
+        assertThat(tablesOf(target.porter.export())).isEqualTo(tablesOf(exported))
     }
 }

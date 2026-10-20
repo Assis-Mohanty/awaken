@@ -37,7 +37,7 @@ class BuildReminderUseCase @Inject constructor(
         val profile = hunterDao.getProfile() ?: return null
         if (profile.reminderTime == null) return null
         val today = clock.gameDate(profile.dayStartHour)
-        val count = questDao.getForDate(today).count { it.status != QuestStatus.REROLLED && it.type in DIRECTIVE_TYPES }
+        val count = questDao.getForDate(today).count { !it.status.isHidden && it.type in DIRECTIVE_TYPES }
         return if (count > 0) ReminderContent.Directive(count) else null
     }
 
@@ -45,7 +45,7 @@ class BuildReminderUseCase @Inject constructor(
         val profile = hunterDao.getProfile() ?: return null
         val reminder = profile.reminderTime?.let(LocalTime::parse) ?: return null
         val today = clock.gameDate(profile.dayStartHour)
-        val quests = questDao.getForDate(today).filter { it.status != QuestStatus.REROLLED }
+        val quests = questDao.getForDate(today).filter { !it.status.isHidden }
         val record = dayRecordDao.get(today)
         val day = quests.toDayRecord(today, restDay = record?.restDay ?: false, recovery = record?.recovery ?: false)
         if (!ReminderRules.shouldLastCall(reminder, day)) return null

@@ -25,6 +25,7 @@ internal fun QuestDraft.toEntity(createdAt: Instant): QuestInstanceEntity = Ques
     minDurationSec = minDurationSec,
     status = QuestStatus.ACTIVE,
     createdAt = createdAt,
+    pathSlotId = pathSlotId,
 )
 
 /** Generated quests only (they always have a template). */

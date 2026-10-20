@@ -150,6 +150,10 @@ interface QuestDao {
     @Query("UPDATE quest_instance SET status = :status, completed_at = :completedAt WHERE id = :id")
     suspend fun setStatus(id: String, status: QuestStatus, completedAt: Instant?)
 
+    /** A Path quest whose gate collapsed or was left stays on the Directive, untouched (GD §6.6, ENGINE_DECISIONS #76). */
+    @Query("UPDATE quest_instance SET status = 'ACTIVE', started_at = NULL WHERE id = :id AND status IN ('ACTIVE', 'STARTED')")
+    suspend fun reopen(id: String)
+
     @Query("UPDATE quest_instance SET status = 'STARTED', started_at = :startedAt WHERE id = :id AND status = 'ACTIVE'")
     suspend fun markStarted(id: String, startedAt: Instant): Int
 

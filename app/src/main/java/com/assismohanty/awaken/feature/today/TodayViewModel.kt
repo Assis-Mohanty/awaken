@@ -150,6 +150,6 @@ internal fun QuestInstanceEntity.toRowModel() = QuestRowModel(
     state = when (status) {
         QuestStatus.COMPLETED -> QuestRowState.DONE
         QuestStatus.ACTIVE, QuestStatus.STARTED -> QuestRowState.OPEN
-        QuestStatus.EXPIRED, QuestStatus.MISSED, QuestStatus.REROLLED -> QuestRowState.CLOSED
+        QuestStatus.EXPIRED, QuestStatus.MISSED, QuestStatus.REROLLED, QuestStatus.REPORTED -> QuestRowState.CLOSED
     },
 )

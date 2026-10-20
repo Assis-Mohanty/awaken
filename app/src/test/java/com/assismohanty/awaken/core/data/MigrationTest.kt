@@ -61,7 +61,7 @@ class MigrationTest {
         try {
             assertThat(db.ledgerDao().all().sumOf { it.delta }).isEqualTo(120)
             assertThat(db.gateRunDao().running()).isNull()
-            assertThat(db.openHelper.readableDatabase.version).isEqualTo(4)
+            assertThat(db.openHelper.readableDatabase.version).isEqualTo(5)
         } finally {
             db.close()
         }
@@ -88,7 +88,7 @@ class MigrationTest {
             assertThat(profile?.equippedTitleId).isEqualTo("veteran")
             assertThat(profile?.equippedFrameId).isNull()
             assertThat(profile?.equippedSigilId).isNull()
-            assertThat(db.openHelper.readableDatabase.version).isEqualTo(4)
+            assertThat(db.openHelper.readableDatabase.version).isEqualTo(5)
         } finally {
             db.close()
         }
@@ -114,7 +114,34 @@ class MigrationTest {
             assertThat(profile?.injuryMode).isTrue()
             assertThat(profile?.injuryTags).containsExactly("impact", "legs")
             assertThat(profile?.ownedEquipment).containsExactly("dumbbells")
-            assertThat(db.openHelper.readableDatabase.version).isEqualTo(4)
+            assertThat(db.openHelper.readableDatabase.version).isEqualTo(5)
+        } finally {
+            db.close()
+        }
+    }
+
+    @Test
+    fun v4To5AddsThePathTablesAndKeepsExistingQuests() = runTest {
+        val path = createFromSchema(4)
+        SQLiteDatabase.openDatabase(path, null, SQLiteDatabase.OPEN_READWRITE).use { db ->
+            db.execSQL(
+                "INSERT INTO quest_instance (id, game_date, type, stat, title, description, unit, target, difficulty, " +
+                    "verification, min_duration_sec, status, created_at) " +
+                    "VALUES ('q1', '2026-10-18', 'SIDE', 'STR', 'Push-ups', 'Do them', 'reps', 20, 'NORMAL', 'SELF', 0, 'ACTIVE', 0)",
+            )
+        }
+
+        val db = Room.databaseBuilder(context, AwakenDatabase::class.java, path)
+            .addMigrations(*ALL_MIGRATIONS)
+            .allowMainThreadQueries()
+            .build()
+        try {
+            val quest = db.questDao().get("q1")
+            assertThat(quest?.title).isEqualTo("Push-ups")
+            assertThat(quest?.pathSlotId).isNull()
+            assertThat(db.pathDao().all()).isEmpty()
+            assertThat(db.pathDao().unsentReports()).isEmpty()
+            assertThat(db.openHelper.readableDatabase.version).isEqualTo(5)
         } finally {
             db.close()
         }

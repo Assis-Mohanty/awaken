@@ -26,6 +26,7 @@ class GenerateDirectiveUseCase @Inject constructor(
     private val habitDao: HabitDao,
     private val reader: GameStateReader,
     private val templates: TemplateRepository,
+    private val pathQuests: PathQuestPlanner,
     private val transactions: TransactionRunner,
     private val clock: Clock,
 ) {
@@ -37,8 +38,14 @@ class GenerateDirectiveUseCase @Inject constructor(
             val now = clock.now()
             if (questDao.countGenerated(gameDate) == 0) {
                 val context = reader.hunterContext(profile, gameDate)
-                val directive = DirectiveGenerator.generate(library.templates, context, gameDate)
+                val directive = DirectiveGenerator.generate(library.templates, context, gameDate, pathQuests.draftsFor(gameDate))
                 questDao.insertAll(directive.quests.map { it.toEntity(now) })
+            } else {
+                // A Path week can arrive after the day's directive exists: its quests join as plain PATH quests, never
+                // as Main, and never push the day past the cap (ENGINE_DECISIONS #75).
+                questDao.insertAll(
+                    pathQuests.draftsFor(gameDate).map { it.copy(type = QuestType.PATH).toEntity(now) },
+                )
             }
             questDao.insertAll(
                 habitDao.active()

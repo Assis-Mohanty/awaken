@@ -58,7 +58,15 @@ enum class QuestType {
 }
 
 /** Lifecycle of a quest instance (ARCHITECTURE §2). */
-enum class QuestStatus { ACTIVE, STARTED, COMPLETED, EXPIRED, MISSED, REROLLED }
+enum class QuestStatus {
+    ACTIVE, STARTED, COMPLETED, EXPIRED, MISSED, REROLLED,
+
+    /** A Path quest the hunter reported (PRD F21): hidden like REROLLED, but never counted as a paid reroll. */
+    REPORTED;
+
+    /** Replaced or removed quests: not shown, not counted, not attempted (ENGINE_DECISIONS #74). */
+    val isHidden: Boolean get() = this == REROLLED || this == REPORTED
+}
 
 /** Hunter ranks and their level bands (GD §5). */
 enum class Rank(val minLevel: Int) {

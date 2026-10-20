@@ -179,6 +179,17 @@ class RulesTest {
         }
 
         @Test
+        fun `rerolled and reported quests were never attempted`() {
+            val hidden = QuestStatus.entries.filter { it.isHidden }
+            assertThat(hidden).containsExactly(QuestStatus.REROLLED, QuestStatus.REPORTED)
+            val withHidden = outcomes(Stat.STR, 4, 4) +
+                hidden.map { QuestOutcome(monday.minusDays(1), QuestType.SIDE, Stat.STR, it) }
+
+            assertThat(DifficultyAdapter.recalibrate(emptyMap(), withHidden, monday.plusDays(2)).tiers)
+                .isEqualTo(DifficultyAdapter.recalibrate(emptyMap(), outcomes(Stat.STR, 4, 4), monday.plusDays(2)).tiers)
+        }
+
+        @Test
         fun `due on Monday or first open after`() {
             assertThat(DifficultyAdapter.isDue(monday.plusDays(3), monday.minusDays(7))).isTrue()
             assertThat(DifficultyAdapter.isDue(monday.plusDays(3), monday)).isFalse()

@@ -17,6 +17,12 @@ import com.assismohanty.awaken.engine.model.Rank
 import com.assismohanty.awaken.engine.model.SourceType
 import com.assismohanty.awaken.engine.model.Stat
 import com.assismohanty.awaken.engine.model.Verification
+import com.assismohanty.awaken.engine.path.Feedback
+import com.assismohanty.awaken.engine.path.PathMode
+import com.assismohanty.awaken.engine.path.PathStatus
+import com.assismohanty.awaken.engine.path.PathUnit
+import com.assismohanty.awaken.engine.path.ProgressionSignal
+import com.assismohanty.awaken.engine.path.SlotOutcome
 import com.assismohanty.awaken.engine.model.VerificationSource
 import java.time.Instant
 import java.time.LocalDate
@@ -62,7 +68,7 @@ data class StatTierEntity(
 
 @Entity(
     tableName = "quest_instance",
-    indices = [Index("game_date"), Index("status")],
+    indices = [Index("game_date"), Index("status"), Index("path_slot_id")],
 )
 data class QuestInstanceEntity(
     @PrimaryKey val id: String,
@@ -83,6 +89,8 @@ data class QuestInstanceEntity(
     @ColumnInfo(name = "started_at") val startedAt: Instant? = null,
     @ColumnInfo(name = "completed_at") val completedAt: Instant? = null,
     @ColumnInfo(name = "created_at") val createdAt: Instant,
+    /** The Path slot this quest was scheduled from (ARCH §2); null for template, habit, penalty, trial and gate quests. */
+    @ColumnInfo(name = "path_slot_id") val pathSlotId: String? = null,
 )
 
 /** One completion attempt; [id] is the completionId `questInstanceId#attemptN` (GD §9.3). Not a ledger table. */
@@ -218,4 +226,99 @@ data class HealthSyncStateEntity(
     @PrimaryKey @ColumnInfo(name = "record_type") val recordType: String,
     @ColumnInfo(name = "last_change_token") val lastChangeToken: String?,
     @ColumnInfo(name = "last_synced_at") val lastSyncedAt: Instant?,
+)
+
+// ---- AI Paths (GAME_DESIGN §6.6, ARCH §2). None of these tables moves a balance: rewards flow only through
+// quest_instance → CompleteQuest → ledger.
+
+@Entity(tableName = "path")
+data class PathEntity(
+    @PrimaryKey val id: String,
+    val goal: String,
+    @ColumnInfo(name = "current_level") val currentLevel: String,
+    val notes: String,
+    @ColumnInfo(name = "primary_stat") val primaryStat: Stat,
+    @ColumnInfo(name = "secondary_stat") val secondaryStat: Stat?,
+    /** Bit (dayOfWeek.value − 1) set = active that day; Monday = bit 0 (same as habits). */
+    @ColumnInfo(name = "active_days_mask") val activeDaysMask: Int,
+    @ColumnInfo(name = "quests_per_day") val questsPerDay: Int,
+    @ColumnInfo(name = "weekly_minutes") val weeklyMinutes: Int,
+    val status: PathStatus,
+    @ColumnInfo(name = "current_milestone_index") val currentMilestoneIndex: Int = 0,
+    @ColumnInfo(name = "milestone_started_game_date") val milestoneStartedGameDate: LocalDate,
+    @ColumnInfo(name = "created_at") val createdAt: Instant,
+    @ColumnInfo(name = "created_game_date") val createdGameDate: LocalDate,
+    /** ISO week of the last user "Re-plan" (max one per week per Path, GD §6.6.2); null = never. */
+    @ColumnInfo(name = "last_replan_iso_week") val lastReplanIsoWeek: String? = null,
+)
+
+/** One rung of a plan. A re-plan writes a new [planVersion]; the highest version is the current ladder. */
+@Entity(tableName = "path_milestone", primaryKeys = ["path_id", "plan_version", "idx"])
+data class PathMilestoneEntity(
+    @ColumnInfo(name = "path_id") val pathId: String,
+    val idx: Int,
+    val title: String,
+    val summary: String,
+    @ColumnInfo(name = "exit_criterion") val exitCriterion: String,
+    @ColumnInfo(name = "plan_version") val planVersion: Int,
+)
+
+enum class PathWeekStatus { REQUESTED, READY, EMPTY, FAILED }
+
+@Entity(tableName = "path_week", primaryKeys = ["path_id", "iso_week"])
+data class PathWeekEntity(
+    @ColumnInfo(name = "path_id") val pathId: String,
+    /** ISO week key, e.g. `2026-W43` ([com.assismohanty.awaken.engine.path.PathScheduler.isoWeek]). */
+    @ColumnInfo(name = "iso_week") val isoWeek: String,
+    val status: PathWeekStatus,
+    @ColumnInfo(name = "progression_signal") val progressionSignal: ProgressionSignal,
+    @ColumnInfo(name = "prompt_version") val promptVersion: String,
+    @ColumnInfo(name = "response_sha256") val responseSha256: String,
+    @ColumnInfo(name = "requested_at") val requestedAt: Instant,
+    @ColumnInfo(name = "received_at") val receivedAt: Instant? = null,
+    @ColumnInfo(name = "manual_retries") val manualRetries: Int = 0,
+    @ColumnInfo(name = "suggest_advance") val suggestAdvance: Boolean = false,
+)
+
+/** A validated, priced blueprint placed in a week. Priced fields are copied to quests, never recomputed. */
+@Entity(
+    tableName = "path_slot",
+    indices = [Index(value = ["path_id", "iso_week", "blueprint_index"], unique = true), Index("assigned_game_date")],
+)
+data class PathSlotEntity(
+    @PrimaryKey val id: String,
+    @ColumnInfo(name = "path_id") val pathId: String,
+    @ColumnInfo(name = "iso_week") val isoWeek: String,
+    @ColumnInfo(name = "blueprint_index") val blueprintIndex: Int,
+    /** Null = unscheduled: reroll stock for the week (ENGINE_DECISIONS #65). */
+    @ColumnInfo(name = "assigned_game_date") val assignedGameDate: LocalDate?,
+    @ColumnInfo(name = "carried_over") val carriedOver: Boolean,
+    val title: String,
+    val description: String,
+    val stat: Stat,
+    val unit: PathUnit,
+    val target: Int,
+    @ColumnInfo(name = "est_minutes") val estMinutes: Int,
+    val mode: PathMode,
+    @ColumnInfo(name = "priced_difficulty") val pricedDifficulty: Difficulty,
+    @ColumnInfo(name = "priced_verification") val pricedVerification: Verification,
+    @ColumnInfo(name = "gate_rank") val gateRank: GateRank?,
+    @ColumnInfo(name = "min_duration_sec") val minDurationSec: Int,
+    @ColumnInfo(name = "tags_json") val tagsJson: String,
+    val rationale: String,
+    val outcome: SlotOutcome,
+    val feedback: Feedback? = null,
+)
+
+/** Outbox for `/v1/reports` (PRD F21). Holds the text reported, never an install ID. */
+@Entity(tableName = "ai_report")
+data class AiReportEntity(
+    @PrimaryKey val id: String,
+    @ColumnInfo(name = "path_slot_id") val pathSlotId: String,
+    val reason: String,
+    @ColumnInfo(name = "prompt_version") val promptVersion: String,
+    val title: String,
+    val description: String,
+    @ColumnInfo(name = "created_at") val createdAt: Instant,
+    @ColumnInfo(name = "sent_at") val sentAt: Instant? = null,
 )

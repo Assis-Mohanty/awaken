@@ -24,6 +24,11 @@ annotation class NoticePrefs
 @Retention(AnnotationRetention.BINARY)
 annotation class UiPrefsStore
 
+/** AI Paths consent and the random install ID (ARCH §4). */
+@Qualifier
+@Retention(AnnotationRetention.BINARY)
+annotation class AiPrefsStore
+
 @Module
 @InstallIn(SingletonComponent::class)
 object DataStoreModule {
@@ -45,5 +50,15 @@ object DataStoreModule {
         @ApplicationScope scope: CoroutineScope,
     ): DataStore<Preferences> = PreferenceDataStoreFactory.create(scope = scope) {
         context.preferencesDataStoreFile("ui_prefs")
+    }
+
+    @Provides
+    @Singleton
+    @AiPrefsStore
+    fun provideAiPrefs(
+        @ApplicationContext context: Context,
+        @ApplicationScope scope: CoroutineScope,
+    ): DataStore<Preferences> = PreferenceDataStoreFactory.create(scope = scope) {
+        context.preferencesDataStoreFile("ai_prefs")
     }
 }

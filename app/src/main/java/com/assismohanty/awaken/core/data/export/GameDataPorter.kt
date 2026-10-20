@@ -61,9 +61,10 @@ class GameDataPorter @Inject constructor(
         } catch (e: IllegalArgumentException) {
             return@withContext ImportResult.Rejected(ImportProblem.Malformed)
         }
-        ExportValidator.check(doc)?.let { return@withContext ImportResult.Rejected(it) }
+        val current = ExportUpgrade.toCurrent(doc)
+        ExportValidator.check(current)?.let { return@withContext ImportResult.Rejected(it) }
         try {
-            transactions.run { replaceAll(doc) }
+            transactions.run { replaceAll(current) }
         } catch (e: CancellationException) {
             throw e
         } catch (e: ImportAbort) {

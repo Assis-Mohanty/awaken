@@ -4,6 +4,7 @@ import com.assismohanty.awaken.core.data.clock.Clock
 import com.assismohanty.awaken.core.data.clock.gameDate
 import com.assismohanty.awaken.core.data.db.dao.CompletionDao
 import com.assismohanty.awaken.core.data.db.dao.HunterDao
+import com.assismohanty.awaken.core.data.db.dao.PathDao
 import com.assismohanty.awaken.core.data.db.dao.LedgerDao
 import com.assismohanty.awaken.core.data.db.dao.QuestDao
 import com.assismohanty.awaken.core.data.db.dao.TrialDao
@@ -14,6 +15,7 @@ import com.assismohanty.awaken.engine.QuestRules
 import com.assismohanty.awaken.engine.RankRules
 import com.assismohanty.awaken.engine.model.QuestType
 import com.assismohanty.awaken.engine.model.VerificationSource
+import com.assismohanty.awaken.engine.path.SlotOutcome
 import com.assismohanty.awaken.engine.model.QuestStatus
 import javax.inject.Inject
 
@@ -42,13 +44,16 @@ class UndoCompletionUseCase @Inject constructor(
     private val trialDao: TrialDao,
     private val completionDao: CompletionDao,
     private val ledgerDao: LedgerDao,
+    private val pathDao: PathDao,
     private val ledger: LedgerRepository,
     private val transactions: TransactionRunner,
     private val clock: Clock,
 ) {
     suspend operator fun invoke(questInstanceId: String): UndoResult = transactions.run {
         val completion = completionDao.latestActive(questInstanceId) ?: return@run UndoResult.NothingToUndo
-        if (completion.questType == QuestType.GATE) return@run UndoResult.GateClear
+        val quest = questDao.get(questInstanceId)
+        val clearedThroughGate = completion.verificationSource == VerificationSource.TIMER && quest?.pathSlotId != null
+        if (completion.questType == QuestType.GATE || clearedThroughGate) return@run UndoResult.GateClear
         if (completion.verificationSource == VerificationSource.HEALTH) return@run UndoResult.HealthVerified
         val now = clock.now()
         if (!QuestRules.canUndo(completion.completedAt, now)) return@run UndoResult.WindowExpired
@@ -63,9 +68,12 @@ class UndoCompletionUseCase @Inject constructor(
         val originals = ledgerDao.bySource(COMPLETION_SOURCE_TYPES, completion.id)
         ledger.insertIdempotent(ledger.reversalsOf(originals, now))
         completionDao.markUndone(completion.id, now)
-        val quest = questDao.get(questInstanceId)
         val reopened = if (quest?.startedAt != null) QuestStatus.STARTED else QuestStatus.ACTIVE
         questDao.setStatus(questInstanceId, reopened, completedAt = null)
+        quest?.pathSlotId?.let {
+            pathDao.setOutcome(it, SlotOutcome.PENDING)
+            pathDao.setFeedback(it, null)
+        }
         // The cleared stage had closed the day's other stages; they are open again.
         if (isTrialStage) questDao.reopenTrialStages(completion.gameDate)
         UndoResult.Undone(completion.id)

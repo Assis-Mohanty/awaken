@@ -145,7 +145,7 @@ health_sync_state(record_type PK, last_change_token NULL, last_synced_at)
 
 -- AI PATHS (GAME_DESIGN §6.6). None of these tables affect balances directly;
 -- rewards still flow only through quest_instance → CompleteQuest → ledger.
-path(id PK, goal, current_level, notes, primary_stat, secondary_stat NULL,
+path(id PK, goal, current_level, notes, primary_stat, secondary_stat NULL, last_replan_iso_week NULL,
      active_days_mask INT, quests_per_day INT, weekly_minutes INT,
      status,                                   -- PLANNING|ACTIVE|PAUSED|ARCHIVED
      current_milestone_index INT, milestone_started_game_date, created_at, created_game_date)
@@ -179,7 +179,7 @@ UNIQUE with nullable columns: SQLite treats NULLs as distinct → store `''` ins
 
 Ledger sourceIds: QUEST/GATE → completionId; UNDO → the undone row's sourceId; DAY_CLEAR and SHIELD_USE → game_date; ACHIEVEMENT → achievement id; SHOP → purchase UUID (rerolls: `reroll:<game_date>#n`).
 
-Migrations: `exportSchema = true`, schemas committed under `app/schemas/`. Every schema change bumps the version and adds a `Migration` (`core/data/db/Migrations.kt`, listed in `ALL_MIGRATIONS`) plus a case in `MigrationTest`, which builds the old database from its exported JSON (the schemas are debug-only assets) and opens it with the current Room, so Room validates the result. (`MigrationTestHelper` is not used: its `createDatabase` rejects Robolectric database paths on Windows.) Current version: 4 (v1→v2 rebuilt the then-empty `gate_run` for Focus Gates; v2→v3 added `hunter_profile.equipped_frame_id` and `equipped_sigil_id` for the Vault; v3→v4 added `injury_tags` for Settings). **No destructive fallback, ever: hunters never lose data.**
+Migrations: `exportSchema = true`, schemas committed under `app/schemas/`. Every schema change bumps the version and adds a `Migration` (`core/data/db/Migrations.kt`, listed in `ALL_MIGRATIONS`) plus a case in `MigrationTest`, which builds the old database from its exported JSON (the schemas are debug-only assets) and opens it with the current Room, so Room validates the result. (`MigrationTestHelper` is not used: its `createDatabase` rejects Robolectric database paths on Windows.) Current version: 5 (v1→v2 rebuilt the then-empty `gate_run` for Focus Gates; v2→v3 added `hunter_profile.equipped_frame_id` and `equipped_sigil_id` for the Vault; v3→v4 added `injury_tags` for Settings; v4→v5 added the five AI Paths tables and `quest_instance.path_slot_id`). **No destructive fallback, ever: hunters never lose data.**
 
 ## 3. Core flows
 
@@ -269,6 +269,7 @@ AcceptWeekPlanUseCase, in ONE transaction:
 
 - **Weekly trigger:** `DayRolloverUseCase` on the first rollover of an ISO week computes `ProgressionSignal` per active Path from last week's `path_slot` outcomes (GD §6.6.5) and enqueues `PlanWeekWorker(pathId, WEEK)`.
 - **Request content** (the only data that leaves the phone): `goal`, `currentLevel`, `notes`, stats, `activeDays`, `questsPerDay`, `weeklyMinutes`, current and next milestone titles, `progressionSignal`, and last week's `[{title, outcome, feedback}]`. Plus equipment owned and Injury Mode tags, so the model avoids them up front (the validator enforces it anyway). Never XP, level, gold, streak, Health Connect data, hunter name or device identifiers beyond the random install ID.
+- **Headers beyond the contract:** week calls send `X-Path-Id` (keys the per-Path weekly limits) and `X-Retry-Kind: manual` on user retries (absent = automatic); see `proxy/src/routes/week.ts`.
 - **Integrity:** `IntegrityTokenProvider` wraps the Play Integrity **Standard API** (`prepareIntegrityToken` once per app process, then `request()` per call with `requestHash = SHA-256(canonical request body)`). Headers: `X-Install-Id` (random UUID in DataStore, created at consent) and `X-Integrity-Token`.
 - **Retries:** each logical request carries a `requestId` UUID that is reused across WorkManager retries; the proxy doesn't charge quota twice for the same `requestId`.
 - **Timeouts:** connect 10 s, total 45 s. Model latency is the long pole.
@@ -318,7 +319,7 @@ Request pipeline, in order (cheap checks first, the model last):
 `ObserveStatusUseCase` derives everything Status shows from Room flows: radar (current stat levels vs levels from ledger rows before this Monday), 18-week heatmap (active completions per game-day), the 32 achievements, chapters (`level ≥ unlockLevel`), and the Weekly Report with a projected recalibration. Equipping a title updates `hunter_profile.equipped_title_id` only, never the ledger. To share, `ShareCard` is laid out offscreen at 360×450dp with density 3, recorded into a `GraphicsLayer` (1080×1350px), written by `ShareImageWriter` to `cache/share/` (one file, overwritten), and handed to `ACTION_SEND` through `androidx.core.content.FileProvider` (authority `${applicationId}.share`, cache path only, with a per-share read grant). No network.
 
 ### 3.10 Vault, Settings and export/import
-`PurchaseItemUseCase` and `OpenRelicCacheUseCase` each run in one transaction and are idempotent on a client-generated id (`SHOP` / `CACHE_OPEN` ledger sources). `ShopRules` (engine) owns the catalogue, prices and the deterministic cache drop. Settings edits go through `UpdateSettingsUseCase` (profile row only); haptics and reduce-motion live in a DataStore (`UiPrefsRepository`) and feed `AwakenTheme` with the equipped theme via `AppearanceViewModel`. `GameDataPorter` exports the raw rows of 12 tables as JSON (SAF, no permission, no network) and imports them atomically (ENGINE_DECISIONS #48).
+`PurchaseItemUseCase` and `OpenRelicCacheUseCase` each run in one transaction and are idempotent on a client-generated id (`SHOP` / `CACHE_OPEN` ledger sources). `ShopRules` (engine) owns the catalogue, prices and the deterministic cache drop. Settings edits go through `UpdateSettingsUseCase` (profile row only); haptics and reduce-motion live in a DataStore (`UiPrefsRepository`) and feed `AwakenTheme` with the equipped theme via `AppearanceViewModel`. `GameDataPorter` exports the raw rows of 17 tables as JSON (SAF, no permission, no network) and imports them atomically (ENGINE_DECISIONS #48).
 
 ## 4. State & DI
 - Hilt modules: `DatabaseModule`, `DispatchersModule` (`@IoDispatcher`, `@DefaultDispatcher`), `ClockModule` (`Clock` interface; `SystemClock` in prod, `FakeClock` in tests), `EngineModule` (provides engine objects + loaded template library), `AiModule` (Ktor `HttpClient`, `PathOracleClient` bound to the real or fake implementation, `IntegrityTokenProvider`; base URL from `BuildConfig` per build type).

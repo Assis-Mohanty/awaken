@@ -44,7 +44,7 @@ object DifficultyAdapter {
     fun recalibrate(current: Map<Stat, Difficulty>, outcomes: List<QuestOutcome>, gameDate: LocalDate): Recalibration {
         val monday = recalibrationDate(gameDate)
         val window = monday.minusDays(WINDOW_DAYS)..monday.minusDays(1)
-        val relevant = outcomes.filter { it.type.isGenerated && it.pathSlotId == null && it.gameDate in window && it.status != QuestStatus.REROLLED }
+        val relevant = outcomes.filter { it.type.isGenerated && it.pathSlotId == null && it.gameDate in window && !it.status.isHidden }
         val tiers = HashMap<Stat, Difficulty>()
         val changes = HashMap<Stat, Change>()
         for (stat in Stat.entries) {

@@ -18,6 +18,17 @@ val keystoreProperties = Properties().apply {
     }
 }
 
+// Path Oracle endpoints and keys come from local.properties (git-ignored), never from source. Missing values leave AI
+// Paths unconfigured: debug builds fall back to FakePathOracle, release builds report the Oracle as unavailable.
+val localProperties = Properties().apply {
+    val file = rootProject.file("local.properties")
+    if (file.exists()) file.inputStream().use { load(it) }
+}
+
+fun String.asBuildConfigString(): String = "\"" + replace("\\", "\\\\").replace("\"", "\\\"") + "\""
+
+fun localProperty(name: String): String = localProperties.getProperty(name, "").trim()
+
 android {
     namespace = "com.assismohanty.awaken"
     compileSdk {
@@ -46,7 +57,17 @@ android {
     }
 
     buildTypes {
+        debug {
+            // Sideloaded debug APKs fail Play Integrity, so debug builds talk to staging with the debug key (ARCH §3.7).
+            buildConfigField("String", "ORACLE_BASE_URL", localProperty("oracle.stagingUrl").asBuildConfigString())
+            buildConfigField("String", "ORACLE_DEBUG_KEY", localProperty("oracle.debugKey").asBuildConfigString())
+            buildConfigField("long", "PLAY_CLOUD_PROJECT_NUMBER", (localProperty("oracle.cloudProjectNumber").ifEmpty { "0" }) + "L")
+        }
         release {
+            buildConfigField("String", "ORACLE_BASE_URL", localProperty("oracle.productionUrl").asBuildConfigString())
+            // Never ship a debug key (Phase 16 re-checks the release BuildConfig).
+            buildConfigField("String", "ORACLE_DEBUG_KEY", "\"\"")
+            buildConfigField("long", "PLAY_CLOUD_PROJECT_NUMBER", (localProperty("oracle.cloudProjectNumber").ifEmpty { "0" }) + "L")
             optimization {
                 enable = true
                 packageScope = setOf("androidx.**", "kotlin.**", "kotlinx.**")
@@ -116,6 +137,12 @@ dependencies {
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.timber)
+
+    // AI Paths: the only network code in the app lives in core/data/ai (CLAUDE.md invariant 8).
+    implementation(libs.ktor.client.core)
+    implementation(libs.ktor.client.okhttp)
+    implementation(libs.play.integrity)
+    testImplementation(libs.ktor.client.mock)
 
     testImplementation(libs.junit4)
     testImplementation(libs.truth)

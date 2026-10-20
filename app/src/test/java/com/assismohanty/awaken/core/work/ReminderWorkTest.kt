@@ -13,14 +13,17 @@ import androidx.work.WorkManager
 import androidx.work.WorkerFactory
 import androidx.work.WorkerParameters
 import androidx.work.testing.TestListenableWorkerBuilder
+import androidx.work.testing.SynchronousExecutor
 import androidx.work.testing.WorkManagerTestInitHelper
 import androidx.work.workDataOf
 import com.assismohanty.awaken.testing.TestGraph
 import com.google.common.truth.Truth.assertThat
 import java.time.LocalTime
 import kotlinx.coroutines.runBlocking
+import com.assismohanty.awaken.testing.RetryRule
 import org.junit.After
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.Shadows.shadowOf
@@ -28,13 +31,17 @@ import org.robolectric.Shadows.shadowOf
 /** Phase 12: the reminders are armed with the right delays and the worker posts what the use case built. */
 @RunWith(AndroidJUnit4::class)
 class ReminderWorkTest {
+    // WorkManager's test executor occasionally leaves a freshly enqueued unique work CANCELLED (seen on the pre-Phase-15 baseline too).
+    @get:Rule
+    val retry = RetryRule(attempts = 5)
+
     private val context: Context = ApplicationProvider.getApplicationContext()
     private val graph = TestGraph() // 2026-10-18 10:00 UTC
     private lateinit var scheduler: ReminderScheduler
 
     @Before
     fun setUp() {
-        WorkManagerTestInitHelper.initializeTestWorkManager(context, Configuration.Builder().build())
+        WorkManagerTestInitHelper.initializeTestWorkManager(context, Configuration.Builder().setExecutor(SynchronousExecutor()).build())
         scheduler = ReminderScheduler(context, graph.db.hunterDao(), graph.clock)
     }
 
