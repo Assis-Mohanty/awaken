@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://awaken.app/contracts/path_plan.response.schema.json",
+  "title": "PLAN_PATH response (GAME_DESIGN §6.6.2)",
+  "description": "The proxy's reply. The model's structured output is this schema without promptVersion, which the proxy adds. The app's PathValidator runs again on every reply (defence in depth).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["promptVersion", "milestones"],
+  "properties": {
+    "promptVersion": { "type": "string", "pattern": "^[a-z_]+\\.v[0-9]+$" },
+    "milestones": {
+      "type": "array",
+      "minItems": 4,
+      "maxItems": 10,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["title", "summary", "exitCriterion"],
+        "properties": {
+          "title": { "type": "string", "minLength": 1, "maxLength": 48 },
+          "summary": { "type": "string", "maxLength": 200 },
+          "exitCriterion": { "type": "string", "maxLength": 140 }
+        }
+      }
+    }
+  }
+}

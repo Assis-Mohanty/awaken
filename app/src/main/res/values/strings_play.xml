@@ -73,6 +73,7 @@
     <string name="quest_kind_penalty">PENALTY QUEST</string>
     <string name="quest_kind_trial">TRIAL STAGE</string>
     <string name="quest_kind_gate">FOCUS GATE</string>
+    <string name="quest_kind_path">PATH QUEST</string>
     <string name="quest_split_primary">%1$s · full XP</string>
     <string name="quest_split_secondary">%1$s · 30%% bonus</string>
     <string name="verify_self">Self-reported. Tap Begin, do the work, then complete it.</string>

@@ -1,0 +1,18 @@
+{
+  "promptVersion": "week_quests.v1",
+  "suggestAdvance": false,
+  "blueprints": [
+    {
+      "title": "Read: http://evil.example now",
+      "description": "Read 10 pages\n\nof   the   book at https://evil.example/x?y=1 today.",
+      "stat": "INT",
+      "unit": "PAGES",
+      "target": 10,
+      "effort": "NORMAL",
+      "estMinutes": 25,
+      "mode": "SELF",
+      "tags": ["quiet"],
+      "rationale": "Links never reach the hunter."
+    }
+  ]
+}

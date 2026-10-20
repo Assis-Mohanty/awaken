@@ -1,0 +1,30 @@
+{
+  "promptVersion": "week_quests.v1",
+  "suggestAdvance": false,
+  "blueprints": [
+    {
+      "title": "Two Minute Drill",
+      "description": "Name the complexity of 5 algorithms.",
+      "stat": "INT",
+      "unit": "ITEMS",
+      "target": 5,
+      "effort": "EASY",
+      "estMinutes": 2,
+      "mode": "SELF",
+      "tags": ["quiet"],
+      "rationale": "Quick recall."
+    },
+    {
+      "title": "Marathon Study",
+      "description": "Study shortest paths for two hours.",
+      "stat": "INT",
+      "unit": "MINUTES",
+      "target": 120,
+      "effort": "NORMAL",
+      "estMinutes": 120,
+      "mode": "SELF",
+      "tags": ["quiet"],
+      "rationale": "Depth."
+    }
+  ]
+}

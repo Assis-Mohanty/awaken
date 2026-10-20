@@ -1,0 +1,18 @@
+{
+  "promptVersion": "week_quests.v1",
+  "suggestAdvance": false,
+  "blueprints": [
+    {
+      "title": "Desk Push",
+      "description": "Do 20 push-ups between two practice problems.",
+      "stat": "STR",
+      "unit": "REPS",
+      "target": 20,
+      "effort": "NORMAL",
+      "estMinutes": 10,
+      "mode": "SELF",
+      "tags": ["indoor"],
+      "rationale": "The stat must belong to the Path."
+    }
+  ]
+}

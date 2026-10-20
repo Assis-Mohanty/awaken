@@ -186,6 +186,7 @@ private val QuestType.kindRes: Int
         QuestType.PENALTY -> R.string.quest_kind_penalty
         QuestType.TRIAL -> R.string.quest_kind_trial
         QuestType.GATE -> R.string.quest_kind_gate
+        QuestType.PATH -> R.string.quest_kind_path
     }
 
 private val VerificationSource.explanationRes: Int

@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://awaken.app/contracts/path_week.request.schema.json",
+  "title": "WEEK_QUESTS request (GAME_DESIGN §6.6.2, §6.6.5)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["requestId", "path", "milestone", "progressionSignal", "maxBlueprints", "lastWeek", "constraints"],
+  "properties": {
+    "requestId": { "$ref": "path_plan.request.schema.json#/$defs/uuid" },
+    "path": { "$ref": "path_plan.request.schema.json#/$defs/path" },
+    "milestone": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["title", "summary", "exitCriterion"],
+      "properties": {
+        "title": { "type": "string", "minLength": 1, "maxLength": 48 },
+        "summary": { "type": "string", "maxLength": 200 },
+        "exitCriterion": { "type": "string", "maxLength": 140 }
+      }
+    },
+    "progressionSignal": { "enum": ["UP", "HOLD", "DOWN"] },
+    "maxBlueprints": { "type": "integer", "minimum": 1, "maximum": 14 },
+    "lastWeek": {
+      "type": "array",
+      "maxItems": 14,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["title", "outcome"],
+        "properties": {
+          "title": { "type": "string", "maxLength": 48 },
+          "outcome": { "enum": ["PENDING", "COMPLETED", "EXPIRED", "SKIPPED", "REROLLED", "REPORTED"] },
+          "feedback": { "anyOf": [{ "enum": ["TOO_EASY", "RIGHT", "TOO_HARD"] }, { "type": "null" }] }
+        }
+      }
+    },
+    "constraints": { "$ref": "path_plan.request.schema.json#/$defs/constraints" }
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://awaken.app/contracts/path_week.response.schema.json",
+  "title": "WEEK_QUESTS response (GAME_DESIGN §6.6.2-6.6.3)",
+  "description": "The proxy's reply. The model's structured output is this schema without promptVersion, which the proxy adds. Numeric bounds here are sanity bounds only: the per-unit target clamps (V4) and estMinutes clamp (V5) are applied by the engine's PathValidator, which runs again on every reply.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["promptVersion", "blueprints", "suggestAdvance"],
+  "properties": {
+    "promptVersion": { "type": "string", "pattern": "^[a-z_]+\\.v[0-9]+$" },
+    "suggestAdvance": { "type": "boolean" },
+    "blueprints": {
+      "type": "array",
+      "maxItems": 14,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["title", "description", "stat", "unit", "target", "effort", "estMinutes", "mode", "tags", "rationale"],
+        "properties": {
+          "title": { "type": "string", "minLength": 1, "maxLength": 48 },
+          "description": { "type": "string", "maxLength": 280 },
+          "stat": { "enum": ["STR", "INT", "WIL", "VIT", "CHA"] },
+          "unit": { "enum": ["MINUTES", "REPS", "PAGES", "PROBLEMS", "ITEMS", "SESSIONS", "KM"] },
+          "target": { "type": "integer", "minimum": 0, "maximum": 1000 },
+          "effort": { "enum": ["EASY", "NORMAL", "HARD", "EXTREME"] },
+          "estMinutes": { "type": "integer", "minimum": 1, "maximum": 600 },
+          "mode": { "enum": ["SELF", "GATE"] },
+          "tags": {
+            "type": "array",
+            "uniqueItems": true,
+            "maxItems": 8,
+            "items": { "enum": ["impact", "legs", "upper", "outdoor", "indoor", "social", "quiet", "screen"] }
+          },
+          "rationale": { "type": "string", "maxLength": 140 }
+        }
+      }
+    }
+  }
+}

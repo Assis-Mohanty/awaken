@@ -1,0 +1,30 @@
+{
+  "promptVersion": "week_quests.v1",
+  "suggestAdvance": false,
+  "blueprints": [
+    {
+      "title": "Rep Storm",
+      "description": "Do 500 breathing reps with a 4-7-8 count.",
+      "stat": "WIL",
+      "unit": "REPS",
+      "target": 500,
+      "effort": "NORMAL",
+      "estMinutes": 20,
+      "mode": "SELF",
+      "tags": ["quiet"],
+      "rationale": "Calm under pressure."
+    },
+    {
+      "title": "Zero Problem",
+      "description": "Solve problems on Codeforces.",
+      "stat": "INT",
+      "unit": "PROBLEMS",
+      "target": 0,
+      "effort": "NORMAL",
+      "estMinutes": 20,
+      "mode": "SELF",
+      "tags": ["screen"],
+      "rationale": "A target of zero is never a quest."
+    }
+  ]
+}

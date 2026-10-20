@@ -1,0 +1,30 @@
+{
+  "promptVersion": "week_quests.v1",
+  "suggestAdvance": false,
+  "blueprints": [
+    {
+      "title": "Flash Drill",
+      "description": "Review 10 flashcards of graph theory terms.",
+      "stat": "INT",
+      "unit": "ITEMS",
+      "target": 10,
+      "effort": "EASY",
+      "estMinutes": 5,
+      "mode": "GATE",
+      "tags": ["quiet"],
+      "rationale": "A short warm-up."
+    },
+    {
+      "title": "Virtual Contest",
+      "description": "Take a full virtual Div. 2 contest and upsolve one problem.",
+      "stat": "INT",
+      "unit": "SESSIONS",
+      "target": 1,
+      "effort": "EXTREME",
+      "estMinutes": 300,
+      "mode": "GATE",
+      "tags": ["screen"],
+      "rationale": "Contest stamina is part of the goal."
+    }
+  ]
+}

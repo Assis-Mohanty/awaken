@@ -1,0 +1,18 @@
+{
+  "promptVersion": "week_quests.v1",
+  "suggestAdvance": true,
+  "blueprints": [
+    {
+      "title": "Next Rung",
+      "description": "Solve 2 problems rated 1600.",
+      "stat": "INT",
+      "unit": "PROBLEMS",
+      "target": 2,
+      "effort": "NORMAL",
+      "estMinutes": 40,
+      "mode": "SELF",
+      "tags": ["screen"],
+      "rationale": "You cleared last week cleanly."
+    }
+  ]
+}

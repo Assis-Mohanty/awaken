@@ -29,6 +29,8 @@ dependencies {
     testImplementation(platform(libs.junit.bom))
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.truth)
+    // Checks the AI Paths fixtures against /contracts (test-only; never shipped).
+    testImplementation(libs.json.schema.validator)
     testRuntimeOnly(libs.junit.platform.launcher)
 }
 
@@ -44,6 +46,16 @@ val copyContentAssets by tasks.registering(Copy::class) {
     into(layout.buildDirectory.dir("generated/contentAssets"))
 }
 
+// The AI Paths wire contracts live in /contracts (shared with /proxy); tests read them from the classpath.
+val copyContracts by tasks.registering(Copy::class) {
+    from(rootProject.layout.projectDirectory.dir("contracts")) {
+        include("*.schema.json")
+        into("contracts")
+    }
+    into(layout.buildDirectory.dir("generated/contracts"))
+}
+
 sourceSets.test {
     resources.srcDir(copyContentAssets)
+    resources.srcDir(copyContracts)
 }

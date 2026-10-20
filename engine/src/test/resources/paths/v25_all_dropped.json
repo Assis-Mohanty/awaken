@@ -1,0 +1,42 @@
+{
+  "promptVersion": "week_quests.v1",
+  "suggestAdvance": false,
+  "blueprints": [
+    {
+      "title": "Box Jumps",
+      "description": "Do 30 box jumps.",
+      "stat": "WIL",
+      "unit": "REPS",
+      "target": 30,
+      "effort": "HARD",
+      "estMinutes": 15,
+      "mode": "SELF",
+      "tags": ["impact", "legs"],
+      "rationale": "Excluded by Injury Mode."
+    },
+    {
+      "title": "Iron Focus",
+      "description": "Hold a dumbbell overhead while you recite the graph algorithms you know.",
+      "stat": "INT",
+      "unit": "MINUTES",
+      "target": 10,
+      "effort": "NORMAL",
+      "estMinutes": 10,
+      "mode": "SELF",
+      "tags": ["indoor"],
+      "rationale": "Needs equipment the hunter doesn't own."
+    },
+    {
+      "title": "https://evil.example/only-a-link",
+      "description": "Click it.",
+      "stat": "INT",
+      "unit": "ITEMS",
+      "target": 1,
+      "effort": "EASY",
+      "estMinutes": 5,
+      "mode": "SELF",
+      "tags": [],
+      "rationale": "Empty title after cleaning."
+    }
+  ]
+}

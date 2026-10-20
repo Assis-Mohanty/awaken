@@ -52,7 +52,8 @@ awaken/
 │     ├─ XpCalculator.kt  LevelCurve.kt  RankRules.kt  StatLevel.kt
 │     ├─ DailyCaps.kt  CritRoller.kt (fnv1a64)  StreakRules.kt
 │     ├─ DirectiveGenerator.kt  DifficultyAdapter.kt  AchievementEvaluator.kt
-│     ├─ path/  PathValidator.kt  PathPricing.kt  PathScheduler.kt  ProgressionSignal.kt  StatSuggester.kt
+│     ├─ path/  PathValidator.kt  PathPricing.kt  PathScheduler.kt  PathProgression.kt  Keywords.kt (StatSuggester,
+│     │         EquipmentKeywords)  PathText.kt  PathModels.kt  PathWire.kt (wire DTOs)
 │     └─ GameDay.kt  (Instant + zone + dayStartHour -> LocalDate)
 │  └─ src/test/kotlin/...  (GAME_DESIGN §12 vectors + property tests)
 │  └─ src/test/resources/paths/  (hand-written response fixtures for vectors 16–35)

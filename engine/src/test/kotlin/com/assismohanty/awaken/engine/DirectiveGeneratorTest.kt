@@ -67,7 +67,7 @@ class DirectiveGeneratorTest {
         repeat(30) { dayIndex ->
             val day = date.plusDays(dayIndex.toLong())
             val window = DirectiveGenerator.noveltyWindow(day)
-            val recent = history.filter { it.gameDate in window }.flatMap { d -> d.quests.map { it.templateId } }.toSet()
+            val recent = history.filter { it.gameDate in window }.flatMap { d -> d.quests.mapNotNull { it.templateId } }.toSet()
             val directive = DirectiveGenerator.generate(
                 templates,
                 context.copy(recentTemplateIds = recent, lastActiveDates = lastActive),
@@ -96,7 +96,7 @@ class DirectiveGeneratorTest {
         val picked = (0L until 30L).flatMap { DirectiveGenerator.generate(templates, injured, date.plusDays(it)).quests }
         val byId = templates.associateBy { it.id }
         picked.forEach { draft ->
-            assertThat(byId.getValue(draft.templateId).tags).containsNoneOf("impact", "legs")
+            assertThat(byId.getValue(checkNotNull(draft.templateId)).tags).containsNoneOf("impact", "legs")
         }
         assertThat(picked.count { it.stat == Stat.STR }).isGreaterThan(0)
     }
@@ -188,7 +188,7 @@ class DirectiveGeneratorTest {
         val upperOnly = context.copy(injuryTags = setOf("upper"))
         val byId = templates.associateBy { it.id }
         val picked = (0L until 30L).flatMap { DirectiveGenerator.generate(templates, upperOnly, date.plusDays(it)).quests }
-        picked.forEach { assertThat(byId.getValue(it.templateId).tags).doesNotContain("upper") }
-        assertThat(picked.any { byId.getValue(it.templateId).tags.contains("legs") }).isTrue()
+        picked.forEach { assertThat(byId.getValue(checkNotNull(it.templateId)).tags).doesNotContain("upper") }
+        assertThat(picked.any { byId.getValue(checkNotNull(it.templateId)).tags.contains("legs") }).isTrue()
     }
 }

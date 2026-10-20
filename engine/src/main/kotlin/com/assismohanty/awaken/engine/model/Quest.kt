@@ -24,12 +24,15 @@ data class QuestTemplate(
     }
 }
 
-/** A generated quest before it is persisted. [questInstanceId] is a deterministic UUID string (crit seed + ledger key). */
+/**
+ * A generated quest before it is persisted. [questInstanceId] is a deterministic UUID string (crit seed + ledger key).
+ * [templateId] is null for Path quests, which come from a validated, priced blueprint instead ([pathSlotId], GD §6.6).
+ */
 data class QuestDraft(
     val questInstanceId: String,
     val gameDate: LocalDate,
     val type: QuestType,
-    val templateId: String,
+    val templateId: String?,
     val stat: Stat,
     val secondaryStat: Stat?,
     val title: String,
@@ -39,15 +42,21 @@ data class QuestDraft(
     val difficulty: Difficulty,
     val verification: Verification,
     val minDurationSec: Int,
+    /** The Path slot this quest was scheduled from; null for template, habit, penalty and trial quests. */
+    val pathSlotId: String? = null,
 )
 
-/** Main + side quests generated for one `(hunterId, gameDate)` (GD §6.3). Habits are user-owned and not generated. */
+/**
+ * Main + Path + side quests generated for one `(hunterId, gameDate)` (GD §6.3, §6.6.6). [paths] are the Path quests
+ * that were not promoted to main. Habits are user-owned and not generated.
+ */
 data class Directive(
     val gameDate: LocalDate,
     val main: QuestDraft?,
     val sides: List<QuestDraft>,
+    val paths: List<QuestDraft> = emptyList(),
 ) {
-    val quests: List<QuestDraft> get() = listOfNotNull(main) + sides
+    val quests: List<QuestDraft> get() = listOfNotNull(main) + paths + sides
 }
 
 /**

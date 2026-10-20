@@ -45,12 +45,15 @@ enum class QuestType {
     HABIT,
     PENALTY,
     TRIAL,
-    GATE;
+    GATE,
+
+    /** A Path quest that was not promoted to main (GD §6.6.6). A promoted one is MAIN with a pathSlotId. */
+    PATH;
 
     /** Penalty quests and Rank Trial stages cannot crit (GD §4.2). */
     val canCrit: Boolean get() = this != PENALTY && this != TRIAL
 
-    /** Main + side quests are "generated" (GD §6.4, §6.5). */
+    /** Main + side quests are "generated" (GD §6.4, §6.5). PATH is not: Path quests follow §6.6 (carry-over, own signal). */
     val isGenerated: Boolean get() = this == MAIN || this == SIDE
 }
 

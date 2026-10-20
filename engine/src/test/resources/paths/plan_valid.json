@@ -1,0 +1,11 @@
+{
+  "promptVersion": "plan_path.v1",
+  "milestones": [
+    { "title": "Foundations", "summary": "Lock in BFS, DFS and basic DP.", "exitCriterion": "Solve 10 problems rated 1400 without hints." },
+    { "title": "  Graph   Fluency ", "summary": "Shortest paths and topological sort. See https://example.com", "exitCriterion": "Solve 8 graph problems rated 1600." },
+    { "title": "https://only-a-link.example", "summary": "Dropped: empty title after cleaning.", "exitCriterion": "None." },
+    { "title": "DP Depth", "summary": "Knapsack, intervals and bitmasks.", "exitCriterion": "Solve 8 DP problems rated 1700." },
+    { "title": "Contest Stamina", "summary": "Full virtual contests under time.", "exitCriterion": "Four virtual contests above 1800 performance." },
+    { "title": "The 1900 Gate", "summary": "Live rated rounds.", "exitCriterion": "Reach 1900 rating." }
+  ]
+}

@@ -94,7 +94,7 @@ class ContentAssetsTest {
         repeat(30) { i ->
             val day = start.plusDays(i.toLong())
             val window = DirectiveGenerator.noveltyWindow(day)
-            val recent = history.filter { it.gameDate in window }.flatMap { d -> d.quests.map { it.templateId } }.toSet()
+            val recent = history.filter { it.gameDate in window }.flatMap { d -> d.quests.mapNotNull { it.templateId } }.toSet()
             val directive = DirectiveGenerator.generate(library.templates, restrictive.copy(recentTemplateIds = recent), day)
             assertWithMessage("$day").that(directive.quests).hasSize(4)
             history += directive

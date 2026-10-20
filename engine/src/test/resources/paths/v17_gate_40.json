@@ -1,0 +1,18 @@
+{
+  "promptVersion": "week_quests.v1",
+  "suggestAdvance": false,
+  "blueprints": [
+    {
+      "title": "Graph Hunt",
+      "description": "Solve 2 problems tagged 'graphs' rated 1500-1600 on Codeforces. Write one line on the key idea of each.",
+      "stat": "INT",
+      "unit": "PROBLEMS",
+      "target": 2,
+      "effort": "HARD",
+      "estMinutes": 40,
+      "mode": "GATE",
+      "tags": ["quiet", "screen"],
+      "rationale": "Your last two contests lost points on graph problems."
+    }
+  ]
+}

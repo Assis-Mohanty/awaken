@@ -1,0 +1,12 @@
+{
+  "promptVersion": "week_quests.v1",
+  "suggestAdvance": false,
+  "blueprints": [
+    { "title": "Quest One", "description": "Solve 2 easy graph problems.", "stat": "INT", "unit": "PROBLEMS", "target": 2, "effort": "NORMAL", "estMinutes": 20, "mode": "SELF", "tags": ["screen"], "rationale": "Warm-up." },
+    { "title": "Quest Two", "description": "Read 5 pages on BFS.", "stat": "INT", "unit": "PAGES", "target": 5, "effort": "EASY", "estMinutes": 20, "mode": "SELF", "tags": ["quiet"], "rationale": "Theory." },
+    { "title": "Quest Three", "description": "Focus for 20 minutes without the phone.", "stat": "WIL", "unit": "MINUTES", "target": 20, "effort": "NORMAL", "estMinutes": 20, "mode": "GATE", "tags": ["quiet"], "rationale": "Attention." },
+    { "title": "Quest Four", "description": "Solve 1 DP problem.", "stat": "INT", "unit": "PROBLEMS", "target": 1, "effort": "HARD", "estMinutes": 20, "mode": "SELF", "tags": ["screen"], "rationale": "DP." },
+    { "title": "Quest Five", "description": "Write a summary of Dijkstra in 5 lines.", "stat": "INT", "unit": "ITEMS", "target": 5, "effort": "NORMAL", "estMinutes": 20, "mode": "SELF", "tags": ["quiet"], "rationale": "Recall." },
+    { "title": "Quest Six", "description": "One timed practice session.", "stat": "WIL", "unit": "SESSIONS", "target": 1, "effort": "NORMAL", "estMinutes": 20, "mode": "GATE", "tags": ["screen"], "rationale": "Pressure." }
+  ]
+}

@@ -32,7 +32,7 @@ class TrialAndRecoveryTest {
         first.forEach { stage ->
             assertThat(stage.type).isEqualTo(QuestType.TRIAL)
             assertThat(stage.difficulty).isEqualTo(Difficulty.HARD)
-            assertThat(byId.getValue(stage.templateId).verification.source).isEqualTo(VerificationSource.SELF)
+            assertThat(byId.getValue(checkNotNull(stage.templateId)).verification.source).isEqualTo(VerificationSource.SELF)
         }
         assertThat(first.map { it.questInstanceId }.toSet()).hasSize(3)
     }

@@ -1,0 +1,54 @@
+{
+  "promptVersion": "week_quests.v1",
+  "suggestAdvance": false,
+  "blueprints": [
+    {
+      "title": "Long March One",
+      "description": "Work through a full DP problem set.",
+      "stat": "INT",
+      "unit": "PROBLEMS",
+      "target": 4,
+      "effort": "HARD",
+      "estMinutes": 120,
+      "mode": "GATE",
+      "tags": ["screen"],
+      "rationale": "DP is the weak spot."
+    },
+    {
+      "title": "Long March Two",
+      "description": "Work through a full graph problem set.",
+      "stat": "INT",
+      "unit": "PROBLEMS",
+      "target": 4,
+      "effort": "HARD",
+      "estMinutes": 120,
+      "mode": "GATE",
+      "tags": ["screen"],
+      "rationale": "Graphs are the other weak spot."
+    },
+    {
+      "title": "Upsolve",
+      "description": "Upsolve the last contest's two unsolved problems.",
+      "stat": "INT",
+      "unit": "PROBLEMS",
+      "target": 2,
+      "effort": "HARD",
+      "estMinutes": 90,
+      "mode": "GATE",
+      "tags": ["screen"],
+      "rationale": "Learn from the misses."
+    },
+    {
+      "title": "Editorial Review",
+      "description": "Read three editorials and note one trick from each.",
+      "stat": "INT",
+      "unit": "ITEMS",
+      "target": 3,
+      "effort": "NORMAL",
+      "estMinutes": 60,
+      "mode": "SELF",
+      "tags": ["quiet"],
+      "rationale": "Pattern library."
+    }
+  ]
+}

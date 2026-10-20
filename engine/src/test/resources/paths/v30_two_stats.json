@@ -1,0 +1,8 @@
+{
+  "promptVersion": "week_quests.v1",
+  "suggestAdvance": false,
+  "blueprints": [
+    { "title": "Mind Gate", "description": "Hold a no-phone focus block.", "stat": "WIL", "unit": "MINUTES", "target": 25, "effort": "NORMAL", "estMinutes": 25, "mode": "GATE", "tags": ["quiet"], "rationale": "Attention." },
+    { "title": "Graph Hunt", "description": "Solve 2 graph problems.", "stat": "INT", "unit": "PROBLEMS", "target": 2, "effort": "HARD", "estMinutes": 40, "mode": "GATE", "tags": ["screen"], "rationale": "Weak spot." }
+  ]
+}

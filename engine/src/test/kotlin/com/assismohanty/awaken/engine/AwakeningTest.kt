@@ -45,7 +45,7 @@ class AwakeningTest {
             assertThat(starter.difficulty).isEqualTo(Difficulty.EASY)
             assertThat(starter.stat).isIn(context.focusStats)
             assertThat(starter.verification.source).isEqualTo(VerificationSource.SELF)
-            assertThat(byId.getValue(starter.templateId).tags).doesNotContain("outdoor")
+            assertThat(byId.getValue(checkNotNull(starter.templateId)).tags).doesNotContain("outdoor")
             assertThat(directive.quests.map { it.templateId }).containsNoDuplicates()
         }
     }

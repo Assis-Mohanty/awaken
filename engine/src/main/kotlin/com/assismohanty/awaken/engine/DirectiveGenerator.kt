@@ -42,19 +42,36 @@ object DirectiveGenerator {
     fun noveltyWindow(gameDate: LocalDate): ClosedRange<LocalDate> =
         gameDate.minusDays(NOVELTY_WINDOW_DAYS)..gameDate.minusDays(1)
 
-    fun generate(templates: List<QuestTemplate>, context: HunterContext, gameDate: LocalDate): Directive {
+    /**
+     * [pathQuests] are today's Path quests (GD §6.6.6), already validated, priced and capped at
+     * [com.assismohanty.awaken.engine.path.PathScheduler.MAX_PATH_QUESTS_PER_DAY], in priority order (Path creation,
+     * then blueprint index). With none, the output is exactly the template-only directive (vector 25).
+     */
+    fun generate(
+        templates: List<QuestTemplate>,
+        context: HunterContext,
+        gameDate: LocalDate,
+        pathQuests: List<QuestDraft> = emptyList(),
+    ): Directive {
         val rng = SplittableRandom(seed(context.hunterId, gameDate, "directive"))
         val pool = eligible(templates, context).filter { it.id !in context.recentTemplateIds }
 
         val mainStatPreference = mainStatFor(context, gameDate)
-        val mainCandidates = pool.filter { it.stat == mainStatPreference && it.supports(mainDifficulty(context, it.stat)) }
-            .ifEmpty { pool.filter { it.supports(mainDifficulty(context, it.stat)) } }
-        val main = pickWeighted(mainCandidates, context, gameDate, rng)?.let { template ->
-            draft(template, QuestType.MAIN, mainDifficulty(context, template.stat), context, gameDate, "main", rng)
+        // Main promotion (GD §6.6.6): a Path quest in today's focus stat, highest priced difficulty, earliest on a tie.
+        // It keeps its own priced difficulty and verification (ENGINE_DECISIONS #68).
+        val promoted = pathQuests.filter { it.stat == mainStatPreference }.maxByOrNull { it.difficulty.ordinal }
+        val main = promoted?.copy(type = QuestType.MAIN) ?: run {
+            val mainCandidates = pool.filter { it.stat == mainStatPreference && it.supports(mainDifficulty(context, it.stat)) }
+                .ifEmpty { pool.filter { it.supports(mainDifficulty(context, it.stat)) } }
+            pickWeighted(mainCandidates, context, gameDate, rng)?.let { template ->
+                draft(template, QuestType.MAIN, mainDifficulty(context, template.stat), context, gameDate, "main", rng)
+            }
         }
+        val paths = pathQuests.filter { it !== promoted }.map { it.copy(type = QuestType.PATH) }
+        val sideCount = sideCount(pathQuests.size)
 
-        val used = mutableSetOf<String>().apply { main?.let { add(it.templateId) } }
-        val sides = ArrayList<QuestDraft>(SIDE_COUNT)
+        val used = mutableSetOf<String>().apply { main?.templateId?.let { add(it) } }
+        val sides = ArrayList<QuestDraft>(sideCount)
         if (context.firstDirective) {
             // GD §6.3: the first directive guarantees one Easy quest in a focus stat that can be done right now.
             val starters = pool.filter {
@@ -66,17 +83,28 @@ object DirectiveGenerator {
                 sides += draft(template, QuestType.SIDE, Difficulty.EASY, context, gameDate, "side0", rng)
             }
         }
-        for (index in sides.size until SIDE_COUNT) {
+        for (index in sides.size until sideCount) {
             val template = pickSide(pool, used, main?.stat, context, gameDate, rng) ?: break
             used += template.id
             sides += draft(template, QuestType.SIDE, context.tier(template.stat), context, gameDate, "side$index", rng)
         }
-        return Directive(gameDate, main, sides)
+        return Directive(gameDate, main, sides, paths)
     }
 
+    /** Sides = `max(1, 3 − pathQuestsToday)` (GD §6.6.6): with 3 Path quests there is still one template side. */
+    fun sideCount(pathQuestsToday: Int): Int = maxOf(1, SIDE_COUNT - pathQuestsToday)
+
     /**
-     * Replaces one side quest. [rerollNumber] is 1-based per day; [alsoExclude] holds templates already rerolled away
-     * today. Returns null when nothing eligible remains. The main quest can never be rerolled.
+     * Which quests a reroll may target (GD §6.3): a side quest or a non-promoted Path quest; never the main quest, even
+     * when it is a promoted Path quest (that one is type MAIN). A Path quest reroll first tries the Path's next
+     * unscheduled blueprint ([com.assismohanty.awaken.engine.path.PathScheduler.rerollPick]), then a template side.
+     */
+    fun canReroll(type: QuestType): Boolean = type == QuestType.SIDE || type == QuestType.PATH
+
+    /**
+     * Replaces one side (or Path) quest with a template side. [rerollNumber] is 1-based per day; [alsoExclude] holds
+     * templates already rerolled away today. Returns null when nothing eligible remains. The main quest can never be
+     * rerolled.
      */
     fun rerollSide(
         templates: List<QuestTemplate>,
@@ -89,7 +117,7 @@ object DirectiveGenerator {
         val gameDate = current.gameDate
         val rng = SplittableRandom(seed(context.hunterId, gameDate, "reroll$rerollNumber"))
         val pool = eligible(templates, context).filter { it.id !in context.recentTemplateIds }
-        val used = current.quests.mapTo(HashSet()) { it.templateId } + alsoExclude
+        val used = current.quests.mapNotNullTo(HashSet()) { it.templateId } + alsoExclude
         val template = pickSide(pool, used, current.main?.stat, context, gameDate, rng) ?: return null
         return draft(template, QuestType.SIDE, context.tier(template.stat), context, gameDate, "reroll$rerollNumber", rng)
     }

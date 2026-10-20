@@ -8,8 +8,17 @@ import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.temporal.TemporalAdjusters
 
-/** A generated quest's outcome, as input to recalibration. */
-data class QuestOutcome(val gameDate: LocalDate, val type: QuestType, val stat: Stat, val status: QuestStatus)
+/**
+ * A generated quest's outcome, as input to recalibration. [pathSlotId] marks a Path quest (even when promoted to
+ * main); recalibration ignores those (GD §6.4).
+ */
+data class QuestOutcome(
+    val gameDate: LocalDate,
+    val type: QuestType,
+    val stat: Stat,
+    val status: QuestStatus,
+    val pathSlotId: String? = null,
+)
 
 /** Weekly per-stat adaptive difficulty (GD §6.4). */
 object DifficultyAdapter {
@@ -29,13 +38,13 @@ object DifficultyAdapter {
         lastRecalibratedOn == null || lastRecalibratedOn < recalibrationDate(gameDate)
 
     /**
-     * New tier for each stat from the 7 game-days before the recalibration Monday. Only generated quests (main/side)
+     * New tier for each stat from the 7 game-days before the recalibration Monday. Only template-generated quests (main/side)
      * count; REROLLED quests were replaced, not attempted, and are ignored.
      */
     fun recalibrate(current: Map<Stat, Difficulty>, outcomes: List<QuestOutcome>, gameDate: LocalDate): Recalibration {
         val monday = recalibrationDate(gameDate)
         val window = monday.minusDays(WINDOW_DAYS)..monday.minusDays(1)
-        val relevant = outcomes.filter { it.type.isGenerated && it.gameDate in window && it.status != QuestStatus.REROLLED }
+        val relevant = outcomes.filter { it.type.isGenerated && it.pathSlotId == null && it.gameDate in window && it.status != QuestStatus.REROLLED }
         val tiers = HashMap<Stat, Difficulty>()
         val changes = HashMap<Stat, Change>()
         for (stat in Stat.entries) {

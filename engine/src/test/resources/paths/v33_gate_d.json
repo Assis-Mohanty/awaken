@@ -1,0 +1,18 @@
+{
+  "promptVersion": "week_quests.v1",
+  "suggestAdvance": false,
+  "blueprints": [
+    {
+      "title": "Kata Gate",
+      "description": "Implement BFS from memory and test it on 3 inputs.",
+      "stat": "INT",
+      "unit": "ITEMS",
+      "target": 3,
+      "effort": "EXTREME",
+      "estMinutes": 20,
+      "mode": "GATE",
+      "tags": ["screen"],
+      "rationale": "Recall under the clock."
+    }
+  ]
+}

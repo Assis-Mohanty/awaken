@@ -1,0 +1,8 @@
+{
+  "promptVersion": "plan_path.v1",
+  "milestones": [
+    { "title": "Start", "summary": "Begin.", "exitCriterion": "Begun." },
+    { "title": "Middle", "summary": "Continue.", "exitCriterion": "Continued." },
+    { "title": "End", "summary": "Finish.", "exitCriterion": "Finished." }
+  ]
+}

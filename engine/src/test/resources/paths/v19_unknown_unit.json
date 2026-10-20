@@ -1,0 +1,30 @@
+{
+  "promptVersion": "week_quests.v1",
+  "suggestAdvance": false,
+  "blueprints": [
+    {
+      "title": "Burn Quota",
+      "description": "Burn 500 calories.",
+      "stat": "INT",
+      "unit": "CALORIES",
+      "target": 500,
+      "effort": "HARD",
+      "estMinutes": 45,
+      "mode": "SELF",
+      "tags": [],
+      "rationale": "Not a unit the System accepts."
+    },
+    {
+      "title": "Proof Reading",
+      "description": "Read 10 pages of an algorithms book and summarise one idea.",
+      "stat": "INT",
+      "unit": "PAGES",
+      "target": 10,
+      "effort": "NORMAL",
+      "estMinutes": 30,
+      "mode": "SELF",
+      "tags": ["quiet"],
+      "rationale": "Theory backs up practice."
+    }
+  ]
+}

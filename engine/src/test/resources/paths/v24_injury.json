@@ -1,0 +1,18 @@
+{
+  "promptVersion": "week_quests.v1",
+  "suggestAdvance": false,
+  "blueprints": [
+    {
+      "title": "Sprint Ladder",
+      "description": "Run 6 hill sprints of 20 seconds.",
+      "stat": "WIL",
+      "unit": "REPS",
+      "target": 6,
+      "effort": "HARD",
+      "estMinutes": 20,
+      "mode": "SELF",
+      "tags": ["impact", "outdoor"],
+      "rationale": "Grit training."
+    }
+  ]
+}

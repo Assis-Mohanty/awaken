@@ -1,0 +1,18 @@
+{
+  "promptVersion": "week_quests.v1",
+  "suggestAdvance": false,
+  "blueprints": [
+    {
+      "title": "Deep Work Siege",
+      "description": "Solve 3 problems rated 1500 on Codeforces without looking at the editorial.",
+      "stat": "INT",
+      "unit": "PROBLEMS",
+      "target": 3,
+      "effort": "EXTREME",
+      "estMinutes": 30,
+      "mode": "SELF",
+      "tags": ["quiet", "screen"],
+      "rationale": "Claims of extreme effort don't raise a self-reported reward."
+    }
+  ]
+}

@@ -32,7 +32,8 @@ object QuestReasons {
         QuestType.MAIN -> QuestReason.Main(stat)
         QuestType.PENALTY -> QuestReason.Penalty
         QuestType.HABIT -> QuestReason.Habit
-        QuestType.TRIAL, QuestType.GATE -> null
+        // Path quests carry their own rationale from the blueprint (GD §6.6.3), shown by the Paths UI.
+        QuestType.TRIAL, QuestType.GATE, QuestType.PATH -> null
         QuestType.SIDE -> {
             val last = lastActive[stat]
             val idleDays = last?.let { ChronoUnit.DAYS.between(it, today) }
