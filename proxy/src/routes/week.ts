@@ -53,7 +53,7 @@ export async function handleWeekQuests(request: Request, env: Env): Promise<Resp
     outputSchema: modelWeekOutputSchema,
   });
 
-  await env.BUDGET_COUNTER.getByName("global").addUsage(llm.ok ? llm.tokensUsed : 0);
+  await env.BUDGET_COUNTER.getByName("global").addUsage(llm.tokensUsed);
 
   const installIdSha256 = await sha256Hex(installId);
   if (!llm.ok) {

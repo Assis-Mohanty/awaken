@@ -14,7 +14,7 @@ import type { Env } from "../env.ts";
 
 export type LlmOutcome<T> =
   | { ok: true; data: T; tokensUsed: number }
-  | { ok: false; code: "model_invalid_output" };
+  | { ok: false; code: "model_invalid_output"; tokensUsed: number };
 
 interface WorkersAiTextResult {
   response?: unknown;
@@ -50,7 +50,8 @@ export async function callWorkersAi<Schema extends ZodType>(params: {
   const { env, systemPrompt, hunterData, jsonSchema, outputSchema } = params;
   const messages = [
     { role: "system" as const, content: systemPrompt },
-    { role: "user" as const, content: `<hunter_data>\n${JSON.stringify(hunterData)}\n</hunter_data>` },
+    // "<" is escaped so hunter text can never close the delimiter early (CLAUDE.md invariant 9).
+    { role: "user" as const, content: `<hunter_data>\n${JSON.stringify(hunterData).replace(/</g, "\\u003c")}\n</hunter_data>` },
   ];
 
   let tokensUsed = 0;
@@ -70,5 +71,5 @@ export async function callWorkersAi<Schema extends ZodType>(params: {
     if (parsed.success) return { ok: true, data: parsed.data, tokensUsed };
   }
 
-  return { ok: false, code: "model_invalid_output" };
+  return { ok: false, code: "model_invalid_output", tokensUsed };
 }
