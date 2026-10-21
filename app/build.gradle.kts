@@ -25,6 +25,22 @@ val localProperties = Properties().apply {
     if (file.exists()) file.inputStream().use { load(it) }
 }
 
+// A release artifact without the upload key is useless for Play, so fail loudly instead of building silently unsigned.
+// Pass -Pawaken.allowUnsignedRelease=true to verify R8/manifest output on a machine without the keystore.
+gradle.taskGraph.whenReady {
+    val buildsRelease = allTasks.any { it.project == project && it.name in setOf("bundleRelease", "assembleRelease") }
+    if (buildsRelease && !project.hasProperty("awaken.allowUnsignedRelease")) {
+        val required = listOf("storeFile", "storePassword", "keyAlias", "keyPassword")
+        val missing = required.filter { keystoreProperties.getProperty(it).isNullOrBlank() }
+        if (missing.isNotEmpty()) {
+            throw GradleException(
+                "Release signing is not configured. Create keystore.properties (see keystore.properties.example); " +
+                    "missing: ${missing.joinToString()}",
+            )
+        }
+    }
+}
+
 fun String.asBuildConfigString(): String = "\"" + replace("\\", "\\\\").replace("\"", "\\\"") + "\""
 
 fun localProperty(name: String): String = localProperties.getProperty(name, "").trim()
@@ -119,6 +135,7 @@ dependencies {
     implementation(libs.androidx.compose.ui.graphics)
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.core.splashscreen)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.androidx.lifecycle.viewmodel.compose)

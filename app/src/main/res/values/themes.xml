@@ -1,7 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Dark-only in v1. windowBackground = void (#05080F) so there is no white flash before Compose draws. -->
+    <!-- Dark-only in v1. windowBackground = void so there is no white flash before Compose draws. -->
     <style name="Theme.AWAKEN" parent="android:Theme.Material.NoActionBar">
         <item name="android:windowBackground">@color/void_background</item>
+    </style>
+
+    <!-- Launch theme (core-splashscreen); MainActivity swaps to Theme.AWAKEN via installSplashScreen(). -->
+    <style name="Theme.AWAKEN.Starting" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/void_background</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_gate</item>
+        <item name="postSplashScreenTheme">@style/Theme.AWAKEN</item>
     </style>
 </resources>
