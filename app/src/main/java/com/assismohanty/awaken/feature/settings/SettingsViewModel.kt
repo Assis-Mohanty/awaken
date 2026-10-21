@@ -3,6 +3,7 @@ package com.assismohanty.awaken.feature.settings
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.assismohanty.awaken.core.data.ai.AiPrefsRepository
 import com.assismohanty.awaken.core.data.export.BackupFiles
 import com.assismohanty.awaken.core.data.export.GameDataPorter
 import com.assismohanty.awaken.core.data.export.ImportResult
@@ -15,6 +16,8 @@ import com.assismohanty.awaken.core.domain.CompletionCenter
 import com.assismohanty.awaken.core.domain.DisableHealthUseCase
 import com.assismohanty.awaken.core.domain.EnableHealthResult
 import com.assismohanty.awaken.core.domain.EnableHealthUseCase
+import com.assismohanty.awaken.core.domain.GrantAiConsentUseCase
+import com.assismohanty.awaken.core.domain.RevokeAiConsentUseCase
 import com.assismohanty.awaken.core.domain.DayRefresher
 import com.assismohanty.awaken.core.domain.ObserveSettingsUseCase
 import com.assismohanty.awaken.core.domain.SettingsModel
@@ -68,6 +71,10 @@ data class SettingsUiState(
     val healthStatus: HealthStatus? = null,
     val healthAction: HealthAction? = null,
     val healthPermissions: Set<String> = emptySet(),
+    /** AI Paths consent (DS §4.7): on means the Oracle may be asked to write Path quests. */
+    val aiPathsEnabled: Boolean = false,
+    /** The consent sheet is open because the hunter turned AI Paths on. */
+    val showAiConsent: Boolean = false,
     /** A reminder is set but the system blocks notifications, so it can't reach the hunter. */
     val notificationsBlocked: Boolean = false,
 ) {
@@ -102,6 +109,10 @@ sealed interface SettingsEvent {
     data object DismissHealthRationale : SettingsEvent
     /** The screen came back to the foreground (e.g. from system settings): re-check what the system allows. */
     data object Resumed : SettingsEvent
+    /** Off revokes consent at once; on opens the consent sheet first. */
+    data class SetAiPaths(val enabled: Boolean) : SettingsEvent
+    data object EnableAiPaths : SettingsEvent
+    data object DeclineAiPaths : SettingsEvent
 }
 
 private data class Drafts(
@@ -115,6 +126,7 @@ private data class Drafts(
     val healthAction: HealthAction? = null,
     val healthPermissions: Set<String> = emptySet(),
     val notificationsBlocked: Boolean = false,
+    val aiConsentSheet: Boolean = false,
 )
 
 @HiltViewModel
@@ -131,12 +143,15 @@ class SettingsViewModel @Inject constructor(
     private val notificationAccess: NotificationAccess,
     private val enableHealth: EnableHealthUseCase,
     private val disableHealth: DisableHealthUseCase,
+    aiPrefs: AiPrefsRepository,
+    private val grantAiConsent: GrantAiConsentUseCase,
+    private val revokeAiConsent: RevokeAiConsentUseCase,
 ) : ViewModel() {
 
     private val drafts = MutableStateFlow(Drafts())
 
-    val uiState: StateFlow<SettingsUiState> = combine(observeSettings(), uiPrefs.prefs, drafts) { model, prefs, drafts ->
-        model?.toUiState(prefs, drafts) ?: SettingsUiState()
+    val uiState: StateFlow<SettingsUiState> = combine(observeSettings(), uiPrefs.prefs, drafts, aiPrefs.consent) { model, prefs, drafts, consent ->
+        model?.toUiState(prefs, drafts, consent.given) ?: SettingsUiState()
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), SettingsUiState())
 
     fun onEvent(event: SettingsEvent) {
@@ -202,6 +217,26 @@ class SettingsViewModel @Inject constructor(
             SettingsEvent.DisconnectHealth -> launchHealth { disableHealth() }
             SettingsEvent.DismissHealthRationale -> drafts.update { it.copy(healthAction = null) }
             SettingsEvent.Resumed -> refreshNotificationAccess()
+            is SettingsEvent.SetAiPaths ->
+                if (event.enabled) drafts.update { it.copy(aiConsentSheet = true) } else launchAi { revokeAiConsent() }
+            SettingsEvent.EnableAiPaths -> launchAi {
+                grantAiConsent()
+                drafts.update { it.copy(aiConsentSheet = false) }
+            }
+            SettingsEvent.DeclineAiPaths -> drafts.update { it.copy(aiConsentSheet = false) }
+        }
+    }
+
+    private fun launchAi(block: suspend () -> Unit) {
+        viewModelScope.launch {
+            try {
+                block()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Timber.e(e, "Changing AI Paths consent failed")
+                completionCenter.message(UserMessage.Error)
+            }
         }
     }
 
@@ -327,7 +362,7 @@ class SettingsViewModel @Inject constructor(
     }
 }
 
-private fun SettingsModel.toUiState(prefs: UiPrefs, drafts: Drafts) = SettingsUiState(
+private fun SettingsModel.toUiState(prefs: UiPrefs, drafts: Drafts, aiConsent: Boolean) = SettingsUiState(
     loading = false,
     savedName = name,
     nameDraft = drafts.name ?: name,
@@ -351,4 +386,6 @@ private fun SettingsModel.toUiState(prefs: UiPrefs, drafts: Drafts) = SettingsUi
     healthAction = drafts.healthAction,
     healthPermissions = drafts.healthPermissions,
     notificationsBlocked = drafts.notificationsBlocked && reminder != null,
+    aiPathsEnabled = aiConsent,
+    showAiConsent = drafts.aiConsentSheet && !aiConsent,
 )

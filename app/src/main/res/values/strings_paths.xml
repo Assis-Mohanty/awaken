@@ -3,6 +3,17 @@
     <!-- Navigation -->
     <string name="nav_paths">Paths</string>
 
+    <!-- Onboarding step 6 (DESIGN_SYSTEM §4.1) -->
+    <string name="onboarding_path_title">YOUR FIRST PATH</string>
+    <string name="onboarding_path_body">Name one thing you are leveling toward. The System will chart it into quests. You can skip this and add Paths later.</string>
+    <string name="action_skip">Skip</string>
+
+    <!-- Settings → AI Paths (DESIGN_SYSTEM §4.7) -->
+    <string name="settings_window_ai">AI PATHS</string>
+    <string name="settings_ai_paths">AI Paths</string>
+    <string name="settings_ai_on_note">The Oracle writes your Path quests. Turn off to stop all requests; your Paths stay and keep working.</string>
+    <string name="settings_ai_off_note">Off. Nothing is sent, and the app runs on its built-in quests.</string>
+
     <!-- Paths tab (DESIGN_SYSTEM §4.8) -->
     <string name="paths_empty_line">Name what you\'re leveling toward. The System will chart the way.</string>
     <string name="paths_create">Create path</string>

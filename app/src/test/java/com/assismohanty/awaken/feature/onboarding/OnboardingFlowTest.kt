@@ -35,11 +35,12 @@ class OnboardingFlowTest {
     private fun click(text: String, substring: Boolean = false) =
         composeRule.onNodeWithText(text, substring = substring).performScrollTo().performClick()
 
-    @Test
-    fun awakeningCreatesTheHunterAndTheFirstDirective() {
-        val viewModel = OnboardingViewModel(graph.completeOnboarding, graph.completionCenter, graph.health)
-        composeRule.setContent { AwakenTheme { OnboardingRoute(viewModel = viewModel) } }
+    private fun newViewModel() = OnboardingViewModel(
+        graph.completeOnboarding, graph.completionCenter, graph.health, graph.grantConsent, graph.createPath,
+    )
 
+    /** Welcome through Health Connect, ending on step 6 "Your first Path". */
+    private fun walkToPathStep() {
         click("Accept")
         composeRule.onNode(hasSetTextAction()).performTextInput("Jinwoo")
         click("Continue")
@@ -51,6 +52,91 @@ class OnboardingFlowTest {
         click("7h+")
         click("Continue")
         click("Not now")
+    }
+
+    private fun awaitAwakened() = composeRule.waitUntil(timeoutMillis = 5_000) {
+        ShadowLooper.idleMainLooper()
+        graph.completionCenter.events.value.isNotEmpty()
+    }
+
+    @Test
+    fun aGoalThenEnablingAiCreatesTheFirstPathAfterTheHunterExists() {
+        val viewModel = newViewModel()
+        composeRule.setContent { AwakenTheme { OnboardingRoute(viewModel = viewModel) } }
+
+        walkToPathStep()
+        click("Run a 10K")
+        click("Continue")
+        composeRule.onNodeWithText("The System needs to consult the Oracle.").assertExists()
+        click("Enable AI Paths")
+        // Consent is saved on a coroutine; the step moves on once it is stored.
+        composeRule.waitUntil(timeoutMillis = 5_000) {
+            ShadowLooper.idleMainLooper()
+            viewModel.uiState.value.step == OnboardingStep.REMINDER
+        }
+        click("Continue")
+        click("Enter")
+        awaitAwakened()
+        composeRule.waitUntil(timeoutMillis = 5_000) {
+            ShadowLooper.idleMainLooper()
+            runBlocking { graph.pathDao.all().isNotEmpty() }
+        }
+
+        runBlocking {
+            val path = graph.pathDao.all().single()
+            assertThat(path.goal).isEqualTo("Run a 10K")
+            assertThat(path.primaryStat).isEqualTo(Stat.VIT)
+            assertThat(graph.aiPrefs.hasConsent()).isTrue()
+        }
+    }
+
+    @Test
+    fun skippingTheFirstPathSendsAndCreatesNothing() {
+        val viewModel = newViewModel()
+        composeRule.setContent { AwakenTheme { OnboardingRoute(viewModel = viewModel) } }
+
+        walkToPathStep()
+        click("Skip")
+        click("Continue")
+        click("Enter")
+        awaitAwakened()
+
+        runBlocking {
+            assertThat(graph.pathDao.all()).isEmpty()
+            assertThat(graph.aiPrefs.hasConsent()).isFalse()
+        }
+        assertThat(graph.oracle.totalCalls).isEqualTo(0)
+    }
+
+    @Test
+    fun decliningConsentDropsTheGoalAndMovesOn() {
+        val viewModel = newViewModel()
+        composeRule.setContent { AwakenTheme { OnboardingRoute(viewModel = viewModel) } }
+
+        walkToPathStep()
+        click("Run a 10K")
+        click("Continue")
+        click("Not now")
+
+        assertThat(viewModel.uiState.value.step).isEqualTo(OnboardingStep.REMINDER)
+        assertThat(viewModel.uiState.value.pathGoal).isEmpty()
+        click("Continue")
+        click("Enter")
+        awaitAwakened()
+        runBlocking {
+            assertThat(graph.pathDao.all()).isEmpty()
+            assertThat(graph.aiPrefs.hasConsent()).isFalse()
+        }
+        assertThat(graph.oracle.totalCalls).isEqualTo(0)
+    }
+
+    @Test
+    fun awakeningCreatesTheHunterAndTheFirstDirective() {
+        val viewModel = newViewModel()
+        composeRule.setContent { AwakenTheme { OnboardingRoute(viewModel = viewModel) } }
+
+        walkToPathStep()
+        click("Skip")
         click("Continue")
         click("Enter")
 
@@ -85,7 +171,7 @@ class OnboardingFlowTest {
 
     @Test
     fun nameIsValidatedBeforeMovingOn() {
-        val viewModel = OnboardingViewModel(graph.completeOnboarding, graph.completionCenter, graph.health)
+        val viewModel = newViewModel()
         composeRule.setContent { AwakenTheme { OnboardingRoute(viewModel = viewModel) } }
 
         click("Accept")

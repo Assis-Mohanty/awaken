@@ -2,6 +2,7 @@ package com.assismohanty.awaken.debug
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.assismohanty.awaken.core.data.ai.AiPrefsRepository
 import com.assismohanty.awaken.core.data.clock.Clock
 import com.assismohanty.awaken.core.data.clock.gameDate
 import com.assismohanty.awaken.core.data.db.AwakenDatabase
@@ -14,6 +15,11 @@ import com.assismohanty.awaken.core.data.di.IoDispatcher
 import com.assismohanty.awaken.core.data.repo.LedgerRepository
 import com.assismohanty.awaken.core.domain.CompleteQuestUseCase
 import com.assismohanty.awaken.core.domain.CreateHunterUseCase
+import com.assismohanty.awaken.core.domain.CreatePathUseCase
+import com.assismohanty.awaken.core.domain.GrantAiConsentUseCase
+import com.assismohanty.awaken.core.domain.RevokeAiConsentUseCase
+import com.assismohanty.awaken.engine.path.PathInput
+import java.time.DayOfWeek
 import com.assismohanty.awaken.core.domain.DayRefresher
 import com.assismohanty.awaken.core.domain.EnableHealthUseCase
 import com.assismohanty.awaken.core.domain.HealthSyncUseCase
@@ -56,6 +62,9 @@ data class DebugUiState(
     /** Raw result of the last action — this is a developer tool, so results are shown as-is. */
     val lastResult: String? = null,
     val simulateSteps: Boolean = false,
+    val useFakeOracle: Boolean = true,
+    val oracleFailure: OracleFailure = OracleFailure.NONE,
+    val aiConsent: Boolean = false,
 )
 
 sealed interface DebugEvent {
@@ -69,6 +78,10 @@ sealed interface DebugEvent {
     data object GrantFragments : DebugEvent
     data class SimulateSteps(val enabled: Boolean) : DebugEvent
     data object SyncHealth : DebugEvent
+    data class SetUseFakeOracle(val enabled: Boolean) : DebugEvent
+    data object CycleOracleFailure : DebugEvent
+    data class SetAiConsent(val enabled: Boolean) : DebugEvent
+    data object SeedPath : DebugEvent
     data object GrantLevel : DebugEvent
     data object WipeData : DebugEvent
     data class Begin(val questInstanceId: String) : DebugEvent
@@ -95,6 +108,10 @@ class DebugViewModel @Inject constructor(
     private val rerollQuest: RerollQuestUseCase,
     private val enableHealth: EnableHealthUseCase,
     private val healthSync: HealthSyncUseCase,
+    private val grantAiConsent: GrantAiConsentUseCase,
+    private val revokeAiConsent: RevokeAiConsentUseCase,
+    private val createPath: CreatePathUseCase,
+    aiPrefs: AiPrefsRepository,
     private val db: AwakenDatabase,
     @IoDispatcher private val ioDispatcher: CoroutineDispatcher,
 ) : ViewModel() {
@@ -107,13 +124,19 @@ class DebugViewModel @Inject constructor(
             if (profile == null) flowOf(emptyList()) else questDao.observeForDate(clock.gameDate(profile.dayStartHour))
         }
 
+    private val ledgerView = combine(ledger.observeBalances(), ledgerDao.observeRecent(LEDGER_ROWS)) { balances, rows -> balances to rows }
+
+    private val oracleView = combine(settings.useFakeOracle, settings.oracleFailure, aiPrefs.consent) { fake, failure, consent ->
+        Triple(fake, failure, consent.given)
+    }
+
     val uiState: StateFlow<DebugUiState> = combine(
         observeHunterState(dayChanges = settings.offsetDays),
         todayQuests,
-        ledger.observeBalances(),
-        ledgerDao.observeRecent(LEDGER_ROWS),
+        ledgerView,
         combine(settings.offsetDays, lastResult, settings.simulateSteps) { offset, result, simulate -> Triple(offset, result, simulate) },
-    ) { hunter, quests, balances, rows, (offset, result, simulate) ->
+        oracleView,
+    ) { hunter, quests, (balances, rows), (offset, result, simulate), (fake, failure, consent) ->
         DebugUiState(
             hunter = hunter,
             now = clock.now(),
@@ -124,6 +147,9 @@ class DebugViewModel @Inject constructor(
             ledger = rows,
             lastResult = result,
             simulateSteps = simulate,
+            useFakeOracle = fake,
+            oracleFailure = failure,
+            aiConsent = consent,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), DebugUiState())
 
@@ -187,6 +213,36 @@ class DebugViewModel @Inject constructor(
             if (event.enabled) "Simulating 9,000 steps: ${enableHealth()}" else "Simulation off (next sync re-checks the real Health Connect)."
         }
         DebugEvent.SyncHealth -> "Health sync: ${healthSync()}"
+        is DebugEvent.SetUseFakeOracle -> {
+            settings.setUseFakeOracle(event.enabled)
+            if (event.enabled) "Path Oracle: FakePathOracle." else "Path Oracle: the real client (needs a staging URL and debug key)."
+        }
+        DebugEvent.CycleOracleFailure -> {
+            val entries = OracleFailure.entries
+            val next = entries[(settings.oracleFailure.value.ordinal + 1) % entries.size]
+            settings.setOracleFailure(next)
+            "Every Oracle call now: $next"
+        }
+        is DebugEvent.SetAiConsent -> {
+            if (event.enabled) grantAiConsent() else revokeAiConsent()
+            if (event.enabled) "AI Paths consent given." else "AI Paths consent revoked."
+        }
+        DebugEvent.SeedPath -> {
+            grantAiConsent()
+            val result = createPath(
+                PathInput(
+                    goal = "Reach 1900 on Codeforces",
+                    currentLevel = "Rated 1400",
+                    notes = "",
+                    primaryStat = Stat.INT,
+                    secondaryStat = null,
+                    activeDays = setOf(DayOfWeek.MONDAY, DayOfWeek.WEDNESDAY, DayOfWeek.FRIDAY),
+                    questsPerDay = 1,
+                    weeklyMinutes = SEED_PATH_MINUTES,
+                ),
+            )
+            "Seed path: $result"
+        }
         DebugEvent.GrantGold -> grantCurrency(LedgerKind.GOLD, DEBUG_GOLD, "Granted $DEBUG_GOLD gold.")
         DebugEvent.GrantFragments -> grantCurrency(LedgerKind.FRAGMENT, DEBUG_FRAGMENTS, "Granted $DEBUG_FRAGMENTS fragments.")
         DebugEvent.GrantLevel -> uiState.value.hunter?.let { hunter ->
@@ -239,6 +295,7 @@ class DebugViewModel @Inject constructor(
         const val LEDGER_ROWS = 100
         const val DEBUG_GOLD = 2_000L
         const val DEBUG_FRAGMENTS = 10L
+        const val SEED_PATH_MINUTES = 180
         const val STOP_TIMEOUT_MS = 5_000L
     }
 }

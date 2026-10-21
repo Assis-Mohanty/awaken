@@ -59,6 +59,8 @@ import com.assismohanty.awaken.core.designsystem.theme.AwakenTheme
 import com.assismohanty.awaken.core.designsystem.theme.Spacing
 import com.assismohanty.awaken.engine.model.Rank
 import com.assismohanty.awaken.engine.model.Stat
+import com.assismohanty.awaken.feature.paths.AiConsentSheet
+import com.assismohanty.awaken.feature.paths.WhatIsSent
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
@@ -141,6 +143,7 @@ fun SettingsScreen(
                     ProfileWindow(state, onEvent)
                     DayWindow(state, onEvent, onOpenNotificationSettings)
                     TrainingWindow(state, onEvent)
+                    AiPathsWindow(state, onEvent)
                     ComfortWindow(state, onEvent)
                     DataWindow(state, onExport, onImport, onOpenPrivacy)
                 }
@@ -149,6 +152,9 @@ fun SettingsScreen(
     }
     if (state.showReminderPicker) ReminderDialog(state.reminder, onEvent)
     if (state.importPending) ImportConfirmDialog(onEvent)
+    if (state.showAiConsent) {
+        AiConsentSheet(onEnable = { onEvent(SettingsEvent.EnableAiPaths) }, onNotNow = { onEvent(SettingsEvent.DeclineAiPaths) })
+    }
     if (state.healthAction == HealthAction.SHOW_RATIONALE) {
         HealthRationaleDialog(
             onContinue = { onEvent(SettingsEvent.HealthRationaleAccepted) },
@@ -317,6 +323,20 @@ private fun HealthRow(state: SettingsUiState, onEvent: (SettingsEvent) -> Unit) 
         )
     }
 }
+/** Settings → AI Paths (DESIGN_SYSTEM §4.7): on/off, "what we send", and what turning it off does. */
+@Composable
+private fun AiPathsWindow(state: SettingsUiState, onEvent: (SettingsEvent) -> Unit) {
+    SystemWindow(title = stringResource(R.string.settings_window_ai), accent = accent(), reveal = false) {
+        SwitchRow(
+            title = stringResource(R.string.settings_ai_paths),
+            note = stringResource(if (state.aiPathsEnabled) R.string.settings_ai_on_note else R.string.settings_ai_off_note),
+            checked = state.aiPathsEnabled,
+            onChange = { onEvent(SettingsEvent.SetAiPaths(it)) },
+        )
+        WhatIsSent()
+    }
+}
+
 @Composable
 private fun ComfortWindow(state: SettingsUiState, onEvent: (SettingsEvent) -> Unit) {
     SystemWindow(title = stringResource(R.string.settings_window_comfort), accent = accent(), reveal = false) {

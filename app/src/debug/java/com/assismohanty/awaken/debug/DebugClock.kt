@@ -6,6 +6,7 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.longPreferencesKey
+import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.assismohanty.awaken.BuildConfig
 import com.assismohanty.awaken.core.data.clock.Clock
@@ -66,6 +67,15 @@ class DebugSettings @Inject constructor(
         store.edit { it[USE_FAKE_ORACLE] = enabled }
     }
 
+    /** Debug-only: make every Oracle call fail the same way, to see the Paths tab degrade (Phase 15c). */
+    val oracleFailure: StateFlow<OracleFailure> = store.data
+        .map { prefs -> OracleFailure.entries.firstOrNull { it.name == prefs[ORACLE_FAILURE] } ?: OracleFailure.NONE }
+        .stateIn(scope, SharingStarted.Eagerly, OracleFailure.NONE)
+
+    suspend fun setOracleFailure(failure: OracleFailure) {
+        store.edit { it[ORACLE_FAILURE] = failure.name }
+    }
+
     suspend fun reset() {
         store.edit { it.remove(OFFSET_DAYS) }
     }
@@ -74,6 +84,7 @@ class DebugSettings @Inject constructor(
         val OFFSET_DAYS = longPreferencesKey("offset_days")
         val SIMULATE_STEPS = booleanPreferencesKey("simulate_steps")
         val USE_FAKE_ORACLE = booleanPreferencesKey("use_fake_oracle")
+        val ORACLE_FAILURE = stringPreferencesKey("oracle_failure")
     }
 }
 
@@ -91,3 +102,6 @@ abstract class DebugClockModule {
     @Binds
     abstract fun bindClock(impl: DebugClock): Clock
 }
+
+/** What the Debug screen forces every Path Oracle call to return; [NONE] lets the call through. */
+enum class OracleFailure { NONE, OFFLINE, SERVER_ERROR, RATE_LIMITED }

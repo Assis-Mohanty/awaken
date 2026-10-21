@@ -12,6 +12,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -59,6 +61,7 @@ import com.assismohanty.awaken.core.designsystem.theme.Spacing
 import com.assismohanty.awaken.engine.Awakening
 import com.assismohanty.awaken.feature.settings.HealthActionEffect
 import com.assismohanty.awaken.engine.model.Stat
+import com.assismohanty.awaken.feature.paths.AiConsentSheet
 import java.time.LocalTime
 
 @Composable
@@ -73,7 +76,7 @@ fun OnboardingRoute(modifier: Modifier = Modifier, viewModel: OnboardingViewMode
     OnboardingScreen(state = state, onEvent = viewModel::onEvent, modifier = modifier)
 }
 
-/** Awakening (DESIGN_SYSTEM §4.1): seven steps in one System window, no account. */
+/** Awakening (DESIGN_SYSTEM §4.1): eight steps in one System window, no account. */
 @Composable
 fun OnboardingScreen(state: OnboardingUiState, onEvent: (OnboardingEvent) -> Unit, modifier: Modifier = Modifier) {
     val motion = AwakenTheme.motion
@@ -113,6 +116,7 @@ fun OnboardingScreen(state: OnboardingUiState, onEvent: (OnboardingEvent) -> Uni
                         OnboardingStep.FOCUS -> FocusStep(state, onEvent)
                         OnboardingStep.CALIBRATION -> CalibrationStep(state, onEvent)
                         OnboardingStep.HEALTH -> HealthStep(state, onEvent)
+                        OnboardingStep.PATH -> PathStep(state, onEvent)
                         OnboardingStep.REMINDER -> ReminderStep(state, onEvent)
                         OnboardingStep.COMPLETE -> CompleteStep(state, onEvent)
                     }
@@ -129,6 +133,7 @@ private val OnboardingStep.titleRes: Int
         OnboardingStep.FOCUS -> R.string.onboarding_focus_title
         OnboardingStep.CALIBRATION -> R.string.onboarding_calibration_title
         OnboardingStep.HEALTH -> R.string.onboarding_health_title
+        OnboardingStep.PATH -> R.string.onboarding_path_title
         OnboardingStep.REMINDER -> R.string.onboarding_reminder_title
         OnboardingStep.COMPLETE -> R.string.onboarding_complete_title
     }
@@ -284,6 +289,84 @@ private fun HealthStep(state: OnboardingUiState, onEvent: (OnboardingEvent) -> U
     }
 }
 
+/**
+ * Step 6 "Your first Path" (DESIGN_SYSTEM §4.1): optional. [Skip] sits beside [Continue] at the same size, and Continue
+ * opens the consent sheet before anything is sent. The first quest never waits on this.
+ */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun PathStep(state: OnboardingUiState, onEvent: (OnboardingEvent) -> Unit) {
+    val colors = AwakenTheme.colors
+    Text(stringResource(R.string.onboarding_path_body), style = AwakenTheme.type.body, color = colors.mist)
+    OutlinedTextField(
+        value = state.pathGoal,
+        onValueChange = { onEvent(OnboardingEvent.PathGoalChanged(it)) },
+        label = { Text(stringResource(R.string.editor_goal_label)) },
+        singleLine = true,
+        keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences, imeAction = ImeAction.Next),
+        colors = onboardingFieldColors(),
+        modifier = Modifier.fillMaxWidth(),
+    )
+    FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.xs), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+        listOf(
+            R.string.editor_example_cf, R.string.editor_example_run, R.string.editor_example_read, R.string.editor_example_japanese,
+        ).forEach { example ->
+            val text = stringResource(example)
+            ChoiceChip(
+                text = text,
+                selected = state.pathGoal == text,
+                onClick = { onEvent(OnboardingEvent.PathGoalChanged(text)) },
+            )
+        }
+    }
+    OutlinedTextField(
+        value = state.pathLevel,
+        onValueChange = { onEvent(OnboardingEvent.PathLevelChanged(it)) },
+        label = { Text(stringResource(R.string.editor_level_label)) },
+        singleLine = true,
+        keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences, imeAction = ImeAction.Done),
+        keyboardActions = KeyboardActions(onDone = { if (state.canContinue) onEvent(OnboardingEvent.Next) }),
+        colors = onboardingFieldColors(),
+        modifier = Modifier.fillMaxWidth(),
+    )
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(top = Spacing.md),
+        horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
+    ) {
+        SecondaryButton(
+            text = stringResource(R.string.action_skip),
+            onClick = { onEvent(OnboardingEvent.SkipPath) },
+            modifier = Modifier.weight(1f),
+        )
+        PrimaryButton(
+            text = stringResource(R.string.action_continue),
+            onClick = { onEvent(OnboardingEvent.Next) },
+            enabled = state.canContinue,
+            modifier = Modifier.weight(1f),
+        )
+    }
+    QuietButton(text = stringResource(R.string.action_back), onClick = { onEvent(OnboardingEvent.Back) })
+    if (state.showConsent) {
+        AiConsentSheet(
+            onEnable = { onEvent(OnboardingEvent.EnableAiConsent) },
+            onNotNow = { onEvent(OnboardingEvent.DeclineAiConsent) },
+        )
+    }
+}
+
+@Composable
+private fun onboardingFieldColors() = AwakenTheme.colors.let { colors ->
+    OutlinedTextFieldDefaults.colors(
+        focusedBorderColor = colors.system,
+        unfocusedBorderColor = colors.edge,
+        focusedLabelColor = colors.system,
+        cursorColor = colors.system,
+        errorBorderColor = colors.ember,
+        errorLabelColor = colors.ember,
+        errorSupportingTextColor = colors.ember,
+    )
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ColumnScope.ReminderStep(state: OnboardingUiState, onEvent: (OnboardingEvent) -> Unit) {
@@ -371,6 +454,25 @@ private fun OnboardingCalibrationPreview() {
 @Composable
 private fun OnboardingHealthPreview() {
     AwakenTheme { OnboardingScreen(OnboardingUiState(step = OnboardingStep.HEALTH, healthNotInstalled = true), onEvent = {}) }
+}
+
+@PhonePreviews
+@Composable
+private fun OnboardingPathPreview() {
+    AwakenTheme {
+        OnboardingScreen(OnboardingUiState(step = OnboardingStep.PATH, pathGoal = "Run a 10K", pathLevel = "5K in 32 minutes"), onEvent = {})
+    }
+}
+
+@PhonePreviews
+@Composable
+private fun OnboardingPathConsentPreview() {
+    AwakenTheme {
+        OnboardingScreen(
+            OnboardingUiState(step = OnboardingStep.PATH, pathGoal = "Run a 10K", showConsent = true),
+            onEvent = {},
+        )
+    }
 }
 
 @PhonePreviews

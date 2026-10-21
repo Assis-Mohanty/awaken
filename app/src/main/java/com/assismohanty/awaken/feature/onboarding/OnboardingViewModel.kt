@@ -5,24 +5,32 @@ import androidx.lifecycle.viewModelScope
 import com.assismohanty.awaken.core.data.health.HealthGateway
 import com.assismohanty.awaken.core.data.health.HealthStatus
 import com.assismohanty.awaken.core.domain.CompleteOnboardingUseCase
+import com.assismohanty.awaken.core.domain.CreatePathUseCase
+import com.assismohanty.awaken.core.domain.GrantAiConsentUseCase
 import com.assismohanty.awaken.core.domain.CompletionCenter
 import com.assismohanty.awaken.core.domain.OnboardingResult
 import com.assismohanty.awaken.engine.Awakening
 import com.assismohanty.awaken.engine.model.Stat
+import com.assismohanty.awaken.engine.path.PathInput
+import com.assismohanty.awaken.engine.path.PathRules
+import com.assismohanty.awaken.engine.path.StatSuggester
+import com.assismohanty.awaken.feature.paths.PathEditorState
 import com.assismohanty.awaken.feature.settings.HealthAction
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.LocalTime
 import javax.inject.Inject
 import kotlin.coroutines.cancellation.CancellationException
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import timber.log.Timber
 
-/** The seven Awakening steps (DESIGN_SYSTEM §4.1), in order. */
-enum class OnboardingStep { WELCOME, NAME, FOCUS, CALIBRATION, HEALTH, REMINDER, COMPLETE }
+/** The eight Awakening steps (DESIGN_SYSTEM §4.1), in order. */
+enum class OnboardingStep { WELCOME, NAME, FOCUS, CALIBRATION, HEALTH, PATH, REMINDER, COMPLETE }
 
 enum class CalibrationQuestion { TRAINING, STUDY, SLEEP }
 
@@ -40,14 +48,40 @@ data class OnboardingUiState(
     val healthDeclined: Boolean = false,
     val healthAction: HealthAction? = null,
     val healthPermissions: Set<String> = emptySet(),
+    /** Step 6 "Your first Path": both stay empty when the hunter skips; nothing is sent before consent. */
+    val pathGoal: String = "",
+    val pathLevel: String = "",
+    val showConsent: Boolean = false,
+    /** The hunter pressed [Enable AI Paths] in step 6; the Path is created right after the hunter exists. */
+    val pathConsented: Boolean = false,
     val reminder: LocalTime = DEFAULT_REMINDER,
     val submitting: Boolean = false,
     val failed: Boolean = false,
 ) {
+    val goalValid: Boolean get() = pathGoal.trim().length in PathRules.GOAL_LENGTH
+    val levelValid: Boolean get() = pathLevel.trim().length in PathRules.LEVEL_LENGTH
+
+    /** The Path to chart once the hunter exists; null when skipped, declined or not valid. */
+    fun pathInput(): PathInput? {
+        if (!pathConsented || !goalValid || !levelValid) return null
+        val primary = StatSuggester.suggest(pathGoal) ?: focus.firstOrNull() ?: return null
+        return PathInput(
+            goal = pathGoal.trim(),
+            currentLevel = pathLevel.trim(),
+            notes = "",
+            primaryStat = primary,
+            secondaryStat = null,
+            activeDays = PathEditorState.DEFAULT_DAYS,
+            questsPerDay = 1,
+            weeklyMinutes = PathEditorState.DEFAULT_MINUTES,
+        )
+    }
+
     val canContinue: Boolean
         get() = when (step) {
             OnboardingStep.FOCUS -> focus.size == FOCUS_COUNT
             OnboardingStep.CALIBRATION -> answers.size == CalibrationQuestion.entries.size
+            OnboardingStep.PATH -> goalValid && levelValid
             else -> true
         }
 
@@ -67,6 +101,12 @@ sealed interface OnboardingEvent {
     data object ConnectHealth : OnboardingEvent
     data class HealthPermissionsResult(val granted: Set<String>) : OnboardingEvent
     data object HealthActionHandled : OnboardingEvent
+    data class PathGoalChanged(val goal: String) : OnboardingEvent
+    data class PathLevelChanged(val level: String) : OnboardingEvent
+    /** [Skip] on step 6: no Path, nothing is asked or sent. */
+    data object SkipPath : OnboardingEvent
+    data object EnableAiConsent : OnboardingEvent
+    data object DeclineAiConsent : OnboardingEvent
     data class ReminderChanged(val time: LocalTime) : OnboardingEvent
     /** "Enter" on the final window: creates the hunter and the first directive. */
     data object Finish : OnboardingEvent
@@ -77,6 +117,8 @@ class OnboardingViewModel @Inject constructor(
     private val completeOnboarding: CompleteOnboardingUseCase,
     private val completionCenter: CompletionCenter,
     private val healthGateway: HealthGateway,
+    private val grantConsent: GrantAiConsentUseCase,
+    private val createPath: CreatePathUseCase,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(OnboardingUiState())
@@ -100,6 +142,13 @@ class OnboardingViewModel @Inject constructor(
             OnboardingEvent.ConnectHealth -> connectHealth()
             is OnboardingEvent.HealthPermissionsResult -> onHealthResult(event.granted)
             OnboardingEvent.HealthActionHandled -> _uiState.update { it.copy(healthAction = null) }
+            is OnboardingEvent.PathGoalChanged ->
+                _uiState.update { it.copy(pathGoal = event.goal.take(PathRules.GOAL_LENGTH.last)) }
+            is OnboardingEvent.PathLevelChanged ->
+                _uiState.update { it.copy(pathLevel = event.level.take(PathRules.LEVEL_LENGTH.last)) }
+            OnboardingEvent.SkipPath -> _uiState.update { it.skipPath() }
+            OnboardingEvent.EnableAiConsent -> enableConsent()
+            OnboardingEvent.DeclineAiConsent -> _uiState.update { it.skipPath() }
             is OnboardingEvent.ReminderChanged -> _uiState.update { it.copy(reminder = event.time) }
             OnboardingEvent.Finish -> finish()
         }
@@ -131,11 +180,53 @@ class OnboardingViewModel @Inject constructor(
         _uiState.update { it.copy(healthConnected = connected, healthDeclined = !connected, healthNotInstalled = false) }
         if (connected) next()
     }
+
+    private fun enableConsent() {
+        viewModelScope.launch {
+            try {
+                grantConsent()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Timber.e(e, "Saving AI consent failed")
+                // Consent was not recorded, so no Path is created: treat it as a skip.
+                _uiState.update { it.skipPath() }
+                return@launch
+            }
+            _uiState.update { it.copy(showConsent = false, pathConsented = true, step = OnboardingStep.REMINDER) }
+        }
+    }
+
+    private fun OnboardingUiState.skipPath() =
+        copy(pathGoal = "", pathLevel = "", pathConsented = false, showConsent = false, step = OnboardingStep.REMINDER)
+
     private fun next() = _uiState.update { state ->
         when {
             state.step == OnboardingStep.NAME && !Awakening.isValidName(state.name) -> state.copy(showNameError = true)
             !state.canContinue || state.step == OnboardingStep.COMPLETE -> state
+            // The consent sheet comes first; nothing leaves the phone until the hunter enables AI Paths.
+            state.step == OnboardingStep.PATH -> if (state.pathConsented) {
+                state.copy(step = OnboardingStep.REMINDER)
+            } else {
+                state.copy(showConsent = true)
+            }
             else -> state.copy(step = OnboardingStep.entries[state.step.ordinal + 1])
+        }
+    }
+
+    /**
+     * Creates the Path from step 6 once the hunter exists. The first directive is already written and never waits on the
+     * Oracle; a failure here only means no Path yet, so it is logged and the hunter can create one from the Paths tab.
+     * Runs non-cancellable because the app leaves onboarding (and clears this ViewModel) as soon as the profile exists.
+     */
+    private suspend fun chartFirstPath(state: OnboardingUiState) {
+        val input = state.pathInput() ?: return
+        try {
+            withContext(NonCancellable) { createPath(input) }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Timber.e(e, "Creating the first Path failed")
         }
     }
 
@@ -158,7 +249,10 @@ class OnboardingViewModel @Inject constructor(
             }
             when (result) {
                 // The app switches to Today as soon as the profile exists; the unlocks toast there.
-                is OnboardingResult.Done -> completionCenter.achievements(result.unlocked)
+                is OnboardingResult.Done -> {
+                    completionCenter.achievements(result.unlocked)
+                    chartFirstPath(state)
+                }
                 OnboardingResult.InvalidName -> _uiState.update { it.copy(submitting = false, step = OnboardingStep.NAME, showNameError = true) }
                 OnboardingResult.InvalidFocus -> _uiState.update { it.copy(submitting = false, step = OnboardingStep.FOCUS) }
                 null -> _uiState.update { it.copy(submitting = false, failed = true) }

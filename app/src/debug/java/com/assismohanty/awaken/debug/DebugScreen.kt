@@ -102,6 +102,16 @@ fun DebugScreen(
                 }
                 OutlinedButton(onClick = { onEvent(DebugEvent.SyncHealth) }) { Text(stringResource(R.string.debug_health_sync)) }
                 OutlinedButton(onClick = { onEvent(DebugEvent.GrantLevel) }) { Text(stringResource(R.string.debug_grant_level)) }
+                OutlinedButton(onClick = { onEvent(DebugEvent.SetUseFakeOracle(!state.useFakeOracle)) }) {
+                    Text(stringResource(if (state.useFakeOracle) R.string.debug_oracle_use_real else R.string.debug_oracle_use_fake))
+                }
+                OutlinedButton(onClick = { onEvent(DebugEvent.CycleOracleFailure) }) {
+                    Text(stringResource(R.string.debug_oracle_failure, state.oracleFailure.name))
+                }
+                OutlinedButton(onClick = { onEvent(DebugEvent.SetAiConsent(!state.aiConsent)) }) {
+                    Text(stringResource(if (state.aiConsent) R.string.debug_ai_revoke else R.string.debug_ai_grant))
+                }
+                OutlinedButton(onClick = { onEvent(DebugEvent.SeedPath) }) { Text(stringResource(R.string.debug_seed_path)) }
                 OutlinedButton(onClick = { onEvent(DebugEvent.WipeData) }) { Text(stringResource(R.string.debug_wipe)) }
             }
         }

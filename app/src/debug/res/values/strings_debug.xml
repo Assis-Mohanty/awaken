@@ -24,6 +24,12 @@
     <string name="debug_health_sync">Sync Health now</string>
     <string name="debug_grant_level">+1 level</string>
     <string name="debug_wipe">Wipe data</string>
+    <string name="debug_oracle_use_real">Oracle: fake (tap for real)</string>
+    <string name="debug_oracle_use_fake">Oracle: real (tap for fake)</string>
+    <string name="debug_oracle_failure">Force Oracle failure: %1$s</string>
+    <string name="debug_ai_grant">Grant AI consent</string>
+    <string name="debug_ai_revoke">Revoke AI consent</string>
+    <string name="debug_seed_path">Seed Path (grants consent)</string>
     <string name="debug_begin">Begin</string>
     <string name="debug_complete">Complete</string>
     <string name="debug_undo">Undo</string>

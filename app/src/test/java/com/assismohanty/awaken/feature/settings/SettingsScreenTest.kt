@@ -38,9 +38,35 @@ class SettingsScreenTest {
     @Test
     fun showsEveryGroup() {
         show(previewSettingsState())
-        listOf("PROFILE", "DAY", "TRAINING", "COMFORT", "YOUR DATA").forEach {
+        listOf("PROFILE", "DAY", "TRAINING", "AI PATHS", "COMFORT", "YOUR DATA").forEach {
             composeRule.onNodeWithText(it).performScrollTo().assertIsDisplayed()
         }
+    }
+
+    @Test
+    fun aiPathsSwitchReportsTurningItOnAndOff() {
+        val events = mutableListOf<SettingsEvent>()
+        show(previewSettingsState(), events)
+        composeRule.onNodeWithText("Off. Nothing is sent, and the app runs on its built-in quests.").performScrollTo()
+        composeRule.onNodeWithText("AI Paths").performScrollTo().performClick()
+        assertThat(events).containsExactly(SettingsEvent.SetAiPaths(true))
+    }
+
+    @Test
+    fun turningAiPathsOffIsOneTap() {
+        val events = mutableListOf<SettingsEvent>()
+        show(previewSettingsState().copy(aiPathsEnabled = true), events)
+        composeRule.onNodeWithText("AI Paths").performScrollTo().performClick()
+        assertThat(events).containsExactly(SettingsEvent.SetAiPaths(false))
+    }
+
+    @Test
+    fun theConsentSheetOpensOnlyWhenAsked() {
+        val events = mutableListOf<SettingsEvent>()
+        show(previewSettingsState().copy(showAiConsent = true), events)
+        composeRule.onNodeWithText("The System needs to consult the Oracle.").assertIsDisplayed()
+        composeRule.onNodeWithText("Not now").performClick()
+        assertThat(events).containsExactly(SettingsEvent.DeclineAiPaths)
     }
 
     @Test
