@@ -18,6 +18,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -178,7 +179,7 @@ internal fun StatusPills(path: PathCardUi) {
         }
         if (path.weekTotal > 0) {
             Text(
-                stringResource(R.string.path_week_progress, path.weekDone, path.weekTotal),
+                pluralStringResource(R.plurals.path_week_progress, path.weekTotal, path.weekDone, path.weekTotal),
                 style = AwakenTheme.type.caption,
                 color = colors.mist,
             )

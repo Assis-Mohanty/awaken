@@ -20,7 +20,10 @@
     <string name="paths_create_limit">Three Paths are active. Pause or archive one to chart another.</string>
     <string name="paths_create_today">One new Path per day. Come back tomorrow.</string>
     <string name="paths_consent_off">AI Paths are off. Turn them on in Settings to chart new weeks.</string>
-    <string name="path_week_progress">%1$d / %2$d quests this week</string>
+    <plurals name="path_week_progress">
+        <item quantity="one">%1$d / %2$d quest this week</item>
+        <item quantity="other">%1$d / %2$d quests this week</item>
+    </plurals>
     <string name="path_milestone_position">Milestone %1$d of %2$d</string>
     <string name="path_no_quests_yet">No quests charted for this week yet.</string>
     <string name="path_open_description">Open path %1$s</string>
@@ -55,7 +58,6 @@
     <string name="path_ladder_title">LADDER</string>
     <string name="path_week_title">THIS WEEK</string>
     <string name="path_action_edit">Edit path</string>
-    <string name="path_action_replan">Re-plan ladder</string>
     <string name="path_action_replan_used">Re-plan used this week</string>
     <string name="path_action_pause">Pause path</string>
     <string name="path_action_resume">Resume path</string>

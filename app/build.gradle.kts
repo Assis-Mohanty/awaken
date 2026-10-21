@@ -30,6 +30,11 @@ fun String.asBuildConfigString(): String = "\"" + replace("\\", "\\\\").replace(
 fun localProperty(name: String): String = localProperties.getProperty(name, "").trim()
 
 android {
+    lint {
+        // targetSdk is pinned by CLAUDE.md (36); junit5 6.x is a major bump we have not adopted.
+        informational += setOf("OldTargetApi", "NewerVersionAvailable")
+    }
+
     namespace = "com.assismohanty.awaken"
     compileSdk {
         version = release(37)
