@@ -170,7 +170,7 @@ class PathUseCasesTest {
         }
         val run = RunPathRequestUseCase(
             graph.db.hunterDao(), pathDao, graph.pathRequests, revokingOracle, graph.acceptPlan, graph.acceptWeek,
-            graph.aiPrefs, graph.transactions, graph.clock,
+            graph.aiPrefs, graph.oracleTrace, graph.transactions, graph.clock,
         )
 
         assertThat(run(PathJob(pathId, PathRequestMode.PLAN_THEN_WEEK, "req-1"), attempt = 0)).isEqualTo(PathRequestResult.Done)
@@ -199,7 +199,7 @@ class PathUseCasesTest {
         }
         val run = RunPathRequestUseCase(
             graph.db.hunterDao(), pathDao, graph.pathRequests, flaky, graph.acceptPlan, graph.acceptWeek,
-            graph.aiPrefs, graph.transactions, graph.clock,
+            graph.aiPrefs, graph.oracleTrace, graph.transactions, graph.clock,
         )
         val job = PathJob(pathId, PathRequestMode.PLAN_THEN_WEEK, "req-stable")
 
@@ -220,7 +220,7 @@ class PathUseCasesTest {
         }
         val run = RunPathRequestUseCase(
             graph.db.hunterDao(), pathDao, graph.pathRequests, down, graph.acceptPlan, graph.acceptWeek,
-            graph.aiPrefs, graph.transactions, graph.clock,
+            graph.aiPrefs, graph.oracleTrace, graph.transactions, graph.clock,
         )
 
         val last = RunPathRequestUseCase.MAX_ATTEMPTS - 1
@@ -246,7 +246,7 @@ class PathUseCasesTest {
         }
         val run = RunPathRequestUseCase(
             graph.db.hunterDao(), pathDao, graph.pathRequests, broke, graph.acceptPlan, graph.acceptWeek,
-            graph.aiPrefs, graph.transactions, graph.clock,
+            graph.aiPrefs, graph.oracleTrace, graph.transactions, graph.clock,
         )
 
         assertThat(run(PathJob(pathId, PathRequestMode.WEEK, "r", isoWeek = week), attempt = 0)).isEqualTo(PathRequestResult.Done)

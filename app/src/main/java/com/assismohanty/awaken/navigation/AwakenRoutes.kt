@@ -6,6 +6,13 @@ import kotlinx.serialization.Serializable
 data object TodayRoute
 
 @Serializable
+data object PathsRoute
+
+/** One Path's full window: ladder, week, edit / pause / archive (DESIGN_SYSTEM §4.8). */
+@Serializable
+data class PathDetailRoute(val pathId: String)
+
+@Serializable
 data object GatesRoute
 
 @Serializable

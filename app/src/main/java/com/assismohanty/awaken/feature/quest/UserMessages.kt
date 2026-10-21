@@ -48,6 +48,8 @@ fun UserMessage.text(resources: Resources): String = when (this) {
     UserMessage.UndoGate -> resources.getString(R.string.msg_undo_gate)
     UserMessage.UndoHealth -> resources.getString(R.string.msg_undo_health)
     UserMessage.GateTooLate -> resources.getString(R.string.msg_gate_too_late)
+    UserMessage.GateAlreadyRunning -> resources.getString(R.string.msg_gate_running)
+    UserMessage.QuestReported -> resources.getString(R.string.report_done)
     UserMessage.TrialStarted -> resources.getString(R.string.msg_trial_started)
     UserMessage.TrialNoStages -> resources.getString(R.string.msg_trial_no_stages)
     is UserMessage.Rerolled ->

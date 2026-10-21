@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Navigation -->
+    <string name="nav_paths">Paths</string>
+
+    <!-- Paths tab (DESIGN_SYSTEM §4.8) -->
+    <string name="paths_empty_line">Name what you\'re leveling toward. The System will chart the way.</string>
+    <string name="paths_create">Create path</string>
+    <string name="paths_create_limit">Three Paths are active. Pause or archive one to chart another.</string>
+    <string name="paths_create_today">One new Path per day. Come back tomorrow.</string>
+    <string name="paths_consent_off">AI Paths are off. Turn them on in Settings to chart new weeks.</string>
+    <string name="path_week_progress">%1$d / %2$d quests this week</string>
+    <string name="path_milestone_position">Milestone %1$d of %2$d</string>
+    <string name="path_no_quests_yet">No quests charted for this week yet.</string>
+    <string name="path_open_description">Open path %1$s</string>
+    <string name="path_status_paused">PAUSED</string>
+    <string name="path_status_planning">CHARTING</string>
+    <string name="path_status_active">ACTIVE</string>
+
+    <!-- Oracle status line (DESIGN_SYSTEM §3 OracleStatus) -->
+    <string name="oracle_charting">Charting your week…</string>
+    <string name="oracle_charted">Week charted</string>
+    <string name="oracle_offline">Offline: your path updates when you reconnect</string>
+    <string name="oracle_failed">The System could not chart this week</string>
+    <string name="oracle_retry">Retry</string>
+    <string name="oracle_retry_limit">Retries for this week are used up. The System tries again next week.</string>
+    <string name="oracle_consent_needed">Turn on AI Paths in Settings to chart this week.</string>
+
+    <!-- Weekly recalibration line -->
+    <string name="recal_up">The System has raised the bar.</string>
+    <string name="recal_hold">Holding steady.</string>
+    <string name="recal_down">The System has eased your path.</string>
+
+    <!-- Slot outcomes in a Path window -->
+    <string name="slot_pending">Open</string>
+    <string name="slot_completed">Cleared</string>
+    <string name="slot_expired">Missed</string>
+    <string name="slot_skipped">Skipped</string>
+    <string name="slot_unscheduled">In reserve</string>
+    <string name="slot_carried">Carried over</string>
+
+    <!-- Path detail -->
+    <string name="path_detail_title">PATH</string>
+    <string name="path_ladder_title">LADDER</string>
+    <string name="path_week_title">THIS WEEK</string>
+    <string name="path_action_edit">Edit path</string>
+    <string name="path_action_replan">Re-plan ladder</string>
+    <string name="path_action_replan_used">Re-plan used this week</string>
+    <string name="path_action_pause">Pause path</string>
+    <string name="path_action_resume">Resume path</string>
+    <string name="path_action_archive">Archive path</string>
+    <string name="path_archive_confirm">Archive this path? It leaves your list; finished quests stay in your history.</string>
+    <string name="path_exit_criterion">Cleared when: %1$s</string>
+    <string name="cd_ladder_cleared">Cleared milestone %1$s</string>
+    <string name="cd_ladder_current">Current milestone %1$s</string>
+    <string name="cd_ladder_future">Upcoming milestone %1$s</string>
+
+    <!-- Milestone advance -->
+    <string name="advance_title">MILESTONE CLEARED</string>
+    <string name="advance_body">The System judges you ready for: %1$s</string>
+    <string name="advance_confirm">Advance</string>
+    <string name="advance_stay">Stay</string>
+
+    <!-- Create / edit sheet -->
+    <string name="editor_title_new">NEW PATH</string>
+    <string name="editor_title_edit">EDIT PATH</string>
+    <string name="editor_goal_label">What are you leveling toward?</string>
+    <string name="editor_level_label">Where are you now?</string>
+    <string name="editor_notes_label">Anything the System should avoid?</string>
+    <string name="editor_primary_stat">Primary stat</string>
+    <string name="editor_secondary_stat">Second stat (optional)</string>
+    <string name="editor_suggested_stat">Suggested from your goal: %1$s</string>
+    <string name="editor_days">Active days</string>
+    <string name="editor_quests_per_day">Quests per day</string>
+    <string name="editor_weekly_minutes">Time per week: %1$d min</string>
+    <string name="editor_minutes_hint">≈ %1$d min per active day</string>
+    <string name="editor_save_new">Chart this path</string>
+    <string name="editor_save_edit">Save changes</string>
+    <string name="editor_replan_toggle">Ask the Oracle for a new ladder</string>
+    <string name="editor_error_goal">Your goal needs 3 to 120 characters.</string>
+    <string name="editor_error_level">Keep this under 120 characters.</string>
+    <string name="editor_error_notes">Keep this under 280 characters.</string>
+    <string name="editor_error_stats">Pick two different stats.</string>
+    <string name="editor_error_primary">Pick the stat this Path trains.</string>
+    <string name="editor_error_days">Pick at least one day.</string>
+    <string name="editor_error_minutes">Time per week must be 30 to 900 minutes.</string>
+    <string name="editor_example_cf">Reach 1900 on Codeforces</string>
+    <string name="editor_example_run">Run a 10K</string>
+    <string name="editor_example_read">Read 12 books</string>
+    <string name="editor_example_japanese">Learn Japanese</string>
+    <string name="editor_failed">Something went wrong. Nothing was changed.</string>
+    <string name="editor_error_limit">Three Paths are active. Pause or archive one first.</string>
+    <string name="editor_error_today">One new Path per day. Try again tomorrow.</string>
+    <string name="editor_error_replan">The ladder was already re-planned this week.</string>
+
+    <!-- AI consent sheet (DESIGN_SYSTEM §4.8) -->
+    <string name="consent_title">THE ORACLE</string>
+    <string name="consent_headline">The System needs to consult the Oracle.</string>
+    <string name="consent_body">To write your Path, AWAKEN sends your goal, current level, notes, and last week\'s quest results to our AI provider. No name, no account, no health data. Our server doesn\'t store it.</string>
+    <string name="consent_rewards">Rewards are always calculated on your phone by fixed rules. The AI only writes the quests.</string>
+    <string name="consent_enable">Enable AI Paths</string>
+    <string name="consent_not_now">Not now</string>
+    <string name="consent_what_is_sent">What exactly is sent?</string>
+    <string name="consent_sent_title">Sent with each request</string>
+    <string name="consent_sent_1">Your goal, current level and notes, as you typed them</string>
+    <string name="consent_sent_2">Your primary and second stat, active days, quests per day and weekly minutes</string>
+    <string name="consent_sent_3">The current and next milestone titles, and how last week went (quest titles, done or not, your feedback)</string>
+    <string name="consent_sent_4">The equipment you own and your Injury Mode tags, so quests avoid them</string>
+    <string name="consent_not_sent">Never sent: XP, level, gold, streak, Health Connect data, your name, or any device identifier beyond a random install ID.</string>
+
+    <!-- Feedback, badge, gate, report -->
+    <string name="feedback_label">How was it?</string>
+    <string name="feedback_too_easy">Too easy</string>
+    <string name="feedback_right">Right</string>
+    <string name="feedback_too_hard">Too hard</string>
+    <string name="path_badge_gate">%1$s-Gate · %2$d min</string>
+    <string name="cd_path_badge">Path quest from %1$s</string>
+    <string name="action_enter_path_gate">Enter %1$s-Gate · %2$d min</string>
+    <string name="action_report_quest">Report this quest</string>
+    <string name="report_title">REPORT THIS QUEST</string>
+    <string name="report_prompt">What is wrong with it?</string>
+    <string name="report_reason_unsafe">Unsafe</string>
+    <string name="report_reason_not_relevant">Not relevant</string>
+    <string name="report_reason_impossible">Impossible for me</string>
+    <string name="report_reason_offensive">Offensive</string>
+    <string name="report_reason_other">Other</string>
+    <string name="report_done">Reported. This quest has been removed.</string>
+    <string name="quest_path_rationale_label">FROM THE ORACLE</string>
+    <string name="quest_gate_required">This quest is cleared in a Focus Gate. Time is measured, and leaving early reopens it.</string>
+    <string name="msg_gate_running">A gate is already running. Finish or leave it first.</string>
+</resources>

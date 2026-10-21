@@ -139,7 +139,7 @@ fun TodayScreen(
                     )
                 },
             ) {
-                val directive = listOfNotNull(state.main) + state.sides
+                val directive = listOfNotNull(state.main) + state.paths + state.sides
                 directive.forEachIndexed { index, row ->
                     QuestRow(
                         model = row,

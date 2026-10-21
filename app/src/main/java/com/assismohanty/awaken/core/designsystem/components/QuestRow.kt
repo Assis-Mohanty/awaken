@@ -47,10 +47,14 @@ import com.assismohanty.awaken.core.designsystem.theme.AwakenAlpha
 import com.assismohanty.awaken.core.designsystem.theme.AwakenTheme
 import com.assismohanty.awaken.core.designsystem.theme.Spacing
 import com.assismohanty.awaken.engine.model.Difficulty
+import com.assismohanty.awaken.engine.model.GateRank
 import com.assismohanty.awaken.engine.model.Stat
 import com.assismohanty.awaken.engine.model.VerificationSource
 
 enum class QuestRowState { OPEN, DONE, CLOSED }
+
+@Immutable
+data class PathBadgeModel(val name: String, val gateRank: GateRank? = null, val gateMinutes: Int? = null)
 
 @Immutable
 data class QuestRowModel(
@@ -63,6 +67,8 @@ data class QuestRowModel(
     val verification: VerificationSource,
     val isMain: Boolean,
     val state: QuestRowState,
+    /** Set for Path quests: which Path they came from and, for GATE-mode quests, the gate they need (DS §3). */
+    val pathBadge: PathBadgeModel? = null,
 )
 
 /**
@@ -168,9 +174,15 @@ fun QuestRow(
                         color = if (dimmed) colors.fog else colors.mist,
                         textDecoration = decoration,
                     )
-                    if (model.isMain || model.verification != VerificationSource.SELF) {
+                    if (model.isMain || model.verification != VerificationSource.SELF || model.pathBadge != null) {
                         FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.xxs)) {
                             if (model.isMain) Pill(stringResource(R.string.chip_main), colors.system)
+                            model.pathBadge?.let { badge ->
+                                PathQuestBadge(
+                                    name = badge.name,
+                                    gate = badge.gateRank?.let { rank -> stringResource(R.string.path_badge_gate, rank.name, badge.gateMinutes ?: rank.durationMinutes) },
+                                )
+                            }
                             VerifiedBadge(model.verification)
                         }
                     }
@@ -219,6 +231,14 @@ internal val previewQuests = listOf(
     QuestRowModel("2", "Inner Gate", Stat.INT, 25, "min", Difficulty.NORMAL, VerificationSource.TIMER, isMain = false, state = QuestRowState.DONE),
     QuestRowModel("3", "Footfall Tally", Stat.VIT, 7_000, "steps", Difficulty.NORMAL, VerificationSource.HEALTH, isMain = false, state = QuestRowState.OPEN),
     QuestRowModel("4", "Still Water", Stat.WIL, 10, "min", Difficulty.NORMAL, VerificationSource.SELF, isMain = false, state = QuestRowState.CLOSED),
+    QuestRowModel(
+        "5", "Graph Hunt", Stat.INT, 2, "problems", Difficulty.NORMAL, VerificationSource.SELF, isMain = false, state = QuestRowState.OPEN,
+        pathBadge = PathBadgeModel("Codeforces 1900"),
+    ),
+    QuestRowModel(
+        "6", "Deep Work Siege", Stat.INT, 50, "min", Difficulty.HARD, VerificationSource.TIMER, isMain = false, state = QuestRowState.OPEN,
+        pathBadge = PathBadgeModel("Codeforces 1900", GateRank.C, 50),
+    ),
 )
 
 @ComponentPreview

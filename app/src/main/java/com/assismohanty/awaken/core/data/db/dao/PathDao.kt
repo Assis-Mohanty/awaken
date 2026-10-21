@@ -66,7 +66,13 @@ interface PathDao {
     )
     fun observeCurrentMilestones(pathId: String): Flow<List<PathMilestoneEntity>>
 
+    @Query("SELECT * FROM path_milestone ORDER BY path_id, plan_version, idx")
+    fun observeAllMilestones(): Flow<List<PathMilestoneEntity>>
+
     // ---- weeks ---------------------------------------------------------------------------------------------------
+
+    @Query("SELECT * FROM path_week WHERE iso_week = :isoWeek")
+    fun observeWeeksForIsoWeek(isoWeek: String): Flow<List<PathWeekEntity>>
 
     @Query("SELECT * FROM path_week WHERE path_id = :pathId AND iso_week = :isoWeek")
     suspend fun week(pathId: String, isoWeek: String): PathWeekEntity?
@@ -117,6 +123,9 @@ interface PathDao {
 
     @Query("SELECT * FROM path_slot WHERE iso_week = :isoWeek ORDER BY path_id, blueprint_index")
     suspend fun slotsForIsoWeek(isoWeek: String): List<PathSlotEntity>
+
+    @Query("SELECT * FROM path_slot WHERE iso_week = :isoWeek ORDER BY path_id, blueprint_index")
+    fun observeSlotsForIsoWeek(isoWeek: String): Flow<List<PathSlotEntity>>
 
     @Query("SELECT * FROM path_slot WHERE assigned_game_date = :gameDate AND outcome = 'PENDING' ORDER BY path_id, blueprint_index")
     suspend fun pendingOn(gameDate: LocalDate): List<PathSlotEntity>

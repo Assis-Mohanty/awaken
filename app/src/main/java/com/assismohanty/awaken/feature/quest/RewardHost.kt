@@ -54,9 +54,11 @@ import com.assismohanty.awaken.core.designsystem.theme.AwakenTheme
 import com.assismohanty.awaken.core.domain.CompletionCenter
 import com.assismohanty.awaken.core.domain.CompletionEvent
 import com.assismohanty.awaken.core.domain.CompletionOutcome
+import com.assismohanty.awaken.core.domain.SubmitFeedbackUseCase
 import com.assismohanty.awaken.core.domain.UserMessage
 import com.assismohanty.awaken.engine.AchievementEvaluator
 import com.assismohanty.awaken.engine.DifficultyAdapter
+import com.assismohanty.awaken.engine.path.Feedback
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.delay
@@ -77,6 +79,7 @@ class RewardHostViewModel @Inject constructor(
     narrative: NarrativeRepository,
     private val notificationAccess: NotificationAccess,
     private val uiPrefs: UiPrefsRepository,
+    private val submitFeedback: SubmitFeedbackUseCase,
 ) : ViewModel() {
     /** Bundled chapters, for the reveal after a level-up that crosses an unlock level (GD §11). */
     val chapters: StateFlow<List<Chapter>> = flow { emit(narrative.chapters()) }
@@ -123,6 +126,11 @@ class RewardHostViewModel @Inject constructor(
     }
 
     fun consume(eventId: Long) = completionCenter.consume(eventId)
+
+    /** The optional Too easy / Right / Too hard chip; feeds next week's progression signal (GD §6.6.5). */
+    fun feedback(questInstanceId: String, feedback: Feedback?) {
+        viewModelScope.launch { submitFeedback(questInstanceId, feedback) }
+    }
 
     fun undo(questInstanceId: String) {
         viewModelScope.launch { completionCenter.undo(questInstanceId) }
@@ -177,6 +185,7 @@ fun RewardHost(snackbarHostState: SnackbarHostState, modifier: Modifier = Modifi
 
     when (val current = event) {
         is CompletionEvent.Completed -> CompletedPresentation(
+            onFeedback = { viewModel.feedback(current.outcome.questInstanceId, it) },
             event = current,
             chapters = chapters,
             onFinished = {
@@ -289,18 +298,26 @@ internal fun newlyUnlockedChapters(chapters: List<Chapter>, levelBefore: Int, le
     chapters.withIndex().filter { (_, chapter) -> chapter.unlockLevel in (levelBefore + 1)..levelAfter }
 
 @Composable
-private fun CompletedPresentation(event: CompletionEvent.Completed, chapters: List<Chapter>, onFinished: () -> Unit) {
+private fun CompletedPresentation(
+    event: CompletionEvent.Completed,
+    chapters: List<Chapter>,
+    onFinished: () -> Unit,
+    onFeedback: (Feedback?) -> Unit,
+) {
     val outcome = event.outcome
     val promotedTo = outcome.promotedTo
     var phase by remember(event.id) { mutableStateOf(Phase.SHEET) }
     val unlocked = remember(event.id, chapters) { newlyUnlockedChapters(chapters, outcome.levelBefore, outcome.levelAfter) }
     var chapterIndex by remember(event.id) { mutableIntStateOf(0) }
+    var feedback by remember(event.id) { mutableStateOf<Feedback?>(null) }
     val afterChapters = { if (promotedTo != null) phase = Phase.RANK_UP else onFinished() }
     val afterLevelUp = { if (unlocked.isNotEmpty()) phase = Phase.CHAPTER else afterChapters() }
     when (phase) {
         Phase.SHEET -> RewardSheet(
             model = outcome.toRewardModel(),
             onDone = { if (outcome.leveledUp) phase = Phase.LEVEL_UP else afterLevelUp() },
+            feedback = feedback,
+            onFeedback = { feedback = it; onFeedback(it) },
         )
         Phase.LEVEL_UP -> LevelUpDialog(
             oldLevel = outcome.levelBefore,
@@ -342,6 +359,7 @@ internal fun CompletionOutcome.toRewardModel() = RewardModel(
     difficulty = difficulty,
     verification = verification,
     breakdown = reward.breakdown,
+    pathQuest = pathQuest,
 )
 
 /** Toast keys are unique across events: event id × stride + index within the event. */

@@ -41,7 +41,7 @@ class NotificationPromptTest {
     fun tearDown() = graph.close()
 
     private fun show() {
-        val viewModel = RewardHostViewModel(graph.completionCenter, graph.notices, graph.narrative, graph.notificationAccess, graph.uiPrefs)
+        val viewModel = RewardHostViewModel(graph.completionCenter, graph.notices, graph.narrative, graph.notificationAccess, graph.uiPrefs, graph.submitFeedback)
         composeRule.setContent {
             AwakenTheme {
                 val snackbarHostState = remember { SnackbarHostState() }

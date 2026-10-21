@@ -8,12 +8,18 @@ import com.assismohanty.awaken.core.data.clock.Clock
 import com.assismohanty.awaken.core.data.clock.gameDate
 import com.assismohanty.awaken.core.data.db.dao.CompletionDao
 import com.assismohanty.awaken.core.data.db.dao.HunterDao
+import com.assismohanty.awaken.core.data.db.dao.PathDao
 import com.assismohanty.awaken.core.data.db.dao.QuestDao
 import com.assismohanty.awaken.core.data.db.entity.QuestInstanceEntity
 import com.assismohanty.awaken.core.data.repo.GameStateReader
 import com.assismohanty.awaken.core.domain.CompletionCenter
 import com.assismohanty.awaken.core.domain.RerollQuestUseCase
 import com.assismohanty.awaken.core.domain.RerollResult
+import com.assismohanty.awaken.core.domain.ReportPathQuestUseCase
+import com.assismohanty.awaken.core.domain.ReportReason
+import com.assismohanty.awaken.core.domain.ReportResult
+import com.assismohanty.awaken.core.domain.StartPathGateResult
+import com.assismohanty.awaken.core.domain.StartPathGateUseCase
 import com.assismohanty.awaken.core.domain.StartQuestUseCase
 import com.assismohanty.awaken.core.domain.UserMessage
 import com.assismohanty.awaken.engine.DirectiveGenerator
@@ -21,6 +27,7 @@ import com.assismohanty.awaken.engine.QuestReason
 import com.assismohanty.awaken.engine.QuestReasons
 import com.assismohanty.awaken.engine.QuestRules
 import com.assismohanty.awaken.engine.model.Difficulty
+import com.assismohanty.awaken.engine.model.GateRank
 import com.assismohanty.awaken.engine.model.QuestStatus
 import com.assismohanty.awaken.engine.model.QuestType
 import com.assismohanty.awaken.engine.model.Stat
@@ -45,12 +52,16 @@ import kotlinx.coroutines.launch
 import timber.log.Timber
 
 /** Static context for the "Why this quest?" line and reroll pricing, loaded once per open. */
+private data class PathInfo(val name: String, val rationale: String, val gateRank: GateRank?)
+
 private data class DetailContext(
     val today: LocalDate,
     val focusStats: List<Stat>,
     val lastActive: Map<Stat, LocalDate>,
     /** Cost of the next reroll today; null when the daily limit is used up (GD §6.3). */
     val nextRerollCost: Int?,
+    /** Set for Path quests. */
+    val path: PathInfo? = null,
 )
 
 data class QuestDetailUiState(
@@ -79,6 +90,14 @@ data class QuestDetailUiState(
     val busy: Boolean = false,
     /** Set when the quest is done or replaced; the screen navigates back once. */
     val closed: Boolean = false,
+    /** Path quests (DS §4.3): the Path it belongs to, the Oracle's rationale and the gate a GATE-mode quest needs. */
+    val pathName: String? = null,
+    val rationale: String? = null,
+    val gateRank: GateRank? = null,
+    val canEnterGate: Boolean = false,
+    val reportable: Boolean = false,
+    /** The gate opened; the screen leaves for the Gates tab once. */
+    val enteredGate: Boolean = false,
 )
 
 sealed interface QuestDetailEvent {
@@ -86,6 +105,8 @@ sealed interface QuestDetailEvent {
     data object Complete : QuestDetailEvent
     data object Undo : QuestDetailEvent
     data object Reroll : QuestDetailEvent
+    data object EnterGate : QuestDetailEvent
+    data class Report(val reason: ReportReason) : QuestDetailEvent
 }
 
 @HiltViewModel
@@ -97,6 +118,9 @@ class QuestDetailViewModel @Inject constructor(
     private val reader: GameStateReader,
     private val startQuest: StartQuestUseCase,
     private val rerollQuest: RerollQuestUseCase,
+    private val pathDao: PathDao,
+    private val startPathGate: StartPathGateUseCase,
+    private val reportPathQuest: ReportPathQuestUseCase,
     private val completionCenter: CompletionCenter,
     private val clock: Clock,
 ) : ViewModel() {
@@ -105,7 +129,7 @@ class QuestDetailViewModel @Inject constructor(
     private val context = MutableStateFlow<DetailContext?>(null)
     private val action = MutableStateFlow(ActionState())
 
-    private data class ActionState(val busy: Boolean = false, val closed: Boolean = false)
+    private data class ActionState(val busy: Boolean = false, val closed: Boolean = false, val enteredGate: Boolean = false)
 
     /** Re-evaluates time-based state (countdown, undo window) once a second while the screen is visible. */
     private val ticks: Flow<Instant> = flow {
@@ -138,6 +162,23 @@ class QuestDetailViewModel @Inject constructor(
                 if (completionCenter.complete(questInstanceId)) action.update { it.copy(closed = true) }
             }
             QuestDetailEvent.Undo -> run { completionCenter.undo(questInstanceId) }
+            QuestDetailEvent.EnterGate -> run {
+                when (startPathGate(questInstanceId)) {
+                    is StartPathGateResult.Started -> action.update { it.copy(enteredGate = true) }
+                    StartPathGateResult.AlreadyRunning -> completionCenter.message(UserMessage.GateAlreadyRunning)
+                    StartPathGateResult.TooLate -> completionCenter.message(UserMessage.GateTooLate)
+                    StartPathGateResult.NoHunter, StartPathGateResult.NotAGateQuest -> completionCenter.message(UserMessage.Error)
+                }
+            }
+            is QuestDetailEvent.Report -> run {
+                when (reportPathQuest(questInstanceId, event.reason)) {
+                    ReportResult.Reported -> {
+                        completionCenter.message(UserMessage.QuestReported)
+                        action.update { it.copy(closed = true) }
+                    }
+                    ReportResult.NotReportable -> completionCenter.message(UserMessage.Error)
+                }
+            }
             QuestDetailEvent.Reroll -> run {
                 when (val result = rerollQuest(questInstanceId)) {
                     is RerollResult.Rerolled -> {
@@ -180,7 +221,15 @@ class QuestDetailViewModel @Inject constructor(
             focusStats = profile.focusStats,
             lastActive = reader.lastActiveDates(),
             nextRerollCost = DirectiveGenerator.rerollCost(questDao.countRerolled(today) + 1),
+            path = pathInfo(),
         )
+    }
+
+    private suspend fun pathInfo(): PathInfo? {
+        val quest = questDao.get(questInstanceId) ?: return null
+        val slot = quest.pathSlotId?.let { pathDao.slot(it) } ?: return null
+        val path = pathDao.get(slot.pathId) ?: return null
+        return PathInfo(path.goal, slot.rationale, slot.gateRank)
     }
 
     private fun QuestInstanceEntity.toUiState(
@@ -217,10 +266,16 @@ class QuestDetailViewModel @Inject constructor(
             canBegin = isToday && self && status == QuestStatus.ACTIVE && minDurationSec > 0,
             canComplete = isToday && self && open && readyIn == 0L,
             canUndo = status == QuestStatus.COMPLETED && completedAt != null && QuestRules.canUndo(completedAt, now),
-            canReroll = isToday && open && type == QuestType.SIDE && rerollCost != null,
+            canReroll = isToday && open && (type == QuestType.SIDE || (type == QuestType.PATH && pathSlotId != null)) && rerollCost != null,
             rerollCost = rerollCost ?: 0,
             busy = actionState.busy,
             closed = actionState.closed,
+            pathName = ctx.path?.name,
+            rationale = ctx.path?.rationale?.takeIf { it.isNotBlank() },
+            gateRank = ctx.path?.gateRank,
+            canEnterGate = isToday && open && ctx.path?.gateRank != null && verification.source == VerificationSource.TIMER,
+            reportable = isToday && open && pathSlotId != null,
+            enteredGate = actionState.enteredGate,
         )
     }
 

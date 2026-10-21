@@ -42,6 +42,9 @@ sealed interface UserMessage {
     data object UndoGate : UserMessage
     data object UndoHealth : UserMessage
     data object GateTooLate : UserMessage
+    data object GateAlreadyRunning : UserMessage
+    /** A Path quest was reported and removed (PRD F21). */
+    data object QuestReported : UserMessage
     data object TrialStarted : UserMessage
     data object TrialNoStages : UserMessage
     data class Rerolled(val cost: Int) : UserMessage

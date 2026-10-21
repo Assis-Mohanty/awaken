@@ -21,6 +21,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.pluralStringResource
@@ -33,7 +36,9 @@ import com.assismohanty.awaken.R
 import com.assismohanty.awaken.core.designsystem.components.AwakenGlyphs
 import com.assismohanty.awaken.core.designsystem.components.DifficultyChip
 import com.assismohanty.awaken.core.designsystem.components.EmptyState
+import com.assismohanty.awaken.core.designsystem.components.PathQuestBadge
 import com.assismohanty.awaken.core.designsystem.components.PrimaryButton
+import com.assismohanty.awaken.core.designsystem.components.QuietButton
 import com.assismohanty.awaken.core.designsystem.components.SecondaryButton
 import com.assismohanty.awaken.core.designsystem.components.StatChip
 import com.assismohanty.awaken.core.designsystem.components.SystemWindow
@@ -45,6 +50,7 @@ import com.assismohanty.awaken.core.designsystem.preview.PhonePreviews
 import com.assismohanty.awaken.core.designsystem.theme.AwakenTheme
 import com.assismohanty.awaken.core.designsystem.theme.Spacing
 import com.assismohanty.awaken.engine.QuestReason
+import com.assismohanty.awaken.feature.paths.ReportSheet
 import com.assismohanty.awaken.engine.model.Difficulty
 import com.assismohanty.awaken.engine.model.QuestStatus
 import com.assismohanty.awaken.engine.model.QuestType
@@ -52,9 +58,15 @@ import com.assismohanty.awaken.engine.model.Stat
 import com.assismohanty.awaken.engine.model.VerificationSource
 
 @Composable
-fun QuestDetailRoute(onBack: () -> Unit, modifier: Modifier = Modifier, viewModel: QuestDetailViewModel = hiltViewModel()) {
+fun QuestDetailRoute(
+    onBack: () -> Unit,
+    onOpenGates: () -> Unit,
+    modifier: Modifier = Modifier,
+    viewModel: QuestDetailViewModel = hiltViewModel(),
+) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     LaunchedEffect(state.closed) { if (state.closed) onBack() }
+    LaunchedEffect(state.enteredGate) { if (state.enteredGate) onOpenGates() }
     QuestDetailScreen(state = state, onEvent = viewModel::onEvent, onBack = onBack, modifier = modifier)
 }
 
@@ -98,6 +110,16 @@ private fun QuestDetailContent(state: QuestDetailUiState, onEvent: (QuestDetailE
     val colors = AwakenTheme.colors
     val type = AwakenTheme.type
     val accent = if (state.type == QuestType.PENALTY) colors.ember else colors.stat(state.stat)
+    var showReport by rememberSaveable { mutableStateOf(false) }
+    if (showReport) {
+        ReportSheet(
+            onReport = { reason ->
+                showReport = false
+                onEvent(QuestDetailEvent.Report(reason))
+            },
+            onDismiss = { showReport = false },
+        )
+    }
     SystemWindow(title = stringResource(state.type.kindRes), accent = accent) {
         Text(state.title, style = type.display, color = colors.bone, modifier = Modifier.semantics { heading() })
         Text(
@@ -109,6 +131,12 @@ private fun QuestDetailContent(state: QuestDetailUiState, onEvent: (QuestDetailE
             StatChip(state.stat)
             DifficultyChip(state.difficulty)
             VerifiedBadge(state.verification)
+        }
+        state.pathName?.let { name ->
+            PathQuestBadge(
+                name = name,
+                gate = state.gateRank?.let { rank -> stringResource(R.string.path_badge_gate, rank.name, rank.durationMinutes) },
+            )
         }
         if (state.description.isNotBlank()) Text(state.description, style = type.body, color = colors.bone)
 
@@ -138,7 +166,16 @@ private fun QuestDetailContent(state: QuestDetailUiState, onEvent: (QuestDetailE
             }
         }
 
-        state.reason?.let { reason ->
+        state.rationale?.let { rationale ->
+            Text(
+                text = stringResource(R.string.quest_path_rationale_label),
+                style = type.windowTitle,
+                color = colors.fog,
+                modifier = Modifier.padding(top = Spacing.xs),
+            )
+            Text(rationale, style = type.body, color = colors.bone)
+        }
+        state.reason?.takeIf { state.rationale == null }?.let { reason ->
             Text(
                 text = stringResource(R.string.quest_reason_label),
                 style = type.windowTitle,
@@ -152,6 +189,17 @@ private fun QuestDetailContent(state: QuestDetailUiState, onEvent: (QuestDetailE
             modifier = Modifier.fillMaxWidth().padding(top = Spacing.md),
             verticalArrangement = Arrangement.spacedBy(Spacing.xs),
         ) {
+            if (state.canEnterGate) {
+                state.gateRank?.let { rank ->
+                    Text(stringResource(R.string.quest_gate_required), style = type.caption, color = colors.mist)
+                    PrimaryButton(
+                        stringResource(R.string.action_enter_path_gate, rank.name, rank.durationMinutes),
+                        onClick = { onEvent(QuestDetailEvent.EnterGate) },
+                        enabled = !state.busy,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+            }
             if (state.canBegin) {
                 PrimaryButton(stringResource(R.string.action_begin), onClick = { onEvent(QuestDetailEvent.Begin) }, enabled = !state.busy, modifier = Modifier.fillMaxWidth())
             }
@@ -173,6 +221,9 @@ private fun QuestDetailContent(state: QuestDetailUiState, onEvent: (QuestDetailE
                     stringResource(R.string.action_reroll_paid, state.rerollCost)
                 }
                 SecondaryButton(label, onClick = { onEvent(QuestDetailEvent.Reroll) }, enabled = !state.busy, modifier = Modifier.fillMaxWidth())
+            }
+            if (state.reportable) {
+                QuietButton(stringResource(R.string.action_report_quest), onClick = { showReport = true }, enabled = !state.busy, modifier = Modifier.fillMaxWidth())
             }
         }
     }

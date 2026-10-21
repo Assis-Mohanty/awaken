@@ -37,6 +37,8 @@ import com.assismohanty.awaken.debug.DebugEntry
 import com.assismohanty.awaken.engine.model.Rank
 import com.assismohanty.awaken.feature.gate.GatesEntry
 import com.assismohanty.awaken.feature.onboarding.OnboardingRoute as OnboardingEntry
+import com.assismohanty.awaken.feature.paths.PathDetailRoute as PathDetailEntry
+import com.assismohanty.awaken.feature.paths.PathsRoute as PathsEntry
 import com.assismohanty.awaken.feature.quest.QuestDetailRoute as QuestDetailEntry
 import com.assismohanty.awaken.feature.quest.RewardHost
 import com.assismohanty.awaken.feature.settings.SettingsRoute as SettingsEntry
@@ -47,7 +49,7 @@ import com.assismohanty.awaken.feature.vault.VaultRoute as VaultEntry
 
 // Feature `*Route` composables are imported as `*Entry`: the serializable route types here share their names.
 
-/** Onboarding until a hunter exists, then the four tabs (DESIGN_SYSTEM §4). */
+/** Onboarding until a hunter exists, then the five tabs (DESIGN_SYSTEM §4). */
 @Composable
 fun AwakenNavHost(modifier: Modifier = Modifier, openTodayRequests: Int = 0, appViewModel: AppViewModel = hiltViewModel()) {
     val launch by appViewModel.state.collectAsStateWithLifecycle()
@@ -147,13 +149,26 @@ private fun MainScaffold(
                         }
                     }
                 }
-                composable<QuestDetailRoute> { QuestDetailEntry(onBack = { navController.popBackStack() }) }
+                composable<QuestDetailRoute> {
+                    QuestDetailEntry(
+                        onBack = { navController.popBackStack() },
+                        onOpenGates = {
+                            navController.navigate(GatesRoute) {
+                                popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                                launchSingleTop = true
+                                restoreState = true
+                            }
+                        },
+                    )
+                }
                 composable<TrialRoute> {
                     TrialDetailEntry(
                         onBack = { navController.popBackStack() },
                         onOpenQuest = { navController.navigate(QuestDetailRoute(it)) },
                     )
                 }
+                composable<PathsRoute> { PathsEntry(onOpenPath = { navController.navigate(PathDetailRoute(it)) }) }
+                composable<PathDetailRoute> { PathDetailEntry(onBack = { navController.popBackStack() }) }
                 composable<GatesRoute> { GatesEntry() }
                 composable<StatusRoute> { StatusEntry(onOpenSettings = { navController.navigate(SettingsRoute) }) }
                 composable<SettingsRoute> { SettingsEntry(onBack = { navController.popBackStack() }) }

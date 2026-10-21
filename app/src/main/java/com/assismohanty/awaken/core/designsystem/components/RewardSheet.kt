@@ -34,6 +34,7 @@ import com.assismohanty.awaken.engine.model.BreakdownItem
 import com.assismohanty.awaken.engine.model.Difficulty
 import com.assismohanty.awaken.engine.model.Stat
 import com.assismohanty.awaken.engine.model.VerificationSource
+import com.assismohanty.awaken.engine.path.Feedback
 
 @Immutable
 data class RewardModel(
@@ -47,19 +48,21 @@ data class RewardModel(
     val verification: VerificationSource,
     /** Straight from the engine's QuestReward — the UI never recomputes a number (invariant 4). */
     val breakdown: List<BreakdownItem>,
+    /** Path quests show the feedback chips (DS §3); they never change the reward. */
+    val pathQuest: Boolean = false,
 )
 
 /** Bottom sheet wrapper; the content is separately previewable and testable. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun RewardSheet(model: RewardModel, onDone: () -> Unit) {
+fun RewardSheet(model: RewardModel, onDone: () -> Unit, feedback: Feedback? = null, onFeedback: (Feedback?) -> Unit = {}) {
     ModalBottomSheet(
         onDismissRequest = onDone,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
         containerColor = AwakenTheme.colors.panelRaised,
         shape = AwakenTheme.shapes.window,
     ) {
-        RewardSheetContent(model, onDone, modifier = Modifier.navigationBarsPadding())
+        RewardSheetContent(model, onDone, modifier = Modifier.navigationBarsPadding(), feedback = feedback, onFeedback = onFeedback)
     }
 }
 
@@ -69,7 +72,13 @@ fun RewardSheet(model: RewardModel, onDone: () -> Unit) {
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun RewardSheetContent(model: RewardModel, onDone: () -> Unit, modifier: Modifier = Modifier) {
+fun RewardSheetContent(
+    model: RewardModel,
+    onDone: () -> Unit,
+    modifier: Modifier = Modifier,
+    feedback: Feedback? = null,
+    onFeedback: (Feedback?) -> Unit = {},
+) {
     val colors = AwakenTheme.colors
     val type = AwakenTheme.type
     val motion = AwakenTheme.motion
@@ -121,6 +130,7 @@ fun RewardSheetContent(model: RewardModel, onDone: () -> Unit, modifier: Modifie
         }
         Text(text = breakdownText(model), style = type.caption, color = colors.mist)
         if (model.capped) Text(stringResource(R.string.cap_reached_note), style = type.caption, color = colors.mist)
+        if (model.pathQuest) FeedbackChips(selected = feedback, onSelect = onFeedback)
         PrimaryButton(
             text = stringResource(R.string.action_done),
             onClick = onDone,

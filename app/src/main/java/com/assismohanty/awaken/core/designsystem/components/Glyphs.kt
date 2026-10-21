@@ -144,6 +144,15 @@ object AwakenGlyphs {
         }
     }
 
+    /** Paths tab: a stepped trail climbing to a flag, the ladder of milestones. */
+    val Path: ImageVector by lazy {
+        glyph("Path") {
+            moveTo(5f, 20f); lineTo(5f, 14f); lineTo(12f, 14f); lineTo(12f, 8f); lineTo(19f, 8f); lineTo(19f, 3f)
+            moveTo(3f, 20f); lineTo(7f, 20f)
+            moveTo(19f, 3f); lineTo(22f, 5f); lineTo(19f, 7f)
+        }
+    }
+
     val Settings: ImageVector by lazy {
         glyph("Settings") {
             moveTo(12f, 3f); lineTo(19f, 7f); lineTo(19f, 17f); lineTo(12f, 21f); lineTo(5f, 17f); lineTo(5f, 7f); close()

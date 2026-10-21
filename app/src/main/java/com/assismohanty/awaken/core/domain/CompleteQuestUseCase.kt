@@ -52,6 +52,8 @@ data class CompletionOutcome(
     val unlockedAchievements: List<String>,
     /** False for a cleared Focus Gate, which is final (ENGINE_DECISIONS #36). */
     val undoable: Boolean = true,
+    /** A Path quest: the reward sheet offers the Too easy / Right / Too hard chips (GD §6.6.5). */
+    val pathQuest: Boolean = false,
 ) {
     val leveledUp: Boolean get() = levelAfter > levelBefore
 }
@@ -158,6 +160,7 @@ class CompleteQuestUseCase @Inject constructor(
                     // Timed work is final: a cleared Focus Gate, or a Path quest cleared through its gate (ENGINE_DECISIONS #36, #76).
                     undoable = quest.type != QuestType.GATE && source != VerificationSource.HEALTH &&
                         !(source == VerificationSource.TIMER && quest.pathSlotId != null),
+                    pathQuest = quest.pathSlotId != null,
                 ),
             )
         }

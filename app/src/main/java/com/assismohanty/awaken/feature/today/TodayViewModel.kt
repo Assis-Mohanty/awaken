@@ -4,11 +4,13 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.assismohanty.awaken.core.data.db.entity.QuestInstanceEntity
 import com.assismohanty.awaken.core.designsystem.components.HunterHeaderModel
+import com.assismohanty.awaken.core.designsystem.components.PathBadgeModel
 import com.assismohanty.awaken.core.designsystem.components.QuestRowModel
 import com.assismohanty.awaken.core.designsystem.components.QuestRowState
 import com.assismohanty.awaken.core.domain.CompletionCenter
 import com.assismohanty.awaken.core.domain.DayRefresher
 import com.assismohanty.awaken.core.domain.ObserveTodayUseCase
+import com.assismohanty.awaken.core.domain.PathBadgeInfo
 import com.assismohanty.awaken.core.domain.StartTrialResult
 import com.assismohanty.awaken.core.domain.StartTrialUseCase
 import com.assismohanty.awaken.core.domain.TodayModel
@@ -38,6 +40,8 @@ data class TodayUiState(
     val penalty: QuestRowModel? = null,
     val main: QuestRowModel? = null,
     val sides: List<QuestRowModel> = emptyList(),
+    /** Today's Path quests that were not promoted to Main (GD §6.6.6). */
+    val paths: List<QuestRowModel> = emptyList(),
     val habits: List<QuestRowModel> = emptyList(),
     val completed: Int = 0,
     val total: Int = 0,
@@ -106,8 +110,9 @@ class TodayViewModel @Inject constructor(
 
 internal fun TodayModel.toUiState(): TodayUiState {
     val directive = quests.filter { it.type == QuestType.MAIN || it.type == QuestType.SIDE }
+    val pathQuests = quests.filter { it.type == QuestType.PATH }
     val habits = quests.filter { it.type == QuestType.HABIT }
-    val counted = directive + habits
+    val counted = directive + pathQuests + habits
     return TodayUiState(
         loading = false,
         header = HunterHeaderModel(
@@ -125,8 +130,9 @@ internal fun TodayModel.toUiState(): TodayUiState {
         equippedTitleId = hunter.equippedTitleId,
         rank = hunter.rank,
         penalty = quests.firstOrNull { it.type == QuestType.PENALTY }?.toRowModel(),
-        main = directive.firstOrNull { it.type == QuestType.MAIN }?.toRowModel(),
+        main = directive.firstOrNull { it.type == QuestType.MAIN }?.let { it.toRowModel(pathBadges[it.id]) },
         sides = directive.filter { it.type == QuestType.SIDE }.map { it.toRowModel() },
+        paths = pathQuests.map { it.toRowModel(pathBadges[it.id]) },
         habits = habits.map { it.toRowModel() },
         completed = counted.count { it.status == QuestStatus.COMPLETED },
         total = counted.size,
@@ -138,7 +144,7 @@ internal fun TodayModel.toUiState(): TodayUiState {
     )
 }
 
-internal fun QuestInstanceEntity.toRowModel() = QuestRowModel(
+internal fun QuestInstanceEntity.toRowModel(badge: PathBadgeInfo? = null) = QuestRowModel(
     id = id,
     title = title,
     stat = stat,
@@ -152,4 +158,5 @@ internal fun QuestInstanceEntity.toRowModel() = QuestRowModel(
         QuestStatus.ACTIVE, QuestStatus.STARTED -> QuestRowState.OPEN
         QuestStatus.EXPIRED, QuestStatus.MISSED, QuestStatus.REROLLED, QuestStatus.REPORTED -> QuestRowState.CLOSED
     },
+    pathBadge = badge?.let { PathBadgeModel(it.pathName, it.gateRank) },
 )

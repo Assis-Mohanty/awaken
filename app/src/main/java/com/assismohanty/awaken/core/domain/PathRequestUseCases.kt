@@ -2,6 +2,7 @@ package com.assismohanty.awaken.core.domain
 
 import com.assismohanty.awaken.core.data.ai.AiPrefsRepository
 import com.assismohanty.awaken.core.data.ai.OracleOutcome
+import com.assismohanty.awaken.core.data.ai.OracleTrace
 import com.assismohanty.awaken.core.data.ai.PathOracleClient
 import com.assismohanty.awaken.core.data.ai.dto.ReportRequest
 import com.assismohanty.awaken.core.data.clock.Clock
@@ -52,6 +53,7 @@ class RunPathRequestUseCase @Inject constructor(
     private val acceptPlan: AcceptPlanUseCase,
     private val acceptWeek: AcceptWeekPlanUseCase,
     private val aiPrefs: AiPrefsRepository,
+    private val trace: OracleTrace,
     private val transactions: TransactionRunner,
     private val clock: Clock,
 ) {
@@ -65,6 +67,7 @@ class RunPathRequestUseCase @Inject constructor(
             val request = requests.plan(path, job.requestId) ?: return PathRequestResult.Done
             when (val outcome = oracle.planPath(request)) {
                 is OracleOutcome.Success -> {
+                    trace.clearOffline(path.id)
                     // Consent revoked while the request was in flight: the reply is discarded unread (ARCH §3.7).
                     if (!aiPrefs.hasConsent()) return PathRequestResult.Done
                     when (acceptPlan(path.id, outcome.value)) {
@@ -73,7 +76,7 @@ class RunPathRequestUseCase @Inject constructor(
                         AcceptPlanResult.Invalid -> return failed(path.id, week, attempt, retryable = true)
                     }
                 }
-                else -> return failed(path.id, week, attempt, retryable = outcome.isRetryable())
+                else -> return failed(path.id, week, attempt, retryable = outcome.isRetryable(), offline = outcome == OracleOutcome.Offline)
             }
             if (job.mode == PathRequestMode.PLAN) return PathRequestResult.Done
         }
@@ -87,11 +90,12 @@ class RunPathRequestUseCase @Inject constructor(
         val request = requests.week(path, isoWeek, job.requestId) ?: return failed(path.id, isoWeek, attempt, retryable = false)
         return when (val outcome = oracle.weekQuests(request, path.id, job.manual)) {
             is OracleOutcome.Success -> {
+                trace.clearOffline(path.id)
                 if (!aiPrefs.hasConsent()) return PathRequestResult.Done
                 acceptWeek(path.id, isoWeek, outcome.value)
                 PathRequestResult.Done
             }
-            else -> failed(path.id, isoWeek, attempt, retryable = outcome.isRetryable())
+            else -> failed(path.id, isoWeek, attempt, retryable = outcome.isRetryable(), offline = outcome == OracleOutcome.Offline)
         }
     }
 
@@ -108,7 +112,8 @@ class RunPathRequestUseCase @Inject constructor(
     }
 
     /** Retry with backoff while attempts remain; otherwise record the failure so the Paths tab can offer [Retry]. */
-    private suspend fun failed(pathId: String, isoWeek: String, attempt: Int, retryable: Boolean): PathRequestResult {
+    private suspend fun failed(pathId: String, isoWeek: String, attempt: Int, retryable: Boolean, offline: Boolean = false): PathRequestResult {
+        if (offline) trace.markOffline(pathId) else trace.clearOffline(pathId)
         if (retryable && attempt + 1 < MAX_ATTEMPTS) return PathRequestResult.Retry
         transactions.run {
             val row = pathDao.week(pathId, isoWeek)

@@ -179,7 +179,7 @@ class TestGraph(
         db.hunterDao(), db.questDao(), db.dayRecordDao(), db.trialDao(), ledger, clock,
     )
     val observeToday = ObserveTodayUseCase(
-        observeHunterState, db.hunterDao(), db.questDao(), reader, db.trialDao(), trialReader, narrative, clock,
+        observeHunterState, db.hunterDao(), db.questDao(), reader, db.trialDao(), pathDao, trialReader, narrative, clock,
     )
     val dayRefresher = DayRefresher(runRollover)
     val setRestDay = SetRestDayUseCase(db.hunterDao(), db.dayRecordDao(), transactions, clock)
@@ -214,7 +214,7 @@ class TestGraph(
     val reportPathQuest = ReportPathQuestUseCase(db.questDao(), pathDao, pathWork, transactions, clock)
     val pathRequests = PathRequests(db.hunterDao(), pathDao, clock)
     val runPathRequest = RunPathRequestUseCase(
-        db.hunterDao(), pathDao, pathRequests, oracle, acceptPlan, acceptWeek, aiPrefs, transactions, clock,
+        db.hunterDao(), pathDao, pathRequests, oracle, acceptPlan, acceptWeek, aiPrefs, oracleTrace, transactions, clock,
     )
     val sendReports = SendReportsUseCase(pathDao, oracle, clock)
     val startPathGate = StartPathGateUseCase(db.hunterDao(), db.questDao(), pathDao, db.gateRunDao(), transactions, uptime, clock)

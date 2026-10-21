@@ -175,7 +175,7 @@ fun Difficulty.label(): String = stringResource(nameRes())
 
 @Composable
 @ReadOnlyComposable
-private fun currentLocale(): Locale = LocalConfiguration.current.locales[0]
+fun currentLocale(): Locale = LocalConfiguration.current.locales[0]
 
 /** "1,240" in the user's locale. */
 @Composable
