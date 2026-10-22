@@ -24,14 +24,17 @@ Release `BuildConfig`: `DEBUG=false`, `ORACLE_DEBUG_KEY=""`.
 2. **Privacy policy placeholders** (`[date]`, `[your name]`, `[city]`, `[email]`, Cloudflare retention terms) in both the hosted page and `strings_play.xml`. Play rejects a policy with placeholders.
 3. **Play Integrity** only passes for Play-installed builds: the production proxy path is untestable until an Internal testing install.
 4. **No keystore yet** (`keystore.properties` absent). Back it up; losing it blocks updates unless Play App Signing is enabled (recommended).
-5. **`docs/QA_CHECKLIST.md` is still all `_TBD_`.** Manual device checks (notifications, widget, Health Connect flow, gate backgrounding, airplane mode mid "Charting your week…", 200% font scale, TalkBack) have not been run or recorded.
+5. **`docs/QA_CHECKLIST.md` is written but not yet run.** Run it on a real phone and record the results.
 6. **Screenshot mode is untested on a device**; the seeded data was compiled but not viewed.
 7. `ReminderWorkTest.bothRemindersAreArmed` is a known ~25% flake (RetryRule applied); don't read a red run there as a regression.
 8. `allowBackup="true"`: confirm the backup rules exclude what you don't want in Google backups, and that the policy's Backups paragraph stays true.
 9. Proxy: eval set (`npm run eval`) drop rate against staging has not been recorded here.
 
+## Dependency scan (releaseRuntimeClasspath)
+Only Ktor 3.6.0 + OkHttp 5.5.0 (our Path Oracle client) and Play Integrity 1.6.0 with play-services basement/tasks. No Firebase, analytics, crash, ads or other networking SDKs.
+
 ## Not verified in this report
-Dependency tree scan for SDKs with their own network calls, process-death on every screen, timezone/clock-back behaviour on a device. Phase 16 asked for these; the commit log shows lint/accessibility/icon/signing work but I did not re-audit them.
+Process-death on every screen, timezone/clock-back behaviour on a device. Phase 16 asked for these; the commit log shows lint/accessibility/icon/signing work but I did not re-audit them.
 
 ## Cut candidates if time is short
 - Baseline Profile module (optional per Phase 16).
