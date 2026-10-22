@@ -71,7 +71,8 @@ export async function callWorkersAi<Schema extends ZodType>(params: {
       // Workers AI throws on quota (error 4006: daily free neurons, or a paid cap) and on upstream failures; an uncaught
       // throw would reach the app as Cloudflare's HTML error page instead of our JSON contract.
       const message = error instanceof Error ? error.message : String(error);
-      console.error("workers_ai_error", message.slice(0, 300));
+      // Only the numeric Workers AI error code is logged: upstream messages could echo request text.
+      console.error("workers_ai_error", /\b\d{4}\b/.exec(message)?.[0] ?? "unknown");
       const quota = /4006|daily free allocation/i.test(message);
       return { ok: false, code: quota ? "budget_exhausted" : "model_invalid_output", tokensUsed };
     }

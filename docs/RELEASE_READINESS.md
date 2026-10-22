@@ -21,7 +21,7 @@ Release `BuildConfig`: `DEBUG=false`, `ORACLE_DEBUG_KEY=""`.
 
 ## Risks (fix before upload)
 1. **Release `ORACLE_BASE_URL` is empty** in the current build: `oracle.productionUrl` is not set in `local.properties`. Deploy the proxy to production, set the key, rebuild. Until then AI Paths can't work in release.
-2. **Privacy policy placeholders** (`[date]`, `[your name]`, `[city]`, `[email]`, Cloudflare retention terms) in both the hosted page and `strings_play.xml`. Play rejects a policy with placeholders.
+2. **Privacy policy: filled in (22 October 2026).** Developer, city, email and the Workers AI statement (zero data retention for standard inference, no training; Cloudflare gives no retention period) are in both the hosted page and `strings_play.xml`. Still to do: publish the page and use that URL in Play and Health Connect.
 3. **Play Integrity** only passes for Play-installed builds: the production proxy path is untestable until an Internal testing install.
 4. **No keystore yet** (`keystore.properties` absent). Back it up; losing it blocks updates unless Play App Signing is enabled (recommended).
 5. **`docs/QA_CHECKLIST.md` is written but not yet run.** Run it on a real phone and record the results.

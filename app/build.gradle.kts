@@ -67,7 +67,8 @@ android {
     }
 
     signingConfigs {
-        if (keystorePropertiesFile.exists()) {
+        // An empty or partial keystore.properties creates no config; the guard above then names what is missing.
+        if (!keystoreProperties.getProperty("storeFile").isNullOrBlank()) {
             create("release") {
                 storeFile = rootProject.file(keystoreProperties.getProperty("storeFile"))
                 storePassword = keystoreProperties.getProperty("storePassword")
@@ -94,9 +95,7 @@ android {
                 packageScope = setOf("androidx.**", "kotlin.**", "kotlinx.**")
             }
             isShrinkResources = true
-            if (keystorePropertiesFile.exists()) {
-                signingConfig = signingConfigs.getByName("release")
-            }
+            signingConfigs.findByName("release")?.let { signingConfig = it }
         }
     }
     compileOptions {
