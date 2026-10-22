@@ -30,6 +30,28 @@ describe("POST /v1/paths/plan", () => {
     expect(payload.milestones).toHaveLength(4);
   });
 
+  it("503s budget_exhausted as JSON when Workers AI reports the daily quota is used up", async () => {
+    const env = testEnv();
+    env.AI.run = async () => {
+      throw new Error("4006: you have used up your daily free allocation of 10,000 neurons");
+    };
+
+    const response = await handlePlanPath(jsonRequest(PLAN_URL, validBody()), env);
+    expect(response.status).toBe(503);
+    expect((await response.json<{ error: string }>()).error).toBe("budget_exhausted");
+  });
+
+  it("502s model_invalid_output as JSON when Workers AI fails for any other reason", async () => {
+    const env = testEnv();
+    env.AI.run = async () => {
+      throw new Error("3040: capacity temporarily exceeded");
+    };
+
+    const response = await handlePlanPath(jsonRequest(PLAN_URL, validBody()), env);
+    expect(response.status).toBe(502);
+    expect((await response.json<{ error: string }>()).error).toBe("model_invalid_output");
+  });
+
   it("400s on a schema violation (goal too short)", async () => {
     const env = testEnv();
     const response = await handlePlanPath(jsonRequest(PLAN_URL, validBody({ path: { ...validPath, goal: "Hi" } })), env);

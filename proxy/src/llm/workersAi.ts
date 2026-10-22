@@ -14,7 +14,7 @@ import type { Env } from "../env.ts";
 
 export type LlmOutcome<T> =
   | { ok: true; data: T; tokensUsed: number }
-  | { ok: false; code: "model_invalid_output"; tokensUsed: number };
+  | { ok: false; code: "model_invalid_output" | "budget_exhausted"; tokensUsed: number };
 
 interface WorkersAiTextResult {
   response?: unknown;
@@ -56,15 +56,25 @@ export async function callWorkersAi<Schema extends ZodType>(params: {
 
   let tokensUsed = 0;
   for (let attempt = 0; attempt < 2; attempt++) {
-    const result = (await env.AI.run(
-      env.AI_MODEL_ID as Parameters<Ai["run"]>[0],
-      {
-        messages,
-        response_format: { type: "json_schema", json_schema: jsonSchema },
-        temperature: 0.4,
-        max_tokens: 2000,
-      } as Parameters<Ai["run"]>[1],
-    )) as WorkersAiTextResult;
+    let result: WorkersAiTextResult;
+    try {
+      result = (await env.AI.run(
+        env.AI_MODEL_ID as Parameters<Ai["run"]>[0],
+        {
+          messages,
+          response_format: { type: "json_schema", json_schema: jsonSchema },
+          temperature: 0.4,
+          max_tokens: 2000,
+        } as Parameters<Ai["run"]>[1],
+      )) as WorkersAiTextResult;
+    } catch (error) {
+      // Workers AI throws on quota (error 4006: daily free neurons, or a paid cap) and on upstream failures; an uncaught
+      // throw would reach the app as Cloudflare's HTML error page instead of our JSON contract.
+      const message = error instanceof Error ? error.message : String(error);
+      console.error("workers_ai_error", message.slice(0, 300));
+      const quota = /4006|daily free allocation/i.test(message);
+      return { ok: false, code: quota ? "budget_exhausted" : "model_invalid_output", tokensUsed };
+    }
 
     tokensUsed += tokensOf(result);
     const parsed = outputSchema.safeParse(extractPayload(result));

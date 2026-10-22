@@ -42,8 +42,10 @@ export async function handlePlanPath(request: Request, env: Env): Promise<Respon
 
   const installIdSha256 = await sha256Hex(installId);
   if (!llm.ok) {
-    logRequest({ route: "/v1/paths/plan", status: 502, latencyMs: Date.now() - started, installIdSha256 });
-    return errorResponse("model_invalid_output", "the model's response didn't match the schema");
+    logRequest({ route: "/v1/paths/plan", status: llm.code === "budget_exhausted" ? 503 : 502, latencyMs: Date.now() - started, installIdSha256 });
+    return llm.code === "budget_exhausted"
+      ? errorResponse("budget_exhausted", "the model quota is used up for now")
+      : errorResponse("model_invalid_output", "the model's response didn't match the schema");
   }
 
   const responsePayload = pathPlanResponseSchema.parse({ promptVersion: PROMPT_VERSION, ...llm.data });
