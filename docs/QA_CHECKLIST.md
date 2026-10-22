@@ -81,3 +81,29 @@ Run log: `Device: ____  Android: ____  Build: ____  Date: ____  Tester: ____`
 - [ ] Merged manifest check: only INTERNET as a network permission (see `docs/RELEASE_READINESS.md`).
 - [ ] Privacy policy opens in-app and online with no placeholders left.
 - [ ] Screenshot mode (debug only): seeds LV 24 / C-rank / 12-day streak, two Paths, heatmap; capture the 8 store screenshots listed in `docs/PLAY_STORE_LAUNCH.md` §6.
+
+## Results log (fill in on the device)
+Only mark Pass after performing the steps on a physical phone. AI Paths items are deferred until the Workers AI quota is available.
+
+| Area | Status | Device / Android | Expected | Actual | Logcat / notes |
+|---|---|---|---|---|---|
+| Notifications | NOT RUN | | | | |
+| Widget | NOT RUN | | | | |
+| Health Connect | NOT RUN | | | | |
+| Backgrounding a Gate | NOT RUN | | | | |
+| Lifecycle (background / process death / rotation) | NOT RUN | | | | |
+| Airplane mode (non-AI parts) | NOT RUN | | | | |
+| Font scale 200% | NOT RUN | | | | |
+| TalkBack | NOT RUN | | | | |
+| AI Paths end to end | DEFERRED (quota) | | | | |
+
+## Handy adb commands (debug build, phone connected with USB debugging)
+Use `%LOCALAPPDATA%\Android\Sdk\platform-tools\adb.exe`.
+- Install: `adb install -r app\build\outputs\apk\debug\app-debug.apk`
+- Crash and error log, app only: `adb logcat --pid=$(adb shell pidof -s com.assismohanty.awaken) *:W` (save with `> qa-logcat.txt`)
+- Clear the log before a run: `adb logcat -c`
+- Font scale 200%: `adb shell settings put system font_scale 2.0` (reset: `... font_scale 1.0`)
+- Revoke / grant notifications: `adb shell pm revoke com.assismohanty.awaken android.permission.POST_NOTIFICATIONS` / `pm grant ...`
+- Simulate process death: background the app, then `adb shell am kill com.assismohanty.awaken`, reopen from recents.
+- Airplane mode: toggle in system quick settings (`adb shell cmd connectivity airplane-mode enable` on Android 11+).
+- Force a reminder check after changing its time: `adb shell cmd jobscheduler run -f com.assismohanty.awaken 1` (WorkManager jobs; inexact timing otherwise).
