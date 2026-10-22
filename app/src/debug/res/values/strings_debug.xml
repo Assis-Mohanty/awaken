@@ -30,6 +30,7 @@
     <string name="debug_ai_grant">Grant AI consent</string>
     <string name="debug_ai_revoke">Revoke AI consent</string>
     <string name="debug_seed_path">Seed Path (grants consent)</string>
+    <string name="debug_screenshot_mode">Screenshot mode (wipes data, seeds demo hunter)</string>
     <string name="debug_begin">Begin</string>
     <string name="debug_complete">Complete</string>
     <string name="debug_undo">Undo</string>

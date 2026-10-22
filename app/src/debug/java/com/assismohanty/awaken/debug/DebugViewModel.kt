@@ -83,6 +83,7 @@ sealed interface DebugEvent {
     data class SetAiConsent(val enabled: Boolean) : DebugEvent
     data object SeedPath : DebugEvent
     data object GrantLevel : DebugEvent
+    data object ScreenshotMode : DebugEvent
     data object WipeData : DebugEvent
     data class Begin(val questInstanceId: String) : DebugEvent
     data class Complete(val questInstanceId: String) : DebugEvent
@@ -111,6 +112,7 @@ class DebugViewModel @Inject constructor(
     private val grantAiConsent: GrantAiConsentUseCase,
     private val revokeAiConsent: RevokeAiConsentUseCase,
     private val createPath: CreatePathUseCase,
+    private val demoSeeder: DemoSeeder,
     aiPrefs: AiPrefsRepository,
     private val db: AwakenDatabase,
     @IoDispatcher private val ioDispatcher: CoroutineDispatcher,
@@ -243,6 +245,7 @@ class DebugViewModel @Inject constructor(
             )
             "Seed path: $result"
         }
+        DebugEvent.ScreenshotMode -> demoSeeder()
         DebugEvent.GrantGold -> grantCurrency(LedgerKind.GOLD, DEBUG_GOLD, "Granted $DEBUG_GOLD gold.")
         DebugEvent.GrantFragments -> grantCurrency(LedgerKind.FRAGMENT, DEBUG_FRAGMENTS, "Granted $DEBUG_FRAGMENTS fragments.")
         DebugEvent.GrantLevel -> uiState.value.hunter?.let { hunter ->
