@@ -51,6 +51,8 @@ fun PrivacyPolicyScreen(onClose: () -> Unit, modifier: Modifier = Modifier) {
     val paragraphs = listOf(
         R.string.privacy_developer,
         R.string.privacy_storage,
+        R.string.privacy_ai,
+        R.string.privacy_reports,
         R.string.privacy_health,
         R.string.privacy_backups,
         R.string.privacy_children,
