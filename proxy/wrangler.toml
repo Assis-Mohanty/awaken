@@ -94,7 +94,7 @@ period = 60
 [[env.staging.d1_databases]]
 binding = "REPORTS_DB"
 database_name = "awaken-path-oracle-reports-staging"
-database_id = "REPLACE_WITH_WRANGLER_D1_CREATE_OUTPUT"
+database_id = "c527c3a1-d1d7-4ee5-a124-52a3d1978215"
 
 [env.staging.triggers]
 crons = ["0 3 * * *"]

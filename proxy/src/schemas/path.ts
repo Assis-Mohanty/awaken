@@ -146,5 +146,9 @@ export type ReportRequest = z.infer<typeof reportRequestSchema>;
  * needs (no `$schema`/`$id`/`title`/`description` — the model only needs structural fields). */
 export function toModelJsonSchema(jsonSchema: Record<string, unknown>): Record<string, unknown> {
   const { $schema, $id, title, description, $defs, ...rest } = jsonSchema;
-  return rest;
+  // The proxy adds `promptVersion` itself (ARCH §3.8 step 9). Asking the model for it only invites it to ramble in a
+  // free-text field until max_tokens cuts the JSON off.
+  const { promptVersion, ...properties } = (rest.properties ?? {}) as Record<string, unknown>;
+  const required = Array.isArray(rest.required) ? rest.required.filter((name) => name !== "promptVersion") : rest.required;
+  return { ...rest, properties, required };
 }
