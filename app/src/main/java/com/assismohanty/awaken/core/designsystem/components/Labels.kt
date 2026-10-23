@@ -37,6 +37,7 @@ fun unitPluralRes(unit: String): Int? = when (unit) {
     "sec" -> R.plurals.unit_sec
     "min" -> R.plurals.unit_min
     "km" -> R.plurals.unit_km
+    "kcal" -> R.plurals.unit_kcal
     "floors" -> R.plurals.unit_floors
     "rounds" -> R.plurals.unit_rounds
     "sprints" -> R.plurals.unit_sprints

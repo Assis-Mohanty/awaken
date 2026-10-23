@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Health screen (Settings → View health data) -->
+    <string name="health_title">Health</string>
+    <string name="health_updated">Updated %1$s</string>
+    <string name="health_action_refresh">Refresh</string>
+    <string name="health_loading">Reading Health Connect…</string>
+    <string name="health_state_disabled">Verified quests are off. Turn them on in Settings to see your health data here.</string>
+    <string name="health_state_unavailable">Health Connect isn\'t ready. Check its status in Settings.</string>
+    <string name="health_state_read_failed">Couldn\'t read Health Connect just now. Try again in a moment.</string>
+
+    <string name="health_window_today">Today</string>
+    <string name="health_metric_steps">Steps</string>
+    <string name="health_metric_distance">Distance</string>
+    <string name="health_metric_calories">Active calories</string>
+    <string name="health_metric_heart_rate">Avg heart rate</string>
+    <string name="health_not_allowed">Not allowed</string>
+    <string name="health_no_data">No data</string>
+    <string name="health_value_distance">%1$s km</string>
+    <string name="health_value_kcal">%1$s kcal</string>
+    <string name="health_value_bpm">%1$d bpm</string>
+
+    <string name="health_window_workouts">Workouts</string>
+    <string name="health_no_workouts">No recorded workouts yet today.</string>
+    <string name="health_workout_default">Workout</string>
+    <string name="health_workout_title">%1$s · %2$s</string>
+    <string name="health_workout_window">%1$s – %2$s</string>
+
+    <string name="health_window_sleep">Sleep</string>
+    <string name="health_no_sleep">No sleep recorded for last night.</string>
+    <string name="health_sleep_total">%1$s asleep</string>
+    <string name="health_sleep_no_stages">This source didn\'t record sleep stages.</string>
+    <string name="health_stage_awake">Awake</string>
+    <string name="health_stage_light">Light</string>
+    <string name="health_stage_deep">Deep</string>
+    <string name="health_stage_rem">REM</string>
+    <string name="health_stage_unknown">Other</string>
+    <string name="health_stage_line">%1$s %2$s</string>
+
+    <string name="health_duration_hm">%1$dh %2$02dm</string>
+    <string name="health_duration_min">%1$d min</string>
+
+    <string name="health_window_trend">Last 7 days</string>
+    <string name="cd_trend_chart">%1$s over the last 7 days: %2$s</string>
+
+    <string name="health_window_sources">Sources</string>
+    <string name="health_sources_note">Records typed in by hand are ignored. Everything else comes from the apps and devices below.</string>
+    <string name="health_sources_none">No source has written data today.</string>
+
+    <string name="health_allow_more">Allow more metrics</string>
+    <string name="health_allow_more_note">Distance, active calories and heart rate each need their own permission. Verified quests keep working without them.</string>
+
+    <string name="settings_health_view">View health data</string>
+</resources>

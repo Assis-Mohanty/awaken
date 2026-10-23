@@ -202,7 +202,7 @@ class SettingsViewModel @Inject constructor(
             SettingsEvent.DismissImportSummary -> drafts.update { it.copy(summary = null) }
             SettingsEvent.ConnectHealth -> connectHealth()
             SettingsEvent.HealthRationaleAccepted -> drafts.update {
-                it.copy(healthAction = HealthAction.REQUEST_PERMISSIONS, healthPermissions = healthGateway.requiredPermissions)
+                it.copy(healthAction = HealthAction.REQUEST_PERMISSIONS, healthPermissions = healthGateway.allPermissions)
             }
             SettingsEvent.HealthActionHandled -> drafts.update {
                 if (it.healthAction == HealthAction.SHOW_RATIONALE) it else it.copy(healthAction = null)

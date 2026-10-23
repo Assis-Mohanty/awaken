@@ -127,9 +127,10 @@ class TestGraph(
     val transactions = TransactionRunner(db)
     val ledger = LedgerRepository(db.ledgerDao(), transactions)
     val templates = TemplateRepository(context, Dispatchers.Unconfined)
+    val health = FakeHealthGateway()
     val reader = GameStateReader(
         db.hunterDao(), db.questDao(), db.completionDao(), db.ledgerDao(), db.dayRecordDao(),
-        db.gateRunDao(), db.trialDao(), db.achievementDao(), clock,
+        db.gateRunDao(), db.trialDao(), db.achievementDao(), clock, health,
     )
 
     val pathDao = db.pathDao()
@@ -173,7 +174,6 @@ class TestGraph(
     val runRollover = RunRolloverUseCase(rollover, notices)
     val completionCenter = CompletionCenter(completeQuest, undoCompletion)
     val completeOnboarding = CompleteOnboardingUseCase(createHunter, achievements, rollover, transactions, clock)
-    val health = FakeHealthGateway()
     val narrative = NarrativeRepository(context, Dispatchers.Unconfined)
     val observeHunterState = ObserveHunterStateUseCase(
         db.hunterDao(), db.questDao(), db.dayRecordDao(), db.trialDao(), ledger, clock,

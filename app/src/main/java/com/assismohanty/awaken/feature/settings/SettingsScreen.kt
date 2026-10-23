@@ -66,7 +66,12 @@ import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 
 @Composable
-fun SettingsRoute(onBack: () -> Unit, modifier: Modifier = Modifier, viewModel: SettingsViewModel = hiltViewModel()) {
+fun SettingsRoute(
+    onBack: () -> Unit,
+    onOpenHealth: () -> Unit,
+    modifier: Modifier = Modifier,
+    viewModel: SettingsViewModel = hiltViewModel(),
+) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val exportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument(BACKUP_MIME)) { uri ->
         uri?.let { viewModel.onEvent(SettingsEvent.ExportTo(it)) }
@@ -93,6 +98,7 @@ fun SettingsRoute(onBack: () -> Unit, modifier: Modifier = Modifier, viewModel: 
         // Backups are plain JSON, but file managers label them inconsistently, so any type may be picked.
         onImport = { importLauncher.launch(arrayOf("*/*")) },
         onOpenPrivacy = { context.startActivity(Intent(context, PrivacyPolicyActivity::class.java)) },
+        onOpenHealth = onOpenHealth,
         onOpenNotificationSettings = {
             context.startActivity(
                 Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName),
@@ -113,6 +119,7 @@ fun SettingsScreen(
     modifier: Modifier = Modifier,
     onOpenPrivacy: () -> Unit = {},
     onOpenNotificationSettings: () -> Unit = {},
+    onOpenHealth: () -> Unit = {},
 ) {
     GateBackground(rank = Rank.E, modifier = modifier) {
         Column(
@@ -142,7 +149,7 @@ fun SettingsScreen(
                 if (!state.loading) {
                     ProfileWindow(state, onEvent)
                     DayWindow(state, onEvent, onOpenNotificationSettings)
-                    TrainingWindow(state, onEvent)
+                    TrainingWindow(state, onEvent, onOpenHealth)
                     AiPathsWindow(state, onEvent)
                     ComfortWindow(state, onEvent)
                     DataWindow(state, onExport, onImport, onOpenPrivacy)
@@ -256,11 +263,11 @@ private fun DayWindow(state: SettingsUiState, onEvent: (SettingsEvent) -> Unit, 
 }
 
 @Composable
-private fun TrainingWindow(state: SettingsUiState, onEvent: (SettingsEvent) -> Unit) {
+private fun TrainingWindow(state: SettingsUiState, onEvent: (SettingsEvent) -> Unit, onOpenHealth: () -> Unit) {
     val colors = AwakenTheme.colors
     val type = AwakenTheme.type
     SystemWindow(title = stringResource(R.string.settings_window_training), accent = accent(), reveal = false) {
-        HealthRow(state, onEvent)
+        HealthRow(state, onEvent, onOpenHealth)
         Text(stringResource(R.string.settings_equipment_title), style = type.label, color = colors.bone)
         FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.xs), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
             state.equipmentOptions.forEach { id ->
@@ -297,7 +304,7 @@ private fun TrainingWindow(state: SettingsUiState, onEvent: (SettingsEvent) -> U
 
 
 @Composable
-private fun HealthRow(state: SettingsUiState, onEvent: (SettingsEvent) -> Unit) {
+private fun HealthRow(state: SettingsUiState, onEvent: (SettingsEvent) -> Unit, onOpenHealth: () -> Unit) {
     val colors = AwakenTheme.colors
     val type = AwakenTheme.type
     Text(stringResource(R.string.settings_health_title), style = type.label, color = colors.bone)
@@ -309,6 +316,12 @@ private fun HealthRow(state: SettingsUiState, onEvent: (SettingsEvent) -> Unit) 
     }
     Text(stringResource(status), style = type.caption, color = if (state.healthConnected) colors.verified else colors.mist)
     if (state.healthConnected) {
+        PrimaryButton(
+            text = stringResource(R.string.settings_health_view),
+            onClick = onOpenHealth,
+            color = colors.verified,
+            modifier = Modifier.fillMaxWidth(),
+        )
         SecondaryButton(
             text = stringResource(R.string.action_disconnect),
             onClick = { onEvent(SettingsEvent.DisconnectHealth) },

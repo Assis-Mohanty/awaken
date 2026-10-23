@@ -14,7 +14,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
-/** ARCH §3.4: Health Connect must find the privacy screen, and only the three read permissions are declared. */
+/** ARCH §3.4: Health Connect must find the privacy screen, and only the six read permissions are declared. */
 @RunWith(AndroidJUnit4::class)
 class HealthConnectManifestTest {
     @get:Rule
@@ -37,6 +37,9 @@ class HealthConnectManifestTest {
             "android.permission.health.READ_STEPS",
             "android.permission.health.READ_EXERCISE",
             "android.permission.health.READ_SLEEP",
+            "android.permission.health.READ_DISTANCE",
+            "android.permission.health.READ_ACTIVE_CALORIES_BURNED",
+            "android.permission.health.READ_HEART_RATE",
         )
         // Phase 15: INTERNET is declared for the Path Oracle only (CLAUDE.md invariant 8), and no other sensitive permission.
         assertThat(requested.toList()).contains("android.permission.INTERNET")

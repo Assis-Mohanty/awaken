@@ -164,6 +164,61 @@ class HealthUseCasesTest {
     }
 
     @Test
+    fun enablingNeedsOnlyTheCorePermissionsAndTheOptionalOnesStayOff() = runTest {
+        graph.seedHunter()
+        graph.health.granted = graph.health.requiredPermissions
+
+        assertThat(graph.enableHealth()).isEqualTo(EnableHealthResult.Enabled)
+        assertThat(profile().healthEnabled).isTrue()
+        assertThat(graph.health.unavailableVerifications())
+            .containsExactly(Verification.HEALTH_DISTANCE, Verification.HEALTH_CALORIES)
+    }
+
+    @Test
+    fun missingAnOptionalPermissionNeverSwitchesVerifiedQuestsOff() = runTest {
+        connected()
+        val quest = graph.fixtureQuest("walk", verification = Verification.HEALTH_STEPS, target = 10)
+        graph.health.granted = graph.health.requiredPermissions
+        graph.health.day = HealthDay(steps = 100)
+
+        assertThat(graph.healthSync()).isInstanceOf(HealthSyncResult.Synced::class.java)
+        assertThat(profile().healthEnabled).isTrue()
+        assertThat(status(quest.id)).isEqualTo(QuestStatus.COMPLETED)
+    }
+
+    @Test
+    fun losingACorePermissionStillSwitchesVerifiedQuestsOff() = runTest {
+        connected()
+        graph.fixtureQuest("walk", verification = Verification.HEALTH_STEPS, target = 10)
+        graph.health.granted = graph.health.allPermissions - "read.sleep"
+
+        assertThat(graph.healthSync()).isEqualTo(HealthSyncResult.Lost)
+        assertThat(profile().healthEnabled).isFalse()
+    }
+
+    @Test
+    fun aDistanceQuestCompletesVerifiedFromTrustedDistance() = runTest {
+        connected()
+        val quest = graph.fixtureQuest("walk_far", verification = Verification.HEALTH_DISTANCE, target = 4)
+        graph.health.day = HealthDay(distanceMeters = 4_200.0)
+
+        assertThat((graph.healthSync() as HealthSyncResult.Synced).completed).hasSize(1)
+        assertThat(status(quest.id)).isEqualTo(QuestStatus.COMPLETED)
+    }
+
+    @Test
+    fun aManuallyEnteredWorkoutDoesNotCompleteAnExerciseQuest() = runTest {
+        connected()
+        val quest = graph.fixtureQuest("workout", verification = Verification.HEALTH_EXERCISE, target = 30)
+        graph.health.day = HealthDay(
+            exercise = listOf(HealthSession(Instant.parse("2026-10-18T07:00:00Z"), Instant.parse("2026-10-18T08:00:00Z"), manualEntry = true)),
+        )
+
+        assertThat((graph.healthSync() as HealthSyncResult.Synced).completed).isEmpty()
+        assertThat(status(quest.id)).isEqualTo(QuestStatus.ACTIVE)
+    }
+
+    @Test
     fun disconnectingRevokesAndTurnsOff() = runTest {
         connected()
 

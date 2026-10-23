@@ -41,6 +41,7 @@ import com.assismohanty.awaken.feature.paths.PathDetailRoute as PathDetailEntry
 import com.assismohanty.awaken.feature.paths.PathsRoute as PathsEntry
 import com.assismohanty.awaken.feature.quest.QuestDetailRoute as QuestDetailEntry
 import com.assismohanty.awaken.feature.quest.RewardHost
+import com.assismohanty.awaken.feature.health.HealthRoute as HealthEntry
 import com.assismohanty.awaken.feature.settings.SettingsRoute as SettingsEntry
 import com.assismohanty.awaken.feature.status.StatusRoute as StatusEntry
 import com.assismohanty.awaken.feature.today.TodayRoute as TodayEntry
@@ -171,7 +172,10 @@ private fun MainScaffold(
                 composable<PathDetailRoute> { PathDetailEntry(onBack = { navController.popBackStack() }) }
                 composable<GatesRoute> { GatesEntry() }
                 composable<StatusRoute> { StatusEntry(onOpenSettings = { navController.navigate(SettingsRoute) }) }
-                composable<SettingsRoute> { SettingsEntry(onBack = { navController.popBackStack() }) }
+                composable<SettingsRoute> {
+                    SettingsEntry(onBack = { navController.popBackStack() }, onOpenHealth = { navController.navigate(HealthRoute) })
+                }
+                composable<HealthRoute> { HealthEntry(onBack = { navController.popBackStack() }) }
                 composable<VaultRoute> { VaultEntry() }
                 if (DebugEntry.ENABLED) {
                     composable<DebugRoute> { DebugEntry.Screen(onBack = { navController.popBackStack() }) }

@@ -167,7 +167,7 @@ class OnboardingViewModel @Inject constructor(
             }
             _uiState.update {
                 if (available) {
-                    it.copy(healthAction = HealthAction.REQUEST_PERMISSIONS, healthPermissions = healthGateway.requiredPermissions)
+                    it.copy(healthAction = HealthAction.REQUEST_PERMISSIONS, healthPermissions = healthGateway.allPermissions)
                 } else {
                     it.copy(healthAction = HealthAction.OPEN_STORE, healthNotInstalled = true)
                 }

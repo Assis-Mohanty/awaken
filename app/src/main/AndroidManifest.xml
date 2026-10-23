@@ -8,10 +8,13 @@
     <!-- Focus Gate countdown and "return to claim" notifications (ARCH §3.3). Requested when a gate opens. -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
-    <!-- Health Connect (ARCH §3.4): read-only, these three types and nothing else; no background-read permission. -->
+    <!-- Health Connect (ARCH §3.4): read-only. Core: steps, exercise, sleep. Optional: distance, active calories, heart rate. No background-read permission. -->
     <uses-permission android:name="android.permission.health.READ_STEPS" />
     <uses-permission android:name="android.permission.health.READ_EXERCISE" />
     <uses-permission android:name="android.permission.health.READ_SLEEP" />
+    <uses-permission android:name="android.permission.health.READ_DISTANCE" />
+    <uses-permission android:name="android.permission.health.READ_ACTIVE_CALORIES_BURNED" />
+    <uses-permission android:name="android.permission.health.READ_HEART_RATE" />
 
     <queries>
         <package android:name="com.google.android.apps.healthdata" />

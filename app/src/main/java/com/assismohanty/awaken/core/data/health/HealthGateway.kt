@@ -2,6 +2,7 @@ package com.assismohanty.awaken.core.data.health
 
 import com.assismohanty.awaken.engine.HealthDay
 import com.assismohanty.awaken.engine.HealthWindow
+import com.assismohanty.awaken.engine.model.Verification
 
 /** Whether the Health Connect app/module can be used on this device. */
 enum class HealthStatus { AVAILABLE, NOT_INSTALLED, UPDATE_REQUIRED }
@@ -10,16 +11,35 @@ enum class HealthStatus { AVAILABLE, NOT_INSTALLED, UPDATE_REQUIRED }
 class HealthReadException(cause: Throwable) : Exception(cause)
 
 /**
- * Read-only access to Health Connect (ARCH §3.4): Steps, ExerciseSession, SleepSession and nothing else. All network-free;
- * Health Connect is an on-device provider.
+ * Read-only access to Health Connect (ARCH §3.4): Steps, ExerciseSession and SleepSession (core), plus Distance, Active
+ * calories and Heart rate (optional, ENGINE_DECISIONS #83). All network-free; Health Connect is an on-device provider.
  */
 interface HealthGateway {
     suspend fun status(): HealthStatus
 
-    /** The permissions the hunter must grant, as Health Connect permission strings. */
+    /** The core permissions the hunter must grant for verified quests, as Health Connect permission strings. */
     val requiredPermissions: Set<String>
 
+    val distancePermission: String
+    val caloriesPermission: String
+    val heartRatePermission: String
+
+    /** Extra metrics: each one is requested together with the core set but only ever turns off its own feature. */
+    val optionalPermissions: Set<String> get() = setOf(distancePermission, caloriesPermission, heartRatePermission)
+
+    /** Everything the permission dialog asks for. */
+    val allPermissions: Set<String> get() = requiredPermissions + optionalPermissions
+
     suspend fun grantedPermissions(): Set<String>
+
+    /** HEALTH verifications that need an optional permission the hunter has not granted (ENGINE_DECISIONS #83). */
+    suspend fun unavailableVerifications(): Set<Verification> {
+        val granted = grantedPermissions()
+        return buildSet {
+            if (distancePermission !in granted) add(Verification.HEALTH_DISTANCE)
+            if (caloriesPermission !in granted) add(Verification.HEALTH_CALORIES)
+        }
+    }
 
     /** Best effort: Health Connect may refuse when unavailable. */
     suspend fun revokeAll()

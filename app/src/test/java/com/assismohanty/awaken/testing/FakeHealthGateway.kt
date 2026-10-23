@@ -13,7 +13,10 @@ class FakeHealthGateway(
     var failReads: Boolean = false,
 ) : HealthGateway {
     override val requiredPermissions: Set<String> = setOf("read.steps", "read.exercise", "read.sleep")
-    var granted: Set<String> = requiredPermissions
+    override val distancePermission: String = "read.distance"
+    override val caloriesPermission: String = "read.calories"
+    override val heartRatePermission: String = "read.heart_rate"
+    var granted: Set<String> = allPermissions
     var reads = 0
         private set
     var revoked = false

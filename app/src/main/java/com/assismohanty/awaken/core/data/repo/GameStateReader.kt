@@ -10,6 +10,7 @@ import com.assismohanty.awaken.core.data.db.dao.LedgerDao
 import com.assismohanty.awaken.core.data.db.dao.QuestDao
 import com.assismohanty.awaken.core.data.db.dao.TrialDao
 import com.assismohanty.awaken.core.data.db.entity.HunterProfileEntity
+import com.assismohanty.awaken.core.data.health.HealthGateway
 import com.assismohanty.awaken.engine.AchievementEvaluator
 import com.assismohanty.awaken.engine.AchievementSnapshot
 import com.assismohanty.awaken.engine.DirectiveGenerator
@@ -39,6 +40,7 @@ class GameStateReader @Inject constructor(
     private val trialDao: TrialDao,
     private val achievementDao: AchievementDao,
     private val clock: Clock,
+    private val healthGateway: HealthGateway,
 ) {
     /** Streak over finalized days only (ENGINE_DECISIONS #2, #23). */
     suspend fun finalizedStreak(): StreakSummary {
@@ -59,6 +61,7 @@ class GameStateReader @Inject constructor(
             injuryTags = if (profile.injuryMode) profile.injuryTags else emptySet(),
             recoveryMode = dayRecordDao.get(gameDate)?.recovery ?: false,
             healthAvailable = profile.healthEnabled,
+            unavailableHealth = if (profile.healthEnabled) healthGateway.unavailableVerifications() else emptySet(),
             lastActiveDates = completionDao.lastActivePerStat().associate { it.stat to it.gameDate },
             recentTemplateIds = questDao.templateIdsBetween(window.start, window.endInclusive).toSet(),
             firstDirective = gameDate == profile.firstGameDate,

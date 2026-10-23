@@ -5,6 +5,7 @@
     <plurals name="unit_sec"><item quantity="one">sec</item><item quantity="other">sec</item></plurals>
     <plurals name="unit_min"><item quantity="one">min</item><item quantity="other">min</item></plurals>
     <plurals name="unit_km"><item quantity="one">km</item><item quantity="other">km</item></plurals>
+    <plurals name="unit_kcal"><item quantity="one">kcal</item><item quantity="other">kcal</item></plurals>
     <plurals name="unit_floors"><item quantity="one">floor</item><item quantity="other">floors</item></plurals>
     <plurals name="unit_rounds"><item quantity="one">round</item><item quantity="other">rounds</item></plurals>
     <plurals name="unit_sprints"><item quantity="one">sprint</item><item quantity="other">sprints</item></plurals>

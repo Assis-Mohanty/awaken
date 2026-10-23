@@ -36,3 +36,7 @@ data object DebugRoute
 /** Settings (DESIGN_SYSTEM §4.7), opened from the Status header. */
 @Serializable
 data object SettingsRoute
+
+/** Health Connect overview (steps, workouts, sleep, trends), opened from Settings. */
+@Serializable
+data object HealthRoute
