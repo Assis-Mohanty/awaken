@@ -7,6 +7,7 @@ import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
+import androidx.work.await
 import androidx.work.workDataOf
 import com.assismohanty.awaken.core.data.clock.Clock
 import com.assismohanty.awaken.core.data.db.dao.HunterDao
@@ -51,7 +52,7 @@ class ReminderScheduler @Inject constructor(
             ReminderKind.LAST_CALL -> ReminderRules.LAST_CALL_TIME.takeIf { reminder != null && reminder < it }
         }
         if (time == null) {
-            workManager.cancelUniqueWork(kind.workName)
+            workManager.cancelUniqueWork(kind.workName).await()
             return
         }
         val now = clock.now()
@@ -63,7 +64,7 @@ class ReminderScheduler @Inject constructor(
                 .setInputData(workDataOf(KIND to kind.name))
                 .setInitialDelay(delay.toMillis(), TimeUnit.MILLISECONDS)
                 .build(),
-        )
+        ).await()
     }
 
     companion object {

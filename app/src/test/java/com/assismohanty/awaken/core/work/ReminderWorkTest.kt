@@ -20,10 +20,8 @@ import com.assismohanty.awaken.testing.TestGraph
 import com.google.common.truth.Truth.assertThat
 import java.time.LocalTime
 import kotlinx.coroutines.runBlocking
-import com.assismohanty.awaken.testing.RetryRule
 import org.junit.After
 import org.junit.Before
-import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.Shadows.shadowOf
@@ -31,10 +29,6 @@ import org.robolectric.Shadows.shadowOf
 /** Phase 12: the reminders are armed with the right delays and the worker posts what the use case built. */
 @RunWith(AndroidJUnit4::class)
 class ReminderWorkTest {
-    // WorkManager's test executor occasionally leaves a freshly enqueued unique work CANCELLED (seen on the pre-Phase-15 baseline too).
-    @get:Rule
-    val retry = RetryRule(attempts = 5)
-
     private val context: Context = ApplicationProvider.getApplicationContext()
     private val graph = TestGraph() // 2026-10-18 10:00 UTC
     private lateinit var scheduler: ReminderScheduler
@@ -48,8 +42,10 @@ class ReminderWorkTest {
     @After
     fun tearDown() = graph.close()
 
+    // REPLACE leaves the superseded work in the unique-work list as CANCELLED; the armed one is the other entry.
     private fun work(kind: ReminderKind): WorkInfo? =
-        WorkManager.getInstance(context).getWorkInfosForUniqueWork(kind.workName).get().firstOrNull()
+        WorkManager.getInstance(context).getWorkInfosForUniqueWork(kind.workName).get()
+            .firstOrNull { it.state != WorkInfo.State.CANCELLED }
 
     private fun delayHours(info: WorkInfo): Double = info.initialDelayMillis / 3_600_000.0
 
