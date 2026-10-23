@@ -43,7 +43,7 @@ Habit/RPG apps are a crowded but low-quality niche on Play: Habitica (aging, pun
 | F6 | Level-up ceremony; rank-trial unlock | GD §4.4, §5; DS §2.5 |
 | F7 | Streak, Rest Day, Recovery Mode, Streak Shield, Penalty Zone | GD §7 |
 | F8 | Focus Gates (E/D/C/B timer dungeons, breach rule) | GD §8; ARCH §3.3 |
-| F9 | Health Connect verified quests (Steps, ExerciseSession, SleepSession; read-only; optional) | ARCH §3.4 |
+| F9 | Health Connect verified quests (core: Steps, ExerciseSession, SleepSession; optional: Distance, ActiveCaloriesBurned, HeartRate; read-only; manual entries ignored; Health screen with workouts, sleep stages and 7-day trend) | ARCH §3.4; GD §6.2 |
 | F10 | Rank Trials (3-stage gate to promote) | GD §5 |
 | F11 | Adaptive difficulty per stat (weekly) | GD §6.4 |
 | F12 | Status: radar (this vs last week), stat list, 18-week heatmap, achievements & titles (32), chapters (6) | GD §10–11; DS §4.5 |
@@ -56,6 +56,7 @@ Habit/RPG apps are a crowded but low-quality niche on Play: Habitica (aging, pun
 | F19 | **AI Paths**: opt-in consent; up to 3 Paths (goal, level, notes, stats, days, time budget); AI milestone ladder; weekly AI quest plan validated and priced by the engine; Path quests in the Directive; SELF ≤ Normal, harder work as linked Focus Gates; weekly progression from completion + "too easy/right/too hard" feedback; engine-gated milestone advance; offline/failed fallback to templates | GD §6.6; ARCH §3.7; DS §4.8 |
 | F20 | **Path Oracle proxy**: Cloudflare Worker with Play Integrity, rate limits, budget cap, structured output, no data retention; staging + production | ARCH §3.8 |
 | F21 | **AI content safety**: in-app "Report this quest" (hides it immediately, sends report), prompt content rules, eval set passing before each prompt release | ARCH §3.7–3.8, §6; PLAY_STORE_LAUNCH §2 |
+| F22 | **Set counter**: tap-per-set reps and a rest timer on SELF rep quests; progress only, the hunter still taps Complete (stays SELF, ×1.00, capped) | GD §6.5; ENGINE_DECISIONS #84–85 |
 
 ## 5. Explicitly OUT of scope for v1.0 (put in `BACKLOG.md`)
 Accounts/sync · global/friends leaderboards · guilds · PvP duels & wagers · premium currency / IAP / ads · AI mentor chat (free-form conversation) · AI deciding any reward · on-device LLM · photo/video proof · multi-day dungeons · hardcore/permadeath · prestige · territory wars · iOS · web · Wear OS · localisation beyond English (strings are externalised though; Path goals may be typed in any language).
@@ -88,7 +89,7 @@ Accounts/sync · global/friends leaderboards · guilds · PvP duels & wagers · 
 - Play's AI-generated content policy: in-app reporting of AI output (F21) and content rules that prevent restricted content.
 
 ## 9. Acceptance — "Done" for v1.0
-- Every F1–F21 item works on a physical Android 10+ phone and the latest Android emulator (AI Paths against the production proxy from a Play-installed build).
+- Every F1–F22 item works on a physical Android 10+ phone and the latest Android emulator (AI Paths against the production proxy from a Play-installed build).
 - All GAME_DESIGN §12 vectors pass; ARCH §6 tests green (incl. proxy tests and the contract check); prompt eval passes its bar; lint clean.
 - `docs/QA_CHECKLIST.md` executed and ticked.
 - Signed AAB uploaded to Closed testing with listing, Data safety, Health apps declaration, content rating, privacy policy.

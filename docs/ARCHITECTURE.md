@@ -24,7 +24,7 @@ The existing `userService`/`questService` repo stays as a learning/portfolio pro
 │  core/data    — Room DAOs, repositories, DataStore,  │                          │
 │                 HealthConnectGateway, Clock,         │                          │
 │                 ai/PathOracleClient ─────────────────┼──── HTTPS ──┐            │
-│  workers      — DayRolloverWorker, HealthSyncWorker, │             │            │
+│  workers      — DayRolloverWorker,                   │             │            │
 │                 ReminderWorker, PlanWeekWorker       │             │            │
 │  widget       — Glance TodayWidget                   │             │            │
 └──────────────────────────────────────────────────────┼─────────────┼────────────┘
@@ -95,7 +95,7 @@ hunter_profile(id PK='me', hunter_id,                 -- hunter_id: random UUID,
 
 stat_tier(stat PK, tier TEXT)                         -- EASY..EXTREME, adaptive (GD §6.4)
 
-quest_instance(id PK, game_date, type, template_id NULL, habit_id NULL, path_slot_id NULL,
+quest_instance(id PK, game_date, type, template_id NULL, habit_id NULL, path_slot_id NULL, set_reps DEFAULT '',
                stat, secondary_stat NULL, title, description, unit, target INT,
                difficulty, verification, min_duration_sec,
                status,                               -- ACTIVE|STARTED|COMPLETED|EXPIRED|MISSED|REROLLED
@@ -179,7 +179,7 @@ UNIQUE with nullable columns: SQLite treats NULLs as distinct → store `''` ins
 
 Ledger sourceIds: QUEST/GATE → completionId; UNDO → the undone row's sourceId; DAY_CLEAR and SHIELD_USE → game_date; ACHIEVEMENT → achievement id; SHOP → purchase UUID (rerolls: `reroll:<game_date>#n`).
 
-Migrations: `exportSchema = true`, schemas committed under `app/schemas/`. Every schema change bumps the version and adds a `Migration` (`core/data/db/Migrations.kt`, listed in `ALL_MIGRATIONS`) plus a case in `MigrationTest`, which builds the old database from its exported JSON (the schemas are debug-only assets) and opens it with the current Room, so Room validates the result. (`MigrationTestHelper` is not used: its `createDatabase` rejects Robolectric database paths on Windows.) Current version: 5 (v1→v2 rebuilt the then-empty `gate_run` for Focus Gates; v2→v3 added `hunter_profile.equipped_frame_id` and `equipped_sigil_id` for the Vault; v3→v4 added `injury_tags` for Settings; v4→v5 added the five AI Paths tables and `quest_instance.path_slot_id`). **No destructive fallback, ever: hunters never lose data.**
+Migrations: `exportSchema = true`, schemas committed under `app/schemas/`. Every schema change bumps the version and adds a `Migration` (`core/data/db/Migrations.kt`, listed in `ALL_MIGRATIONS`) plus a case in `MigrationTest`, which builds the old database from its exported JSON (the schemas are debug-only assets) and opens it with the current Room, so Room validates the result. (`MigrationTestHelper` is not used: its `createDatabase` rejects Robolectric database paths on Windows.) Current version: 6 (v1→v2 rebuilt the then-empty `gate_run` for Focus Gates; v2→v3 added `hunter_profile.equipped_frame_id` and `equipped_sigil_id` for the Vault; v3→v4 added `injury_tags` for Settings; v4→v5 added the five AI Paths tables and `quest_instance.path_slot_id`; v5→v6 added `quest_instance.set_reps` for the set counter). **No destructive fallback, ever: hunters never lose data.**
 
 ## 3. Core flows
 
@@ -224,9 +224,10 @@ This avoids foreground-service-type policy declarations entirely. The process ma
 
 ### 3.4 Health Connect verification
 
-- Permissions requested **only** at the moment the user enables "Verified quests" (onboarding step or Settings), with a rationale screen first. Read-only: `Steps`, `ExerciseSession`, `SleepSession`. Nothing else.
+- Permissions requested **only** at the moment the user enables "Verified quests" (onboarding step or Settings), with a rationale screen first. Read-only. Core: `Steps`, `ExerciseSession`, `SleepSession` (losing any of them switches verified quests off). Optional, each requested in the same sheet but only ever turning off its own feature (ENGINE_DECISIONS #83): `Distance`, `ActiveCaloriesBurned`, `HeartRate`. Nothing else.
+- **Trust** (GD §6.2 "Health data trust", ENGINE_DECISIONS #82): the gateway flags manual-entry records and totals steps/distance/calories/heart rate only over apps that wrote at least one non-manual record (Health Connect still does its own cross-source merge); `HealthRules.trusted` in `:engine` then drops manual and implausible records and merges overlapping sessions. The Health screen (`feature/health`, opened from Settings) shows the same trusted data and never pays anything.
 - Must declare `<activity-alias>` / intent filter for `androidx.health.ACTION_SHOW_PERMISSIONS_RATIONALE` and the privacy-policy screen per Health Connect docs.
-- **Foreground-only sync** (ENGINE_DECISIONS #51): `HealthSyncCoordinator` on `ProcessLifecycleOwner` syncs on every app start and every 30 min while visible. Health Connect refuses background reads without `READ_HEALTH_DATA_IN_BACKGROUND`, which we do not request, so there is no background worker. `HealthSyncUseCase` reads the game-day window (`aggregate(StepsRecord.COUNT_TOTAL)`, exercise sessions, last night's sleep), matches with `HealthRules` (engine, #50) and completes via `CompleteQuestUseCase.completeVerified(id, HEALTH)`. Health completions are not undoable (#52).
+- **Foreground-only sync** (ENGINE_DECISIONS #51): `HealthSyncCoordinator` on `ProcessLifecycleOwner` syncs on every app start and every 30 min while visible. Health Connect refuses background reads without `READ_HEALTH_DATA_IN_BACKGROUND`, which we do not request, so there is no background worker. `HealthSyncUseCase` reads the game-day window (`aggregate` for steps/distance/calories/heart rate, exercise sessions, last night's sleep), matches with `HealthRules` (engine, #50) and completes via `CompleteQuestUseCase.completeVerified(id, HEALTH)`. Health completions are not undoable (#52).
 - `HealthGateway` (real: `HealthConnectGateway`, connect-client 1.1.0; debug: `DebugHealthGateway` with "Simulate 9,000 steps"; tests: `FakeHealthGateway`).
 - If HC unavailable/not installed/denied: HEALTH templates are excluded from generation; no nagging.
 - Never write to Health Connect in v1.

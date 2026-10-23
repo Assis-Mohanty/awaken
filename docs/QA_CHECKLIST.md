@@ -23,8 +23,12 @@ Run log: `Device: ____  Android: ____  Build: ____  Date: ____  Tester: ____`
 
 ## Health Connect permission flow
 - [ ] Phone without Health Connect installed (or disabled): "connect" explains it and offers the install path; nothing crashes.
-- [ ] Settings → connect: permission sheet lists exactly Steps, Exercise, Sleep and nothing else.
-- [ ] Grant all three: verified quests appear in the next directive and show the verified badge and +30% in the breakdown.
+- [ ] Settings → connect: permission sheet lists exactly Steps, Exercise, Sleep, Distance, Active calories, Heart rate and nothing else.
+- [ ] Grant all six: verified quests appear in the next directive and show the verified badge and +30% in the breakdown; Settings → View health data shows steps, distance, calories, heart rate, workouts, sleep stages and a 7-day trend.
+- [ ] Grant only the three core permissions: steps, exercise and sleep quests still verify; distance and calorie quests never appear; the Health screen shows "Not allowed" for the rest and offers "Allow more metrics".
+- [ ] In a health app, add a manual workout and a manual steps record: neither completes a quest nor appears on the Health screen.
+- [ ] Two apps report the same walk (e.g. watch app and phone app): one workout on the Health screen, not two.
+- [ ] Revoke Heart rate only: verified quests keep working; the heart-rate tile says "Not allowed".
 - [ ] Grant only Steps: only step quests are verified; the others stay on self-report.
 - [ ] Walk enough steps (or add a manual steps record in Health Connect), open the app: the step quest completes automatically once, XP not doubled on a second open.
 - [ ] Revoke access in Health Connect settings, reopen the app: Settings shows "Off", no crash, existing completions untouched.

@@ -174,7 +174,7 @@ class SettingsScreenTest {
     fun theRationaleComesBeforeThePermissionSheet() {
         val events = mutableListOf<SettingsEvent>()
         show(previewSettingsState().copy(healthAction = HealthAction.SHOW_RATIONALE), events)
-        composeRule.onNodeWithText("AWAKEN reads only Steps, Exercise sessions and Sleep sessions, on this phone. It never writes to Health Connect.")
+        composeRule.onNodeWithText("AWAKEN reads Steps, Exercise sessions and Sleep sessions, plus Distance, Active calories and Heart rate if you allow them, on this phone. It never writes to Health Connect.")
             .assertIsDisplayed()
     }
 

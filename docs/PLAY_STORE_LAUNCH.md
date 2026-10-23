@@ -58,7 +58,7 @@ A PATH BUILT FOR YOUR GOAL
 • Rewards are calculated on your phone by fixed rules. The AI writes the quests, never the XP.
 
 THE SYSTEM CAN SEE YOUR EFFORT
-• Verified quests: steps, workouts and sleep complete automatically through Health Connect — and earn 30% more XP.
+• Verified quests: steps, distance, calories, workouts and sleep complete automatically through Health Connect — and earn 30% more XP. Manually typed records are ignored.
 • Focus Gates: timed deep-work dungeons. Leave the app too long and the gate collapses.
 • Every reward shows its formula. No mystery numbers.
 
@@ -99,7 +99,7 @@ Because AI Paths send user-entered text off the device, the answer is no longer 
 
 - Encrypted in transit: **Yes** (HTTPS only, cleartext disabled).
 - Users can request deletion: proxy keeps no user data; reports carry no identifier, so explain that in the policy. On-device data: Settings → Data → Wipe, or uninstall.
-- Health Connect reads still happen on-device only and are never sent to the proxy. Keep it that way or this table changes.
+- Health Connect reads (steps, exercise, sleep, distance, active calories, heart rate) still happen on-device only and are never sent to the proxy. Keep it that way or this table changes.
 - The model provider is Cloudflare (Workers AI), called from our proxy as a service provider (no third-party SDK in the app). The privacy policy states Cloudflare's data-use terms; re-check them before each release.
 Re-do this form whenever you add sync, analytics, or crash SDKs, or change what the Path request contains.
 
@@ -107,6 +107,9 @@ Re-do this form whenever you add sync, analytics, or crash SDKs, or change what 
 - **Steps (read):** "Used to automatically mark user-chosen step-count quests as complete on-device and award in-app experience points. Not shared or uploaded."
 - **Exercise sessions (read):** "Used to verify workout quests (e.g., 30 minutes of exercise) on-device."
 - **Sleep sessions (read):** "Used to verify the user's opt-in sleep-duration quest (e.g., 7 hours) on-device."
+- **Distance (read, optional):** "Used to verify the user's opt-in distance quests (e.g., 4 km on foot) and to show distance in the app, on-device. Not shared or uploaded."
+- **Active calories burned (read, optional):** "Used to verify the user's opt-in active-calorie quests and to show workout summaries, on-device. Not shared or uploaded."
+- **Heart rate (read, optional):** "Shown on workout summaries and used on-device to reject workouts where the heart rate never rose. It does not change rewards. Not shared or uploaded."
 Request nothing else. The privacy policy link shown inside Health Connect must be the same as the Play listing's.
 
 ## 6. Graphics
@@ -146,7 +149,9 @@ Reports: if you report a quest, its text and your chosen reason are sent and kep
 Reports contain no identifier.
 
 Health Connect: if you choose to enable verified quests, the app reads Steps, Exercise sessions and Sleep sessions
-from Health Connect on your device to mark matching quests complete. This data is processed on-device only, is never
+from Health Connect on your device to mark matching quests complete. If you also allow them, it reads Distance, Active
+calories and Heart rate for distance and calorie quests and to show your activity in the app. Data entered by hand in a
+health app is ignored. This data is processed on-device only, is never
 uploaded (including to AI Paths), and is not used for advertising. You can revoke access anytime in Health Connect settings.
 Use of information received from Health Connect adheres to the Health Connect Permissions policy, including the
 Limited Use requirements.

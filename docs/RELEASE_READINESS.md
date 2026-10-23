@@ -13,7 +13,7 @@ Snapshot after Phase 17 (commit `67b1754`). Gates green: `:engine:test`, `:app:t
 |---|---|
 | INTERNET | App (Path Oracle only; cleartext disabled) |
 | POST_NOTIFICATIONS | App (reminders) |
-| health.READ_STEPS / READ_EXERCISE / READ_SLEEP | App (Health Connect, on-device only) |
+| health.READ_STEPS / READ_EXERCISE / READ_SLEEP (core), READ_DISTANCE / READ_ACTIVE_CALORIES_BURNED / READ_HEART_RATE (optional) | App (Health Connect, on-device only) |
 | WAKE_LOCK, ACCESS_NETWORK_STATE, RECEIVE_BOOT_COMPLETED, FOREGROUND_SERVICE | WorkManager |
 | `<package>.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION` | AndroidX (internal) |
 
