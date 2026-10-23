@@ -5,7 +5,7 @@
 v1 has **zero users**. A distributed backend buys nothing yet and costs weeks: auth, hosting, sync conflicts, a privacy policy that now covers server data. So the app is **offline-first with exactly one network feature**:
 
 - All game state lives on the phone. No account, no user database, no sync. It works on a plane.
-- **AI Paths** call one **stateless proxy** (the "Path Oracle", §3.8) that holds the LLM key, authenticates the *install* with Play Integrity instead of a person with a login, rate-limits, forwards to the model, and stores nothing. Losing the proxy degrades personalisation, never the game.
+- **AI Paths** call one **stateless proxy** (the "Path Oracle", §3.8) that calls the model through its own Cloudflare Workers AI binding (no LLM API key exists anywhere), authenticates the *install* with Play Integrity instead of a person with a login, rate-limits, forwards to the model, and stores nothing. Losing the proxy degrades personalisation, never the game.
 - The *same invariants* the backend design wanted (append-only ledger, idempotency keys, deterministic engine) hold, so syncing later is "upload ledger events, server recomputes", not a rewrite.
 
 Why not a real backend with accounts for AI? An account system only buys identity, and v1 needs none: rate limiting needs "is this a genuine install of our app" (Play Integrity answers that) and the AI needs only the Path text sent in the request. Every user record we don't store is a record we can't leak.
@@ -36,7 +36,7 @@ The existing `userService`/`questService` repo stays as a learning/portfolio pro
                    │ AchievementEvaluator                       │   │ Stores no user data.               │
                    │ PathValidator  PathScheduler               │   └─────────────────┬──────────────────┘
                    │ ProgressionSignal  model/*                 │                     ▼
-                   └────────────────────────────────────────────┘               LLM provider API
+                   └────────────────────────────────────────────┘               Cloudflare Workers AI
 ```
 
 ## 1. Project layout
@@ -304,7 +304,7 @@ Request pipeline, in order (cheap checks first, the model last):
 6. Build prompt: system prompt from prompts/<name>.v<N>.md; user fields inserted ONLY inside a
    delimited <hunter_data> block with an instruction that its contents are data, not instructions
 7. Call the model with structured output (JSON schema = the response contract), max 2,000 output tokens,
-   temperature low (≈0.4). Model ID from env (a small, fast tier; verify current IDs on the provider's docs)
+   temperature low (≈0.4). Model ID from env `AI_MODEL_ID` (currently `@cf/google/gemma-4-26b-a4b-it`, called via the Worker's `AI` binding with `response_format: json_schema`)
 8. zod-validate the model output. Invalid → retry once → still invalid             → 502 model_invalid_output
 9. Respond { promptVersion, ...payload }. The app's PathValidator runs again (defence in depth)
 ```
@@ -328,8 +328,8 @@ Request pipeline, in order (cheap checks first, the model last):
 
 ## 5. Security, privacy, abuse
 - `INTERNET` is used only by `PathOracleClient` (and Play services for Integrity). `network_security_config.xml`: cleartext disabled. No third-party SDKs that make network calls. Phase 16 verifies the merged manifest and dependency list.
-- The proxy is the only server. It holds the LLM key as a Worker secret; the key never exists in the repo, the APK, or CI logs.
-- Threat model for AI Paths, and the control for each: **key theft** → key only on the proxy; **cost abuse** → Play Integrity + per-install and per-IP limits + monthly budget cap; **prompt injection** via goal text → delimited data block + schema-constrained output + engine validator + rewards never derived from model output; **XP farming** via trivial goals → SELF Path quests capped at Normal and the daily self cap (GD §6.6.4); **harmful content** → prompt rules + unit enum without diet/weight units + in-app report; **data leak** → proxy stores no request data and logs no bodies.
+- The proxy is the only server. It reaches the model through the Worker's `AI` binding, so there is no LLM API key to leak; its secrets (Play Integrity service account, debug key) live only as Worker secrets, never in the repo, the APK, or CI logs.
+- Threat model for AI Paths, and the control for each: **key theft** → no LLM key exists (Workers AI binding), the app holds none; **cost abuse** → Play Integrity + per-install and per-IP limits + monthly budget cap; **prompt injection** via goal text → delimited data block + schema-constrained output + engine validator + rewards never derived from model output; **XP farming** via trivial goals → SELF Path quests capped at Normal and the daily self cap (GD §6.6.4); **harmful content** → prompt rules + unit enum without diet/weight units + in-app report; **data leak** → proxy stores no request data and logs no bodies.
 - `android:allowBackup="true"` with `dataExtractionRules` including the Room DB so users don't lose progress on a new phone (Google auto-backup). Plus manual **Export/Import JSON** of the ledger (Settings) — export is a full ledger dump; import validates with the engine and rebuilds caches.
 - Cheating is possible offline (clock changes, self-report). Accept it for v1: it only affects the cheater. Mitigations that matter for later sync: ledger keeps `created_at` + `game_date`; record `SystemClock.elapsedRealtime()` deltas on completions; flag days where wall-clock moved backwards. When leaderboards arrive, **only HEALTH/TIMER-verified XP counts toward ranked boards**, and the server recomputes from events.
 - R8 enabled for release; no secrets in repo; `keystore.properties` git-ignored.

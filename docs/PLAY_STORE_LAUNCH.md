@@ -100,7 +100,7 @@ Because AI Paths send user-entered text off the device, the answer is no longer 
 - Encrypted in transit: **Yes** (HTTPS only, cleartext disabled).
 - Users can request deletion: proxy keeps no user data; reports carry no identifier, so explain that in the policy. On-device data: Settings → Data → Wipe, or uninstall.
 - Health Connect reads still happen on-device only and are never sent to the proxy. Keep it that way or this table changes.
-- The LLM provider processes the request as your service provider. Check its current data-retention terms for API traffic and state them in the privacy policy.
+- The model provider is Cloudflare (Workers AI), called from our proxy as a service provider (no third-party SDK in the app). The privacy policy states Cloudflare's data-use terms; re-check them before each release.
 Re-do this form whenever you add sync, analytics, or crash SDKs, or change what the Path request contains.
 
 ## 5. Health apps declaration — justification text (adapt)
