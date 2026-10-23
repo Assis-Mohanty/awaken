@@ -25,9 +25,12 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.Shadows.shadowOf
+import org.robolectric.annotation.Config
 
 /** Phase 12: the reminders are armed with the right delays and the worker posts what the use case built. */
 @RunWith(AndroidJUnit4::class)
+// A plain Application: the real AwakenApp would start ReminderCoordinator, which cancels these works (no hunter in the app DB).
+@Config(application = Application::class)
 class ReminderWorkTest {
     private val context: Context = ApplicationProvider.getApplicationContext()
     private val graph = TestGraph() // 2026-10-18 10:00 UTC
