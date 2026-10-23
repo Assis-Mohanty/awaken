@@ -36,6 +36,8 @@ enum class Verification(val source: VerificationSource) {
     HEALTH_STEPS(VerificationSource.HEALTH),
     HEALTH_EXERCISE(VerificationSource.HEALTH),
     HEALTH_SLEEP(VerificationSource.HEALTH),
+    HEALTH_DISTANCE(VerificationSource.HEALTH),
+    HEALTH_CALORIES(VerificationSource.HEALTH),
 }
 
 /** Quest types (GD §6.1). */

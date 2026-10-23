@@ -65,6 +65,10 @@ class ContentAssetsTest {
         targetsOf(Verification.HEALTH_STEPS).forEach { assertThat(it).containsExactly(4000, 7000, 10000, 14000).inOrder() }
         assertThat(targetsOf(Verification.HEALTH_EXERCISE)).isNotEmpty()
         targetsOf(Verification.HEALTH_EXERCISE).forEach { assertThat(it).containsExactly(15, 30, 45, 60).inOrder() }
+        assertThat(targetsOf(Verification.HEALTH_DISTANCE)).isNotEmpty()
+        targetsOf(Verification.HEALTH_DISTANCE).forEach { assertThat(it).containsExactly(2, 4, 7, 12).inOrder() }
+        assertThat(targetsOf(Verification.HEALTH_CALORIES)).isNotEmpty()
+        targetsOf(Verification.HEALTH_CALORIES).forEach { assertThat(it).containsExactly(150, 300, 500, 800).inOrder() }
         val sleep = library.templates.filter { it.verification == Verification.HEALTH_SLEEP }
         assertThat(sleep.map { it.stat }).containsExactly(Stat.VIT)
         assertThat(sleep.single().targets.values.toSet()).containsExactly(7)

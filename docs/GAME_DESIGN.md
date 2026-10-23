@@ -179,7 +179,16 @@ Quests are generated from a **bundled JSON template library** (`assets/quests/te
 }
 ```
 
-Verification options in templates: `SELF`, `TIMER` (completed by the Focus Gate engine), `HEALTH_STEPS`, `HEALTH_EXERCISE` (any exercise session ≥ target minutes), `HEALTH_SLEEP` (sleep session ≥ target hours).
+Verification options in templates: `SELF`, `TIMER` (completed by the Focus Gate engine), `HEALTH_STEPS`, `HEALTH_EXERCISE` (any exercise session ≥ target minutes), `HEALTH_SLEEP` (sleep session ≥ target hours), `HEALTH_DISTANCE` (walking + running distance for the game-day ≥ target km), `HEALTH_CALORIES` (active calories for the game-day ≥ target kcal).
+
+Target ladders (Easy / Normal / Hard / Extreme): `HEALTH_DISTANCE` **2 / 4 / 7 / 12 km**; `HEALTH_CALORIES` **150 / 300 / 500 / 800 kcal** (active only, never resting/total). Calories are never an AI Path unit and the model cannot choose `HEALTH_*` (§6.6).
+
+#### Health data trust (applies to every `HEALTH_*` quest)
+- **Manual entries never count.** Records whose recording method is manual entry are dropped before any rule runs. Records with an unknown recording method are kept (older sources do not label themselves).
+- **Sanity limits.** A day with more than **60,000 steps** counts as 0 steps. An exercise session whose average speed exceeds **25 km/h** is dropped. An exercise session with an average heart rate **below 60 bpm** is dropped; a session with no heart-rate data is never penalised.
+- **No double counting.** Overlapping exercise sessions, and overlapping sleep sessions, from different apps are merged into one before matching. Steps, distance and calories use Health Connect's own cross-source aggregate.
+- **Heart rate is display-only.** It is shown on workout summaries and used by the sanity limit above; it never changes XP, gold, crits or caps.
+- Permissions: Steps, Exercise and Sleep are the core set; Distance, Active calories and Heart rate are optional and each enables only its own feature.
 
 ### 6.3 Generation algorithm
 
@@ -221,6 +230,7 @@ Side quests use the stat's tier; the main quest uses `tier + 1` (capped). Shown 
 - `minDurationSec`: a SELF quest cannot be completed sooner than N seconds after it was *started* (tap "Begin"). If the user never tapped Begin, they can still complete, but `V` stays 1.0 and it counts toward the self cap. Keep it low-friction; this is a soft speed bump, not a jail.
 - Completions are **undoable for 10 minutes** (writes a reversing ledger entry with the same idempotency group; never deletes). Undo never revokes achievements: unlocks and their gold are permanent. Undo is also refused once the game-day has ended, even within the 10 minutes.
 - HEALTH and TIMER quests cannot be completed by hand. HEALTH quests complete only from Health Connect data, TIMER quests only by clearing a Focus Gate. Only SELF quests have a manual Complete button.
+- **Set counter.** SELF quests with unit `reps` show a set counter (tap per set, reps per set, rest timer). It only records progress toward the target; it never completes the quest and never mints anything. The hunter taps Complete themselves, so the quest stays SELF (V 1.00, 600 XP cap).
 - After the day ends, unfinished generated quests become `EXPIRED`. Habits become `MISSED`. Path quests follow the carry-over rule in §6.6.6.
 
 ### 6.6 AI Paths (personal quest ladders)

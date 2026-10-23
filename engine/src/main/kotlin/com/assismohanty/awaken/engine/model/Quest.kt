@@ -83,6 +83,8 @@ data class HunterContext(
     val injuryTags: Set<String> = emptySet(),
     val recoveryMode: Boolean = false,
     val healthAvailable: Boolean = true,
+    /** HEALTH verifications whose optional Health Connect permission is not granted: their templates are not offered (ENGINE_DECISIONS #83). */
+    val unavailableHealth: Set<Verification> = emptySet(),
     val lastActiveDates: Map<Stat, LocalDate> = emptyMap(),
     val recentTemplateIds: Set<String> = emptySet(),
     /** True only for the hunter's first game-day: one side slot becomes an Easy starter quest (GD §6.3). */

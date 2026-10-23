@@ -166,6 +166,7 @@ object DirectiveGenerator {
         if (!context.ownedEquipment.containsAll(equipment)) return false
         if (tags.any { it in context.injuryTags }) return false
         if (!context.healthAvailable && verification.source == VerificationSource.HEALTH) return false
+        if (verification in context.unavailableHealth) return false
         if (context.recoveryMode && (stat !in RECOVERY_STATS || RECOVERY_EXCLUDED_TAG in tags)) return false
         return true
     }
