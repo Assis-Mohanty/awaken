@@ -69,6 +69,8 @@ data class QuestRowModel(
     val state: QuestRowState,
     /** Set for Path quests: which Path they came from and, for GATE-mode quests, the gate they need (DS §3). */
     val pathBadge: PathBadgeModel? = null,
+    /** Reps logged on the set counter so far (SELF rep quests only); null until the first set. */
+    val progress: Int? = null,
 )
 
 /**
@@ -169,7 +171,17 @@ fun QuestRow(
                         textDecoration = decoration,
                     )
                     Text(
-                        text = stringResource(R.string.quest_target_line, formatCount(model.target), unitLabel(model.unit, model.target), model.difficulty.label()),
+                        text = if (model.progress != null) {
+                            stringResource(
+                                R.string.quest_target_progress_line,
+                                formatCount(model.progress),
+                                formatCount(model.target),
+                                unitLabel(model.unit, model.target),
+                                model.difficulty.label(),
+                            )
+                        } else {
+                            stringResource(R.string.quest_target_line, formatCount(model.target), unitLabel(model.unit, model.target), model.difficulty.label())
+                        },
                         style = type.label,
                         color = if (dimmed) colors.fog else colors.mist,
                         textDecoration = decoration,

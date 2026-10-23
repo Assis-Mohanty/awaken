@@ -12,20 +12,24 @@ import com.assismohanty.awaken.core.data.db.dao.PathDao
 import com.assismohanty.awaken.core.data.db.dao.QuestDao
 import com.assismohanty.awaken.core.data.db.entity.QuestInstanceEntity
 import com.assismohanty.awaken.core.data.repo.GameStateReader
+import com.assismohanty.awaken.core.domain.AddSetUseCase
 import com.assismohanty.awaken.core.domain.CompletionCenter
 import com.assismohanty.awaken.core.domain.RerollQuestUseCase
 import com.assismohanty.awaken.core.domain.RerollResult
 import com.assismohanty.awaken.core.domain.ReportPathQuestUseCase
 import com.assismohanty.awaken.core.domain.ReportReason
 import com.assismohanty.awaken.core.domain.ReportResult
+import com.assismohanty.awaken.core.domain.SetCounterResult
 import com.assismohanty.awaken.core.domain.StartPathGateResult
 import com.assismohanty.awaken.core.domain.StartPathGateUseCase
 import com.assismohanty.awaken.core.domain.StartQuestUseCase
+import com.assismohanty.awaken.core.domain.UndoSetUseCase
 import com.assismohanty.awaken.core.domain.UserMessage
 import com.assismohanty.awaken.engine.DirectiveGenerator
 import com.assismohanty.awaken.engine.QuestReason
 import com.assismohanty.awaken.engine.QuestReasons
 import com.assismohanty.awaken.engine.QuestRules
+import com.assismohanty.awaken.engine.SetCounter
 import com.assismohanty.awaken.engine.model.Difficulty
 import com.assismohanty.awaken.engine.model.GateRank
 import com.assismohanty.awaken.engine.model.QuestStatus
@@ -98,6 +102,18 @@ data class QuestDetailUiState(
     val reportable: Boolean = false,
     /** The gate opened; the screen leaves for the Gates tab once. */
     val enteredGate: Boolean = false,
+    /** Set counter for SELF rep quests that are still open today (GD §6.5); null otherwise. */
+    val setCounter: SetCounterUiState? = null,
+)
+
+data class SetCounterUiState(
+    val sets: List<Int>,
+    val total: Int,
+    /** Where the reps stepper starts: what is still missing, else the last set. */
+    val suggestedReps: Int,
+    /** Seconds since the last set logged on this screen; null before the first. */
+    val restSeconds: Long?,
+    val full: Boolean,
 )
 
 sealed interface QuestDetailEvent {
@@ -107,6 +123,8 @@ sealed interface QuestDetailEvent {
     data object Reroll : QuestDetailEvent
     data object EnterGate : QuestDetailEvent
     data class Report(val reason: ReportReason) : QuestDetailEvent
+    data class AddSet(val reps: Int) : QuestDetailEvent
+    data object UndoSet : QuestDetailEvent
 }
 
 @HiltViewModel
@@ -121,6 +139,8 @@ class QuestDetailViewModel @Inject constructor(
     private val pathDao: PathDao,
     private val startPathGate: StartPathGateUseCase,
     private val reportPathQuest: ReportPathQuestUseCase,
+    private val addSet: AddSetUseCase,
+    private val undoSet: UndoSetUseCase,
     private val completionCenter: CompletionCenter,
     private val clock: Clock,
 ) : ViewModel() {
@@ -129,7 +149,13 @@ class QuestDetailViewModel @Inject constructor(
     private val context = MutableStateFlow<DetailContext?>(null)
     private val action = MutableStateFlow(ActionState())
 
-    private data class ActionState(val busy: Boolean = false, val closed: Boolean = false, val enteredGate: Boolean = false)
+    private data class ActionState(
+        val busy: Boolean = false,
+        val closed: Boolean = false,
+        val enteredGate: Boolean = false,
+        /** When the last set was logged on this screen: the rest timer counts up from here (not stored, not a reward). */
+        val lastSetAt: Instant? = null,
+    )
 
     /** Re-evaluates time-based state (countdown, undo window) once a second while the screen is visible. */
     private val ticks: Flow<Instant> = flow {
@@ -177,6 +203,18 @@ class QuestDetailViewModel @Inject constructor(
                         action.update { it.copy(closed = true) }
                     }
                     ReportResult.NotReportable -> completionCenter.message(UserMessage.Error)
+                }
+            }
+            is QuestDetailEvent.AddSet -> run {
+                when (addSet(questInstanceId, event.reps)) {
+                    is SetCounterResult.Updated -> action.update { it.copy(lastSetAt = clock.now()) }
+                    SetCounterResult.NotAvailable -> completionCenter.message(UserMessage.Error)
+                }
+            }
+            QuestDetailEvent.UndoSet -> run {
+                when (undoSet(questInstanceId)) {
+                    is SetCounterResult.Updated -> action.update { it.copy(lastSetAt = null) }
+                    SetCounterResult.NotAvailable -> completionCenter.message(UserMessage.Error)
                 }
             }
             QuestDetailEvent.Reroll -> run {
@@ -276,6 +314,19 @@ class QuestDetailViewModel @Inject constructor(
             canEnterGate = isToday && open && ctx.path?.gateRank != null && verification.source == VerificationSource.TIMER,
             reportable = isToday && open && pathSlotId != null,
             enteredGate = actionState.enteredGate,
+            setCounter = setCounter(isToday, open, actionState, now),
+        )
+    }
+
+    private fun QuestInstanceEntity.setCounter(isToday: Boolean, open: Boolean, actionState: ActionState, now: Instant): SetCounterUiState? {
+        if (!isToday || !open || !SetCounter.appliesTo(unit, verification)) return null
+        val sets = SetCounter.parse(setReps)
+        return SetCounterUiState(
+            sets = sets,
+            total = SetCounter.total(sets),
+            suggestedReps = SetCounter.suggestedReps(sets, target),
+            restSeconds = actionState.lastSetAt?.let { Duration.between(it, now).seconds.coerceAtLeast(0) },
+            full = sets.size >= SetCounter.MAX_SETS,
         )
     }
 

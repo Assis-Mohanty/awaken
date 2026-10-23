@@ -21,6 +21,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -28,6 +29,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -50,6 +52,7 @@ import com.assismohanty.awaken.core.designsystem.preview.PhonePreviews
 import com.assismohanty.awaken.core.designsystem.theme.AwakenTheme
 import com.assismohanty.awaken.core.designsystem.theme.Spacing
 import com.assismohanty.awaken.engine.QuestReason
+import com.assismohanty.awaken.engine.SetCounter
 import com.assismohanty.awaken.feature.paths.ReportSheet
 import com.assismohanty.awaken.engine.model.Difficulty
 import com.assismohanty.awaken.engine.model.QuestStatus
@@ -166,6 +169,10 @@ private fun QuestDetailContent(state: QuestDetailUiState, onEvent: (QuestDetailE
             }
         }
 
+        state.setCounter?.let { counter ->
+            SetCounterBlock(counter, target = state.target, unit = state.unit, busy = state.busy, onEvent = onEvent)
+        }
+
         state.rationale?.let { rationale ->
             Text(
                 text = stringResource(R.string.quest_path_rationale_label),
@@ -227,6 +234,61 @@ private fun QuestDetailContent(state: QuestDetailUiState, onEvent: (QuestDetailE
             }
         }
     }
+}
+
+/** Tap-per-set counter for SELF rep quests (GD §6.5): progress only, the hunter still taps Complete. */
+@Composable
+private fun SetCounterBlock(counter: SetCounterUiState, target: Int, unit: String, busy: Boolean, onEvent: (QuestDetailEvent) -> Unit) {
+    val colors = AwakenTheme.colors
+    val type = AwakenTheme.type
+    // Restarts at the suggested value after every logged or undone set.
+    var reps by rememberSaveable(counter.sets.size) { mutableIntStateOf(counter.suggestedReps) }
+    Text(
+        text = stringResource(R.string.quest_sets_title),
+        style = type.windowTitle,
+        color = colors.fog,
+        modifier = Modifier.padding(top = Spacing.xs),
+    )
+    Text(
+        text = stringResource(R.string.quest_sets_total, counter.total, target, unitLabel(unit, target)),
+        style = type.numericSmall,
+        color = if (counter.total >= target) colors.verified else colors.bone,
+    )
+    counter.sets.forEachIndexed { index, setReps ->
+        Text(stringResource(R.string.quest_set_line, index + 1, setReps), style = type.caption, color = colors.mist)
+    }
+    counter.restSeconds?.let { seconds ->
+        Text(stringResource(R.string.quest_sets_rest, DateUtils.formatElapsedTime(seconds)), style = type.label, color = colors.system)
+    }
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+        val fewer = stringResource(R.string.cd_reps_fewer)
+        val more = stringResource(R.string.cd_reps_more)
+        QuietButton(
+            text = "−",
+            onClick = { reps = (reps - 1).coerceAtLeast(1) },
+            modifier = Modifier.semantics { contentDescription = fewer },
+        )
+        Text(stringResource(R.string.quest_set_reps_value, reps), style = type.numericSmall, color = colors.bone)
+        QuietButton(
+            text = "+",
+            onClick = { reps = (reps + 1).coerceAtMost(SetCounter.MAX_REPS_PER_SET) },
+            modifier = Modifier.semantics { contentDescription = more },
+        )
+    }
+    PrimaryButton(
+        stringResource(R.string.action_log_set),
+        onClick = { onEvent(QuestDetailEvent.AddSet(reps)) },
+        enabled = !busy && !counter.full,
+        modifier = Modifier.fillMaxWidth(),
+    )
+    if (counter.sets.isNotEmpty()) {
+        QuietButton(stringResource(R.string.action_undo_set), onClick = { onEvent(QuestDetailEvent.UndoSet) }, enabled = !busy, modifier = Modifier.fillMaxWidth())
+    }
+    Text(
+        text = stringResource(if (counter.full) R.string.quest_sets_full else R.string.quest_sets_note),
+        style = type.caption,
+        color = colors.mist,
+    )
 }
 
 private val QuestType.kindRes: Int

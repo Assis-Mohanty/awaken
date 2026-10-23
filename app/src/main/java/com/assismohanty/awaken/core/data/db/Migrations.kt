@@ -91,5 +91,15 @@ val MIGRATION_4_5 = object : Migration(4, 5) {
     }
 }
 
+/**
+ * v5 → v6: the set counter. One text column on the quest holds the reps of each set ("10,8,6"); existing quests start with
+ * no sets, so nothing is backfilled and no existing row changes meaning.
+ */
+val MIGRATION_5_6 = object : Migration(5, 6) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE `quest_instance` ADD COLUMN `set_reps` TEXT NOT NULL DEFAULT ''")
+    }
+}
+
 /** Every migration, in order. The database builder and the migration test both use this list. */
-val ALL_MIGRATIONS: Array<Migration> = arrayOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
+val ALL_MIGRATIONS: Array<Migration> = arrayOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6)

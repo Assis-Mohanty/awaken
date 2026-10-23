@@ -108,6 +108,10 @@ interface QuestDao {
     @Query("SELECT * FROM quest_instance WHERE id = :id")
     fun observe(id: String): Flow<QuestInstanceEntity?>
 
+    /** Stores the set counter text for a still-open quest; 0 rows when the quest is done or gone. */
+    @Query("UPDATE quest_instance SET set_reps = :setReps WHERE id = :id AND status IN ('ACTIVE', 'STARTED')")
+    suspend fun updateSetReps(id: String, setReps: String): Int
+
     /** Keeps today's still-open instance of an edited habit in step with the habit. */
     @Query(
         "UPDATE quest_instance SET title = :title, description = :title, stat = :stat, difficulty = :difficulty, " +

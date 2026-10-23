@@ -91,6 +91,8 @@ data class QuestInstanceEntity(
     @ColumnInfo(name = "created_at") val createdAt: Instant,
     /** The Path slot this quest was scheduled from (ARCH §2); null for template, habit, penalty, trial and gate quests. */
     @ColumnInfo(name = "path_slot_id") val pathSlotId: String? = null,
+    /** Set counter progress (GD §6.5): reps per set as "10,8,6". Progress only, never a reward (ENGINE_DECISIONS #84). */
+    @ColumnInfo(name = "set_reps", defaultValue = "") val setReps: String = "",
 )
 
 /** One completion attempt; [id] is the completionId `questInstanceId#attemptN` (GD §9.3). Not a ledger table. */

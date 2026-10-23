@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Set counter on SELF rep quests (GD §6.5). It tracks progress only; Complete stays yours. -->
+    <string name="quest_sets_title">Sets</string>
+    <string name="quest_target_progress_line">%1$s / %2$s %3$s · %4$s</string>
+    <string name="quest_sets_total">%1$d / %2$d %3$s</string>
+    <string name="quest_set_line">Set %1$d: %2$d reps</string>
+    <string name="quest_sets_rest">Rest %1$s</string>
+    <string name="quest_sets_note">Counting is for you. Tap Complete when you are done.</string>
+    <string name="quest_sets_full">Set limit reached.</string>
+    <string name="quest_set_reps_value">%1$d reps</string>
+    <string name="action_log_set">Log set</string>
+    <string name="action_undo_set">Undo last set</string>
+    <string name="cd_reps_fewer">Fewer reps</string>
+    <string name="cd_reps_more">More reps</string>
+</resources>

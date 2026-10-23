@@ -17,6 +17,10 @@ object ExportUpgrade {
                 tables = current.tables + PATH_TABLES.filter { it !in current.tables }.associateWith { emptyList() },
             )
         }
+        // v5 → v6 (set counter): the new quest column has a default, so an older file simply leaves it out.
+        if (current.app == ExportDocument.APP_ID && current.schemaVersion == 5) {
+            current = current.copy(schemaVersion = 6)
+        }
         return current
     }
 }

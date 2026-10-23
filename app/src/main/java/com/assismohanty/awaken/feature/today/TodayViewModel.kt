@@ -17,6 +17,7 @@ import com.assismohanty.awaken.core.domain.TodayModel
 import com.assismohanty.awaken.core.domain.TrialSummary
 import com.assismohanty.awaken.core.domain.isOpen
 import com.assismohanty.awaken.core.domain.UserMessage
+import com.assismohanty.awaken.engine.SetCounter
 import com.assismohanty.awaken.engine.model.QuestStatus
 import com.assismohanty.awaken.engine.model.QuestType
 import com.assismohanty.awaken.engine.model.Rank
@@ -159,4 +160,7 @@ internal fun QuestInstanceEntity.toRowModel(badge: PathBadgeInfo? = null) = Ques
         QuestStatus.EXPIRED, QuestStatus.MISSED, QuestStatus.REROLLED, QuestStatus.REPORTED -> QuestRowState.CLOSED
     },
     pathBadge = badge?.let { PathBadgeModel(it.pathName, it.gateRank) },
+    progress = if (SetCounter.appliesTo(unit, verification) && status in OPEN_STATUSES) SetCounter.total(SetCounter.parse(setReps)).takeIf { it > 0 } else null,
 )
+
+private val OPEN_STATUSES = setOf(QuestStatus.ACTIVE, QuestStatus.STARTED)
