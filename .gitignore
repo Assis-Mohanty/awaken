@@ -23,3 +23,5 @@ keystore.properties
 # Android signing secrets
 *.jks
 keystore.properties
+
+/.idea/deploymentTargetSelector.xml
