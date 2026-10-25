@@ -22,6 +22,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.assismohanty.awaken.R
+import com.assismohanty.awaken.engine.campaign.CampaignAct
 import com.assismohanty.awaken.core.designsystem.components.EmptyState
 import com.assismohanty.awaken.core.designsystem.components.HunterHeader
 import com.assismohanty.awaken.core.designsystem.components.HunterHeaderModel
@@ -47,6 +48,7 @@ fun TodayRoute(
     onOpenTrial: () -> Unit,
     modifier: Modifier = Modifier,
     onOpenScreenTime: () -> Unit = {},
+    onOpenCampaign: () -> Unit = {},
     viewModel: TodayViewModel = hiltViewModel(),
     habitsViewModel: HabitsViewModel = hiltViewModel(),
     dayPlanViewModel: DayPlanViewModel = hiltViewModel(),
@@ -63,6 +65,7 @@ fun TodayRoute(
         onDayPlanEvent = dayPlanViewModel::onEvent,
         modifier = modifier,
         onOpenScreenTime = onOpenScreenTime,
+        onOpenCampaign = onOpenCampaign,
     )
     HabitSheets(state = habits, onEvent = habitsViewModel::onEvent)
     DayPlanSheet(state = dayPlan, onEvent = dayPlanViewModel::onEvent)
@@ -82,6 +85,7 @@ fun TodayScreen(
     onDayPlanEvent: (DayPlanEvent) -> Unit,
     modifier: Modifier = Modifier,
     onOpenScreenTime: () -> Unit = {},
+    onOpenCampaign: () -> Unit = {},
 ) {
     val colors = AwakenTheme.colors
     val type = AwakenTheme.type
@@ -187,6 +191,8 @@ fun TodayScreen(
                 }
             }
 
+            CampaignCardWindow(state, onOpenCampaign)
+
             state.discipline?.let { card ->
                 DisciplineCardWindow(card, onOpenScreenTime, Modifier.staggeredEntrance(3))
             }
@@ -284,3 +290,35 @@ private fun DisciplineCardWindow(card: DisciplineCard, onOpenScreenTime: () -> U
         )
     }
 }
+
+
+/** The campaign on Today (GD §6.8): its day and act while one runs, otherwise a quiet offer to begin one. */
+@Composable
+private fun CampaignCardWindow(state: TodayUiState, onOpenCampaign: () -> Unit) {
+    val colors = AwakenTheme.colors
+    val card = state.campaign
+    if (card == null && !state.campaignOffer) return
+    SystemWindow(
+        title = stringResource(R.string.campaign_window_progress),
+        accent = if (card != null) colors.crit else colors.system,
+        reveal = false,
+        headerTrailing = { QuietButton(text = stringResource(R.string.action_open_campaign), onClick = onOpenCampaign) },
+    ) {
+        Text(
+            text = if (card != null) {
+                stringResource(R.string.today_campaign_day, card.dayIndex, stringResource(card.act.todayNameRes))
+            } else {
+                stringResource(R.string.today_campaign_begin)
+            },
+            style = if (card != null) AwakenTheme.type.numeric else AwakenTheme.type.body,
+            color = if (card != null) colors.bone else colors.mist,
+        )
+    }
+}
+
+private val CampaignAct.todayNameRes: Int
+    get() = when (this) {
+        CampaignAct.FOUNDATION -> R.string.campaign_act_foundation
+        CampaignAct.BUILD -> R.string.campaign_act_build
+        CampaignAct.ASCEND -> R.string.campaign_act_ascend
+    }

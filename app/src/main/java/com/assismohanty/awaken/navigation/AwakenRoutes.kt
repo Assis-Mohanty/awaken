@@ -44,3 +44,7 @@ data object HealthRoute
 /** Screen time + Screen Discipline (GD §6.7), opened from Settings and the Today card. */
 @Serializable
 data object ScreenTimeRoute
+
+/** The 45-day Campaign (GD §6.8), opened from the Today card. */
+@Serializable
+data object CampaignRoute

@@ -9,7 +9,11 @@ import com.assismohanty.awaken.core.designsystem.components.QuestRowModel
 import com.assismohanty.awaken.core.designsystem.components.QuestRowState
 import com.assismohanty.awaken.core.domain.CompletionCenter
 import com.assismohanty.awaken.core.domain.DayRefresher
+import com.assismohanty.awaken.core.domain.ObserveCampaignUseCase
 import com.assismohanty.awaken.core.domain.ObserveTodayUseCase
+import com.assismohanty.awaken.engine.campaign.CampaignAct
+import com.assismohanty.awaken.engine.campaign.CampaignStatus
+import kotlinx.coroutines.flow.combine
 import com.assismohanty.awaken.core.domain.PathBadgeInfo
 import com.assismohanty.awaken.core.domain.StartTrialResult
 import com.assismohanty.awaken.core.domain.StartTrialUseCase
@@ -59,7 +63,12 @@ data class TodayUiState(
     val penaltyOpen: Boolean = false,
     /** Today's Screen Discipline quest (GD §6.7), shown as its own card, not as a quest row. */
     val discipline: DisciplineCard? = null,
+    /** The running campaign's day and act, or null with [campaignOffer] when none runs (GD §6.8). */
+    val campaign: CampaignCard? = null,
+    val campaignOffer: Boolean = false,
 )
+
+data class CampaignCard(val dayIndex: Int, val act: CampaignAct)
 
 /** [held] false once a limit was crossed; [xpAtStake] is the no-crit price for today's streak. */
 data class DisciplineCard(val held: Boolean, val xpAtStake: Int)
@@ -75,10 +84,20 @@ class TodayViewModel @Inject constructor(
     dayRefresher: DayRefresher,
     private val completionCenter: CompletionCenter,
     private val startTrial: StartTrialUseCase,
+    observeCampaign: ObserveCampaignUseCase,
 ) : ViewModel() {
 
-    val uiState: StateFlow<TodayUiState> = observeToday(dayChanges = dayRefresher.ticks)
-        .map { model -> model?.toUiState() ?: TodayUiState() }
+    val uiState: StateFlow<TodayUiState> = combine(
+        observeToday(dayChanges = dayRefresher.ticks),
+        observeCampaign(dayRefresher.ticks),
+    ) { model, campaign ->
+        val base = model?.toUiState() ?: return@combine TodayUiState()
+        val running = campaign?.takeIf { it.campaign.status == CampaignStatus.ACTIVE }
+        base.copy(
+            campaign = running?.dayIndex?.let { CampaignCard(it, running.act) },
+            campaignOffer = running == null,
+        )
+    }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), TodayUiState())
 
     fun onEvent(event: TodayEvent) {

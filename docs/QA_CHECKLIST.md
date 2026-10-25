@@ -46,6 +46,15 @@ Run log: `Device: ____  Android: ____  Build: ____  Date: ____  Tester: ____`
 - [ ] Turn usage access off mid-day: no crash; the quest expires unpaid; the screen asks for access again.
 - [ ] Debug build: Debug → add simulated Instagram minutes reproduces warning and forfeit on an emulator.
 
+## 45-day Campaign
+- [ ] Today shows "Begin a 45-day campaign"; Campaign → Begin the scan → 10 questions (Back works) → forge animation → result with archetype, radar and "weakest · we start here".
+- [ ] With 6+ active habits the result says it needs 3 free slots and offers no oath.
+- [ ] Hold the seal: it fills over ~1.5 s, releasing early resets it; when sealed, the progress view shows Day 1 / 45 and today's campaign habits appear on Today.
+- [ ] Try to edit a campaign habit: refused with the campaign message; archiving works.
+- [ ] Debug time travel +15 days: Act II (Build); campaign habit targets rose.
+- [ ] Clear days and travel past day 45: with ≥ 32 cleared → REFORGED, +1,000 gold, title Reforged equippable; otherwise CAMPAIGN ENDED; habits archived either way.
+- [ ] Abandon: confirm dialog; habits archived; gold/XP unchanged.
+
 ## Backgrounding a Gate
 - [ ] Start a Focus Gate, press Home for 30 s, return: gate continues, background time shown.
 - [ ] Start a gate, stay in the background over 90 s total: on return the gate has collapsed with no XP and a "Gate collapsed" record.

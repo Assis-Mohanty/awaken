@@ -43,7 +43,7 @@ class QuestRewardTest {
             graph.seedHunter()
             graph.fixtureQuest("Iron Arms")
         }
-        val todayViewModel = TodayViewModel(graph.observeToday, graph.dayRefresher, graph.completionCenter, graph.startTrial)
+        val todayViewModel = TodayViewModel(graph.observeToday, graph.dayRefresher, graph.completionCenter, graph.startTrial, graph.observeCampaign)
         val hostViewModel = RewardHostViewModel(graph.completionCenter, graph.notices, graph.narrative, graph.notificationAccess, graph.uiPrefs, graph.submitFeedback)
 
         composeRule.setContent {

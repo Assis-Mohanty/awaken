@@ -54,6 +54,7 @@ import com.assismohanty.awaken.feature.paths.PathsRoute as PathsEntry
 import com.assismohanty.awaken.feature.quest.QuestDetailRoute as QuestDetailEntry
 import com.assismohanty.awaken.feature.quest.RewardHost
 import com.assismohanty.awaken.feature.health.HealthRoute as HealthEntry
+import com.assismohanty.awaken.feature.campaign.CampaignRoute as CampaignEntry
 import com.assismohanty.awaken.feature.screentime.ScreenTimeRoute as ScreenTimeEntry
 import com.assismohanty.awaken.feature.settings.SettingsRoute as SettingsEntry
 import com.assismohanty.awaken.feature.status.StatusRoute as StatusEntry
@@ -157,6 +158,7 @@ private fun MainScaffold(
                         TodayEntry(
                             onOpenQuest = { navController.navigate(QuestDetailRoute(it)) },
                             onOpenScreenTime = { navController.navigate(ScreenTimeRoute) },
+                            onOpenCampaign = { navController.navigate(CampaignRoute) },
                             onOpenTrial = { navController.navigate(TrialRoute) },
                         )
                         if (DebugEntry.ENABLED) {
@@ -199,6 +201,7 @@ private fun MainScaffold(
                 }
                 composable<HealthRoute> { HealthEntry(onBack = { navController.popBackStack() }) }
                 composable<ScreenTimeRoute> { ScreenTimeEntry(onBack = { navController.popBackStack() }) }
+                composable<CampaignRoute> { CampaignEntry(onBack = { navController.popBackStack() }) }
                 composable<VaultRoute> { VaultEntry() }
                 if (DebugEntry.ENABLED) {
                     composable<DebugRoute> { DebugEntry.Screen(onBack = { navController.popBackStack() }) }

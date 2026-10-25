@@ -47,6 +47,7 @@ import com.assismohanty.awaken.core.domain.DayRolloverUseCase
 import com.assismohanty.awaken.core.domain.AbandonCampaignUseCase
 import com.assismohanty.awaken.core.domain.AdvanceCampaignUseCase
 import com.assismohanty.awaken.core.domain.DisciplineQuestPlanner
+import com.assismohanty.awaken.core.domain.ObserveCampaignUseCase
 import com.assismohanty.awaken.core.domain.PreviewCampaignUseCase
 import com.assismohanty.awaken.core.domain.SaveHabitUseCase
 import com.assismohanty.awaken.core.domain.StartCampaignUseCase
@@ -184,6 +185,7 @@ class TestGraph(
     val previewCampaign = PreviewCampaignUseCase(db.hunterDao(), db.habitDao(), db.campaignDao(), reader, templates, clock)
     val startCampaign = StartCampaignUseCase(db.hunterDao(), db.habitDao(), db.campaignDao(), previewCampaign, generateDirective, transactions, clock)
     val abandonCampaign = AbandonCampaignUseCase(db.campaignDao(), db.habitDao(), transactions, clock)
+    val observeCampaign = ObserveCampaignUseCase(db.hunterDao(), db.campaignDao(), db.dayRecordDao(), clock)
     val saveHabit = SaveHabitUseCase(db.hunterDao(), db.habitDao(), db.questDao(), generateDirective, transactions, clock)
     val seedAppRules = SeedAppRulesUseCase(db.hunterDao(), db.screenTimeDao(), usage, clock)
     val setScreenTimeEnabled = SetScreenTimeEnabledUseCase(db.hunterDao(), db.questDao(), seedAppRules, screenTimeReader, transactions, clock)

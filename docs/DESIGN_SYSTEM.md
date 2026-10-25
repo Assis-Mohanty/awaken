@@ -221,6 +221,16 @@ Opened from Settings → Training → "Screen time" and from the Today card. No 
 - **LAST 7 DAYS:** bars of total time (`edge`) with the distracting part (`ember`); each bar has a content description.
 - **Today card:** a SCREEN DISCIPLINE window under the directive (`verified` accent while holding, `ember` once forfeited) with "Limits holding · +N XP at day end" or "Limit crossed · stake forfeited" and a [Screen time] link. The DISCIPLINE quest is never a quest row.
 
+### 4.10 The 45-day Campaign (GD §6.8)
+Opened from the Today card ("CAMPAIGN · Day 12 / 45 · Build" while one runs, otherwise a quiet "Begin a 45-day campaign" offer). One route, steps inside it:
+- **Intro:** what it is, the three acts (Roman numerals in `system`), the rule "Clear 32 of the 45 days… Missed days never reset anything" in `crit`, [Begin the scan].
+- **Scan:** one question per window, accent = the question's stat colour, "3 / 10" in the header, four full-width answers (the chosen one filled), [Back].
+- **Forge:** "SYSTEM · FORGE", a `displayXL` percentage, a thin bar and three checks; ~2.4 s, instant under reduce-motion; moves on only once the plan is ready.
+- **Result:** "CHALLENGER DETECTED" in the weakest stat's colour, the archetype as `display`, one line, the scan on the existing `RadarChart`, "Strength · weakest. We start here."; then YOUR CAMPAIGN with dates and the planned habits (stat chip, title, target, days). A problem (no room, already running) replaces [Take the oath] with the reason in `ember`.
+- **Oath:** "THE OATH" in `crit`, the commitment with the hunter's name, "Day 45: <date>", and a ring the hunter holds for 1.5 s to seal (haptic confirm); TalkBack's tap action seals too. Caption: nothing is signed or saved but the start date.
+- **Progress:** "Day N / 45" as `displayXL`, act name, cleared vs needed, an on-course / out-of-reach line, and a 45-cell calendar (9 per row): cleared = `system`, today = `crit` outline, missed = `fog` outline, upcoming = `edge`. CAMPAIGN HABITS lists the habits and offers a quiet [Abandon campaign] behind a confirm dialog. Finished: REFORGED (`crit`) / CAMPAIGN ENDED / ABANDONED with [Start a new campaign].
+- Campaign habits appear as ordinary habit rows on Today; their editor refuses edits with "This habit belongs to your campaign…".
+
 ## 5. Copy voice
 - System lines: terse, second person, present tense. "Quest cleared." "The System has recalibrated your STR trials." "You missed yesterday. One quest stands between you and redemption."
 - Human UI text: plain verbs, sentence case. Button labels name the action: "Complete quest", "Start gate", "Buy shield". A button that says "Start gate" leads to a notification "Gate in progress".
