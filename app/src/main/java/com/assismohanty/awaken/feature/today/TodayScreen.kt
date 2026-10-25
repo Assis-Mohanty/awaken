@@ -46,6 +46,7 @@ fun TodayRoute(
     onOpenQuest: (questInstanceId: String) -> Unit,
     onOpenTrial: () -> Unit,
     modifier: Modifier = Modifier,
+    onOpenScreenTime: () -> Unit = {},
     viewModel: TodayViewModel = hiltViewModel(),
     habitsViewModel: HabitsViewModel = hiltViewModel(),
     dayPlanViewModel: DayPlanViewModel = hiltViewModel(),
@@ -61,6 +62,7 @@ fun TodayRoute(
         onHabitsEvent = habitsViewModel::onEvent,
         onDayPlanEvent = dayPlanViewModel::onEvent,
         modifier = modifier,
+        onOpenScreenTime = onOpenScreenTime,
     )
     HabitSheets(state = habits, onEvent = habitsViewModel::onEvent)
     DayPlanSheet(state = dayPlan, onEvent = dayPlanViewModel::onEvent)
@@ -79,6 +81,7 @@ fun TodayScreen(
     onHabitsEvent: (HabitsEvent) -> Unit,
     onDayPlanEvent: (DayPlanEvent) -> Unit,
     modifier: Modifier = Modifier,
+    onOpenScreenTime: () -> Unit = {},
 ) {
     val colors = AwakenTheme.colors
     val type = AwakenTheme.type
@@ -184,8 +187,12 @@ fun TodayScreen(
                 }
             }
 
+            state.discipline?.let { card ->
+                DisciplineCardWindow(card, onOpenScreenTime, Modifier.staggeredEntrance(3))
+            }
+
             state.systemLine?.let { line ->
-                Text(text = line, style = type.body, color = colors.mist, modifier = Modifier.staggeredEntrance(3).padding(horizontal = Spacing.xxs))
+                Text(text = line, style = type.body, color = colors.mist, modifier = Modifier.staggeredEntrance(4).padding(horizontal = Spacing.xxs))
             }
         }
     }
@@ -250,6 +257,30 @@ private fun TodayScreenClearedPreview() {
             onOpenTrial = {},
             onHabitsEvent = {},
             onDayPlanEvent = {},
+        )
+    }
+}
+
+
+/** Screen Discipline on Today (GD §6.7): status and stake; the details live on the Screen Time screen. */
+@Composable
+private fun DisciplineCardWindow(card: DisciplineCard, onOpenScreenTime: () -> Unit, modifier: Modifier = Modifier) {
+    val colors = AwakenTheme.colors
+    SystemWindow(
+        title = stringResource(R.string.quest_kind_discipline),
+        accent = if (card.held) colors.verified else colors.ember,
+        modifier = modifier,
+        reveal = false,
+        headerTrailing = { QuietButton(text = stringResource(R.string.action_open_screen_time), onClick = onOpenScreenTime) },
+    ) {
+        Text(
+            text = if (card.held) {
+                stringResource(R.string.today_discipline_on_track, card.xpAtStake)
+            } else {
+                stringResource(R.string.today_discipline_forfeited)
+            },
+            style = AwakenTheme.type.body,
+            color = if (card.held) colors.bone else colors.mist,
         )
     }
 }

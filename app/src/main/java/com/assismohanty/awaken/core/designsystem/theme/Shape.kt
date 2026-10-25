@@ -53,6 +53,8 @@ data class AwakenDimens(
     /** Bottom-bar selection mark: a short bar above the selected tab's icon (DS §3). */
     val navIndicatorWidth: Dp = 20.dp,
     val navIndicatorHeight: Dp = 2.dp,
+    /** Screen Time 7-day bars (DS §4.9). */
+    val trendBarHeight: Dp = 96.dp,
 )
 
 val LocalAwakenShapes = staticCompositionLocalOf { AwakenShapes() }

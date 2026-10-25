@@ -40,3 +40,7 @@ data object SettingsRoute
 /** Health Connect overview (steps, workouts, sleep, trends), opened from Settings. */
 @Serializable
 data object HealthRoute
+
+/** Screen time + Screen Discipline (GD §6.7), opened from Settings and the Today card. */
+@Serializable
+data object ScreenTimeRoute

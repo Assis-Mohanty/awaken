@@ -196,4 +196,40 @@ class ScreenTimeUseCasesTest {
         }.toDayRecord(day2)
         assertThat(record.itemsCompleted).isEqualTo(1)
     }
+
+    @Test
+    fun theOverviewGroupsTodayByCategoryWithoutChangingAnything() = runTest {
+        enabledThenNextDay()
+        graph.usage.minutes[INSTAGRAM] = 31
+        graph.usage.minutes[DOCS] = 50
+        graph.setAppRule(INSTAGRAM, AppCategory.DISTRACTING, 60)
+
+        val overview = checkNotNull(graph.loadScreenTime())
+
+        assertThat(overview.hasAccess).isTrue()
+        assertThat(overview.totalMinutes).isEqualTo(81)
+        assertThat(overview.minutesByCategory[AppCategory.DISTRACTING]).isEqualTo(31)
+        assertThat(overview.minutesByCategory[AppCategory.PRODUCTIVE]).isEqualTo(50)
+        assertThat(overview.status).isEqualTo(DisciplineStatus.FORFEITED)
+        val insta = overview.apps.first { it.packageName == INSTAGRAM }
+        assertThat(insta.limitMinutes).isEqualTo(30)
+        assertThat(insta.hasPendingChange).isTrue()
+        assertThat(insta.nextLimitMinutes).isEqualTo(60)
+        assertThat(overview.trend).hasSize(7)
+        // Read-only: the forfeit itself only happens in the sync.
+        assertThat(discipline(day2)?.status).isEqualTo(QuestStatus.ACTIVE)
+    }
+
+    @Test
+    fun theOverviewWithoutAccessShowsNoApps() = runTest {
+        graph.seedHunter()
+        graph.rollover()
+        graph.usage.access = false
+
+        val overview = checkNotNull(graph.loadScreenTime())
+
+        assertThat(overview.hasAccess).isFalse()
+        assertThat(overview.apps).isEmpty()
+        assertThat(overview.status).isEqualTo(DisciplineStatus.OFF)
+    }
 }

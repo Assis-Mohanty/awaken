@@ -20,6 +20,8 @@ import com.assismohanty.awaken.core.domain.UserMessage
 import com.assismohanty.awaken.engine.SetCounter
 import com.assismohanty.awaken.engine.model.QuestStatus
 import com.assismohanty.awaken.engine.model.QuestType
+import com.assismohanty.awaken.engine.model.VerificationSource
+import com.assismohanty.awaken.engine.XpCalculator
 import com.assismohanty.awaken.engine.model.Rank
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -55,7 +57,12 @@ data class TodayUiState(
     val trialStages: List<QuestRowModel> = emptyList(),
     /** A penalty quest is still open: Today is tinted ember (GD §7.3, visual only). */
     val penaltyOpen: Boolean = false,
+    /** Today's Screen Discipline quest (GD §6.7), shown as its own card, not as a quest row. */
+    val discipline: DisciplineCard? = null,
 )
+
+/** [held] false once a limit was crossed; [xpAtStake] is the no-crit price for today's streak. */
+data class DisciplineCard(val held: Boolean, val xpAtStake: Int)
 
 sealed interface TodayEvent {
     data class Complete(val questInstanceId: String) : TodayEvent
@@ -142,6 +149,12 @@ internal fun TodayModel.toUiState(): TodayUiState {
         trial = trial,
         trialStages = quests.filter { it.type == QuestType.TRIAL }.map { it.toRowModel() },
         penaltyOpen = quests.any { it.type == QuestType.PENALTY && it.isOpen },
+        discipline = quests.firstOrNull { it.type == QuestType.DISCIPLINE }?.let { quest ->
+            DisciplineCard(
+                held = quest.status != QuestStatus.EXPIRED,
+                xpAtStake = XpCalculator.questXp(quest.difficulty, hunter.streak, VerificationSource.USAGE, crit = false),
+            )
+        },
     )
 }
 

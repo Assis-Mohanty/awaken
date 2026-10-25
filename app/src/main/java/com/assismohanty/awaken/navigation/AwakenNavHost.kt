@@ -54,6 +54,7 @@ import com.assismohanty.awaken.feature.paths.PathsRoute as PathsEntry
 import com.assismohanty.awaken.feature.quest.QuestDetailRoute as QuestDetailEntry
 import com.assismohanty.awaken.feature.quest.RewardHost
 import com.assismohanty.awaken.feature.health.HealthRoute as HealthEntry
+import com.assismohanty.awaken.feature.screentime.ScreenTimeRoute as ScreenTimeEntry
 import com.assismohanty.awaken.feature.settings.SettingsRoute as SettingsEntry
 import com.assismohanty.awaken.feature.status.StatusRoute as StatusEntry
 import com.assismohanty.awaken.feature.today.TodayRoute as TodayEntry
@@ -155,6 +156,7 @@ private fun MainScaffold(
                     Box(modifier = Modifier.fillMaxSize()) {
                         TodayEntry(
                             onOpenQuest = { navController.navigate(QuestDetailRoute(it)) },
+                            onOpenScreenTime = { navController.navigate(ScreenTimeRoute) },
                             onOpenTrial = { navController.navigate(TrialRoute) },
                         )
                         if (DebugEntry.ENABLED) {
@@ -189,9 +191,14 @@ private fun MainScaffold(
                 composable<GatesRoute> { GatesEntry() }
                 composable<StatusRoute> { StatusEntry(onOpenSettings = { navController.navigate(SettingsRoute) }) }
                 composable<SettingsRoute> {
-                    SettingsEntry(onBack = { navController.popBackStack() }, onOpenHealth = { navController.navigate(HealthRoute) })
+                    SettingsEntry(
+                        onBack = { navController.popBackStack() },
+                        onOpenHealth = { navController.navigate(HealthRoute) },
+                        onOpenScreenTime = { navController.navigate(ScreenTimeRoute) },
+                    )
                 }
                 composable<HealthRoute> { HealthEntry(onBack = { navController.popBackStack() }) }
+                composable<ScreenTimeRoute> { ScreenTimeEntry(onBack = { navController.popBackStack() }) }
                 composable<VaultRoute> { VaultEntry() }
                 if (DebugEntry.ENABLED) {
                     composable<DebugRoute> { DebugEntry.Screen(onBack = { navController.popBackStack() }) }

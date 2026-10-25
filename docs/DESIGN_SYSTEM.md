@@ -212,6 +212,15 @@ Profile (name, focus stats), Day starts at, Reminder times, Rest day (pick next)
 - **Weekly recalibration line** on the Path window: "The System has raised the bar." (UP) / "Holding steady." (HOLD) / "The System has eased your path." (DOWN).
 - **Report flow:** bottom sheet with reasons (Unsafe · Not relevant · Impossible for me · Offensive · Other) → "Reported. This quest has been removed." The slot leaves today's Directive immediately.
 
+### 4.9 Screen time (GD §6.7)
+Opened from Settings → Training → "Screen time" and from the Today card. No tab.
+- **No usage access:** a USAGE ACCESS window explains what is read (app times, on this phone, never sent, nothing blocked), then [Allow usage access] opens `Settings.ACTION_USAGE_ACCESS_SETTINGS`. Returning to the screen re-reads.
+- **TODAY:** total time as `displayXL`, a 6dp segmented bar (Distracting `ember` · Productive `verified` · Neutral `mist`; meaning, not decoration) and a legend with minutes per category.
+- **SCREEN DISCIPLINE:** `+N XP` (`crit`) in the header; one status line (off / starts tomorrow / no limits / every limit holds / forfeited, "Your earned XP is untouched"); up to 4 limit bars (bar turns `ember` from 84 % of the limit); [Turn on] (with "Starts tomorrow" rules caption) or a quiet [Turn off].
+- **APPS:** filter chips (All + 3 categories), rows with launcher icon, label, category · limit, minutes and a category pill; a `crit` caption "From tomorrow: …" when an edit is pending. Unused apps fold behind "Show N more apps". Tap → rule sheet: category chips, −5 / +5 min stepper (5–240), [Track without a limit], the caption "Applies from tomorrow, so today's limits stay fair.", [Save].
+- **LAST 7 DAYS:** bars of total time (`edge`) with the distracting part (`ember`); each bar has a content description.
+- **Today card:** a SCREEN DISCIPLINE window under the directive (`verified` accent while holding, `ember` once forfeited) with "Limits holding · +N XP at day end" or "Limit crossed · stake forfeited" and a [Screen time] link. The DISCIPLINE quest is never a quest row.
+
 ## 5. Copy voice
 - System lines: terse, second person, present tense. "Quest cleared." "The System has recalibrated your STR trials." "You missed yesterday. One quest stands between you and redemption."
 - Human UI text: plain verbs, sentence case. Button labels name the action: "Complete quest", "Start gate", "Buy shield". A button that says "Start gate" leads to a notification "Gate in progress".

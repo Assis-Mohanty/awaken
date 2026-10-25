@@ -5,4 +5,69 @@
     <string name="discipline_quest_title">Screen Discipline</string>
     <string name="discipline_quest_description">Keep every distracting app under its daily limit until the day ends.</string>
     <string name="verify_usage">Verified by your phone\'s usage data. Pays at the end of the day if every limit held.</string>
+
+    <string name="screentime_title">Screen time</string>
+    <string name="screentime_loading">Reading today\'s usage…</string>
+    <string name="screentime_failed">The System couldn\'t read your usage. Try again in a moment.</string>
+    <string name="screentime_window_access">USAGE ACCESS</string>
+    <string name="screentime_access_body">To show how long you spend in each app, AWAKEN needs usage access. It reads app times on this phone only. Nothing is sent anywhere, and no app is ever blocked.</string>
+    <string name="screentime_access_steps">On the next screen, find AWAKEN and turn on \"Permit usage access\".</string>
+    <string name="screentime_access_action">Allow usage access</string>
+    <string name="screentime_window_today">TODAY</string>
+    <string name="screentime_window_apps">APPS</string>
+    <string name="screentime_window_trend">LAST 7 DAYS</string>
+    <string name="screentime_trend_note">Grey is all screen time, red the distracting part.</string>
+    <string name="screentime_trend_day">%1$s: %2$s total, %3$s distracting</string>
+    <string name="screentime_privacy_note">Usage stays on this phone. It never leaves the device and never changes XP by itself.</string>
+
+    <string name="screentime_category_distracting">Distracting</string>
+    <string name="screentime_category_productive">Productive</string>
+    <string name="screentime_category_neutral">Neutral</string>
+    <string name="screentime_short_distracting">Distracting</string>
+    <string name="screentime_short_productive">Productive</string>
+    <string name="screentime_short_neutral">Neutral</string>
+    <string name="screentime_filter_all">All</string>
+
+    <string name="screentime_xp_at_stake">+%1$d XP</string>
+    <string name="screentime_discipline_off">Set daily limits on distracting apps. Hold them all day and the System pays +%1$d XP. Cross one and you forfeit it. Nothing you\'ve earned is ever taken.</string>
+    <string name="screentime_discipline_starts">Screen Discipline starts tomorrow. Today\'s usage is tracked but nothing is at stake yet.</string>
+    <string name="screentime_discipline_no_limits">No distracting app has a limit, so nothing is at stake. Set one below.</string>
+    <string name="screentime_discipline_on_track">Every limit holds. Keep it until the day ends to claim +%1$d XP.</string>
+    <string name="screentime_discipline_forfeited">A limit was crossed. Today\'s stake is forfeited. Your earned XP is untouched. Tomorrow is a new day.</string>
+    <string name="screentime_discipline_turn_on">Turn on Screen Discipline</string>
+    <string name="screentime_discipline_turn_off">Turn off Screen Discipline</string>
+    <string name="screentime_discipline_rules">Starts tomorrow. Popular social and video apps start as distracting with a 30 min limit. Change any app below.</string>
+    <string name="screentime_limit_progress">%1$s: %2$d of %3$d minutes used</string>
+    <string name="screentime_minutes_of_limit">%1$d / %2$d min</string>
+    <string name="screentime_limit_short">%1$d min limit</string>
+    <string name="screentime_pending">From tomorrow: %1$s</string>
+    <string name="screentime_pending_limit">From tomorrow: %1$s, %2$d min</string>
+    <string name="screentime_apps_note">Tap an app to change its category or limit. Changes apply from tomorrow.</string>
+    <string name="screentime_apps_empty">No app time recorded today.</string>
+    <string name="screentime_hide_unused">Hide unused apps</string>
+    <plurals name="screentime_show_unused">
+        <item quantity="one">Show %1$d more app</item>
+        <item quantity="other">Show %1$d more apps</item>
+    </plurals>
+    <string name="screentime_edit_app">Edit %1$s</string>
+
+    <string name="screentime_editor_category">Category</string>
+    <string name="screentime_editor_limit">Daily limit</string>
+    <string name="screentime_limit_minus">−5 min</string>
+    <string name="screentime_limit_plus">+5 min</string>
+    <string name="screentime_no_limit">No limit</string>
+    <string name="screentime_set_limit">Set a limit</string>
+    <string name="screentime_remove_limit">Track without a limit</string>
+    <string name="screentime_editor_tomorrow">Applies from tomorrow, so today\'s limits stay fair.</string>
+
+    <string name="screentime_duration_minutes">%1$s min</string>
+    <string name="screentime_duration_hours">%1$s h</string>
+    <string name="screentime_duration_hours_minutes">%1$s h %2$s min</string>
+
+    <!-- Today card and Settings -->
+    <string name="today_discipline_on_track">Limits holding · +%1$d XP at day end</string>
+    <string name="today_discipline_forfeited">Limit crossed · stake forfeited</string>
+    <string name="action_open_screen_time">Screen time</string>
+    <string name="settings_screen_time_title">Screen time</string>
+    <string name="settings_screen_time_note">App usage, categories and Screen Discipline limits.</string>
 </resources>

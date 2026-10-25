@@ -47,6 +47,7 @@ import com.assismohanty.awaken.core.domain.DayRolloverUseCase
 import com.assismohanty.awaken.core.domain.DisciplineQuestPlanner
 import com.assismohanty.awaken.core.domain.DisciplineSyncUseCase
 import com.assismohanty.awaken.core.domain.DisciplineText
+import com.assismohanty.awaken.core.domain.LoadScreenTimeOverviewUseCase
 import com.assismohanty.awaken.core.domain.ScreenTimeReader
 import com.assismohanty.awaken.core.domain.SeedAppRulesUseCase
 import com.assismohanty.awaken.core.domain.SetAppRuleUseCase
@@ -176,6 +177,7 @@ class TestGraph(
     val setScreenTimeEnabled = SetScreenTimeEnabledUseCase(db.hunterDao(), db.questDao(), seedAppRules, screenTimeReader, transactions, clock)
     val setAppRule = SetAppRuleUseCase(db.hunterDao(), db.screenTimeDao(), clock)
     val disciplineSync = DisciplineSyncUseCase(db.hunterDao(), db.questDao(), screenTimeReader, reader, usage, transactions, clock)
+    val loadScreenTime = LoadScreenTimeOverviewUseCase(db.hunterDao(), screenTimeReader, seedAppRules, reader, usage, clock)
     val startTrial = StartTrialUseCase(db.hunterDao(), db.questDao(), db.trialDao(), ledger, reader, templates, transactions, clock)
 
     /** A fresh DataStore file per graph, so notices never leak between tests. */

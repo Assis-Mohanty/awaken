@@ -71,6 +71,7 @@ fun SettingsRoute(
     onBack: () -> Unit,
     onOpenHealth: () -> Unit,
     modifier: Modifier = Modifier,
+    onOpenScreenTime: () -> Unit = {},
     viewModel: SettingsViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -100,6 +101,7 @@ fun SettingsRoute(
         onImport = { importLauncher.launch(arrayOf("*/*")) },
         onOpenPrivacy = { context.startActivity(Intent(context, PrivacyPolicyActivity::class.java)) },
         onOpenHealth = onOpenHealth,
+        onOpenScreenTime = onOpenScreenTime,
         onOpenNotificationSettings = {
             context.startActivity(
                 Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName),
@@ -121,6 +123,7 @@ fun SettingsScreen(
     onOpenPrivacy: () -> Unit = {},
     onOpenNotificationSettings: () -> Unit = {},
     onOpenHealth: () -> Unit = {},
+    onOpenScreenTime: () -> Unit = {},
 ) {
     GateBackground(rank = Rank.E, modifier = modifier) {
         Column(
@@ -150,7 +153,7 @@ fun SettingsScreen(
                 if (!state.loading) {
                     ProfileWindow(state, onEvent)
                     DayWindow(state, onEvent, onOpenNotificationSettings)
-                    TrainingWindow(state, onEvent, onOpenHealth)
+                    TrainingWindow(state, onEvent, onOpenHealth, onOpenScreenTime)
                     AiPathsWindow(state, onEvent)
                     ComfortWindow(state, onEvent)
                     DataWindow(state, onExport, onImport, onOpenPrivacy)
@@ -264,11 +267,14 @@ private fun DayWindow(state: SettingsUiState, onEvent: (SettingsEvent) -> Unit, 
 }
 
 @Composable
-private fun TrainingWindow(state: SettingsUiState, onEvent: (SettingsEvent) -> Unit, onOpenHealth: () -> Unit) {
+private fun TrainingWindow(state: SettingsUiState, onEvent: (SettingsEvent) -> Unit, onOpenHealth: () -> Unit, onOpenScreenTime: () -> Unit) {
     val colors = AwakenTheme.colors
     val type = AwakenTheme.type
     SystemWindow(title = stringResource(R.string.settings_window_training), accent = accent(), reveal = false) {
         HealthRow(state, onEvent, onOpenHealth)
+        Text(stringResource(R.string.settings_screen_time_title), style = type.label, color = colors.bone)
+        Text(stringResource(R.string.settings_screen_time_note), style = type.caption, color = colors.mist)
+        SecondaryButton(text = stringResource(R.string.action_open_screen_time), onClick = onOpenScreenTime, modifier = Modifier.fillMaxWidth())
         Text(stringResource(R.string.settings_equipment_title), style = type.label, color = colors.bone)
         FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.xs), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
             state.equipmentOptions.forEach { id ->
