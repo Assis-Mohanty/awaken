@@ -20,6 +20,8 @@
     <string name="debug_grant_gold">+2,000 gold</string>
     <string name="debug_grant_fragments">+10 fragments</string>
     <string name="debug_simulate_steps_on">Simulate 9,000 steps</string>
+    <string name="debug_add_usage">+10 min Instagram</string>
+    <string name="debug_clear_usage">Clear simulated usage</string>
     <string name="debug_simulate_steps_off">Stop simulating steps</string>
     <string name="debug_health_sync">Sync Health now</string>
     <string name="debug_grant_level">+1 level</string>

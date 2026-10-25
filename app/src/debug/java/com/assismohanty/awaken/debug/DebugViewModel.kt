@@ -23,6 +23,7 @@ import java.time.DayOfWeek
 import com.assismohanty.awaken.core.domain.DayRefresher
 import com.assismohanty.awaken.core.domain.EnableHealthUseCase
 import com.assismohanty.awaken.core.domain.HealthSyncUseCase
+import com.assismohanty.awaken.core.work.ScreenTimeChecker
 import com.assismohanty.awaken.core.domain.RunRolloverUseCase
 import com.assismohanty.awaken.core.domain.HunterState
 import com.assismohanty.awaken.core.domain.ObserveHunterStateUseCase
@@ -78,6 +79,8 @@ sealed interface DebugEvent {
     data object GrantFragments : DebugEvent
     data class SimulateSteps(val enabled: Boolean) : DebugEvent
     data object SyncHealth : DebugEvent
+    data object AddUsage : DebugEvent
+    data object ClearUsage : DebugEvent
     data class SetUseFakeOracle(val enabled: Boolean) : DebugEvent
     data object CycleOracleFailure : DebugEvent
     data class SetAiConsent(val enabled: Boolean) : DebugEvent
@@ -109,6 +112,7 @@ class DebugViewModel @Inject constructor(
     private val rerollQuest: RerollQuestUseCase,
     private val enableHealth: EnableHealthUseCase,
     private val healthSync: HealthSyncUseCase,
+    private val screenTimeChecker: ScreenTimeChecker,
     private val grantAiConsent: GrantAiConsentUseCase,
     private val revokeAiConsent: RevokeAiConsentUseCase,
     private val createPath: CreatePathUseCase,
@@ -215,6 +219,18 @@ class DebugViewModel @Inject constructor(
             if (event.enabled) "Simulating 9,000 steps: ${enableHealth()}" else "Simulation off (next sync re-checks the real Health Connect)."
         }
         DebugEvent.SyncHealth -> "Health sync: ${healthSync()}"
+        DebugEvent.AddUsage -> {
+            val target = settings.simulatedUsageMinutes.value + SIMULATED_USAGE_STEP
+            settings.addSimulatedUsage(SIMULATED_USAGE_STEP)
+            settings.simulatedUsageMinutes.first { it == target }
+            val check = screenTimeChecker.run()
+            "Instagram +$SIMULATED_USAGE_STEP min (simulated $target). " +
+                (check?.let { "Breached: ${it.state.breached}, forfeited now: ${it.forfeitedNow}, warnings: ${it.warnings.size}" } ?: "Screen Discipline is off.")
+        }
+        DebugEvent.ClearUsage -> {
+            settings.clearSimulatedUsage()
+            "Simulated usage cleared."
+        }
         is DebugEvent.SetUseFakeOracle -> {
             settings.setUseFakeOracle(event.enabled)
             if (event.enabled) "Path Oracle: FakePathOracle." else "Path Oracle: the real client (needs a staging URL and debug key)."
@@ -299,6 +315,7 @@ class DebugViewModel @Inject constructor(
         const val DEBUG_GOLD = 2_000L
         const val DEBUG_FRAGMENTS = 10L
         const val SEED_PATH_MINUTES = 180
+        const val SIMULATED_USAGE_STEP = 10
         const val STOP_TIMEOUT_MS = 5_000L
     }
 }

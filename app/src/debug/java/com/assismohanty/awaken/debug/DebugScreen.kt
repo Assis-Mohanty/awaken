@@ -101,6 +101,8 @@ fun DebugScreen(
                     Text(stringResource(if (state.simulateSteps) R.string.debug_simulate_steps_off else R.string.debug_simulate_steps_on))
                 }
                 OutlinedButton(onClick = { onEvent(DebugEvent.SyncHealth) }) { Text(stringResource(R.string.debug_health_sync)) }
+                OutlinedButton(onClick = { onEvent(DebugEvent.AddUsage) }) { Text(stringResource(R.string.debug_add_usage)) }
+                OutlinedButton(onClick = { onEvent(DebugEvent.ClearUsage) }) { Text(stringResource(R.string.debug_clear_usage)) }
                 OutlinedButton(onClick = { onEvent(DebugEvent.GrantLevel) }) { Text(stringResource(R.string.debug_grant_level)) }
                 OutlinedButton(onClick = { onEvent(DebugEvent.SetUseFakeOracle(!state.useFakeOracle)) }) {
                     Text(stringResource(if (state.useFakeOracle) R.string.debug_oracle_use_real else R.string.debug_oracle_use_fake))

@@ -64,6 +64,17 @@
     <string name="screentime_duration_hours">%1$s h</string>
     <string name="screentime_duration_hours_minutes">%1$s h %2$s min</string>
 
+    <!-- Notifications (channel screen_time) -->
+    <string name="screentime_channel_name">Screen Discipline</string>
+    <string name="screentime_channel_description">A warning when a distracting app is close to its limit, and a notice if a limit is crossed.</string>
+    <string name="screentime_warning_title">%1$s: almost at your limit</string>
+    <plurals name="screentime_warning_text">
+        <item quantity="one">%1$d minute left. Cross it and you forfeit today\'s +%2$d XP.</item>
+        <item quantity="other">%1$d minutes left. Cross it and you forfeit today\'s +%2$d XP.</item>
+    </plurals>
+    <string name="screentime_forfeit_title">Limit crossed</string>
+    <string name="screentime_forfeit_text">%1$s went over its limit. Today\'s Screen Discipline stake is forfeited. Your earned XP is untouched.</string>
+
     <!-- Today card and Settings -->
     <string name="today_discipline_on_track">Limits holding · +%1$d XP at day end</string>
     <string name="today_discipline_forfeited">Limit crossed · stake forfeited</string>

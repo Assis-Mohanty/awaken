@@ -34,6 +34,18 @@ Run log: `Device: ____  Android: ____  Build: ____  Date: ____  Tester: ____`
 - [ ] Revoke access in Health Connect settings, reopen the app: Settings shows "Off", no crash, existing completions untouched.
 - [ ] Health Connect's own "privacy policy" link opens the same URL as the Play listing.
 
+## Screen time and Screen Discipline
+- [ ] Settings → Screen time without usage access: the access window explains it; "Allow usage access" opens the system list; turning AWAKEN on and pressing back shows today's apps.
+- [ ] Totals look right against the phone's own Digital Wellbeing numbers (within a few minutes).
+- [ ] Instagram/YouTube/TikTok start as Distracting with a 30 min limit; a notes or docs app starts as Productive; others Neutral.
+- [ ] Edit an app's category or limit: the row shows "From tomorrow: …"; today's limit is unchanged.
+- [ ] Turn on Screen Discipline: it says it starts tomorrow; next day the Today card shows "Limits holding · +78 XP at day end".
+- [ ] Use a distracting app until 5 min remain: one warning notification (it may lag up to ~15 min); no second one that day.
+- [ ] Cross the limit: one "Limit crossed" notice; the Today card turns to "stake forfeited"; XP and gold unchanged.
+- [ ] A day with every limit held: after the day ends, opening the app pays the quest once (ledger row dated on that day); reopening pays nothing more.
+- [ ] Turn usage access off mid-day: no crash; the quest expires unpaid; the screen asks for access again.
+- [ ] Debug build: Debug → add simulated Instagram minutes reproduces warning and forfeit on an emulator.
+
 ## Backgrounding a Gate
 - [ ] Start a Focus Gate, press Home for 30 s, return: gate continues, background time shown.
 - [ ] Start a gate, stay in the background over 90 s total: on return the gate has collapsed with no XP and a "Gate collapsed" record.

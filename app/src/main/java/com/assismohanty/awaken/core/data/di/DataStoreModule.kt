@@ -29,6 +29,11 @@ annotation class UiPrefsStore
 @Retention(AnnotationRetention.BINARY)
 annotation class AiPrefsStore
 
+/** Which Screen Discipline alerts were already sent today (once per app per day, GD §6.7). */
+@Qualifier
+@Retention(AnnotationRetention.BINARY)
+annotation class ScreenTimeAlertPrefs
+
 @Module
 @InstallIn(SingletonComponent::class)
 object DataStoreModule {
@@ -60,5 +65,15 @@ object DataStoreModule {
         @ApplicationScope scope: CoroutineScope,
     ): DataStore<Preferences> = PreferenceDataStoreFactory.create(scope = scope) {
         context.preferencesDataStoreFile("ai_prefs")
+    }
+
+    @Provides
+    @Singleton
+    @ScreenTimeAlertPrefs
+    fun provideScreenTimeAlertPrefs(
+        @ApplicationContext context: Context,
+        @ApplicationScope scope: CoroutineScope,
+    ): DataStore<Preferences> = PreferenceDataStoreFactory.create(scope = scope) {
+        context.preferencesDataStoreFile("screen_time_alerts")
     }
 }

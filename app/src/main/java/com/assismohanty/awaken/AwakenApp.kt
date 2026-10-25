@@ -12,6 +12,7 @@ import com.assismohanty.awaken.core.work.DayRolloverWorker
 import com.assismohanty.awaken.core.work.GateCoordinator
 import com.assismohanty.awaken.core.work.HealthSyncCoordinator
 import com.assismohanty.awaken.core.work.ReminderCoordinator
+import com.assismohanty.awaken.core.work.ScreenTimeCoordinator
 import com.assismohanty.awaken.core.widget.WidgetUpdater
 import dagger.hilt.android.HiltAndroidApp
 import javax.inject.Inject
@@ -30,6 +31,8 @@ class AwakenApp : Application(), Configuration.Provider {
     @Inject lateinit var healthSyncCoordinator: HealthSyncCoordinator
 
     @Inject lateinit var reminderCoordinator: ReminderCoordinator
+
+    @Inject lateinit var screenTimeCoordinator: ScreenTimeCoordinator
 
     @Inject lateinit var widgetUpdater: WidgetUpdater
 
@@ -50,6 +53,9 @@ class AwakenApp : Application(), Configuration.Provider {
         ProcessLifecycleOwner.get().lifecycle.addObserver(healthSyncCoordinator)
         // Keeps the two daily notifications armed for the current reminder time (ARCH §3.5).
         reminderCoordinator.start()
+        // Screen Discipline checks: periodic while it is on, plus one on every foreground (ARCH §3.11).
+        screenTimeCoordinator.start()
+        ProcessLifecycleOwner.get().lifecycle.addObserver(screenTimeCoordinator)
         // Keeps the home-screen widget in step with the game (ARCH §3.6).
         widgetUpdater.start()
         appScope.launch {

@@ -57,6 +57,7 @@ Habit/RPG apps are a crowded but low-quality niche on Play: Habitica (aging, pun
 | F20 | **Path Oracle proxy**: Cloudflare Worker with Play Integrity, rate limits, budget cap, structured output, no data retention; staging + production | ARCH §3.8 |
 | F21 | **AI content safety**: in-app "Report this quest" (hides it immediately, sends report), prompt content rules, eval set passing before each prompt release | ARCH §3.7–3.8, §6; PLAY_STORE_LAUNCH §2 |
 | F22 | **Set counter**: tap-per-set reps and a rest timer on SELF rep quests; progress only, the hunter still taps Complete (stays SELF, ×1.00, capped) | GD §6.5; ENGINE_DECISIONS #84–85 |
+| F23 | **Screen time + Screen Discipline**: per-app usage today and over 7 days (usage access, on-device only); apps tagged Distracting / Productive / Neutral with bundled defaults the hunter can change; daily limits on distracting apps; a daily DISCIPLINE quest paid at day end if every limit held, forfeited (never deducted) on the first crossing; edits apply from tomorrow; ≤ 5 min warning and crossing notice | GD §6.7; ARCH §3.11; DS §4.9; ENGINE_DECISIONS #86–#91 |
 | F24 | **Appearance**: System / Dark / Light; premium black default, light palette on the same tokens | DS §2.1b |
 
 ## 5. Explicitly OUT of scope for v1.0 (put in `BACKLOG.md`)

@@ -96,6 +96,7 @@ Because AI Paths send user-entered text off the device, the answer is no longer 
 | Device or other IDs (random install ID; Play Integrity verdict) | Yes | No | Install ID hash kept in proxy logs 30 days | Optional | Fraud prevention, security |
 | App activity → reports (only when the user taps "Report this quest") | Yes | No | No, kept 90 days | Optional | App functionality (content safety) |
 | Health data, location, contacts, name, email | **No** | No | — | — | — |
+| App activity → **Installed apps / app usage** (Screen time) | **No**: read and kept on the device only, never transmitted | No | — | Optional (usage access) | App functionality |
 
 - Encrypted in transit: **Yes** (HTTPS only, cleartext disabled).
 - Users can request deletion: proxy keeps no user data; reports carry no identifier, so explain that in the policy. On-device data: Settings → Data → Wipe, or uninstall.
@@ -111,6 +112,12 @@ Re-do this form whenever you add sync, analytics, or crash SDKs, or change what 
 - **Active calories burned (read, optional):** "Used to verify the user's opt-in active-calorie quests and to show workout summaries, on-device. Not shared or uploaded."
 - **Heart rate (read, optional):** "Shown on workout summaries and used on-device to reject workouts where the heart rate never rose. It does not change rewards. Not shared or uploaded."
 Request nothing else. The privacy policy link shown inside Health Connect must be the same as the Play listing's.
+
+## 5b. Usage access (`PACKAGE_USAGE_STATS`) — justification text (adapt)
+- Usage access is a special app access the user turns on in system settings after an in-app explanation; the app never blocks, overlays or interrupts other apps.
+- **Core feature:** "Screen time and Screen Discipline: shows the user how long they spent in each app today and over 7 days, lets them mark apps as distracting, productive or neutral, and checks the daily limits they set on distracting apps. Staying under every limit completes an in-app quest. Usage data is processed on-device only and is never uploaded or shared."
+- App names come from a launcher-intent `<queries>` element; the app does **not** request `QUERY_ALL_PACKAGES`.
+- If Play asks for a demo video: Settings → Screen time → Allow usage access → system toggle → back in the app → Turn on Screen Discipline → a limit warning notification.
 
 ## 6. Graphics
 - App icon 512×512 (original portal/gate glyph — no series artwork).
@@ -155,6 +162,11 @@ health app is ignored. This data is processed on-device only, is never
 uploaded (including to AI Paths), and is not used for advertising. You can revoke access anytime in Health Connect settings.
 Use of information received from Health Connect adheres to the Health Connect Permissions policy, including the
 Limited Use requirements.
+
+Screen time: if you allow usage access, the app reads how long each app was in the foreground on your device to
+show your screen time and check the daily limits you set for Screen Discipline, plus the list of apps in your launcher
+to show their names. This stays on your device, is never uploaded (including to AI Paths) and is not used for
+advertising. You can turn usage access off anytime in your phone's settings.
 
 Backups: Android may include app data in your Google account device backup according to your phone's backup settings.
 You can export or delete all data from Settings → Data. Uninstalling the app deletes its data from the device.

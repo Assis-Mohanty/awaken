@@ -243,6 +243,7 @@ This avoids foreground-service-type policy declarations entirely. The process ma
 - Channel `last_call` (default): 1× at 21:00 local *only if* the day isn't cleared — "2 quests from clearing the day."
 - Channel `gate` (low): ongoing gate countdown.
 - Channel `system` (low): level-up / trial unlocked when app is backgrounded (rare). **Not built** (ENGINE_DECISIONS #55): nothing raises that event while the app is away.
+- Channel `screen_time` (default, opt-in through Screen Discipline, ARCH §3.11): one warning per app per day at ≤ 5 min left, and one "limit crossed" notice per day; de-duplicated in `ScreenTimeAlertStore`. Outside the cap below because the hunter turned the feature on and each alert is bounded per day.
 - Max 2 non-gate notifications/day (one of each kind, fixed ids). Android 13+ `POST_NOTIFICATIONS` asked after the first quest completion, not at launch, through a System-styled pre-prompt (once ever).
 - Built as `ReminderScheduler`/`ReminderWorker` (one-shot, self-re-arming, inexact), `ReminderCoordinator` (re-arms on reminder/day-start change), `BuildReminderUseCase` + `ReminderRules` (engine). Reminder off silences both (#53-#55).
 

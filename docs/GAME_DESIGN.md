@@ -368,6 +368,7 @@ The hunter tags apps **Distracting / Productive / Neutral** and sets a daily lim
 - **Held vs crossed.** Usage is floored to whole minutes; a limit is crossed when usage is strictly over it (exactly 30/30 holds). The first crossing **forfeits** the quest at once (status EXPIRED, "Forfeited"); nothing is ever deducted. If every limit held, the quest is completed at rollover for the finished day, before the day outcome (§7) is computed, and counts as one directive item.
 - **Warnings.** One notification per app per day when ≤ **5 min** remain ("Cross it and you forfeit +78 XP"), and one notice when a limit is crossed. Checks are inexact (WorkManager), so a warning can lag; the verdict always comes from the usage events themselves.
 - **Usage access revoked** mid-day → the quest expires unpaid; nothing else changes.
+- **Notifications** use their own `screen_time` channel, outside the two-a-day reminder cap (ARCH §3.5), because the hunter opted in and each alert fires at most once per app per day.
 
 ---
 
