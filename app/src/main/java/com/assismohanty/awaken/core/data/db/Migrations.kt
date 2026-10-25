@@ -115,5 +115,22 @@ val MIGRATION_6_7 = object : Migration(6, 7) {
     }
 }
 
+/**
+ * v7 → v8: the 45-day Campaign (GD §6.8). A new table, and two nullable habit columns that mark campaign habits. Every
+ * existing habit stays a plain custom habit.
+ */
+val MIGRATION_7_8 = object : Migration(7, 8) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE `habit` ADD COLUMN `campaign_id` TEXT")
+        db.execSQL("ALTER TABLE `habit` ADD COLUMN `template_id` TEXT")
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS `campaign` (`id` TEXT NOT NULL, `start_date` TEXT NOT NULL, `focus_stat` TEXT NOT NULL, " +
+                "`archetype` TEXT NOT NULL, `scores` TEXT NOT NULL, `oath_sealed_at` INTEGER NOT NULL, `status` TEXT NOT NULL, " +
+                "`current_act` TEXT NOT NULL, `cleared_days` INTEGER NOT NULL, `ended_at` INTEGER, PRIMARY KEY(`id`))",
+        )
+    }
+}
+
 /** Every migration, in order. The database builder and the migration test both use this list. */
-val ALL_MIGRATIONS: Array<Migration> = arrayOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7)
+val ALL_MIGRATIONS: Array<Migration> =
+    arrayOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8)

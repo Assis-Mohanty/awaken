@@ -44,7 +44,12 @@ import com.assismohanty.awaken.core.domain.CompletionCenter
 import com.assismohanty.awaken.core.domain.CreateHunterUseCase
 import com.assismohanty.awaken.core.domain.DayRefresher
 import com.assismohanty.awaken.core.domain.DayRolloverUseCase
+import com.assismohanty.awaken.core.domain.AbandonCampaignUseCase
+import com.assismohanty.awaken.core.domain.AdvanceCampaignUseCase
 import com.assismohanty.awaken.core.domain.DisciplineQuestPlanner
+import com.assismohanty.awaken.core.domain.PreviewCampaignUseCase
+import com.assismohanty.awaken.core.domain.SaveHabitUseCase
+import com.assismohanty.awaken.core.domain.StartCampaignUseCase
 import com.assismohanty.awaken.core.domain.DisciplineSyncUseCase
 import com.assismohanty.awaken.core.domain.DisciplineText
 import com.assismohanty.awaken.core.domain.LoadScreenTimeOverviewUseCase
@@ -139,7 +144,7 @@ class TestGraph(
     val health = FakeHealthGateway()
     val reader = GameStateReader(
         db.hunterDao(), db.questDao(), db.completionDao(), db.ledgerDao(), db.dayRecordDao(),
-        db.gateRunDao(), db.trialDao(), db.achievementDao(), clock, health,
+        db.gateRunDao(), db.trialDao(), db.achievementDao(), clock, health, db.campaignDao(),
     )
 
     val pathDao = db.pathDao()
@@ -169,10 +174,17 @@ class TestGraph(
     val pathWork = RecordingPathWorkScheduler()
     val pathWeeks = PathWeekRequester(pathDao, aiPrefs, pathWork, transactions, clock)
     val settleDiscipline = SettleDisciplineUseCase(db.hunterDao(), db.questDao(), screenTimeReader, usage, completeQuest)
+    val advanceCampaign = AdvanceCampaignUseCase(
+        db.hunterDao(), db.campaignDao(), db.dayRecordDao(), db.habitDao(), reader, templates, achievements, transactions, clock,
+    )
     val rollover = DayRolloverUseCase(
         db.hunterDao(), db.questDao(), db.dayRecordDao(), ledger, reader, templates, generateDirective, advanceTrial, pathDao, pathWeeks,
-        settleDiscipline, transactions, clock,
+        settleDiscipline, advanceCampaign, transactions, clock,
     )
+    val previewCampaign = PreviewCampaignUseCase(db.hunterDao(), db.habitDao(), db.campaignDao(), reader, templates, clock)
+    val startCampaign = StartCampaignUseCase(db.hunterDao(), db.habitDao(), db.campaignDao(), previewCampaign, generateDirective, transactions, clock)
+    val abandonCampaign = AbandonCampaignUseCase(db.campaignDao(), db.habitDao(), transactions, clock)
+    val saveHabit = SaveHabitUseCase(db.hunterDao(), db.habitDao(), db.questDao(), generateDirective, transactions, clock)
     val seedAppRules = SeedAppRulesUseCase(db.hunterDao(), db.screenTimeDao(), usage, clock)
     val setScreenTimeEnabled = SetScreenTimeEnabledUseCase(db.hunterDao(), db.questDao(), seedAppRules, screenTimeReader, transactions, clock)
     val setAppRule = SetAppRuleUseCase(db.hunterDao(), db.screenTimeDao(), clock)

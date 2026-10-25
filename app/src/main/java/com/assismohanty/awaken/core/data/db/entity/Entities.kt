@@ -6,6 +6,9 @@ import androidx.room.Index
 import androidx.room.PrimaryKey
 import com.assismohanty.awaken.engine.AppCategory
 import com.assismohanty.awaken.engine.DayOutcome
+import com.assismohanty.awaken.engine.campaign.Archetype
+import com.assismohanty.awaken.engine.campaign.CampaignAct
+import com.assismohanty.awaken.engine.campaign.CampaignStatus
 import com.assismohanty.awaken.engine.GateCollapseReason
 import com.assismohanty.awaken.engine.GateTiming
 import com.assismohanty.awaken.engine.RankRules
@@ -130,6 +133,10 @@ data class HabitEntity(
     val unit: String,
     val active: Boolean,
     @ColumnInfo(name = "created_at") val createdAt: Instant,
+    /** Set for campaign habits (GD §6.8): planned by the engine and read-only in the habit editor (ENGINE_DECISIONS #92). */
+    @ColumnInfo(name = "campaign_id") val campaignId: String? = null,
+    /** The template a campaign habit was planned from, so each act re-prices it from the same targets. */
+    @ColumnInfo(name = "template_id") val templateId: String? = null,
 )
 
 /** THE LEDGER (append-only, GD §9.3). Never update or delete rows; `stat`/`item_id` use '' instead of NULL. */
@@ -339,4 +346,19 @@ data class AppRuleEntity(
     val category: AppCategory,
     /** Null = tracked without a limit. */
     @ColumnInfo(name = "daily_limit_minutes") val dailyLimitMinutes: Int?,
+)
+
+/** One 45-day campaign (GD §6.8). [scores] is the scan result as "STR:3,INT:5,…". Not a ledger table. */
+@Entity(tableName = "campaign")
+data class CampaignEntity(
+    @PrimaryKey val id: String,
+    @ColumnInfo(name = "start_date") val startDate: LocalDate,
+    @ColumnInfo(name = "focus_stat") val focusStat: Stat,
+    val archetype: Archetype,
+    val scores: String,
+    @ColumnInfo(name = "oath_sealed_at") val oathSealedAt: Instant,
+    val status: CampaignStatus,
+    @ColumnInfo(name = "current_act") val currentAct: CampaignAct,
+    @ColumnInfo(name = "cleared_days") val clearedDays: Int = 0,
+    @ColumnInfo(name = "ended_at") val endedAt: Instant? = null,
 )

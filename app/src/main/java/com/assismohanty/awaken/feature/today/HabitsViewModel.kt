@@ -150,6 +150,7 @@ class HabitsViewModel @Inject constructor(
                 SaveHabitResult.InvalidDays -> R.string.habit_error_days
                 SaveHabitResult.InvalidTarget -> R.string.habit_error_target
                 SaveHabitResult.DifficultyTooHigh -> R.string.habit_difficulty_note
+                SaveHabitResult.CampaignHabit -> R.string.habit_campaign_locked
                 null -> R.string.msg_error
             }
             if (error == null) sheet.value = HabitSheet.Overview else edit { it.copy(saving = false, error = error) }

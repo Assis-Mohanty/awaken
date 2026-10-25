@@ -34,4 +34,5 @@ object DatabaseModule {
     @Provides fun provideOwnedCosmeticDao(db: AwakenDatabase) = db.ownedCosmeticDao()
     @Provides fun providePathDao(db: AwakenDatabase) = db.pathDao()
     @Provides fun provideScreenTimeDao(db: AwakenDatabase) = db.screenTimeDao()
+    @Provides fun provideCampaignDao(db: AwakenDatabase) = db.campaignDao()
 }

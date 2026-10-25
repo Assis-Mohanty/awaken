@@ -9,6 +9,7 @@ object ExportUpgrade {
     /** v4 → v5 (Phase 15): the Path tables did not exist, so the old file simply has none of their rows. */
     private val PATH_TABLES = listOf("path", "path_milestone", "path_week", "path_slot", "ai_report")
     private const val APP_RULE_TABLE = "app_rule"
+    private const val CAMPAIGN_TABLE = "campaign"
 
     fun toCurrent(doc: ExportDocument): ExportDocument {
         var current = doc
@@ -27,6 +28,13 @@ object ExportUpgrade {
             current = current.copy(
                 schemaVersion = 7,
                 tables = current.tables + (APP_RULE_TABLE to current.tables[APP_RULE_TABLE].orEmpty()),
+            )
+        }
+        // v7 → v8 (45-day Campaign): no campaigns existed, and the new habit columns are nullable (= plain habits).
+        if (current.app == ExportDocument.APP_ID && current.schemaVersion == 7) {
+            current = current.copy(
+                schemaVersion = 8,
+                tables = current.tables + (CAMPAIGN_TABLE to current.tables[CAMPAIGN_TABLE].orEmpty()),
             )
         }
         return current

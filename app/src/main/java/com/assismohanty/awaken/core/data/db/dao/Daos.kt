@@ -321,6 +321,14 @@ interface DayRecordDao {
     @Query("SELECT MAX(game_date) FROM day_record WHERE finalized_at IS NOT NULL")
     suspend fun lastFinalizedDate(): LocalDate?
 
+    /** Finalized cleared days in `[from, to]` (GD §6.8 campaign progress). */
+    @Query("SELECT COUNT(*) FROM day_record WHERE finalized_at IS NOT NULL AND cleared = 1 AND game_date BETWEEN :from AND :to")
+    suspend fun countCleared(from: LocalDate, to: LocalDate): Int
+
+    /** Finalized cleared game-dates in `[from, to]`, for the campaign calendar. */
+    @Query("SELECT game_date FROM day_record WHERE finalized_at IS NOT NULL AND cleared = 1 AND game_date BETWEEN :from AND :to")
+    fun observeClearedDates(from: LocalDate, to: LocalDate): Flow<List<LocalDate>>
+
     @Query("SELECT outcome FROM day_record WHERE finalized_at IS NOT NULL AND outcome IS NOT NULL ORDER BY game_date")
     suspend fun finalizedOutcomes(): List<DayOutcome>
 

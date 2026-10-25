@@ -40,6 +40,8 @@ data class RolloverOutcome(
     val recalibration: Map<Stat, DifficultyAdapter.Change>,
     /** The rank whose trial this run found expired (GD §5), if any. */
     val trialFailed: Rank? = null,
+    /** A campaign act began or the campaign ended in this run (GD §6.8). */
+    val campaign: CampaignAdvance? = null,
 )
 
 /**
@@ -58,6 +60,7 @@ class DayRolloverUseCase @Inject constructor(
     private val pathDao: PathDao,
     private val pathWeeks: PathWeekRequester,
     private val settleDiscipline: SettleDisciplineUseCase,
+    private val advanceCampaign: AdvanceCampaignUseCase,
     private val transactions: TransactionRunner,
     private val clock: Clock,
 ) {
@@ -86,11 +89,13 @@ class DayRolloverUseCase @Inject constructor(
 
         val recalibration = recalibrateIfDue(today)
         pathWeeks.requestDue(today)
+        // Before the directive, so today's habit instances carry the new act's targets (GD §6.8).
+        val campaign = advanceCampaign(today)
         generateDirective(today)
         val brokenDay = finalized.lastOrNull { it.outcome == DayOutcome.BROKEN }?.gameDate
         val penaltyIssued = brokenDay != null && issuePenalty(profile, today, brokenDay)
         val trialFailed = advanceTrial(profile, today)
-        return RolloverOutcome(today, finalized, penaltyIssued, recalibration, trialFailed)
+        return RolloverOutcome(today, finalized, penaltyIssued, recalibration, trialFailed, campaign)
     }
 
     /**

@@ -29,6 +29,7 @@ data class HabitDraft(
 
 sealed interface SaveHabitResult {
     data class Saved(val habitId: String) : SaveHabitResult
+    data object CampaignHabit : SaveHabitResult
     data object LimitReached : SaveHabitResult
     data object InvalidTitle : SaveHabitResult
     data object InvalidDays : SaveHabitResult
@@ -63,6 +64,8 @@ class SaveHabitUseCase @Inject constructor(
         }
         val result = transactions.run {
             val existing = draft.id?.let { habitDao.get(it) }
+            // Campaign habits are planned and priced by the engine; they can be archived, not edited (ENGINE_DECISIONS #92).
+            if (existing?.campaignId != null) return@run SaveHabitResult.CampaignHabit
             if (existing == null && !QuestRules.canAddCustom(habitDao.countActive())) return@run SaveHabitResult.LimitReached
             val habit = HabitEntity(
                 id = existing?.id ?: UUID.randomUUID().toString(),

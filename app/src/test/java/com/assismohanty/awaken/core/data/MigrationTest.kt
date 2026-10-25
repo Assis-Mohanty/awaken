@@ -175,6 +175,32 @@ class MigrationTest {
     }
 
     @Test
+    fun v7To8KeepsHabitsPlainAndAddsAnEmptyCampaignTable() = runTest {
+        val path = createFromSchema(7)
+        SQLiteDatabase.openDatabase(path, null, SQLiteDatabase.OPEN_READWRITE).use { db ->
+            db.execSQL(
+                "INSERT INTO habit (id, title, stat, difficulty, verification, days_of_week_mask, target, unit, active, created_at) " +
+                    "VALUES ('h1', 'Read', 'INT', 'NORMAL', 'SELF', 127, 20, 'pages', 1, 0)",
+            )
+        }
+
+        val db = Room.databaseBuilder(context, AwakenDatabase::class.java, path)
+            .addMigrations(*ALL_MIGRATIONS)
+            .allowMainThreadQueries()
+            .build()
+        try {
+            val habit = db.habitDao().get("h1")
+            assertThat(habit?.title).isEqualTo("Read")
+            assertThat(habit?.campaignId).isNull()
+            assertThat(habit?.templateId).isNull()
+            assertThat(db.campaignDao().active()).isNull()
+            assertThat(db.openHelper.readableDatabase.version).isEqualTo(AwakenDatabase.SCHEMA_VERSION)
+        } finally {
+            db.close()
+        }
+    }
+
+    @Test
     fun v4To5AddsThePathTablesAndKeepsExistingQuests() = runTest {
         val path = createFromSchema(4)
         SQLiteDatabase.openDatabase(path, null, SQLiteDatabase.OPEN_READWRITE).use { db ->

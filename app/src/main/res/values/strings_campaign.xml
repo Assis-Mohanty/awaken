@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The 45-day Campaign (GAME_DESIGN §6.8, DESIGN_SYSTEM §4.10) -->
+    <string name="habit_campaign_locked">This habit belongs to your campaign. The System sets it; you can archive it, not edit it.</string>
+</resources>

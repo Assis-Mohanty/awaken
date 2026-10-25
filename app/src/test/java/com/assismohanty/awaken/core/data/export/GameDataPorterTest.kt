@@ -239,6 +239,25 @@ class GameDataPorterTest {
     }
 
     @Test
+    fun aBackupFromBeforeCampaignsStillImports() = runTest {
+        playSomeGame()
+        val current = source.porter.export()
+        // What a v7 app wrote: no campaign table, no campaign columns on habits.
+        val v7 = mutate(current) { root ->
+            root["schemaVersion"] = JsonPrimitive(7)
+            root["tables"] = JsonObject(
+                root.getValue("tables").jsonObject.filterKeys { it != "campaign" }.mapValues { (table, rows) ->
+                    if (table != "habit") rows else JsonArray(rows.jsonArray.map { JsonObject(it.jsonObject - "campaign_id" - "template_id") })
+                },
+            )
+        }
+
+        assertThat(target.porter.import(v7)).isInstanceOf(ImportResult.Imported::class.java)
+        assertThat(target.ledger.balances()).isEqualTo(source.ledger.balances())
+        assertThat(tablesOf(target.porter.export())).isEqualTo(tablesOf(current))
+    }
+
+    @Test
     fun aBackupFromBeforeScreenDisciplineStillImports() = runTest {
         playSomeGame()
         val current = source.porter.export()
@@ -246,8 +265,12 @@ class GameDataPorterTest {
         val v6 = mutate(current) { root ->
             root["schemaVersion"] = JsonPrimitive(6)
             root["tables"] = JsonObject(
-                root.getValue("tables").jsonObject.filterKeys { it != "app_rule" }.mapValues { (table, rows) ->
-                    if (table != "hunter_profile") rows else JsonArray(rows.jsonArray.map { JsonObject(it.jsonObject - "screen_time_from") })
+                root.getValue("tables").jsonObject.filterKeys { it != "app_rule" && it != "campaign" }.mapValues { (table, rows) ->
+                    when (table) {
+                        "hunter_profile" -> JsonArray(rows.jsonArray.map { JsonObject(it.jsonObject - "screen_time_from") })
+                        "habit" -> JsonArray(rows.jsonArray.map { JsonObject(it.jsonObject - "campaign_id" - "template_id") })
+                        else -> rows
+                    }
                 },
             )
         }

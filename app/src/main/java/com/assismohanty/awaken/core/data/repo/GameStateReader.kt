@@ -2,6 +2,7 @@ package com.assismohanty.awaken.core.data.repo
 
 import com.assismohanty.awaken.core.data.clock.Clock
 import com.assismohanty.awaken.core.data.db.dao.AchievementDao
+import com.assismohanty.awaken.core.data.db.dao.CampaignDao
 import com.assismohanty.awaken.core.data.db.dao.CompletionDao
 import com.assismohanty.awaken.core.data.db.dao.DayRecordDao
 import com.assismohanty.awaken.core.data.db.dao.GateRunDao
@@ -41,6 +42,7 @@ class GameStateReader @Inject constructor(
     private val achievementDao: AchievementDao,
     private val clock: Clock,
     private val healthGateway: HealthGateway,
+    private val campaignDao: CampaignDao,
 ) {
     /** Streak over finalized days only (ENGINE_DECISIONS #2, #23). */
     suspend fun finalizedStreak(): StreakSummary {
@@ -102,6 +104,7 @@ class GameStateReader @Inject constructor(
                 gate.endedAt?.let { AchievementEvaluator.isMidnightGate(it.localTime(), profile.dayStartHour) } == true
             },
             cachesOpened = ledgerDao.cachesOpened(),
+            campaignsCompleted = campaignDao.countCompleted(),
             alreadyUnlocked = achievementDao.unlockedIds().toSet(),
         )
     }
