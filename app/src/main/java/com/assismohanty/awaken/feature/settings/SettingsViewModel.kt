@@ -8,6 +8,7 @@ import com.assismohanty.awaken.core.data.export.BackupFiles
 import com.assismohanty.awaken.core.data.export.GameDataPorter
 import com.assismohanty.awaken.core.data.export.ImportResult
 import com.assismohanty.awaken.core.data.export.ImportSummary
+import com.assismohanty.awaken.core.data.repo.ThemeMode
 import com.assismohanty.awaken.core.data.repo.UiPrefs
 import com.assismohanty.awaken.core.data.repo.UiPrefsRepository
 import com.assismohanty.awaken.core.data.health.HealthGateway
@@ -62,6 +63,7 @@ data class SettingsUiState(
     val injuryOptions: List<String> = DirectiveGenerator.INJURY_TAGS,
     val hapticsEnabled: Boolean = true,
     val reduceMotion: Boolean = false,
+    val themeMode: ThemeMode = ThemeMode.SYSTEM,
     /** A picked backup is waiting for the "replace everything" confirmation. */
     val importPending: Boolean = false,
     val busy: Boolean = false,
@@ -96,6 +98,7 @@ sealed interface SettingsEvent {
     data class ToggleInjuryTag(val tag: String) : SettingsEvent
     data class SetHaptics(val enabled: Boolean) : SettingsEvent
     data class SetReduceMotion(val enabled: Boolean) : SettingsEvent
+    data class SetThemeMode(val mode: ThemeMode) : SettingsEvent
     data class ExportTo(val uri: Uri) : SettingsEvent
     data class ImportPicked(val uri: Uri) : SettingsEvent
     data object ConfirmImport : SettingsEvent
@@ -195,6 +198,7 @@ class SettingsViewModel @Inject constructor(
             }
             is SettingsEvent.SetHaptics -> viewModelScope.launch { uiPrefs.setHaptics(event.enabled) }
             is SettingsEvent.SetReduceMotion -> viewModelScope.launch { uiPrefs.setReduceMotion(event.enabled) }
+            is SettingsEvent.SetThemeMode -> viewModelScope.launch { uiPrefs.setThemeMode(event.mode) }
             is SettingsEvent.ExportTo -> export(event.uri)
             is SettingsEvent.ImportPicked -> pickImport(event.uri)
             SettingsEvent.ConfirmImport -> confirmImport()
@@ -378,6 +382,7 @@ private fun SettingsModel.toUiState(prefs: UiPrefs, drafts: Drafts, aiConsent: B
     injuryTags = injuryTags,
     hapticsEnabled = prefs.hapticsEnabled,
     reduceMotion = prefs.reduceMotion,
+    themeMode = prefs.themeMode,
     importPending = drafts.pendingImport != null,
     busy = drafts.busy,
     importSummary = drafts.summary,

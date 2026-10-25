@@ -9,6 +9,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.assismohanty.awaken.core.data.health.HealthStatus
+import com.assismohanty.awaken.core.data.repo.ThemeMode
 import com.assismohanty.awaken.core.designsystem.theme.AwakenTheme
 import com.assismohanty.awaken.engine.model.Stat
 import com.google.common.truth.Truth.assertThat
@@ -127,6 +128,16 @@ class SettingsScreenTest {
         composeRule.onNodeWithText("Haptics").performScrollTo().performClick()
         composeRule.onNodeWithText("Reduce motion").performScrollTo().performClick()
         assertThat(events).containsExactly(SettingsEvent.SetHaptics(false), SettingsEvent.SetReduceMotion(true)).inOrder()
+    }
+
+    @Test
+    fun appearanceOffersSystemDarkAndLight() {
+        val events = mutableListOf<SettingsEvent>()
+        show(previewSettingsState(), events)
+        composeRule.onNodeWithText("Appearance").performScrollTo().assertIsDisplayed()
+        composeRule.onNodeWithText("Light").performScrollTo().performClick()
+        composeRule.onNodeWithText("Dark").performScrollTo().performClick()
+        assertThat(events).containsExactly(SettingsEvent.SetThemeMode(ThemeMode.LIGHT), SettingsEvent.SetThemeMode(ThemeMode.DARK)).inOrder()
     }
 
     @Test

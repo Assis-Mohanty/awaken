@@ -8,13 +8,16 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import com.assismohanty.awaken.R
+import com.assismohanty.awaken.core.designsystem.theme.AwakenColors
 import com.assismohanty.awaken.core.designsystem.theme.AwakenTheme
+import com.assismohanty.awaken.core.designsystem.theme.LocalAwakenColors
 import com.assismohanty.awaken.core.designsystem.theme.Spacing
 import com.assismohanty.awaken.engine.model.Rank
 import com.assismohanty.awaken.engine.model.Stat
@@ -36,6 +39,12 @@ data class ShareCardModel(
  */
 @Composable
 fun ShareCard(model: ShareCardModel, modifier: Modifier = Modifier) {
+    // The card is an image that leaves the app: always premium black, whatever mode the hunter uses.
+    CompositionLocalProvider(LocalAwakenColors provides AwakenColors.Dark) { ShareCardContent(model, modifier) }
+}
+
+@Composable
+private fun ShareCardContent(model: ShareCardModel, modifier: Modifier) {
     val colors = AwakenTheme.colors
     val type = AwakenTheme.type
     val dimens = AwakenTheme.dimens

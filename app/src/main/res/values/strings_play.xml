@@ -429,6 +429,10 @@
     <string name="injury_tag_upper">Upper body</string>
     <string name="settings_haptics">Haptics</string>
     <string name="settings_reduce_motion">Reduce motion</string>
+    <string name="settings_appearance_title">Appearance</string>
+    <string name="settings_theme_system">System</string>
+    <string name="settings_theme_dark">Dark</string>
+    <string name="settings_theme_light">Light</string>
     <string name="settings_data_note">Backups hold your whole hunter and stay on your device. Importing replaces everything here.</string>
     <string name="action_export_data">Export data</string>
     <string name="action_import_data">Import data</string>

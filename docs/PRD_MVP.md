@@ -57,6 +57,7 @@ Habit/RPG apps are a crowded but low-quality niche on Play: Habitica (aging, pun
 | F20 | **Path Oracle proxy**: Cloudflare Worker with Play Integrity, rate limits, budget cap, structured output, no data retention; staging + production | ARCH §3.8 |
 | F21 | **AI content safety**: in-app "Report this quest" (hides it immediately, sends report), prompt content rules, eval set passing before each prompt release | ARCH §3.7–3.8, §6; PLAY_STORE_LAUNCH §2 |
 | F22 | **Set counter**: tap-per-set reps and a rest timer on SELF rep quests; progress only, the hunter still taps Complete (stays SELF, ×1.00, capped) | GD §6.5; ENGINE_DECISIONS #84–85 |
+| F24 | **Appearance**: System / Dark / Light; premium black default, light palette on the same tokens | DS §2.1b |
 
 ## 5. Explicitly OUT of scope for v1.0 (put in `BACKLOG.md`)
 Accounts/sync · global/friends leaderboards · guilds · PvP duels & wagers · premium currency / IAP / ads · AI mentor chat (free-form conversation) · AI deciding any reward · on-device LLM · photo/video proof · multi-day dungeons · hardcore/permadeath · prestige · territory wars · iOS · web · Wear OS · localisation beyond English (strings are externalised though; Path goals may be typed in any language).

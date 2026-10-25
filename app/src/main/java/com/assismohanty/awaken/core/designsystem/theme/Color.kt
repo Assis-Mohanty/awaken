@@ -94,6 +94,49 @@ data class AwakenColors(
         Stat.VIT -> statVit
         Stat.CHA -> statCha
     }
+
+    companion object {
+        /** The premium-black palette (DESIGN_SYSTEM §2.1). */
+        val Dark = AwakenColors()
+
+        /**
+         * The light palette (DESIGN_SYSTEM §2.1b): same tokens, inverted ink. `void` is still "the page" and `bone` is
+         * still "primary ink". Hues are darkened so text in them reaches ≥ 4.5:1 on `panel` (white).
+         */
+        val Light = AwakenColors(
+            void = Color(0xFFF6F6F4),
+            depth = Color(0xFFEFEFEC),
+            panel = Color(0xFFFFFFFF),
+            panelRaised = Color(0xFFF2F2F0),
+            edge = Color(0xFFDADAD6),
+            bone = Color(0xFF111111),
+            mist = Color(0xFF5C5C5C),
+            fog = Color(0xFFA3A3A3),
+            system = Color(0xFF111111),
+            aether = Color(0xFF000000),
+            ember = Color(0xFFD42C42),
+            crit = Color(0xFF946500),
+            verified = Color(0xFF0A7F56),
+            rankE = Color(0xFF5A6678),
+            rankD = Color(0xFF1E8048),
+            rankC = Color(0xFF0B7A8A),
+            rankB = Color(0xFF2F5FD6),
+            rankA = Color(0xFF7446D9),
+            rankS = Color(0xFF946500),
+            statStr = Color(0xFFC4492A),
+            statInt = Color(0xFF1C72AC),
+            statWil = Color(0xFF7446D9),
+            statVit = Color(0xFF0A7F56),
+            statCha = Color(0xFFB8467A),
+            themeCrimson = Color(0xFFC42238),
+            themeViolet = Color(0xFF6E3BE0),
+            themeGold = Color(0xFF9A6E0E),
+            frameIron = Color(0xFF6B7380),
+            frameEmber = Color(0xFFC4492A),
+            frameUmbral = Color(0xFF7446D9),
+            frameRegal = Color(0xFF946500),
+        )
+    }
 }
 
 /** Alpha steps used repeatedly across components (DESIGN_SYSTEM §2.3, §3). */

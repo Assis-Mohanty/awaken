@@ -17,13 +17,13 @@ class ThemeAccentTest {
     @get:Rule
     val composeRule = createComposeRule()
 
-    private val colors = AwakenColors()
+    private val colors = AwakenColors.Dark
 
-    private fun accentsUnder(themeId: String): Pair<Color, Color> {
+    private fun accentsUnder(themeId: String, dark: Boolean = true): Pair<Color, Color> {
         var rankAccent = Color.Unspecified
         var crest = Color.Unspecified
         composeRule.setContent {
-            AwakenTheme(themeId = themeId) {
+            AwakenTheme(darkTheme = dark, themeId = themeId) {
                 rankAccent = AwakenTheme.rankAccent(Rank.S)
                 crest = AwakenTheme.colors.rank(Rank.S)
             }
@@ -37,6 +37,13 @@ class ThemeAccentTest {
         val (accent, crest) = accentsUnder("theme_crimson_gate")
         assertThat(accent).isEqualTo(colors.themeCrimson)
         assertThat(crest).isEqualTo(colors.rankS)
+    }
+
+    @Test
+    fun theLightPaletteUsesItsOwnThemeTint() {
+        val (accent, crest) = accentsUnder("theme_crimson_gate", dark = false)
+        assertThat(accent).isEqualTo(AwakenColors.Light.themeCrimson)
+        assertThat(crest).isEqualTo(AwakenColors.Light.rankS)
     }
 
     @Test

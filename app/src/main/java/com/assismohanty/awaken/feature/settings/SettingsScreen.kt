@@ -45,6 +45,7 @@ import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.assismohanty.awaken.R
 import com.assismohanty.awaken.core.data.health.HealthStatus
+import com.assismohanty.awaken.core.data.repo.ThemeMode
 import com.assismohanty.awaken.core.designsystem.components.ChoiceChip
 import com.assismohanty.awaken.core.designsystem.components.GateBackground
 import com.assismohanty.awaken.core.designsystem.components.PrimaryButton
@@ -353,6 +354,16 @@ private fun AiPathsWindow(state: SettingsUiState, onEvent: (SettingsEvent) -> Un
 @Composable
 private fun ComfortWindow(state: SettingsUiState, onEvent: (SettingsEvent) -> Unit) {
     SystemWindow(title = stringResource(R.string.settings_window_comfort), accent = accent(), reveal = false) {
+        Text(stringResource(R.string.settings_appearance_title), style = AwakenTheme.type.label, color = AwakenTheme.colors.bone)
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.xs), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+            ThemeMode.entries.forEach { mode ->
+                ChoiceChip(
+                    text = stringResource(mode.labelRes()),
+                    selected = mode == state.themeMode,
+                    onClick = { onEvent(SettingsEvent.SetThemeMode(mode)) },
+                )
+            }
+        }
         SwitchRow(
             title = stringResource(R.string.settings_haptics),
             note = null,
@@ -391,6 +402,12 @@ private fun DataWindow(state: SettingsUiState, onExport: () -> Unit, onImport: (
         QuietButton(text = stringResource(R.string.action_privacy_policy), onClick = onOpenPrivacy, modifier = Modifier.fillMaxWidth())
         Text(stringResource(R.string.settings_about, version), style = AwakenTheme.type.caption, color = colors.fog)
     }
+}
+
+private fun ThemeMode.labelRes(): Int = when (this) {
+    ThemeMode.SYSTEM -> R.string.settings_theme_system
+    ThemeMode.DARK -> R.string.settings_theme_dark
+    ThemeMode.LIGHT -> R.string.settings_theme_light
 }
 
 /** The whole row is the toggle target (48dp minimum); the switch only shows state. */

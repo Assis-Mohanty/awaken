@@ -8,7 +8,7 @@ What we are explicitly not: Habitica's pixel-art toybox, a generic Material "pro
 
 ## 2. Tokens
 
-### 2.1 Colour (dark-only in v1, premium black)
+### 2.1 Colour (premium black by default; light palette in §2.1b)
 
 | Token | Hex | Use |
 |---|---|---|
@@ -37,6 +37,24 @@ Rank colours (window corner bracket, window title, crest, and a ~5 % background 
 Stat colours (radar, chips, quest stat marks): STR `#FF7A59`, INT `#5CC2FF`, WIL `#A97BFF`, VIT `#5BE3B0`, CHA `#FFB3D1`.
 
 Contrast: `bone` on `panel` ≈ 16:1; `mist` on `panel` ≈ 5.6:1 (≥ 5:1 required); `fog` is never used for readable text. Colour is never the only signal (stat chips carry the 3-letter code; verified has an icon + word).
+
+### 2.1b Light palette — same tokens, two palettes
+
+Settings → Comfort → **Appearance**: System (default, follows the device) / Dark / Light, stored in `UiPrefs.themeMode`. The light palette reuses every token name: `void` is still "the page", `bone` is still "primary ink", so components never branch on mode. Only `Color.kt` holds hex values (`AwakenColors.Dark` / `AwakenColors.Light`).
+
+| Token | Light hex | | Token | Light hex |
+|---|---|---|---|---|
+| `void` | `#F6F6F4` | | `bone` | `#111111` |
+| `depth` | `#EFEFEC` | | `mist` | `#5C5C5C` |
+| `panel` | `#FFFFFF` | | `fog` | `#A3A3A3` |
+| `panelRaised` | `#F2F2F0` | | `system` | `#111111` |
+| `edge` | `#DADAD6` | | `aether` | `#000000` |
+| `ember` | `#D42C42` | | `crit` / rank S | `#946500` |
+| `verified` / VIT | `#0A7F56` | | | |
+
+Ranks E–A: `#5A6678` `#1E8048` `#0B7A8A` `#2F5FD6` `#7446D9`. Stats: STR `#C4492A`, INT `#1C72AC`, WIL `#7446D9`, CHA `#B8467A`. Hues are darkened so text in them reaches ≥ 4.5:1 on white; `PaletteContrastTest` enforces the floors (bone ≥ 7:1, mist ≥ 5:1, hues ≥ 4.5:1) for both palettes.
+
+Stay dark in every mode: the splash (brand), the weekly share card (an image that leaves the app) and the widget (Phase 12 decision). On Android 12+ a forced Dark/Light choice is also applied as the app's night mode so the pre-Compose window matches.
 
 ### 2.2 Typography — two families, clearly distinct (both SIL OFL, bundle in `res/font`)
 

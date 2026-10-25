@@ -40,7 +40,7 @@ Proxy (`/proxy`): TypeScript on Cloudflare Workers · zod · Wrangler · Vitest.
 - No `!!`. No `GlobalScope`. No `runBlocking` outside tests. Coroutines: `viewModelScope`, injected `CoroutineDispatcher`s.
 - Errors: repositories return `Result`/sealed outcomes; UI shows a System-styled error, never a crash.
 - Strings in `strings.xml`. Content descriptions on all icons. Touch targets ≥ 48dp.
-- Every screen has `@Preview`s (light content irrelevant — app is dark-only in v1) at phone + small phone sizes.
+- Every screen has `@Preview`s at phone + small phone sizes via `@PhonePreviews`, which renders both the dark and light palettes (DESIGN_SYSTEM §2.1b). Never hard-code a colour that only works on black.
 - Debug-only code lives in `app/src/debug` (Debug screen, `DebugClock` time travel) with a no-op twin in `app/src/release` (`DebugEntry`, `ClockModule`). Never reference debug classes from `src/main` except through `DebugEntry`.
 
 ## Workflow rules for you (Claude Code)

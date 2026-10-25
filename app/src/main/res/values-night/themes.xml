@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Premium black. windowBackground = void so there is no white flash before Compose draws. -->
+    <style name="Theme.AWAKEN" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/void_background</item>
+    </style>
+</resources>

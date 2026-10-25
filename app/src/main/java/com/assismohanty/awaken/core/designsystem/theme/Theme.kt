@@ -1,7 +1,10 @@
 package com.assismohanty.awaken.core.designsystem.theme
 
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.ReadOnlyComposable
@@ -11,53 +14,29 @@ import androidx.compose.ui.graphics.Color
 import com.assismohanty.awaken.engine.model.Rank
 
 /**
- * Dark-only in v1 (DESIGN_SYSTEM.md). No dynamic colour: the System has one look.
+ * Two palettes, one set of tokens (DESIGN_SYSTEM §2.1). No dynamic colour: the System has one look per mode.
  *
+ * @param darkTheme premium black when true, the light palette otherwise. The caller resolves the user's
+ *   System / Dark / Light choice; the default follows the device.
  * @param reduceMotion the in-app toggle; the system "Remove animations" setting is OR-ed in (§2.5).
  * @param hapticsEnabled the in-app toggle (§2.6).
  * @param themeId the equipped Vault theme (GD §9.2); re-tints the background glow and rank-coloured window accents ([AwakenTheme.rankAccent]) only.
  */
 @Composable
 fun AwakenTheme(
+    darkTheme: Boolean = isSystemInDarkTheme(),
     reduceMotion: Boolean = false,
     hapticsEnabled: Boolean = true,
     themeId: String = "default",
     content: @Composable () -> Unit,
 ) {
-    val colors = remember { AwakenColors() }
+    val colors = if (darkTheme) AwakenColors.Dark else AwakenColors.Light
     val type = remember { AwakenType() }
     val reduce = reduceMotion || systemReduceMotion()
     val motion = remember(reduce) { AwakenMotion(reduceMotion = reduce) }
     val shapes = remember { AwakenShapes() }
     val dimens = remember { AwakenDimens() }
-    val colorScheme = remember(colors) {
-        darkColorScheme(
-            primary = colors.system,
-            onPrimary = colors.void,
-            primaryContainer = colors.panelRaised,
-            onPrimaryContainer = colors.bone,
-            secondary = colors.aether,
-            onSecondary = colors.void,
-            secondaryContainer = colors.panelRaised, // nav-bar indicator: neutral, not Material tint
-            onSecondaryContainer = colors.bone,
-            tertiary = colors.crit,
-            onTertiary = colors.void,
-            background = colors.void,
-            onBackground = colors.bone,
-            surface = colors.void,
-            onSurface = colors.bone,
-            surfaceVariant = colors.depth,
-            onSurfaceVariant = colors.mist,
-            surfaceContainer = colors.depth,
-            surfaceContainerLow = colors.depth,
-            surfaceContainerHigh = colors.panelRaised,
-            surfaceContainerHighest = colors.panelRaised,
-            outline = colors.edge,
-            outlineVariant = colors.fog,
-            error = colors.ember,
-            onError = colors.void,
-        )
-    }
+    val colorScheme = remember(colors, darkTheme) { colors.toColorScheme(darkTheme) }
     CompositionLocalProvider(
         LocalAwakenColors provides colors,
         LocalAwakenType provides type,
@@ -73,6 +52,37 @@ fun AwakenTheme(
             content = content,
         )
     }
+}
+
+/** Material slots mapped onto our tokens; identical mapping for both palettes so components never branch on mode. */
+private fun AwakenColors.toColorScheme(dark: Boolean): ColorScheme {
+    val base = if (dark) darkColorScheme() else lightColorScheme()
+    return base.copy(
+        primary = system,
+        onPrimary = void,
+        primaryContainer = panelRaised,
+        onPrimaryContainer = bone,
+        secondary = aether,
+        onSecondary = void,
+        secondaryContainer = panelRaised, // nav-bar indicator: neutral, not Material tint
+        onSecondaryContainer = bone,
+        tertiary = crit,
+        onTertiary = void,
+        background = void,
+        onBackground = bone,
+        surface = void,
+        onSurface = bone,
+        surfaceVariant = depth,
+        onSurfaceVariant = mist,
+        surfaceContainer = depth,
+        surfaceContainerLow = depth,
+        surfaceContainerHigh = panelRaised,
+        surfaceContainerHighest = panelRaised,
+        outline = edge,
+        outlineVariant = fog,
+        error = ember,
+        onError = void,
+    )
 }
 
 /** Token access for components and screens: `AwakenTheme.colors.system`, `AwakenTheme.type.title`, … */
