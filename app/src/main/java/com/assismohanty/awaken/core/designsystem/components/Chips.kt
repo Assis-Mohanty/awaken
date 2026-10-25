@@ -116,7 +116,7 @@ fun DifficultyChip(difficulty: Difficulty, modifier: Modifier = Modifier) {
     Pill(text = difficulty.label(), color = color, modifier = modifier)
 }
 
-/** Verified = Health Connect; Timed = Focus Gate. Nothing for self-reported quests. */
+/** Verified = Health Connect or phone usage; Timed = Focus Gate. Nothing for self-reported quests. */
 @Composable
 fun VerifiedBadge(source: VerificationSource, modifier: Modifier = Modifier) {
     val color = AwakenTheme.colors.verified
@@ -126,6 +126,8 @@ fun VerifiedBadge(source: VerificationSource, modifier: Modifier = Modifier) {
             Pill(stringResource(R.string.badge_verified), color, modifier, icon = AwakenGlyphs.VerifiedSeal)
         VerificationSource.TIMER ->
             Pill(stringResource(R.string.badge_timed), color, modifier, icon = AwakenGlyphs.Hourglass)
+        VerificationSource.USAGE ->
+            Pill(stringResource(R.string.badge_verified), color, modifier, icon = AwakenGlyphs.VerifiedSeal)
     }
 }
 

@@ -13,13 +13,13 @@ object DailyCaps {
     fun capFor(source: VerificationSource): Int? = when (source) {
         VerificationSource.SELF -> SELF_CAP
         VerificationSource.TIMER -> TIMER_CAP
-        VerificationSource.HEALTH -> null
+        VerificationSource.HEALTH, VerificationSource.USAGE -> null
     }
 
     fun earnedToday(source: VerificationSource, context: HunterContext): Int = when (source) {
         VerificationSource.SELF -> context.todaySelfXp
         VerificationSource.TIMER -> context.todayTimerXp
-        VerificationSource.HEALTH -> 0
+        VerificationSource.HEALTH, VerificationSource.USAGE -> 0
     }
 
     /** True when awarding [questXp] in full would push today's [source] total past its cap. */

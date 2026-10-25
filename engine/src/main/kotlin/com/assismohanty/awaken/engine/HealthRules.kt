@@ -88,7 +88,7 @@ object HealthRules {
             Verification.HEALTH_SLEEP -> trusted.sleep.any { it.end in window && it.duration.toMinutes() >= target * MINUTES_PER_HOUR }
             Verification.HEALTH_DISTANCE -> trusted.distanceMeters >= target * METERS_PER_KM
             Verification.HEALTH_CALORIES -> trusted.activeKcal >= target
-            Verification.SELF, Verification.TIMER -> false
+            Verification.SELF, Verification.TIMER, Verification.DEVICE_USAGE -> false
         }
     }
 

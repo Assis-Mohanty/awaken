@@ -151,7 +151,7 @@ private fun breakdownText(model: RewardModel): String {
             BreakdownItem.Kind.STREAK -> stringResource(R.string.breakdown_streak, formatMultiplier(item.value, fixed = true))
             BreakdownItem.Kind.VERIFICATION -> when (model.verification) {
                 VerificationSource.SELF -> null // ×1.00 adds nothing to explain
-                VerificationSource.HEALTH -> stringResource(R.string.breakdown_verified, formatMultiplier(item.value, fixed = true))
+                VerificationSource.HEALTH, VerificationSource.USAGE -> stringResource(R.string.breakdown_verified, formatMultiplier(item.value, fixed = true))
                 VerificationSource.TIMER -> stringResource(R.string.breakdown_timed, formatMultiplier(item.value, fixed = true))
             }
             BreakdownItem.Kind.CRIT -> stringResource(R.string.breakdown_crit, formatMultiplier(item.value, fixed = false))

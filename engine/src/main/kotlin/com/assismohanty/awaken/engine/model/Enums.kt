@@ -26,6 +26,9 @@ enum class VerificationSource(val multiplier: Double) {
     SELF(1.0),
     TIMER(1.15),
     HEALTH(1.30),
+
+    /** Phone usage observed by the device (Screen Discipline, GD §6.7): same trust as Health, uncapped. */
+    USAGE(1.30),
 }
 
 /** Verification as written in templates (GD §6.2). Every HEALTH_* variant earns the HEALTH multiplier. */
@@ -38,6 +41,9 @@ enum class Verification(val source: VerificationSource) {
     HEALTH_SLEEP(VerificationSource.HEALTH),
     HEALTH_DISTANCE(VerificationSource.HEALTH),
     HEALTH_CALORIES(VerificationSource.HEALTH),
+
+    /** Screen Discipline (GD §6.7): every distracting-app limit held for the game-day. Never in templates. */
+    DEVICE_USAGE(VerificationSource.USAGE),
 }
 
 /** Quest types (GD §6.1). */
@@ -50,7 +56,10 @@ enum class QuestType {
     GATE,
 
     /** A Path quest that was not promoted to main (GD §6.6.6). A promoted one is MAIN with a pathSlotId. */
-    PATH;
+    PATH,
+
+    /** Screen Discipline (GD §6.7): paid at rollover if every limit held, forfeited on the first breach. */
+    DISCIPLINE;
 
     /** Penalty quests and Rank Trial stages cannot crit (GD §4.2). */
     val canCrit: Boolean get() = this != PENALTY && this != TRIAL

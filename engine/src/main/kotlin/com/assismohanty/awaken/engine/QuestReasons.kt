@@ -33,7 +33,8 @@ object QuestReasons {
         QuestType.PENALTY -> QuestReason.Penalty
         QuestType.HABIT -> QuestReason.Habit
         // Path quests carry their own rationale from the blueprint (GD §6.6.3), shown by the Paths UI.
-        QuestType.TRIAL, QuestType.GATE, QuestType.PATH -> null
+        // Screen Discipline explains itself with the limits on its card (GD §6.7).
+        QuestType.TRIAL, QuestType.GATE, QuestType.PATH, QuestType.DISCIPLINE -> null
         QuestType.SIDE -> {
             val last = lastActive[stat]
             val idleDays = last?.let { ChronoUnit.DAYS.between(it, today) }

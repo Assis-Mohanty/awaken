@@ -156,6 +156,7 @@ Reaching the first level of a new band does **not** promote you. It unlocks the 
 | **Penalty** | 0–1 | System | Appears after a failed day (§7.3) |
 | **Trial** | 1 while active | System | Rank Trial stage (§5) |
 | **Focus Gate** | unlimited | User-started | Timer dungeon (§8). Counts as a quest completion. |
+| **Discipline** | 0–1 | System | Screen Discipline (§6.7): paid at rollover if every app limit held |
 
 **Daily Directive** = Main + Path quests scheduled today + Side + Habits scheduled today. Generated at day start (or on first app open of the day — whichever comes first; idempotent per `(hunterId, gameDate)`).
 
@@ -356,6 +357,18 @@ The prompt turns UP/HOLD/DOWN into instructions ("raise targets or complexity by
 | Request body | ≤ 8 KB; response capped at 2,000 output tokens |
 | Global | Monthly spend cap; at 100% the proxy returns `503 budget_exhausted` and the app falls back silently to templates |
 
+### 6.7 Screen Discipline (phone usage, opt-in)
+
+The hunter tags apps **Distracting / Productive / Neutral** and sets a daily limit on distracting apps. Usage is read on the phone (Android usage access), never sent anywhere, and never pays anything by itself. The only reward is one daily quest.
+
+- **Categories.** Defaults come from a bundled package list (Instagram, Facebook, TikTok, Snapchat, X/Twitter, Reddit, YouTube, Netflix, Prime Video, Hotstar, Threads, Pinterest, Discord → Distracting; a short list of work/learning apps → Productive), then Android's own category (Social, Video, Game → Distracting; Productivity → Productive; everything else Neutral). The hunter may change any app.
+- **Limits.** Only Distracting apps carry a limit: default **30 min/day**, editable **5–240 min in 5-min steps**, or no limit (tracked only).
+- **Edits apply from the next game-day.** Category and limit changes never affect today, so a limit can't be raised at 59/60 minutes. Turning Screen Discipline on also starts it tomorrow.
+- **The DISCIPLINE quest.** Each game-day with ≥ 1 limited Distracting app gets one quest: stat **WIL**, **Normal**, verification `DEVICE_USAGE` (source `USAGE`, **V = 1.30**, uncapped like HEALTH). XP and gold follow §4.1/§9.1: **78 XP** at streak 0, up to 117 at streak 30; it can crit. It can't be rerolled and isn't "generated" for §6.4.
+- **Held vs crossed.** Usage is floored to whole minutes; a limit is crossed when usage is strictly over it (exactly 30/30 holds). The first crossing **forfeits** the quest at once (status EXPIRED, "Forfeited"); nothing is ever deducted. If every limit held, the quest is completed at rollover for the finished day, before the day outcome (§7) is computed, and counts as one directive item.
+- **Warnings.** One notification per app per day when ≤ **5 min** remain ("Cross it and you forfeit +78 XP"), and one notice when a limit is crossed. Checks are inexact (WorkManager), so a warning can lag; the verdict always comes from the usage events themselves.
+- **Usage access revoked** mid-day → the quest expires unpaid; nothing else changes.
+
 ---
 
 ## 7. Streak, rest, and the Penalty Zone
@@ -401,7 +414,7 @@ The in-app-verified quest type. Turns study/deep-work into a dungeon run.
 - **Breach rule**: if the app is in background for > 90 seconds cumulative *(phone calls excluded via call state where available; otherwise just the 90 s budget)*, the gate collapses → no XP, a "Gate collapsed" record. Up to 1 pause of ≤ 5 min allowed per run.
 - Clear → `V = TIMER (1.15)`, quest XP via §4.1, + 1 Loot Fragment.
 - **Gates launched from a GATE-mode Path quest** (§6.6.4) have their rank fixed by the quest and the stat fixed to the quest's stat. On clear, the reward is paid **once**, as the Path quest (`sourceType = QUEST`, `sourceId = questInstanceId`), never additionally as a standalone gate. A collapsed run leaves the Path quest open; the hunter may start the gate again the same day.
-- Do NOT use AccessibilityService or usage-stats app blocking in v1 (Play policy review risk + permission friction). The breach budget is enough.
+- Do NOT use AccessibilityService or block apps in v1 (Play policy review risk + permission friction). The breach budget is enough. (Screen Discipline, §6.7, only *reads* usage stats; it never blocks or interrupts an app.)
 
 ---
 
@@ -522,5 +535,15 @@ Template quests, chapters and System lines stay hand-written and bundled. AI wri
 | 33 | Gate cleared from a GATE-mode Path quest (D-Gate, NORMAL, streak 0, no crit) | exactly **one** reward: `round(40×1.5×1.0×1.15)` = **69 XP**, `sourceType = QUEST`; no separate gate reward |
 | 34 | `suggestAdvance = true`, 3 Path quests completed since milestone start | advance **not** offered (needs ≥ 4) |
 | 35 | SELF blueprint `estMinutes = 2` → clamped 5 / `estMinutes = 120` | `minDurationSec` = **75** / **900** (clamp(5×15, 60, 900) = 75; clamp(1800, 60, 900) = 900) |
+
+**Screen Discipline (§6.7)**
+
+| # | Input | Expected |
+|---|---|---|
+| 36 | DISCIPLINE quest, streak 0 / streak 30, no crit, 10,000 SELF XP already today | **78** / **117** XP; no cap applies |
+| 37 | Instagram limit 30 min; used 30 min 59 s / 31 min | **held** / **crossed** |
+| 38 | Limit 30 since 3 days ago; today the hunter sets 120 | today **30**, tomorrow **120** |
+| 39 | 600 min each on a Productive app, a Neutral app and a Distracting app with no limit | nothing crossed; **no stake** (no quest) |
+| 40 | DISCIPLINE quest for the same (hunter, day) twice; next day | same instance id / different id; never rerollable; not "generated" |
 
 > Note on vector 7: the level table in §4.4 lists the *step into* each level (i.e. `xpToNext(L−1)`), so "L10 step 504" = `xpToNext(9)`. Vector 7 is `xpToNext(10)` = 578. Tests are authoritative.

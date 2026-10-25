@@ -300,6 +300,7 @@ private val QuestType.kindRes: Int
         QuestType.TRIAL -> R.string.quest_kind_trial
         QuestType.GATE -> R.string.quest_kind_gate
         QuestType.PATH -> R.string.quest_kind_path
+        QuestType.DISCIPLINE -> R.string.quest_kind_discipline
     }
 
 private val VerificationSource.explanationRes: Int
@@ -307,6 +308,7 @@ private val VerificationSource.explanationRes: Int
         VerificationSource.SELF -> R.string.verify_self
         VerificationSource.TIMER -> R.string.verify_timer
         VerificationSource.HEALTH -> R.string.verify_health
+        VerificationSource.USAGE -> R.string.verify_usage
     }
 
 @Composable
