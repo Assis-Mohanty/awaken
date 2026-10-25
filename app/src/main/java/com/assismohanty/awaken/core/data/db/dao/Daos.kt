@@ -72,6 +72,9 @@ interface HunterDao {
     @Query("UPDATE hunter_profile SET injury_mode = :enabled, injury_tags = :tags WHERE id = 'me'")
     suspend fun setInjury(enabled: Boolean, tags: Set<String>)
 
+    @Query("UPDATE hunter_profile SET screen_time_from = :from WHERE id = 'me'")
+    suspend fun setScreenTimeFrom(from: LocalDate?)
+
     @Query("SELECT * FROM stat_tier")
     suspend fun getTiers(): List<StatTierEntity>
 

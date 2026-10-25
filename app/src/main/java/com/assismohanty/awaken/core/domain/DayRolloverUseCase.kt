@@ -57,6 +57,7 @@ class DayRolloverUseCase @Inject constructor(
     private val advanceTrial: AdvanceTrialUseCase,
     private val pathDao: PathDao,
     private val pathWeeks: PathWeekRequester,
+    private val settleDiscipline: SettleDisciplineUseCase,
     private val transactions: TransactionRunner,
     private val clock: Clock,
 ) {
@@ -75,6 +76,8 @@ class DayRolloverUseCase @Inject constructor(
         var date = maxOf(lastFinalized?.plusDays(1) ?: profile.firstGameDate, profile.firstGameDate)
         while (date < today) {
             carryRecovery(date)
+            // Pays or forfeits the day's Screen Discipline quest before the day outcome is computed (GD §6.7).
+            settleDiscipline(date)
             finalized += finalizeDay(date)
             date = date.plusDays(1)
         }

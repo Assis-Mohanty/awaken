@@ -12,10 +12,12 @@ import com.assismohanty.awaken.core.data.db.dao.HunterDao
 import com.assismohanty.awaken.core.data.db.dao.LedgerDao
 import com.assismohanty.awaken.core.data.db.dao.OwnedCosmeticDao
 import com.assismohanty.awaken.core.data.db.dao.PathDao
+import com.assismohanty.awaken.core.data.db.dao.ScreenTimeDao
 import com.assismohanty.awaken.core.data.db.dao.QuestDao
 import com.assismohanty.awaken.core.data.db.dao.TrialDao
 import com.assismohanty.awaken.core.data.db.entity.AchievementUnlockEntity
 import com.assismohanty.awaken.core.data.db.entity.AiReportEntity
+import com.assismohanty.awaken.core.data.db.entity.AppRuleEntity
 import com.assismohanty.awaken.core.data.db.entity.BalanceCacheEntity
 import com.assismohanty.awaken.core.data.db.entity.CompletionEntity
 import com.assismohanty.awaken.core.data.db.entity.DayRecordEntity
@@ -55,6 +57,7 @@ import com.assismohanty.awaken.core.data.db.entity.TrialEntity
         PathWeekEntity::class,
         PathSlotEntity::class,
         AiReportEntity::class,
+        AppRuleEntity::class,
     ],
 )
 @TypeConverters(Converters::class)
@@ -70,11 +73,12 @@ abstract class AwakenDatabase : RoomDatabase() {
     abstract fun achievementDao(): AchievementDao
     abstract fun ownedCosmeticDao(): OwnedCosmeticDao
     abstract fun pathDao(): PathDao
+    abstract fun screenTimeDao(): ScreenTimeDao
 
     companion object {
         const val NAME = "awaken.db"
 
         /** Also the export format version: an export is only importable into the schema it was written from. */
-        const val SCHEMA_VERSION = 6
+        const val SCHEMA_VERSION = 7
     }
 }

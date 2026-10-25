@@ -101,5 +101,19 @@ val MIGRATION_5_6 = object : Migration(5, 6) {
     }
 }
 
+/**
+ * v6 → v7: Screen Discipline (GD §6.7). The per-app rule table and the profile's start date. Purely additive: the
+ * nullable column means "off" for every existing hunter, and the new table starts empty.
+ */
+val MIGRATION_6_7 = object : Migration(6, 7) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE `hunter_profile` ADD COLUMN `screen_time_from` TEXT")
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS `app_rule` (`package_name` TEXT NOT NULL, `effective_from` TEXT NOT NULL, " +
+                "`category` TEXT NOT NULL, `daily_limit_minutes` INTEGER, PRIMARY KEY(`package_name`, `effective_from`))",
+        )
+    }
+}
+
 /** Every migration, in order. The database builder and the migration test both use this list. */
-val ALL_MIGRATIONS: Array<Migration> = arrayOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6)
+val ALL_MIGRATIONS: Array<Migration> = arrayOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7)

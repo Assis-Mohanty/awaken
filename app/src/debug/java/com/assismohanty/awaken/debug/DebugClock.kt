@@ -5,6 +5,7 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
@@ -76,6 +77,22 @@ class DebugSettings @Inject constructor(
         store.edit { it[ORACLE_FAILURE] = failure.name }
     }
 
+    /**
+     * Debug-only: pretend usage access is granted and add this many minutes of Instagram to today ([DebugUsageGateway]),
+     * so Screen Discipline warnings and forfeits can be tested on an emulator. 0 = off.
+     */
+    val simulatedUsageMinutes: StateFlow<Int> = store.data
+        .map { it[SIMULATED_USAGE_MINUTES] ?: 0 }
+        .stateIn(scope, SharingStarted.Eagerly, 0)
+
+    suspend fun addSimulatedUsage(minutes: Int) {
+        store.edit { it[SIMULATED_USAGE_MINUTES] = ((it[SIMULATED_USAGE_MINUTES] ?: 0) + minutes).coerceAtLeast(0) }
+    }
+
+    suspend fun clearSimulatedUsage() {
+        store.edit { it.remove(SIMULATED_USAGE_MINUTES) }
+    }
+
     suspend fun reset() {
         store.edit { it.remove(OFFSET_DAYS) }
     }
@@ -85,6 +102,7 @@ class DebugSettings @Inject constructor(
         val SIMULATE_STEPS = booleanPreferencesKey("simulate_steps")
         val USE_FAKE_ORACLE = booleanPreferencesKey("use_fake_oracle")
         val ORACLE_FAILURE = stringPreferencesKey("oracle_failure")
+        val SIMULATED_USAGE_MINUTES = intPreferencesKey("simulated_usage_minutes")
     }
 }
 

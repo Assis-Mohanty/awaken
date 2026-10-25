@@ -141,7 +141,34 @@ class MigrationTest {
             assertThat(quest?.setReps).isEmpty()
             assertThat(db.questDao().updateSetReps("q1", "10,8")).isEqualTo(1)
             assertThat(db.questDao().get("q1")?.setReps).isEqualTo("10,8")
-            assertThat(db.openHelper.readableDatabase.version).isEqualTo(6)
+            assertThat(db.openHelper.readableDatabase.version).isEqualTo(AwakenDatabase.SCHEMA_VERSION)
+        } finally {
+            db.close()
+        }
+    }
+
+    @Test
+    fun v6To7LeavesScreenDisciplineOffAndAddsAnEmptyRuleTable() = runTest {
+        val path = createFromSchema(6)
+        SQLiteDatabase.openDatabase(path, null, SQLiteDatabase.OPEN_READWRITE).use { db ->
+            db.execSQL(
+                "INSERT INTO hunter_profile (id, hunter_id, name, created_at, first_game_date, focus_stat_1, focus_stat_2, " +
+                    "day_start_hour, theme_id, onboarding_done, owned_equipment, injury_mode, injury_tags, health_enabled) " +
+                    "VALUES ('me', 'h1', 'Assis', 0, '2026-10-18', 'STR', 'INT', 4, 'default', 1, '', 0, 'impact,legs', 1)",
+            )
+        }
+
+        val db = Room.databaseBuilder(context, AwakenDatabase::class.java, path)
+            .addMigrations(*ALL_MIGRATIONS)
+            .allowMainThreadQueries()
+            .build()
+        try {
+            val profile = db.hunterDao().getProfile()
+            assertThat(profile?.name).isEqualTo("Assis")
+            assertThat(profile?.healthEnabled).isTrue()
+            assertThat(profile?.screenTimeFrom).isNull()
+            assertThat(db.screenTimeDao().allRules()).isEmpty()
+            assertThat(db.openHelper.readableDatabase.version).isEqualTo(AwakenDatabase.SCHEMA_VERSION)
         } finally {
             db.close()
         }

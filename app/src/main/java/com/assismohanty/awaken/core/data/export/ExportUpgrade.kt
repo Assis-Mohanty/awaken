@@ -8,6 +8,7 @@ package com.assismohanty.awaken.core.data.export
 object ExportUpgrade {
     /** v4 → v5 (Phase 15): the Path tables did not exist, so the old file simply has none of their rows. */
     private val PATH_TABLES = listOf("path", "path_milestone", "path_week", "path_slot", "ai_report")
+    private const val APP_RULE_TABLE = "app_rule"
 
     fun toCurrent(doc: ExportDocument): ExportDocument {
         var current = doc
@@ -20,6 +21,13 @@ object ExportUpgrade {
         // v5 → v6 (set counter): the new quest column has a default, so an older file simply leaves it out.
         if (current.app == ExportDocument.APP_ID && current.schemaVersion == 5) {
             current = current.copy(schemaVersion = 6)
+        }
+        // v6 → v7 (Screen Discipline): no app rules existed, and the new profile column is nullable (= off).
+        if (current.app == ExportDocument.APP_ID && current.schemaVersion == 6) {
+            current = current.copy(
+                schemaVersion = 7,
+                tables = current.tables + (APP_RULE_TABLE to current.tables[APP_RULE_TABLE].orEmpty()),
+            )
         }
         return current
     }

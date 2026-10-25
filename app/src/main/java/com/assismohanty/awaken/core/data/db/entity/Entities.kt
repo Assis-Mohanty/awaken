@@ -4,6 +4,7 @@ import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
+import com.assismohanty.awaken.engine.AppCategory
 import com.assismohanty.awaken.engine.DayOutcome
 import com.assismohanty.awaken.engine.GateCollapseReason
 import com.assismohanty.awaken.engine.GateTiming
@@ -51,6 +52,8 @@ data class HunterProfileEntity(
     @ColumnInfo(name = "injury_tags", defaultValue = "impact,legs") val injuryTags: Set<String> = setOf("impact", "legs"),
     @ColumnInfo(name = "health_enabled") val healthEnabled: Boolean = false,
     @ColumnInfo(name = "last_recalibrated_on") val lastRecalibratedOn: LocalDate? = null,
+    /** First game-day Screen Discipline runs (GD §6.7); null = off. Turning it on sets tomorrow (ENGINE_DECISIONS #88). */
+    @ColumnInfo(name = "screen_time_from") val screenTimeFrom: LocalDate? = null,
 ) {
     val focusStats: List<Stat> get() = listOf(focusStat1, focusStat2)
 
@@ -323,4 +326,17 @@ data class AiReportEntity(
     val description: String,
     @ColumnInfo(name = "created_at") val createdAt: Instant,
     @ColumnInfo(name = "sent_at") val sentAt: Instant? = null,
+)
+
+/**
+ * One version of the hunter's rule for an app (GD §6.7). Versions are never edited: a change writes a new row effective
+ * from the next game-day, so today's limits stay fixed (ENGINE_DECISIONS #88). Not a ledger table; it mints nothing.
+ */
+@Entity(tableName = "app_rule", primaryKeys = ["package_name", "effective_from"])
+data class AppRuleEntity(
+    @ColumnInfo(name = "package_name") val packageName: String,
+    @ColumnInfo(name = "effective_from") val effectiveFrom: LocalDate,
+    val category: AppCategory,
+    /** Null = tracked without a limit. */
+    @ColumnInfo(name = "daily_limit_minutes") val dailyLimitMinutes: Int?,
 )

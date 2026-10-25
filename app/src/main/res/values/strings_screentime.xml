@@ -2,5 +2,7 @@
 <resources>
     <!-- Screen Discipline (GAME_DESIGN §6.7, DESIGN_SYSTEM §4.9) -->
     <string name="quest_kind_discipline">SCREEN DISCIPLINE</string>
+    <string name="discipline_quest_title">Screen Discipline</string>
+    <string name="discipline_quest_description">Keep every distracting app under its daily limit until the day ends.</string>
     <string name="verify_usage">Verified by your phone\'s usage data. Pays at the end of the day if every limit held.</string>
 </resources>

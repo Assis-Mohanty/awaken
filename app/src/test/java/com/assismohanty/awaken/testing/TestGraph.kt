@@ -44,6 +44,14 @@ import com.assismohanty.awaken.core.domain.CompletionCenter
 import com.assismohanty.awaken.core.domain.CreateHunterUseCase
 import com.assismohanty.awaken.core.domain.DayRefresher
 import com.assismohanty.awaken.core.domain.DayRolloverUseCase
+import com.assismohanty.awaken.core.domain.DisciplineQuestPlanner
+import com.assismohanty.awaken.core.domain.DisciplineSyncUseCase
+import com.assismohanty.awaken.core.domain.DisciplineText
+import com.assismohanty.awaken.core.domain.ScreenTimeReader
+import com.assismohanty.awaken.core.domain.SeedAppRulesUseCase
+import com.assismohanty.awaken.core.domain.SetAppRuleUseCase
+import com.assismohanty.awaken.core.domain.SetScreenTimeEnabledUseCase
+import com.assismohanty.awaken.core.domain.SettleDisciplineUseCase
 import com.assismohanty.awaken.core.domain.GateRunController
 import com.assismohanty.awaken.core.data.export.GameDataPorter
 import com.assismohanty.awaken.core.data.repo.UiPrefsRepository
@@ -136,8 +144,11 @@ class TestGraph(
     val pathDao = db.pathDao()
     val pathPlanner = PathQuestPlanner(pathDao, db.questDao())
     val createHunter = CreateHunterUseCase(db.hunterDao(), transactions, clock)
+    val usage = FakeUsageGateway()
+    val screenTimeReader = ScreenTimeReader(db.screenTimeDao(), db.questDao(), usage, clock)
+    val disciplinePlanner = DisciplineQuestPlanner(screenTimeReader, DisciplineText(context))
     val generateDirective = GenerateDirectiveUseCase(
-        db.hunterDao(), db.questDao(), db.habitDao(), reader, templates, pathPlanner, transactions, clock,
+        db.hunterDao(), db.questDao(), db.habitDao(), reader, templates, pathPlanner, disciplinePlanner, transactions, clock,
     )
     val trialReader = TrialReader(db.questDao())
     val achievements = AchievementUnlocker(db.questDao(), db.achievementDao(), ledger, reader)
@@ -156,10 +167,15 @@ class TestGraph(
     )
     val pathWork = RecordingPathWorkScheduler()
     val pathWeeks = PathWeekRequester(pathDao, aiPrefs, pathWork, transactions, clock)
+    val settleDiscipline = SettleDisciplineUseCase(db.hunterDao(), db.questDao(), screenTimeReader, usage, completeQuest)
     val rollover = DayRolloverUseCase(
         db.hunterDao(), db.questDao(), db.dayRecordDao(), ledger, reader, templates, generateDirective, advanceTrial, pathDao, pathWeeks,
-        transactions, clock,
+        settleDiscipline, transactions, clock,
     )
+    val seedAppRules = SeedAppRulesUseCase(db.hunterDao(), db.screenTimeDao(), usage, clock)
+    val setScreenTimeEnabled = SetScreenTimeEnabledUseCase(db.hunterDao(), db.questDao(), seedAppRules, screenTimeReader, transactions, clock)
+    val setAppRule = SetAppRuleUseCase(db.hunterDao(), db.screenTimeDao(), clock)
+    val disciplineSync = DisciplineSyncUseCase(db.hunterDao(), db.questDao(), screenTimeReader, reader, usage, transactions, clock)
     val startTrial = StartTrialUseCase(db.hunterDao(), db.questDao(), db.trialDao(), ledger, reader, templates, transactions, clock)
 
     /** A fresh DataStore file per graph, so notices never leak between tests. */

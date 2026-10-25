@@ -87,7 +87,7 @@ class CompleteQuestUseCase @Inject constructor(
     /** Manual completion from the UI: SELF quests only. */
     suspend operator fun invoke(questInstanceId: String): CompleteQuestResult = complete(questInstanceId, verifiedBy = null)
 
-    /** Verified entry point for Focus Gates (TIMER, Phase 8) and Health Connect sync (HEALTH, Phase 11). */
+    /** Verified entry point for Focus Gates (TIMER, Phase 8), Health Connect sync (HEALTH, Phase 11) and Screen Discipline (USAGE). */
     suspend fun completeVerified(questInstanceId: String, verifiedBy: VerificationSource): CompleteQuestResult =
         complete(questInstanceId, verifiedBy)
 
@@ -99,11 +99,15 @@ class CompleteQuestUseCase @Inject constructor(
                 return@run CompleteQuestResult.NotCompletable(quest.status)
             }
             val now = clock.now()
-            val today = clock.gameDate(profile.dayStartHour)
-            if (quest.gameDate != today) return@run CompleteQuestResult.WrongDay
+            val currentDay = clock.gameDate(profile.dayStartHour)
+            // Screen Discipline is paid at rollover for the day that just ended, priced and dated on that day (ENGINE_DECISIONS #91).
+            // Every other completion belongs to the current game-day only.
+            val today = if (verifiedBy == VerificationSource.USAGE) quest.gameDate else currentDay
+            val dayOk = if (verifiedBy == VerificationSource.USAGE) quest.gameDate < currentDay else quest.gameDate == currentDay
+            if (!dayOk) return@run CompleteQuestResult.WrongDay
 
             val source = quest.verification.source
-            // SELF quests complete by hand only; HEALTH/TIMER only through their own verifier.
+            // SELF quests complete by hand only; HEALTH/TIMER/USAGE only through their own verifier.
             val expectedVerifier = if (source == VerificationSource.SELF) null else source
             if (verifiedBy != expectedVerifier) return@run CompleteQuestResult.VerificationRequired
             val startedAt = quest.startedAt
@@ -158,7 +162,7 @@ class CompleteQuestUseCase @Inject constructor(
                     promotedTo = promotedTo,
                     unlockedAchievements = unlocked,
                     // Timed work is final: a cleared Focus Gate, or a Path quest cleared through its gate (ENGINE_DECISIONS #36, #76).
-                    undoable = quest.type != QuestType.GATE && source != VerificationSource.HEALTH &&
+                    undoable = quest.type != QuestType.GATE && source != VerificationSource.HEALTH && source != VerificationSource.USAGE &&
                         !(source == VerificationSource.TIMER && quest.pathSlotId != null),
                     pathQuest = quest.pathSlotId != null,
                 ),

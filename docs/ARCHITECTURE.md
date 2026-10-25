@@ -91,7 +91,8 @@ hunter_profile(id PK='me', hunter_id,                 -- hunter_id: random UUID,
                name, created_at, first_game_date, focus_stat_1, focus_stat_2, day_start_hour,
                reminder_time NULL, equipped_title_id NULL, theme_id, equipped_frame_id NULL, equipped_sigil_id NULL, onboarding_done,
                owned_equipment TEXT,                 -- comma-separated equipment ids (GD §6.3 filter)
-               injury_mode BOOL, injury_tags (default impact,legs), health_enabled BOOL, last_recalibrated_on NULL)
+               injury_mode BOOL, injury_tags (default impact,legs), health_enabled BOOL, last_recalibrated_on NULL,
+               screen_time_from NULL)              -- first game-day Screen Discipline runs (GD §6.7); NULL = off
 
 stat_tier(stat PK, tier TEXT)                         -- EASY..EXTREME, adaptive (GD §6.4)
 
@@ -171,6 +172,11 @@ path_slot(id PK, path_id, iso_week, blueprint_index INT,
           UNIQUE(path_id, iso_week, blueprint_index))
 
 ai_report(id PK, path_slot_id, reason, created_at, sent_at NULL)   -- outbox for /v1/reports
+
+-- SCREEN DISCIPLINE (GAME_DESIGN §6.7). Versioned rules; an edit adds a row effective tomorrow. Mints nothing.
+app_rule(package_name, effective_from, category,      -- DISTRACTING|PRODUCTIVE|NEUTRAL
+         daily_limit_minutes NULL,                     -- distracting apps only; NULL = tracked, no limit
+         PRIMARY KEY(package_name, effective_from))
 ```
 
 `path_slot` holds the *validated, priced* blueprint. `quest_instance` for a Path quest is created from a slot on its game-day by `GenerateDirective`, with `path_slot_id` set; the priced fields are copied, never recomputed from model output.
@@ -179,7 +185,7 @@ UNIQUE with nullable columns: SQLite treats NULLs as distinct → store `''` ins
 
 Ledger sourceIds: QUEST/GATE → completionId; UNDO → the undone row's sourceId; DAY_CLEAR and SHIELD_USE → game_date; ACHIEVEMENT → achievement id; SHOP → purchase UUID (rerolls: `reroll:<game_date>#n`).
 
-Migrations: `exportSchema = true`, schemas committed under `app/schemas/`. Every schema change bumps the version and adds a `Migration` (`core/data/db/Migrations.kt`, listed in `ALL_MIGRATIONS`) plus a case in `MigrationTest`, which builds the old database from its exported JSON (the schemas are debug-only assets) and opens it with the current Room, so Room validates the result. (`MigrationTestHelper` is not used: its `createDatabase` rejects Robolectric database paths on Windows.) Current version: 6 (v1→v2 rebuilt the then-empty `gate_run` for Focus Gates; v2→v3 added `hunter_profile.equipped_frame_id` and `equipped_sigil_id` for the Vault; v3→v4 added `injury_tags` for Settings; v4→v5 added the five AI Paths tables and `quest_instance.path_slot_id`; v5→v6 added `quest_instance.set_reps` for the set counter). **No destructive fallback, ever: hunters never lose data.**
+Migrations: `exportSchema = true`, schemas committed under `app/schemas/`. Every schema change bumps the version and adds a `Migration` (`core/data/db/Migrations.kt`, listed in `ALL_MIGRATIONS`) plus a case in `MigrationTest`, which builds the old database from its exported JSON (the schemas are debug-only assets) and opens it with the current Room, so Room validates the result. (`MigrationTestHelper` is not used: its `createDatabase` rejects Robolectric database paths on Windows.) Current version: 7 (v1→v2 rebuilt the then-empty `gate_run` for Focus Gates; v2→v3 added `hunter_profile.equipped_frame_id` and `equipped_sigil_id` for the Vault; v3→v4 added `injury_tags` for Settings; v4→v5 added the five AI Paths tables and `quest_instance.path_slot_id`; v5→v6 added `quest_instance.set_reps` for the set counter; v6→v7 added `app_rule` and `hunter_profile.screen_time_from` for Screen Discipline). **No destructive fallback, ever: hunters never lose data.**
 
 ## 3. Core flows
 
@@ -321,6 +327,11 @@ Request pipeline, in order (cheap checks first, the model last):
 
 ### 3.10 Vault, Settings and export/import
 `PurchaseItemUseCase` and `OpenRelicCacheUseCase` each run in one transaction and are idempotent on a client-generated id (`SHOP` / `CACHE_OPEN` ledger sources). `ShopRules` (engine) owns the catalogue, prices and the deterministic cache drop. Settings edits go through `UpdateSettingsUseCase` (profile row only); haptics and reduce-motion live in a DataStore (`UiPrefsRepository`) and feed `AwakenTheme` with the equipped theme via `AppearanceViewModel`. `GameDataPorter` exports the raw rows of 17 tables as JSON (SAF, no permission, no network) and imports them atomically (ENGINE_DECISIONS #48).
+
+### 3.11 Screen Discipline (usage stats)
+- **Permission.** `PACKAGE_USAGE_STATS` is a special app access: the Screen Time screen explains it, then opens `Settings.ACTION_USAGE_ACCESS_SETTINGS`. App names and icons come from a launcher-intent `<queries>` block; no `QUERY_ALL_PACKAGES`. Read-only: nothing blocks, overlays or interrupts another app, and no usage data leaves the device (invariant 8 untouched).
+- **Gateway.** `UsageGateway` (real: `AndroidUsageGateway`, which sums foreground time from activity resume/pause events over the game-day window; debug: `DebugUsageGateway` with "simulate Instagram minutes"; tests: `FakeUsageGateway`).
+- **Flow.** Turning it on (`SetScreenTimeEnabledUseCase`) seeds default rules for launcher apps and sets `screen_time_from = tomorrow`. `GenerateDirective` adds the day's DISCIPLINE quest when it runs (`DisciplineQuestPlanner`). `DisciplineSyncUseCase` runs on app foreground and from `ScreenTimeWorker` (periodic, 15 min): the first crossing expires the quest in one transaction, and warnings due are returned for the caller to notify once per app per day. At rollover, `SettleDisciplineUseCase` completes a held day through `CompleteQuestUseCase.completeVerified(id, USAGE)` before `finalizeDay` (ENGINE_DECISIONS #91).
 
 ## 4. State & DI
 - Hilt modules: `DatabaseModule`, `DispatchersModule` (`@IoDispatcher`, `@DefaultDispatcher`), `ClockModule` (`Clock` interface; `SystemClock` in prod, `FakeClock` in tests), `EngineModule` (provides engine objects + loaded template library), `AiModule` (Ktor `HttpClient`, `PathOracleClient` bound to the real or fake implementation, `IntegrityTokenProvider`; base URL from `BuildConfig` per build type).

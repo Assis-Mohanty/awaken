@@ -16,8 +16,18 @@
     <uses-permission android:name="android.permission.health.READ_ACTIVE_CALORIES_BURNED" />
     <uses-permission android:name="android.permission.health.READ_HEART_RATE" />
 
+    <!-- Screen Discipline (ARCH §3.11): read-only usage access the hunter grants in system settings. Never blocks apps. -->
+    <uses-permission
+        android:name="android.permission.PACKAGE_USAGE_STATS"
+        tools:ignore="ProtectedPermissions" />
+
     <queries>
         <package android:name="com.google.android.apps.healthdata" />
+        <!-- Launcher apps only, for the Screen Time list's names and icons (no QUERY_ALL_PACKAGES). -->
+        <intent>
+            <action android:name="android.intent.action.MAIN" />
+            <category android:name="android.intent.category.LAUNCHER" />
+        </intent>
     </queries>
 
     <application

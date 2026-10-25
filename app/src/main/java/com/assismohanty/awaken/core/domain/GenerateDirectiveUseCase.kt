@@ -17,7 +17,7 @@ import java.time.LocalDate
 import javax.inject.Inject
 
 /**
- * Daily Directive for one game-date (GD §6.3): main + sides once per date, plus today's habits. Idempotent: ids are
+ * Daily Directive for one game-date (GD §6.3): main + sides once per date, plus today's habits and Screen Discipline. Idempotent: ids are
  * deterministic, so a second call (or a race) inserts nothing new.
  */
 class GenerateDirectiveUseCase @Inject constructor(
@@ -27,6 +27,7 @@ class GenerateDirectiveUseCase @Inject constructor(
     private val reader: GameStateReader,
     private val templates: TemplateRepository,
     private val pathQuests: PathQuestPlanner,
+    private val discipline: DisciplineQuestPlanner,
     private val transactions: TransactionRunner,
     private val clock: Clock,
 ) {
@@ -47,6 +48,8 @@ class GenerateDirectiveUseCase @Inject constructor(
                     pathQuests.draftsFor(gameDate).map { it.copy(type = QuestType.PATH).toEntity(now) },
                 )
             }
+            // Screen Discipline (GD §6.7): one quest per day it runs; the deterministic id makes this a no-op once inserted.
+            discipline.draftFor(profile, gameDate)?.let { questDao.insertAll(listOf(it.toEntity(now))) }
             questDao.insertAll(
                 habitDao.active()
                     .filter { it.isScheduledOn(gameDate) }

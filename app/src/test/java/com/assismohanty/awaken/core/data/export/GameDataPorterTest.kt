@@ -239,6 +239,28 @@ class GameDataPorterTest {
     }
 
     @Test
+    fun aBackupFromBeforeScreenDisciplineStillImports() = runTest {
+        playSomeGame()
+        val current = source.porter.export()
+        // What a v6 app wrote: no app_rule table, no screen_time_from column on the profile.
+        val v6 = mutate(current) { root ->
+            root["schemaVersion"] = JsonPrimitive(6)
+            root["tables"] = JsonObject(
+                root.getValue("tables").jsonObject.filterKeys { it != "app_rule" }.mapValues { (table, rows) ->
+                    if (table != "hunter_profile") rows else JsonArray(rows.jsonArray.map { JsonObject(it.jsonObject - "screen_time_from") })
+                },
+            )
+        }
+
+        val result = target.porter.import(v6)
+
+        assertThat(result).isInstanceOf(ImportResult.Imported::class.java)
+        assertThat(target.ledger.balances()).isEqualTo(source.ledger.balances())
+        assertThat(target.db.hunterDao().getProfile()?.screenTimeFrom).isNull()
+        assertThat(tablesOf(target.porter.export())).isEqualTo(tablesOf(current))
+    }
+
+    @Test
     fun pathsRoundTripThroughExportAndImport() = runTest {
         source.seedHunter()
         source.grantConsent()
