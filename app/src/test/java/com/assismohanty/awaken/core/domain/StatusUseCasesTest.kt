@@ -10,6 +10,7 @@ import com.assismohanty.awaken.engine.model.SourceType
 import com.assismohanty.awaken.engine.model.Stat
 import com.assismohanty.awaken.feature.quest.newlyUnlockedChapters
 import com.assismohanty.awaken.testing.TestGraph
+import com.assismohanty.awaken.engine.AchievementEvaluator
 import com.google.common.truth.Truth.assertThat
 import java.time.LocalDate
 import kotlinx.coroutines.flow.filterNotNull
@@ -115,7 +116,7 @@ class StatusUseCasesTest {
 
         val model = status()
 
-        assertThat(model.achievements).hasSize(32)
+        assertThat(model.achievements).hasSize(AchievementEvaluator.all.size)
         assertThat(model.achievements.filter { it.unlocked }.map { it.id }).containsExactly("first_blood")
         assertThat(model.chapters).hasSize(6)
         assertThat(model.chapters.filter { it.unlocked }.map { it.chapter.unlockLevel }).containsExactly(1)

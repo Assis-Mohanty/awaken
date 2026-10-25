@@ -25,6 +25,8 @@ data class AchievementSnapshot(
     val dawnRaidDays: Int = 0,
     val midnightGates: Int = 0,
     val cachesOpened: Int = 0,
+    /** 45-day campaigns finished at or above the completion bar (GD §6.8). */
+    val campaignsCompleted: Int = 0,
     val alreadyUnlocked: Set<String> = emptySet(),
 ) {
     fun statLevel(stat: Stat): Int = StatLevel.level(statXp[stat] ?: 0L)
@@ -83,6 +85,7 @@ object AchievementEvaluator {
         add(Achievement("early_bird", 50) { it.dawnRaidDays >= 5 })
         add(Achievement("night_owl", 20) { it.midnightGates >= 1 })
         add(Achievement("collector", 50) { it.cachesOpened >= 5 })
+        add(Achievement("reforged", 1_000, "reforged") { it.campaignsCompleted >= 1 })
     }
 
     val byId: Map<String, Achievement> = all.associateBy { it.id }

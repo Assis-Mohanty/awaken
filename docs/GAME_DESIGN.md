@@ -370,6 +370,18 @@ The hunter tags apps **Distracting / Productive / Neutral** and sets a daily lim
 - **Usage access revoked** mid-day → the quest expires unpaid; nothing else changes.
 - **Notifications** use their own `screen_time` channel, outside the two-a-day reminder cap (ARCH §3.5), because the hunter opted in and each alert fires at most once per app per day.
 
+### 6.8 The 45-day Campaign (opt-in)
+
+A fixed-length program built from the hunter's own scan. Clean-room design: no content, art or code from any other app.
+
+- **Scan.** 10 questions, two per stat, answered 0 (never) … 3 (almost always). Score per stat = sum (0–6). The weakest stat (ties → stat order STR, INT, WIL, VIT, CHA) is "where we start" and names the **archetype**: STR *The Rebuilder*, INT *The Scholar*, WIL *The Iron Will*, VIT *The Restorer*, CHA *The Envoy*.
+- **Plan.** Up to **5 campaign habits** from the template library (SELF templates that support Easy, Normal and Hard; equipment and Injury Mode filters apply): weakest stat ×2 (daily + Mon/Wed/Fri), 2nd and 3rd weakest ×1 (Tue/Thu/Sat, Mon/Wed/Fri), 4th weakest ×1 (Tue/Thu/Sat). The strongest stat is left to the daily directive. Deterministic per hunter.
+- **Habit slots.** Campaign habits count toward the 8 active habits (§4.3). With fewer than **3** free slots the campaign can't start; with 3–4 free it takes that many.
+- **Length and acts.** **45 game-days**, day 1 = the day the oath is sealed. Acts of 15 days: **Foundation** (days 1–15, Easy), **Build** (16–30, Normal), **Ascend** (31–45, Hard). Each habit's difficulty is the act's tier, but never more than one step above that stat's adaptive tier (§6.4); its target is the template's target for that tier. Campaign habits are system quests from templates, so the custom-habit Normal cap (§4.3) does not apply to them; they are read-only in the habit editor and the SELF daily cap still applies.
+- **Oath.** The hunter seals a short commitment (their name and the end date) with a long press. Stored locally; no signature is kept.
+- **Progress.** A campaign day counts when the game-day is **cleared** (§7.1). Missed days never reset anything (pillar 3).
+- **Completion.** When day 45 has been finalized: **≥ 32 cleared days (70 %)** → status COMPLETED and the **Reforged** achievement (+1,000 gold, title *Reforged*, §10); otherwise ENDED. Either way the campaign habits are archived. One active campaign at a time; the hunter may abandon it anytime (habits archived, nothing deducted).
+
 ---
 
 ## 7. Streak, rest, and the Penalty Zone
@@ -456,7 +468,7 @@ The in-app-verified quest type. Turns study/deep-work into a dungeon run.
 
 ---
 
-## 10. Achievements & titles (launch set: 32)
+## 10. Achievements & titles (launch set: 32, plus Reforged)
 
 Each unlock: toast + haptic + gold reward. Titles are equippable; one shows under the hunter name.
 
@@ -476,6 +488,7 @@ Each unlock: toast + haptic + gold reward. Titles are equippable; one shows unde
 | early_bird | Dawn Raid | Complete a quest before 07:00 on 5 days | 50 | — |
 | night_owl | Midnight Gate | Clear a Focus Gate after 23:00 | 20 | — |
 | collector | Relic Hunter | Open 5 Relic Caches | 50 | — |
+| reforged | Reforged | Complete a 45-day campaign (§6.8) | 1,000 | "Reforged" |
 
 Achievements are evaluated by a pure function over ledger/state after each write — no ad-hoc counters scattered in UI code.
 
@@ -546,5 +559,15 @@ Template quests, chapters and System lines stay hand-written and bundled. AI wri
 | 38 | Limit 30 since 3 days ago; today the hunter sets 120 | today **30**, tomorrow **120** |
 | 39 | 600 min each on a Productive app, a Neutral app and a Distracting app with no limit | nothing crossed; **no stake** (no quest) |
 | 40 | DISCIPLINE quest for the same (hunter, day) twice; next day | same instance id / different id; never rerollable; not "generated" |
+
+**45-day Campaign (§6.8)**
+
+| # | Input | Expected |
+|---|---|---|
+| 41 | Start 2026-10-25 | day 1 = start, day 45 = 2026-12-08, 2026-12-09 is past the end |
+| 42 | Day 15 / 16 / 30 / 31 | Foundation / Build / Build / Ascend |
+| 43 | Ascend with stat tier Normal / Easy | Hard / Normal (one above the adaptive tier at most) |
+| 44 | 32 / 31 cleared days at the end | COMPLETED / ENDED |
+| 45 | Campaign completed once | Reforged unlocks once: +1,000 gold, title "Reforged" |
 
 > Note on vector 7: the level table in §4.4 lists the *step into* each level (i.e. `xpToNext(L−1)`), so "L10 step 504" = `xpToNext(9)`. Vector 7 is `xpToNext(10)` = 578. Tests are authoritative.

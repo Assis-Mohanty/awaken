@@ -82,6 +82,7 @@ fun titleNameRes(titleId: String): Int? = when (titleId) {
     "stoic" -> R.string.title_stoic
     "evergreen" -> R.string.title_evergreen
     "silver_tongue" -> R.string.title_silver_tongue
+    "reforged" -> R.string.title_reforged
     "d_rank_hunter" -> R.string.title_d_rank_hunter
     "c_rank_hunter" -> R.string.title_c_rank_hunter
     "b_rank_hunter" -> R.string.title_b_rank_hunter
@@ -125,6 +126,7 @@ fun achievementConditionRes(achievementId: String): Int? = when (achievementId) 
     "early_bird" -> R.string.condition_early_bird
     "night_owl" -> R.string.condition_night_owl
     "collector" -> R.string.condition_collector
+    "reforged" -> R.string.condition_reforged
     else -> null
 }
 
@@ -163,6 +165,7 @@ fun achievementNameRes(achievementId: String): Int? = when (achievementId) {
     "early_bird" -> R.string.achievement_early_bird
     "night_owl" -> R.string.achievement_night_owl
     "collector" -> R.string.achievement_collector
+    "reforged" -> R.string.achievement_reforged
     else -> null
 }
 
