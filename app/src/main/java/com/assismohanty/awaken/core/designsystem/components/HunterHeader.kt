@@ -1,5 +1,7 @@
 package com.assismohanty.awaken.core.designsystem.components
 
+import androidx.compose.animation.core.animateIntAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -11,6 +13,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -48,6 +51,11 @@ fun HunterHeader(model: HunterHeaderModel, modifier: Modifier = Modifier, large:
     val colors = AwakenTheme.colors
     val type = AwakenTheme.type
     val dimens = AwakenTheme.dimens
+    val motion = AwakenTheme.motion
+    // Numbers roll to their new value (DS §2.5 `reveal`); reduce-motion snaps.
+    val countUp = tween<Int>(motion.duration(motion.revealMs), easing = motion.standardEasing)
+    val level by animateIntAsState(model.level, countUp, label = "level")
+    val gold by animateIntAsState(model.gold.coerceAtMost(Int.MAX_VALUE.toLong()).toInt(), countUp, label = "gold")
     Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
             RankCrest(model.rank, if (large) dimens.crestLarge else dimens.crestSmall)
@@ -80,14 +88,14 @@ fun HunterHeader(model: HunterHeaderModel, modifier: Modifier = Modifier, large:
             )
             Counter(
                 icon = AwakenGlyphs.Coin,
-                value = formatCount(model.gold),
+                value = formatCount(gold.toLong()),
                 tint = colors.crit,
                 description = stringResource(R.string.cd_gold, formatCount(model.gold)),
             )
         }
         Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
             Text(
-                text = stringResource(R.string.level_short, model.level),
+                text = stringResource(R.string.level_short, level),
                 style = if (large) type.displayXL else type.display,
                 color = colors.bone,
             )

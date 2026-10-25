@@ -39,6 +39,10 @@ data class AwakenColors(
     val ember: Color = Ember,
     val crit: Color = Crit,
     val verified: Color = Verified,
+    /** Bottom stop of the System Window's vertical fill (panel → panelShade): depth without shadows (DS §2.3). */
+    val panelShade: Color = Color(0xFF090909),
+    /** The 1dp "lit edge" along a window's top: light catching the slab. Transparent in the light palette. */
+    val panelSheen: Color = Color(0x12FFFFFF),
     val rankE: Color = Color(0xFF8A96A8),
     val rankD: Color = Color(0xFF5BD08A),
     val rankC: Color = Color(0xFF4FD6E8),
@@ -117,6 +121,8 @@ data class AwakenColors(
             ember = Color(0xFFD42C42),
             crit = Color(0xFF946500),
             verified = Color(0xFF0A7F56),
+            panelShade = Color(0xFFFAFAF8),
+            panelSheen = Color(0x00FFFFFF),
             rankE = Color(0xFF5A6678),
             rankD = Color(0xFF1E8048),
             rankC = Color(0xFF0B7A8A),

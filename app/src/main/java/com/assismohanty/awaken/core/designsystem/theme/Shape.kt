@@ -27,7 +27,7 @@ data class AwakenDimens(
     val bracketLength: Dp = 24.dp,
     val hairline: Dp = 1.dp,
     val touchTarget: Dp = 48.dp,
-    val xpBarHeight: Dp = 10.dp,
+    val xpBarHeight: Dp = 6.dp,
     val xpBarLeadGlow: Dp = 24.dp,
     val iconSmall: Dp = 16.dp,
     val icon: Dp = 24.dp,
@@ -48,6 +48,11 @@ data class AwakenDimens(
     val toastMaxWidth: Dp = 420.dp,
     val shareCardWidth: Dp = 360.dp,
     val shareCardHeight: Dp = 450.dp,
+    /** How far a staggered item rises while it fades in (DS §2.5). */
+    val staggerRise: Dp = 12.dp,
+    /** Bottom-bar selection mark: a short bar above the selected tab's icon (DS §3). */
+    val navIndicatorWidth: Dp = 20.dp,
+    val navIndicatorHeight: Dp = 2.dp,
 )
 
 val LocalAwakenShapes = staticCompositionLocalOf { AwakenShapes() }

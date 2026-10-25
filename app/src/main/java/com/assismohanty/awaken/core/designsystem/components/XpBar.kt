@@ -29,7 +29,7 @@ import com.assismohanty.awaken.core.designsystem.theme.AwakenTheme
 import com.assismohanty.awaken.core.designsystem.theme.Spacing
 
 /**
- * XP bar (DESIGN_SYSTEM §3): 10dp, chamfered ends, `edge` track, `system` fill with a 24dp leading gradient to `aether`.
+ * XP bar (DESIGN_SYSTEM §3): 6dp, chamfered ends, `edge` track, `system` fill with a 24dp leading gradient to `aether`.
  * Animates changes with the `standard` motion; shows "1,240 / 1,434 XP" underneath.
  */
 @Composable

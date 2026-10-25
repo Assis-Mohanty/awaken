@@ -83,7 +83,7 @@ Rules: UPPERCASE is reserved for `windowTitle` — that's the System speaking. E
 - **Chips/badges**: fully rounded pills (stat, difficulty, verified).
 - **Buttons**: primary = filled `system`, chamfered 8dp one corner; secondary = outlined `edge`; text buttons for low-emphasis.
 - Spacing scale: 4, 8, 12, 16, 24, 32, 48. Screen gutters 20dp. Content max width 560dp (tablets centre it).
-- No drop shadows, no glows on chrome. Depth = black-on-black panels and hairlines. The background may carry a barely visible rank-tinted haze (~5 %).
+- No drop shadows, no glows on chrome. Depth = black-on-black panels and hairlines. The System Window fill is a vertical gradient `panel` → `panelShade`, with a 1dp `panelSheen` "lit edge" along its top that fades out to the right (transparent in the light palette). The XP bar is 6dp. The background may carry a barely visible rank-tinted haze (~5 %).
 
 ### 2.4 Iconography
 Material Symbols *Sharp* (outlined, weight 300) — matches the chamfered geometry. Custom vector glyphs (draw in Compose `ImageVector`) for: 5 stat sigils, rank crest (hex frame with letter), gate portal, shield, loot fragment.
@@ -93,7 +93,9 @@ Material Symbols *Sharp* (outlined, weight 300) — matches the chamfered geomet
 |---|---|---|
 | `quick` | 120 ms, `FastOutSlowIn` | Press, toggles |
 | `standard` | 240 ms, emphasized decelerate | Sheets, list changes |
-| `reveal` | 420 ms | Window open (scale 0.96→1 + edge "draws" around the perimeter) |
+| `reveal` | 420 ms | Window open (scale 0.96→1 + edge "draws" around the perimeter); header numbers (level, gold) count up to a new value |
+| `stagger` | 40 ms step, `standard` | Screen entrance: top-level items rise 12dp and fade in one after another (max 6 steps) |
+| press | `quick`, scale 0.98 | Buttons settle slightly while held |
 | `ceremony` | ~2.2 s choreographed | Level-up / rank-up only |
 
 - **One orchestrated moment per event.** Completing a quest: row check → the XP number counts up inside the reward sheet → bar fills with an `aether` leading glow. That's it — no confetti on every tap.
@@ -135,7 +137,7 @@ Off by default in v1 (toggle in settings ready, assets in v1.1). Never ship a so
 
 ## 4. Screens & flows
 
-Navigation: bottom bar with 5 destinations — **Today**, **Paths**, **Gates**, **Status**, **Vault**. Settings from Status top-right.
+Navigation: bottom bar (`depth` fill, one `edge` hairline on top, the selected tab marked by a 20×2dp `system` bar above its icon, no Material pill) with 5 destinations — **Today**, **Paths**, **Gates**, **Status**, **Vault**. Settings from Status top-right.
 
 ### 4.1 Awakening (onboarding) — target < 60 seconds without a Path, < 2 minutes with one; no account
 

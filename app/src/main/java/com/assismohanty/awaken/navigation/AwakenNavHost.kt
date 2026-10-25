@@ -1,12 +1,18 @@
 package com.assismohanty.awaken.navigation
 
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarHost
@@ -18,7 +24,12 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.LifecycleStartEffect
@@ -33,6 +44,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.assismohanty.awaken.core.designsystem.components.GateBackground
 import com.assismohanty.awaken.core.designsystem.theme.AwakenTheme
+import com.assismohanty.awaken.core.designsystem.theme.Spacing
 import com.assismohanty.awaken.debug.DebugEntry
 import com.assismohanty.awaken.engine.model.Rank
 import com.assismohanty.awaken.feature.gate.GatesEntry
@@ -105,7 +117,10 @@ private fun MainScaffold(
             },
             bottomBar = {
                 if (showBottomBar) {
-                    NavigationBar(containerColor = AwakenTheme.colors.depth) {
+                    NavigationBar(
+                        containerColor = AwakenTheme.colors.depth,
+                        modifier = Modifier.topHairline(AwakenTheme.colors.edge, AwakenTheme.dimens.hairline),
+                    ) {
                         TopLevelDestination.entries.forEach { destination ->
                             val selected = currentDestination?.hierarchy
                                 ?.any { it.hasRoute(destination.route::class) } == true
@@ -122,8 +137,9 @@ private fun MainScaffold(
                                     }
                                 },
                                 // Label text is visible, so the icon is decorative (avoids TalkBack reading it twice).
-                                icon = { Icon(destination.icon, contentDescription = null) },
+                                icon = { NavIcon(destination.icon, selected) },
                                 label = { Text(label) },
+                                colors = navItemColors(),
                             )
                         }
                     }
@@ -186,3 +202,39 @@ private fun MainScaffold(
         RewardHost(snackbarHostState = snackbarHostState)
     }
 }
+
+/** Bottom bar seam: one `edge` hairline along the top instead of an elevation shadow (DS §2.3). */
+private fun Modifier.topHairline(color: Color, width: Dp): Modifier = drawBehind {
+    drawLine(color, start = Offset(0f, 0f), end = Offset(size.width, 0f), strokeWidth = width.toPx())
+}
+
+/** Tab icon with a short `system` bar above it when selected: our selection mark instead of Material's pill (DS §3). */
+@Composable
+private fun NavIcon(icon: ImageVector, selected: Boolean) {
+    val motion = AwakenTheme.motion
+    val dimens = AwakenTheme.dimens
+    val mark by animateFloatAsState(
+        targetValue = if (selected) 1f else 0f,
+        animationSpec = tween(motion.duration(motion.standardMs), easing = motion.standardEasing),
+        label = "navMark",
+    )
+    val markColor = AwakenTheme.colors.system
+    Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(Spacing.xxs)) {
+        Box(
+            modifier = Modifier
+                .size(width = dimens.navIndicatorWidth, height = dimens.navIndicatorHeight)
+                .graphicsLayer { scaleX = mark }
+                .background(markColor.copy(alpha = mark)),
+        )
+        Icon(icon, contentDescription = null)
+    }
+}
+
+@Composable
+private fun navItemColors() = NavigationBarItemDefaults.colors(
+    selectedIconColor = AwakenTheme.colors.bone,
+    selectedTextColor = AwakenTheme.colors.bone,
+    unselectedIconColor = AwakenTheme.colors.mist,
+    unselectedTextColor = AwakenTheme.colors.mist,
+    indicatorColor = Color.Transparent,
+)

@@ -30,6 +30,7 @@ import com.assismohanty.awaken.core.designsystem.components.QuestRowModel
 import com.assismohanty.awaken.core.designsystem.components.QuestRowState
 import com.assismohanty.awaken.core.designsystem.components.QuietButton
 import com.assismohanty.awaken.core.designsystem.components.SystemWindow
+import com.assismohanty.awaken.core.designsystem.components.staggeredEntrance
 import com.assismohanty.awaken.core.designsystem.components.titleNameRes
 import com.assismohanty.awaken.core.designsystem.preview.PhonePreviews
 import com.assismohanty.awaken.core.designsystem.theme.AwakenAlpha
@@ -101,13 +102,17 @@ fun TodayScreen(
                 return@Column
             }
             val title = state.equippedTitleId?.let(::titleNameRes)?.let { stringResource(it) }
-            HunterHeader(header.copy(title = title))
+            HunterHeader(header.copy(title = title), modifier = Modifier.staggeredEntrance(0))
             Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterEnd) {
                 QuietButton(text = stringResource(R.string.action_day_plan), onClick = { onDayPlanEvent(DayPlanEvent.Open) })
             }
 
             state.penalty?.let { penalty ->
-                SystemWindow(title = stringResource(R.string.quest_kind_penalty), accent = colors.ember) {
+                SystemWindow(
+                    title = stringResource(R.string.quest_kind_penalty),
+                    accent = colors.ember,
+                    modifier = Modifier.staggeredEntrance(1),
+                ) {
                     QuestRow(
                         model = penalty,
                         onComplete = { onEvent(TodayEvent.Complete(penalty.id)) },
@@ -131,6 +136,7 @@ fun TodayScreen(
             SystemWindow(
                 title = stringResource(if (state.cleared) R.string.system_title_directive_cleared else R.string.system_title_daily_directive),
                 accent = clearedPulseAccent(state.cleared, base = AwakenTheme.rankAccent(state.rank)),
+                modifier = Modifier.staggeredEntrance(2),
                 headerTrailing = {
                     Text(
                         text = stringResource(R.string.today_progress, state.completed, state.total),
@@ -179,7 +185,7 @@ fun TodayScreen(
             }
 
             state.systemLine?.let { line ->
-                Text(text = line, style = type.body, color = colors.mist, modifier = Modifier.padding(horizontal = Spacing.xxs))
+                Text(text = line, style = type.body, color = colors.mist, modifier = Modifier.staggeredEntrance(3).padding(horizontal = Spacing.xxs))
             }
         }
     }

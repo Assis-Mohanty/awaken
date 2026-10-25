@@ -17,7 +17,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.drawWithCache
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathMeasure
@@ -67,7 +70,8 @@ fun SystemWindow(
                 alpha = if (animate) progress.value.coerceAtLeast(MIN_REVEAL_ALPHA) else 1f
             }
             .clip(shapes.window)
-            .background(AwakenTheme.colors.panel)
+            .background(Brush.verticalGradient(listOf(AwakenTheme.colors.panel, AwakenTheme.colors.panelShade)))
+            .litEdge(AwakenTheme.colors.panelSheen, dimens.edgeWidth, shapes.windowChamfer)
             .windowEdge(
                 shape = shapes.window,
                 edgeColor = AwakenTheme.colors.edge,
@@ -145,6 +149,21 @@ fun Modifier.windowEdge(
             style = Stroke(width = accentPx, cap = StrokeCap.Square, join = StrokeJoin.Miter),
         )
     }
+}
+
+/**
+ * A hairline of [sheen] along the top edge, starting after the top-start chamfer and fading out to the right: light
+ * catching the slab's top (DS §2.3). Drawn under the edge stroke, so the hairline still defines the window.
+ */
+private fun Modifier.litEdge(sheen: Color, width: Dp, chamfer: Dp): Modifier = drawBehind {
+    if (sheen.alpha == 0f) return@drawBehind
+    val y = width.toPx() * 1.5f
+    drawLine(
+        brush = Brush.horizontalGradient(listOf(sheen, Color.Transparent), startX = chamfer.toPx(), endX = size.width),
+        start = Offset(chamfer.toPx(), y),
+        end = Offset(size.width, y),
+        strokeWidth = width.toPx(),
+    )
 }
 
 private const val REVEAL_START_SCALE = 0.96f

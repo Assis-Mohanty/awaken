@@ -18,6 +18,8 @@ data class AwakenMotion(
     val quickMs: Int = 120,
     val standardMs: Int = 240,
     val revealMs: Int = 420,
+    /** Delay between consecutive items of a staggered entrance. */
+    val staggerStepMs: Int = 40,
     val ceremonyMs: Int = 2_200,
     val typeOnCharMs: Long = 30,
     val ceremonySkippableAfterMs: Long = 600,
