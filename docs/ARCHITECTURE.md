@@ -183,6 +183,18 @@ app_rule(package_name, effective_from, category,      -- DISTRACTING|PRODUCTIVE|
 campaign(id PK, start_date, focus_stat, archetype, scores TEXT,   -- scores "STR:3,INT:5,…" from the scan
          oath_sealed_at, status,                                  -- ACTIVE|COMPLETED|ENDED|ABANDONED
          current_act, cleared_days INT, ended_at NULL)            -- FOUNDATION|BUILD|ASCEND
+
+-- Gym and Diet (GD §13): trackers, not ledger tables; rows may be edited and deleted (ENGINE_DECISIONS #95)
+custom_exercise(id PK "custom:<uuid>", name, equipment, primary_muscles, secondary_muscles, created_at)
+routine(id PK, name, updated_at)
+routine_exercise(routine_id, position, exercise_id, set_count, PK(routine_id, position))
+workout(id PK, name, game_date, started_at, ended_at NULL)          -- ended_at NULL = in progress (one at a time)
+workout_set(id PK, workout_id, exercise_id, exercise_name, primary_muscles, secondary_muscles,   -- name + muscles snapshotted
+            position, set_index, weight_kg REAL, reps INT, done)
+custom_food(id PK "custom:<uuid>", name, nutrients_json, portions_json, created_at)   -- per 100 g
+food_log(id PK, game_date, meal, food_id, name, grams REAL, portion_label NULL,
+         nutrients_json, logged_at)                                -- per-100 g snapshot: the day never changes later
+nutrition_profile(id PK = 1, sex, birth_year, height_cm, weight_kg, activity, goal, overrides_json, updated_at)
 ```
 
 `path_slot` holds the *validated, priced* blueprint. `quest_instance` for a Path quest is created from a slot on its game-day by `GenerateDirective`, with `path_slot_id` set; the priced fields are copied, never recomputed from model output.
@@ -191,7 +203,7 @@ UNIQUE with nullable columns: SQLite treats NULLs as distinct → store `''` ins
 
 Ledger sourceIds: QUEST/GATE → completionId; UNDO → the undone row's sourceId; DAY_CLEAR and SHIELD_USE → game_date; ACHIEVEMENT → achievement id; SHOP → purchase UUID (rerolls: `reroll:<game_date>#n`).
 
-Migrations: `exportSchema = true`, schemas committed under `app/schemas/`. Every schema change bumps the version and adds a `Migration` (`core/data/db/Migrations.kt`, listed in `ALL_MIGRATIONS`) plus a case in `MigrationTest`, which builds the old database from its exported JSON (the schemas are debug-only assets) and opens it with the current Room, so Room validates the result. (`MigrationTestHelper` is not used: its `createDatabase` rejects Robolectric database paths on Windows.) Current version: 8 (v1→v2 rebuilt the then-empty `gate_run` for Focus Gates; v2→v3 added `hunter_profile.equipped_frame_id` and `equipped_sigil_id` for the Vault; v3→v4 added `injury_tags` for Settings; v4→v5 added the five AI Paths tables and `quest_instance.path_slot_id`; v5→v6 added `quest_instance.set_reps` for the set counter; v6→v7 added `app_rule` and `hunter_profile.screen_time_from` for Screen Discipline; v7→v8 added `campaign` and `habit.campaign_id`/`template_id` for the 45-day Campaign). **No destructive fallback, ever: hunters never lose data.**
+Migrations: `exportSchema = true`, schemas committed under `app/schemas/`. Every schema change bumps the version and adds a `Migration` (`core/data/db/Migrations.kt`, listed in `ALL_MIGRATIONS`) plus a case in `MigrationTest`, which builds the old database from its exported JSON (the schemas are debug-only assets) and opens it with the current Room, so Room validates the result. (`MigrationTestHelper` is not used: its `createDatabase` rejects Robolectric database paths on Windows.) Current version: 9 (v1→v2 rebuilt the then-empty `gate_run` for Focus Gates; v2→v3 added `hunter_profile.equipped_frame_id` and `equipped_sigil_id` for the Vault; v3→v4 added `injury_tags` for Settings; v4→v5 added the five AI Paths tables and `quest_instance.path_slot_id`; v5→v6 added `quest_instance.set_reps` for the set counter; v6→v7 added `app_rule` and `hunter_profile.screen_time_from` for Screen Discipline; v7→v8 added `campaign` and `habit.campaign_id`/`template_id` for the 45-day Campaign; v8→v9 added the eight Gym and Diet tables). **No destructive fallback, ever: hunters never lose data.**
 
 ## 3. Core flows
 
@@ -344,6 +356,11 @@ Request pipeline, in order (cheap checks first, the model last):
 - `PreviewCampaignUseCase` turns scan answers into scores, archetype and up to 5 planned habits (engine `CampaignPlanner`) without writing. `StartCampaignUseCase` (the sealed oath) writes the campaign and its habits in one transaction and regenerates today's directive so the habits join it.
 - `AdvanceCampaignUseCase` runs in the rollover after finalization and before `GenerateDirective`: on a new act it re-prices each campaign habit from its template; after day 45 it records COMPLETED/ENDED, archives the habits and calls `AchievementUnlocker`, which pays `reforged` (+1,000 gold, title) once.
 - `ObserveCampaignUseCase` feeds the Campaign screen and the Today card (day N/45, act, cleared days, calendar).
+
+### 3.13 Gym and Diet (trackers)
+- **Catalogs.** `core/data/catalog`: `ExerciseCatalog` (`assets/gym/exercises.json`, free-exercise-db, Unlicense) and `FoodCatalog` (`assets/nutrition/foods.json`, USDA SR Legacy + FNDDS, public domain), loaded once on the IO dispatcher like `TemplateRepository`. Built offline by `tools/catalog/*.mjs` (pinned sources in `tools/catalog/README.md`); ~1 MB compressed in the APK. No network: invariant 8 is unchanged. `CatalogSearch` ranks names (whole query at the start > first word > every word starts a word > anywhere; shorter names win ties).
+- **Domain.** `GymTracker` (session in progress, sets prefilled from the previous session, finish keeps done sets, routines, overview of week/records/history derived from finished sets) and `DietTracker` (setup → engine `NutritionMath.plan`, overrides, diary per game-day, search = custom foods then catalog, recent foods when blank). All numbers come from `:engine` `body/` (GD §13). Neither writes the ledger, so XP, caps and streaks are untouched.
+- **Navigation.** Gym and Diet are bottom tabs; Gates and Vault moved to icon buttons at the top of Today.
 
 ## 4. State & DI
 - Hilt modules: `DatabaseModule`, `DispatchersModule` (`@IoDispatcher`, `@DefaultDispatcher`), `ClockModule` (`Clock` interface; `SystemClock` in prod, `FakeClock` in tests), `EngineModule` (provides engine objects + loaded template library), `AiModule` (Ktor `HttpClient`, `PathOracleClient` bound to the real or fake implementation, `IntegrityTokenProvider`; base URL from `BuildConfig` per build type).
