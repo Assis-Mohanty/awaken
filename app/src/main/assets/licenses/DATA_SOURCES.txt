@@ -1,0 +1,10 @@
+AWAKEN bundles two public-domain datasets, used offline.
+
+Exercise library
+  free-exercise-db by Yuri Honas and contributors - https://github.com/yuhonas/free-exercise-db
+  Released under The Unlicense (public domain). Commit f00c92c7dcf1216a928a52c3706c7ce8e2f71ed5.
+
+Food and nutrient data
+  U.S. Department of Agriculture, Agricultural Research Service. FoodData Central.
+  SR Legacy (April 2018) and Food and Nutrient Database for Dietary Studies (FNDDS, 2024-10-31).
+  https://fdc.nal.usda.gov/ - Public domain (CC0 1.0).

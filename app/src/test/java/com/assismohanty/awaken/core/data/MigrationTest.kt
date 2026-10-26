@@ -201,6 +201,32 @@ class MigrationTest {
     }
 
     @Test
+    fun v8To9AddsEmptyGymAndDietTablesAndKeepsHabits() = runTest {
+        val path = createFromSchema(8)
+        SQLiteDatabase.openDatabase(path, null, SQLiteDatabase.OPEN_READWRITE).use { db ->
+            db.execSQL(
+                "INSERT INTO habit (id, title, stat, difficulty, verification, days_of_week_mask, target, unit, active, created_at) " +
+                    "VALUES ('h1', 'Read', 'INT', 'NORMAL', 'SELF', 127, 20, 'pages', 1, 0)",
+            )
+        }
+
+        val db = Room.databaseBuilder(context, AwakenDatabase::class.java, path)
+            .addMigrations(*ALL_MIGRATIONS)
+            .allowMainThreadQueries()
+            .build()
+        try {
+            assertThat(db.habitDao().get("h1")?.title).isEqualTo("Read")
+            assertThat(db.gymDao().activeWorkout()).isNull()
+            assertThat(db.gymDao().customExercises()).isEmpty()
+            assertThat(db.dietDao().profile()).isNull()
+            assertThat(db.dietDao().customFoods()).isEmpty()
+            assertThat(db.openHelper.readableDatabase.version).isEqualTo(AwakenDatabase.SCHEMA_VERSION)
+        } finally {
+            db.close()
+        }
+    }
+
+    @Test
     fun v4To5AddsThePathTablesAndKeepsExistingQuests() = runTest {
         val path = createFromSchema(4)
         SQLiteDatabase.openDatabase(path, null, SQLiteDatabase.OPEN_READWRITE).use { db ->

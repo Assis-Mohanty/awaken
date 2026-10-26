@@ -42,7 +42,11 @@ import com.assismohanty.awaken.core.domain.CompleteOnboardingUseCase
 import com.assismohanty.awaken.core.domain.CompleteQuestUseCase
 import com.assismohanty.awaken.core.domain.CompletionCenter
 import com.assismohanty.awaken.core.domain.CreateHunterUseCase
+import com.assismohanty.awaken.core.data.catalog.ExerciseCatalog
+import com.assismohanty.awaken.core.data.catalog.FoodCatalog
 import com.assismohanty.awaken.core.domain.DayRefresher
+import com.assismohanty.awaken.core.domain.DietTracker
+import com.assismohanty.awaken.core.domain.GymTracker
 import com.assismohanty.awaken.core.domain.DayRolloverUseCase
 import com.assismohanty.awaken.core.domain.AbandonCampaignUseCase
 import com.assismohanty.awaken.core.domain.AdvanceCampaignUseCase
@@ -229,6 +233,12 @@ class TestGraph(
     val enableHealth = EnableHealthUseCase(db.hunterDao(), health, healthSync)
     val buildReminder = BuildReminderUseCase(db.hunterDao(), db.questDao(), db.dayRecordDao(), runRollover, clock)
     val disableHealth = DisableHealthUseCase(db.hunterDao(), health)
+
+    // Gym and Diet (trackers, GD §13).
+    val exerciseCatalog = ExerciseCatalog(context, Dispatchers.Unconfined)
+    val foodCatalog = FoodCatalog(context, Dispatchers.Unconfined)
+    val gym = GymTracker(db.gymDao(), db.hunterDao(), exerciseCatalog, transactions, clock)
+    val diet = DietTracker(db.dietDao(), db.hunterDao(), foodCatalog, clock)
 
     // AI Paths. `oracle` records calls, so tests can assert "no network request was made".
     val oracle = FakePathOracle()

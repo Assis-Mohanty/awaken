@@ -10,6 +10,9 @@ object ExportUpgrade {
     private val PATH_TABLES = listOf("path", "path_milestone", "path_week", "path_slot", "ai_report")
     private const val APP_RULE_TABLE = "app_rule"
     private const val CAMPAIGN_TABLE = "campaign"
+    private val BODY_TABLES = listOf(
+        "custom_exercise", "routine", "routine_exercise", "workout", "workout_set", "custom_food", "food_log", "nutrition_profile",
+    )
 
     fun toCurrent(doc: ExportDocument): ExportDocument {
         var current = doc
@@ -35,6 +38,13 @@ object ExportUpgrade {
             current = current.copy(
                 schemaVersion = 8,
                 tables = current.tables + (CAMPAIGN_TABLE to current.tables[CAMPAIGN_TABLE].orEmpty()),
+            )
+        }
+        // v8 → v9 (Gym and Diet): the tracker tables did not exist, so the old file has none of their rows.
+        if (current.app == ExportDocument.APP_ID && current.schemaVersion == 8) {
+            current = current.copy(
+                schemaVersion = 9,
+                tables = current.tables + BODY_TABLES.filter { it !in current.tables }.associateWith { emptyList() },
             )
         }
         return current

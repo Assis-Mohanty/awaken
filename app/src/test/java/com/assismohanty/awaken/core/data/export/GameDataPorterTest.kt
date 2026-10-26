@@ -239,6 +239,24 @@ class GameDataPorterTest {
     }
 
     @Test
+    fun aBackupFromBeforeGymAndDietStillImports() = runTest {
+        playSomeGame()
+        val current = source.porter.export()
+        val bodyTables = setOf(
+            "custom_exercise", "routine", "routine_exercise", "workout", "workout_set", "custom_food", "food_log", "nutrition_profile",
+        )
+        // What a v8 app wrote: none of the tracker tables.
+        val v8 = mutate(current) { root ->
+            root["schemaVersion"] = JsonPrimitive(8)
+            root["tables"] = JsonObject(root.getValue("tables").jsonObject.filterKeys { it !in bodyTables })
+        }
+
+        assertThat(target.porter.import(v8)).isInstanceOf(ImportResult.Imported::class.java)
+        assertThat(target.ledger.balances()).isEqualTo(source.ledger.balances())
+        assertThat(tablesOf(target.porter.export())).isEqualTo(tablesOf(current))
+    }
+
+    @Test
     fun aBackupFromBeforeCampaignsStillImports() = runTest {
         playSomeGame()
         val current = source.porter.export()

@@ -131,6 +131,56 @@ val MIGRATION_7_8 = object : Migration(7, 8) {
     }
 }
 
+/**
+ * v8 → v9: Gym and Diet (GD §13). Eight new tables, all starting empty; no existing table changes. Trackers only, so
+ * none of them is a ledger table.
+ */
+val MIGRATION_8_9 = object : Migration(8, 9) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS `custom_exercise` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `equipment` TEXT NOT NULL, " +
+                "`primary_muscles` TEXT NOT NULL, `secondary_muscles` TEXT NOT NULL, `created_at` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        )
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS `routine` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `updated_at` INTEGER NOT NULL, " +
+                "PRIMARY KEY(`id`))",
+        )
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS `routine_exercise` (`routine_id` TEXT NOT NULL, `position` INTEGER NOT NULL, " +
+                "`exercise_id` TEXT NOT NULL, `set_count` INTEGER NOT NULL, PRIMARY KEY(`routine_id`, `position`))",
+        )
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS `workout` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `game_date` TEXT NOT NULL, " +
+                "`started_at` INTEGER NOT NULL, `ended_at` INTEGER, PRIMARY KEY(`id`))",
+        )
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_workout_game_date` ON `workout` (`game_date`)")
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS `workout_set` (`id` TEXT NOT NULL, `workout_id` TEXT NOT NULL, `exercise_id` TEXT NOT NULL, " +
+                "`exercise_name` TEXT NOT NULL, `primary_muscles` TEXT NOT NULL, `secondary_muscles` TEXT NOT NULL, " +
+                "`position` INTEGER NOT NULL, `set_index` INTEGER NOT NULL, `weight_kg` REAL NOT NULL, `reps` INTEGER NOT NULL, " +
+                "`done` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        )
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_workout_set_workout_id` ON `workout_set` (`workout_id`)")
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_workout_set_exercise_id` ON `workout_set` (`exercise_id`)")
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS `custom_food` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `nutrients_json` TEXT NOT NULL, " +
+                "`portions_json` TEXT NOT NULL, `created_at` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        )
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS `food_log` (`id` TEXT NOT NULL, `game_date` TEXT NOT NULL, `meal` TEXT NOT NULL, " +
+                "`food_id` TEXT NOT NULL, `name` TEXT NOT NULL, `grams` REAL NOT NULL, `portion_label` TEXT, " +
+                "`nutrients_json` TEXT NOT NULL, `logged_at` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        )
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_food_log_game_date` ON `food_log` (`game_date`)")
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_food_log_food_id` ON `food_log` (`food_id`)")
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS `nutrition_profile` (`id` INTEGER NOT NULL, `sex` TEXT NOT NULL, `birth_year` INTEGER NOT NULL, " +
+                "`height_cm` REAL NOT NULL, `weight_kg` REAL NOT NULL, `activity` TEXT NOT NULL, `goal` TEXT NOT NULL, " +
+                "`overrides_json` TEXT NOT NULL, `updated_at` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        )
+    }
+}
+
 /** Every migration, in order. The database builder and the migration test both use this list. */
 val ALL_MIGRATIONS: Array<Migration> =
-    arrayOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8)
+    arrayOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9)

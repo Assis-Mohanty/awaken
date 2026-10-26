@@ -7,7 +7,9 @@ import com.assismohanty.awaken.core.data.db.dao.AchievementDao
 import com.assismohanty.awaken.core.data.db.dao.CampaignDao
 import com.assismohanty.awaken.core.data.db.dao.CompletionDao
 import com.assismohanty.awaken.core.data.db.dao.DayRecordDao
+import com.assismohanty.awaken.core.data.db.dao.DietDao
 import com.assismohanty.awaken.core.data.db.dao.GateRunDao
+import com.assismohanty.awaken.core.data.db.dao.GymDao
 import com.assismohanty.awaken.core.data.db.dao.HabitDao
 import com.assismohanty.awaken.core.data.db.dao.HunterDao
 import com.assismohanty.awaken.core.data.db.dao.LedgerDao
@@ -22,20 +24,28 @@ import com.assismohanty.awaken.core.data.db.entity.AppRuleEntity
 import com.assismohanty.awaken.core.data.db.entity.CampaignEntity
 import com.assismohanty.awaken.core.data.db.entity.BalanceCacheEntity
 import com.assismohanty.awaken.core.data.db.entity.CompletionEntity
+import com.assismohanty.awaken.core.data.db.entity.CustomExerciseEntity
+import com.assismohanty.awaken.core.data.db.entity.CustomFoodEntity
 import com.assismohanty.awaken.core.data.db.entity.DayRecordEntity
+import com.assismohanty.awaken.core.data.db.entity.FoodLogEntity
 import com.assismohanty.awaken.core.data.db.entity.GateRunEntity
 import com.assismohanty.awaken.core.data.db.entity.HabitEntity
 import com.assismohanty.awaken.core.data.db.entity.HealthSyncStateEntity
 import com.assismohanty.awaken.core.data.db.entity.HunterProfileEntity
 import com.assismohanty.awaken.core.data.db.entity.LedgerEntryEntity
+import com.assismohanty.awaken.core.data.db.entity.NutritionProfileEntity
 import com.assismohanty.awaken.core.data.db.entity.OwnedCosmeticEntity
 import com.assismohanty.awaken.core.data.db.entity.PathEntity
 import com.assismohanty.awaken.core.data.db.entity.PathMilestoneEntity
 import com.assismohanty.awaken.core.data.db.entity.PathSlotEntity
 import com.assismohanty.awaken.core.data.db.entity.PathWeekEntity
 import com.assismohanty.awaken.core.data.db.entity.QuestInstanceEntity
+import com.assismohanty.awaken.core.data.db.entity.RoutineEntity
+import com.assismohanty.awaken.core.data.db.entity.RoutineExerciseEntity
 import com.assismohanty.awaken.core.data.db.entity.StatTierEntity
 import com.assismohanty.awaken.core.data.db.entity.TrialEntity
+import com.assismohanty.awaken.core.data.db.entity.WorkoutEntity
+import com.assismohanty.awaken.core.data.db.entity.WorkoutSetEntity
 
 @Database(
     version = AwakenDatabase.SCHEMA_VERSION,
@@ -61,6 +71,14 @@ import com.assismohanty.awaken.core.data.db.entity.TrialEntity
         AiReportEntity::class,
         AppRuleEntity::class,
         CampaignEntity::class,
+        CustomExerciseEntity::class,
+        RoutineEntity::class,
+        RoutineExerciseEntity::class,
+        WorkoutEntity::class,
+        WorkoutSetEntity::class,
+        CustomFoodEntity::class,
+        FoodLogEntity::class,
+        NutritionProfileEntity::class,
     ],
 )
 @TypeConverters(Converters::class)
@@ -78,11 +96,13 @@ abstract class AwakenDatabase : RoomDatabase() {
     abstract fun pathDao(): PathDao
     abstract fun screenTimeDao(): ScreenTimeDao
     abstract fun campaignDao(): CampaignDao
+    abstract fun gymDao(): GymDao
+    abstract fun dietDao(): DietDao
 
     companion object {
         const val NAME = "awaken.db"
 
         /** Also the export format version: an export is only importable into the schema it was written from. */
-        const val SCHEMA_VERSION = 8
+        const val SCHEMA_VERSION = 9
     }
 }
