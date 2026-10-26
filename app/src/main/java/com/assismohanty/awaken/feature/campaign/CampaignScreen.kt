@@ -527,8 +527,8 @@ internal fun previewCampaignPreview(): CampaignPreview {
         weakest = Stat.STR,
         archetype = Archetype.REBUILDER,
         habits = listOf(
-            CampaignHabitPreview("a", Stat.STR, "Iron Arms", "reps", DayOfWeek.entries.toSet(), Difficulty.EASY, 20),
-            CampaignHabitPreview("b", Stat.STR, "Ground Walk", "min", setOf(DayOfWeek.MONDAY, DayOfWeek.WEDNESDAY, DayOfWeek.FRIDAY), Difficulty.EASY, 15),
+            CampaignHabitPreview("a", Stat.STR, "Do push-ups", "reps", DayOfWeek.entries.toSet(), Difficulty.EASY, 20),
+            CampaignHabitPreview("b", Stat.STR, "Take an easy walk", "min", setOf(DayOfWeek.MONDAY, DayOfWeek.WEDNESDAY, DayOfWeek.FRIDAY), Difficulty.EASY, 15),
             CampaignHabitPreview("c", Stat.WIL, "Still Mind", "min", setOf(DayOfWeek.TUESDAY, DayOfWeek.THURSDAY, DayOfWeek.SATURDAY), Difficulty.EASY, 5),
         ),
         startDate = start,

@@ -324,7 +324,7 @@ private fun reasonText(reason: QuestReason): String = when (reason) {
 
 private val previewState = QuestDetailUiState(
     loading = false,
-    title = "Deep Dive",
+    title = "Do deep work",
     description = "Study one topic with no distractions.",
     type = QuestType.SIDE,
     stat = Stat.INT,

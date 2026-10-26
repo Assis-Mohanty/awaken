@@ -27,8 +27,8 @@ data class TemplateLibrary(
         templates.groupBy { it.id }.filterValues { it.size > 1 }.keys.forEach { add("duplicate id: $it") }
         for (t in templates) {
             if (!ID_PATTERN.matches(t.id)) add("${t.id}: id must match ${ID_PATTERN.pattern}")
-            if (t.titles.size !in 2..3) add("${t.id}: needs 2–3 titles")
-            if (t.titles.any { it.isBlank() }) add("${t.id}: blank title")
+            if (t.titles.size !in 1..3) add("${t.id}: needs 1–3 titles")
+            t.titles.forEach { title -> titleProblems(title).forEach { add("${t.id}: title \"$title\" $it") } }
             if (t.description.isBlank() || "{target}" !in t.description) add("${t.id}: description must contain {target}")
             if (t.secondaryStat == t.stat) add("${t.id}: secondaryStat equals stat")
             if (t.unit !in units) add("${t.id}: unknown unit ${t.unit}")
@@ -62,6 +62,34 @@ data class TemplateLibrary(
     companion object {
         const val MIN_PER_STAT = 25
         private val ID_PATTERN = Regex("^[a-z][a-z0-9_]*$")
+
+        /** GD §6.2 title rules: plain, action-first, sentence case, no numbers (the target line shows them). */
+        const val MAX_TITLE_LENGTH = 40
+        val TITLE_WORDS = 2..5
+
+        /** Fantasy words that crept into the first library ("Fuel the Forge", "Arch of Power"). Whole words, any case. */
+        val BANNED_TITLE_WORDS = setOf(
+            "forge", "arcane", "descent", "power", "shadow", "gate", "gates", "realm", "rite", "ritual", "quest",
+            "trial", "iron", "steel", "oath", "sanctum", "banner", "ally", "allies", "kin", "tome", "scroll",
+            "hunter", "dungeon", "raid", "guild", "vigil", "ember", "flame", "storm", "siege", "spire", "throne",
+            "vanguard", "protocol", "slay", "dragon", "blade", "shield", "battle", "fate", "vessel", "ration",
+            "ledger", "herald", "bard", "envoy", "missive",
+        )
+
+        /** Problems with one title; empty means it follows the rules. */
+        fun titleProblems(title: String): List<String> = buildList {
+            if (title.isBlank()) {
+                add("is blank")
+                return@buildList
+            }
+            if (title.length > MAX_TITLE_LENGTH) add("is longer than $MAX_TITLE_LENGTH chars")
+            val words = title.trim().split(Regex("\\s+"))
+            if (words.size !in TITLE_WORDS) add("must have ${TITLE_WORDS.first}–${TITLE_WORDS.last} words")
+            if (title.any { it.isDigit() } || "{" in title) add("must not contain numbers or placeholders")
+            if (!title.first().isUpperCase() || words.drop(1).any { it.first().isUpperCase() }) add("must be sentence case")
+            Regex("\\p{L}+").findAll(title.lowercase()).map { it.value }.filter { it in BANNED_TITLE_WORDS }
+                .forEach { add("uses banned word \"$it\"") }
+        }
         private val json = Json { ignoreUnknownKeys = false }
 
         fun parse(text: String): TemplateLibrary = json.decodeFromString(serializer(), text)

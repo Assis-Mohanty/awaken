@@ -41,7 +41,7 @@ class QuestRewardTest {
         // Known fixture: SELF, Normal, no crit, no streak → 40 × 1.5 = 60 XP (GD §4.1).
         val quest = runBlocking {
             graph.seedHunter()
-            graph.fixtureQuest("Iron Arms")
+            graph.fixtureQuest("Do push-ups")
         }
         val todayViewModel = TodayViewModel(graph.observeToday, graph.dayRefresher, graph.completionCenter, graph.startTrial, graph.observeCampaign)
         val hostViewModel = RewardHostViewModel(graph.completionCenter, graph.notices, graph.narrative, graph.notificationAccess, graph.uiPrefs, graph.submitFeedback)
@@ -64,9 +64,9 @@ class QuestRewardTest {
         }
 
         composeRule.waitUntil(timeoutMillis = 5_000) {
-            composeRule.onAllNodesWithText("Iron Arms").fetchSemanticsNodes().isNotEmpty()
+            composeRule.onAllNodesWithText("Do push-ups").fetchSemanticsNodes().isNotEmpty()
         }
-        composeRule.onNodeWithText("Iron Arms").performTouchInput { swipeRight(startX = left, endX = right) }
+        composeRule.onNodeWithText("Do push-ups").performTouchInput { swipeRight(startX = left, endX = right) }
 
         composeRule.waitUntil(timeoutMillis = 5_000) {
             composeRule.onAllNodesWithContentDescription("+60 XP").fetchSemanticsNodes().isNotEmpty()

@@ -167,7 +167,7 @@ private fun CatalogContent(
                     Text("C", style = type.display, color = rankColor)
                     Text(stringResource(R.string.system_title_daily_directive), style = type.windowTitle, color = rankColor)
                     Text("+144 XP · 1,920", style = type.numeric, color = colors.bone)
-                    Text("Iron Arms", style = type.title, color = colors.bone)
+                    Text("Do push-ups", style = type.title, color = colors.bone)
                     Text("Complete 80 push-ups. Sets of any size.", style = type.body, color = colors.bone)
                     Text("80 reps · Hard", style = type.label, color = colors.mist)
                     Text("Self-report limit reached — verified quests still count fully.", style = type.caption, color = colors.mist)

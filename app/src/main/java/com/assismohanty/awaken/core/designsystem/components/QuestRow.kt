@@ -239,10 +239,10 @@ private const val SWIPE_THRESHOLD = 0.35f
 private const val SWIPE_MAX = 0.5f
 
 internal val previewQuests = listOf(
-    QuestRowModel("1", "Iron Arms", Stat.STR, 80, "reps", Difficulty.HARD, VerificationSource.SELF, isMain = true, state = QuestRowState.OPEN),
+    QuestRowModel("1", "Do push-ups", Stat.STR, 80, "reps", Difficulty.HARD, VerificationSource.SELF, isMain = true, state = QuestRowState.OPEN),
     QuestRowModel("2", "Inner Gate", Stat.INT, 25, "min", Difficulty.NORMAL, VerificationSource.TIMER, isMain = false, state = QuestRowState.DONE),
     QuestRowModel("3", "Footfall Tally", Stat.VIT, 7_000, "steps", Difficulty.NORMAL, VerificationSource.HEALTH, isMain = false, state = QuestRowState.OPEN),
-    QuestRowModel("4", "Still Water", Stat.WIL, 10, "min", Difficulty.NORMAL, VerificationSource.SELF, isMain = false, state = QuestRowState.CLOSED),
+    QuestRowModel("4", "Sit and meditate", Stat.WIL, 10, "min", Difficulty.NORMAL, VerificationSource.SELF, isMain = false, state = QuestRowState.CLOSED),
     QuestRowModel(
         "5", "Graph Hunt", Stat.INT, 2, "problems", Difficulty.NORMAL, VerificationSource.SELF, isMain = false, state = QuestRowState.OPEN,
         pathBadge = PathBadgeModel("Codeforces 1900"),

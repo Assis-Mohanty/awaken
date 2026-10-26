@@ -20,7 +20,7 @@ class SetCounterBlockTest {
 
     private fun stateWith(sets: List<Int>, rest: Long? = null, full: Boolean = false) = QuestDetailUiState(
         loading = false,
-        title = "Iron Arms",
+        title = "Do push-ups",
         target = 25,
         unit = "reps",
         canComplete = true,

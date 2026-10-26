@@ -52,7 +52,7 @@ class CampaignScreenTest {
         show(CampaignUiState(loading = false, step = CampaignStep.RESULT, preview = previewCampaignPreview()), events)
         composeRule.onNodeWithText("The Rebuilder").assertIsDisplayed()
         composeRule.onNodeWithText("Strength · weakest. We start here.").performScrollTo().assertIsDisplayed()
-        composeRule.onNodeWithText("Iron Arms").performScrollTo().assertIsDisplayed()
+        composeRule.onNodeWithText("Do push-ups").performScrollTo().assertIsDisplayed()
         composeRule.onNodeWithText("Take the oath").performScrollTo().performClick()
         assertThat(events).containsExactly(CampaignEvent.ToOath)
     }

@@ -187,7 +187,7 @@ private fun DebugScreenPreview() {
                 quests = listOf(
                     QuestInstanceEntity(
                         id = "q1", gameDate = today, type = QuestType.MAIN, templateId = "str_pushups", habitId = null,
-                        stat = Stat.STR, secondaryStat = Stat.WIL, title = "Iron Arms", description = "Complete 50 push-ups.",
+                        stat = Stat.STR, secondaryStat = Stat.WIL, title = "Do push-ups", description = "Complete 50 push-ups.",
                         unit = "reps", target = 50, difficulty = Difficulty.HARD, verification = Verification.SELF,
                         minDurationSec = 60, status = QuestStatus.ACTIVE, createdAt = now,
                     ),

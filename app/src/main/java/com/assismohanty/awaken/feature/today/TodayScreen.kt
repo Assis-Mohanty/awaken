@@ -246,10 +246,10 @@ private val previewState = TodayUiState(
         gold = 1_920,
     ),
     rank = Rank.C,
-    main = previewRow("m", "Iron Arms", Stat.STR, 80, "reps", isMain = true),
+    main = previewRow("m", "Do push-ups", Stat.STR, 80, "reps", isMain = true),
     sides = listOf(
-        previewRow("s1", "Deep Dive", Stat.INT, 25, "min", done = true),
-        previewRow("s2", "Ground Walk", Stat.VIT, 7_000, "steps"),
+        previewRow("s1", "Do deep work", Stat.INT, 25, "min", done = true),
+        previewRow("s2", "Walk your steps", Stat.VIT, 7_000, "steps"),
         previewRow("s3", "Still Mind", Stat.WIL, 10, "min"),
     ),
     habits = listOf(previewRow("h1", "Call home", Stat.CHA, 1, "call")),

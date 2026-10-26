@@ -271,7 +271,7 @@ class RulesTest {
         val json = """
             {
               "id": "str_pushups", "stat": "STR", "secondaryStat": "WIL",
-              "titles": ["Iron Arms", "Ground Assault", "The Hundred"],
+              "titles": ["Do push-ups", "Practise push-ups"],
               "description": "Complete {target} push-ups. Sets of any size.", "unit": "reps",
               "targets": { "EASY": 20, "NORMAL": 40, "HARD": 80, "EXTREME": 120 },
               "verification": "SELF", "equipment": [], "tags": ["bodyweight", "indoor", "no_impact_false"],
