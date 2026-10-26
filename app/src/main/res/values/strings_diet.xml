@@ -3,7 +3,104 @@
     <!-- Diet: food diary and nutrient targets (PRD F-diet, GAME_DESIGN §13.1). Trackers only: no XP. -->
     <string name="nav_diet">Diet</string>
     <string name="diet_title">Diet</string>
-    <string name="diet_placeholder">Food diary, calorie budget and nutrient targets.</string>
+    <string name="diet_tracker_note">Tracking only. Meals here don’t grant XP yet. Food data: USDA FoodData Central.</string>
+
+    <string name="diet_today">Today</string>
+    <string name="cd_diet_previous_day">Previous day</string>
+    <string name="cd_diet_next_day">Next day</string>
+
+    <!-- Setup -->
+    <string name="diet_window_setup">Calorie budget</string>
+    <string name="diet_setup_intro">Answer once. The System works out your daily budget and nutrient targets; you can change any of them later.</string>
+    <string name="diet_setup_goal">What is your goal?</string>
+    <string name="diet_goal_lose">Lose weight</string>
+    <string name="diet_goal_maintain">Maintain weight</string>
+    <string name="diet_goal_gain">Gain weight</string>
+    <string name="diet_setup_sex">Sex (for the BMR formula)</string>
+    <string name="diet_sex_male">Male</string>
+    <string name="diet_sex_female">Female</string>
+    <string name="diet_setup_birth_year">Birth year</string>
+    <string name="diet_setup_height">Height</string>
+    <string name="diet_setup_weight">Weight</string>
+    <string name="diet_unit_cm">cm</string>
+    <string name="diet_unit_kg">kg</string>
+    <string name="diet_setup_activity">How active are you?</string>
+    <string name="diet_activity_sedentary">Sedentary · desk job, little exercise</string>
+    <string name="diet_activity_light">Light · exercise 1–3 days a week</string>
+    <string name="diet_activity_moderate">Moderate · exercise 3–5 days a week</string>
+    <string name="diet_activity_very">Very active · hard exercise 6–7 days</string>
+    <string name="diet_activity_extra">Extra active · physical job plus training</string>
+    <string name="diet_setup_incomplete">Fill in every field to see your budget.</string>
+    <string name="diet_setup_preview">BMR %1$s kcal · maintenance %2$s kcal</string>
+    <string name="diet_setup_budget">%1$s kcal / day</string>
+    <string name="diet_setup_macros">Protein %1$s g · Carbs %2$s g · Fat %3$s g</string>
+    <string name="diet_setup_save">Save budget</string>
+
+    <!-- Diary -->
+    <string name="diet_window_budget">Daily energy</string>
+    <string name="diet_kcal_remaining">remaining</string>
+    <string name="diet_kcal_over">over</string>
+    <string name="diet_eaten">Eaten</string>
+    <string name="diet_goal">Goal</string>
+    <string name="cd_diet_ring">%1$s of %2$s kcal eaten</string>
+    <string name="diet_amount_of_target">%1$s / %2$s %3$s</string>
+    <string name="diet_amount_only">%1$s %2$s</string>
+    <string name="diet_meal_breakfast">Breakfast</string>
+    <string name="diet_meal_lunch">Lunch</string>
+    <string name="diet_meal_dinner">Dinner</string>
+    <string name="diet_meal_snack">Snacks</string>
+    <string name="diet_meal_kcal">%1$s kcal</string>
+    <string name="diet_meal_empty">Nothing logged.</string>
+    <string name="diet_add_food">Add food</string>
+    <string name="diet_entry_meta">%1$s · %2$s kcal</string>
+    <string name="diet_entry_grams">%1$s g</string>
+    <string name="diet_entry_edit">Edit %1$s</string>
+    <string name="diet_window_nutrients">Nutrients</string>
+    <string name="diet_limit_over">Over limit</string>
+    <string name="diet_edit_targets">Edit targets</string>
+    <string name="diet_edit_profile">Edit budget profile</string>
+
+    <!-- Search -->
+    <string name="diet_search_title">Add to %1$s</string>
+    <string name="diet_search_hint">Search foods (paneer, roti, eggs…)</string>
+    <string name="diet_search_recent">Recent</string>
+    <string name="diet_search_recent_empty">Foods you log show up here for one-tap re-adding.</string>
+    <string name="diet_search_empty">No foods match. Try a simpler word, or create your own.</string>
+    <string name="diet_search_per100">%1$s kcal · P %2$s · C %3$s · F %4$s per 100 g</string>
+    <string name="diet_source_custom">Custom</string>
+    <string name="diet_custom_create">Create custom food</string>
+
+    <!-- Amount -->
+    <string name="diet_amount_grams">Grams</string>
+    <string name="diet_amount_count">How many</string>
+    <string name="diet_amount_total">= %1$s g</string>
+    <string name="diet_amount_meal">Meal</string>
+    <string name="diet_amount_add">Add</string>
+    <string name="diet_amount_save">Save</string>
+    <string name="diet_amount_delete">Remove from diary</string>
+    <string name="diet_amount_preview">%1$s kcal · P %2$s g · C %3$s g · F %4$s g</string>
+
+    <!-- Targets -->
+    <string name="diet_targets_title">Nutrient targets</string>
+    <string name="diet_targets_intro">Defaults come from your budget and FDA Daily Values. Change any number; clear it to go back to the default.</string>
+    <string name="diet_targets_macros">Macros</string>
+    <string name="diet_targets_fats">Fat breakdown</string>
+    <string name="diet_targets_minerals">Minerals and vitamins</string>
+    <string name="diet_targets_other">Other</string>
+    <string name="diet_targets_default">default %1$s</string>
+    <string name="diet_targets_none">no target</string>
+    <string name="diet_targets_reset">Reset all to defaults</string>
+    <string name="cd_diet_target">%1$s target in %2$s</string>
+
+    <!-- Custom food -->
+    <string name="diet_custom_title">Custom food</string>
+    <string name="diet_custom_name">Food name</string>
+    <string name="diet_custom_per100">Nutrition per 100 g</string>
+    <string name="diet_custom_portion">Optional serving</string>
+    <string name="diet_custom_portion_label">Serving name (e.g. 1 bowl)</string>
+    <string name="diet_custom_portion_grams">Serving weight</string>
+    <string name="diet_custom_save">Create and add</string>
+    <string name="cd_diet_custom_value">%1$s per 100 grams, in %2$s</string>
 
     <string name="nutrient_kcal">Calories</string>
     <string name="nutrient_protein">Protein</string>
