@@ -206,6 +206,24 @@ object AwakenGlyphs {
         }
     }
 
+    /** Gym tab: a dumbbell, plates and bar. */
+    val Dumbbell: ImageVector by lazy {
+        glyph("Dumbbell") {
+            moveTo(4f, 7f); lineTo(7f, 7f); lineTo(7f, 17f); lineTo(4f, 17f); close()
+            moveTo(17f, 7f); lineTo(20f, 7f); lineTo(20f, 17f); lineTo(17f, 17f); close()
+            moveTo(7f, 12f); lineTo(17f, 12f)
+            moveTo(2f, 10f); lineTo(2f, 14f); moveTo(22f, 10f); lineTo(22f, 14f)
+        }
+    }
+
+    /** Diet tab: a bowl with chopsticks. */
+    val Bowl: ImageVector by lazy {
+        glyph("Bowl") {
+            moveTo(3f, 11f); lineTo(21f, 11f); curveTo(21f, 16f, 17f, 20f, 12f, 20f); curveTo(7f, 20f, 3f, 16f, 3f, 11f); close()
+            moveTo(12f, 9f); lineTo(18f, 3f); moveTo(15f, 9f); lineTo(21f, 4f)
+        }
+    }
+
     /** Glyph for a sigil id from the shop catalogue; null for an id this build doesn't know. */
     fun sigil(sigilId: String): ImageVector? = when (sigilId) {
         "sigil_blade" -> Blade

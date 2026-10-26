@@ -137,7 +137,7 @@ Off by default in v1 (toggle in settings ready, assets in v1.1). Never ship a so
 
 ## 4. Screens & flows
 
-Navigation: bottom bar (`depth` fill, one `edge` hairline on top, the selected tab marked by a 20×2dp `system` bar above its icon, no Material pill) with 5 destinations — **Today**, **Paths**, **Gates**, **Status**, **Vault**. Settings from Status top-right.
+Navigation: bottom bar (`depth` fill, one `edge` hairline on top, the selected tab marked by a 20×2dp `system` bar above its icon, no Material pill) with 5 destinations — **Today**, **Paths**, **Gym**, **Diet**, **Status**. **Gates** and **Vault** open from icon buttons at the top right of Today (pushed screens with Back; Quest detail still links to Gates). Settings from Status top-right.
 
 ### 4.1 Awakening (onboarding) — target < 60 seconds without a Path, < 2 minutes with one; no account
 

@@ -26,7 +26,7 @@ class VaultScreenTest {
     val composeRule = createComposeRule()
 
     private fun show(state: VaultUiState, events: MutableList<VaultEvent> = mutableListOf()) {
-        composeRule.setContent { AwakenTheme(reduceMotion = true) { VaultScreen(state = state, onEvent = { events += it }) } }
+        composeRule.setContent { AwakenTheme(reduceMotion = true) { VaultScreen(state = state, onEvent = { events += it }, onBack = {}) } }
     }
 
     @Test

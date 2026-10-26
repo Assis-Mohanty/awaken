@@ -13,7 +13,7 @@ enum class TopLevelDestination(
 ) {
     TODAY(TodayRoute, AwakenGlyphs.Directive, R.string.nav_today),
     PATHS(PathsRoute, AwakenGlyphs.Path, R.string.nav_paths),
-    GATES(GatesRoute, AwakenGlyphs.Portal, R.string.nav_gates),
+    GYM(GymRoute, AwakenGlyphs.Dumbbell, R.string.nav_gym),
+    DIET(DietRoute, AwakenGlyphs.Bowl, R.string.nav_diet),
     STATUS(StatusRoute, AwakenGlyphs.Pentagon, R.string.nav_status),
-    VAULT(VaultRoute, AwakenGlyphs.Vault, R.string.nav_vault),
 }

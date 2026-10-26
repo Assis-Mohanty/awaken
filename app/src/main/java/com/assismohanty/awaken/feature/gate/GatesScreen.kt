@@ -32,6 +32,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
@@ -60,7 +61,7 @@ import com.assismohanty.awaken.feature.quest.shortClock
 import java.time.Duration
 
 @Composable
-fun GatesEntry(modifier: Modifier = Modifier, viewModel: GatesViewModel = hiltViewModel()) {
+fun GatesEntry(onBack: () -> Unit, modifier: Modifier = Modifier, viewModel: GatesViewModel = hiltViewModel()) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
     // The gate runs either way; the permission only adds the countdown outside the app (ARCH §3.3).
@@ -75,13 +76,14 @@ fun GatesEntry(modifier: Modifier = Modifier, viewModel: GatesViewModel = hiltVi
             }
             viewModel.onEvent(event)
         },
+        onBack = onBack,
         modifier = modifier,
     )
 }
 
 /** Focus Gates (DESIGN_SYSTEM §4.4): the E/D/C/B portals, then the full-screen dial while a gate is open. */
 @Composable
-fun GatesScreen(state: GatesUiState, onEvent: (GatesEvent) -> Unit, modifier: Modifier = Modifier) {
+fun GatesScreen(state: GatesUiState, onEvent: (GatesEvent) -> Unit, onBack: () -> Unit, modifier: Modifier = Modifier) {
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -99,16 +101,24 @@ fun GatesScreen(state: GatesUiState, onEvent: (GatesEvent) -> Unit, modifier: Mo
             when {
                 state.loading -> Unit
                 active != null -> GateRun(active, state.confirmAbandon, onEvent)
-                else -> GatePicker(state, onEvent)
+                else -> GatePicker(state, onEvent, onBack)
             }
         }
     }
 }
 
 @Composable
-private fun GatePicker(state: GatesUiState, onEvent: (GatesEvent) -> Unit) {
+private fun GatePicker(state: GatesUiState, onEvent: (GatesEvent) -> Unit, onBack: () -> Unit) {
     val colors = AwakenTheme.colors
-    Text(stringResource(R.string.gates_title), style = AwakenTheme.type.windowTitle, color = colors.bone)
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Text(
+            stringResource(R.string.gates_title),
+            style = AwakenTheme.type.windowTitle,
+            color = colors.bone,
+            modifier = Modifier.weight(1f).semantics { heading() },
+        )
+        QuietButton(text = stringResource(R.string.action_back), onClick = onBack)
+    }
     Text(
         stringResource(R.string.gates_body, shortClock(GateRules.BREACH_BUDGET_MS)),
         style = AwakenTheme.type.body,
@@ -252,7 +262,7 @@ private val previewTiles = GateRank.entries.map { GateTile(it, it.durationMinute
 @Composable
 private fun GatesPickerPreview() {
     AwakenTheme {
-        GatesScreen(GatesUiState(loading = false, tiles = previewTiles, setup = GateSetup(GateRank.D, Stat.INT, "DSA – graphs")), onEvent = {})
+        GatesScreen(GatesUiState(loading = false, tiles = previewTiles, setup = GateSetup(GateRank.D, Stat.INT, "DSA – graphs")), onEvent = {}, onBack = {})
     }
 }
 
@@ -270,6 +280,7 @@ private fun GateRunPreview() {
                 ),
             ),
             onEvent = {},
+            onBack = {},
         )
     }
 }
@@ -289,6 +300,7 @@ private fun GatePausedPreview() {
                 confirmAbandon = true,
             ),
             onEvent = {},
+            onBack = {},
         )
     }
 }

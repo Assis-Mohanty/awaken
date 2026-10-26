@@ -8,14 +8,18 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
@@ -23,6 +27,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.assismohanty.awaken.R
 import com.assismohanty.awaken.engine.campaign.CampaignAct
+import com.assismohanty.awaken.core.designsystem.components.AwakenGlyphs
 import com.assismohanty.awaken.core.designsystem.components.EmptyState
 import com.assismohanty.awaken.core.designsystem.components.HunterHeader
 import com.assismohanty.awaken.core.designsystem.components.HunterHeaderModel
@@ -49,6 +54,8 @@ fun TodayRoute(
     modifier: Modifier = Modifier,
     onOpenScreenTime: () -> Unit = {},
     onOpenCampaign: () -> Unit = {},
+    onOpenGates: () -> Unit = {},
+    onOpenVault: () -> Unit = {},
     viewModel: TodayViewModel = hiltViewModel(),
     habitsViewModel: HabitsViewModel = hiltViewModel(),
     dayPlanViewModel: DayPlanViewModel = hiltViewModel(),
@@ -66,6 +73,8 @@ fun TodayRoute(
         modifier = modifier,
         onOpenScreenTime = onOpenScreenTime,
         onOpenCampaign = onOpenCampaign,
+        onOpenGates = onOpenGates,
+        onOpenVault = onOpenVault,
     )
     HabitSheets(state = habits, onEvent = habitsViewModel::onEvent)
     DayPlanSheet(state = dayPlan, onEvent = dayPlanViewModel::onEvent)
@@ -86,6 +95,8 @@ fun TodayScreen(
     modifier: Modifier = Modifier,
     onOpenScreenTime: () -> Unit = {},
     onOpenCampaign: () -> Unit = {},
+    onOpenGates: () -> Unit = {},
+    onOpenVault: () -> Unit = {},
 ) {
     val colors = AwakenTheme.colors
     val type = AwakenTheme.type
@@ -103,6 +114,11 @@ fun TodayScreen(
                 .padding(horizontal = Spacing.gutter, vertical = Spacing.md),
             verticalArrangement = Arrangement.spacedBy(Spacing.md),
         ) {
+            // Gates and Vault live up here since Gym and Diet took their tabs.
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                HeaderAction(AwakenGlyphs.Portal, stringResource(R.string.action_open_gates), onOpenGates)
+                HeaderAction(AwakenGlyphs.Vault, stringResource(R.string.action_open_vault), onOpenVault)
+            }
             val header = state.header
             if (state.loading || header == null) {
                 Text(stringResource(R.string.today_loading), style = type.body, color = colors.mist)
@@ -269,6 +285,13 @@ private fun TodayScreenClearedPreview() {
 
 
 /** Screen Discipline on Today (GD §6.7): status and stake; the details live on the Screen Time screen. */
+@Composable
+private fun HeaderAction(icon: ImageVector, label: String, onClick: () -> Unit) {
+    IconButton(onClick = onClick) {
+        Icon(icon, contentDescription = label, tint = AwakenTheme.colors.bone, modifier = Modifier.size(AwakenTheme.dimens.icon))
+    }
+}
+
 @Composable
 private fun DisciplineCardWindow(card: DisciplineCard, onOpenScreenTime: () -> Unit, modifier: Modifier = Modifier) {
     val colors = AwakenTheme.colors

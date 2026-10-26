@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Gym: workout tracker (PRD F-gym) -->
+    <string name="nav_gym">Gym</string>
+    <string name="gym_title">Gym</string>
+    <string name="gym_placeholder">Workout log, exercise library and routines.</string>
+</resources>

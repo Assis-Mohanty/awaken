@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Diet: food diary and nutrient targets (PRD F-diet) -->
+    <string name="nav_diet">Diet</string>
+    <string name="diet_title">Diet</string>
+    <string name="diet_placeholder">Food diary, calorie budget and nutrient targets.</string>
+</resources>

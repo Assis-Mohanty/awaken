@@ -3,9 +3,10 @@
 
     <!-- Bottom navigation -->
     <string name="nav_today">Today</string>
-    <string name="nav_gates">Gates</string>
     <string name="nav_status">Status</string>
     <string name="nav_vault">Vault</string>
+    <string name="action_open_gates">Open Gates</string>
+    <string name="action_open_vault">Open Vault</string>
 
     <!-- Placeholders (Phase 1 only) -->
 

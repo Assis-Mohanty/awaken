@@ -47,7 +47,9 @@ import com.assismohanty.awaken.core.designsystem.theme.AwakenTheme
 import com.assismohanty.awaken.core.designsystem.theme.Spacing
 import com.assismohanty.awaken.debug.DebugEntry
 import com.assismohanty.awaken.engine.model.Rank
+import com.assismohanty.awaken.feature.diet.DietRoute as DietEntry
 import com.assismohanty.awaken.feature.gate.GatesEntry
+import com.assismohanty.awaken.feature.gym.GymRoute as GymEntry
 import com.assismohanty.awaken.feature.onboarding.OnboardingRoute as OnboardingEntry
 import com.assismohanty.awaken.feature.paths.PathDetailRoute as PathDetailEntry
 import com.assismohanty.awaken.feature.paths.PathsRoute as PathsEntry
@@ -160,6 +162,8 @@ private fun MainScaffold(
                             onOpenScreenTime = { navController.navigate(ScreenTimeRoute) },
                             onOpenCampaign = { navController.navigate(CampaignRoute) },
                             onOpenTrial = { navController.navigate(TrialRoute) },
+                            onOpenGates = { navController.navigate(GatesRoute) { launchSingleTop = true } },
+                            onOpenVault = { navController.navigate(VaultRoute) { launchSingleTop = true } },
                         )
                         if (DebugEntry.ENABLED) {
                             DebugEntry.LauncherButton(
@@ -173,13 +177,7 @@ private fun MainScaffold(
                 composable<QuestDetailRoute> {
                     QuestDetailEntry(
                         onBack = { navController.popBackStack() },
-                        onOpenGates = {
-                            navController.navigate(GatesRoute) {
-                                popUpTo(navController.graph.findStartDestination().id) { saveState = true }
-                                launchSingleTop = true
-                                restoreState = true
-                            }
-                        },
+                        onOpenGates = { navController.navigate(GatesRoute) { launchSingleTop = true } },
                     )
                 }
                 composable<TrialRoute> {
@@ -190,7 +188,9 @@ private fun MainScaffold(
                 }
                 composable<PathsRoute> { PathsEntry(onOpenPath = { navController.navigate(PathDetailRoute(it)) }) }
                 composable<PathDetailRoute> { PathDetailEntry(onBack = { navController.popBackStack() }) }
-                composable<GatesRoute> { GatesEntry() }
+                composable<GatesRoute> { GatesEntry(onBack = { navController.popBackStack() }) }
+                composable<GymRoute> { GymEntry() }
+                composable<DietRoute> { DietEntry() }
                 composable<StatusRoute> { StatusEntry(onOpenSettings = { navController.navigate(SettingsRoute) }) }
                 composable<SettingsRoute> {
                     SettingsEntry(
@@ -202,7 +202,7 @@ private fun MainScaffold(
                 composable<HealthRoute> { HealthEntry(onBack = { navController.popBackStack() }) }
                 composable<ScreenTimeRoute> { ScreenTimeEntry(onBack = { navController.popBackStack() }) }
                 composable<CampaignRoute> { CampaignEntry(onBack = { navController.popBackStack() }) }
-                composable<VaultRoute> { VaultEntry() }
+                composable<VaultRoute> { VaultEntry(onBack = { navController.popBackStack() }) }
                 if (DebugEntry.ENABLED) {
                     composable<DebugRoute> { DebugEntry.Screen(onBack = { navController.popBackStack() }) }
                 }

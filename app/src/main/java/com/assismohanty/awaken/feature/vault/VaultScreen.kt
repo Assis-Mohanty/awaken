@@ -26,6 +26,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.window.Dialog
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -50,14 +51,14 @@ import com.assismohanty.awaken.engine.ShopRules
 import com.assismohanty.awaken.engine.model.Rank
 
 @Composable
-fun VaultRoute(modifier: Modifier = Modifier, viewModel: VaultViewModel = hiltViewModel()) {
+fun VaultRoute(onBack: () -> Unit, modifier: Modifier = Modifier, viewModel: VaultViewModel = hiltViewModel()) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
-    VaultScreen(state = state, onEvent = viewModel::onEvent, modifier = modifier)
+    VaultScreen(state = state, onEvent = viewModel::onEvent, onBack = onBack, modifier = modifier)
 }
 
 /** Vault (DESIGN_SYSTEM §4.6): balances, Relic Cache, then the shield, themes, frames and sigils. */
 @Composable
-fun VaultScreen(state: VaultUiState, onEvent: (VaultEvent) -> Unit, modifier: Modifier = Modifier) {
+fun VaultScreen(state: VaultUiState, onEvent: (VaultEvent) -> Unit, onBack: () -> Unit, modifier: Modifier = Modifier) {
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -72,6 +73,15 @@ fun VaultScreen(state: VaultUiState, onEvent: (VaultEvent) -> Unit, modifier: Mo
                 .padding(horizontal = Spacing.gutter, vertical = Spacing.lg),
             verticalArrangement = Arrangement.spacedBy(Spacing.lg),
         ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    stringResource(R.string.nav_vault),
+                    style = AwakenTheme.type.display,
+                    color = AwakenTheme.colors.bone,
+                    modifier = Modifier.weight(1f).semantics { heading() },
+                )
+                QuietButton(text = stringResource(R.string.action_back), onClick = onBack)
+            }
             BalanceWindow(state)
             CacheWindow(state, onEvent)
             ShieldWindow(state, onEvent)
@@ -327,11 +337,11 @@ internal fun previewVaultState(rich: Boolean = true): VaultUiState {
 @PhonePreviews
 @Composable
 private fun VaultScreenPreview() {
-    AwakenTheme(reduceMotion = true) { VaultScreen(state = previewVaultState(), onEvent = {}) }
+    AwakenTheme(reduceMotion = true) { VaultScreen(state = previewVaultState(), onEvent = {}, onBack = {}) }
 }
 
 @PhonePreviews
 @Composable
 private fun VaultScreenPoorPreview() {
-    AwakenTheme(reduceMotion = true) { VaultScreen(state = previewVaultState(rich = false), onEvent = {}) }
+    AwakenTheme(reduceMotion = true) { VaultScreen(state = previewVaultState(rich = false), onEvent = {}, onBack = {}) }
 }

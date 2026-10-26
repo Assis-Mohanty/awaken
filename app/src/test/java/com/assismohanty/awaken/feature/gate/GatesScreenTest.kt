@@ -63,6 +63,7 @@ class GatesScreenTest {
                             else -> state
                         }
                     },
+                    onBack = {},
                 )
             }
         }

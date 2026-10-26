@@ -48,3 +48,11 @@ data object ScreenTimeRoute
 /** The 45-day Campaign (GD §6.8), opened from the Today card. */
 @Serializable
 data object CampaignRoute
+
+/** Gym: workout tracker, exercise library and routines (bottom tab). */
+@Serializable
+data object GymRoute
+
+/** Diet: food diary, calorie budget and nutrient targets (bottom tab). */
+@Serializable
+data object DietRoute
