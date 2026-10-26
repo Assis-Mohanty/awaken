@@ -1,7 +1,116 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Gym: workout tracker (PRD F-gym) -->
+    <!-- Gym: workout tracker (PRD F-gym, GAME_DESIGN §13.2). Trackers only: no XP. -->
     <string name="nav_gym">Gym</string>
     <string name="gym_title">Gym</string>
-    <string name="gym_placeholder">Workout log, exercise library and routines.</string>
+    <string name="gym_tracker_note">Tracking only. Workouts here don’t grant XP yet.</string>
+
+    <string name="gym_start_empty">Start workout</string>
+    <string name="gym_window_week">This week</string>
+    <string name="gym_week_workouts">Workouts</string>
+    <string name="gym_week_sets">Sets</string>
+    <string name="gym_week_volume">Volume</string>
+    <string name="gym_week_map_caption">Sets per muscle since Monday. Brighter = more work.</string>
+    <string name="cd_gym_week_map">Muscles trained this week: %1$s</string>
+    <string name="cd_gym_week_map_empty">No muscles trained this week</string>
+    <string name="gym_window_routines">Routines</string>
+    <string name="gym_routines_empty">Finish a workout, then save it as a routine to repeat it in one tap.</string>
+    <string name="gym_routine_meta">%1$d exercises · %2$d sets</string>
+    <string name="gym_routine_start">Start</string>
+    <string name="gym_routine_delete">Delete routine %1$s</string>
+    <string name="gym_window_records">Personal records</string>
+    <string name="gym_records_empty">Log weighted sets of 1–12 reps to see estimated one-rep maxes.</string>
+    <string name="gym_record_line">%1$s kg × %2$d · e1RM %3$s kg</string>
+    <string name="gym_window_history">History</string>
+    <string name="gym_history_empty">No workouts yet. Start one and tick sets as you go.</string>
+    <string name="gym_history_meta">%1$s · %2$d min · %3$d sets · %4$s kg</string>
+    <string name="gym_history_delete">Delete workout from %1$s</string>
+    <string name="gym_workout_default_name">Workout</string>
+
+    <string name="gym_notice_finished">Workout saved.</string>
+    <string name="gym_notice_discarded_empty">Nothing was ticked done, so the workout wasn’t saved.</string>
+    <string name="gym_notice_routine_saved">Routine saved.</string>
+
+    <!-- Active session -->
+    <string name="gym_session_timer">%1$s elapsed</string>
+    <string name="gym_session_summary">%1$d sets done · %2$s kg</string>
+    <string name="gym_add_exercise">Add exercise</string>
+    <string name="gym_finish">Finish</string>
+    <string name="gym_discard">Discard</string>
+    <string name="gym_save_routine">Save as routine</string>
+    <string name="gym_session_empty">Add an exercise to begin. Sets are prefilled from your last session.</string>
+    <string name="gym_col_set">Set</string>
+    <string name="gym_col_previous">Previous</string>
+    <string name="gym_col_kg">kg</string>
+    <string name="gym_col_reps">Reps</string>
+    <string name="gym_previous_none">—</string>
+    <string name="gym_previous_value">%1$s×%2$d</string>
+    <string name="gym_add_set">Add set</string>
+    <string name="gym_remove_exercise">Remove %1$s</string>
+    <string name="gym_exercise_info">About %1$s</string>
+    <string name="cd_gym_set_weight">Set %1$d weight in kilograms</string>
+    <string name="cd_gym_set_reps">Set %1$d reps</string>
+    <string name="cd_gym_set_done">Set %1$d done</string>
+    <string name="gym_remove_set">Remove last set</string>
+    <string name="gym_kg_value">%1$s kg</string>
+    <string name="action_dismiss">Dismiss</string>
+    <string name="gym_discard_title">Discard this workout?</string>
+    <string name="gym_discard_body">All sets in this session will be deleted.</string>
+    <string name="gym_routine_name_title">Name this routine</string>
+    <string name="gym_routine_name_label">Routine name</string>
+
+    <!-- Exercise library -->
+    <string name="gym_picker_title">Add exercise</string>
+    <string name="gym_picker_search">Search exercises</string>
+    <string name="gym_picker_equipment">Equipment</string>
+    <string name="gym_picker_muscle_hint">Tap a muscle to filter</string>
+    <string name="cd_gym_picker_map">Body map. Selected muscle: %1$s</string>
+    <string name="gym_picker_any_muscle">Any muscle</string>
+    <string name="gym_picker_empty">No exercises match. Try fewer filters, or create your own.</string>
+    <string name="gym_picker_custom">Create custom exercise</string>
+    <string name="gym_custom_badge">Custom</string>
+    <string name="gym_exercise_primary">Primary: %1$s</string>
+    <string name="gym_exercise_secondary">Secondary: %1$s</string>
+    <string name="gym_exercise_add">Add to workout</string>
+    <string name="gym_exercise_instructions">How to</string>
+    <string name="cd_gym_exercise_map">Works %1$s</string>
+    <string name="gym_custom_title">Custom exercise</string>
+    <string name="gym_custom_name">Name</string>
+    <string name="gym_custom_primary">Primary muscles</string>
+    <string name="gym_custom_secondary">Secondary muscles</string>
+    <string name="gym_custom_create">Create and add</string>
+
+    <string name="body_front">Front</string>
+    <string name="body_back">Back</string>
+
+    <string name="muscle_abdominals">Abs</string>
+    <string name="muscle_abductors">Abductors</string>
+    <string name="muscle_adductors">Adductors</string>
+    <string name="muscle_biceps">Biceps</string>
+    <string name="muscle_calves">Calves</string>
+    <string name="muscle_chest">Chest</string>
+    <string name="muscle_forearms">Forearms</string>
+    <string name="muscle_glutes">Glutes</string>
+    <string name="muscle_hamstrings">Hamstrings</string>
+    <string name="muscle_lats">Lats</string>
+    <string name="muscle_lower_back">Lower back</string>
+    <string name="muscle_middle_back">Middle back</string>
+    <string name="muscle_neck">Neck</string>
+    <string name="muscle_quadriceps">Quads</string>
+    <string name="muscle_shoulders">Shoulders</string>
+    <string name="muscle_traps">Traps</string>
+    <string name="muscle_triceps">Triceps</string>
+
+    <string name="gear_body_only">Body only</string>
+    <string name="gear_dumbbell">Dumbbell</string>
+    <string name="gear_barbell">Barbell</string>
+    <string name="gear_ez_bar">EZ bar</string>
+    <string name="gear_kettlebells">Kettlebell</string>
+    <string name="gear_cable">Cable</string>
+    <string name="gear_machine">Machine</string>
+    <string name="gear_bands">Bands</string>
+    <string name="gear_medicine_ball">Medicine ball</string>
+    <string name="gear_exercise_ball">Exercise ball</string>
+    <string name="gear_foam_roll">Foam roll</string>
+    <string name="gear_other">Other</string>
 </resources>

@@ -1,7 +1,34 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Diet: food diary and nutrient targets (PRD F-diet) -->
+    <!-- Diet: food diary and nutrient targets (PRD F-diet, GAME_DESIGN §13.1). Trackers only: no XP. -->
     <string name="nav_diet">Diet</string>
     <string name="diet_title">Diet</string>
     <string name="diet_placeholder">Food diary, calorie budget and nutrient targets.</string>
+
+    <string name="nutrient_kcal">Calories</string>
+    <string name="nutrient_protein">Protein</string>
+    <string name="nutrient_carbs">Carbs</string>
+    <string name="nutrient_fat">Fat</string>
+    <string name="nutrient_fiber">Fiber</string>
+    <string name="nutrient_sugars">Sugars</string>
+    <string name="nutrient_sat_fat">Saturated fat</string>
+    <string name="nutrient_mono_fat">Monounsaturated fat</string>
+    <string name="nutrient_poly_fat">Polyunsaturated fat</string>
+    <string name="nutrient_trans_fat">Trans fat</string>
+    <string name="nutrient_cholesterol">Cholesterol</string>
+    <string name="nutrient_sodium">Sodium</string>
+    <string name="nutrient_potassium">Potassium</string>
+    <string name="nutrient_calcium">Calcium</string>
+    <string name="nutrient_iron">Iron</string>
+    <string name="nutrient_magnesium">Magnesium</string>
+    <string name="nutrient_vitamin_a">Vitamin A</string>
+    <string name="nutrient_vitamin_c">Vitamin C</string>
+    <string name="nutrient_vitamin_d">Vitamin D</string>
+    <string name="nutrient_caffeine">Caffeine</string>
+    <string name="nutrient_alcohol">Alcohol</string>
+
+    <string name="nutrient_unit_kcal">kcal</string>
+    <string name="nutrient_unit_g">g</string>
+    <string name="nutrient_unit_mg">mg</string>
+    <string name="nutrient_unit_ug">µg</string>
 </resources>

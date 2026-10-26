@@ -224,6 +224,35 @@ object AwakenGlyphs {
         }
     }
 
+    /** Remove / close. */
+    val Close: ImageVector by lazy {
+        glyph("Close") {
+            moveTo(6f, 6f); lineTo(18f, 18f); moveTo(18f, 6f); lineTo(6f, 18f)
+        }
+    }
+
+    val Plus: ImageVector by lazy {
+        glyph("Plus") {
+            moveTo(12f, 5f); lineTo(12f, 19f); moveTo(5f, 12f); lineTo(19f, 12f)
+        }
+    }
+
+    /** Details: a framed "i". */
+    val Info: ImageVector by lazy {
+        glyph("Info") {
+            moveTo(12f, 3f); lineTo(20f, 7.5f); lineTo(20f, 16.5f); lineTo(12f, 21f); lineTo(4f, 16.5f); lineTo(4f, 7.5f); close()
+            moveTo(12f, 11f); lineTo(12f, 16.5f); moveTo(12f, 7.5f); lineTo(12f, 8.5f)
+        }
+    }
+
+    val ChevronLeft: ImageVector by lazy {
+        glyph("ChevronLeft") { moveTo(15f, 5f); lineTo(8f, 12f); lineTo(15f, 19f) }
+    }
+
+    val ChevronRight: ImageVector by lazy {
+        glyph("ChevronRight") { moveTo(9f, 5f); lineTo(16f, 12f); lineTo(9f, 19f) }
+    }
+
     /** Glyph for a sigil id from the shop catalogue; null for an id this build doesn't know. */
     fun sigil(sigilId: String): ImageVector? = when (sigilId) {
         "sigil_blade" -> Blade

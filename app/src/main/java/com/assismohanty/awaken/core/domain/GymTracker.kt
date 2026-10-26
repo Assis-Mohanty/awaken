@@ -143,6 +143,8 @@ class GymTracker @Inject constructor(
         if (workout == null) flowOf(null) else gymDao.observeSets(workout.id).map { sets -> ActiveWorkout(workout, group(sets)) }
     }
 
+    suspend fun activeWorkoutId(): String? = gymDao.activeWorkout()?.id
+
     /** Starts a session (or returns the one already running), optionally filled from [routineId]. */
     suspend fun start(name: String, routineId: String? = null): String = transactions.run {
         gymDao.activeWorkout()?.let { return@run it.id }

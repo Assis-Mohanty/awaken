@@ -55,6 +55,13 @@ data class AwakenDimens(
     val navIndicatorHeight: Dp = 2.dp,
     /** Screen Time 7-day bars (DS §4.9). */
     val trendBarHeight: Dp = 96.dp,
+    /** Gym body map: front + back figures side by side (DS §3). */
+    val bodyMapHeight: Dp = 260.dp,
+    /** Diet calorie ring and its stroke. */
+    val calorieRing: Dp = 148.dp,
+    val calorieRingStroke: Dp = 10.dp,
+    /** Number fields in set rows and nutrient forms. */
+    val numberField: Dp = 64.dp,
 )
 
 val LocalAwakenShapes = staticCompositionLocalOf { AwakenShapes() }
