@@ -38,6 +38,9 @@ truth = "1.4.5"
 turbine = "1.2.1"
 jsonSchemaValidator = "3.0.8"
 robolectric = "4.17"
+# Screenshot tests (golden images of every @Preview): Roborazzi + ComposablePreviewScanner
+roborazzi = "1.77.0"
+composablePreviewScanner = "0.9.3"
 androidxTestJunit = "1.3.0"
 espressoCore = "3.7.0"
 
@@ -111,6 +114,12 @@ truth = { group = "com.google.truth", name = "truth", version.ref = "truth" }
 turbine = { group = "app.cash.turbine", name = "turbine", version.ref = "turbine" }
 json-schema-validator = { group = "com.networknt", name = "json-schema-validator", version.ref = "jsonSchemaValidator" }
 robolectric = { group = "org.robolectric", name = "robolectric", version.ref = "robolectric" }
+roborazzi = { group = "io.github.takahirom.roborazzi", name = "roborazzi", version.ref = "roborazzi" }
+roborazzi-compose = { group = "io.github.takahirom.roborazzi", name = "roborazzi-compose", version.ref = "roborazzi" }
+roborazzi-junit-rule = { group = "io.github.takahirom.roborazzi", name = "roborazzi-junit-rule", version.ref = "roborazzi" }
+roborazzi-annotations = { group = "io.github.takahirom.roborazzi", name = "roborazzi-annotations", version.ref = "roborazzi" }
+roborazzi-preview-scanner-support = { group = "io.github.takahirom.roborazzi", name = "roborazzi-compose-preview-scanner-support", version.ref = "roborazzi" }
+composable-preview-scanner = { group = "io.github.sergio-sastre.ComposablePreviewScanner", name = "android", version.ref = "composablePreviewScanner" }
 androidx-test-junit = { group = "androidx.test.ext", name = "junit", version.ref = "androidxTestJunit" }
 androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
 
@@ -122,3 +131,4 @@ kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", versi
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 hilt = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
 room = { id = "androidx.room", version.ref = "room" }
+roborazzi = { id = "io.github.takahirom.roborazzi", version.ref = "roborazzi" }

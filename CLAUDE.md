@@ -45,7 +45,8 @@ Proxy (`/proxy`): TypeScript on Cloudflare Workers · zod · Wrangler · Vitest.
 
 ## Workflow rules for you (Claude Code)
 - Start each phase in **plan mode**; list files you'll touch; then implement.
-- After each phase: `./gradlew :engine:test :app:testDebugUnitTest :app:assembleDebug` must pass, plus `./gradlew lint` with no new errors. Fix before moving on.
+- After each phase: `./gradlew :engine:test :app:testDebugUnitTest :app:assembleDebug` must pass, plus `./gradlew lint` with no new errors and `./gradlew :app:verifyRoborazziDebug` with no unexpected diffs. Fix before moving on.
+- Screenshot goldens (`app/src/test/screenshots/`, every `@Preview` at half scale) are re-recorded only on purpose, with the changed screens named in the commit. They are rendered on this Windows machine; another OS may differ by font rasterisation.
 - Commit after each green phase: `feat(<area>): <what>` — small, reviewable commits.
 - If a requirement in the docs is ambiguous or conflicts, stop and ask; don't guess numbers.
 - Don't add features not in `PRD_MVP.md`. Put ideas in `docs/BACKLOG.md` instead.
@@ -55,6 +56,8 @@ Proxy (`/proxy`): TypeScript on Cloudflare Workers · zod · Wrangler · Vitest.
 ```
 ./gradlew :engine:test                 # rules engine tests (fast, run constantly)
 ./gradlew :app:testDebugUnitTest       # app unit tests (Robolectric; includes Compose UI tests)
+./gradlew :app:recordRoborazziDebug     # re-record golden screenshots of every @Preview (deliberate visual changes only)
+./gradlew :app:verifyRoborazziDebug     # compare against the committed goldens
 ./gradlew :app:connectedDebugAndroidTest   # instrumented (needs device/emulator)
 ./gradlew :app:assembleDebug           # debug APK -> app/build/outputs/apk/debug/
 ./gradlew :app:bundleRelease           # signed AAB for Play (needs keystore.properties)

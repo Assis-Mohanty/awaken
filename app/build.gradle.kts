@@ -8,6 +8,7 @@ plugins {
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt)
     alias(libs.plugins.room)
+    alias(libs.plugins.roborazzi)
 }
 
 // Release signing is read from keystore.properties (git-ignored). Absent file => unsigned release build.
@@ -123,6 +124,20 @@ room {
     schemaDirectory("$projectDir/schemas")
 }
 
+// Golden screenshots of every @Preview (phone, small phone, light, font 200 %), committed under src/test/screenshots.
+// record: ./gradlew recordRoborazziDebug   verify: ./gradlew verifyRoborazziDebug
+roborazzi {
+    outputDir.set(file("src/test/screenshots"))
+    @OptIn(com.github.takahirom.roborazzi.ExperimentalRoborazziApi::class)
+    generateComposePreviewRobolectricTests {
+        enable = true
+        packages = listOf("com.assismohanty.awaken")
+        includePrivatePreviews = true
+        // Half density: a quarter of the bytes, still catches any visual change.
+        renderScale = 0.5
+    }
+}
+
 dependencies {
     implementation(project(":engine"))
 
@@ -175,6 +190,12 @@ dependencies {
     // Compose UI tests run on Robolectric so the per-phase gate covers them without a device.
     testImplementation(platform(libs.androidx.compose.bom))
     testImplementation(libs.androidx.compose.ui.test.junit4)
+    testImplementation(libs.roborazzi)
+    testImplementation(libs.roborazzi.compose)
+    testImplementation(libs.roborazzi.junit.rule)
+    testImplementation(libs.roborazzi.annotations)
+    testImplementation(libs.roborazzi.preview.scanner.support)
+    testImplementation(libs.composable.preview.scanner)
 
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
