@@ -79,7 +79,9 @@ Read GAME_DESIGN.md §3, §6.2, §8, §10, §11 and DESIGN_SYSTEM.md §5 (copy v
 
 Create content assets in app/src/main/assets:
 1. quests/templates.json — at least 150 templates following the GD §6.2 schema: >=25 per stat, all 4 difficulty targets,
-   2–3 evocative original titles each (no Solo Leveling names/quotes), realistic targets (beginner-safe EASY),
+   1–3 plain titles each following the GD §6.2 title rules (action first, 2–5 words, sentence case, ≤ 40 chars, no
+   numbers, no metaphors or fantasy words; e.g. "Do push-ups", "Walk your steps", never "Iron Arms"),
+   no Solo Leveling names/quotes, realistic targets (beginner-safe EASY),
    correct equipment and tags (impact, legs, upper, outdoor, indoor, social, quiet). Include:
    - HEALTH_STEPS templates (steps targets 4k/7k/10k/14k), HEALTH_EXERCISE (15/30/45/60 min), HEALTH_SLEEP (7h baseline only for VIT),
    - a "penalty" set of 15 short Normal quests doable anywhere,
@@ -89,7 +91,8 @@ Create content assets in app/src/main/assets:
 3. narrative/system_lines.json — ~60 lines keyed by context (streak_milestone, comeback, neglected_<stat>, trial_active,
    cleared_day, generic).
 4. A :engine test that loads templates.json (copy it as a test resource via Gradle task) and validates: unique ids,
-   all targets present & increasing, valid enums, >=25 per stat, no empty titles.
+   all targets present & increasing, valid enums, >=25 per stat, and every title passes `TemplateLibrary.titleProblems`
+   (length, word count, sentence case, no numbers, banned fantasy words).
 Run the tests.
 ```
 

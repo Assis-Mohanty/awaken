@@ -63,6 +63,18 @@ Habit/RPG apps are a crowded but low-quality niche on Play: Habitica (aging, pun
 | F26 | **Gym** (tracker, no XP): Gym tab; start an empty workout or a routine; kg × reps set rows prefilled from the last session; finish keeps done sets; save as routine; week snapshot (workouts, sets, volume) with a muscle-load body map; estimated-1RM records; history. Offline exercise library (free-exercise-db, 876 exercises): search, equipment chips, tap-a-muscle filter, how-to steps, custom exercises | GD §13.2; ARCH §3.13; DS §4.11; ENGINE_DECISIONS #95–#98 |
 | F27 | **Diet** (tracker, no XP): Diet tab; one-time budget setup (goal, sex, birth year, height, weight, activity → BMR, budget, macro and Daily Value targets, all editable); day view with calorie ring, macros, four meals, nutrient panel; offline food search (USDA SR Legacy + FNDDS, 13k foods) with recent foods; log by grams or household portion; edit/remove entries; custom foods | GD §13.1; ARCH §3.13; DS §4.12 |
 
+**v1.1 growth layer (approved 2026-10-27)** (brief: `docs/V1_1_FEATURES_PROMPT.md`, whose F22–F28 are renumbered F28–F34 here because F22–F27 were already taken). All on-device, no AI, no new network call, no XP for reflection or opening the app.
+
+| # | Feature | Spec |
+|---|---|---|
+| F28 | **Consistency score + "never miss twice"**: "22 of the last 28 days" meter beside the unchanged streak (rest/recovery days excluded); a calm line the day after a missed day; recoveries counted for an achievement | GD §14.2; DS §8.1 |
+| F29 | **Personal insights**: on-device correlations (sleep, weekday, time of day, focus hour, steps, momentum) with statistical guardrails and correlational copy; up to 3 on Status, rotated per ISO week | GD §14.3; DS §8.1 |
+| F30 | **Weekly review**: Sat–Mon ritual, ≤ 5 taps (numbers, went well, slipped, next week's focus stats, intention); stored locally, exported; no XP, achievements only | GD §14.4; DS §8.2 |
+| F31 | **Time-of-day blocks**: Morning / Day / Evening / Anytime grouping on Today with editable boundaries; templates and habits carry a block; no change to generation or rewards | GD §14.5; DS §8.2 |
+| F32 | **Monthly and yearly recap**: 3–5 story cards, reopenable, last card shared as a 1080×1350 image | GD §14.6; DS §8.2 |
+| F33 | **Identity framing**: "Who are you becoming?" (1–3 of 12) in onboarding, pre-selects focus stats, shown on Status, used in the review; no rewards | GD §14.7; DS §8.2 |
+| F34 | **Clean / System presentation**: Clean by default for new installs, one-time invite after the first level-up; a Lexicon swaps game terms and voice; numbers identical | GD §14.9; DS §8.3 |
+
 ## 5. Explicitly OUT of scope for v1.0 (put in `BACKLOG.md`)
 Accounts/sync · global/friends leaderboards · guilds · PvP duels & wagers · premium currency / IAP / ads · AI mentor chat (free-form conversation) · AI deciding any reward · on-device LLM · photo/video proof · multi-day dungeons · hardcore/permadeath · prestige · territory wars · iOS · web · Wear OS · localisation beyond English (strings are externalised though; Path goals may be typed in any language).
 

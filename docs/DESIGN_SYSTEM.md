@@ -171,10 +171,10 @@ First quest is guaranteed Easy and doable now (e.g., "Drink a glass of water" VI
 │ [████████████░░░░]  1,240/1,434  │
 ├──────────────────────────────────┤
 │ ◤ DAILY DIRECTIVE        3 / 5 ◢│  SystemWindow (rank edge)
-│  STR  Iron Arms   80 reps · Hard │  ← main quest, larger row, "Main" chip
-│  INT  Deep Dive   25 min · Timed │  ✓
-│  VIT  Ground Walk 7,000 steps ✔V │  auto-completes from Health Connect
-│  WIL  Still Mind  10 min         │
+│  STR  Do push-ups 80 reps · Hard │  ← main quest, larger row, "Main" chip
+│  INT  Do deep work 25 min · Timed│  ✓
+│  VIT  Walk your steps 7,000 ✔V   │  auto-completes from Health Connect
+│  WIL  Sit and meditate 10 min    │
 │  ─ habits ─                      │
 │  CHA  Call home                  │
 ├──────────────────────────────────┤
@@ -249,3 +249,77 @@ TalkBack labels on every interactive element and chart (radar exposes "Strength 
 ## 7. Design prompt to give Claude Code (paste with Phase 2)
 
 > Implement the AWAKEN design system from `docs/DESIGN_SYSTEM.md` in `core/designsystem`. The look is a premium-black "System" interface: true-black `void` background with at most a faint rank-tinted haze, black chamfered `SystemWindow` slabs with a grey hairline and a rank-coloured corner bracket, monochrome chrome with colour only for rank/stat/crit/verified/ember, Saira Condensed for the System's voice and numerals, IBM Plex Sans for everything people read. Quiet everywhere except windows and the level-up ceremony. No cards-per-row, no drop shadows, no Material default purple, no monospace, uppercase only for window titles. Build the components in §3 with `@Preview`s for each state (default, pressed, disabled, crit, penalty, reduce-motion). Implement `AwakenTheme` exposing `AwakenColors`, `AwakenType`, `AwakenMotion`, `Haptics` via CompositionLocals; screens must never reference raw hex/dp values. Then build a `DesignSystemCatalog` debug screen that shows every component so I can review them on device.
+
+## 8. v1.1 growth layer: components, screens, tokens and lexicon
+
+Rules for everything below: semantic tokens only (§8.4), charts only through ChartKit (§8.5), every game term through the Lexicon (§8.3), strings in `strings.xml`, `@PhonePreviews` for every state (dark + light), 48dp targets, TalkBack text on every chart and meter, reduce-motion = crossfade only. Numbers come from GD §14.
+
+### 8.1 New components (`core/designsystem/components`)
+
+| Component | Spec |
+|---|---|
+| `ConsistencyMeter(cleared, eligible)` | A 6dp horizontal track (`surfaceSunken`) filled to the ratio in `accent`, with "22 of the last 28 days" in `label` and the count as `metricL`. No colour by value, no bands. `eligible = 0` → "—" and an empty track. Content description: "Cleared 22 of the last 28 days." Sits beside the streak in `HunterHeader`'s row on Today and on Status. |
+| `InsightCard(insight)` | One card: a ChartKit mini comparison (two bars A/B, or the weekday bars, or a focus-hour sparkline), one correlational sentence in `body`, and a `caption` "Based on your last 84 days. A pattern, not a cause." Card states: insight, empty ("9 more days and your patterns will show."), no-pattern. The chart's content description reads the two values. |
+| `NeverMissTwiceLine` | Replaces the daily System line on Today the day after a missed day: `textSecondary`, no icon, no `ember`. |
+| `TimeBlockHeader(block, done, total, state)` | Section header inside the Directive window: block name, "2 of 3 done", chevron. States: current (accent rule on the left, expanded), past (collapsed, `textMuted`, tap to expand), upcoming (expanded, `textSecondary`). 48dp row; state announced to TalkBack ("Morning, past, 2 of 3 done, collapsed"). |
+| `ReviewFlow` steps | `ReviewStepNumbers`, `ReviewTextStep(prompt, maxChars=280)` with a live counter, `ReviewFocusStep` (5 stat tiles, exactly 2 selected), `ReviewIntentionStep(maxChars=120)`; a step indicator "2 / 5"; [Skip] on every optional step with the same weight as [Next]. |
+| `RecapCard(page)` | Full-bleed story card: period kicker, one `metricXL` hero number, 1–3 supporting rows, page dots; swipe or tap edges to move; reduce-motion = crossfade, never auto-advance. The last card hosts [Share] (ShareCard path, dark in every mode). |
+| `IdentityChips(selected, max=3)` | Wrapping selectable pills "Someone who reads" with the stat sigil; a 4th tap shows "Pick up to 3"; read-only variant under the name on Status. |
+| `ModeSwitch(mode)` | Two-segment control Clean / System with one line of explanation each ("Plain words, calm look." / "The full System: Gates, Hunters, glow."). Also used inside the one-time invite sheet. |
+
+### 8.2 New and changed screens
+
+- **Today:** `ConsistencyMeter` beside the streak; the Directive window grouped by `TimeBlockHeader` (Morning → Day → Evening → Anytime), penalty still pinned on top; `NeverMissTwiceLine` when applicable; a "Weekly review is open" row between Saturday and Monday until done.
+- **Status:** identities under the name; INSIGHTS section (up to 3 `InsightCard`s) after the radar; consistency next to the heatmap; a RECAPS list (month/year rows) after the Weekly Report.
+- **Weekly Review** (new route, from the Today row, the Sunday notification and Status): five steps in one window; finishing shows "Review saved" and any achievement toast. No XP anywhere on these screens.
+- **Recap** (new route): auto-opens once per GD §14.6, else from Status → Recaps.
+- **Onboarding:** new step "Who are you becoming?" (`IdentityChips`, [Skip]) before focus stats; the focus-stat step arrives pre-selected.
+- **Settings:** Presentation (`ModeSwitch`), Identities, Time blocks ("Morning ends", "Day ends" hour pickers), Light/Dark debug toggle stays debug-only (Part 2).
+- **Habit editor:** a block picker (Morning / Day / Evening / Anytime).
+- **System invite sheet:** after the first level-up in Clean mode; [Try it] / [Keep clean].
+
+### 8.3 Lexicon (Clean ↔ System)
+
+`Lexicon` (interface in `core/designsystem/lexicon`) exposes one function per term key; `CleanLexicon` and `SystemLexicon` read string resources `term_<key>_clean` / `term_<key>_system`. Provided by `LocalLexicon` from the `presentationMode` DataStore pref. Whole sentences that speak *as* the System ("THE SYSTEM HAS RECALIBRATED") get a full Clean string rather than term substitution, because word-swapping breaks grammar. Window titles are UPPERCASE in System mode and sentence case in Clean mode (the case is copy, not the type style).
+
+| Key | Clean | System |
+|---|---|---|
+| `hunter` | Profile | Hunter |
+| `gate` / `gates` | Focus session / Focus sessions | Gate / Gates |
+| `gate_collapsed` | Session ended early | Gate collapsed |
+| `breach` | Time away | Breach |
+| `dungeon` | Challenge | Dungeon *(reserved; no UI uses it yet)* |
+| `directive` | Today's plan | Daily Directive |
+| `directive_cleared` | Plan complete | Directive cleared |
+| `penalty_zone` | Comeback | Penalty Zone |
+| `penalty_quest` | Comeback quest | Penalty quest |
+| `rank_trial` | Promotion challenge | Rank Trial |
+| `relic_cache` | Reward chest | Relic Cache |
+| `fragments` | Shards | Loot Fragments |
+| `system_message` | Daily focus | System message |
+| `awakening` | Getting started | Awakening |
+| `vault` | Shop | Vault |
+| `status` | Progress | Status |
+| `sigil` | Badge | Sigil |
+| `chapter` | Story | Chapter |
+| `oath` | Commitment | Oath |
+| `streak_shield` | Streak freeze | Streak Shield |
+| `crit` | Bonus | Critical |
+| `recalibrated` | Adjusted | Recalibrated |
+| `oracle` | AI planner | Oracle |
+
+Unchanged in both: ranks E–S, level, XP, gold, streak, stats, quest, title, Path, campaign. Gate tiles keep their rank letter and duration in both modes ("C · 50 min" Clean, "C-Gate · 50 min" System). Clean mode turns off the gate glow (`GateBackground`); nothing else visual changes in v1.1.
+
+### 8.4 Token architecture (Part 2 refactor; no visual change)
+
+Three layers. Only `core/designsystem/theme` may name layer 1.
+
+1. **Palette** (raw values, today's §2.1 / §2.1b hex): `AwakenPalette.Dark` / `.Light`.
+2. **Semantic tokens** (`AwakenTheme.colors`): `surface`, `surfaceElevated`, `surfaceSunken`, `textPrimary`, `textSecondary`, `textMuted`, `accent`, `accentMuted`, `positive`, `warning`, `critical`, `divider`, `chartSeries1..6`, `chartGrid`, plus the existing meaning colours (rank, stat, `crit`) behind semantic names. Mapping for v1.1 (identity, so screenshots match): `surface` = void, `surfaceElevated` = panel, `surfaceSunken` = depth, `textPrimary` = bone, `textSecondary` = mist, `textMuted` = fog, `accent` = system, `accentMuted` = edge, `positive` = verified, `warning` = crit, `critical` = ember, `divider` = edge, `chartGrid` = edge, `chartSeries1..5` = stat colours STR…CHA, `chartSeries6` = mist.
+3. **Type roles** `metricXL` (= displayXL), `metricL` (= display), `title`, `body`, `label`, `caption` (+ `windowTitle`, `numeric` kept). **Spacing** `space.xs…xxl` (4…48), **radius** `radius.chip/card/sheet`, **elevation** `elevation.flat/raised` (both 0 today; depth stays hairlines).
+
+Enforcement: a unit test scans `feature/**` and fails on raw palette names, `Color(0x…)`, `#hex`, or literal `.dp`/`.sp` outside layout-only modifiers (`padding`, `size`, `width`, `height`, `Spacer`) that use spacing tokens.
+
+### 8.5 ChartKit (`core/designsystem/charts`)
+
+`Chart(spec: ChartSpec, modifier)` with sealed `ChartSpec`: `TrendLine`, `Bars`, `Ring`, `Radar`, `Heatmap`, `Sparkline`, `Comparison` (two bars). Every spec carries a `contentDescription` built by the caller from strings. The existing `RadarChart`, `Heatmap` and `ProgressRing` move behind it unchanged. Feature code never touches `Canvas`.

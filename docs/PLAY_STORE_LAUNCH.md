@@ -113,6 +113,13 @@ Re-do this form whenever you add sync, analytics, or crash SDKs, or change what 
 - **Heart rate (read, optional):** "Shown on workout summaries and used on-device to reject workouts where the heart rate never rose. It does not change rewards. Not shared or uploaded."
 Request nothing else. The privacy policy link shown inside Health Connect must be the same as the Play listing's.
 
+**v1.1 additions (GD §14; no new permission, a new on-device use of the same data).** Append to the matching lines above when v1.1 ships:
+- **Steps:** "…and, on-device only, to show the user personal patterns (for example, how many quests they complete on days with 7,000+ steps) and monthly/yearly summaries of their own activity."
+- **Sleep sessions:** "…and, on-device only, to show the user personal patterns (for example, quest completion on days after 7+ hours of sleep) and their average sleep in monthly/yearly summaries."
+- **Distance (optional):** "…and to show total distance in the user's monthly/yearly summary, on-device."
+- Shared line for the form's "how is it used" box: "Insights and summaries are computed on the phone from data the user already granted. Daily totals (steps, sleep minutes, distance) are kept in the app's local database so summaries can cover past months. Nothing is uploaded, shared, sent to AI Paths, or used for advertising."
+- Data safety form (§4): **no change** (still not collected, as nothing leaves the device). Re-check if that ever changes.
+
 ## 5b. Usage access (`PACKAGE_USAGE_STATS`) — justification text (adapt)
 - Usage access is a special app access the user turns on in system settings after an in-app explanation; the app never blocks, overlays or interrupts other apps.
 - **Core feature:** "Screen time and Screen Discipline: shows the user how long they spent in each app today and over 7 days, lets them mark apps as distracting, productive or neutral, and checks the daily limits they set on distracting apps. Staying under every limit completes an in-app quest. Usage data is processed on-device only and is never uploaded or shared."
@@ -162,6 +169,13 @@ health app is ignored. This data is processed on-device only, is never
 uploaded (including to AI Paths), and is not used for advertising. You can revoke access anytime in Health Connect settings.
 Use of information received from Health Connect adheres to the Health Connect Permissions policy, including the
 Limited Use requirements.
+
+[v1.1] Insights and recaps: the app also uses this data, on your device only, to show you personal patterns
+(for example, how many quests you complete on days after 7+ hours of sleep or with 7,000+ steps) and monthly and
+yearly summaries of your own activity. To cover past months it keeps daily totals (steps, sleep time, distance) in
+the app's local database. These patterns describe correlations in your own data; they are not medical advice. Nothing
+is uploaded, shared, sent to AI Paths, or used for advertising. Weekly reviews (what went well, what slipped, your
+intention) and your chosen identities are stored only on your device and included in your export file.
 
 Screen time: if you allow usage access, the app reads how long each app was in the foreground on your device to
 show your screen time and check the daily limits you set for Screen Discipline, plus the list of apps in your launcher
