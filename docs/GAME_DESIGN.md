@@ -571,3 +571,29 @@ Template quests, chapters and System lines stay hand-written and bundled. AI wri
 | 45 | Campaign completed once | Reforged unlocks once: +1,000 gold, title "Reforged" |
 
 > Note on vector 7: the level table in §4.4 lists the *step into* each level (i.e. `xpToNext(L−1)`), so "L10 step 504" = `xpToNext(9)`. Vector 7 is `xpToNext(10)` = 578. Tests are authoritative.
+
+## 13. Body tracking — Gym and Diet (trackers, no XP)
+
+Approved 2026-10-27. Gym and Diet are trackers: they mint **no XP, gold, stat XP or items** and write no ledger rows. Hooks into the RPG are in `BACKLOG.md` and need their own numbers here before any code. Rules live in `:engine` `body/` (`NutritionMath`, `TrainingMath`). Units are metric (kg, cm, g).
+
+### 13.1 Diet — calorie budget and nutrient targets
+- **BMR** (Mifflin–St Jeor): `10·kg + 6.25·cm − 5·age + 5` (male) / `− 161` (female). Age = game-date year − birth year.
+- **TDEE** = BMR × activity: sedentary 1.2 · light 1.375 · moderate 1.55 · very active 1.725 · extra active 1.9.
+- **Calorie budget** = round(TDEE) + goal delta: lose −500 · maintain 0 · gain +300; never below 1,200 (female) / 1,500 (male).
+- **Protein** 2.0 g/kg (lose) or 1.6 g/kg (maintain, gain). **Fat** 25 % of kcal ÷ 9. **Carbs** = (kcal − 4·protein − 9·fat) ÷ 4, never below 0. **Fiber** 14 g per 1,000 kcal. **Saturated fat** limit 10 % of kcal ÷ 9.
+- **Defaults from FDA Daily Values:** cholesterol ≤ 300 mg, sodium ≤ 2,300 mg, potassium 4,700 mg, calcium 1,300 mg, iron 18 mg, magnesium 420 mg, vitamin A 900 µg, vitamin C 90 mg, vitamin D 20 µg. Sugars, mono/poly/trans fat, caffeine and alcohol have no default.
+- **Overrides:** every target is editable and an override wins. Overriding kcal alone rescales fat, carbs, fiber and saturated fat; overriding a macro sets it outright.
+- **Logging:** a diary row stores grams and a snapshot of the food's per-100 g nutrients; amounts = per-100 g × grams ÷ 100. Rows belong to the game-day (§2) they're logged for.
+
+### 13.2 Gym — volume, PRs and muscle load
+- **Volume** = Σ weight × reps over done sets.
+- **Estimated 1RM**: the weight for a single; Epley `w × (1 + reps/30)` for 2–12 reps; no estimate above 12 reps or for unweighted sets. An exercise's PR is its best estimate.
+- **Muscle load** per week (Monday → Sunday): each done set adds 1 to its exercise's primary muscles and 0.5 to secondary ones (a muscle listed in both counts as primary).
+- **Body-map bands:** 0 sets · ≤ 5 · ≤ 10 · ≤ 15 · more (bands 0–4).
+
+| # | Input | Expected |
+|---|---|---|
+| 46 | Male, 25 y, 175 cm, 80 kg, moderate, maintain | BMR 1,774 · TDEE 2,749 · budget 2,749 kcal · protein 128 g |
+| 47 | Female, 30 y, 160 cm, 60 kg, sedentary, lose | 1,547 − 500 = 1,047 → floor **1,200** |
+| 48 | Sets 100×1 / 90×6 / 120×20 | best set 90×6 (e1RM 108); 120×20 has no estimate |
+| 49 | 2 bench sets (chest; shoulders, triceps) + 1 dip (triceps; chest) | chest 2.5 · triceps 2 · shoulders 1 |
