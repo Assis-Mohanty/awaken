@@ -36,7 +36,11 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.assismohanty.awaken.R
 import com.assismohanty.awaken.core.designsystem.components.ChoiceChip
+import com.assismohanty.awaken.core.designsystem.components.AwakenGlyphs
 import com.assismohanty.awaken.core.designsystem.components.DifficultyChip
+import com.assismohanty.awaken.core.designsystem.components.IconCircle
+import com.assismohanty.awaken.core.designsystem.components.LargeTitleScaffold
+import com.assismohanty.awaken.core.designsystem.components.SkeletonCard
 import com.assismohanty.awaken.core.designsystem.components.GateDial
 import com.assismohanty.awaken.core.designsystem.components.PrimaryButton
 import com.assismohanty.awaken.core.designsystem.components.QuietButton
@@ -75,51 +79,36 @@ fun GatesEntry(onBack: () -> Unit, modifier: Modifier = Modifier, viewModel: Gat
     )
 }
 
-/** Focus Gates (DESIGN_SYSTEM §4.4): the E/D/C/B portals, then the full-screen dial while a gate is open. */
+/**
+ * Focus Gates (DESIGN_SYSTEM §4.4): the large title over the E/D/C/B gates as a 2 × 2 grid of cards, then the setup
+ * card; while a gate is open, the dial is the one big thing on the screen.
+ */
 @Composable
 fun GatesScreen(state: GatesUiState, onEvent: (GatesEvent) -> Unit, onBack: () -> Unit, modifier: Modifier = Modifier) {
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState()),
-        horizontalAlignment = Alignment.CenterHorizontally,
+    val active = state.active
+    LargeTitleScaffold(
+        title = if (active != null) lexString(R.string.gate_name, active.rank.name) else lexString(R.string.gates_title),
+        onBack = if (active == null) onBack else null,
+        modifier = modifier,
     ) {
-        Column(
-            modifier = Modifier
-                .widthIn(max = Spacing.contentMaxWidth)
-                .fillMaxWidth()
-                .padding(horizontal = Spacing.gutter, vertical = Spacing.lg),
-            verticalArrangement = Arrangement.spacedBy(Spacing.lg),
-        ) {
-            val active = state.active
-            when {
-                state.loading -> Unit
-                active != null -> GateRun(active, state.confirmAbandon, onEvent)
-                else -> GatePicker(state, onEvent, onBack)
-            }
+        when {
+            state.loading -> SkeletonCard()
+            active != null -> GateRun(active, state.confirmAbandon, onEvent)
+            else -> GatePicker(state, onEvent)
         }
     }
 }
 
 @Composable
-private fun GatePicker(state: GatesUiState, onEvent: (GatesEvent) -> Unit, onBack: () -> Unit) {
+private fun GatePicker(state: GatesUiState, onEvent: (GatesEvent) -> Unit) {
     val colors = AwakenTheme.colors
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Text(
-            lexString(R.string.gates_title),
-            style = AwakenTheme.type.windowTitle,
-            color = colors.textPrimary,
-            modifier = Modifier.weight(1f).semantics { heading() },
-        )
-        QuietButton(text = lexString(R.string.action_back), onClick = onBack)
-    }
     Text(
         lexString(R.string.gates_body, shortClock(GateRules.BREACH_BUDGET_MS)),
         style = AwakenTheme.type.body,
         color = colors.textSecondary,
     )
     state.tiles.chunked(2).forEach { row ->
-        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.cardGap)) {
             row.forEach { tile ->
                 GatePortal(
                     tile = tile,
@@ -152,8 +141,9 @@ private fun GatePortal(tile: GateTile, selected: Boolean, onClick: () -> Unit, m
         onClick = onClick,
         modifier = modifier,
     ) {
-        Text(name, style = AwakenTheme.type.windowTitle, color = gateColor)
-        Text(minutes, style = AwakenTheme.type.numeric, color = if (tile.available) colors.textPrimary else colors.textMuted)
+        IconCircle(AwakenGlyphs.Portal, gateColor)
+        Text(name, style = AwakenTheme.type.windowTitle, color = if (tile.available) colors.textPrimary else colors.textMuted)
+        Text(minutes, style = AwakenTheme.type.metricL, color = if (tile.available) colors.textPrimary else colors.textMuted)
         if (tile.available) {
             DifficultyChip(tile.rank.difficulty)
         } else {
@@ -196,7 +186,6 @@ private fun GateSetupWindow(setup: GateSetup, onEvent: (GatesEvent) -> Unit) {
         PrimaryButton(
             text = lexString(R.string.action_enter_gate),
             onClick = { onEvent(GatesEvent.Enter) },
-            color = colors.gate(setup.rank),
             modifier = Modifier.fillMaxWidth(),
         )
         QuietButton(text = lexString(R.string.action_back), onClick = { onEvent(GatesEvent.CloseSetup) }, modifier = Modifier.fillMaxWidth())
@@ -211,7 +200,6 @@ private fun GateRun(active: ActiveGate, confirmAbandon: Boolean, onEvent: (Gates
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(Spacing.md),
     ) {
-        Text(lexString(R.string.gate_name, active.rank.name), style = AwakenTheme.type.windowTitle, color = colors.gate(active.rank))
         Row(horizontalArrangement = Arrangement.spacedBy(Spacing.xs), verticalAlignment = Alignment.CenterVertically) {
             StatChip(active.stat)
             active.label?.let { Text(it, style = AwakenTheme.type.label, color = colors.textPrimary) }
