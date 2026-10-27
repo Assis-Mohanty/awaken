@@ -30,6 +30,9 @@ import androidx.compose.ui.window.Dialog
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.assismohanty.awaken.R
+import com.assismohanty.awaken.core.designsystem.components.MetricCard
+import com.assismohanty.awaken.core.designsystem.components.LargeTitleScaffold
+import com.assismohanty.awaken.core.designsystem.components.SkeletonCard
 import com.assismohanty.awaken.core.designsystem.components.AwakenGlyphs
 import com.assismohanty.awaken.core.designsystem.components.Pill
 import com.assismohanty.awaken.core.designsystem.components.PrimaryButton
@@ -57,36 +60,17 @@ fun VaultRoute(onBack: () -> Unit, modifier: Modifier = Modifier, viewModel: Vau
 /** Vault (DESIGN_SYSTEM §4.6): balances, Relic Cache, then the shield, themes, frames and sigils. */
 @Composable
 fun VaultScreen(state: VaultUiState, onEvent: (VaultEvent) -> Unit, onBack: () -> Unit, modifier: Modifier = Modifier) {
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState()),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        if (state.loading) return@Column
-        Column(
-            modifier = Modifier
-                .widthIn(max = Spacing.contentMaxWidth)
-                .fillMaxWidth()
-                .padding(horizontal = Spacing.gutter, vertical = Spacing.lg),
-            verticalArrangement = Arrangement.spacedBy(Spacing.lg),
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    lexString(R.string.nav_vault),
-                    style = AwakenTheme.type.metricL,
-                    color = AwakenTheme.colors.textPrimary,
-                    modifier = Modifier.weight(1f).semantics { heading() },
-                )
-                QuietButton(text = lexString(R.string.action_back), onClick = onBack)
-            }
-            BalanceWindow(state)
-            CacheWindow(state, onEvent)
-            ShieldWindow(state, onEvent)
-            ThemesWindow(state, onEvent)
-            ItemsWindow(R.string.vault_window_frames, state.frames, state, onEvent)
-            ItemsWindow(R.string.vault_window_sigils, state.sigils, state, onEvent)
+    LargeTitleScaffold(title = lexString(R.string.nav_vault), onBack = onBack, modifier = modifier) {
+        if (state.loading) {
+            SkeletonCard()
+            return@LargeTitleScaffold
         }
+        BalanceWindow(state)
+        CacheWindow(state, onEvent)
+        ShieldWindow(state, onEvent)
+        ThemesWindow(state, onEvent)
+        ItemsWindow(R.string.vault_window_frames, state.frames, state, onEvent)
+        ItemsWindow(R.string.vault_window_sigils, state.sigils, state, onEvent)
     }
     state.pending?.let { pending ->
         ConfirmSheet(pending.state.item, gold = state.gold, busy = state.busy, onEvent = onEvent)
@@ -98,13 +82,18 @@ fun VaultScreen(state: VaultUiState, onEvent: (VaultEvent) -> Unit, onBack: () -
 private fun BalanceWindow(state: VaultUiState) {
     val colors = AwakenTheme.colors
     val type = AwakenTheme.type
-    SystemWindow(title = lexString(R.string.vault_window_balance), accent = AwakenTheme.rankAccent(state.rank), reveal = false) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
-            Icon(AwakenGlyphs.Coin, contentDescription = null, tint = colors.reward, modifier = Modifier.size(AwakenTheme.dimens.icon))
-            Text(lexString(R.string.vault_gold, formatCount(state.gold)), style = type.numeric, color = colors.textPrimary)
-        }
-        Text(lexString(R.string.vault_shields, state.shields, state.shieldMax), style = type.label, color = colors.textSecondary)
-    }
+    // The balance is the one big number on the Vault.
+    val shields = lexString(R.string.vault_shields, state.shields, state.shieldMax)
+    MetricCard(
+        label = lexString(R.string.vault_window_balance),
+        value = formatCount(state.gold),
+        unit = lexString(R.string.unit_gold),
+        secondary = shields,
+        icon = AwakenGlyphs.Coin,
+        iconTint = colors.reward,
+        large = true,
+        description = lexString(R.string.vault_gold, formatCount(state.gold)) + ". " + shields,
+    )
 }
 
 @Composable

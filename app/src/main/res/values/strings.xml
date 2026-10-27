@@ -61,6 +61,7 @@
     <string name="breakdown_crit">%1$s crit</string>
     <string name="reward_xp_unit">XP</string>
     <string name="reward_gold">Gold</string>
+    <string name="unit_gold">gold</string>
     <string name="reward_row_base">Base</string>
     <string name="reward_row_streak">Streak</string>
     <string name="reward_row_verified">Verified</string>

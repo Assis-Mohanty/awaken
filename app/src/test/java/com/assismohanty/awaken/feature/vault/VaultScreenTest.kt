@@ -6,6 +6,7 @@ import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
@@ -33,8 +34,8 @@ class VaultScreenTest {
     @Test
     fun showsBalancesAndEverySection() {
         show(previewVaultState())
-        composeRule.onNodeWithText("1,240 gold").assertIsDisplayed()
-        composeRule.onNodeWithText("Streak Shields 1 / 2").assertIsDisplayed()
+        composeRule.onNodeWithContentDescription("1,240 gold", substring = true).assertIsDisplayed()
+        composeRule.onNodeWithContentDescription("Streak Shields 1 / 2", substring = true).assertIsDisplayed()
         composeRule.onNodeWithText("Fragments 10 / 10").assertIsDisplayed()
         listOf("RELIC CACHE", "INSURANCE", "THEMES", "TITLE FRAMES", "HUNTER SIGILS").forEach {
             composeRule.onNodeWithText(it).performScrollTo().assertIsDisplayed()
