@@ -76,8 +76,8 @@ fun VaultScreen(state: VaultUiState, onEvent: (VaultEvent) -> Unit, onBack: () -
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     stringResource(R.string.nav_vault),
-                    style = AwakenTheme.type.display,
-                    color = AwakenTheme.colors.bone,
+                    style = AwakenTheme.type.metricL,
+                    color = AwakenTheme.colors.textPrimary,
                     modifier = Modifier.weight(1f).semantics { heading() },
                 )
                 QuietButton(text = stringResource(R.string.action_back), onClick = onBack)
@@ -102,10 +102,10 @@ private fun BalanceWindow(state: VaultUiState) {
     val type = AwakenTheme.type
     SystemWindow(title = stringResource(R.string.vault_window_balance), accent = AwakenTheme.rankAccent(state.rank), reveal = false) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
-            Icon(AwakenGlyphs.Coin, contentDescription = null, tint = colors.crit, modifier = Modifier.size(AwakenTheme.dimens.icon))
-            Text(stringResource(R.string.vault_gold, formatCount(state.gold)), style = type.numeric, color = colors.bone)
+            Icon(AwakenGlyphs.Coin, contentDescription = null, tint = colors.reward, modifier = Modifier.size(AwakenTheme.dimens.icon))
+            Text(stringResource(R.string.vault_gold, formatCount(state.gold)), style = type.numeric, color = colors.textPrimary)
         }
-        Text(stringResource(R.string.vault_shields, state.shields, state.shieldMax), style = type.label, color = colors.mist)
+        Text(stringResource(R.string.vault_shields, state.shields, state.shieldMax), style = type.label, color = colors.textSecondary)
     }
 }
 
@@ -115,17 +115,17 @@ private fun CacheWindow(state: VaultUiState, onEvent: (VaultEvent) -> Unit) {
     val type = AwakenTheme.type
     SystemWindow(title = stringResource(R.string.vault_window_cache), accent = AwakenTheme.rankAccent(state.rank), reveal = false) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
-            Icon(AwakenGlyphs.Fragment, contentDescription = null, tint = colors.system, modifier = Modifier.size(AwakenTheme.dimens.icon))
+            Icon(AwakenGlyphs.Fragment, contentDescription = null, tint = colors.accent, modifier = Modifier.size(AwakenTheme.dimens.icon))
             Text(
                 stringResource(R.string.vault_fragments, state.fragments.toInt(), state.cacheFragments),
                 style = type.label,
-                color = colors.bone,
+                color = colors.textPrimary,
             )
         }
         Text(
             stringResource(if (state.cachePoolEmpty) R.string.vault_cache_empty else R.string.vault_cache_body),
             style = type.caption,
-            color = colors.mist,
+            color = colors.textSecondary,
         )
         PrimaryButton(
             text = stringResource(R.string.action_open_cache),
@@ -140,9 +140,9 @@ private fun CacheWindow(state: VaultUiState, onEvent: (VaultEvent) -> Unit) {
 private fun ShieldWindow(state: VaultUiState, onEvent: (VaultEvent) -> Unit) {
     val colors = AwakenTheme.colors
     SystemWindow(title = stringResource(R.string.vault_window_shield), accent = AwakenTheme.rankAccent(state.rank), reveal = false) {
-        Text(stringResource(R.string.vault_shield_body), style = AwakenTheme.type.caption, color = colors.mist)
+        Text(stringResource(R.string.vault_shield_body), style = AwakenTheme.type.caption, color = colors.textSecondary)
         state.shield?.let { ItemRow(it, state, onEvent) }
-        Text(stringResource(R.string.vault_reroll_body), style = AwakenTheme.type.caption, color = colors.mist)
+        Text(stringResource(R.string.vault_reroll_body), style = AwakenTheme.type.caption, color = colors.textSecondary)
     }
 }
 
@@ -157,9 +157,9 @@ private fun ThemesWindow(state: VaultUiState, onEvent: (VaultEvent) -> Unit) {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
         ) {
-            Text(stringResource(R.string.shop_theme_default), style = AwakenTheme.type.label, color = colors.bone, modifier = Modifier.weight(1f))
+            Text(stringResource(R.string.shop_theme_default), style = AwakenTheme.type.label, color = colors.textPrimary, modifier = Modifier.weight(1f))
             if (state.defaultThemeEquipped) {
-                Pill(text = stringResource(R.string.action_equipped), color = colors.system)
+                Pill(text = stringResource(R.string.action_equipped), color = colors.accent)
             } else {
                 SecondaryButton(
                     text = stringResource(R.string.action_equip),
@@ -192,13 +192,13 @@ private fun ItemRow(item: VaultItemState, state: VaultUiState, onEvent: (VaultEv
     ) {
         ItemMark(item.item)
         Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(Spacing.xxs)) {
-            Text(name, style = type.label, color = colors.bone)
+            Text(name, style = type.label, color = colors.textPrimary)
             when {
-                item.equipped -> Pill(text = stringResource(R.string.action_equipped), color = colors.system)
-                item.owned -> Text(stringResource(R.string.vault_owned), style = type.caption, color = colors.mist)
+                item.equipped -> Pill(text = stringResource(R.string.action_equipped), color = colors.accent)
+                item.owned -> Text(stringResource(R.string.vault_owned), style = type.caption, color = colors.textSecondary)
                 else -> {
-                    Text(stringResource(R.string.vault_price, formatCount(item.item.price)), style = type.numericSmall, color = colors.crit)
-                    blockReason(item.check)?.let { Text(it, style = type.caption, color = colors.mist) }
+                    Text(stringResource(R.string.vault_price, formatCount(item.item.price)), style = type.numericSmall, color = colors.reward)
+                    blockReason(item.check)?.let { Text(it, style = type.caption, color = colors.textSecondary) }
                 }
             }
         }
@@ -256,11 +256,11 @@ private fun ItemMark(item: ShopItem) {
     val markSize = dimens.sigil
     when (item.kind) {
         ShopKind.SIGIL -> AwakenGlyphs.sigil(item.id)?.let {
-            Icon(it, contentDescription = null, tint = colors.system, modifier = Modifier.size(markSize))
+            Icon(it, contentDescription = null, tint = colors.accent, modifier = Modifier.size(markSize))
         }
-        ShopKind.SHIELD -> Icon(AwakenGlyphs.Shield, contentDescription = null, tint = colors.system, modifier = Modifier.size(markSize))
+        ShopKind.SHIELD -> Icon(AwakenGlyphs.Shield, contentDescription = null, tint = colors.accent, modifier = Modifier.size(markSize))
         ShopKind.FRAME -> Box(Modifier.size(markSize).border(dimens.hairline, colors.frame(item.id), AwakenTheme.shapes.button))
-        ShopKind.THEME -> Box(Modifier.size(markSize).background(colors.theme(item.id) ?: colors.edge, AwakenTheme.shapes.button))
+        ShopKind.THEME -> Box(Modifier.size(markSize).background(colors.theme(item.id) ?: colors.divider, AwakenTheme.shapes.button))
     }
 }
 
@@ -272,7 +272,7 @@ private fun ConfirmSheet(item: ShopItem, gold: Long, busy: Boolean, onEvent: (Va
     ModalBottomSheet(
         onDismissRequest = { onEvent(VaultEvent.DismissConfirm) },
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-        containerColor = colors.panelRaised,
+        containerColor = colors.surfaceOverlay,
         shape = AwakenTheme.shapes.window,
     ) {
         Column(
@@ -282,11 +282,11 @@ private fun ConfirmSheet(item: ShopItem, gold: Long, busy: Boolean, onEvent: (Va
                 .padding(horizontal = Spacing.gutter, vertical = Spacing.md),
             verticalArrangement = Arrangement.spacedBy(Spacing.md),
         ) {
-            Text(stringResource(R.string.vault_confirm_title), style = AwakenTheme.type.windowTitle, color = colors.system)
+            Text(stringResource(R.string.vault_confirm_title), style = AwakenTheme.type.windowTitle, color = colors.accent)
             Text(
                 stringResource(R.string.vault_confirm_body, name, formatCount(item.price), formatCount(gold - item.price)),
                 style = AwakenTheme.type.body,
-                color = colors.bone,
+                color = colors.textPrimary,
             )
             PrimaryButton(
                 text = stringResource(R.string.action_confirm_buy, formatCount(item.price)),
@@ -304,10 +304,10 @@ private fun CacheDropDialog(drop: ShopItem, onDismiss: () -> Unit) {
     val colors = AwakenTheme.colors
     val name = shopItemNameRes(drop.id)?.let { stringResource(it) } ?: drop.id
     Dialog(onDismissRequest = onDismiss) {
-        SystemWindow(title = stringResource(R.string.vault_cache_result_title), accent = colors.crit) {
+        SystemWindow(title = stringResource(R.string.vault_cache_result_title), accent = colors.reward) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
                 ItemMark(drop)
-                Text(stringResource(R.string.vault_cache_result_body, name), style = AwakenTheme.type.body, color = colors.bone)
+                Text(stringResource(R.string.vault_cache_result_body, name), style = AwakenTheme.type.body, color = colors.textPrimary)
             }
             PrimaryButton(text = stringResource(R.string.action_done), onClick = onDismiss, modifier = Modifier.fillMaxWidth())
         }

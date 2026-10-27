@@ -49,7 +49,7 @@ fun PathEditorSheet(state: PathEditorState, onEvent: (PathEditorEvent) -> Unit) 
     ModalBottomSheet(
         onDismissRequest = { onEvent(PathEditorEvent.Dismiss) },
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-        containerColor = AwakenTheme.colors.panelRaised,
+        containerColor = AwakenTheme.colors.surfaceOverlay,
         shape = AwakenTheme.shapes.window,
     ) {
         PathEditorContent(state, onEvent, modifier = Modifier.navigationBarsPadding().imePadding())
@@ -72,7 +72,7 @@ fun PathEditorContent(state: PathEditorState, onEvent: (PathEditorEvent) -> Unit
         Text(
             text = stringResource(if (state.isEdit) R.string.editor_title_edit else R.string.editor_title_new),
             style = type.windowTitle,
-            color = colors.system,
+            color = colors.accent,
             modifier = Modifier.semantics { heading() },
         )
 
@@ -108,17 +108,17 @@ fun PathEditorContent(state: PathEditorState, onEvent: (PathEditorEvent) -> Unit
 
         SectionLabel(stringResource(R.string.editor_primary_stat))
         state.suggestedStat?.takeIf { state.chosenPrimary == null }?.let { suggested ->
-            Text(stringResource(R.string.editor_suggested_stat, suggested.label()), style = type.caption, color = colors.mist)
+            Text(stringResource(R.string.editor_suggested_stat, suggested.label()), style = type.caption, color = colors.textSecondary)
         }
         StatChoices(selected = state.primary, onPick = { onEvent(PathEditorEvent.PrimaryPicked(it)) }, exclude = null)
         if (state.showErrors && state.primaryMissing) {
-            Text(stringResource(R.string.editor_error_primary), style = type.caption, color = colors.ember)
+            Text(stringResource(R.string.editor_error_primary), style = type.caption, color = colors.critical)
         }
 
         SectionLabel(stringResource(R.string.editor_secondary_stat))
         StatChoices(selected = state.secondary, onPick = { onEvent(PathEditorEvent.SecondaryPicked(it)) }, exclude = state.primary)
         if (PathInputProblem.SAME_STATS in problems) {
-            Text(stringResource(R.string.editor_error_stats), style = type.caption, color = colors.ember)
+            Text(stringResource(R.string.editor_error_stats), style = type.caption, color = colors.critical)
         }
 
         SectionLabel(stringResource(R.string.editor_days))
@@ -136,7 +136,7 @@ fun PathEditorContent(state: PathEditorState, onEvent: (PathEditorEvent) -> Unit
                 )
             }
         }
-        if (PathInputProblem.NO_DAYS in problems) Text(stringResource(R.string.editor_error_days), style = type.caption, color = colors.ember)
+        if (PathInputProblem.NO_DAYS in problems) Text(stringResource(R.string.editor_error_days), style = type.caption, color = colors.critical)
 
         SectionLabel(stringResource(R.string.editor_quests_per_day))
         FlowRow(modifier = Modifier.selectableGroup(), horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
@@ -155,13 +155,13 @@ fun PathEditorContent(state: PathEditorState, onEvent: (PathEditorEvent) -> Unit
             onValueChange = { onEvent(PathEditorEvent.MinutesChanged(snapMinutes(it))) },
             valueRange = PathRules.WEEKLY_MINUTES.first.toFloat()..PathRules.WEEKLY_MINUTES.last.toFloat(),
             colors = SliderDefaults.colors(
-                thumbColor = colors.system,
-                activeTrackColor = colors.system,
-                inactiveTrackColor = colors.edge,
+                thumbColor = colors.accent,
+                activeTrackColor = colors.accent,
+                inactiveTrackColor = colors.divider,
             ),
         )
-        Text(stringResource(R.string.editor_minutes_hint, state.minutesPerActiveDay), style = type.caption, color = colors.mist)
-        if (PathInputProblem.WEEKLY_MINUTES in problems) Text(stringResource(R.string.editor_error_minutes), style = type.caption, color = colors.ember)
+        Text(stringResource(R.string.editor_minutes_hint, state.minutesPerActiveDay), style = type.caption, color = colors.textSecondary)
+        if (PathInputProblem.WEEKLY_MINUTES in problems) Text(stringResource(R.string.editor_error_minutes), style = type.caption, color = colors.critical)
 
         if (state.isEdit) {
             ChoiceChip(
@@ -185,7 +185,7 @@ fun PathEditorContent(state: PathEditorState, onEvent: (PathEditorEvent) -> Unit
                     },
                 ),
                 style = type.label,
-                color = colors.ember,
+                color = colors.critical,
             )
         }
 
@@ -206,7 +206,7 @@ fun PathEditorContent(state: PathEditorState, onEvent: (PathEditorEvent) -> Unit
 
 @Composable
 private fun SectionLabel(text: String) {
-    Text(text, style = AwakenTheme.type.label, color = AwakenTheme.colors.bone, modifier = Modifier.padding(top = Spacing.xs).semantics { heading() })
+    Text(text, style = AwakenTheme.type.label, color = AwakenTheme.colors.textPrimary, modifier = Modifier.padding(top = Spacing.xs).semantics { heading() })
 }
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -248,13 +248,13 @@ private fun PathTextField(
         minLines = if (singleLine) 1 else 2,
         keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
         colors = OutlinedTextFieldDefaults.colors(
-            focusedBorderColor = colors.system,
-            unfocusedBorderColor = colors.edge,
-            focusedLabelColor = colors.system,
-            cursorColor = colors.system,
-            errorBorderColor = colors.ember,
-            errorLabelColor = colors.ember,
-            errorSupportingTextColor = colors.ember,
+            focusedBorderColor = colors.accent,
+            unfocusedBorderColor = colors.divider,
+            focusedLabelColor = colors.accent,
+            cursorColor = colors.accent,
+            errorBorderColor = colors.critical,
+            errorLabelColor = colors.critical,
+            errorSupportingTextColor = colors.critical,
         ),
         modifier = Modifier.fillMaxWidth(),
     )

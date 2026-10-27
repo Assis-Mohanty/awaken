@@ -30,7 +30,7 @@ import com.assismohanty.awaken.core.designsystem.theme.Spacing
  */
 @Composable
 fun ChapterReveal(number: Int, title: String, body: String, onDismiss: () -> Unit, modifier: Modifier = Modifier) {
-    val colors = AwakenTheme.colors
+    val colors = AwakenTheme.palette
     val type = AwakenTheme.type
     GateBackground(tint = colors.system, modifier = modifier.fillMaxSize()) {
         Box(
@@ -52,7 +52,7 @@ fun ChapterReveal(number: Int, title: String, body: String, onDismiss: () -> Uni
                     style = type.windowTitle,
                     color = colors.mist,
                 )
-                Text(title, style = type.display, color = colors.bone, modifier = Modifier.semantics { heading() })
+                Text(title, style = type.metricL, color = colors.bone, modifier = Modifier.semantics { heading() })
                 Text(body, style = type.body, color = colors.bone)
                 PrimaryButton(
                     text = stringResource(R.string.action_continue),

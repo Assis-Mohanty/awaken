@@ -64,12 +64,12 @@ fun ChoiceChip(
     selected: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    color: Color = AwakenTheme.colors.system,
+    color: Color = AwakenTheme.palette.system,
     icon: ImageVector? = null,
     multiSelect: Boolean = false,
     enabled: Boolean = true,
 ) {
-    val colors = AwakenTheme.colors
+    val colors = AwakenTheme.palette
     val dimens = AwakenTheme.dimens
     val shape = AwakenTheme.shapes.button
     val selection = if (multiSelect) {
@@ -98,7 +98,7 @@ fun ChoiceChip(
 fun StatChip(stat: Stat, modifier: Modifier = Modifier) {
     Pill(
         text = stat.name,
-        color = AwakenTheme.colors.stat(stat),
+        color = AwakenTheme.palette.stat(stat),
         icon = AwakenGlyphs.stat(stat),
         description = stat.label(),
         modifier = modifier,
@@ -107,7 +107,7 @@ fun StatChip(stat: Stat, modifier: Modifier = Modifier) {
 
 @Composable
 fun DifficultyChip(difficulty: Difficulty, modifier: Modifier = Modifier) {
-    val colors = AwakenTheme.colors
+    val colors = AwakenTheme.palette
     val color = when (difficulty) {
         Difficulty.EASY, Difficulty.NORMAL -> colors.mist
         Difficulty.HARD -> colors.bone
@@ -119,7 +119,7 @@ fun DifficultyChip(difficulty: Difficulty, modifier: Modifier = Modifier) {
 /** Verified = Health Connect or phone usage; Timed = Focus Gate. Nothing for self-reported quests. */
 @Composable
 fun VerifiedBadge(source: VerificationSource, modifier: Modifier = Modifier) {
-    val color = AwakenTheme.colors.verified
+    val color = AwakenTheme.palette.verified
     when (source) {
         VerificationSource.SELF -> Unit
         VerificationSource.HEALTH ->
@@ -141,7 +141,7 @@ private fun ChipsPreview() {
             Row(horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
                 VerifiedBadge(VerificationSource.HEALTH)
                 VerifiedBadge(VerificationSource.TIMER)
-                Pill(stringResource(R.string.chip_main), AwakenTheme.colors.system)
+                Pill(stringResource(R.string.chip_main), AwakenTheme.palette.system)
             }
         }
     }

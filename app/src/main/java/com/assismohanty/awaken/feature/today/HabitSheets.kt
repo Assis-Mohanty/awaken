@@ -61,7 +61,7 @@ fun HabitSheets(state: HabitsUiState, onEvent: (HabitsEvent) -> Unit) {
     ModalBottomSheet(
         onDismissRequest = { onEvent(HabitsEvent.Dismiss) },
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-        containerColor = AwakenTheme.colors.panelRaised,
+        containerColor = AwakenTheme.colors.surfaceOverlay,
         shape = AwakenTheme.shapes.window,
     ) {
         val content = Modifier
@@ -87,12 +87,12 @@ fun HabitOverview(state: HabitsUiState, onEvent: (HabitsEvent) -> Unit, modifier
         Text(
             text = stringResource(R.string.habit_overview_title),
             style = type.windowTitle,
-            color = colors.system,
+            color = colors.accent,
             modifier = Modifier.semantics { heading() },
         )
-        Text(pluralStringResource(R.plurals.habit_count, state.max, state.habits.size, state.max), style = type.caption, color = colors.mist)
+        Text(pluralStringResource(R.plurals.habit_count, state.max, state.habits.size, state.max), style = type.caption, color = colors.textSecondary)
         state.habits.forEachIndexed { index, habit ->
-            if (index > 0) HorizontalDivider(thickness = AwakenTheme.dimens.hairline, color = colors.edge)
+            if (index > 0) HorizontalDivider(thickness = AwakenTheme.dimens.hairline, color = colors.divider)
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -109,16 +109,16 @@ fun HabitOverview(state: HabitsUiState, onEvent: (HabitsEvent) -> Unit, modifier
                     modifier = Modifier.size(AwakenTheme.dimens.sigil),
                 )
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(habit.title, style = type.body, color = colors.bone)
+                    Text(habit.title, style = type.body, color = colors.textPrimary)
                     Text(
                         text = stringResource(R.string.habit_schedule_line, habit.days.sorted().joinToString(" ") { it.shortName(locale) }, habit.difficulty.label()),
                         style = type.caption,
-                        color = colors.mist,
+                        color = colors.textSecondary,
                     )
                 }
             }
         }
-        if (!state.canAdd) Text(stringResource(R.string.habit_limit), style = type.label, color = colors.mist)
+        if (!state.canAdd) Text(stringResource(R.string.habit_limit), style = type.label, color = colors.textSecondary)
         PrimaryButton(
             text = stringResource(R.string.action_add_habit),
             onClick = { onEvent(HabitsEvent.Add) },
@@ -139,7 +139,7 @@ fun HabitEditor(editor: HabitEditorState, onEvent: (HabitsEvent) -> Unit, modifi
         Text(
             text = stringResource(if (editor.habitId == null) R.string.habit_editor_new else R.string.habit_editor_edit),
             style = type.windowTitle,
-            color = colors.system,
+            color = colors.accent,
             modifier = Modifier.semantics { heading() },
         )
         OutlinedTextField(
@@ -180,7 +180,7 @@ fun HabitEditor(editor: HabitEditorState, onEvent: (HabitsEvent) -> Unit, modifi
                 )
             }
         }
-        Text(stringResource(R.string.habit_difficulty_note), style = type.caption, color = colors.mist)
+        Text(stringResource(R.string.habit_difficulty_note), style = type.caption, color = colors.textSecondary)
 
         SectionLabel(R.string.habit_days)
         FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.xs), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
@@ -214,7 +214,7 @@ fun HabitEditor(editor: HabitEditorState, onEvent: (HabitsEvent) -> Unit, modifi
             )
         }
 
-        editor.error?.let { Text(stringResource(it), style = type.label, color = colors.ember) }
+        editor.error?.let { Text(stringResource(it), style = type.label, color = colors.critical) }
 
         PrimaryButton(
             text = stringResource(R.string.action_save),
@@ -236,7 +236,7 @@ fun HabitEditor(editor: HabitEditorState, onEvent: (HabitsEvent) -> Unit, modifi
 
 @Composable
 private fun SectionLabel(@StringRes resId: Int) {
-    Text(stringResource(resId), style = AwakenTheme.type.label, color = AwakenTheme.colors.bone, modifier = Modifier.semantics { heading() })
+    Text(stringResource(resId), style = AwakenTheme.type.label, color = AwakenTheme.colors.textPrimary, modifier = Modifier.semantics { heading() })
 }
 
 private fun DayOfWeek.shortName(locale: Locale): String = getDisplayName(TextStyle.SHORT, locale)
@@ -245,10 +245,10 @@ private fun DayOfWeek.shortName(locale: Locale): String = getDisplayName(TextSty
 private fun awakenFieldColors(): TextFieldColors {
     val colors = AwakenTheme.colors
     return OutlinedTextFieldDefaults.colors(
-        focusedBorderColor = colors.system,
-        unfocusedBorderColor = colors.edge,
-        focusedLabelColor = colors.system,
-        cursorColor = colors.system,
+        focusedBorderColor = colors.accent,
+        unfocusedBorderColor = colors.divider,
+        focusedLabelColor = colors.accent,
+        cursorColor = colors.accent,
     )
 }
 

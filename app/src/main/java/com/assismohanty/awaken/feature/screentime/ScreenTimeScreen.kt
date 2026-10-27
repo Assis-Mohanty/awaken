@@ -128,8 +128,8 @@ fun ScreenTimeScreen(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
                         stringResource(R.string.screentime_title),
-                        style = AwakenTheme.type.display,
-                        color = colors.bone,
+                        style = AwakenTheme.type.metricL,
+                        color = colors.textPrimary,
                         modifier = Modifier
                             .weight(1f)
                             .semantics { heading() },
@@ -149,7 +149,7 @@ fun ScreenTimeScreen(
                         DisciplineWindow(overview, onEvent, Modifier.staggeredEntrance(1))
                         AppsWindow(state, onEvent, Modifier.staggeredEntrance(2))
                         TrendWindow(overview.trend, Modifier.staggeredEntrance(3))
-                        Text(stringResource(R.string.screentime_privacy_note), style = AwakenTheme.type.caption, color = colors.mist)
+                        Text(stringResource(R.string.screentime_privacy_note), style = AwakenTheme.type.caption, color = colors.textSecondary)
                     }
                 }
             }
@@ -160,17 +160,17 @@ fun ScreenTimeScreen(
 
 @Composable
 private fun MessageWindow(text: String) {
-    SystemWindow(title = null, accent = AwakenTheme.colors.mist, reveal = false) {
-        Text(text, style = AwakenTheme.type.body, color = AwakenTheme.colors.mist)
+    SystemWindow(title = null, accent = AwakenTheme.colors.textSecondary, reveal = false) {
+        Text(text, style = AwakenTheme.type.body, color = AwakenTheme.colors.textSecondary)
     }
 }
 
 @Composable
 private fun AccessWindow(onOpenUsageAccess: () -> Unit, modifier: Modifier = Modifier) {
     val colors = AwakenTheme.colors
-    SystemWindow(title = stringResource(R.string.screentime_window_access), accent = colors.system, modifier = modifier, reveal = false) {
-        Text(stringResource(R.string.screentime_access_body), style = AwakenTheme.type.body, color = colors.bone)
-        Text(stringResource(R.string.screentime_access_steps), style = AwakenTheme.type.caption, color = colors.mist)
+    SystemWindow(title = stringResource(R.string.screentime_window_access), accent = colors.accent, modifier = modifier, reveal = false) {
+        Text(stringResource(R.string.screentime_access_body), style = AwakenTheme.type.body, color = colors.textPrimary)
+        Text(stringResource(R.string.screentime_access_steps), style = AwakenTheme.type.caption, color = colors.textSecondary)
         PrimaryButton(text = stringResource(R.string.screentime_access_action), onClick = onOpenUsageAccess, modifier = Modifier.fillMaxWidth())
     }
 }
@@ -179,8 +179,8 @@ private fun AccessWindow(onOpenUsageAccess: () -> Unit, modifier: Modifier = Mod
 private fun UsageTodayWindow(overview: ScreenTimeOverview, modifier: Modifier = Modifier) {
     val colors = AwakenTheme.colors
     val type = AwakenTheme.type
-    SystemWindow(title = stringResource(R.string.screentime_window_today), accent = colors.system, modifier = modifier, reveal = false) {
-        Text(formatMinutes(overview.totalMinutes), style = type.displayXL, color = colors.bone)
+    SystemWindow(title = stringResource(R.string.screentime_window_today), accent = colors.accent, modifier = modifier, reveal = false) {
+        Text(formatMinutes(overview.totalMinutes), style = type.metricXL, color = colors.textPrimary)
         SplitBar(overview.minutesByCategory, overview.totalMinutes)
         AppCategory.entries.forEach { category ->
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
@@ -189,8 +189,8 @@ private fun UsageTodayWindow(overview: ScreenTimeOverview, modifier: Modifier = 
                         .size(Spacing.xs)
                         .background(categoryColor(category)),
                 )
-                Text(stringResource(category.labelRes), style = type.label, color = colors.bone, modifier = Modifier.weight(1f))
-                Text(formatMinutes(overview.minutesByCategory[category] ?: 0), style = type.numericSmall, color = colors.mist)
+                Text(stringResource(category.labelRes), style = type.label, color = colors.textPrimary, modifier = Modifier.weight(1f))
+                Text(formatMinutes(overview.minutesByCategory[category] ?: 0), style = type.numericSmall, color = colors.textSecondary)
             }
         }
     }
@@ -205,7 +205,7 @@ private fun SplitBar(byCategory: Map<AppCategory, Int>, total: Int) {
             .fillMaxWidth()
             .height(AwakenTheme.dimens.xpBarHeight)
             .clip(AwakenTheme.shapes.xpBar)
-            .background(colors.edge)
+            .background(colors.divider)
             .clearAndSetSemantics { },
     ) {
         if (total > 0) {
@@ -229,9 +229,9 @@ private fun DisciplineWindow(overview: ScreenTimeOverview, onEvent: (ScreenTimeE
     val colors = AwakenTheme.colors
     val type = AwakenTheme.type
     val accent = when (overview.status) {
-        DisciplineStatus.FORFEITED -> colors.ember
-        DisciplineStatus.ON_TRACK -> colors.verified
-        else -> colors.system
+        DisciplineStatus.FORFEITED -> colors.critical
+        DisciplineStatus.ON_TRACK -> colors.positive
+        else -> colors.accent
     }
     SystemWindow(
         title = stringResource(R.string.quest_kind_discipline),
@@ -240,7 +240,7 @@ private fun DisciplineWindow(overview: ScreenTimeOverview, onEvent: (ScreenTimeE
         reveal = false,
         headerTrailing = {
             if (overview.status != DisciplineStatus.OFF) {
-                Text(stringResource(R.string.screentime_xp_at_stake, overview.xpAtStake), style = type.numericSmall, color = colors.crit)
+                Text(stringResource(R.string.screentime_xp_at_stake, overview.xpAtStake), style = type.numericSmall, color = colors.reward)
             }
         },
     ) {
@@ -251,7 +251,7 @@ private fun DisciplineWindow(overview: ScreenTimeOverview, onEvent: (ScreenTimeE
             DisciplineStatus.ON_TRACK -> stringResource(R.string.screentime_discipline_on_track, overview.xpAtStake)
             DisciplineStatus.FORFEITED -> stringResource(R.string.screentime_discipline_forfeited)
         }
-        Text(line, style = type.body, color = colors.bone)
+        Text(line, style = type.body, color = colors.textPrimary)
         overview.apps.filter { it.category == AppCategory.DISTRACTING && it.limitMinutes != null && it.usedMinutes > 0 }
             .take(LIMIT_PREVIEW_COUNT)
             .forEach { LimitBar(it) }
@@ -261,7 +261,7 @@ private fun DisciplineWindow(overview: ScreenTimeOverview, onEvent: (ScreenTimeE
                 onClick = { onEvent(ScreenTimeEvent.SetDiscipline(true)) },
                 modifier = Modifier.fillMaxWidth(),
             )
-            Text(stringResource(R.string.screentime_discipline_rules), style = type.caption, color = colors.mist)
+            Text(stringResource(R.string.screentime_discipline_rules), style = type.caption, color = colors.textSecondary)
         } else {
             QuietButton(
                 text = stringResource(R.string.screentime_discipline_turn_off),
@@ -282,11 +282,11 @@ private fun LimitBar(row: AppUsageRow) {
         verticalArrangement = Arrangement.spacedBy(Spacing.xxs),
     ) {
         Row {
-            Text(row.label, style = AwakenTheme.type.label, color = colors.bone, modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(row.label, style = AwakenTheme.type.label, color = colors.textPrimary, modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
             Text(
                 stringResource(R.string.screentime_minutes_of_limit, row.usedMinutes, limit),
                 style = AwakenTheme.type.numericSmall,
-                color = if (row.breached) colors.ember else colors.mist,
+                color = if (row.breached) colors.critical else colors.textSecondary,
             )
         }
         Box(
@@ -294,13 +294,13 @@ private fun LimitBar(row: AppUsageRow) {
                 .fillMaxWidth()
                 .height(AwakenTheme.dimens.xpBarHeight)
                 .clip(AwakenTheme.shapes.xpBar)
-                .background(colors.edge),
+                .background(colors.divider),
         ) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth(fraction)
                     .fillMaxHeight()
-                    .background(if (row.breached || fraction >= WARN_FRACTION) colors.ember else colors.system),
+                    .background(if (row.breached || fraction >= WARN_FRACTION) colors.critical else colors.accent),
             )
         }
     }
@@ -309,8 +309,8 @@ private fun LimitBar(row: AppUsageRow) {
 @Composable
 private fun AppsWindow(state: ScreenTimeUiState, onEvent: (ScreenTimeEvent) -> Unit, modifier: Modifier = Modifier) {
     val colors = AwakenTheme.colors
-    SystemWindow(title = stringResource(R.string.screentime_window_apps), accent = colors.system, modifier = modifier, reveal = false) {
-        Text(stringResource(R.string.screentime_apps_note), style = AwakenTheme.type.caption, color = colors.mist)
+    SystemWindow(title = stringResource(R.string.screentime_window_apps), accent = colors.accent, modifier = modifier, reveal = false) {
+        Text(stringResource(R.string.screentime_apps_note), style = AwakenTheme.type.caption, color = colors.textSecondary)
         FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.xs), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
             ChoiceChip(text = stringResource(R.string.screentime_filter_all), selected = state.filter == null, onClick = { onEvent(ScreenTimeEvent.Filter(null)) })
             AppCategory.entries.forEach { category ->
@@ -324,10 +324,10 @@ private fun AppsWindow(state: ScreenTimeUiState, onEvent: (ScreenTimeEvent) -> U
         }
         val apps = state.visibleApps
         if (apps.isEmpty()) {
-            Text(stringResource(R.string.screentime_apps_empty), style = AwakenTheme.type.body, color = colors.mist)
+            Text(stringResource(R.string.screentime_apps_empty), style = AwakenTheme.type.body, color = colors.textSecondary)
         }
         apps.forEachIndexed { index, row ->
-            if (index > 0) HorizontalDivider(thickness = AwakenTheme.dimens.hairline, color = colors.edge)
+            if (index > 0) HorizontalDivider(thickness = AwakenTheme.dimens.hairline, color = colors.divider)
             AppRow(row, onClick = { onEvent(ScreenTimeEvent.OpenApp(row.packageName)) })
         }
         if (state.hiddenCount > 0 || state.showUnused) {
@@ -359,21 +359,21 @@ private fun AppRow(row: AppUsageRow, onClick: () -> Unit) {
     ) {
         AppIcon(row.packageName)
         Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(Spacing.xxs)) {
-            Text(row.label, style = type.title, color = colors.bone, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(row.label, style = type.title, color = colors.textPrimary, maxLines = 1, overflow = TextOverflow.Ellipsis)
             val detail = buildList {
                 add(stringResource(row.category.labelRes))
                 row.limitMinutes?.let { add(stringResource(R.string.screentime_limit_short, it)) }
             }.joinToString(" · ")
-            Text(detail, style = type.label, color = colors.mist)
+            Text(detail, style = type.label, color = colors.textSecondary)
             if (row.hasPendingChange) {
                 val next = row.nextCategory ?: row.category
                 val nextText = row.nextLimitMinutes?.let { stringResource(R.string.screentime_pending_limit, stringResource(next.labelRes), it) }
                     ?: stringResource(R.string.screentime_pending, stringResource(next.labelRes))
-                Text(nextText, style = type.caption, color = colors.crit)
+                Text(nextText, style = type.caption, color = colors.reward)
             }
         }
         Column(horizontalAlignment = Alignment.End) {
-            Text(formatMinutes(row.usedMinutes), style = type.numericSmall, color = if (row.breached) colors.ember else colors.bone)
+            Text(formatMinutes(row.usedMinutes), style = type.numericSmall, color = if (row.breached) colors.critical else colors.textPrimary)
             Pill(stringResource(row.category.shortRes), categoryColor(row.category))
         }
     }
@@ -399,7 +399,7 @@ private fun AppIcon(packageName: String) {
             modifier = Modifier
                 .size(size)
                 .clip(AwakenTheme.shapes.button)
-                .background(AwakenTheme.colors.panelRaised),
+                .background(AwakenTheme.colors.surfaceOverlay),
         )
     }
 }
@@ -408,8 +408,8 @@ private fun AppIcon(packageName: String) {
 private fun TrendWindow(trend: List<ScreenTimeDay>, modifier: Modifier = Modifier) {
     val colors = AwakenTheme.colors
     val max = (trend.maxOfOrNull { it.totalMinutes } ?: 0).coerceAtLeast(1)
-    SystemWindow(title = stringResource(R.string.screentime_window_trend), accent = colors.system, modifier = modifier, reveal = false) {
-        Text(stringResource(R.string.screentime_trend_note), style = AwakenTheme.type.caption, color = colors.mist)
+    SystemWindow(title = stringResource(R.string.screentime_window_trend), accent = colors.accent, modifier = modifier, reveal = false) {
+        Text(stringResource(R.string.screentime_trend_note), style = AwakenTheme.type.caption, color = colors.textSecondary)
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -429,9 +429,9 @@ private fun TrendWindow(trend: List<ScreenTimeDay>, modifier: Modifier = Modifie
                 ) {
                     val total = day.totalMinutes.toFloat() / max
                     val distracting = day.distractingMinutes.toFloat() / max
-                    Box(modifier = Modifier.fillMaxWidth().weight((total - distracting).coerceAtLeast(MIN_BAR), fill = true).background(colors.edge))
+                    Box(modifier = Modifier.fillMaxWidth().weight((total - distracting).coerceAtLeast(MIN_BAR), fill = true).background(colors.divider))
                     if (distracting > 0f) {
-                        Box(modifier = Modifier.fillMaxWidth().weight(distracting, fill = true).background(colors.ember))
+                        Box(modifier = Modifier.fillMaxWidth().weight(distracting, fill = true).background(colors.critical))
                     }
                     Spacer(modifier = Modifier.weight((1f - total).coerceAtLeast(MIN_BAR)))
                 }
@@ -439,7 +439,7 @@ private fun TrendWindow(trend: List<ScreenTimeDay>, modifier: Modifier = Modifie
         }
         Row(horizontalArrangement = Arrangement.spacedBy(Spacing.xs), modifier = Modifier.fillMaxWidth()) {
             trend.forEach { day ->
-                Text(dayName(day.gameDate), style = AwakenTheme.type.caption, color = colors.mist, modifier = Modifier.weight(1f))
+                Text(dayName(day.gameDate), style = AwakenTheme.type.caption, color = colors.textSecondary, modifier = Modifier.weight(1f))
             }
         }
     }
@@ -451,7 +451,7 @@ private fun RuleEditorSheet(editor: AppRuleEditor, onEvent: (ScreenTimeEvent) ->
     ModalBottomSheet(
         onDismissRequest = { onEvent(ScreenTimeEvent.DismissEditor) },
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-        containerColor = AwakenTheme.colors.panelRaised,
+        containerColor = AwakenTheme.colors.surfaceOverlay,
         shape = AwakenTheme.shapes.window,
     ) {
         RuleEditorContent(editor, onEvent, Modifier.navigationBarsPadding())
@@ -468,8 +468,8 @@ internal fun RuleEditorContent(editor: AppRuleEditor, onEvent: (ScreenTimeEvent)
             .padding(horizontal = Spacing.gutter, vertical = Spacing.md),
         verticalArrangement = Arrangement.spacedBy(Spacing.sm),
     ) {
-        Text(editor.label, style = type.title, color = colors.bone, modifier = Modifier.semantics { heading() })
-        Text(stringResource(R.string.screentime_editor_category), style = type.label, color = colors.mist)
+        Text(editor.label, style = type.title, color = colors.textPrimary, modifier = Modifier.semantics { heading() })
+        Text(stringResource(R.string.screentime_editor_category), style = type.label, color = colors.textSecondary)
         FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.xs), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
             AppCategory.entries.forEach { category ->
                 ChoiceChip(
@@ -481,7 +481,7 @@ internal fun RuleEditorContent(editor: AppRuleEditor, onEvent: (ScreenTimeEvent)
             }
         }
         if (editor.category == AppCategory.DISTRACTING) {
-            Text(stringResource(R.string.screentime_editor_limit), style = type.label, color = colors.mist)
+            Text(stringResource(R.string.screentime_editor_limit), style = type.label, color = colors.textSecondary)
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
                 val limit = editor.limitMinutes
                 SecondaryButton(
@@ -492,7 +492,7 @@ internal fun RuleEditorContent(editor: AppRuleEditor, onEvent: (ScreenTimeEvent)
                 Text(
                     text = limit?.let { formatMinutes(it) } ?: stringResource(R.string.screentime_no_limit),
                     style = type.numeric,
-                    color = colors.bone,
+                    color = colors.textPrimary,
                     modifier = Modifier.weight(1f),
                 )
                 SecondaryButton(
@@ -506,16 +506,16 @@ internal fun RuleEditorContent(editor: AppRuleEditor, onEvent: (ScreenTimeEvent)
                 onClick = { onEvent(ScreenTimeEvent.ToggleNoLimit) },
             )
         }
-        Text(stringResource(R.string.screentime_editor_tomorrow), style = type.caption, color = colors.crit)
+        Text(stringResource(R.string.screentime_editor_tomorrow), style = type.caption, color = colors.reward)
         PrimaryButton(text = stringResource(R.string.action_save), onClick = { onEvent(ScreenTimeEvent.SaveEditor) }, modifier = Modifier.fillMaxWidth())
     }
 }
 
 @Composable
 private fun categoryColor(category: AppCategory): Color = when (category) {
-    AppCategory.DISTRACTING -> AwakenTheme.colors.ember
-    AppCategory.PRODUCTIVE -> AwakenTheme.colors.verified
-    AppCategory.NEUTRAL -> AwakenTheme.colors.mist
+    AppCategory.DISTRACTING -> AwakenTheme.colors.critical
+    AppCategory.PRODUCTIVE -> AwakenTheme.colors.positive
+    AppCategory.NEUTRAL -> AwakenTheme.colors.textSecondary
 }
 
 private val AppCategory.labelRes: Int

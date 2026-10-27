@@ -104,11 +104,11 @@ fun OnboardingScreen(state: OnboardingUiState, onEvent: (OnboardingEvent) -> Uni
                     .verticalScroll(rememberScrollState())
                     .padding(horizontal = Spacing.gutter, vertical = Spacing.lg),
             ) {
-                SystemWindow(title = stringResource(step.titleRes), accent = AwakenTheme.colors.system) {
+                SystemWindow(title = stringResource(step.titleRes), accent = AwakenTheme.colors.accent) {
                     Text(
                         text = stringResource(R.string.onboarding_step, step.ordinal + 1, OnboardingStep.entries.size),
                         style = AwakenTheme.type.caption,
-                        color = AwakenTheme.colors.fog,
+                        color = AwakenTheme.colors.textMuted,
                     )
                     when (step) {
                         OnboardingStep.WELCOME -> WelcomeStep(onEvent)
@@ -143,7 +143,7 @@ private fun WelcomeStep(onEvent: (OnboardingEvent) -> Unit) {
     TypeOnText(
         text = stringResource(R.string.onboarding_welcome_body),
         style = AwakenTheme.type.body,
-        color = AwakenTheme.colors.bone,
+        color = AwakenTheme.colors.textPrimary,
     )
     PrimaryButton(
         text = stringResource(R.string.action_accept),
@@ -169,13 +169,13 @@ private fun NameStep(state: OnboardingUiState, onEvent: (OnboardingEvent) -> Uni
         keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words, imeAction = ImeAction.Done),
         keyboardActions = KeyboardActions(onDone = { onEvent(OnboardingEvent.Next) }),
         colors = OutlinedTextFieldDefaults.colors(
-            focusedBorderColor = colors.system,
-            unfocusedBorderColor = colors.edge,
-            focusedLabelColor = colors.system,
-            cursorColor = colors.system,
-            errorBorderColor = colors.ember,
-            errorLabelColor = colors.ember,
-            errorSupportingTextColor = colors.ember,
+            focusedBorderColor = colors.accent,
+            unfocusedBorderColor = colors.divider,
+            focusedLabelColor = colors.accent,
+            cursorColor = colors.accent,
+            errorBorderColor = colors.critical,
+            errorLabelColor = colors.critical,
+            errorSupportingTextColor = colors.critical,
         ),
         modifier = Modifier.fillMaxWidth(),
     )
@@ -184,7 +184,7 @@ private fun NameStep(state: OnboardingUiState, onEvent: (OnboardingEvent) -> Uni
 
 @Composable
 private fun FocusStep(state: OnboardingUiState, onEvent: (OnboardingEvent) -> Unit) {
-    Text(stringResource(R.string.onboarding_focus_body), style = AwakenTheme.type.body, color = AwakenTheme.colors.mist)
+    Text(stringResource(R.string.onboarding_focus_body), style = AwakenTheme.type.body, color = AwakenTheme.colors.textSecondary)
     Column(verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
         Stat.entries.forEach { stat ->
             val selected = stat in state.focus
@@ -218,7 +218,7 @@ private fun CalibrationStep(state: OnboardingUiState, onEvent: (OnboardingEvent)
         Text(
             text = stringResource(question.promptRes),
             style = AwakenTheme.type.label,
-            color = AwakenTheme.colors.bone,
+            color = AwakenTheme.colors.textPrimary,
             modifier = Modifier.padding(top = Spacing.xs).semantics { heading() },
         )
         Row(
@@ -266,10 +266,10 @@ private fun CalibrationQuestion.answerRes(answer: Awakening.Answer): Int = when 
 
 @Composable
 private fun HealthStep(state: OnboardingUiState, onEvent: (OnboardingEvent) -> Unit) {
-    Text(stringResource(R.string.onboarding_health_body), style = AwakenTheme.type.body, color = AwakenTheme.colors.bone)
+    Text(stringResource(R.string.onboarding_health_body), style = AwakenTheme.type.body, color = AwakenTheme.colors.textPrimary)
     when {
-        state.healthNotInstalled -> Text(stringResource(R.string.health_not_installed), style = AwakenTheme.type.label, color = AwakenTheme.colors.mist)
-        state.healthDeclined -> Text(stringResource(R.string.health_declined), style = AwakenTheme.type.label, color = AwakenTheme.colors.mist)
+        state.healthNotInstalled -> Text(stringResource(R.string.health_not_installed), style = AwakenTheme.type.label, color = AwakenTheme.colors.textSecondary)
+        state.healthDeclined -> Text(stringResource(R.string.health_declined), style = AwakenTheme.type.label, color = AwakenTheme.colors.textSecondary)
     }
     Column(
         modifier = Modifier.fillMaxWidth().padding(top = Spacing.md),
@@ -297,7 +297,7 @@ private fun HealthStep(state: OnboardingUiState, onEvent: (OnboardingEvent) -> U
 @Composable
 private fun PathStep(state: OnboardingUiState, onEvent: (OnboardingEvent) -> Unit) {
     val colors = AwakenTheme.colors
-    Text(stringResource(R.string.onboarding_path_body), style = AwakenTheme.type.body, color = colors.mist)
+    Text(stringResource(R.string.onboarding_path_body), style = AwakenTheme.type.body, color = colors.textSecondary)
     OutlinedTextField(
         value = state.pathGoal,
         onValueChange = { onEvent(OnboardingEvent.PathGoalChanged(it)) },
@@ -357,20 +357,20 @@ private fun PathStep(state: OnboardingUiState, onEvent: (OnboardingEvent) -> Uni
 @Composable
 private fun onboardingFieldColors() = AwakenTheme.colors.let { colors ->
     OutlinedTextFieldDefaults.colors(
-        focusedBorderColor = colors.system,
-        unfocusedBorderColor = colors.edge,
-        focusedLabelColor = colors.system,
-        cursorColor = colors.system,
-        errorBorderColor = colors.ember,
-        errorLabelColor = colors.ember,
-        errorSupportingTextColor = colors.ember,
+        focusedBorderColor = colors.accent,
+        unfocusedBorderColor = colors.divider,
+        focusedLabelColor = colors.accent,
+        cursorColor = colors.accent,
+        errorBorderColor = colors.critical,
+        errorLabelColor = colors.critical,
+        errorSupportingTextColor = colors.critical,
     )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ColumnScope.ReminderStep(state: OnboardingUiState, onEvent: (OnboardingEvent) -> Unit) {
-    Text(stringResource(R.string.onboarding_reminder_body), style = AwakenTheme.type.body, color = AwakenTheme.colors.mist)
+    Text(stringResource(R.string.onboarding_reminder_body), style = AwakenTheme.type.body, color = AwakenTheme.colors.textSecondary)
     val timeState = rememberTimePickerState(
         initialHour = state.reminder.hour,
         initialMinute = state.reminder.minute,
@@ -387,9 +387,9 @@ private fun ColumnScope.ReminderStep(state: OnboardingUiState, onEvent: (Onboard
 
 @Composable
 private fun CompleteStep(state: OnboardingUiState, onEvent: (OnboardingEvent) -> Unit) {
-    Text(stringResource(R.string.onboarding_complete_body), style = AwakenTheme.type.body, color = AwakenTheme.colors.bone)
+    Text(stringResource(R.string.onboarding_complete_body), style = AwakenTheme.type.body, color = AwakenTheme.colors.textPrimary)
     if (state.failed) {
-        Text(stringResource(R.string.msg_error), style = AwakenTheme.type.label, color = AwakenTheme.colors.ember)
+        Text(stringResource(R.string.msg_error), style = AwakenTheme.type.label, color = AwakenTheme.colors.critical)
     }
     Row(
         modifier = Modifier.fillMaxWidth().padding(top = Spacing.md),

@@ -37,7 +37,7 @@ fun SystemToast(
     title: String,
     message: String,
     modifier: Modifier = Modifier,
-    accent: Color = AwakenTheme.colors.crit,
+    accent: Color = AwakenTheme.palette.crit,
     icon: ImageVector = AwakenGlyphs.VerifiedSeal,
 ) {
     val motion = AwakenTheme.motion
@@ -61,7 +61,7 @@ fun SystemToast(
                 Icon(icon, contentDescription = null, tint = accent, modifier = Modifier.size(AwakenTheme.dimens.icon))
                 Column {
                     Text(title, style = AwakenTheme.type.windowTitle, color = accent)
-                    Text(message, style = AwakenTheme.type.body, color = AwakenTheme.colors.bone)
+                    Text(message, style = AwakenTheme.type.body, color = AwakenTheme.palette.bone)
                 }
             }
         }

@@ -61,10 +61,10 @@ fun LevelUpCeremony(
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
     title: String = stringResource(R.string.system_title_level_up),
-    accent: Color = AwakenTheme.colors.crit,
+    accent: Color = AwakenTheme.palette.crit,
     crest: (@Composable () -> Unit)? = null,
 ) {
-    val colors = AwakenTheme.colors
+    val colors = AwakenTheme.palette
     val type = AwakenTheme.type
     val motion = AwakenTheme.motion
     val haptics = AwakenTheme.haptics
@@ -144,7 +144,7 @@ fun LevelUpCeremony(
             crest?.invoke()
             Text(
                 text = stringResource(R.string.level_short, number.value.toInt()),
-                style = type.displayXL,
+                style = type.metricXL,
                 color = colors.bone,
             )
             if (titleVisible) {
@@ -178,7 +178,7 @@ private const val RING_STATIC_ALPHA = 0.25f
 @Composable
 private fun LevelUpCeremonyPreview() {
     AwakenTheme(reduceMotion = true) {
-        GateBackground(tint = AwakenTheme.colors.rankC) {
+        GateBackground(tint = AwakenTheme.palette.rankC) {
             LevelUpCeremony(oldLevel = 9, newLevel = 10, statGains = mapOf(Stat.STR to 94, Stat.WIL to 28), onDismiss = {}, crest = {
                 RankCrest(Rank.D, AwakenTheme.dimens.crestLarge)
             })
@@ -197,7 +197,7 @@ fun LevelUpDialog(
     statGains: Map<Stat, Int>,
     onDismiss: () -> Unit,
     title: String = stringResource(R.string.system_title_level_up),
-    accent: Color = AwakenTheme.colors.crit,
+    accent: Color = AwakenTheme.palette.crit,
     crest: (@Composable () -> Unit)? = null,
 ) {
     Dialog(

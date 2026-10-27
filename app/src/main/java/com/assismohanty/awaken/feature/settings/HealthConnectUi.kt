@@ -66,9 +66,9 @@ fun HealthActionEffect(
 fun HealthRationaleDialog(onContinue: () -> Unit, onDismiss: () -> Unit) {
     val colors = AwakenTheme.colors
     Dialog(onDismissRequest = onDismiss) {
-        SystemWindow(title = stringResource(R.string.onboarding_health_title), accent = colors.verified) {
-            Text(stringResource(R.string.onboarding_health_body), style = AwakenTheme.type.body, color = colors.bone)
-            Text(stringResource(R.string.health_rationale_scope), style = AwakenTheme.type.caption, color = colors.mist)
+        SystemWindow(title = stringResource(R.string.onboarding_health_title), accent = colors.positive) {
+            Text(stringResource(R.string.onboarding_health_body), style = AwakenTheme.type.body, color = colors.textPrimary)
+            Text(stringResource(R.string.health_rationale_scope), style = AwakenTheme.type.caption, color = colors.textSecondary)
             PrimaryButton(text = stringResource(R.string.action_connect), onClick = onContinue, modifier = Modifier.fillMaxWidth())
             QuietButton(text = stringResource(R.string.action_not_now), onClick = onDismiss, modifier = Modifier.fillMaxWidth())
         }

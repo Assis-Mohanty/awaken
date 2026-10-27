@@ -39,7 +39,7 @@ fun GateDial(
     modifier: Modifier = Modifier,
     breachBudget: Duration = Duration.ofMillis(GateRules.BREACH_BUDGET_MS),
 ) {
-    val colors = AwakenTheme.colors
+    val colors = AwakenTheme.palette
     val dimens = AwakenTheme.dimens
     val gateColor = colors.gate(gate)
     val remainingFraction = if (total.isZero) 0f else (remaining.toMillis().toFloat() / total.toMillis()).coerceIn(0f, 1f)
@@ -68,7 +68,7 @@ fun GateDial(
                 drawArc(lerp(colors.mist, colors.ember, breachFraction), START, FULL * breachFraction, false, Offset(innerInset, innerInset), innerSize, style = Stroke(inner))
             }
         }
-        Text(text = remainingText, style = AwakenTheme.type.displayXL, color = colors.bone)
+        Text(text = remainingText, style = AwakenTheme.type.metricXL, color = colors.bone)
     }
 }
 

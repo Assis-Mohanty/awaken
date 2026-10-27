@@ -31,7 +31,7 @@ import com.assismohanty.awaken.core.designsystem.theme.Spacing
  */
 @Composable
 fun SystemWarning(body: String, detail: String, actionLabel: String, onDismiss: () -> Unit, modifier: Modifier = Modifier) {
-    val colors = AwakenTheme.colors
+    val colors = AwakenTheme.palette
     val motion = AwakenTheme.motion
     val haptics = AwakenTheme.haptics
     val fade = remember { Animatable(if (motion.reduceMotion) 1f else 0f) }

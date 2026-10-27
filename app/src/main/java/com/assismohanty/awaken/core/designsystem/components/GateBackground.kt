@@ -27,7 +27,7 @@ fun GateBackground(
     modifier: Modifier = Modifier,
     content: @Composable BoxScope.() -> Unit = {},
 ) {
-    val colors = AwakenTheme.colors
+    val colors = AwakenTheme.palette
     val motion = AwakenTheme.motion
     val glow by animateColorAsState(tint, tween(motion.duration(motion.revealMs)), label = "gateGlow")
     Box(
@@ -52,7 +52,7 @@ fun GateBackground(
 
 @Composable
 fun GateBackground(rank: Rank, modifier: Modifier = Modifier, content: @Composable BoxScope.() -> Unit = {}) =
-    GateBackground(tint = AwakenTheme.themeTint ?: AwakenTheme.colors.rank(rank), modifier = modifier, content = content)
+    GateBackground(tint = AwakenTheme.themeTint ?: AwakenTheme.palette.rank(rank), modifier = modifier, content = content)
 
 private const val GLOW_CENTRE_Y = 0.18f
 private const val DEPTH_RADIUS = 0.85f

@@ -3,7 +3,7 @@ package com.assismohanty.awaken.core.designsystem
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.assismohanty.awaken.core.designsystem.theme.AwakenColors
+import com.assismohanty.awaken.core.designsystem.theme.AwakenPalette
 import com.assismohanty.awaken.core.designsystem.theme.AwakenTheme
 import com.assismohanty.awaken.engine.model.Rank
 import com.google.common.truth.Truth.assertThat
@@ -17,7 +17,7 @@ class ThemeAccentTest {
     @get:Rule
     val composeRule = createComposeRule()
 
-    private val colors = AwakenColors.Dark
+    private val colors = AwakenPalette.Dark
 
     private fun accentsUnder(themeId: String, dark: Boolean = true): Pair<Color, Color> {
         var rankAccent = Color.Unspecified
@@ -25,7 +25,7 @@ class ThemeAccentTest {
         composeRule.setContent {
             AwakenTheme(darkTheme = dark, themeId = themeId) {
                 rankAccent = AwakenTheme.rankAccent(Rank.S)
-                crest = AwakenTheme.colors.rank(Rank.S)
+                crest = AwakenTheme.palette.rank(Rank.S)
             }
         }
         composeRule.waitForIdle()
@@ -42,8 +42,8 @@ class ThemeAccentTest {
     @Test
     fun theLightPaletteUsesItsOwnThemeTint() {
         val (accent, crest) = accentsUnder("theme_crimson_gate", dark = false)
-        assertThat(accent).isEqualTo(AwakenColors.Light.themeCrimson)
-        assertThat(crest).isEqualTo(AwakenColors.Light.rankS)
+        assertThat(accent).isEqualTo(AwakenPalette.Light.themeCrimson)
+        assertThat(crest).isEqualTo(AwakenPalette.Light.rankS)
     }
 
     @Test

@@ -130,7 +130,7 @@ fun StatusScreen(
                     Icon(
                         imageVector = AwakenGlyphs.Settings,
                         contentDescription = stringResource(R.string.cd_open_settings),
-                        tint = AwakenTheme.colors.mist,
+                        tint = AwakenTheme.colors.textSecondary,
                     )
                 }
             }
@@ -167,7 +167,7 @@ private fun RadarWindow(state: StatusUiState) {
         Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
             RadarChart(values = state.radarNow, maxValue = state.radarMax, previous = state.radarLastWeek)
         }
-        Text(stringResource(R.string.status_radar_legend), style = AwakenTheme.type.caption, color = colors.mist)
+        Text(stringResource(R.string.status_radar_legend), style = AwakenTheme.type.caption, color = colors.textSecondary)
     }
 }
 
@@ -181,7 +181,7 @@ private fun StatsWindow(rank: Rank, stats: List<StatProgress>) {
                 Column(verticalArrangement = Arrangement.spacedBy(Spacing.xxs)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(stat.stat.label(), style = type.label, color = colors.stat(stat.stat), modifier = Modifier.weight(1f))
-                        Text(stringResource(R.string.level_short, stat.level), style = type.numericSmall, color = colors.bone)
+                        Text(stringResource(R.string.level_short, stat.level), style = type.numericSmall, color = colors.textPrimary)
                     }
                     XpBar(level = stat.level, xpIntoLevel = stat.xpIntoLevel, xpForLevel = stat.xpForLevel)
                 }
@@ -202,7 +202,7 @@ private fun ActivityWindow(state: StatusUiState, onEvent: (StatusEvent) -> Unit)
         Text(
             text = if (selected == null) stringResource(R.string.status_heatmap_hint) else daySummary(selected),
             style = type.caption,
-            color = if (selected == null) colors.mist else colors.bone,
+            color = if (selected == null) colors.textSecondary else colors.textPrimary,
         )
     }
 }
@@ -233,7 +233,7 @@ private fun AchievementsWindow(
             Text(
                 stringResource(R.string.status_achievements_count, achievements.count { it.unlocked }, achievements.size),
                 style = AwakenTheme.type.caption,
-                color = colors.mist,
+                color = colors.textSecondary,
             )
         },
     ) {
@@ -274,13 +274,13 @@ private fun AchievementCell(entry: AchievementEntry, equipped: Boolean, onEvent:
         verticalArrangement = Arrangement.spacedBy(Spacing.xxs),
     ) {
         // Locked entries are silhouetted: dimmed text plus an explicit "Locked" label (never colour alone).
-        Text(name, style = type.label, color = if (entry.unlocked) colors.bone else colors.fog)
+        Text(name, style = type.label, color = if (entry.unlocked) colors.textPrimary else colors.textMuted)
         if (entry.unlocked) {
-            titleName?.let { Text(stringResource(R.string.status_title_reward, it), style = type.caption, color = colors.mist) }
-            if (equipped) Pill(text = stringResource(R.string.status_title_equipped), color = colors.system)
+            titleName?.let { Text(stringResource(R.string.status_title_reward, it), style = type.caption, color = colors.textSecondary) }
+            if (equipped) Pill(text = stringResource(R.string.status_title_equipped), color = colors.accent)
         } else {
-            Text(stringResource(R.string.status_achievement_locked), style = type.caption, color = colors.fog)
-            achievementConditionRes(entry.id)?.let { Text(stringResource(it), style = type.caption, color = colors.mist) }
+            Text(stringResource(R.string.status_achievement_locked), style = type.caption, color = colors.textMuted)
+            achievementConditionRes(entry.id)?.let { Text(stringResource(it), style = type.caption, color = colors.textSecondary) }
         }
     }
 }
@@ -309,14 +309,14 @@ private fun ChaptersWindow(rank: Rank, chapters: List<ChapterEntry>, onEvent: (S
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
             ) {
-                Text(number, style = type.caption, color = colors.mist)
+                Text(number, style = type.caption, color = colors.textSecondary)
                 if (entry.unlocked) {
-                    Text(entry.chapter.title, style = type.label, color = colors.bone, modifier = Modifier.weight(1f))
+                    Text(entry.chapter.title, style = type.label, color = colors.textPrimary, modifier = Modifier.weight(1f))
                 } else {
                     Text(
                         stringResource(R.string.status_chapter_locked, entry.chapter.unlockLevel),
                         style = type.label,
-                        color = colors.fog,
+                        color = colors.textMuted,
                         modifier = Modifier.weight(1f),
                     )
                 }
@@ -334,10 +334,10 @@ private fun WeeklyWindow(state: StatusUiState, onEvent: (StatusEvent) -> Unit) {
         Text(
             stringResource(R.string.status_weekly_range, formatDate(report.week.monday), formatDate(report.week.sunday)),
             style = type.caption,
-            color = colors.mist,
+            color = colors.textSecondary,
         )
         if (!state.weeklyOpen) {
-            Text(stringResource(R.string.status_weekly_available), style = type.body, color = colors.mist)
+            Text(stringResource(R.string.status_weekly_available), style = type.body, color = colors.textSecondary)
         } else {
             val none = stringResource(R.string.status_weekly_none)
             ReportLine(stringResource(R.string.status_weekly_xp), formatCount(report.totalXp))
@@ -345,13 +345,13 @@ private fun WeeklyWindow(state: StatusUiState, onEvent: (StatusEvent) -> Unit) {
             Stat.entries.forEach { stat -> ReportLine(stat.label(), "+${formatCount(report.statXpGained.getValue(stat))}") }
             ReportLine(stringResource(R.string.status_weekly_best_day), report.bestDay?.let { formatDate(it) } ?: none)
             ReportLine(stringResource(R.string.status_weekly_neglected), report.mostNeglected.label())
-            Text(stringResource(R.string.status_weekly_recal_title), style = type.label, color = colors.bone)
+            Text(stringResource(R.string.status_weekly_recal_title), style = type.label, color = colors.textPrimary)
             if (state.projectedRecalibration.isEmpty()) {
-                Text(stringResource(R.string.status_weekly_recal_none), style = type.caption, color = colors.mist)
+                Text(stringResource(R.string.status_weekly_recal_none), style = type.caption, color = colors.textSecondary)
             } else {
                 state.projectedRecalibration.forEach { (stat, change) ->
                     val res = if (change == DifficultyAdapter.Change.UP) R.string.status_weekly_recal_harder else R.string.status_weekly_recal_easier
-                    Text(stringResource(res, stat.label()), style = type.caption, color = colors.mist)
+                    Text(stringResource(res, stat.label()), style = type.caption, color = colors.textSecondary)
                 }
             }
             SecondaryButton(
@@ -371,8 +371,8 @@ private fun WeeklyWindow(state: StatusUiState, onEvent: (StatusEvent) -> Unit) {
 private fun ReportLine(label: String, value: String) {
     val colors = AwakenTheme.colors
     Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        Text(label, style = AwakenTheme.type.body, color = colors.mist, modifier = Modifier.weight(1f))
-        Text(value, style = AwakenTheme.type.numericSmall, color = colors.bone)
+        Text(label, style = AwakenTheme.type.body, color = colors.textSecondary, modifier = Modifier.weight(1f))
+        Text(value, style = AwakenTheme.type.numericSmall, color = colors.textPrimary)
     }
 }
 

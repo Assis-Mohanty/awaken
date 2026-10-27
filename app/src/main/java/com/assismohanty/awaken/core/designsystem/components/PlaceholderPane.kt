@@ -28,13 +28,13 @@ fun PlaceholderPane(
     ) {
         Text(
             text = title,
-            style = AwakenTheme.type.display,
-            color = AwakenTheme.colors.system,
+            style = AwakenTheme.type.metricL,
+            color = AwakenTheme.palette.system,
         )
         Text(
             text = body,
             style = AwakenTheme.type.body,
-            color = AwakenTheme.colors.mist,
+            color = AwakenTheme.palette.mist,
             textAlign = TextAlign.Center,
         )
     }

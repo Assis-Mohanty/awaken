@@ -40,7 +40,7 @@ fun Heatmap(
     modifier: Modifier = Modifier,
     weeks: Int = WEEKS,
 ) {
-    val colors = AwakenTheme.colors
+    val colors = AwakenTheme.palette
     val dimens = AwakenTheme.dimens
     val firstMonday = days.minOfOrNull { it.date }?.let { it.minusDays((it.dayOfWeek.value - 1).toLong()) }
     val grid = days.associateBy { it.date }

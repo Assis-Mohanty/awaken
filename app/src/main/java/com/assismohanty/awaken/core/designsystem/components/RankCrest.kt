@@ -28,7 +28,7 @@ import kotlin.math.sin
 /** Rank crest (DESIGN_SYSTEM §2.4): a hex frame in the rank colour with the rank letter. */
 @Composable
 fun RankCrest(rank: Rank, size: Dp, modifier: Modifier = Modifier) {
-    val color = AwakenTheme.colors.rank(rank)
+    val color = AwakenTheme.palette.rank(rank)
     val description = stringResource(R.string.cd_rank_crest, rank.name)
     val edge = AwakenTheme.dimens.edgeWidth
     Box(
@@ -53,7 +53,7 @@ fun RankCrest(rank: Rank, size: Dp, modifier: Modifier = Modifier) {
         }
         Text(
             text = rank.name,
-            style = AwakenTheme.type.display.copy(fontSize = AwakenTheme.type.display.fontSize * (size / AwakenTheme.dimens.crestLarge)),
+            style = AwakenTheme.type.metricL.copy(fontSize = AwakenTheme.type.metricL.fontSize * (size / AwakenTheme.dimens.crestLarge)),
             color = color,
         )
     }

@@ -57,7 +57,7 @@ fun ExercisePickerSheet(picker: ExercisePicker, onEvent: (GymEvent) -> Unit) {
     ModalBottomSheet(
         onDismissRequest = { onEvent(GymEvent.ClosePicker) },
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-        containerColor = AwakenTheme.colors.panelRaised,
+        containerColor = AwakenTheme.colors.surfaceOverlay,
         shape = AwakenTheme.shapes.window,
     ) {
         ExercisePickerContent(picker, onEvent, Modifier.navigationBarsPadding())
@@ -75,7 +75,7 @@ fun ExercisePickerContent(picker: ExercisePicker, onEvent: (GymEvent) -> Unit, m
             .padding(horizontal = Spacing.gutter, vertical = Spacing.md),
         verticalArrangement = Arrangement.spacedBy(Spacing.sm),
     ) {
-        Text(stringResource(R.string.gym_picker_title), style = type.windowTitle, color = colors.system, modifier = Modifier.semantics { heading() })
+        Text(stringResource(R.string.gym_picker_title), style = type.windowTitle, color = colors.accent, modifier = Modifier.semantics { heading() })
         if (picker.showCustomForm) {
             CustomExerciseForm(onEvent)
             return@Column
@@ -89,7 +89,7 @@ fun ExercisePickerContent(picker: ExercisePicker, onEvent: (GymEvent) -> Unit, m
             colors = awakenTextFieldColors(),
             modifier = Modifier.fillMaxWidth(),
         )
-        Text(stringResource(R.string.gym_picker_equipment), style = type.label, color = colors.mist)
+        Text(stringResource(R.string.gym_picker_equipment), style = type.label, color = colors.textSecondary)
         LazyRow(horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
             items(Equipment.entries) { gear ->
                 ChoiceChip(
@@ -107,7 +107,7 @@ fun ExercisePickerContent(picker: ExercisePicker, onEvent: (GymEvent) -> Unit, m
             description = stringResource(R.string.cd_gym_picker_map, selectedName),
             onMuscleClick = { onEvent(GymEvent.PickMuscle(it)) },
         )
-        Text(stringResource(R.string.gym_picker_muscle_hint), style = type.caption, color = colors.mist)
+        Text(stringResource(R.string.gym_picker_muscle_hint), style = type.caption, color = colors.textSecondary)
         // The same choice as chips: the body map is one TalkBack node.
         LazyRow(horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
             item {
@@ -117,9 +117,9 @@ fun ExercisePickerContent(picker: ExercisePicker, onEvent: (GymEvent) -> Unit, m
                 ChoiceChip(text = stringResource(muscle.nameRes()), selected = muscle == selected, onClick = { onEvent(GymEvent.PickMuscle(muscle)) })
             }
         }
-        if (picker.results.isEmpty()) Text(stringResource(R.string.gym_picker_empty), style = type.body, color = colors.mist)
+        if (picker.results.isEmpty()) Text(stringResource(R.string.gym_picker_empty), style = type.body, color = colors.textSecondary)
         picker.results.forEachIndexed { i, exercise ->
-            if (i > 0) HorizontalDivider(color = colors.edge, thickness = AwakenTheme.dimens.hairline)
+            if (i > 0) HorizontalDivider(color = colors.divider, thickness = AwakenTheme.dimens.hairline)
             ExerciseResultRow(exercise, onEvent)
         }
         SecondaryButton(text = stringResource(R.string.gym_picker_custom), onClick = { onEvent(GymEvent.OpenCustomForm) }, modifier = Modifier.fillMaxWidth())
@@ -137,13 +137,13 @@ private fun ExerciseResultRow(exercise: Exercise, onEvent: (GymEvent) -> Unit) {
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(Spacing.xxs)) {
-            Text(exercise.name, style = AwakenTheme.type.label, color = colors.bone)
+            Text(exercise.name, style = AwakenTheme.type.label, color = colors.textPrimary)
             Text(
                 (listOf(stringResource(exercise.equipment.nameRes())) + exercise.primary.map { stringResource(it.nameRes()) }).joinToString(" · "),
                 style = AwakenTheme.type.caption,
-                color = colors.mist,
+                color = colors.textSecondary,
             )
-            if (exercise.custom) Pill(text = stringResource(R.string.gym_custom_badge), color = colors.system)
+            if (exercise.custom) Pill(text = stringResource(R.string.gym_custom_badge), color = colors.accent)
         }
         QuietButton(text = stringResource(R.string.gym_exercise_add), onClick = { onEvent(GymEvent.AddExercise(exercise.id)) })
     }
@@ -156,7 +156,7 @@ fun ExerciseDetailSheet(exercise: Exercise, canAdd: Boolean, onEvent: (GymEvent)
     ModalBottomSheet(
         onDismissRequest = { onEvent(GymEvent.CloseExercise) },
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-        containerColor = AwakenTheme.colors.panelRaised,
+        containerColor = AwakenTheme.colors.surfaceOverlay,
         shape = AwakenTheme.shapes.window,
     ) {
         ExerciseDetailContent(exercise, canAdd, onEvent, Modifier.navigationBarsPadding())
@@ -176,24 +176,24 @@ fun ExerciseDetailContent(exercise: Exercise, canAdd: Boolean, onEvent: (GymEven
             .padding(horizontal = Spacing.gutter, vertical = Spacing.md),
         verticalArrangement = Arrangement.spacedBy(Spacing.sm),
     ) {
-        Text(exercise.name, style = type.title, color = colors.bone, modifier = Modifier.semantics { heading() })
+        Text(exercise.name, style = type.title, color = colors.textPrimary, modifier = Modifier.semantics { heading() })
         FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.xs), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
-            Pill(text = stringResource(exercise.equipment.nameRes()), color = colors.system)
-            listOfNotNull(exercise.level, exercise.mechanic, exercise.force).forEach { Pill(text = it.replaceFirstChar(Char::titlecase), color = colors.mist) }
-            if (exercise.custom) Pill(text = stringResource(R.string.gym_custom_badge), color = colors.system)
+            Pill(text = stringResource(exercise.equipment.nameRes()), color = colors.accent)
+            listOfNotNull(exercise.level, exercise.mechanic, exercise.force).forEach { Pill(text = it.replaceFirstChar(Char::titlecase), color = colors.textSecondary) }
+            if (exercise.custom) Pill(text = stringResource(R.string.gym_custom_badge), color = colors.accent)
         }
         BodyMap(
             intensity = exercise.secondary.associateWith { SECONDARY_INTENSITY } + exercise.primary.associateWith { 1f },
             description = stringResource(R.string.cd_gym_exercise_map, (primary + secondary).joinToString()),
         )
-        Text(stringResource(R.string.gym_exercise_primary, primary.joinToString()), style = type.label, color = colors.bone)
-        if (secondary.isNotEmpty()) Text(stringResource(R.string.gym_exercise_secondary, secondary.joinToString()), style = type.label, color = colors.mist)
+        Text(stringResource(R.string.gym_exercise_primary, primary.joinToString()), style = type.label, color = colors.textPrimary)
+        if (secondary.isNotEmpty()) Text(stringResource(R.string.gym_exercise_secondary, secondary.joinToString()), style = type.label, color = colors.textSecondary)
         if (exercise.instructions.isNotEmpty()) {
-            Text(stringResource(R.string.gym_exercise_instructions), style = type.label, color = colors.system)
+            Text(stringResource(R.string.gym_exercise_instructions), style = type.label, color = colors.accent)
             exercise.instructions.forEachIndexed { i, step ->
                 Row(horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
-                    Text("${i + 1}.", style = type.body, color = colors.mist)
-                    Text(step, style = type.body, color = colors.bone)
+                    Text("${i + 1}.", style = type.body, color = colors.textSecondary)
+                    Text(step, style = type.body, color = colors.textPrimary)
                 }
             }
         }
@@ -211,7 +211,7 @@ private fun CustomExerciseForm(onEvent: (GymEvent) -> Unit) {
     var equipment by rememberSaveable { mutableStateOf(Equipment.BODY_ONLY) }
     var primary by rememberSaveable { mutableStateOf(emptySet<Muscle>()) }
     var secondary by rememberSaveable { mutableStateOf(emptySet<Muscle>()) }
-    Text(stringResource(R.string.gym_custom_title), style = type.title, color = colors.bone)
+    Text(stringResource(R.string.gym_custom_title), style = type.title, color = colors.textPrimary)
     OutlinedTextField(
         value = name,
         onValueChange = { name = it.take(MAX_NAME) },
@@ -221,7 +221,7 @@ private fun CustomExerciseForm(onEvent: (GymEvent) -> Unit) {
         colors = awakenTextFieldColors(),
         modifier = Modifier.fillMaxWidth(),
     )
-    Text(stringResource(R.string.gym_picker_equipment), style = type.label, color = colors.mist)
+    Text(stringResource(R.string.gym_picker_equipment), style = type.label, color = colors.textSecondary)
     FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.xs), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
         Equipment.entries.forEach { gear ->
             ChoiceChip(text = stringResource(gear.nameRes()), selected = gear == equipment, onClick = { equipment = gear })
@@ -244,7 +244,7 @@ private fun CustomExerciseForm(onEvent: (GymEvent) -> Unit) {
 
 @Composable
 private fun MuscleChoices(title: String, selected: Set<Muscle>, onToggle: (Muscle) -> Unit) {
-    Text(title, style = AwakenTheme.type.label, color = AwakenTheme.colors.mist)
+    Text(title, style = AwakenTheme.type.label, color = AwakenTheme.colors.textSecondary)
     FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.xs), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
         Muscle.entries.forEach { muscle ->
             ChoiceChip(text = stringResource(muscle.nameRes()), selected = muscle in selected, onClick = { onToggle(muscle) }, multiSelect = true)

@@ -26,9 +26,9 @@ fun PrimaryButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
-    color: Color = AwakenTheme.colors.system,
+    color: Color = AwakenTheme.palette.system,
 ) {
-    val colors = AwakenTheme.colors
+    val colors = AwakenTheme.palette
     val interaction = remember { MutableInteractionSource() }
     Button(
         onClick = onClick,
@@ -55,7 +55,7 @@ fun SecondaryButton(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
 ) {
-    val colors = AwakenTheme.colors
+    val colors = AwakenTheme.palette
     val interaction = remember { MutableInteractionSource() }
     OutlinedButton(
         onClick = onClick,
@@ -78,7 +78,7 @@ fun QuietButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier
         onClick = onClick,
         enabled = enabled,
         interactionSource = interaction,
-        colors = ButtonDefaults.textButtonColors(contentColor = AwakenTheme.colors.system, disabledContentColor = AwakenTheme.colors.fog),
+        colors = ButtonDefaults.textButtonColors(contentColor = AwakenTheme.palette.system, disabledContentColor = AwakenTheme.palette.fog),
         modifier = modifier.pressScale(interaction).defaultMinSize(minHeight = AwakenTheme.dimens.touchTarget),
     ) {
         Text(text = text, style = AwakenTheme.type.label)
@@ -94,7 +94,7 @@ private fun ButtonsPreview() {
         Column(modifier = Modifier.padding(Spacing.gutter), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
             PrimaryButton("Complete quest", onClick = {})
             PrimaryButton("Complete quest", onClick = {}, enabled = false)
-            PrimaryButton("Abandon gate", onClick = {}, color = AwakenTheme.colors.ember)
+            PrimaryButton("Abandon gate", onClick = {}, color = AwakenTheme.palette.ember)
             SecondaryButton("Reroll", onClick = {})
             SecondaryButton("Reroll", onClick = {}, enabled = false)
             QuietButton("Not now", onClick = {})

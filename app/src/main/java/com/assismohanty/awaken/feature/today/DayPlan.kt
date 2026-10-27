@@ -129,7 +129,7 @@ fun DayPlanSheet(state: DayPlanUiState, onEvent: (DayPlanEvent) -> Unit) {
     ModalBottomSheet(
         onDismissRequest = { onEvent(DayPlanEvent.Dismiss) },
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-        containerColor = AwakenTheme.colors.panelRaised,
+        containerColor = AwakenTheme.colors.surfaceOverlay,
         shape = AwakenTheme.shapes.window,
     ) {
         DayPlanContent(
@@ -152,10 +152,10 @@ fun DayPlanContent(state: DayPlanUiState, plan: DayPlan, onEvent: (DayPlanEvent)
     val type = AwakenTheme.type
     val locale = LocalConfiguration.current.locales[0]
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-        Text(stringResource(R.string.day_plan_title), style = type.windowTitle, color = colors.system, modifier = Modifier.semantics { heading() })
+        Text(stringResource(R.string.day_plan_title), style = type.windowTitle, color = colors.accent, modifier = Modifier.semantics { heading() })
 
-        Text(stringResource(R.string.rest_day_label), style = type.label, color = colors.bone, modifier = Modifier.semantics { heading() })
-        Text(stringResource(R.string.rest_day_body), style = type.caption, color = colors.mist)
+        Text(stringResource(R.string.rest_day_label), style = type.label, color = colors.textPrimary, modifier = Modifier.semantics { heading() })
+        Text(stringResource(R.string.rest_day_body), style = type.caption, color = colors.textSecondary)
         FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.xs), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
             plan.upcoming.forEach { date ->
                 ChoiceChip(
@@ -182,14 +182,14 @@ fun DayPlanContent(state: DayPlanUiState, plan: DayPlan, onEvent: (DayPlanEvent)
             horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
         ) {
             Column(modifier = Modifier.weight(1f)) {
-                Text(stringResource(R.string.recovery_label), style = type.label, color = colors.bone)
-                Text(stringResource(R.string.recovery_body), style = type.caption, color = colors.mist)
+                Text(stringResource(R.string.recovery_label), style = type.label, color = colors.textPrimary)
+                Text(stringResource(R.string.recovery_body), style = type.caption, color = colors.textSecondary)
                 Text(
                     text = pluralStringResource(
                         R.plurals.recovery_remaining, plan.recoveryRemaining, plan.recoveryRemaining, StreakRules.RECOVERY_DAYS_PER_MONTH,
                     ),
                     style = type.caption,
-                    color = colors.system,
+                    color = colors.accent,
                 )
             }
             // The row is the toggle target; the switch only shows state.
@@ -197,11 +197,11 @@ fun DayPlanContent(state: DayPlanUiState, plan: DayPlan, onEvent: (DayPlanEvent)
                 checked = plan.recoveryToday,
                 onCheckedChange = null,
                 enabled = !state.busy,
-                colors = SwitchDefaults.colors(checkedTrackColor = colors.system, checkedThumbColor = colors.void),
+                colors = SwitchDefaults.colors(checkedTrackColor = colors.accent, checkedThumbColor = colors.surface),
             )
         }
 
-        state.error?.let { Text(stringResource(it), style = type.label, color = colors.ember) }
+        state.error?.let { Text(stringResource(it), style = type.label, color = colors.critical) }
     }
 }
 

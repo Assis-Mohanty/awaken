@@ -34,12 +34,12 @@ fun ProgressRing(
     progress: Float,
     description: String,
     modifier: Modifier = Modifier,
-    color: Color = AwakenTheme.colors.system,
+    color: Color = AwakenTheme.palette.system,
     size: Dp = AwakenTheme.dimens.calorieRing,
     stroke: Dp = AwakenTheme.dimens.calorieRingStroke,
     content: @Composable () -> Unit,
 ) {
-    val track = AwakenTheme.colors.edge
+    val track = AwakenTheme.palette.edge
     Box(modifier = modifier.size(size).clearAndSetSemantics { contentDescription = description }, contentAlignment = Alignment.Center) {
         Canvas(modifier = Modifier.fillMaxSize()) {
             val width = stroke.toPx()
@@ -63,14 +63,14 @@ fun ProgressRing(
 
 /** A thin horizontal bar filled to [progress] (0..1, clamped) in [color] over an `edge` track. Decorative. */
 @Composable
-fun ProgressBar(progress: Float, modifier: Modifier = Modifier, color: Color = AwakenTheme.colors.system) {
+fun ProgressBar(progress: Float, modifier: Modifier = Modifier, color: Color = AwakenTheme.palette.system) {
     val height = AwakenTheme.dimens.xpBarHeight
     Box(
         modifier = modifier
             .fillMaxWidth()
             .height(height)
             .clip(AwakenTheme.shapes.pill)
-            .background(AwakenTheme.colors.edge),
+            .background(AwakenTheme.palette.edge),
     ) {
         Box(
             modifier = Modifier
@@ -90,7 +90,7 @@ private fun ProgressRingPreview() {
     AwakenTheme {
         Column(verticalArrangement = Arrangement.spacedBy(AwakenTheme.dimens.icon)) {
             ProgressRing(progress = 0.62f, description = "1,880 of 3,030 kcal eaten") {
-                Text("1,150", style = AwakenTheme.type.numeric, color = AwakenTheme.colors.bone)
+                Text("1,150", style = AwakenTheme.type.numeric, color = AwakenTheme.palette.bone)
             }
             ProgressBar(progress = 0.4f)
         }

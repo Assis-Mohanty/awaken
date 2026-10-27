@@ -2,7 +2,7 @@ package com.assismohanty.awaken.core.designsystem
 
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
-import com.assismohanty.awaken.core.designsystem.theme.AwakenColors
+import com.assismohanty.awaken.core.designsystem.theme.AwakenPalette
 import com.assismohanty.awaken.engine.model.Rank
 import com.assismohanty.awaken.engine.model.Stat
 import com.google.common.truth.Truth.assertWithMessage
@@ -16,7 +16,7 @@ class PaletteContrastTest {
         return (hi + 0.05) / (lo + 0.05)
     }
 
-    private fun check(name: String, colors: AwakenColors) {
+    private fun check(name: String, colors: AwakenPalette) {
         assertWithMessage("$name bone").that(contrast(colors.bone, colors.panel)).isAtLeast(7.0)
         assertWithMessage("$name mist").that(contrast(colors.mist, colors.panel)).isAtLeast(5.0)
         val hues = listOf("ember" to colors.ember, "crit" to colors.crit, "verified" to colors.verified) +
@@ -26,8 +26,8 @@ class PaletteContrastTest {
     }
 
     @Test
-    fun darkPaletteMeetsTheFloors() = check("dark", AwakenColors.Dark)
+    fun darkPaletteMeetsTheFloors() = check("dark", AwakenPalette.Dark)
 
     @Test
-    fun lightPaletteMeetsTheFloors() = check("light", AwakenColors.Light)
+    fun lightPaletteMeetsTheFloors() = check("light", AwakenPalette.Light)
 }

@@ -29,7 +29,7 @@ fun ReportSheet(onReport: (ReportReason) -> Unit, onDismiss: () -> Unit) {
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-        containerColor = AwakenTheme.colors.panelRaised,
+        containerColor = AwakenTheme.colors.surfaceOverlay,
         shape = AwakenTheme.shapes.window,
     ) {
         ReportSheetContent(onReport, onDismiss, modifier = Modifier.navigationBarsPadding())
@@ -47,10 +47,10 @@ fun ReportSheetContent(onReport: (ReportReason) -> Unit, onCancel: () -> Unit, m
         Text(
             stringResource(R.string.report_title),
             style = type.windowTitle,
-            color = colors.ember,
+            color = colors.critical,
             modifier = Modifier.semantics { heading() },
         )
-        Text(stringResource(R.string.report_prompt), style = type.body, color = colors.bone)
+        Text(stringResource(R.string.report_prompt), style = type.body, color = colors.textPrimary)
         ReportReason.entries.forEach { reason ->
             SecondaryButton(text = stringResource(reason.labelRes()), onClick = { onReport(reason) }, modifier = Modifier.fillMaxWidth())
         }

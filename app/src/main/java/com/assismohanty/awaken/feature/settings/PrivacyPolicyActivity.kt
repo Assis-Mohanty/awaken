@@ -78,15 +78,15 @@ fun PrivacyPolicyScreen(onClose: () -> Unit, modifier: Modifier = Modifier) {
                     Text(
                         stringResource(R.string.privacy_title),
                         style = type.windowTitle,
-                        color = colors.bone,
+                        color = colors.textPrimary,
                         modifier = Modifier
                             .weight(1f)
                             .semantics { heading() },
                     )
                     QuietButton(text = stringResource(R.string.action_back), onClick = onClose)
                 }
-                Text(stringResource(R.string.privacy_effective), style = type.label, color = colors.mist)
-                paragraphs.forEach { Text(stringResource(it), style = type.body, color = colors.bone) }
+                Text(stringResource(R.string.privacy_effective), style = type.label, color = colors.textSecondary)
+                paragraphs.forEach { Text(stringResource(it), style = type.body, color = colors.textPrimary) }
             }
         }
     }

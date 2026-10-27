@@ -37,10 +37,10 @@ fun BodyMap(
     intensity: Map<Muscle, Float>,
     description: String,
     modifier: Modifier = Modifier,
-    accent: Color = AwakenTheme.colors.system,
+    accent: Color = AwakenTheme.palette.system,
     onMuscleClick: ((Muscle) -> Unit)? = null,
 ) {
-    val colors = AwakenTheme.colors
+    val colors = AwakenTheme.palette
     val dimens = AwakenTheme.dimens
     Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
         Canvas(

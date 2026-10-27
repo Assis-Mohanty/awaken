@@ -142,8 +142,8 @@ fun SettingsScreen(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
                         stringResource(R.string.settings_title),
-                        style = AwakenTheme.type.display,
-                        color = AwakenTheme.colors.bone,
+                        style = AwakenTheme.type.metricL,
+                        color = AwakenTheme.colors.textPrimary,
                         modifier = Modifier
                             .weight(1f)
                             .semantics { heading() },
@@ -176,7 +176,7 @@ fun SettingsScreen(
 }
 
 @Composable
-private fun accent() = AwakenTheme.colors.system
+private fun accent() = AwakenTheme.colors.accent
 
 @Composable
 private fun ProfileWindow(state: SettingsUiState, onEvent: (SettingsEvent) -> Unit) {
@@ -204,7 +204,7 @@ private fun ProfileWindow(state: SettingsUiState, onEvent: (SettingsEvent) -> Un
             enabled = state.canSaveName,
             modifier = Modifier.fillMaxWidth(),
         )
-        Text(stringResource(R.string.settings_focus_title), style = type.label, color = colors.bone)
+        Text(stringResource(R.string.settings_focus_title), style = type.label, color = colors.textPrimary)
         FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.xs), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
             Stat.entries.forEach { stat ->
                 ChoiceChip(
@@ -216,7 +216,7 @@ private fun ProfileWindow(state: SettingsUiState, onEvent: (SettingsEvent) -> Un
                 )
             }
         }
-        Text(stringResource(R.string.settings_focus_note), style = type.caption, color = colors.mist)
+        Text(stringResource(R.string.settings_focus_note), style = type.caption, color = colors.textSecondary)
         SecondaryButton(
             text = stringResource(R.string.action_save_focus),
             onClick = { onEvent(SettingsEvent.SaveFocus) },
@@ -231,7 +231,7 @@ private fun DayWindow(state: SettingsUiState, onEvent: (SettingsEvent) -> Unit, 
     val colors = AwakenTheme.colors
     val type = AwakenTheme.type
     SystemWindow(title = stringResource(R.string.settings_window_day), accent = accent(), reveal = false) {
-        Text(stringResource(R.string.settings_day_start_title), style = type.label, color = colors.bone)
+        Text(stringResource(R.string.settings_day_start_title), style = type.label, color = colors.textPrimary)
         FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.xs), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
             state.dayStartOptions.forEach { hour ->
                 ChoiceChip(
@@ -241,12 +241,12 @@ private fun DayWindow(state: SettingsUiState, onEvent: (SettingsEvent) -> Unit, 
                 )
             }
         }
-        Text(stringResource(R.string.settings_day_start_note), style = type.caption, color = colors.mist)
-        Text(stringResource(R.string.settings_reminder_title), style = type.label, color = colors.bone)
+        Text(stringResource(R.string.settings_day_start_note), style = type.caption, color = colors.textSecondary)
+        Text(stringResource(R.string.settings_reminder_title), style = type.label, color = colors.textPrimary)
         Text(
             text = state.reminder?.let { formatTime(it) } ?: stringResource(R.string.settings_reminder_off),
             style = type.numericSmall,
-            color = colors.bone,
+            color = colors.textPrimary,
         )
         Row(horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
             SecondaryButton(text = stringResource(R.string.action_change_reminder), onClick = { onEvent(SettingsEvent.OpenReminderPicker) })
@@ -254,9 +254,9 @@ private fun DayWindow(state: SettingsUiState, onEvent: (SettingsEvent) -> Unit, 
                 QuietButton(text = stringResource(R.string.action_reminder_off), onClick = { onEvent(SettingsEvent.SetReminder(null)) })
             }
         }
-        Text(stringResource(R.string.settings_reminder_note), style = type.caption, color = colors.mist)
+        Text(stringResource(R.string.settings_reminder_note), style = type.caption, color = colors.textSecondary)
         if (state.notificationsBlocked) {
-            Text(stringResource(R.string.settings_notifications_blocked), style = type.caption, color = colors.ember)
+            Text(stringResource(R.string.settings_notifications_blocked), style = type.caption, color = colors.critical)
             SecondaryButton(
                 text = stringResource(R.string.action_open_notification_settings),
                 onClick = onOpenNotificationSettings,
@@ -272,10 +272,10 @@ private fun TrainingWindow(state: SettingsUiState, onEvent: (SettingsEvent) -> U
     val type = AwakenTheme.type
     SystemWindow(title = stringResource(R.string.settings_window_training), accent = accent(), reveal = false) {
         HealthRow(state, onEvent, onOpenHealth)
-        Text(stringResource(R.string.settings_screen_time_title), style = type.label, color = colors.bone)
-        Text(stringResource(R.string.settings_screen_time_note), style = type.caption, color = colors.mist)
+        Text(stringResource(R.string.settings_screen_time_title), style = type.label, color = colors.textPrimary)
+        Text(stringResource(R.string.settings_screen_time_note), style = type.caption, color = colors.textSecondary)
         SecondaryButton(text = stringResource(R.string.action_open_screen_time), onClick = onOpenScreenTime, modifier = Modifier.fillMaxWidth())
-        Text(stringResource(R.string.settings_equipment_title), style = type.label, color = colors.bone)
+        Text(stringResource(R.string.settings_equipment_title), style = type.label, color = colors.textPrimary)
         FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.xs), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
             state.equipmentOptions.forEach { id ->
                 ChoiceChip(
@@ -286,7 +286,7 @@ private fun TrainingWindow(state: SettingsUiState, onEvent: (SettingsEvent) -> U
                 )
             }
         }
-        Text(stringResource(R.string.settings_equipment_note), style = type.caption, color = colors.mist)
+        Text(stringResource(R.string.settings_equipment_note), style = type.caption, color = colors.textSecondary)
         SwitchRow(
             title = stringResource(R.string.settings_injury_title),
             note = stringResource(R.string.settings_injury_note),
@@ -300,7 +300,7 @@ private fun TrainingWindow(state: SettingsUiState, onEvent: (SettingsEvent) -> U
                         text = injuryTagNameRes(tag)?.let { stringResource(it) } ?: tag,
                         selected = tag in state.injuryTags,
                         onClick = { onEvent(SettingsEvent.ToggleInjuryTag(tag)) },
-                        color = colors.ember,
+                        color = colors.critical,
                         multiSelect = true,
                     )
                 }
@@ -314,19 +314,19 @@ private fun TrainingWindow(state: SettingsUiState, onEvent: (SettingsEvent) -> U
 private fun HealthRow(state: SettingsUiState, onEvent: (SettingsEvent) -> Unit, onOpenHealth: () -> Unit) {
     val colors = AwakenTheme.colors
     val type = AwakenTheme.type
-    Text(stringResource(R.string.settings_health_title), style = type.label, color = colors.bone)
+    Text(stringResource(R.string.settings_health_title), style = type.label, color = colors.textPrimary)
     val status = when {
         state.healthConnected -> R.string.settings_health_on
         state.healthStatus == null -> R.string.settings_health_checking
         state.healthStatus != HealthStatus.AVAILABLE -> R.string.health_not_installed
         else -> R.string.settings_health_off
     }
-    Text(stringResource(status), style = type.caption, color = if (state.healthConnected) colors.verified else colors.mist)
+    Text(stringResource(status), style = type.caption, color = if (state.healthConnected) colors.positive else colors.textSecondary)
     if (state.healthConnected) {
         PrimaryButton(
             text = stringResource(R.string.settings_health_view),
             onClick = onOpenHealth,
-            color = colors.verified,
+            color = colors.positive,
             modifier = Modifier.fillMaxWidth(),
         )
         SecondaryButton(
@@ -338,7 +338,7 @@ private fun HealthRow(state: SettingsUiState, onEvent: (SettingsEvent) -> Unit, 
         PrimaryButton(
             text = stringResource(R.string.action_connect),
             onClick = { onEvent(SettingsEvent.ConnectHealth) },
-            color = colors.verified,
+            color = colors.positive,
             modifier = Modifier.fillMaxWidth(),
         )
     }
@@ -360,7 +360,7 @@ private fun AiPathsWindow(state: SettingsUiState, onEvent: (SettingsEvent) -> Un
 @Composable
 private fun ComfortWindow(state: SettingsUiState, onEvent: (SettingsEvent) -> Unit) {
     SystemWindow(title = stringResource(R.string.settings_window_comfort), accent = accent(), reveal = false) {
-        Text(stringResource(R.string.settings_appearance_title), style = AwakenTheme.type.label, color = AwakenTheme.colors.bone)
+        Text(stringResource(R.string.settings_appearance_title), style = AwakenTheme.type.label, color = AwakenTheme.colors.textPrimary)
         FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.xs), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
             ThemeMode.entries.forEach { mode ->
                 ChoiceChip(
@@ -389,7 +389,7 @@ private fun ComfortWindow(state: SettingsUiState, onEvent: (SettingsEvent) -> Un
 private fun DataWindow(state: SettingsUiState, onExport: () -> Unit, onImport: () -> Unit, onOpenPrivacy: () -> Unit) {
     val colors = AwakenTheme.colors
     SystemWindow(title = stringResource(R.string.settings_window_data), accent = accent(), reveal = false) {
-        Text(stringResource(R.string.settings_data_note), style = AwakenTheme.type.caption, color = colors.mist)
+        Text(stringResource(R.string.settings_data_note), style = AwakenTheme.type.caption, color = colors.textSecondary)
         PrimaryButton(
             text = stringResource(R.string.action_export_data),
             onClick = onExport,
@@ -406,7 +406,7 @@ private fun DataWindow(state: SettingsUiState, onExport: () -> Unit, onImport: (
             runCatching { context.packageManager.getPackageInfo(context.packageName, 0).versionName }.getOrNull().orEmpty()
         }
         QuietButton(text = stringResource(R.string.action_privacy_policy), onClick = onOpenPrivacy, modifier = Modifier.fillMaxWidth())
-        Text(stringResource(R.string.settings_about, version), style = AwakenTheme.type.caption, color = colors.fog)
+        Text(stringResource(R.string.settings_about, version), style = AwakenTheme.type.caption, color = colors.textMuted)
     }
 }
 
@@ -429,13 +429,13 @@ private fun SwitchRow(title: String, note: String?, checked: Boolean, onChange: 
         horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
     ) {
         Column(modifier = Modifier.weight(1f)) {
-            Text(title, style = AwakenTheme.type.label, color = colors.bone)
-            note?.let { Text(it, style = AwakenTheme.type.caption, color = colors.mist) }
+            Text(title, style = AwakenTheme.type.label, color = colors.textPrimary)
+            note?.let { Text(it, style = AwakenTheme.type.caption, color = colors.textSecondary) }
         }
         Switch(
             checked = checked,
             onCheckedChange = null,
-            colors = SwitchDefaults.colors(checkedTrackColor = colors.system, checkedThumbColor = colors.void),
+            colors = SwitchDefaults.colors(checkedTrackColor = colors.accent, checkedThumbColor = colors.surface),
         )
     }
 }
@@ -469,12 +469,12 @@ private fun ReminderDialog(current: LocalTime?, onEvent: (SettingsEvent) -> Unit
 private fun ImportConfirmDialog(onEvent: (SettingsEvent) -> Unit) {
     val colors = AwakenTheme.colors
     Dialog(onDismissRequest = { onEvent(SettingsEvent.CancelImport) }) {
-        SystemWindow(title = stringResource(R.string.import_confirm_title), accent = colors.ember) {
-            Text(stringResource(R.string.import_confirm_body), style = AwakenTheme.type.body, color = colors.bone)
+        SystemWindow(title = stringResource(R.string.import_confirm_title), accent = colors.critical) {
+            Text(stringResource(R.string.import_confirm_body), style = AwakenTheme.type.body, color = colors.textPrimary)
             PrimaryButton(
                 text = stringResource(R.string.action_import_replace),
                 onClick = { onEvent(SettingsEvent.ConfirmImport) },
-                color = colors.ember,
+                color = colors.critical,
                 modifier = Modifier.fillMaxWidth(),
             )
             QuietButton(text = stringResource(R.string.action_cancel), onClick = { onEvent(SettingsEvent.CancelImport) }, modifier = Modifier.fillMaxWidth())
@@ -486,19 +486,19 @@ private fun ImportConfirmDialog(onEvent: (SettingsEvent) -> Unit) {
 private fun ImportDoneDialog(summary: com.assismohanty.awaken.core.data.export.ImportSummary, onDismiss: () -> Unit) {
     val colors = AwakenTheme.colors
     Dialog(onDismissRequest = onDismiss) {
-        SystemWindow(title = stringResource(R.string.import_done_title), accent = colors.verified) {
+        SystemWindow(title = stringResource(R.string.import_done_title), accent = colors.positive) {
             Text(
                 stringResource(R.string.import_done_body, summary.hunterName, summary.level),
                 style = AwakenTheme.type.body,
-                color = colors.bone,
+                color = colors.textPrimary,
             )
             Text(
                 pluralStringResource(R.plurals.import_done_rows, summary.ledgerRows, summary.ledgerRows),
                 style = AwakenTheme.type.caption,
-                color = colors.mist,
+                color = colors.textSecondary,
             )
             if (summary.firstDate != null && summary.lastDate != null) {
-                Text(stringResource(R.string.import_done_range, summary.firstDate, summary.lastDate), style = AwakenTheme.type.caption, color = colors.mist)
+                Text(stringResource(R.string.import_done_range, summary.firstDate, summary.lastDate), style = AwakenTheme.type.caption, color = colors.textSecondary)
             }
             PrimaryButton(text = stringResource(R.string.action_done), onClick = onDismiss, modifier = Modifier.fillMaxWidth())
         }
@@ -507,10 +507,10 @@ private fun ImportDoneDialog(summary: com.assismohanty.awaken.core.data.export.I
 
 @Composable
 private fun textFieldColors() = OutlinedTextFieldDefaults.colors(
-    focusedBorderColor = AwakenTheme.colors.system,
-    unfocusedBorderColor = AwakenTheme.colors.edge,
-    focusedLabelColor = AwakenTheme.colors.system,
-    cursorColor = AwakenTheme.colors.system,
+    focusedBorderColor = AwakenTheme.colors.accent,
+    unfocusedBorderColor = AwakenTheme.colors.divider,
+    focusedLabelColor = AwakenTheme.colors.accent,
+    cursorColor = AwakenTheme.colors.accent,
 )
 
 @Composable

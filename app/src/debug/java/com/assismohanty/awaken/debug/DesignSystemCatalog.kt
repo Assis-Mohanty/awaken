@@ -103,7 +103,7 @@ private fun CatalogContent(
     onReduceMotion: (Boolean) -> Unit,
     onBack: () -> Unit,
 ) {
-    val colors = AwakenTheme.colors
+    val colors = AwakenTheme.palette
     val type = AwakenTheme.type
     val rankColor = colors.rank(rank)
     var revealKey by remember { mutableIntStateOf(0) }
@@ -130,7 +130,7 @@ private fun CatalogContent(
             item {
                 Column(modifier = Modifier.statusBarsPadding()) {
                     QuietButton(stringResource(R.string.debug_back), onClick = onBack)
-                    Text(stringResource(R.string.catalog_title), style = type.display, color = colors.bone)
+                    Text(stringResource(R.string.catalog_title), style = type.metricL, color = colors.bone)
                 }
             }
 
@@ -163,8 +163,8 @@ private fun CatalogContent(
 
             item {
                 Section(R.string.catalog_type) {
-                    Text("LV 24", style = type.displayXL, color = colors.bone)
-                    Text("C", style = type.display, color = rankColor)
+                    Text("LV 24", style = type.metricXL, color = colors.bone)
+                    Text("C", style = type.metricL, color = rankColor)
                     Text(stringResource(R.string.system_title_daily_directive), style = type.windowTitle, color = rankColor)
                     Text("+144 XP · 1,920", style = type.numeric, color = colors.bone)
                     Text("Do push-ups", style = type.title, color = colors.bone)
@@ -304,7 +304,7 @@ private fun CatalogContent(
 @Composable
 private fun Section(titleRes: Int, content: @Composable androidx.compose.foundation.layout.ColumnScope.() -> Unit) {
     Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-        Text(stringResource(titleRes), style = AwakenTheme.type.title, color = AwakenTheme.colors.mist)
+        Text(stringResource(titleRes), style = AwakenTheme.type.title, color = AwakenTheme.palette.mist)
         content()
     }
 }

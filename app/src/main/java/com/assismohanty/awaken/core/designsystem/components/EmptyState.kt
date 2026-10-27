@@ -28,7 +28,7 @@ fun EmptyState(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(Spacing.md),
     ) {
-        Text(line, style = AwakenTheme.type.body, color = AwakenTheme.colors.mist, textAlign = TextAlign.Center)
+        Text(line, style = AwakenTheme.type.body, color = AwakenTheme.palette.mist, textAlign = TextAlign.Center)
         if (actionLabel != null) SecondaryButton(text = actionLabel, onClick = onAction)
     }
 }

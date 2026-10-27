@@ -70,11 +70,11 @@ fun SystemWindow(
                 alpha = if (animate) progress.value.coerceAtLeast(MIN_REVEAL_ALPHA) else 1f
             }
             .clip(shapes.window)
-            .background(Brush.verticalGradient(listOf(AwakenTheme.colors.panel, AwakenTheme.colors.panelShade)))
-            .litEdge(AwakenTheme.colors.panelSheen, dimens.edgeWidth, shapes.windowChamfer)
+            .background(Brush.verticalGradient(listOf(AwakenTheme.palette.panel, AwakenTheme.palette.panelShade)))
+            .litEdge(AwakenTheme.palette.panelSheen, dimens.edgeWidth, shapes.windowChamfer)
             .windowEdge(
                 shape = shapes.window,
-                edgeColor = AwakenTheme.colors.edge,
+                edgeColor = AwakenTheme.palette.edge,
                 edgeWidth = dimens.edgeWidth,
                 accent = accent,
                 accentWidth = dimens.accentWidth,
@@ -174,11 +174,11 @@ private const val MIN_REVEAL_ALPHA = 0.001f
 private fun SystemWindowPreview() {
     AwakenTheme {
         Column(modifier = Modifier.padding(Spacing.gutter), verticalArrangement = Arrangement.spacedBy(Spacing.lg)) {
-            SystemWindow(title = "DAILY DIRECTIVE", accent = AwakenTheme.colors.rankC, reveal = false) {
-                Text("Quests appear here.", style = AwakenTheme.type.body, color = AwakenTheme.colors.bone)
+            SystemWindow(title = "DAILY DIRECTIVE", accent = AwakenTheme.palette.rankC, reveal = false) {
+                Text("Quests appear here.", style = AwakenTheme.type.body, color = AwakenTheme.palette.bone)
             }
-            SystemWindow(title = "SYSTEM WARNING", accent = AwakenTheme.colors.ember, reveal = false) {
-                Text("You missed yesterday.", style = AwakenTheme.type.body, color = AwakenTheme.colors.bone)
+            SystemWindow(title = "SYSTEM WARNING", accent = AwakenTheme.palette.ember, reveal = false) {
+                Text("You missed yesterday.", style = AwakenTheme.type.body, color = AwakenTheme.palette.bone)
             }
         }
     }

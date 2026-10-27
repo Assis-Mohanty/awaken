@@ -37,7 +37,7 @@ fun RadarChart(
     previous: Map<Stat, Float>? = null,
     description: String = radarDescription(values),
 ) {
-    val colors = AwakenTheme.colors
+    val colors = AwakenTheme.palette
     val dimens = AwakenTheme.dimens
     val sigils = Stat.entries.associateWith { rememberVectorPainter(AwakenGlyphs.stat(it)) }
     Canvas(

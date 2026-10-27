@@ -103,7 +103,7 @@ fun TodayScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .then(if (state.penaltyOpen) Modifier.background(colors.ember.copy(alpha = AwakenAlpha.HAZE)) else Modifier)
+            .then(if (state.penaltyOpen) Modifier.background(colors.critical.copy(alpha = AwakenAlpha.HAZE)) else Modifier)
             .verticalScroll(rememberScrollState()),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
@@ -121,7 +121,7 @@ fun TodayScreen(
             }
             val header = state.header
             if (state.loading || header == null) {
-                Text(stringResource(R.string.today_loading), style = type.body, color = colors.mist)
+                Text(stringResource(R.string.today_loading), style = type.body, color = colors.textSecondary)
                 return@Column
             }
             val title = state.equippedTitleId?.let(::titleNameRes)?.let { stringResource(it) }
@@ -133,7 +133,7 @@ fun TodayScreen(
             state.penalty?.let { penalty ->
                 SystemWindow(
                     title = stringResource(R.string.quest_kind_penalty),
-                    accent = colors.ember,
+                    accent = colors.critical,
                     modifier = Modifier.staggeredEntrance(1),
                 ) {
                     QuestRow(
@@ -164,7 +164,7 @@ fun TodayScreen(
                     Text(
                         text = stringResource(R.string.today_progress, state.completed, state.total),
                         style = type.numericSmall,
-                        color = colors.mist,
+                        color = colors.textSecondary,
                     )
                 },
             ) {
@@ -185,7 +185,7 @@ fun TodayScreen(
                     Text(
                         text = stringResource(R.string.today_habits),
                         style = type.windowTitle,
-                        color = colors.fog,
+                        color = colors.textMuted,
                         modifier = Modifier.weight(1f).semantics { heading() },
                     )
                     QuietButton(text = stringResource(R.string.action_manage_habits), onClick = { onHabitsEvent(HabitsEvent.OpenList) })
@@ -214,7 +214,7 @@ fun TodayScreen(
             }
 
             state.systemLine?.let { line ->
-                Text(text = line, style = type.body, color = colors.mist, modifier = Modifier.staggeredEntrance(4).padding(horizontal = Spacing.xxs))
+                Text(text = line, style = type.body, color = colors.textSecondary, modifier = Modifier.staggeredEntrance(4).padding(horizontal = Spacing.xxs))
             }
         }
     }
@@ -288,7 +288,7 @@ private fun TodayScreenClearedPreview() {
 @Composable
 private fun HeaderAction(icon: ImageVector, label: String, onClick: () -> Unit) {
     IconButton(onClick = onClick) {
-        Icon(icon, contentDescription = label, tint = AwakenTheme.colors.bone, modifier = Modifier.size(AwakenTheme.dimens.icon))
+        Icon(icon, contentDescription = label, tint = AwakenTheme.colors.textPrimary, modifier = Modifier.size(AwakenTheme.dimens.icon))
     }
 }
 
@@ -297,7 +297,7 @@ private fun DisciplineCardWindow(card: DisciplineCard, onOpenScreenTime: () -> U
     val colors = AwakenTheme.colors
     SystemWindow(
         title = stringResource(R.string.quest_kind_discipline),
-        accent = if (card.held) colors.verified else colors.ember,
+        accent = if (card.held) colors.positive else colors.critical,
         modifier = modifier,
         reveal = false,
         headerTrailing = { QuietButton(text = stringResource(R.string.action_open_screen_time), onClick = onOpenScreenTime) },
@@ -309,7 +309,7 @@ private fun DisciplineCardWindow(card: DisciplineCard, onOpenScreenTime: () -> U
                 stringResource(R.string.today_discipline_forfeited)
             },
             style = AwakenTheme.type.body,
-            color = if (card.held) colors.bone else colors.mist,
+            color = if (card.held) colors.textPrimary else colors.textSecondary,
         )
     }
 }
@@ -323,7 +323,7 @@ private fun CampaignCardWindow(state: TodayUiState, onOpenCampaign: () -> Unit) 
     if (card == null && !state.campaignOffer) return
     SystemWindow(
         title = stringResource(R.string.campaign_window_progress),
-        accent = if (card != null) colors.crit else colors.system,
+        accent = if (card != null) colors.reward else colors.accent,
         reveal = false,
         headerTrailing = { QuietButton(text = stringResource(R.string.action_open_campaign), onClick = onOpenCampaign) },
     ) {
@@ -334,7 +334,7 @@ private fun CampaignCardWindow(state: TodayUiState, onOpenCampaign: () -> Unit) 
                 stringResource(R.string.today_campaign_begin)
             },
             style = if (card != null) AwakenTheme.type.numeric else AwakenTheme.type.body,
-            color = if (card != null) colors.bone else colors.mist,
+            color = if (card != null) colors.textPrimary else colors.textSecondary,
         )
     }
 }

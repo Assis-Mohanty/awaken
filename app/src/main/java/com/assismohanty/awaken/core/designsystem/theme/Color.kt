@@ -7,7 +7,8 @@ import com.assismohanty.awaken.engine.model.GateRank
 import com.assismohanty.awaken.engine.model.Rank
 import com.assismohanty.awaken.engine.model.Stat
 
-// Raw palette — DESIGN_SYSTEM.md §2.1 (premium black). Only this file holds hex values; everything else reads AwakenColors.
+// Raw palette — DESIGN_SYSTEM.md §2.1 (premium black). Only this file holds hex values. Feature code reads the semantic
+// AwakenColors (DS §8.4); AwakenPalette is for core/designsystem only.
 // The chrome is greyscale; rank, stat, crit, verified and ember are the only hues.
 val Void = Color(0xFF000000)
 val Depth = Color(0xFF0A0A0A)
@@ -24,8 +25,9 @@ val Ember = Color(0xFFFF5468)
 val Crit = Color(0xFFFFC94D)
 val Verified = Color(0xFF5BE3B0)
 
+/** Raw colour values for one mode. Only `core/designsystem` (and the widget, which can't read the theme) may name these. */
 @Immutable
-data class AwakenColors(
+data class AwakenPalette(
     val void: Color = Void,
     val depth: Color = Depth,
     val panel: Color = Panel,
@@ -101,13 +103,13 @@ data class AwakenColors(
 
     companion object {
         /** The premium-black palette (DESIGN_SYSTEM §2.1). */
-        val Dark = AwakenColors()
+        val Dark = AwakenPalette()
 
         /**
          * The light palette (DESIGN_SYSTEM §2.1b): same tokens, inverted ink. `void` is still "the page" and `bone` is
          * still "primary ink". Hues are darkened so text in them reaches ≥ 4.5:1 on `panel` (white).
          */
-        val Light = AwakenColors(
+        val Light = AwakenPalette(
             void = Color(0xFFF6F6F4),
             depth = Color(0xFFEFEFEC),
             panel = Color(0xFFFFFFFF),
@@ -158,4 +160,62 @@ object AwakenAlpha {
     val HEATMAP_STEPS = listOf(0.08f, 0.30f, 0.50f, 0.72f, 1.0f)
 }
 
-val LocalAwakenColors = staticCompositionLocalOf { AwakenColors() }
+/**
+ * Semantic colour tokens (DESIGN_SYSTEM §8.4): what a colour is *for*, not what it looks like. Feature code may use only
+ * these, so a redesign changes the mapping here instead of every screen.
+ */
+@Immutable
+class AwakenColors(private val palette: AwakenPalette) {
+    /** The page. */
+    val surface: Color get() = palette.void
+    /** Below the page: bottom bar, recessed tracks. */
+    val surfaceSunken: Color get() = palette.depth
+    /** Cards and windows. */
+    val surfaceElevated: Color get() = palette.panel
+    /** Sheets, pressed states and wells inside cards. */
+    val surfaceOverlay: Color get() = palette.panelRaised
+    val textPrimary: Color get() = palette.bone
+    val textSecondary: Color get() = palette.mist
+    /** Disabled and tertiary; never for text people need to read. */
+    val textMuted: Color get() = palette.fog
+    /** Primary actions, fills, checks. */
+    val accent: Color get() = palette.system
+    /** Empty tracks and quiet outlines. */
+    val accentMuted: Color get() = palette.edge
+    /** The bright leading edge of a fill. */
+    val accentHighlight: Color get() = palette.aether
+    val divider: Color get() = palette.edge
+    /** Verified, held, healthy. */
+    val positive: Color get() = palette.verified
+    /** Caution that is not an error. */
+    val warning: Color get() = palette.crit
+    /** Errors, destructive actions, penalties, breaches. */
+    val critical: Color get() = palette.ember
+    /** Gold, crits, level-ups. */
+    val reward: Color get() = palette.crit
+    /** Chart series in stat order (STR, INT, WIL, VIT, CHA), then a neutral. */
+    val chartSeries1: Color get() = palette.statStr
+    val chartSeries2: Color get() = palette.statInt
+    val chartSeries3: Color get() = palette.statWil
+    val chartSeries4: Color get() = palette.statVit
+    val chartSeries5: Color get() = palette.statCha
+    val chartSeries6: Color get() = palette.mist
+    val chartGrid: Color get() = palette.edge
+
+    fun rank(rank: Rank): Color = palette.rank(rank)
+    fun stat(stat: Stat): Color = palette.stat(stat)
+    fun gate(gate: GateRank): Color = palette.gate(gate)
+    fun theme(themeId: String): Color? = palette.theme(themeId)
+    fun frame(frameId: String): Color = palette.frame(frameId)
+
+    override fun equals(other: Any?): Boolean = other is AwakenColors && other.palette == palette
+    override fun hashCode(): Int = palette.hashCode()
+
+    companion object {
+        val Dark = AwakenColors(AwakenPalette.Dark)
+        val Light = AwakenColors(AwakenPalette.Light)
+    }
+}
+
+val LocalAwakenPalette = staticCompositionLocalOf { AwakenPalette() }
+val LocalAwakenColors = staticCompositionLocalOf { AwakenColors.Dark }

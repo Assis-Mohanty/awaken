@@ -294,7 +294,7 @@ object AwakenGlyphs {
 @Composable
 private fun GlyphsPreview() {
     AwakenTheme {
-        val colors = AwakenTheme.colors
+        val colors = AwakenTheme.palette
         Row {
             Stat.entries.forEach { stat ->
                 Icon(AwakenGlyphs.stat(stat), contentDescription = null, tint = colors.stat(stat), modifier = Modifier.size(AwakenTheme.dimens.sigil))

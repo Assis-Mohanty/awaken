@@ -31,8 +31,8 @@ private const val TABULAR_NUMS = "tnum"
 
 @Immutable
 data class AwakenType(
-    val displayXL: TextStyle = TextStyle(fontFamily = SairaCondensed, fontWeight = FontWeight.Bold, fontSize = 64.sp, lineHeight = 64.sp),
-    val display: TextStyle = TextStyle(fontFamily = SairaCondensed, fontWeight = FontWeight.Bold, fontSize = 40.sp, lineHeight = 44.sp),
+    val metricXL: TextStyle = TextStyle(fontFamily = SairaCondensed, fontWeight = FontWeight.Bold, fontSize = 64.sp, lineHeight = 64.sp),
+    val metricL: TextStyle = TextStyle(fontFamily = SairaCondensed, fontWeight = FontWeight.Bold, fontSize = 40.sp, lineHeight = 44.sp),
     /** UPPERCASE only here — callers pass already-uppercased System titles from strings.xml. */
     val windowTitle: TextStyle = TextStyle(
         fontFamily = SairaCondensed, fontWeight = FontWeight.SemiBold, fontSize = 18.sp, lineHeight = 22.sp, letterSpacing = 0.06.em,
@@ -55,9 +55,9 @@ val LocalAwakenType = staticCompositionLocalOf { AwakenType() }
 
 /** Material components (text fields, sheets, snackbars) pick up the same families. */
 internal fun AwakenType.toMaterialTypography(): Typography = Typography(
-    displayLarge = displayXL,
-    displayMedium = display,
-    headlineMedium = display.copy(fontSize = 28.sp, lineHeight = 32.sp),
+    displayLarge = metricXL,
+    displayMedium = metricL,
+    headlineMedium = metricL.copy(fontSize = 28.sp, lineHeight = 32.sp),
     titleLarge = windowTitle,
     titleMedium = title,
     titleSmall = title.copy(fontSize = 15.sp, lineHeight = 20.sp),

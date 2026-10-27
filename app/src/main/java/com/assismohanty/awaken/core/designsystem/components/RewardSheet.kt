@@ -59,7 +59,7 @@ fun RewardSheet(model: RewardModel, onDone: () -> Unit, feedback: Feedback? = nu
     ModalBottomSheet(
         onDismissRequest = onDone,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-        containerColor = AwakenTheme.colors.panelRaised,
+        containerColor = AwakenTheme.palette.panelRaised,
         shape = AwakenTheme.shapes.window,
     ) {
         RewardSheetContent(model, onDone, modifier = Modifier.navigationBarsPadding(), feedback = feedback, onFeedback = onFeedback)
@@ -79,7 +79,7 @@ fun RewardSheetContent(
     feedback: Feedback? = null,
     onFeedback: (Feedback?) -> Unit = {},
 ) {
-    val colors = AwakenTheme.colors
+    val colors = AwakenTheme.palette
     val type = AwakenTheme.type
     val motion = AwakenTheme.motion
     val haptics = AwakenTheme.haptics
@@ -104,7 +104,7 @@ fun RewardSheetContent(
         )
         Text(
             text = stringResource(R.string.xp_gain, formatCount(shownXp.value.toInt())),
-            style = type.display,
+            style = type.metricL,
             color = colors.bone,
             modifier = Modifier.semantics { contentDescription = finalXp },
         )

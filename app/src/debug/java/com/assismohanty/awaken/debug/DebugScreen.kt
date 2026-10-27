@@ -162,7 +162,7 @@ private fun SectionTitle(titleRes: Int) {
 
 @Composable
 private fun Mono(text: String) {
-    Text(text = text, style = AwakenTheme.type.caption, color = AwakenTheme.colors.bone)
+    Text(text = text, style = AwakenTheme.type.caption, color = AwakenTheme.palette.bone)
 }
 
 private fun LedgerEntryEntity.describe(): String =

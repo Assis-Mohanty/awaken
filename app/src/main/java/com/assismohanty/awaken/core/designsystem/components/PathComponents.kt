@@ -63,7 +63,7 @@ fun OracleStatus(
     onRetry: (() -> Unit)? = null,
     retryNote: String? = null,
 ) {
-    val colors = AwakenTheme.colors
+    val colors = AwakenTheme.palette
     val type = AwakenTheme.type
     val (text, color) = when (state) {
         OracleUiState.CHARTING -> stringResource(R.string.oracle_charting) to colors.system
@@ -126,7 +126,7 @@ fun PathLadder(
     progressLine: String? = null,
     collapsed: Boolean = false,
 ) {
-    val colors = AwakenTheme.colors
+    val colors = AwakenTheme.palette
     val type = AwakenTheme.type
     val dimens = AwakenTheme.dimens
     var opened by rememberSaveable { mutableIntStateOf(NONE_OPEN) }
@@ -188,7 +188,7 @@ private enum class LadderState { CLEARED, CURRENT, FUTURE }
 
 @Composable
 private fun Node(state: LadderState, accent: Color) {
-    val colors = AwakenTheme.colors
+    val colors = AwakenTheme.palette
     val dimens = AwakenTheme.dimens
     val shape = AwakenTheme.shapes.button
     val size = NODE_SIZE
@@ -220,7 +220,7 @@ private const val NONE_OPEN = -1
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun PathQuestBadge(name: String, modifier: Modifier = Modifier, gate: String? = null) {
-    val colors = AwakenTheme.colors
+    val colors = AwakenTheme.palette
     val description = stringResource(R.string.cd_path_badge, name)
     FlowRow(modifier = modifier, horizontalArrangement = Arrangement.spacedBy(Spacing.xxs)) {
         Pill(text = "◇ $name", color = colors.mist, description = description)
@@ -234,7 +234,7 @@ fun PathQuestBadge(name: String, modifier: Modifier = Modifier, gate: String? = 
 @Composable
 fun FeedbackChips(selected: Feedback?, onSelect: (Feedback?) -> Unit, modifier: Modifier = Modifier) {
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
-        Text(stringResource(R.string.feedback_label), style = AwakenTheme.type.caption, color = AwakenTheme.colors.mist)
+        Text(stringResource(R.string.feedback_label), style = AwakenTheme.type.caption, color = AwakenTheme.palette.mist)
         Row(horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
             Feedback.entries.forEach { feedback ->
                 ChoiceChip(
@@ -267,8 +267,8 @@ private val previewNodes = listOf(
 private fun PathLadderPreview() {
     AwakenTheme {
         Column(modifier = Modifier.padding(Spacing.gutter), verticalArrangement = Arrangement.spacedBy(Spacing.md)) {
-            PathLadder(previewNodes, currentIndex = 1, accent = AwakenTheme.colors.stat(com.assismohanty.awaken.engine.model.Stat.INT), progressLine = "4 / 6 quests this week")
-            PathLadder(previewNodes, currentIndex = 1, accent = AwakenTheme.colors.stat(com.assismohanty.awaken.engine.model.Stat.INT), collapsed = true)
+            PathLadder(previewNodes, currentIndex = 1, accent = AwakenTheme.palette.stat(com.assismohanty.awaken.engine.model.Stat.INT), progressLine = "4 / 6 quests this week")
+            PathLadder(previewNodes, currentIndex = 1, accent = AwakenTheme.palette.stat(com.assismohanty.awaken.engine.model.Stat.INT), collapsed = true)
         }
     }
 }

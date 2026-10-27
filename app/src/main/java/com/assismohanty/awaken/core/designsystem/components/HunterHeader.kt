@@ -48,7 +48,7 @@ data class HunterHeaderModel(
 /** Crest, name, title, level, XP bar, streak flame and gold (DESIGN_SYSTEM §3, §4.2). [large] is the Status variant. */
 @Composable
 fun HunterHeader(model: HunterHeaderModel, modifier: Modifier = Modifier, large: Boolean = false) {
-    val colors = AwakenTheme.colors
+    val colors = AwakenTheme.palette
     val type = AwakenTheme.type
     val dimens = AwakenTheme.dimens
     val motion = AwakenTheme.motion
@@ -96,7 +96,7 @@ fun HunterHeader(model: HunterHeaderModel, modifier: Modifier = Modifier, large:
         Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
             Text(
                 text = stringResource(R.string.level_short, level),
-                style = if (large) type.displayXL else type.display,
+                style = if (large) type.metricXL else type.metricL,
                 color = colors.bone,
             )
             XpBar(
@@ -119,7 +119,7 @@ private fun Counter(icon: ImageVector, value: String, tint: Color, description: 
         horizontalArrangement = Arrangement.spacedBy(Spacing.xxs),
     ) {
         Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(AwakenTheme.dimens.iconSmall))
-        Text(value, style = AwakenTheme.type.numeric, color = AwakenTheme.colors.bone)
+        Text(value, style = AwakenTheme.type.numeric, color = AwakenTheme.palette.bone)
     }
 }
 

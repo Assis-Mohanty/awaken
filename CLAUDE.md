@@ -41,12 +41,13 @@ Proxy (`/proxy`): TypeScript on Cloudflare Workers · zod · Wrangler · Vitest.
 - Errors: repositories return `Result`/sealed outcomes; UI shows a System-styled error, never a crash.
 - Strings in `strings.xml`. Content descriptions on all icons. Touch targets ≥ 48dp.
 - Every screen has `@Preview`s at phone + small phone sizes via `@PhonePreviews`, which renders both the dark and light palettes (DESIGN_SYSTEM §2.1b). Never hard-code a colour that only works on black.
+- Colours: feature code uses only the semantic tokens on `AwakenTheme.colors` (`surface`, `textPrimary`, `accent`, `critical`, `reward`, …, DESIGN_SYSTEM §8.4). Raw palette names (`AwakenTheme.palette`, `AwakenPalette`) are for `core/designsystem` and the widget only.
 - Debug-only code lives in `app/src/debug` (Debug screen, `DebugClock` time travel) with a no-op twin in `app/src/release` (`DebugEntry`, `ClockModule`). Never reference debug classes from `src/main` except through `DebugEntry`.
 
 ## Workflow rules for you (Claude Code)
 - Start each phase in **plan mode**; list files you'll touch; then implement.
 - After each phase: `./gradlew :engine:test :app:testDebugUnitTest :app:assembleDebug` must pass, plus `./gradlew lint` with no new errors and `./gradlew :app:verifyRoborazziDebug` with no unexpected diffs. Fix before moving on.
-- Screenshot goldens (`app/src/test/screenshots/`, every `@Preview` at half scale) are re-recorded only on purpose, with the changed screens named in the commit. They are rendered on this Windows machine; another OS may differ by font rasterisation.
+- Screenshot goldens (`app/src/test/screenshots/`, every `@Preview` at half scale) are re-recorded only on purpose, with the changed screens named in the commit. They are rendered on this Windows machine; another OS may differ by font rasterisation. Some golden file names exceed Windows MAX_PATH: run `git config core.longpaths true` once per clone.
 - Commit after each green phase: `feat(<area>): <what>` — small, reviewable commits.
 - If a requirement in the docs is ambiguous or conflicts, stop and ask; don't guess numbers.
 - Don't add features not in `PRD_MVP.md`. Put ideas in `docs/BACKLOG.md` instead.

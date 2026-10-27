@@ -74,7 +74,7 @@ fun TrialDetailScreen(
     ) {
         Box(modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.xxs)) {
             IconButton(onClick = onBack) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.action_back), tint = colors.bone)
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.action_back), tint = colors.textPrimary)
             }
         }
         Column(
@@ -105,13 +105,13 @@ private fun TrialContent(state: TrialDetailUiState, onEvent: (TrialDetailEvent) 
         val start = state.start
         val expires = state.expires
         if (start != null && expires != null) {
-            Text(stringResource(R.string.trial_window, formatter.format(start), formatter.format(expires)), style = type.label, color = colors.bone)
+            Text(stringResource(R.string.trial_window, formatter.format(start), formatter.format(expires)), style = type.label, color = colors.textPrimary)
         }
-        Text(pluralStringResource(R.plurals.trial_days_left, state.daysLeft, state.daysLeft), style = type.label, color = colors.mist)
-        Text(stringResource(R.string.trial_rule), style = type.caption, color = colors.mist)
+        Text(pluralStringResource(R.plurals.trial_days_left, state.daysLeft, state.daysLeft), style = type.label, color = colors.textSecondary)
+        Text(stringResource(R.string.trial_rule), style = type.caption, color = colors.textSecondary)
 
         state.stages.forEachIndexed { index, stage ->
-            if (index > 0) HorizontalDivider(thickness = AwakenTheme.dimens.hairline, color = colors.edge)
+            if (index > 0) HorizontalDivider(thickness = AwakenTheme.dimens.hairline, color = colors.divider)
             when (stage) {
                 is StageState.Today -> QuestRow(
                     model = stage.quest,
@@ -119,8 +119,8 @@ private fun TrialContent(state: TrialDetailUiState, onEvent: (TrialDetailEvent) 
                     onOpen = { onOpenQuest(stage.quest.id) },
                     showDivider = false,
                 )
-                is StageState.Cleared -> StageLine(stage.stat, stringResource(R.string.trial_stage_cleared), colors.verified)
-                is StageState.Tomorrow -> StageLine(stage.stat, stringResource(R.string.trial_stage_tomorrow), colors.mist)
+                is StageState.Cleared -> StageLine(stage.stat, stringResource(R.string.trial_stage_cleared), colors.positive)
+                is StageState.Tomorrow -> StageLine(stage.stat, stringResource(R.string.trial_stage_tomorrow), colors.textSecondary)
             }
         }
     }

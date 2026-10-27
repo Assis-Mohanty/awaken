@@ -69,7 +69,7 @@ fun PathDetailScreen(
     ) {
         Box(modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.xxs)) {
             IconButton(onClick = onBack) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.action_back), tint = colors.bone)
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.action_back), tint = colors.textPrimary)
             }
         }
         val path = state.path ?: return@Column
@@ -94,9 +94,9 @@ fun PathDetailScreen(
                     )
                 },
             ) {
-                Text(path.goal, style = AwakenTheme.type.title, color = colors.bone)
+                Text(path.goal, style = AwakenTheme.type.title, color = colors.textPrimary)
                 StatusPills(path)
-                path.recalibration?.let { Text(stringResource(it.lineRes()), style = AwakenTheme.type.label, color = colors.system) }
+                path.recalibration?.let { Text(stringResource(it.lineRes()), style = AwakenTheme.type.label, color = colors.accent) }
                 path.oracle?.let { oracle ->
                     OracleStatus(
                         state = oracle,
@@ -116,7 +116,7 @@ fun PathDetailScreen(
             SystemWindow(title = stringResource(R.string.path_week_title), accent = accent, reveal = false) {
                 WeekQuests(path)
                 if (path.quests.isEmpty() && path.oracle != OracleUiState.CHARTED) {
-                    Text(stringResource(R.string.path_no_quests_yet), style = AwakenTheme.type.caption, color = colors.mist)
+                    Text(stringResource(R.string.path_no_quests_yet), style = AwakenTheme.type.caption, color = colors.textSecondary)
                 }
             }
             Actions(path, state, onEvent)
@@ -138,7 +138,7 @@ private fun Actions(path: PathCardUi, state: PathDetailUiState, onEvent: (PathDe
             modifier = Modifier.fillMaxWidth(),
         )
         if (state.replanUsed) {
-            Text(stringResource(R.string.path_action_replan_used), style = AwakenTheme.type.caption, color = colors.mist)
+            Text(stringResource(R.string.path_action_replan_used), style = AwakenTheme.type.caption, color = colors.textSecondary)
         }
         if (path.status.canPause()) {
             SecondaryButton(
@@ -155,12 +155,12 @@ private fun Actions(path: PathCardUi, state: PathDetailUiState, onEvent: (PathDe
             )
         }
         if (state.confirmArchive) {
-            SystemWindow(title = null, accent = colors.ember, reveal = false) {
-                Text(stringResource(R.string.path_archive_confirm), style = AwakenTheme.type.body, color = colors.bone)
+            SystemWindow(title = null, accent = colors.critical, reveal = false) {
+                Text(stringResource(R.string.path_archive_confirm), style = AwakenTheme.type.body, color = colors.textPrimary)
                 PrimaryButton(
                     text = stringResource(R.string.path_action_archive),
                     onClick = { onEvent(PathDetailEvent.ConfirmArchive) },
-                    color = colors.ember,
+                    color = colors.critical,
                     modifier = Modifier.fillMaxWidth(),
                 )
                 QuietButton(text = stringResource(R.string.action_cancel), onClick = { onEvent(PathDetailEvent.CancelArchive) })

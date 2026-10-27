@@ -36,7 +36,7 @@ import androidx.glance.text.TextStyle
 import androidx.glance.unit.ColorProvider
 import com.assismohanty.awaken.MainActivity
 import com.assismohanty.awaken.R
-import com.assismohanty.awaken.core.designsystem.theme.AwakenColors
+import com.assismohanty.awaken.core.designsystem.theme.AwakenPalette
 import com.assismohanty.awaken.core.domain.DayRefresher
 import com.assismohanty.awaken.core.domain.ObserveTodayUseCase
 import com.assismohanty.awaken.core.work.ACTION_OPEN_TODAY
@@ -57,7 +57,7 @@ interface WidgetEntryPoint {
 
 /**
  * The Today widget, 4x2 (ARCH §3.6): rank badge, level, streak flame, "3/5 cleared", the next quest, tap → Today.
- * Glance can't read `AwakenTheme`, so it draws with the same colour tokens (`AwakenColors`) and nothing else.
+ * Glance can't read `AwakenTheme`, so it draws with the same colour tokens (`AwakenPalette`) and nothing else.
  */
 class TodayWidget : GlanceAppWidget() {
 
@@ -72,7 +72,7 @@ class TodayWidgetReceiver : GlanceAppWidgetReceiver() {
     override val glanceAppWidget: GlanceAppWidget = TodayWidget()
 }
 
-private val colors = AwakenColors()
+private val colors = AwakenPalette()
 
 private fun text(color: Color, size: Int, bold: Boolean = false) =
     TextStyle(color = ColorProvider(color), fontSize = size.sp, fontWeight = if (bold) FontWeight.Bold else FontWeight.Normal)

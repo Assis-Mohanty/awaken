@@ -76,7 +76,7 @@ fun AwakenNavHost(modifier: Modifier = Modifier, openTodayRequests: Int = 0, app
     }
     when (val state = launch) {
         // One frame of void while Room answers; no spinner for a local read.
-        LaunchState.Loading -> Box(modifier = modifier.fillMaxSize().background(AwakenTheme.colors.void))
+        LaunchState.Loading -> Box(modifier = modifier.fillMaxSize().background(AwakenTheme.palette.void))
         LaunchState.NeedsOnboarding -> GateBackground(rank = Rank.E, modifier = modifier) { OnboardingEntry() }
         is LaunchState.Ready -> MainScaffold(rank = state.rank, openTodayRequests = openTodayRequests, modifier = modifier)
     }
@@ -113,17 +113,17 @@ private fun MainScaffold(
                 SnackbarHost(snackbarHostState) { data ->
                     Snackbar(
                         snackbarData = data,
-                        containerColor = AwakenTheme.colors.panelRaised,
-                        contentColor = AwakenTheme.colors.bone,
-                        actionColor = AwakenTheme.colors.system,
+                        containerColor = AwakenTheme.palette.panelRaised,
+                        contentColor = AwakenTheme.palette.bone,
+                        actionColor = AwakenTheme.palette.system,
                     )
                 }
             },
             bottomBar = {
                 if (showBottomBar) {
                     NavigationBar(
-                        containerColor = AwakenTheme.colors.depth,
-                        modifier = Modifier.topHairline(AwakenTheme.colors.edge, AwakenTheme.dimens.hairline),
+                        containerColor = AwakenTheme.palette.depth,
+                        modifier = Modifier.topHairline(AwakenTheme.palette.edge, AwakenTheme.dimens.hairline),
                     ) {
                         TopLevelDestination.entries.forEach { destination ->
                             val selected = currentDestination?.hierarchy
@@ -228,7 +228,7 @@ private fun NavIcon(icon: ImageVector, selected: Boolean) {
         animationSpec = tween(motion.duration(motion.standardMs), easing = motion.standardEasing),
         label = "navMark",
     )
-    val markColor = AwakenTheme.colors.system
+    val markColor = AwakenTheme.palette.system
     Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(Spacing.xxs)) {
         Box(
             modifier = Modifier
@@ -242,9 +242,9 @@ private fun NavIcon(icon: ImageVector, selected: Boolean) {
 
 @Composable
 private fun navItemColors() = NavigationBarItemDefaults.colors(
-    selectedIconColor = AwakenTheme.colors.bone,
-    selectedTextColor = AwakenTheme.colors.bone,
-    unselectedIconColor = AwakenTheme.colors.mist,
-    unselectedTextColor = AwakenTheme.colors.mist,
+    selectedIconColor = AwakenTheme.palette.bone,
+    selectedTextColor = AwakenTheme.palette.bone,
+    unselectedIconColor = AwakenTheme.palette.mist,
+    unselectedTextColor = AwakenTheme.palette.mist,
     indicatorColor = Color.Transparent,
 )

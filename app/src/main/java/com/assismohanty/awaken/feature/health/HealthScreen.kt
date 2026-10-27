@@ -96,8 +96,8 @@ fun HealthScreen(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
                         stringResource(R.string.health_title),
-                        style = AwakenTheme.type.display,
-                        color = colors.bone,
+                        style = AwakenTheme.type.metricL,
+                        color = colors.textPrimary,
                         modifier = Modifier
                             .weight(1f)
                             .semantics { heading() },
@@ -126,8 +126,8 @@ private fun MessageWindow(status: HealthScreenStatus, onEvent: (HealthEvent) -> 
         HealthScreenStatus.READ_FAILED -> R.string.health_state_read_failed to true
         HealthScreenStatus.READY -> R.string.health_loading to false
     }
-    SystemWindow(title = null, accent = colors.verified, reveal = false) {
-        Text(stringResource(text), style = AwakenTheme.type.body, color = colors.mist)
+    SystemWindow(title = null, accent = colors.positive, reveal = false) {
+        Text(stringResource(text), style = AwakenTheme.type.body, color = colors.textSecondary)
         if (retry) {
             SecondaryButton(
                 text = stringResource(R.string.health_action_refresh),
@@ -147,12 +147,12 @@ private fun OverviewContent(overview: HealthOverview, state: HealthUiState, onEv
     TrendWindow(overview)
     SourcesWindow(overview.today)
     if (!overview.canDistance || !overview.canCalories || !overview.canHeartRate) {
-        SystemWindow(title = null, accent = colors.verified, reveal = false) {
-            Text(stringResource(R.string.health_allow_more_note), style = AwakenTheme.type.caption, color = colors.mist)
+        SystemWindow(title = null, accent = colors.positive, reveal = false) {
+            Text(stringResource(R.string.health_allow_more_note), style = AwakenTheme.type.caption, color = colors.textSecondary)
             PrimaryButton(
                 text = stringResource(R.string.health_allow_more),
                 onClick = { onEvent(HealthEvent.AllowMoreMetrics) },
-                color = colors.verified,
+                color = colors.positive,
                 modifier = Modifier.fillMaxWidth(),
             )
         }
@@ -168,7 +168,7 @@ private fun TodayWindow(overview: HealthOverview, state: HealthUiState, onEvent:
     val oneDecimal = remember { NumberFormat.getNumberInstance().apply { maximumFractionDigits = 1; minimumFractionDigits = 1 } }
     SystemWindow(
         title = stringResource(R.string.health_window_today),
-        accent = colors.verified,
+        accent = colors.positive,
         reveal = false,
         headerTrailing = {
             QuietButton(
@@ -181,7 +181,7 @@ private fun TodayWindow(overview: HealthOverview, state: HealthUiState, onEvent:
         Text(
             stringResource(R.string.health_updated, formatTime(overview.updatedAt, zone)),
             style = AwakenTheme.type.caption,
-            color = colors.mist,
+            color = colors.textSecondary,
         )
         val notAllowed = stringResource(R.string.health_not_allowed)
         Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm), modifier = Modifier.fillMaxWidth()) {
@@ -219,12 +219,12 @@ private fun MetricTile(label: String, value: String, modifier: Modifier = Modifi
     val colors = AwakenTheme.colors
     Column(
         modifier = modifier
-            .background(colors.panelRaised)
+            .background(colors.surfaceOverlay)
             .padding(Spacing.sm),
         verticalArrangement = Arrangement.spacedBy(Spacing.xxs),
     ) {
-        Text(label, style = AwakenTheme.type.caption, color = colors.mist)
-        Text(value, style = AwakenTheme.type.numericSmall, color = if (dim) colors.fog else colors.bone)
+        Text(label, style = AwakenTheme.type.caption, color = colors.textSecondary)
+        Text(value, style = AwakenTheme.type.numericSmall, color = if (dim) colors.textMuted else colors.textPrimary)
     }
 }
 
@@ -232,31 +232,31 @@ private fun MetricTile(label: String, value: String, modifier: Modifier = Modifi
 private fun WorkoutsWindow(sessions: List<HealthSession>, zone: ZoneId) {
     val colors = AwakenTheme.colors
     val type = AwakenTheme.type
-    SystemWindow(title = stringResource(R.string.health_window_workouts), accent = colors.verified, reveal = false) {
+    SystemWindow(title = stringResource(R.string.health_window_workouts), accent = colors.positive, reveal = false) {
         if (sessions.isEmpty()) {
-            Text(stringResource(R.string.health_no_workouts), style = type.body, color = colors.mist)
+            Text(stringResource(R.string.health_no_workouts), style = type.body, color = colors.textSecondary)
         }
         sessions.forEach { session ->
             val name = prettyWorkoutLabel(session.label) ?: stringResource(R.string.health_workout_default)
             Text(
                 stringResource(R.string.health_workout_title, name, formatDuration(session.duration)),
                 style = type.label,
-                color = colors.bone,
+                color = colors.textPrimary,
             )
             Text(
                 stringResource(R.string.health_workout_window, formatTime(session.start, zone), formatTime(session.end, zone)),
                 style = type.caption,
-                color = colors.mist,
+                color = colors.textSecondary,
             )
             FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.xs), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
                 session.distanceMeters?.let {
-                    Pill(text = stringResource(R.string.health_value_distance, NumberFormat.getNumberInstance().apply { maximumFractionDigits = 1 }.format(it / METERS_PER_KM)), color = colors.mist)
+                    Pill(text = stringResource(R.string.health_value_distance, NumberFormat.getNumberInstance().apply { maximumFractionDigits = 1 }.format(it / METERS_PER_KM)), color = colors.textSecondary)
                 }
                 session.activeKcal?.let {
-                    Pill(text = stringResource(R.string.health_value_kcal, NumberFormat.getIntegerInstance().format(it.toLong())), color = colors.mist)
+                    Pill(text = stringResource(R.string.health_value_kcal, NumberFormat.getIntegerInstance().format(it.toLong())), color = colors.textSecondary)
                 }
-                session.avgHeartRate?.let { Pill(text = stringResource(R.string.health_value_bpm, it), color = colors.ember) }
-                session.origin?.let { Pill(text = healthSourceName(it), color = colors.verified) }
+                session.avgHeartRate?.let { Pill(text = stringResource(R.string.health_value_bpm, it), color = colors.critical) }
+                session.origin?.let { Pill(text = healthSourceName(it), color = colors.positive) }
             }
         }
     }
@@ -266,23 +266,23 @@ private fun WorkoutsWindow(sessions: List<HealthSession>, zone: ZoneId) {
 private fun SleepWindow(session: HealthSession?, zone: ZoneId) {
     val colors = AwakenTheme.colors
     val type = AwakenTheme.type
-    SystemWindow(title = stringResource(R.string.health_window_sleep), accent = colors.statWil, reveal = false) {
+    SystemWindow(title = stringResource(R.string.health_window_sleep), accent = colors.chartSeries3, reveal = false) {
         if (session == null) {
-            Text(stringResource(R.string.health_no_sleep), style = type.body, color = colors.mist)
+            Text(stringResource(R.string.health_no_sleep), style = type.body, color = colors.textSecondary)
             return@SystemWindow
         }
-        Text(stringResource(R.string.health_sleep_total, formatDuration(session.duration)), style = type.numericSmall, color = colors.bone)
+        Text(stringResource(R.string.health_sleep_total, formatDuration(session.duration)), style = type.numericSmall, color = colors.textPrimary)
         Text(
             stringResource(R.string.health_workout_window, formatTime(session.start, zone), formatTime(session.end, zone)),
             style = type.caption,
-            color = colors.mist,
+            color = colors.textSecondary,
         )
         if (session.stages.isEmpty()) {
-            Text(stringResource(R.string.health_sleep_no_stages), style = type.caption, color = colors.mist)
+            Text(stringResource(R.string.health_sleep_no_stages), style = type.caption, color = colors.textSecondary)
         } else {
             StageTimeline(session)
         }
-        session.origin?.let { Pill(text = healthSourceName(it), color = colors.verified) }
+        session.origin?.let { Pill(text = healthSourceName(it), color = colors.positive) }
     }
 }
 
@@ -306,7 +306,7 @@ private fun StageTimeline(session: HealthSession) {
                 Modifier
                     .weight(weight)
                     .height(STAGE_BAR_HEIGHT)
-                    .background(stageColor(segment.type, colors.ember, colors.mist, colors.statInt, colors.statWil, colors.fog)),
+                    .background(stageColor(segment.type, colors.critical, colors.textSecondary, colors.chartSeries2, colors.chartSeries3, colors.textMuted)),
             )
         }
     }
@@ -315,7 +315,7 @@ private fun StageTimeline(session: HealthSession) {
             Text(
                 stringResource(R.string.health_stage_line, stageName(stage), formatDuration(duration)),
                 style = AwakenTheme.type.caption,
-                color = stageColor(stage, colors.ember, colors.mist, colors.statInt, colors.statWil, colors.fog),
+                color = stageColor(stage, colors.critical, colors.textSecondary, colors.chartSeries2, colors.chartSeries3, colors.textMuted),
             )
         }
     }
@@ -343,19 +343,19 @@ private fun stageName(stage: SleepStageType): String = stringResource(
 @Composable
 private fun TrendWindow(overview: HealthOverview) {
     val colors = AwakenTheme.colors
-    SystemWindow(title = stringResource(R.string.health_window_trend), accent = colors.verified, reveal = false) {
+    SystemWindow(title = stringResource(R.string.health_window_trend), accent = colors.positive, reveal = false) {
         TrendChart(
             title = stringResource(R.string.health_metric_steps),
             days = overview.trend,
             value = { it.steps.toDouble() },
-            color = colors.statVit,
+            color = colors.chartSeries4,
         )
         if (overview.canDistance) {
             TrendChart(
                 title = stringResource(R.string.health_metric_distance),
                 days = overview.trend,
                 value = { it.distanceMeters / METERS_PER_KM },
-                color = colors.statInt,
+                color = colors.chartSeries2,
             )
         }
         if (overview.canCalories) {
@@ -363,7 +363,7 @@ private fun TrendWindow(overview: HealthOverview) {
                 title = stringResource(R.string.health_metric_calories),
                 days = overview.trend,
                 value = { it.activeKcal },
-                color = colors.statStr,
+                color = colors.chartSeries1,
             )
         }
     }
@@ -376,7 +376,7 @@ private fun TrendChart(title: String, days: List<HealthTrendDay>, value: (Health
     val max = (values.maxOrNull() ?: 0.0).coerceAtLeast(1.0)
     val numbers = NumberFormat.getIntegerInstance()
     val description = stringResource(R.string.cd_trend_chart, title, values.joinToString(", ") { numbers.format(it.toLong()) })
-    Text(title, style = AwakenTheme.type.label, color = colors.bone)
+    Text(title, style = AwakenTheme.type.label, color = colors.textPrimary)
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -395,7 +395,7 @@ private fun TrendChart(title: String, days: List<HealthTrendDay>, value: (Health
                 Text(
                     day.date.dayOfWeek.getDisplayName(TextStyle.NARROW, Locale.current.platformLocale),
                     style = AwakenTheme.type.caption,
-                    color = colors.mist,
+                    color = colors.textSecondary,
                 )
             }
         }
@@ -406,15 +406,15 @@ private fun TrendChart(title: String, days: List<HealthTrendDay>, value: (Health
 private fun SourcesWindow(today: HealthDay) {
     val colors = AwakenTheme.colors
     val origins = (today.exercise + today.sleep).mapNotNull { it.origin }.distinct()
-    SystemWindow(title = stringResource(R.string.health_window_sources), accent = colors.verified, reveal = false) {
+    SystemWindow(title = stringResource(R.string.health_window_sources), accent = colors.positive, reveal = false) {
         if (origins.isEmpty()) {
-            Text(stringResource(R.string.health_sources_none), style = AwakenTheme.type.body, color = colors.mist)
+            Text(stringResource(R.string.health_sources_none), style = AwakenTheme.type.body, color = colors.textSecondary)
         } else {
             FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.xs), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
-                origins.forEach { Pill(text = healthSourceName(it), color = colors.verified) }
+                origins.forEach { Pill(text = healthSourceName(it), color = colors.positive) }
             }
         }
-        Text(stringResource(R.string.health_sources_note), style = AwakenTheme.type.caption, color = colors.mist)
+        Text(stringResource(R.string.health_sources_note), style = AwakenTheme.type.caption, color = colors.textSecondary)
     }
 }
 

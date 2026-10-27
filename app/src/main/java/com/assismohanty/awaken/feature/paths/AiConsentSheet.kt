@@ -38,7 +38,7 @@ fun AiConsentSheet(onEnable: () -> Unit, onNotNow: () -> Unit) {
     ModalBottomSheet(
         onDismissRequest = onNotNow,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-        containerColor = AwakenTheme.colors.panelRaised,
+        containerColor = AwakenTheme.colors.surfaceOverlay,
         shape = AwakenTheme.shapes.window,
     ) {
         AiConsentContent(onEnable, onNotNow, modifier = Modifier.navigationBarsPadding())
@@ -56,10 +56,10 @@ fun AiConsentContent(onEnable: () -> Unit, onNotNow: () -> Unit, modifier: Modif
             .padding(horizontal = Spacing.gutter, vertical = Spacing.md),
         verticalArrangement = Arrangement.spacedBy(Spacing.sm),
     ) {
-        Text(stringResource(R.string.consent_title), style = type.windowTitle, color = colors.system, modifier = Modifier.semantics { heading() })
-        Text(stringResource(R.string.consent_headline), style = type.title, color = colors.bone)
-        Text(stringResource(R.string.consent_body), style = type.body, color = colors.bone)
-        Text(stringResource(R.string.consent_rewards), style = type.body, color = colors.mist)
+        Text(stringResource(R.string.consent_title), style = type.windowTitle, color = colors.accent, modifier = Modifier.semantics { heading() })
+        Text(stringResource(R.string.consent_headline), style = type.title, color = colors.textPrimary)
+        Text(stringResource(R.string.consent_body), style = type.body, color = colors.textPrimary)
+        Text(stringResource(R.string.consent_rewards), style = type.body, color = colors.textSecondary)
         WhatIsSent()
         PrimaryButton(text = stringResource(R.string.consent_enable), onClick = onEnable, modifier = Modifier.fillMaxWidth().padding(top = Spacing.xs))
         SecondaryButton(text = stringResource(R.string.consent_not_now), onClick = onNotNow, modifier = Modifier.fillMaxWidth())
@@ -76,11 +76,11 @@ fun WhatIsSent(modifier: Modifier = Modifier) {
             onClick = { open = !open },
         )
         if (open) {
-            Text(stringResource(R.string.consent_sent_title), style = AwakenTheme.type.label, color = AwakenTheme.colors.bone)
+            Text(stringResource(R.string.consent_sent_title), style = AwakenTheme.type.label, color = AwakenTheme.colors.textPrimary)
             listOf(R.string.consent_sent_1, R.string.consent_sent_2, R.string.consent_sent_3, R.string.consent_sent_4).forEach { line ->
-                Text("• " + stringResource(line), style = AwakenTheme.type.body, color = AwakenTheme.colors.bone)
+                Text("• " + stringResource(line), style = AwakenTheme.type.body, color = AwakenTheme.colors.textPrimary)
             }
-            Text(stringResource(R.string.consent_not_sent), style = AwakenTheme.type.caption, color = AwakenTheme.colors.mist)
+            Text(stringResource(R.string.consent_not_sent), style = AwakenTheme.type.caption, color = AwakenTheme.colors.textSecondary)
         }
     }
 }

@@ -114,7 +114,7 @@ private fun GatePicker(state: GatesUiState, onEvent: (GatesEvent) -> Unit, onBac
         Text(
             stringResource(R.string.gates_title),
             style = AwakenTheme.type.windowTitle,
-            color = colors.bone,
+            color = colors.textPrimary,
             modifier = Modifier.weight(1f).semantics { heading() },
         )
         QuietButton(text = stringResource(R.string.action_back), onClick = onBack)
@@ -122,7 +122,7 @@ private fun GatePicker(state: GatesUiState, onEvent: (GatesEvent) -> Unit, onBac
     Text(
         stringResource(R.string.gates_body, shortClock(GateRules.BREACH_BUDGET_MS)),
         style = AwakenTheme.type.body,
-        color = colors.mist,
+        color = colors.textSecondary,
     )
     state.tiles.chunked(2).forEach { row ->
         Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
@@ -144,7 +144,7 @@ private fun GatePortal(tile: GateTile, selected: Boolean, onClick: () -> Unit, m
     val colors = AwakenTheme.colors
     val dimens = AwakenTheme.dimens
     val shape = AwakenTheme.shapes.window
-    val gateColor = if (tile.available) colors.gate(tile.rank) else colors.fog
+    val gateColor = if (tile.available) colors.gate(tile.rank) else colors.textMuted
     val name = stringResource(R.string.gate_name, tile.rank.name)
     val minutes = stringResource(R.string.gate_minutes, tile.minutes)
     val description = if (tile.available) {
@@ -155,19 +155,19 @@ private fun GatePortal(tile: GateTile, selected: Boolean, onClick: () -> Unit, m
     Column(
         modifier = modifier
             .defaultMinSize(minHeight = dimens.gateTileHeight)
-            .background(if (selected) gateColor.copy(alpha = AwakenAlpha.TINT) else colors.panel, shape)
-            .border(if (selected) dimens.accentWidth else dimens.hairline, if (selected) gateColor else colors.edge, shape)
+            .background(if (selected) gateColor.copy(alpha = AwakenAlpha.TINT) else colors.surfaceElevated, shape)
+            .border(if (selected) dimens.accentWidth else dimens.hairline, if (selected) gateColor else colors.divider, shape)
             .clickable(enabled = tile.available, role = Role.RadioButton, onClick = onClick)
             .semantics(mergeDescendants = true) { contentDescription = description }
             .padding(Spacing.md),
         verticalArrangement = Arrangement.spacedBy(Spacing.xxs),
     ) {
         Text(name, style = AwakenTheme.type.windowTitle, color = gateColor)
-        Text(minutes, style = AwakenTheme.type.numeric, color = if (tile.available) colors.bone else colors.fog)
+        Text(minutes, style = AwakenTheme.type.numeric, color = if (tile.available) colors.textPrimary else colors.textMuted)
         if (tile.available) {
             DifficultyChip(tile.rank.difficulty)
         } else {
-            Text(stringResource(R.string.gate_tile_late), style = AwakenTheme.type.caption, color = colors.mist)
+            Text(stringResource(R.string.gate_tile_late), style = AwakenTheme.type.caption, color = colors.textSecondary)
         }
     }
 }
@@ -177,7 +177,7 @@ private fun GatePortal(tile: GateTile, selected: Boolean, onClick: () -> Unit, m
 private fun GateSetupWindow(setup: GateSetup, onEvent: (GatesEvent) -> Unit) {
     val colors = AwakenTheme.colors
     SystemWindow(title = stringResource(R.string.gate_name, setup.rank.name), accent = colors.gate(setup.rank)) {
-        Text(stringResource(R.string.gate_stat_label), style = AwakenTheme.type.label, color = colors.mist)
+        Text(stringResource(R.string.gate_stat_label), style = AwakenTheme.type.label, color = colors.textSecondary)
         FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.xs), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
             GATE_STATS.forEach { stat ->
                 ChoiceChip(
@@ -195,14 +195,14 @@ private fun GateSetupWindow(setup: GateSetup, onEvent: (GatesEvent) -> Unit) {
             singleLine = true,
             keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences, imeAction = ImeAction.Done),
             colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = colors.system,
-                unfocusedBorderColor = colors.edge,
-                focusedLabelColor = colors.system,
-                cursorColor = colors.system,
+                focusedBorderColor = colors.accent,
+                unfocusedBorderColor = colors.divider,
+                focusedLabelColor = colors.accent,
+                cursorColor = colors.accent,
             ),
             modifier = Modifier.fillMaxWidth(),
         )
-        Text(stringResource(R.string.gate_rule, shortClock(GateRules.BREACH_BUDGET_MS)), style = AwakenTheme.type.caption, color = colors.mist)
+        Text(stringResource(R.string.gate_rule, shortClock(GateRules.BREACH_BUDGET_MS)), style = AwakenTheme.type.caption, color = colors.textSecondary)
         PrimaryButton(
             text = stringResource(R.string.action_enter_gate),
             onClick = { onEvent(GatesEvent.Enter) },
@@ -224,17 +224,17 @@ private fun GateRun(active: ActiveGate, confirmAbandon: Boolean, onEvent: (Gates
         Text(stringResource(R.string.gate_name, active.rank.name), style = AwakenTheme.type.windowTitle, color = colors.gate(active.rank))
         Row(horizontalArrangement = Arrangement.spacedBy(Spacing.xs), verticalAlignment = Alignment.CenterVertically) {
             StatChip(active.stat)
-            active.label?.let { Text(it, style = AwakenTheme.type.label, color = colors.bone) }
+            active.label?.let { Text(it, style = AwakenTheme.type.label, color = colors.textPrimary) }
         }
         GateDial(gate = active.rank, remaining = active.remaining, total = active.total, breachUsed = active.breachUsed)
         Text(
             stringResource(R.string.gate_breach_line, shortClock(active.breachUsed.toMillis()), shortClock(GateRules.BREACH_BUDGET_MS)),
             style = AwakenTheme.type.label,
-            color = if (active.breachUsed.isZero) colors.mist else colors.ember,
+            color = if (active.breachUsed.isZero) colors.textSecondary else colors.critical,
         )
         when {
             active.paused -> {
-                Text(stringResource(R.string.gate_paused_left, shortClock(active.pauseLeft.toMillis())), style = AwakenTheme.type.label, color = colors.bone)
+                Text(stringResource(R.string.gate_paused_left, shortClock(active.pauseLeft.toMillis())), style = AwakenTheme.type.label, color = colors.textPrimary)
                 PrimaryButton(stringResource(R.string.action_resume), onClick = { onEvent(GatesEvent.Resume) }, modifier = Modifier.fillMaxWidth())
             }
             active.canPause -> SecondaryButton(
@@ -242,12 +242,12 @@ private fun GateRun(active: ActiveGate, confirmAbandon: Boolean, onEvent: (Gates
                 onClick = { onEvent(GatesEvent.Pause) },
                 modifier = Modifier.fillMaxWidth(),
             )
-            else -> Text(stringResource(R.string.gate_pause_used), style = AwakenTheme.type.caption, color = colors.mist)
+            else -> Text(stringResource(R.string.gate_pause_used), style = AwakenTheme.type.caption, color = colors.textSecondary)
         }
         if (confirmAbandon) {
-            SystemWindow(title = null, accent = colors.ember, reveal = false) {
-                Text(stringResource(R.string.gate_abandon_confirm), style = AwakenTheme.type.body, color = colors.bone)
-                PrimaryButton(stringResource(R.string.action_abandon_gate), onClick = { onEvent(GatesEvent.ConfirmAbandon) }, color = colors.ember, modifier = Modifier.fillMaxWidth())
+            SystemWindow(title = null, accent = colors.critical, reveal = false) {
+                Text(stringResource(R.string.gate_abandon_confirm), style = AwakenTheme.type.body, color = colors.textPrimary)
+                PrimaryButton(stringResource(R.string.action_abandon_gate), onClick = { onEvent(GatesEvent.ConfirmAbandon) }, color = colors.critical, modifier = Modifier.fillMaxWidth())
                 QuietButton(stringResource(R.string.action_keep_going), onClick = { onEvent(GatesEvent.CancelAbandon) }, modifier = Modifier.fillMaxWidth())
             }
         } else {

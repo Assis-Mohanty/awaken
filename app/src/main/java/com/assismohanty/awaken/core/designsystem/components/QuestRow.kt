@@ -87,7 +87,7 @@ fun QuestRow(
     modifier: Modifier = Modifier,
     showDivider: Boolean = true,
 ) {
-    val colors = AwakenTheme.colors
+    val colors = AwakenTheme.palette
     val type = AwakenTheme.type
     val dimens = AwakenTheme.dimens
     val haptics = AwakenTheme.haptics
@@ -207,7 +207,7 @@ fun QuestRow(
 
 @Composable
 private fun CheckControl(model: QuestRowModel, canComplete: Boolean, onComplete: () -> Unit) {
-    val colors = AwakenTheme.colors
+    val colors = AwakenTheme.palette
     val dimens = AwakenTheme.dimens
     when {
         model.state == QuestRowState.DONE -> Icon(
@@ -257,7 +257,7 @@ internal val previewQuests = listOf(
 @Composable
 private fun QuestRowPreview() {
     AwakenTheme {
-        SystemWindow(title = "DAILY DIRECTIVE", accent = AwakenTheme.colors.rankC, reveal = false, modifier = Modifier.padding(Spacing.gutter)) {
+        SystemWindow(title = "DAILY DIRECTIVE", accent = AwakenTheme.palette.rankC, reveal = false, modifier = Modifier.padding(Spacing.gutter)) {
             previewQuests.forEachIndexed { index, quest -> QuestRow(quest, onComplete = {}, onOpen = {}, showDivider = index > 0) }
         }
     }

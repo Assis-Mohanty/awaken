@@ -32,12 +32,12 @@ import java.util.Locale
 /** Outlined field colours for the System palette (works on both themes). */
 @Composable
 fun awakenTextFieldColors(): TextFieldColors = OutlinedTextFieldDefaults.colors(
-    focusedBorderColor = AwakenTheme.colors.system,
-    unfocusedBorderColor = AwakenTheme.colors.edge,
-    focusedLabelColor = AwakenTheme.colors.system,
-    cursorColor = AwakenTheme.colors.system,
-    focusedTextColor = AwakenTheme.colors.bone,
-    unfocusedTextColor = AwakenTheme.colors.bone,
+    focusedBorderColor = AwakenTheme.palette.system,
+    unfocusedBorderColor = AwakenTheme.palette.edge,
+    focusedLabelColor = AwakenTheme.palette.system,
+    cursorColor = AwakenTheme.palette.system,
+    focusedTextColor = AwakenTheme.palette.bone,
+    unfocusedTextColor = AwakenTheme.palette.bone,
 )
 
 /**
@@ -66,8 +66,8 @@ fun NumberField(
             onValueChange(cleaned.toDoubleOrNull() ?: 0.0)
         },
         singleLine = true,
-        textStyle = AwakenTheme.type.label.copy(textAlign = TextAlign.End, color = AwakenTheme.colors.bone),
-        cursorBrush = SolidColor(AwakenTheme.colors.system),
+        textStyle = AwakenTheme.type.label.copy(textAlign = TextAlign.End, color = AwakenTheme.palette.bone),
+        cursorBrush = SolidColor(AwakenTheme.palette.system),
         keyboardOptions = KeyboardOptions(keyboardType = if (decimals) KeyboardType.Decimal else KeyboardType.Number, imeAction = ImeAction.Next),
         interactionSource = interaction,
         modifier = modifier
@@ -82,7 +82,7 @@ fun NumberField(
                 singleLine = true,
                 visualTransformation = VisualTransformation.None,
                 interactionSource = interaction,
-                suffix = suffix?.let { { Text(it, style = AwakenTheme.type.caption, color = AwakenTheme.colors.mist) } },
+                suffix = suffix?.let { { Text(it, style = AwakenTheme.type.caption, color = AwakenTheme.palette.mist) } },
                 colors = colors,
                 contentPadding = PaddingValues(horizontal = Spacing.xs, vertical = Spacing.xs),
                 container = {

@@ -30,21 +30,23 @@ fun AwakenTheme(
     themeId: String = "default",
     content: @Composable () -> Unit,
 ) {
+    val palette = if (darkTheme) AwakenPalette.Dark else AwakenPalette.Light
     val colors = if (darkTheme) AwakenColors.Dark else AwakenColors.Light
     val type = remember { AwakenType() }
     val reduce = reduceMotion || systemReduceMotion()
     val motion = remember(reduce) { AwakenMotion(reduceMotion = reduce) }
     val shapes = remember { AwakenShapes() }
     val dimens = remember { AwakenDimens() }
-    val colorScheme = remember(colors, darkTheme) { colors.toColorScheme(darkTheme) }
+    val colorScheme = remember(palette, darkTheme) { palette.toColorScheme(darkTheme) }
     CompositionLocalProvider(
+        LocalAwakenPalette provides palette,
         LocalAwakenColors provides colors,
         LocalAwakenType provides type,
         LocalAwakenMotion provides motion,
         LocalAwakenShapes provides shapes,
         LocalAwakenDimens provides dimens,
         LocalHaptics provides rememberHaptics(hapticsEnabled),
-        LocalThemeTint provides colors.theme(themeId),
+        LocalThemeTint provides palette.theme(themeId),
     ) {
         MaterialTheme(
             colorScheme = colorScheme,
@@ -55,7 +57,7 @@ fun AwakenTheme(
 }
 
 /** Material slots mapped onto our tokens; identical mapping for both palettes so components never branch on mode. */
-private fun AwakenColors.toColorScheme(dark: Boolean): ColorScheme {
+private fun AwakenPalette.toColorScheme(dark: Boolean): ColorScheme {
     val base = if (dark) darkColorScheme() else lightColorScheme()
     return base.copy(
         primary = system,
@@ -85,9 +87,12 @@ private fun AwakenColors.toColorScheme(dark: Boolean): ColorScheme {
     )
 }
 
-/** Token access for components and screens: `AwakenTheme.colors.system`, `AwakenTheme.type.title`, … */
+/** Token access: screens use `AwakenTheme.colors.textPrimary`, `AwakenTheme.type.title`, …; design-system code may read [palette]. */
 object AwakenTheme {
+    /** Semantic tokens (DS §8.4): the only colours feature code may use. */
     val colors: AwakenColors @Composable @ReadOnlyComposable get() = LocalAwakenColors.current
+    /** Raw palette for core/designsystem components; never for feature code. */
+    val palette: AwakenPalette @Composable @ReadOnlyComposable get() = LocalAwakenPalette.current
     val type: AwakenType @Composable @ReadOnlyComposable get() = LocalAwakenType.current
     val motion: AwakenMotion @Composable @ReadOnlyComposable get() = LocalAwakenMotion.current
     val shapes: AwakenShapes @Composable @ReadOnlyComposable get() = LocalAwakenShapes.current
@@ -99,7 +104,7 @@ object AwakenTheme {
     /** Accent for a rank-coloured window: the equipped theme tint (GD §9.2), else the rank colour. Never for the crest. */
     @Composable
     @ReadOnlyComposable
-    fun rankAccent(rank: Rank): Color = LocalThemeTint.current ?: LocalAwakenColors.current.rank(rank)
+    fun rankAccent(rank: Rank): Color = LocalThemeTint.current ?: LocalAwakenPalette.current.rank(rank)
 }
 
 val LocalThemeTint = compositionLocalOf<Color?> { null }

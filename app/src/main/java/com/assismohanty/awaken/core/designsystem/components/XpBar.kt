@@ -40,7 +40,7 @@ fun XpBar(
     modifier: Modifier = Modifier,
     showLabel: Boolean = true,
 ) {
-    val colors = AwakenTheme.colors
+    val colors = AwakenTheme.palette
     val motion = AwakenTheme.motion
     val dimens = AwakenTheme.dimens
     val target = if (xpForLevel <= 0) 1f else (xpIntoLevel.toFloat() / xpForLevel).coerceIn(0f, 1f)

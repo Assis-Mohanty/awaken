@@ -90,7 +90,7 @@ fun QuestDetailScreen(
     ) {
         Box(modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.xxs)) {
             IconButton(onClick = onBack) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.action_back), tint = colors.bone)
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.action_back), tint = colors.textPrimary)
             }
         }
         Column(
@@ -112,7 +112,7 @@ fun QuestDetailScreen(
 private fun QuestDetailContent(state: QuestDetailUiState, onEvent: (QuestDetailEvent) -> Unit) {
     val colors = AwakenTheme.colors
     val type = AwakenTheme.type
-    val accent = if (state.type == QuestType.PENALTY) colors.ember else colors.stat(state.stat)
+    val accent = if (state.type == QuestType.PENALTY) colors.critical else colors.stat(state.stat)
     var showReport by rememberSaveable { mutableStateOf(false) }
     if (showReport) {
         ReportSheet(
@@ -124,11 +124,11 @@ private fun QuestDetailContent(state: QuestDetailUiState, onEvent: (QuestDetailE
         )
     }
     SystemWindow(title = stringResource(state.type.kindRes), accent = accent) {
-        Text(state.title, style = type.display, color = colors.bone, modifier = Modifier.semantics { heading() })
+        Text(state.title, style = type.metricL, color = colors.textPrimary, modifier = Modifier.semantics { heading() })
         Text(
             text = stringResource(R.string.quest_target_line, formatCount(state.target), unitLabel(state.unit, state.target), state.difficulty.label()),
             style = type.title,
-            color = colors.mist,
+            color = colors.textSecondary,
         )
         Row(horizontalArrangement = Arrangement.spacedBy(Spacing.xxs)) {
             StatChip(state.stat)
@@ -141,7 +141,7 @@ private fun QuestDetailContent(state: QuestDetailUiState, onEvent: (QuestDetailE
                 gate = state.gateRank?.let { rank -> stringResource(R.string.path_badge_gate, rank.name, rank.durationMinutes) },
             )
         }
-        if (state.description.isNotBlank()) Text(state.description, style = type.body, color = colors.bone)
+        if (state.description.isNotBlank()) Text(state.description, style = type.body, color = colors.textPrimary)
 
         // Stat split: the primary stat takes full XP, the secondary 30 % (ENGINE_DECISIONS #5).
         Text(stringResource(R.string.quest_split_primary, state.stat.label()), style = type.label, color = colors.stat(state.stat))
@@ -149,12 +149,12 @@ private fun QuestDetailContent(state: QuestDetailUiState, onEvent: (QuestDetailE
             Text(stringResource(R.string.quest_split_secondary, secondary.label()), style = type.label, color = colors.stat(secondary))
         }
 
-        Text(stringResource(state.verification.explanationRes), style = type.body, color = colors.mist)
+        Text(stringResource(state.verification.explanationRes), style = type.body, color = colors.textSecondary)
         if (state.minDurationSec > 0 && state.status == QuestStatus.ACTIVE && state.verification == VerificationSource.SELF) {
             Text(
                 text = stringResource(R.string.quest_min_duration, DateUtils.formatElapsedTime(state.minDurationSec.toLong())),
                 style = type.caption,
-                color = colors.mist,
+                color = colors.textSecondary,
             )
         }
         if (state.status == QuestStatus.STARTED) {
@@ -164,8 +164,8 @@ private fun QuestDetailContent(state: QuestDetailUiState, onEvent: (QuestDetailE
                 stringResource(R.string.quest_started)
             }
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
-                Icon(AwakenGlyphs.Hourglass, contentDescription = null, tint = colors.system, modifier = Modifier.size(AwakenTheme.dimens.iconSmall))
-                Text(text, style = type.label, color = colors.system)
+                Icon(AwakenGlyphs.Hourglass, contentDescription = null, tint = colors.accent, modifier = Modifier.size(AwakenTheme.dimens.iconSmall))
+                Text(text, style = type.label, color = colors.accent)
             }
         }
 
@@ -177,19 +177,19 @@ private fun QuestDetailContent(state: QuestDetailUiState, onEvent: (QuestDetailE
             Text(
                 text = stringResource(R.string.quest_path_rationale_label),
                 style = type.windowTitle,
-                color = colors.fog,
+                color = colors.textMuted,
                 modifier = Modifier.padding(top = Spacing.xs),
             )
-            Text(rationale, style = type.body, color = colors.bone)
+            Text(rationale, style = type.body, color = colors.textPrimary)
         }
         state.reason?.takeIf { state.rationale == null }?.let { reason ->
             Text(
                 text = stringResource(R.string.quest_reason_label),
                 style = type.windowTitle,
-                color = colors.fog,
+                color = colors.textMuted,
                 modifier = Modifier.padding(top = Spacing.xs),
             )
-            Text(reasonText(reason), style = type.body, color = colors.bone)
+            Text(reasonText(reason), style = type.body, color = colors.textPrimary)
         }
 
         Column(
@@ -198,7 +198,7 @@ private fun QuestDetailContent(state: QuestDetailUiState, onEvent: (QuestDetailE
         ) {
             if (state.canEnterGate) {
                 state.gateRank?.let { rank ->
-                    Text(stringResource(R.string.quest_gate_required), style = type.caption, color = colors.mist)
+                    Text(stringResource(R.string.quest_gate_required), style = type.caption, color = colors.textSecondary)
                     PrimaryButton(
                         stringResource(R.string.action_enter_path_gate, rank.name, rank.durationMinutes),
                         onClick = { onEvent(QuestDetailEvent.EnterGate) },
@@ -246,19 +246,19 @@ private fun SetCounterBlock(counter: SetCounterUiState, target: Int, unit: Strin
     Text(
         text = stringResource(R.string.quest_sets_title),
         style = type.windowTitle,
-        color = colors.fog,
+        color = colors.textMuted,
         modifier = Modifier.padding(top = Spacing.xs),
     )
     Text(
         text = stringResource(R.string.quest_sets_total, counter.total, target, unitLabel(unit, target)),
         style = type.numericSmall,
-        color = if (counter.total >= target) colors.verified else colors.bone,
+        color = if (counter.total >= target) colors.positive else colors.textPrimary,
     )
     counter.sets.forEachIndexed { index, setReps ->
-        Text(stringResource(R.string.quest_set_line, index + 1, setReps), style = type.caption, color = colors.mist)
+        Text(stringResource(R.string.quest_set_line, index + 1, setReps), style = type.caption, color = colors.textSecondary)
     }
     counter.restSeconds?.let { seconds ->
-        Text(stringResource(R.string.quest_sets_rest, DateUtils.formatElapsedTime(seconds)), style = type.label, color = colors.system)
+        Text(stringResource(R.string.quest_sets_rest, DateUtils.formatElapsedTime(seconds)), style = type.label, color = colors.accent)
     }
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
         val fewer = stringResource(R.string.cd_reps_fewer)
@@ -268,7 +268,7 @@ private fun SetCounterBlock(counter: SetCounterUiState, target: Int, unit: Strin
             onClick = { reps = (reps - 1).coerceAtLeast(1) },
             modifier = Modifier.semantics { contentDescription = fewer },
         )
-        Text(stringResource(R.string.quest_set_reps_value, reps), style = type.numericSmall, color = colors.bone)
+        Text(stringResource(R.string.quest_set_reps_value, reps), style = type.numericSmall, color = colors.textPrimary)
         QuietButton(
             text = "+",
             onClick = { reps = (reps + 1).coerceAtMost(SetCounter.MAX_REPS_PER_SET) },
@@ -287,7 +287,7 @@ private fun SetCounterBlock(counter: SetCounterUiState, target: Int, unit: Strin
     Text(
         text = stringResource(if (counter.full) R.string.quest_sets_full else R.string.quest_sets_note),
         style = type.caption,
-        color = colors.mist,
+        color = colors.textSecondary,
     )
 }
 

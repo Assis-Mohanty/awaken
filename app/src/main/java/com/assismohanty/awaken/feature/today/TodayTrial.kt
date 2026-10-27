@@ -55,8 +55,8 @@ fun TrialWindow(
     ) {
         when (trial) {
             is TrialSummary.Available -> {
-                Text(stringResource(R.string.trial_available_body, rank.name), style = type.body, color = colors.bone)
-                Text(stringResource(R.string.trial_rule), style = type.caption, color = colors.mist)
+                Text(stringResource(R.string.trial_available_body, rank.name), style = type.body, color = colors.textPrimary)
+                Text(stringResource(R.string.trial_rule), style = type.caption, color = colors.textSecondary)
                 PrimaryButton(
                     text = stringResource(R.string.action_begin_trial),
                     onClick = onBegin,
@@ -69,10 +69,10 @@ fun TrialWindow(
                     Text(
                         text = pluralStringResource(R.plurals.trial_progress, trial.stages, trial.cleared, trial.stages),
                         style = type.label,
-                        color = colors.bone,
+                        color = colors.textPrimary,
                         modifier = Modifier.weight(1f),
                     )
-                    Text(pluralStringResource(R.plurals.trial_days_left, trial.daysLeft, trial.daysLeft), style = type.label, color = colors.mist)
+                    Text(pluralStringResource(R.plurals.trial_days_left, trial.daysLeft, trial.daysLeft), style = type.label, color = colors.textSecondary)
                 }
                 stages.forEachIndexed { index, row ->
                     QuestRow(
@@ -105,5 +105,5 @@ fun clearedPulseAccent(cleared: Boolean, base: Color): Color {
         }
         wasCleared = cleared
     }
-    return if (cleared) lerp(colors.crit, colors.bone, pulse.value) else base
+    return if (cleared) lerp(colors.reward, colors.textPrimary, pulse.value) else base
 }

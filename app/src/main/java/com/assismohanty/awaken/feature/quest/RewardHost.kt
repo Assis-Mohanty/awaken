@@ -260,9 +260,9 @@ fun RewardHost(snackbarHostState: SnackbarHostState, modifier: Modifier = Modifi
             title = toast?.title.orEmpty(),
             message = toast?.message.orEmpty(),
             accent = when (toast?.tone) {
-                ToastTone.WARNING -> colors.ember
-                ToastTone.SYSTEM -> colors.system
-                ToastTone.ACHIEVEMENT, null -> colors.crit
+                ToastTone.WARNING -> colors.critical
+                ToastTone.SYSTEM -> colors.accent
+                ToastTone.ACHIEVEMENT, null -> colors.reward
             },
         )
     }
@@ -369,8 +369,8 @@ private const val TOAST_KEY_STRIDE = 100L
 private fun NotificationPromptDialog(onAllow: () -> Unit, onNotNow: () -> Unit) {
     val colors = AwakenTheme.colors
     Dialog(onDismissRequest = onNotNow) {
-        SystemWindow(title = stringResource(R.string.notif_prompt_title), accent = colors.system) {
-            Text(stringResource(R.string.notif_prompt_body), style = AwakenTheme.type.body, color = colors.bone)
+        SystemWindow(title = stringResource(R.string.notif_prompt_title), accent = colors.accent) {
+            Text(stringResource(R.string.notif_prompt_body), style = AwakenTheme.type.body, color = colors.textPrimary)
             PrimaryButton(text = stringResource(R.string.action_allow_reminders), onClick = onAllow, modifier = Modifier.fillMaxWidth())
             QuietButton(text = stringResource(R.string.action_not_now), onClick = onNotNow, modifier = Modifier.fillMaxWidth())
         }

@@ -115,7 +115,7 @@ private fun CreateAction(state: PathsUiState, onEvent: (PathsEvent) -> Unit) {
             modifier = Modifier.fillMaxWidth(),
         )
         if (reason != null && state.createBlock != null) {
-            Text(stringResource(reason), style = AwakenTheme.type.caption, color = AwakenTheme.colors.mist)
+            Text(stringResource(reason), style = AwakenTheme.type.caption, color = AwakenTheme.colors.textSecondary)
         }
     }
 }
@@ -155,7 +155,7 @@ private fun PathWindow(path: PathCardUi, onEvent: (PathsEvent) -> Unit, onOpen: 
         }
         path.advanceTo?.let { next -> AdvanceMoment(next, onAdvance = { onEvent(PathsEvent.Advance(path.id)) }, onStay = { onEvent(PathsEvent.Stay(path.id)) }) }
         path.recalibration?.let { signal ->
-            Text(stringResource(signal.lineRes()), style = type.label, color = colors.system)
+            Text(stringResource(signal.lineRes()), style = type.label, color = colors.accent)
         }
         WeekQuests(path)
         path.oracle?.let { oracle ->
@@ -173,15 +173,15 @@ internal fun StatusPills(path: PathCardUi) {
     val colors = AwakenTheme.colors
     Row(horizontalArrangement = Arrangement.spacedBy(Spacing.xs), verticalAlignment = Alignment.CenterVertically) {
         when (path.status) {
-            PathStatus.PAUSED -> Pill(text = stringResource(R.string.path_status_paused), color = colors.mist)
-            PathStatus.PLANNING -> Pill(text = stringResource(R.string.path_status_planning), color = colors.system)
-            else -> Pill(text = stringResource(R.string.path_status_active), color = colors.verified)
+            PathStatus.PAUSED -> Pill(text = stringResource(R.string.path_status_paused), color = colors.textSecondary)
+            PathStatus.PLANNING -> Pill(text = stringResource(R.string.path_status_planning), color = colors.accent)
+            else -> Pill(text = stringResource(R.string.path_status_active), color = colors.positive)
         }
         if (path.weekTotal > 0) {
             Text(
                 pluralStringResource(R.plurals.path_week_progress, path.weekTotal, path.weekDone, path.weekTotal),
                 style = AwakenTheme.type.caption,
-                color = colors.mist,
+                color = colors.textSecondary,
             )
         }
     }
@@ -190,8 +190,8 @@ internal fun StatusPills(path: PathCardUi) {
 /** "MILESTONE CLEARED" with the next milestone title; no reward numbers, there are none (DS §4.8). */
 @Composable
 internal fun AdvanceMoment(next: String, onAdvance: () -> Unit, onStay: () -> Unit) {
-    SystemWindow(title = stringResource(R.string.advance_title), accent = AwakenTheme.colors.system, reveal = false) {
-        Text(stringResource(R.string.advance_body, next), style = AwakenTheme.type.body, color = AwakenTheme.colors.bone)
+    SystemWindow(title = stringResource(R.string.advance_title), accent = AwakenTheme.colors.accent, reveal = false) {
+        Text(stringResource(R.string.advance_body, next), style = AwakenTheme.type.body, color = AwakenTheme.colors.textPrimary)
         Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm), verticalAlignment = Alignment.CenterVertically) {
             PrimaryButton(text = stringResource(R.string.advance_confirm), onClick = onAdvance)
             QuietButton(text = stringResource(R.string.advance_stay), onClick = onStay)
@@ -205,7 +205,7 @@ internal fun WeekQuests(path: PathCardUi) {
     val type = AwakenTheme.type
     if (path.quests.isEmpty()) {
         if (path.oracle == OracleUiState.CHARTED) {
-            Text(stringResource(R.string.path_no_quests_yet), style = type.caption, color = colors.mist)
+            Text(stringResource(R.string.path_no_quests_yet), style = type.caption, color = colors.textSecondary)
         }
         return
     }
@@ -216,17 +216,17 @@ internal fun WeekQuests(path: PathCardUi) {
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
             ) {
-                Text(quest.dayLabel, style = type.caption, color = colors.mist, modifier = Modifier.widthIn(min = Spacing.xl))
+                Text(quest.dayLabel, style = type.caption, color = colors.textSecondary, modifier = Modifier.widthIn(min = Spacing.xl))
                 Text(
                     quest.title,
                     style = type.body,
-                    color = if (quest.outcome == SlotOutcome.COMPLETED) colors.mist else colors.bone,
+                    color = if (quest.outcome == SlotOutcome.COMPLETED) colors.textSecondary else colors.textPrimary,
                     modifier = Modifier.weight(1f),
                 )
                 Text(stringResource(quest.outcome.labelRes()), style = type.caption, color = quest.outcome.color())
             }
             if (quest.carried) {
-                Text(stringResource(R.string.slot_carried), style = type.caption, color = colors.mist)
+                Text(stringResource(R.string.slot_carried), style = type.caption, color = colors.textSecondary)
             }
         }
     }
@@ -248,9 +248,9 @@ private fun SlotOutcome.labelRes(): Int = when (this) {
 
 @Composable
 private fun SlotOutcome.color() = when (this) {
-    SlotOutcome.COMPLETED -> AwakenTheme.colors.verified
-    SlotOutcome.EXPIRED -> AwakenTheme.colors.ember
-    else -> AwakenTheme.colors.mist
+    SlotOutcome.COMPLETED -> AwakenTheme.colors.positive
+    SlotOutcome.EXPIRED -> AwakenTheme.colors.critical
+    else -> AwakenTheme.colors.textSecondary
 }
 
 // ---- Previews ----------------------------------------------------------------------------------------------------
