@@ -17,6 +17,7 @@ import androidx.glance.appwidget.GlanceAppWidgetReceiver
 import androidx.glance.appwidget.action.actionStartActivity
 import androidx.glance.appwidget.cornerRadius
 import androidx.glance.appwidget.provideContent
+import androidx.glance.color.ColorProvider as dayNight
 import androidx.glance.background
 import androidx.glance.layout.Alignment
 import androidx.glance.layout.Box
@@ -56,8 +57,8 @@ interface WidgetEntryPoint {
 }
 
 /**
- * The Today widget, 4x2 (ARCH §3.6): rank badge, level, streak flame, "3/5 cleared", the next quest, tap → Today.
- * Glance can't read `AwakenTheme`, so it draws with the same colour tokens (`AwakenPalette`) and nothing else.
+ * The Today widget, 4x2 (ARCH §3.6): level and rank, streak flame, "3 of 5 done", the next quest, tap → Today.
+ * Glance can't read `AwakenTheme`, so it draws with the same colour tokens (`AwakenPalette`, light and dark) and nothing else.
  */
 class TodayWidget : GlanceAppWidget() {
 
@@ -72,10 +73,14 @@ class TodayWidgetReceiver : GlanceAppWidgetReceiver() {
     override val glanceAppWidget: GlanceAppWidget = TodayWidget()
 }
 
-private val colors = AwakenPalette.Dark
+private val light = AwakenPalette.Light
+private val dark = AwakenPalette.Dark
 
-private fun text(color: Color, size: Int, bold: Boolean = false) =
-    TextStyle(color = ColorProvider(color), fontSize = size.sp, fontWeight = if (bold) FontWeight.Bold else FontWeight.Normal)
+/** Follows the phone light/dark setting, like the app (DESIGN_SYSTEM §2.1b). */
+private fun tone(pick: (AwakenPalette) -> Color): ColorProvider = dayNight(day = pick(light), night = pick(dark))
+
+private fun text(color: ColorProvider, size: Int, bold: Boolean = false) =
+    TextStyle(color = color, fontSize = size.sp, fontWeight = if (bold) FontWeight.Medium else FontWeight.Normal)
 
 @Composable
 private fun WidgetContent(context: Context, snapshot: WidgetSnapshot) {
@@ -88,9 +93,9 @@ private fun WidgetContent(context: Context, snapshot: WidgetSnapshot) {
     Box(
         modifier = GlanceModifier
             .fillMaxSize()
-            .background(colors.panel)
+            .background(tone { it.panel })
             .cornerRadius(WIDGET_RADIUS)
-            .padding(12.dp)
+            .padding(16.dp)
             .clickable(open)
             .semantics { contentDescription = summary },
     ) {
@@ -101,45 +106,38 @@ private fun WidgetContent(context: Context, snapshot: WidgetSnapshot) {
 @Composable
 private fun Empty(context: Context) {
     Column(modifier = GlanceModifier.fillMaxSize(), verticalAlignment = Alignment.CenterVertically) {
-        Text(context.getString(R.string.app_name), style = text(colors.system, 18, bold = true))
-        Text(context.getString(R.string.widget_empty), style = text(colors.mist, 13))
+        Text(context.getString(R.string.app_name), style = text(tone { it.bone }, 17, bold = true))
+        Text(context.getString(R.string.widget_empty), style = text(tone { it.mist }, 13))
     }
 }
 
 @Composable
 private fun Filled(context: Context, snapshot: WidgetSnapshot) {
-    val rankColor = colors.rank(snapshot.rank)
     Row(modifier = GlanceModifier.fillMaxSize(), verticalAlignment = Alignment.CenterVertically) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Box(
-                modifier = GlanceModifier.size(44.dp).background(rankColor).cornerRadius(8.dp),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(snapshot.rank.name, style = text(colors.void, 22, bold = true))
-            }
-            Spacer(GlanceModifier.size(4.dp))
-            Text(context.getString(R.string.level_short, snapshot.level), style = text(colors.bone, 13, bold = true))
+        Column {
+            Text(snapshot.level.toString(), style = text(tone { it.bone }, 34, bold = true))
+            Text(context.getString(R.string.widget_level, snapshot.rank.name), style = text(tone { it.mist }, 12))
         }
-        Spacer(GlanceModifier.width(12.dp))
+        Spacer(GlanceModifier.width(20.dp))
         Column(modifier = GlanceModifier.fillMaxWidth()) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Image(
                     provider = ImageProvider(R.drawable.ic_widget_flame),
                     contentDescription = null,
-                    colorFilter = ColorFilter.tint(ColorProvider(colors.crit)),
-                    modifier = GlanceModifier.size(18.dp),
+                    colorFilter = ColorFilter.tint(tone { it.crit }),
+                    modifier = GlanceModifier.size(16.dp),
                 )
-                Text(" ${snapshot.streak}", style = text(colors.crit, 15, bold = true))
+                Text(" ${snapshot.streak}", style = text(tone { it.bone }, 15, bold = true))
                 Spacer(GlanceModifier.width(12.dp))
                 Text(
                     context.getString(R.string.widget_progress, snapshot.completed, snapshot.total),
-                    style = text(if (snapshot.cleared) colors.verified else colors.bone, 15, bold = true),
+                    style = text(if (snapshot.cleared) tone { it.verified } else tone { it.bone }, 15, bold = true),
                 )
             }
             Spacer(GlanceModifier.size(6.dp))
             Text(
                 text = snapshot.nextQuest?.let { context.getString(R.string.widget_next, it) } ?: context.getString(R.string.widget_all_done),
-                style = text(colors.mist, 13),
+                style = text(tone { it.mist }, 13),
                 maxLines = 2,
             )
         }
@@ -161,4 +159,4 @@ private fun summaryText(context: Context, snapshot: WidgetSnapshot): String =
         )
     }
 
-private val WIDGET_RADIUS = 14.dp
+private val WIDGET_RADIUS = 24.dp

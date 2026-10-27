@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Mirrors the dark `void` token in core/designsystem/theme/Color.kt. -->
-    <color name="void_background">#FF000000</color>
+    <!-- Mirror the dark `void` and `panel` tokens in core/designsystem/theme/Color.kt. -->
+    <color name="void_background">#FF0F0F0F</color>
+    <color name="panel_background">#FF1F1E1C</color>
 </resources>
