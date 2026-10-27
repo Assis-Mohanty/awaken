@@ -28,7 +28,10 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.ui.graphics.Color
 import com.assismohanty.awaken.R
+import com.assismohanty.awaken.core.designsystem.components.LargeTitleScaffold
+import com.assismohanty.awaken.core.designsystem.components.SkeletonCard
 import com.assismohanty.awaken.core.data.db.entity.FoodLogEntity
 import com.assismohanty.awaken.core.data.db.entity.Meal
 import com.assismohanty.awaken.core.designsystem.components.AwakenGlyphs
@@ -76,29 +79,18 @@ fun DietRoute(modifier: Modifier = Modifier, viewModel: DietViewModel = hiltView
 @Composable
 fun DietScreen(state: DietUiState, onEvent: (DietEvent) -> Unit, modifier: Modifier = Modifier) {
     val colors = AwakenTheme.colors
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState()),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        Column(
-            modifier = Modifier
-                .widthIn(max = Spacing.contentMaxWidth)
-                .fillMaxWidth()
-                .padding(horizontal = Spacing.gutter, vertical = Spacing.lg),
-            verticalArrangement = Arrangement.spacedBy(Spacing.lg),
-        ) {
-            Text(lexString(R.string.diet_title), style = AwakenTheme.type.metricL, color = colors.textPrimary, modifier = Modifier.semantics { heading() })
-            if (state.loading) return@Column
-            val setup = state.setup
-            val plan = state.plan
-            when {
-                setup != null -> SetupWindow(setup, canCancel = plan != null, onEvent = onEvent)
-                plan != null -> Diary(state, plan, onEvent)
-            }
-            Text(lexString(R.string.diet_tracker_note), style = AwakenTheme.type.caption, color = colors.textMuted)
+    LargeTitleScaffold(title = lexString(R.string.diet_title), modifier = modifier) {
+        if (state.loading) {
+            SkeletonCard()
+            return@LargeTitleScaffold
         }
+        val setup = state.setup
+        val plan = state.plan
+        when {
+            setup != null -> SetupWindow(setup, canCancel = plan != null, onEvent = onEvent)
+            plan != null -> Diary(state, plan, onEvent)
+        }
+        Text(lexString(R.string.diet_tracker_note), style = AwakenTheme.type.caption, color = colors.textMuted)
     }
     state.search?.let { FoodSearchSheet(it, onEvent) }
     state.amount?.let { AmountSheet(it, onEvent) }
@@ -158,7 +150,7 @@ private fun SetupWindow(form: SetupForm, canCancel: Boolean, onEvent: (DietEvent
         if (preview == null) {
             Text(lexString(R.string.diet_setup_incomplete), style = type.caption, color = colors.textSecondary)
         } else {
-            Text(lexString(R.string.diet_setup_budget, formatCount(preview.kcal)), style = type.numeric, color = colors.accent)
+            Text(lexString(R.string.diet_setup_budget, formatCount(preview.kcal)), style = type.numeric, color = colors.textPrimary)
             Text(lexString(R.string.diet_setup_preview, formatCount(preview.bmr), formatCount(preview.tdee)), style = type.caption, color = colors.textSecondary)
             Text(
                 lexString(
@@ -248,7 +240,7 @@ private fun BudgetWindow(plan: DietPlan, totals: Nutrients, modifier: Modifier =
                 ChartSpec.Ring(
                     progress = if (goal > 0) eaten.toFloat() / goal else 0f,
                     description = lexString(R.string.cd_diet_ring, formatCount(eaten), formatCount(goal)),
-                    color = if (remaining < 0) colors.critical else colors.accent,
+                    color = if (remaining < 0) colors.critical else colors.positive,
                 ),
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -298,7 +290,7 @@ private fun NutrientLine(nutrient: Nutrient, amount: Double, target: Double?, ki
             )
         }
         if (target != null && target > 0.0) {
-            Chart(ChartSpec.Progress(progress = (amount / target).toFloat(), color = if (over) colors.critical else colors.accent))
+            Chart(ChartSpec.Progress(progress = (amount / target).toFloat(), color = if (over) colors.critical else nutrient.fillColor()))
         }
     }
 }
@@ -436,4 +428,14 @@ private fun DietDiaryPreview() {
 @Composable
 private fun DietSetupPreview() {
     AwakenTheme(reduceMotion = true) { DietScreen(previewDietState(setup = true), onEvent = {}) }
+}
+
+/** Macro fills in the stat accents (DESIGN_SYSTEM §2.1): one hue per macro, everything else neutral ink. */
+@Composable
+private fun Nutrient.fillColor(): Color = when (this) {
+    Nutrient.PROTEIN -> AwakenTheme.colors.chartSeries1
+    Nutrient.CARBS -> AwakenTheme.colors.chartSeries3
+    Nutrient.FAT -> AwakenTheme.colors.chartSeries5
+    Nutrient.FIBER -> AwakenTheme.colors.chartSeries4
+    else -> AwakenTheme.colors.textSecondary
 }
