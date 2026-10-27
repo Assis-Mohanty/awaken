@@ -41,6 +41,8 @@ import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.assismohanty.awaken.R
+import com.assismohanty.awaken.core.designsystem.components.LargeTitleScaffold
+import com.assismohanty.awaken.core.designsystem.components.SkeletonCard
 import com.assismohanty.awaken.core.data.db.entity.WorkoutEntity
 import com.assismohanty.awaken.core.data.db.entity.WorkoutSetEntity
 import com.assismohanty.awaken.core.designsystem.components.AwakenGlyphs
@@ -89,40 +91,24 @@ fun GymRoute(modifier: Modifier = Modifier, viewModel: GymViewModel = hiltViewMo
 @Composable
 fun GymScreen(state: GymUiState, onEvent: (GymEvent) -> Unit, modifier: Modifier = Modifier) {
     val colors = AwakenTheme.colors
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState()),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        Column(
-            modifier = Modifier
-                .widthIn(max = Spacing.contentMaxWidth)
-                .fillMaxWidth()
-                .padding(horizontal = Spacing.gutter, vertical = Spacing.lg),
-            verticalArrangement = Arrangement.spacedBy(Spacing.lg),
-        ) {
-            Text(
-                lexString(R.string.gym_title),
-                style = AwakenTheme.type.metricL,
-                color = colors.textPrimary,
-                modifier = Modifier.semantics { heading() },
-            )
-            if (state.loading) return@Column
-            val active = state.active
-            if (active != null) {
-                ActiveSession(active, state.now, state.previous, onEvent)
-            } else {
-                state.notice?.let { NoticeLine(it, onEvent) }
-                PrimaryButton(
-                    text = lexString(R.string.gym_start_empty),
-                    onClick = { onEvent(GymEvent.StartEmpty) },
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                state.overview?.let { GymHome(it, onEvent) }
-            }
-            Text(lexString(R.string.gym_tracker_note), style = AwakenTheme.type.caption, color = colors.textMuted)
+    LargeTitleScaffold(title = lexString(R.string.gym_title), modifier = modifier) {
+        if (state.loading) {
+            SkeletonCard()
+            return@LargeTitleScaffold
         }
+        val active = state.active
+        if (active != null) {
+            ActiveSession(active, state.now, state.previous, onEvent)
+        } else {
+            state.notice?.let { NoticeLine(it, onEvent) }
+            PrimaryButton(
+                text = lexString(R.string.gym_start_empty),
+                onClick = { onEvent(GymEvent.StartEmpty) },
+                modifier = Modifier.fillMaxWidth(),
+            )
+            state.overview?.let { GymHome(it, onEvent) }
+        }
+        Text(lexString(R.string.gym_tracker_note), style = AwakenTheme.type.caption, color = colors.textMuted)
     }
     state.picker?.let { ExercisePickerSheet(it, onEvent) }
     state.detail?.let { ExerciseDetailSheet(it, canAdd = true, onEvent = onEvent) }
