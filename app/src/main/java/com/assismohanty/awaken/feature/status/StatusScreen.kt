@@ -34,6 +34,15 @@ import androidx.compose.ui.semantics.Role
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.assismohanty.awaken.R
+import com.assismohanty.awaken.core.designsystem.components.HeaderIconButton
+import com.assismohanty.awaken.core.designsystem.components.LargeTitleScaffold
+import com.assismohanty.awaken.core.designsystem.components.LevelModule
+import com.assismohanty.awaken.core.designsystem.components.ListRow
+import com.assismohanty.awaken.core.designsystem.components.MetricCard
+import com.assismohanty.awaken.core.designsystem.components.SkeletonCard
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.height
 import com.assismohanty.awaken.core.data.repo.Chapter
 import com.assismohanty.awaken.core.designsystem.components.AwakenGlyphs
 import com.assismohanty.awaken.core.designsystem.components.ChapterRevealDialog
@@ -104,46 +113,47 @@ fun StatusScreen(
     onOpenSettings: () -> Unit = {},
     onOpenPaths: () -> Unit = {},
 ) {
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState()),
-        horizontalAlignment = Alignment.CenterHorizontally,
+    val header = state.header
+    val title = state.equippedTitleId?.let(::titleNameRes)?.let { lexString(it) }
+    LargeTitleScaffold(
+        title = lexString(R.string.nav_status),
+        subtitle = header?.let { listOfNotNull(it.name, title).joinToString(" · ") },
+        modifier = modifier,
+        actions = {
+            // Paths left the bottom bar in the v1.1 redesign; they open from here.
+            HeaderIconButton(AwakenGlyphs.Path, lexString(R.string.cd_open_paths), onOpenPaths)
+            HeaderIconButton(AwakenGlyphs.Settings, lexString(R.string.cd_open_settings), onOpenSettings)
+        },
     ) {
-        val header = state.header ?: return@Column
-        Column(
-            modifier = Modifier
-                .widthIn(max = Spacing.contentMaxWidth)
-                .fillMaxWidth()
-                .padding(horizontal = Spacing.gutter, vertical = Spacing.lg),
-            verticalArrangement = Arrangement.spacedBy(Spacing.lg),
-        ) {
-            val title = state.equippedTitleId?.let(::titleNameRes)?.let { lexString(it) }
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                // Paths left the bottom bar in the v1.1 redesign; they open from here.
-                IconButton(onClick = onOpenPaths) {
-                    Icon(
-                        imageVector = AwakenGlyphs.Path,
-                        contentDescription = lexString(R.string.cd_open_paths),
-                        tint = AwakenTheme.colors.textSecondary,
-                    )
-                }
-                IconButton(onClick = onOpenSettings) {
-                    Icon(
-                        imageVector = AwakenGlyphs.Settings,
-                        contentDescription = lexString(R.string.cd_open_settings),
-                        tint = AwakenTheme.colors.textSecondary,
-                    )
-                }
-            }
-            HunterHeader(header.copy(title = title), large = true)
-            RadarWindow(state)
-            StatsWindow(state.rank, state.stats)
-            ActivityWindow(state, onEvent)
-            AchievementsWindow(state.rank, state.achievements, state.equippedTitleId, onEvent)
-            ChaptersWindow(state.rank, state.chapters, onEvent)
-            WeeklyWindow(state, onEvent)
+        if (header == null) {
+            SkeletonCard()
+            return@LargeTitleScaffold
         }
+        // Level and gold side by side, equal heights.
+        Row(modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(Spacing.cardGap)) {
+            LevelModule(
+                level = header.level,
+                rank = header.rank,
+                xpIntoLevel = header.xpIntoLevel,
+                xpForLevel = header.xpForLevel,
+                modifier = Modifier.weight(1f).fillMaxHeight(),
+            )
+            MetricCard(
+                label = lexString(R.string.reward_gold),
+                value = formatCount(header.gold),
+                secondary = lexPlural(R.plurals.cd_streak, header.streak, header.streak),
+                icon = AwakenGlyphs.Coin,
+                iconTint = AwakenTheme.colors.reward,
+                description = lexString(R.string.cd_gold, formatCount(header.gold)),
+                modifier = Modifier.weight(1f).fillMaxHeight(),
+            )
+        }
+        RadarWindow(state)
+        StatsWindow(state.rank, state.stats)
+        ActivityWindow(state, onEvent)
+        AchievementsWindow(state.rank, state.achievements, state.equippedTitleId, onEvent)
+        ChaptersWindow(state.rank, state.chapters, onEvent)
+        WeeklyWindow(state, onEvent)
     }
     state.openChapter?.let { entry ->
         ChapterRevealDialog(
@@ -180,12 +190,16 @@ private fun StatsWindow(rank: Rank, stats: List<StatProgress>) {
     SystemWindow(title = lexString(R.string.status_window_stats), accent = AwakenTheme.rankAccent(rank), reveal = false) {
         Column(verticalArrangement = Arrangement.spacedBy(Spacing.md)) {
             stats.forEach { stat ->
-                Column(verticalArrangement = Arrangement.spacedBy(Spacing.xxs)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(stat.stat.label(), style = type.label, color = colors.stat(stat.stat), modifier = Modifier.weight(1f))
-                        Text(lexString(R.string.level_short, stat.level), style = type.numericSmall, color = colors.textPrimary)
+                Column(verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+                    ListRow(
+                        title = stat.stat.label(),
+                        icon = AwakenGlyphs.stat(stat.stat),
+                        iconTint = colors.stat(stat.stat),
+                        secondary = lexString(R.string.xp_progress, formatCount(stat.xpIntoLevel), formatCount(stat.xpForLevel)),
+                    ) {
+                        Text(lexString(R.string.level_long, stat.level), style = type.numericSmall, color = colors.textPrimary)
                     }
-                    XpBar(level = stat.level, xpIntoLevel = stat.xpIntoLevel, xpForLevel = stat.xpForLevel)
+                    XpBar(level = stat.level, xpIntoLevel = stat.xpIntoLevel, xpForLevel = stat.xpForLevel, showLabel = false)
                 }
             }
         }

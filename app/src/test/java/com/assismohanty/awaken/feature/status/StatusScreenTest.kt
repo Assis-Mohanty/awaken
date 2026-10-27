@@ -27,7 +27,7 @@ class StatusScreenTest {
     @Test
     fun sectionsRenderInOrderWithTheEquippedTitle() {
         show(previewStatusState())
-        composeRule.onNodeWithText("Rising Hunter").assertIsDisplayed()
+        composeRule.onNodeWithText("Assis · Rising Hunter").assertIsDisplayed()
         listOf("STAT PENTAGON", "STATS", "ACTIVITY", "TITLES & ACHIEVEMENTS", "CHAPTERS", "WEEKLY REPORT").forEach {
             composeRule.onNodeWithText(it).performScrollTo().assertIsDisplayed()
         }
