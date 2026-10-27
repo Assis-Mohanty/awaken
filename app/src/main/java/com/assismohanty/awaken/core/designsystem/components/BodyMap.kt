@@ -66,8 +66,9 @@ fun BodyMap(
     modifier: Modifier = Modifier,
     accent: Color = AwakenTheme.colors.stat(Stat.STR),
     onMuscleClick: ((Muscle) -> Unit)? = null,
+    initialSide: BodySide = BodySide.FRONT,
 ) {
-    var side by rememberSaveable { mutableStateOf(BodySide.FRONT) }
+    var side by rememberSaveable { mutableStateOf(initialSide) }
     Column(
         modifier = modifier.fillMaxWidth().semantics { contentDescription = description },
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -182,6 +183,21 @@ private fun BodyMapPreview() {
                 Muscle.QUADRICEPS to 0.78f, Muscle.LATS to 0.38f, Muscle.GLUTES to 0.38f, Muscle.BICEPS to 0.2f,
             ),
             description = "Chest, triceps and shoulders trained",
+        )
+    }
+}
+
+@ComponentPreview
+@Composable
+private fun BodyMapBackPreview() {
+    AwakenTheme(reduceMotion = true) {
+        BodyMap(
+            intensity = mapOf(
+                Muscle.LATS to 1f, Muscle.TRAPS to 0.56f, Muscle.TRICEPS to 0.38f, Muscle.GLUTES to 0.78f,
+                Muscle.HAMSTRINGS to 0.56f, Muscle.CALVES to 0.2f, Muscle.LOWER_BACK to 0.38f,
+            ),
+            description = "Back muscles trained",
+            initialSide = BodySide.BACK,
         )
     }
 }
