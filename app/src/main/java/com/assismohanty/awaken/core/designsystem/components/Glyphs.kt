@@ -18,7 +18,7 @@ import com.assismohanty.awaken.core.designsystem.theme.AwakenTheme
 import com.assismohanty.awaken.engine.model.Stat
 
 /**
- * Custom line glyphs (DESIGN_SYSTEM §2.4), 24-unit grid, sharp joins to match the chamfered geometry. Drawn in black and
+ * Custom line glyphs (DESIGN_SYSTEM §2.4), 24-unit grid, rounded caps and joins. Drawn in black and
  * tinted at the call site via `Icon(tint = …)`.
  */
 object AwakenGlyphs {
@@ -249,8 +249,77 @@ object AwakenGlyphs {
         glyph("ChevronLeft") { moveTo(15f, 5f); lineTo(8f, 12f); lineTo(15f, 19f) }
     }
 
+    val ChevronDown: ImageVector by lazy {
+        glyph("ChevronDown") { moveTo(5f, 9f); lineTo(12f, 16f); lineTo(19f, 9f) }
+    }
+
     val ChevronRight: ImageVector by lazy {
         glyph("ChevronRight") { moveTo(9f, 5f); lineTo(16f, 12f); lineTo(9f, 19f) }
+    }
+
+    val ArrowUp: ImageVector by lazy {
+        glyph("ArrowUp") { moveTo(12f, 19f); lineTo(12f, 5f); moveTo(6f, 11f); lineTo(12f, 5f); lineTo(18f, 11f) }
+    }
+
+    val ArrowDown: ImageVector by lazy {
+        glyph("ArrowDown") { moveTo(12f, 5f); lineTo(12f, 19f); moveTo(6f, 13f); lineTo(12f, 19f); lineTo(18f, 13f) }
+    }
+
+    /** Insights: a four-point sparkle. */
+    val Sparkle: ImageVector by lazy {
+        glyph("Sparkle") {
+            moveTo(12f, 3f); quadTo(13f, 11f, 21f, 12f); quadTo(13f, 13f, 12f, 21f); quadTo(11f, 13f, 3f, 12f); quadTo(11f, 11f, 12f, 3f); close()
+        }
+    }
+
+    /** Morning: the sun on the horizon. */
+    val Sunrise: ImageVector by lazy {
+        glyph("Sunrise") {
+            moveTo(3f, 18f); lineTo(21f, 18f)
+            moveTo(7f, 18f); arcTo(5f, 5f, 0f, false, true, 17f, 18f)
+            moveTo(12f, 6f); lineTo(12f, 9f); moveTo(5f, 10f); lineTo(7f, 12f); moveTo(19f, 10f); lineTo(17f, 12f)
+        }
+    }
+
+    /** Day: the full sun. */
+    val Sun: ImageVector by lazy {
+        glyph("Sun") {
+            moveTo(8f, 12f); arcTo(4f, 4f, 0f, true, true, 16f, 12f); arcTo(4f, 4f, 0f, true, true, 8f, 12f); close()
+            moveTo(12f, 2.5f); lineTo(12f, 4.5f); moveTo(12f, 19.5f); lineTo(12f, 21.5f)
+            moveTo(2.5f, 12f); lineTo(4.5f, 12f); moveTo(19.5f, 12f); lineTo(21.5f, 12f)
+            moveTo(5.3f, 5.3f); lineTo(6.7f, 6.7f); moveTo(17.3f, 17.3f); lineTo(18.7f, 18.7f)
+            moveTo(5.3f, 18.7f); lineTo(6.7f, 17.3f); moveTo(17.3f, 6.7f); lineTo(18.7f, 5.3f)
+        }
+    }
+
+    /** Evening: a crescent moon. */
+    val Moon: ImageVector by lazy {
+        glyph("Moon") {
+            moveTo(20f, 14.5f); arcTo(8f, 8f, 0f, true, true, 9.5f, 4f); arcTo(6.5f, 6.5f, 0f, false, false, 20f, 14.5f); close()
+        }
+    }
+
+    /** Anytime: a clock face. */
+    val Clock: ImageVector by lazy {
+        glyph("Clock") {
+            moveTo(3.5f, 12f); arcTo(8.5f, 8.5f, 0f, true, true, 20.5f, 12f); arcTo(8.5f, 8.5f, 0f, true, true, 3.5f, 12f); close()
+            moveTo(12f, 7f); lineTo(12f, 12f); lineTo(15.5f, 14f)
+        }
+    }
+
+    /** Today tab: a house. */
+    val Home: ImageVector by lazy {
+        glyph("Home") {
+            moveTo(4f, 10.5f); lineTo(12f, 4f); lineTo(20f, 10.5f); lineTo(20f, 20f); lineTo(4f, 20f); close()
+            moveTo(10f, 20f); lineTo(10f, 14f); lineTo(14f, 14f); lineTo(14f, 20f)
+        }
+    }
+
+    /** Progress tab: three rising bars. */
+    val Bars: ImageVector by lazy {
+        glyph("Bars") {
+            moveTo(5f, 20f); lineTo(5f, 13f); moveTo(12f, 20f); lineTo(12f, 8f); moveTo(19f, 20f); lineTo(19f, 4f)
+        }
     }
 
     /** Glyph for a sigil id from the shop catalogue; null for an id this build doesn't know. */
@@ -283,8 +352,8 @@ object AwakenGlyphs {
                 fill = null,
                 stroke = SolidColor(Color.Black),
                 strokeLineWidth = STROKE,
-                strokeLineCap = StrokeCap.Square,
-                strokeLineJoin = StrokeJoin.Miter,
+                strokeLineCap = StrokeCap.Round,
+                strokeLineJoin = StrokeJoin.Round,
                 pathBuilder = pathBuilder,
             )
             .build()

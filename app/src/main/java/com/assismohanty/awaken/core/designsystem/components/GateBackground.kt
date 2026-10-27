@@ -38,6 +38,8 @@ fun GateBackground(
             .fillMaxSize()
             .drawBehind {
                 drawRect(colors.void)
+                // Clean mode: a calm, flat page. The rank glow and depth lift belong to System mode.
+                if (!colors.glow) return@drawBehind
                 val centre = Offset(size.width / 2f, size.height * GLOW_CENTRE_Y)
                 val radius = maxOf(size.width, size.height) * DEPTH_RADIUS
                 drawRect(Brush.radialGradient(listOf(colors.depth, colors.void), center = centre, radius = radius))

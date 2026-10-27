@@ -9,6 +9,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
@@ -72,9 +73,9 @@ fun Heatmap(
                 val topLeft = Offset(week * step, day * step)
                 val intensity = (entry?.intensity ?: 0).coerceIn(0, AwakenAlpha.HEATMAP_STEPS.lastIndex)
                 if (entry?.restDay == true) {
-                    drawRect(colors.system, topLeft, Size(cellPx, cellPx), style = Stroke(width = dimens.hairline.toPx()))
+                    drawRoundRect(colors.system, topLeft, Size(cellPx, cellPx), CornerRadius(cellPx * CELL_ROUNDING), style = Stroke(width = dimens.hairline.toPx()))
                 } else {
-                    drawRect(colors.system.copy(alpha = AwakenAlpha.HEATMAP_STEPS[intensity]), topLeft, Size(cellPx, cellPx))
+                    drawRoundRect(colors.system.copy(alpha = AwakenAlpha.HEATMAP_STEPS[intensity]), topLeft, Size(cellPx, cellPx), CornerRadius(cellPx * CELL_ROUNDING))
                 }
             }
         }
@@ -83,6 +84,9 @@ fun Heatmap(
 
 const val WEEKS = 18
 private const val DAYS_PER_WEEK = 7
+
+/** Soft, rounded cells. */
+private const val CELL_ROUNDING = 0.3f
 
 @ComponentPreview
 @Composable

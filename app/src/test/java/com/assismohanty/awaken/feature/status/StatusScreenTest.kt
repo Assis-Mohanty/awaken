@@ -1,5 +1,6 @@
 package com.assismohanty.awaken.feature.status
 
+import com.assismohanty.awaken.core.designsystem.lexicon.PresentationMode
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -20,7 +21,7 @@ class StatusScreenTest {
     val composeRule = createComposeRule()
 
     private fun show(state: StatusUiState, events: MutableList<StatusEvent> = mutableListOf()) {
-        composeRule.setContent { AwakenTheme(reduceMotion = true) { StatusScreen(state = state, onEvent = { events += it }) } }
+        composeRule.setContent { AwakenTheme(reduceMotion = true, presentation = PresentationMode.SYSTEM) { StatusScreen(state = state, onEvent = { events += it }) } }
     }
 
     @Test

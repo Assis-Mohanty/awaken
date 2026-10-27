@@ -1,11 +1,7 @@
 package com.assismohanty.awaken.navigation
 
 import com.assismohanty.awaken.core.designsystem.lexicon.lexString
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -28,8 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.LifecycleStartEffect
@@ -44,7 +39,6 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.assismohanty.awaken.core.designsystem.components.GateBackground
 import com.assismohanty.awaken.core.designsystem.theme.AwakenTheme
-import com.assismohanty.awaken.core.designsystem.theme.Spacing
 import com.assismohanty.awaken.debug.DebugEntry
 import com.assismohanty.awaken.engine.model.Rank
 import com.assismohanty.awaken.feature.diet.DietRoute as DietEntry
@@ -66,7 +60,7 @@ import com.assismohanty.awaken.feature.vault.VaultRoute as VaultEntry
 
 // Feature `*Route` composables are imported as `*Entry`: the serializable route types here share their names.
 
-/** Onboarding until a hunter exists, then the five tabs (DESIGN_SYSTEM §4). */
+/** Onboarding until a hunter exists, then the four tabs (DESIGN_SYSTEM §4). */
 @Composable
 fun AwakenNavHost(modifier: Modifier = Modifier, openTodayRequests: Int = 0, appViewModel: AppViewModel = hiltViewModel()) {
     val launch by appViewModel.state.collectAsStateWithLifecycle()
@@ -113,16 +107,17 @@ private fun MainScaffold(
                 SnackbarHost(snackbarHostState) { data ->
                     Snackbar(
                         snackbarData = data,
-                        containerColor = AwakenTheme.palette.panelRaised,
-                        contentColor = AwakenTheme.palette.bone,
-                        actionColor = AwakenTheme.palette.system,
+                        containerColor = AwakenTheme.palette.bone,
+                        contentColor = AwakenTheme.palette.void,
+                        actionColor = AwakenTheme.palette.heroWashA,
+                        shape = AwakenTheme.shapes.inner,
                     )
                 }
             },
             bottomBar = {
                 if (showBottomBar) {
                     NavigationBar(
-                        containerColor = AwakenTheme.palette.depth,
+                        containerColor = AwakenTheme.palette.panel,
                         modifier = Modifier.topHairline(AwakenTheme.palette.edge, AwakenTheme.dimens.hairline),
                     ) {
                         TopLevelDestination.entries.forEach { destination ->
@@ -141,8 +136,8 @@ private fun MainScaffold(
                                     }
                                 },
                                 // Label text is visible, so the icon is decorative (avoids TalkBack reading it twice).
-                                icon = { NavIcon(destination.icon, selected) },
-                                label = { Text(label) },
+                                icon = { Icon(destination.icon, contentDescription = null) },
+                                label = { Text(label, style = AwakenTheme.type.caption.copy(fontWeight = FontWeight.SemiBold)) },
                                 colors = navItemColors(),
                             )
                         }
@@ -186,12 +181,19 @@ private fun MainScaffold(
                         onOpenQuest = { navController.navigate(QuestDetailRoute(it)) },
                     )
                 }
-                composable<PathsRoute> { PathsEntry(onOpenPath = { navController.navigate(PathDetailRoute(it)) }) }
+                composable<PathsRoute> {
+                    PathsEntry(onOpenPath = { navController.navigate(PathDetailRoute(it)) })
+                }
                 composable<PathDetailRoute> { PathDetailEntry(onBack = { navController.popBackStack() }) }
                 composable<GatesRoute> { GatesEntry(onBack = { navController.popBackStack() }) }
                 composable<GymRoute> { GymEntry() }
                 composable<DietRoute> { DietEntry() }
-                composable<StatusRoute> { StatusEntry(onOpenSettings = { navController.navigate(SettingsRoute) }) }
+                composable<StatusRoute> {
+                    StatusEntry(
+                        onOpenSettings = { navController.navigate(SettingsRoute) },
+                        onOpenPaths = { navController.navigate(PathsRoute) { launchSingleTop = true } },
+                    )
+                }
                 composable<SettingsRoute> {
                     SettingsEntry(
                         onBack = { navController.popBackStack() },
@@ -218,33 +220,14 @@ private fun Modifier.topHairline(color: Color, width: Dp): Modifier = drawBehind
     drawLine(color, start = Offset(0f, 0f), end = Offset(size.width, 0f), strokeWidth = width.toPx())
 }
 
-/** Tab icon with a short `system` bar above it when selected: our selection mark instead of Material's pill (DS §3). */
-@Composable
-private fun NavIcon(icon: ImageVector, selected: Boolean) {
-    val motion = AwakenTheme.motion
-    val dimens = AwakenTheme.dimens
-    val mark by animateFloatAsState(
-        targetValue = if (selected) 1f else 0f,
-        animationSpec = tween(motion.duration(motion.standardMs), easing = motion.standardEasing),
-        label = "navMark",
-    )
-    val markColor = AwakenTheme.palette.system
-    Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(Spacing.xxs)) {
-        Box(
-            modifier = Modifier
-                .size(width = dimens.navIndicatorWidth, height = dimens.navIndicatorHeight)
-                .graphicsLayer { scaleX = mark }
-                .background(markColor.copy(alpha = mark)),
-        )
-        Icon(icon, contentDescription = null)
-    }
-}
-
+/** Selected tab: accent icon on a soft accent pill, bold label; the rest stay quiet (DESIGN_SYSTEM §4). */
 @Composable
 private fun navItemColors() = NavigationBarItemDefaults.colors(
-    selectedIconColor = AwakenTheme.palette.bone,
+    selectedIconColor = AwakenTheme.palette.system,
     selectedTextColor = AwakenTheme.palette.bone,
     unselectedIconColor = AwakenTheme.palette.mist,
     unselectedTextColor = AwakenTheme.palette.mist,
-    indicatorColor = Color.Transparent,
+    indicatorColor = AwakenTheme.palette.system.copy(alpha = NAV_PILL_ALPHA),
 )
+
+private const val NAV_PILL_ALPHA = 0.12f

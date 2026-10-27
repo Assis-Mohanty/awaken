@@ -160,6 +160,7 @@ fun MetricTile(label: String, value: String, modifier: Modifier = Modifier, dim:
     val palette = AwakenTheme.palette
     Column(
         modifier = modifier
+            .clip(AwakenTheme.shapes.inner)
             .background(palette.panelRaised)
             .padding(Spacing.sm),
         verticalArrangement = Arrangement.spacedBy(Spacing.xxs),
@@ -185,7 +186,7 @@ fun IconPlaceholder(modifier: Modifier = Modifier) {
     Box(
         modifier = modifier
             .size(AwakenTheme.dimens.sigil)
-            .clip(AwakenTheme.shapes.button)
+            .clip(AwakenTheme.shapes.tile)
             .background(AwakenTheme.palette.panelRaised),
     )
 }
@@ -197,9 +198,9 @@ fun CosmeticSwatch(color: Color, outlined: Boolean, modifier: Modifier = Modifie
     val base = modifier.size(dimens.sigil)
     Box(
         if (outlined) {
-            base.border(dimens.hairline, color, AwakenTheme.shapes.button)
+            base.border(dimens.accentWidth, color, AwakenTheme.shapes.tile)
         } else {
-            base.background(color, AwakenTheme.shapes.button)
+            base.background(color, AwakenTheme.shapes.tile)
         },
     )
 }

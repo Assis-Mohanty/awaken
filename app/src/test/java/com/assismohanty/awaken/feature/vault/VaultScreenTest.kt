@@ -1,5 +1,6 @@
 package com.assismohanty.awaken.feature.vault
 
+import com.assismohanty.awaken.core.designsystem.lexicon.PresentationMode
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
@@ -26,7 +27,7 @@ class VaultScreenTest {
     val composeRule = createComposeRule()
 
     private fun show(state: VaultUiState, events: MutableList<VaultEvent> = mutableListOf()) {
-        composeRule.setContent { AwakenTheme(reduceMotion = true) { VaultScreen(state = state, onEvent = { events += it }, onBack = {}) } }
+        composeRule.setContent { AwakenTheme(reduceMotion = true, presentation = PresentationMode.SYSTEM) { VaultScreen(state = state, onEvent = { events += it }, onBack = {}) } }
     }
 
     @Test

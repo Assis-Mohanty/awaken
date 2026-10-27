@@ -1,5 +1,6 @@
 package com.assismohanty.awaken.feature.quest
 
+import com.assismohanty.awaken.core.designsystem.lexicon.PresentationMode
 import android.Manifest
 import android.app.Application
 import androidx.compose.material3.SnackbarHost
@@ -43,7 +44,7 @@ class NotificationPromptTest {
     private fun show() {
         val viewModel = RewardHostViewModel(graph.completionCenter, graph.notices, graph.narrative, graph.notificationAccess, graph.uiPrefs, graph.submitFeedback)
         composeRule.setContent {
-            AwakenTheme {
+            AwakenTheme(presentation = PresentationMode.SYSTEM) {
                 val snackbarHostState = remember { SnackbarHostState() }
                 SnackbarHost(snackbarHostState)
                 RewardHost(snackbarHostState = snackbarHostState, viewModel = viewModel)

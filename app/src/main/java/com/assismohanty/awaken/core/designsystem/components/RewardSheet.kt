@@ -1,5 +1,9 @@
 package com.assismohanty.awaken.core.designsystem.components
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.style.TextAlign
 import com.assismohanty.awaken.core.designsystem.lexicon.lexString
 import com.assismohanty.awaken.core.designsystem.lexicon.lexPlural
 import androidx.compose.animation.core.Animatable
@@ -59,16 +63,16 @@ fun RewardSheet(model: RewardModel, onDone: () -> Unit, feedback: Feedback? = nu
     ModalBottomSheet(
         onDismissRequest = onDone,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-        containerColor = AwakenTheme.palette.panelRaised,
-        shape = AwakenTheme.shapes.window,
+        containerColor = AwakenTheme.palette.panel,
+        shape = AwakenTheme.shapes.sheet,
     ) {
         RewardSheetContent(model, onDone, modifier = Modifier.navigationBarsPadding(), feedback = feedback, onFeedback = onFeedback)
     }
 }
 
 /**
- * "QUEST CLEARED" (or "CRITICAL CLEAR" in `crit`): the XP counts up, then stat split, gold, fragments and the formula
- * breakdown (DESIGN_SYSTEM §3). One orchestrated moment: confirm haptic (crit: double click) when it opens.
+ * Quest complete (DESIGN_SYSTEM §3): a check on a soft disc, the XP counting up as the hero number, the gains as pastel
+ * pills, and the formula in a quiet well. One orchestrated moment: confirm haptic (crit: double click) when it opens.
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -95,41 +99,60 @@ fun RewardSheetContent(
         modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = Spacing.gutter, vertical = Spacing.md),
+        horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(Spacing.sm),
     ) {
+        Box(
+            modifier = Modifier
+                .size(AwakenTheme.dimens.avatar + Spacing.md)
+                .clip(AwakenTheme.shapes.pill)
+                .background(accent.copy(alpha = BADGE_WASH)),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(AwakenGlyphs.Check, contentDescription = null, tint = accent, modifier = Modifier.size(AwakenTheme.dimens.icon))
+        }
         Text(
             text = lexString(if (model.crit) R.string.system_title_critical_clear else R.string.system_title_quest_cleared),
             style = type.windowTitle,
-            color = accent,
+            color = if (colors.glow || model.crit) accent else colors.bone,
         )
         Text(
             text = lexString(R.string.xp_gain, formatCount(shownXp.value.toInt())),
-            style = type.metricL,
+            style = type.metricXL,
             color = colors.bone,
             modifier = Modifier.semantics { contentDescription = finalXp },
         )
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.md), verticalArrangement = Arrangement.spacedBy(Spacing.xxs)) {
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(Spacing.xs, Alignment.CenterHorizontally),
+            verticalArrangement = Arrangement.spacedBy(Spacing.xs),
+        ) {
             model.statXp.forEach { (stat, xp) ->
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.xxs)) {
-                    Icon(AwakenGlyphs.stat(stat), contentDescription = null, tint = colors.stat(stat), modifier = Modifier.size(AwakenTheme.dimens.iconSmall))
-                    Text(lexString(R.string.stat_gain, stat.label(), formatCount(xp)), style = type.label, color = colors.bone)
-                }
+                Pill(
+                    text = lexString(R.string.stat_gain, stat.label(), formatCount(xp)),
+                    color = colors.stat(stat),
+                    background = colors.statTint(stat),
+                    icon = AwakenGlyphs.stat(stat),
+                )
             }
             if (model.gold > 0) {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.xxs)) {
-                    Icon(AwakenGlyphs.Coin, contentDescription = null, tint = colors.crit, modifier = Modifier.size(AwakenTheme.dimens.iconSmall))
-                    Text(lexString(R.string.gold_gain, formatCount(model.gold)), style = type.label, color = colors.bone)
-                }
+                Pill(text = lexString(R.string.gold_gain, formatCount(model.gold)), color = colors.crit, icon = AwakenGlyphs.Coin)
             }
             if (model.fragments > 0) {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.xxs)) {
-                    Icon(AwakenGlyphs.Fragment, contentDescription = null, tint = colors.aether, modifier = Modifier.size(AwakenTheme.dimens.iconSmall))
-                    Text(lexPlural(R.plurals.fragment_gain, model.fragments, model.fragments), style = type.label, color = colors.bone)
-                }
+                Pill(text = lexPlural(R.plurals.fragment_gain, model.fragments, model.fragments), color = colors.system, icon = AwakenGlyphs.Fragment)
             }
         }
-        Text(text = breakdownText(model), style = type.caption, color = colors.mist)
-        if (model.capped) Text(lexString(R.string.cap_reached_note), style = type.caption, color = colors.mist)
+        Text(
+            text = breakdownText(model),
+            style = type.caption,
+            color = colors.mist,
+            textAlign = TextAlign.Center,
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(AwakenTheme.shapes.inner)
+                .background(colors.panelRaised)
+                .padding(Spacing.sm),
+        )
+        if (model.capped) Text(lexString(R.string.cap_reached_note), style = type.caption, color = colors.mist, textAlign = TextAlign.Center)
         if (model.pathQuest) FeedbackChips(selected = feedback, onSelect = onFeedback)
         PrimaryButton(
             text = lexString(R.string.action_done),
@@ -162,6 +185,7 @@ private fun breakdownText(model: RewardModel): String {
 }
 
 private const val COUNT_UP_MS = 700
+private const val BADGE_WASH = 0.14f
 
 internal val previewReward = RewardModel(
     xp = 94,

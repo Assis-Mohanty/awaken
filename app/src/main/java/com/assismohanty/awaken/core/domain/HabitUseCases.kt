@@ -1,5 +1,6 @@
 package com.assismohanty.awaken.core.domain
 
+import com.assismohanty.awaken.engine.model.TimeOfDay
 import com.assismohanty.awaken.core.data.clock.Clock
 import com.assismohanty.awaken.core.data.clock.gameDate
 import com.assismohanty.awaken.core.data.db.dao.HabitDao
@@ -25,6 +26,8 @@ data class HabitDraft(
     val days: Set<DayOfWeek>,
     val target: Int,
     val unit: String,
+    /** GD §14.5: the block this habit shows in on Today; null = Anytime. */
+    val timeOfDay: TimeOfDay? = null,
 )
 
 sealed interface SaveHabitResult {
@@ -78,6 +81,7 @@ class SaveHabitUseCase @Inject constructor(
                 unit = draft.unit,
                 active = true,
                 createdAt = existing?.createdAt ?: clock.now(),
+                timeOfDay = draft.timeOfDay,
             )
             habitDao.upsert(habit)
             hunterDao.getProfile()?.let { profile ->

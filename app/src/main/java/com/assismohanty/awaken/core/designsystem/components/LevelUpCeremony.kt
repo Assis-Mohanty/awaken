@@ -1,5 +1,7 @@
 package com.assismohanty.awaken.core.designsystem.components
 
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import com.assismohanty.awaken.core.designsystem.lexicon.lexString
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
@@ -47,9 +49,10 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 /**
- * The level-up ceremony (DESIGN_SYSTEM §2.5), ~2.2 s: dim to 90 % void → gate ring expands → the level number rolls from
- * [oldLevel] to [newLevel] → [title] types on in [accent] (`crit` gold by default) → stat gains list in → heavy haptic when the number lands. Tap to skip
- * after 600 ms (jumps to the end), tap again to dismiss. Reduce-motion: a static window with the final state.
+ * The level-up ceremony (DESIGN_SYSTEM §2.5), ~2.2 s, calm: the page veils over, the hero ring fills while the level
+ * number rolls from [oldLevel] to [newLevel] → [title] appears in [accent] (System mode types it on) → stat gains fade in
+ * as pastel pills → heavy haptic when the number lands. Tap to skip after 600 ms (jumps to the end), tap again to
+ * dismiss. Reduce-motion: the final state, still.
  *
  * Reused for rank promotion (Phase 7) by passing a different [title] and a [crest].
  */
@@ -118,22 +121,6 @@ fun LevelUpCeremony(
             .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = ::onTap),
         contentAlignment = Alignment.Center,
     ) {
-        val ringStroke = AwakenTheme.dimens.ceremonyRing
-        Canvas(modifier = Modifier.fillMaxSize()) {
-            val progress = ring.value
-            val alpha = when {
-                !animate -> RING_STATIC_ALPHA // reduce-motion: a still gate behind the window
-                progress in 0f..1f -> (1f - progress) * RING_ALPHA // expands and fades out
-                else -> 0f
-            }
-            if (alpha > 0f) {
-                drawCircle(
-                    color = accent.copy(alpha = alpha),
-                    radius = size.minDimension / 2f * progress,
-                    style = Stroke(width = ringStroke.toPx()),
-                )
-            }
-        }
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(Spacing.md),
@@ -142,21 +129,28 @@ fun LevelUpCeremony(
                 .semantics { liveRegion = LiveRegionMode.Polite },
         ) {
             crest?.invoke()
-            Text(
-                text = lexString(R.string.level_short, number.value.toInt()),
-                style = type.metricXL,
-                color = colors.bone,
+            HeroRing(
+                value = formatCount(number.value.toInt()),
+                kicker = lexString(R.string.level_word),
+                progress = ring.value,
+                description = lexString(R.string.level_long, newLevel),
+                colors = listOf(accent, colors.aether, accent),
             )
             if (titleVisible) {
                 TypeOnText(text = title, style = type.windowTitle, color = accent, animate = animate)
             }
             AnimatedVisibility(visible = gainsVisible, enter = fadeIn(tween(motion.duration(motion.standardMs)))) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(Spacing.xs, Alignment.CenterHorizontally),
+                    verticalArrangement = Arrangement.spacedBy(Spacing.xs),
+                ) {
                     statGains.forEach { (stat, gain) ->
-                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
-                            Icon(AwakenGlyphs.stat(stat), contentDescription = null, tint = colors.stat(stat), modifier = Modifier.size(AwakenTheme.dimens.iconSmall))
-                            Text(lexString(R.string.stat_gain, stat.label(), formatCount(gain)), style = type.label, color = colors.bone)
-                        }
+                        Pill(
+                            text = lexString(R.string.stat_gain, stat.label(), formatCount(gain)),
+                            color = colors.stat(stat),
+                            background = colors.statTint(stat),
+                            icon = AwakenGlyphs.stat(stat),
+                        )
                     }
                 }
             }
@@ -171,8 +165,6 @@ private const val RING_MS = 1_400
 private const val NUMBER_DELAY_MS = 300L
 private const val NUMBER_MS = 900
 private const val GAINS_DELAY_MS = 450L
-private const val RING_ALPHA = 0.8f
-private const val RING_STATIC_ALPHA = 0.25f
 
 @PhonePreviews
 @Composable

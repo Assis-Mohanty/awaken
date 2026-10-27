@@ -1,5 +1,7 @@
 package com.assismohanty.awaken.feature.today
 
+import androidx.compose.ui.test.performScrollTo
+import com.assismohanty.awaken.core.designsystem.lexicon.PresentationMode
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.collectAsState
@@ -47,7 +49,7 @@ class QuestRewardTest {
         val hostViewModel = RewardHostViewModel(graph.completionCenter, graph.notices, graph.narrative, graph.notificationAccess, graph.uiPrefs, graph.submitFeedback)
 
         composeRule.setContent {
-            AwakenTheme {
+            AwakenTheme(presentation = PresentationMode.SYSTEM) {
                 val state by todayViewModel.uiState.collectAsState()
                 val snackbarHostState = remember { SnackbarHostState() }
                 TodayScreen(
@@ -66,7 +68,8 @@ class QuestRewardTest {
         composeRule.waitUntil(timeoutMillis = 5_000) {
             composeRule.onAllNodesWithText("Do push-ups").fetchSemanticsNodes().isNotEmpty()
         }
-        composeRule.onNodeWithText("Do push-ups").performTouchInput { swipeRight(startX = left, endX = right) }
+        // The hero ring fills the top of Today, so the plan sits below the fold on a test-sized screen.
+        composeRule.onNodeWithText("Do push-ups").performScrollTo().performTouchInput { swipeRight(startX = left, endX = right) }
 
         composeRule.waitUntil(timeoutMillis = 5_000) {
             composeRule.onAllNodesWithContentDescription("+60 XP").fetchSemanticsNodes().isNotEmpty()

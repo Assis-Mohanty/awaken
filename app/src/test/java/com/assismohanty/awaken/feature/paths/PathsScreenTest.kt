@@ -1,5 +1,6 @@
 package com.assismohanty.awaken.feature.paths
 
+import com.assismohanty.awaken.core.designsystem.lexicon.PresentationMode
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -52,7 +53,7 @@ class PathsScreenTest {
 
     private fun show(state: PathsUiState, events: MutableList<PathsEvent> = mutableListOf()) {
         composeRule.setContent {
-            AwakenTheme { PathsScreen(state = state, onEvent = { events += it }, onOpenPath = {}) }
+            AwakenTheme(presentation = PresentationMode.SYSTEM) { PathsScreen(state = state, onEvent = { events += it }, onOpenPath = {}) }
         }
     }
 

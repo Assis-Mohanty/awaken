@@ -54,7 +54,7 @@ fun ProgressRing(
                 useCenter = false,
                 topLeft = topLeft,
                 size = arcSize,
-                style = Stroke(width, cap = StrokeCap.Butt),
+                style = Stroke(width, cap = StrokeCap.Round),
             )
         }
         content()

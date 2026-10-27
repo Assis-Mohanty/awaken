@@ -17,6 +17,8 @@ data class QuestTemplate(
     val equipment: List<String> = emptyList(),
     val tags: List<String> = emptyList(),
     val minDurationSec: Int = 0,
+    /** GD §14.5: only naturally time-bound templates carry a block; absent = Anytime. */
+    val timeOfDay: TimeOfDay? = null,
 ) {
     init {
         require(titles.isNotEmpty()) { "template $id has no titles" }
@@ -44,6 +46,8 @@ data class QuestDraft(
     val minDurationSec: Int,
     /** The Path slot this quest was scheduled from; null for template, habit, penalty and trial quests. */
     val pathSlotId: String? = null,
+    /** Copied from the template at generation (GD §14.5), so later template edits never move past quests. */
+    val timeOfDay: TimeOfDay? = null,
 )
 
 /**

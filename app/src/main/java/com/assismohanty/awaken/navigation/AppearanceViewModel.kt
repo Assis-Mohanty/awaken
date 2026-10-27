@@ -1,5 +1,8 @@
 package com.assismohanty.awaken.navigation
 
+import com.assismohanty.awaken.core.data.db.entity.HunterProfileEntity
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.first
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.assismohanty.awaken.core.data.db.dao.HunterDao
@@ -23,14 +26,31 @@ data class Appearance(
     val hapticsEnabled: Boolean = true,
     val reduceMotion: Boolean = false,
     val themeMode: ThemeMode = ThemeMode.SYSTEM,
-    val presentationMode: PresentationMode = PresentationMode.SYSTEM,
+    val presentationMode: PresentationMode = PresentationMode.CLEAN,
 )
 
 @HiltViewModel
-class AppearanceViewModel @Inject constructor(hunterDao: HunterDao, uiPrefs: UiPrefsRepository) : ViewModel() {
-    val appearance: StateFlow<Appearance> = combine(
-        hunterDao.observeProfile().map { it?.themeId ?: ShopRules.DEFAULT_THEME_ID }.distinctUntilChanged(),
-        uiPrefs.prefs,
-    ) { themeId, prefs: UiPrefs -> Appearance(themeId, prefs.hapticsEnabled, prefs.reduceMotion, prefs.themeMode, prefs.presentationMode) }
+class AppearanceViewModel @Inject constructor(private val hunterDao: HunterDao, private val uiPrefs: UiPrefsRepository) : ViewModel() {
+    val appearance: StateFlow<Appearance> = combine(hunterDao.observeProfile(), uiPrefs.prefs) { profile, prefs: UiPrefs ->
+        Appearance(
+            themeId = profile?.themeId ?: ShopRules.DEFAULT_THEME_ID,
+            hapticsEnabled = prefs.hapticsEnabled,
+            reduceMotion = prefs.reduceMotion,
+            themeMode = prefs.themeMode,
+            presentationMode = prefs.presentationMode ?: firstLaunchMode(profile),
+        )
+    }
+        .distinctUntilChanged()
         .stateIn(viewModelScope, SharingStarted.Eagerly, Appearance())
+
+    init {
+        // GD §14.9: decide the default once and store it, so finishing onboarding never flips a new install to System.
+        viewModelScope.launch {
+            if (uiPrefs.prefs.first().presentationMode == null) uiPrefs.initPresentationMode(firstLaunchMode(hunterDao.getProfile()))
+        }
+    }
+
+    /** A hunter who finished onboarding before v1.1 keeps the System look; everyone else starts Clean. */
+    private fun firstLaunchMode(profile: HunterProfileEntity?): PresentationMode =
+        if (profile?.onboardingDone == true) PresentationMode.SYSTEM else PresentationMode.CLEAN
 }

@@ -254,6 +254,7 @@ object DirectiveGenerator {
             difficulty = difficulty,
             verification = template.verification,
             minDurationSec = template.minDurationSec,
+            timeOfDay = template.timeOfDay,
         )
     }
 

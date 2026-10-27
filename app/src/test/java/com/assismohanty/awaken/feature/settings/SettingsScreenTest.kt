@@ -1,5 +1,6 @@
 package com.assismohanty.awaken.feature.settings
 
+import com.assismohanty.awaken.core.designsystem.lexicon.PresentationMode
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
@@ -30,7 +31,7 @@ class SettingsScreenTest {
         onOpenPrivacy: () -> Unit = {},
     ) {
         composeRule.setContent {
-            AwakenTheme(reduceMotion = true) {
+            AwakenTheme(reduceMotion = true, presentation = PresentationMode.SYSTEM) {
                 SettingsScreen(state = state, onEvent = { events += it }, onBack = onBack, onExport = {}, onImport = {}, onOpenPrivacy = onOpenPrivacy)
             }
         }
@@ -201,7 +202,7 @@ class SettingsScreenTest {
     fun blockedNotificationsSayWhyAndLinkToSystemSettings() {
         var opened = 0
         composeRule.setContent {
-            AwakenTheme(reduceMotion = true) {
+            AwakenTheme(reduceMotion = true, presentation = PresentationMode.SYSTEM) {
                 SettingsScreen(
                     state = previewSettingsState().copy(notificationsBlocked = true),
                     onEvent = {},

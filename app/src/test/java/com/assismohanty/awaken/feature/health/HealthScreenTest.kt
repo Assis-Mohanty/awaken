@@ -1,5 +1,6 @@
 package com.assismohanty.awaken.feature.health
 
+import com.assismohanty.awaken.core.designsystem.lexicon.PresentationMode
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
@@ -44,7 +45,7 @@ class HealthScreenTest {
 
     private fun show(state: HealthUiState, events: MutableList<HealthEvent> = mutableListOf(), onBack: () -> Unit = {}) {
         composeRule.setContent {
-            AwakenTheme(reduceMotion = true) {
+            AwakenTheme(reduceMotion = true, presentation = PresentationMode.SYSTEM) {
                 HealthScreen(state = state, onEvent = { events += it }, onBack = onBack, zone = ZoneId.of("UTC"))
             }
         }

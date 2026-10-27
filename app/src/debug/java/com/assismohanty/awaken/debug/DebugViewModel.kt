@@ -138,7 +138,7 @@ class DebugViewModel @Inject constructor(
     private val ledgerView = combine(ledger.observeBalances(), ledgerDao.observeRecent(LEDGER_ROWS)) { balances, rows -> balances to rows }
 
     private val oracleView = combine(settings.useFakeOracle, settings.oracleFailure, aiPrefs.consent, uiPrefs.prefs) { fake, failure, consent, prefs ->
-        OracleView(fake, failure, consent.given, prefs.presentationMode)
+        OracleView(fake, failure, consent.given, prefs.presentationMode ?: PresentationMode.SYSTEM)
     }
 
     private data class OracleView(val fake: Boolean, val failure: OracleFailure, val consent: Boolean, val presentation: PresentationMode)

@@ -16,7 +16,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
@@ -29,7 +29,7 @@ import com.assismohanty.awaken.core.designsystem.theme.AwakenTheme
 import com.assismohanty.awaken.core.designsystem.theme.Spacing
 
 /**
- * XP bar (DESIGN_SYSTEM §3): 6dp, chamfered ends, `edge` track, `system` fill with a 24dp leading gradient to `aether`.
+ * XP bar (DESIGN_SYSTEM §3): a slim pill, `edge` track, accent fill fading to `aether` at its leading edge.
  * Animates changes with the `standard` motion; shows "1,240 / 1,434 XP" underneath.
  */
 @Composable
@@ -65,16 +65,11 @@ fun XpBar(
                     drawRect(colors.edge)
                     val fillWidth = size.width * fraction
                     if (fillWidth > 0f) {
-                        drawRect(colors.system, size = Size(fillWidth, size.height))
-                        val lead = dimens.xpBarLeadGlow.toPx().coerceAtMost(fillWidth)
-                        drawRect(
-                            brush = Brush.horizontalGradient(
-                                listOf(colors.system, colors.aether),
-                                startX = fillWidth - lead,
-                                endX = fillWidth,
-                            ),
-                            topLeft = Offset(fillWidth - lead, 0f),
-                            size = Size(lead, size.height),
+                        // A soft accent gradient across the filled part, rounded at both ends.
+                        drawRoundRect(
+                            brush = Brush.horizontalGradient(listOf(colors.system, colors.aether), startX = 0f, endX = fillWidth),
+                            size = Size(fillWidth.coerceAtLeast(size.height), size.height),
+                            cornerRadius = CornerRadius(size.height / 2f),
                         )
                     }
                 },

@@ -78,6 +78,7 @@ class GenerateDirectiveUseCase @Inject constructor(
         verification = verification,
         minDurationSec = 0,
         status = QuestStatus.ACTIVE,
+        timeOfDay = timeOfDay,
         createdAt = now,
     )
 }

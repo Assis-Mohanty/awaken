@@ -30,7 +30,8 @@ fun TypeOnText(
     onFinished: () -> Unit = {},
 ) {
     val motion = AwakenTheme.motion
-    val typeOn = animate && !motion.reduceMotion
+    // Type-on is the System's voice; Clean mode shows the text at once.
+    val typeOn = animate && !motion.reduceMotion && AwakenTheme.palette.glow
     var shown by remember(text) { mutableIntStateOf(if (typeOn) 0 else text.length) }
     val finished by rememberUpdatedState(onFinished)
     LaunchedEffect(text, typeOn) {

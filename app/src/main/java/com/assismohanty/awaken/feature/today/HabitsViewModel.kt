@@ -1,5 +1,6 @@
 package com.assismohanty.awaken.feature.today
 
+import com.assismohanty.awaken.engine.model.TimeOfDay
 import androidx.annotation.StringRes
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -36,6 +37,7 @@ data class HabitItem(
     val days: Set<DayOfWeek>,
     val target: Int,
     val unit: String,
+    val timeOfDay: TimeOfDay? = null,
 )
 
 data class HabitEditorState(
@@ -48,6 +50,8 @@ data class HabitEditorState(
     /** Raw text so the field can be empty while typing; validated on save. */
     val target: String = "1",
     val unit: String = "",
+    /** GD §14.5: where this habit shows on Today's timeline; null = Anytime. */
+    val timeOfDay: TimeOfDay? = null,
     @StringRes val error: Int? = null,
     val saving: Boolean = false,
 ) {
@@ -81,6 +85,7 @@ sealed interface HabitsEvent {
     data class DayToggled(val day: DayOfWeek) : HabitsEvent
     data class TargetChanged(val target: String) : HabitsEvent
     data class UnitChanged(val unit: String) : HabitsEvent
+    data class BlockChanged(val timeOfDay: TimeOfDay?) : HabitsEvent
     data object Save : HabitsEvent
     data object Archive : HabitsEvent
 }
@@ -111,6 +116,7 @@ class HabitsViewModel @Inject constructor(
             is HabitsEvent.DayToggled -> edit { it.copy(days = if (event.day in it.days) it.days - event.day else it.days + event.day, error = null) }
             is HabitsEvent.TargetChanged -> edit { it.copy(target = event.target.filter(Char::isDigit).take(TARGET_MAX_DIGITS), error = null) }
             is HabitsEvent.UnitChanged -> edit { it.copy(unit = event.unit.take(UNIT_MAX_LENGTH)) }
+            is HabitsEvent.BlockChanged -> edit { it.copy(timeOfDay = event.timeOfDay) }
             HabitsEvent.Save -> save()
             HabitsEvent.Archive -> archive()
         }
@@ -135,6 +141,7 @@ class HabitsViewModel @Inject constructor(
                         days = editor.days,
                         target = editor.target.toIntOrNull() ?: 0,
                         unit = editor.unit.trim(),
+                        timeOfDay = editor.timeOfDay,
                     ),
                 )
             } catch (e: CancellationException) {
@@ -179,7 +186,7 @@ class HabitsViewModel @Inject constructor(
     }
 }
 
-private fun HabitEntity.toItem() = HabitItem(id, title, stat, difficulty, daysOfWeekMask.toDays(), target, unit)
+private fun HabitEntity.toItem() = HabitItem(id, title, stat, difficulty, daysOfWeekMask.toDays(), target, unit, timeOfDay)
 
 private fun HabitItem.toEditor() = HabitEditorState(
     habitId = id,
@@ -189,4 +196,5 @@ private fun HabitItem.toEditor() = HabitEditorState(
     days = days,
     target = target.toString(),
     unit = unit,
+    timeOfDay = timeOfDay,
 )

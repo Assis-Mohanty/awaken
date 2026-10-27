@@ -8,6 +8,10 @@ import com.assismohanty.awaken.core.data.db.dao.TrialDao
 import com.assismohanty.awaken.core.data.db.entity.QuestInstanceEntity
 import com.assismohanty.awaken.core.data.repo.GameStateReader
 import com.assismohanty.awaken.core.data.repo.NarrativeRepository
+import com.assismohanty.awaken.core.data.repo.UiPrefsRepository
+import com.assismohanty.awaken.engine.GameDay
+import com.assismohanty.awaken.engine.TimeBlocks
+import com.assismohanty.awaken.engine.model.TimeOfDay
 import com.assismohanty.awaken.engine.RankRules
 import com.assismohanty.awaken.engine.SystemLines
 import com.assismohanty.awaken.engine.model.GateRank
@@ -18,6 +22,7 @@ import java.time.temporal.ChronoUnit
 import javax.inject.Inject
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.mapLatest
@@ -41,6 +46,11 @@ data class TodayModel(
     val trial: TrialSummary? = null,
     /** Path name and gate per quest id, for the Path badge on rows (DS §3 PathQuestBadge). */
     val pathBadges: Map<String, PathBadgeInfo> = emptyMap(),
+    /**
+     * The time-of-day block "now" falls in (GD §14.5), from the injected clock. Re-derived on every emission (quest
+     * changes, foreground, rollover) and when the block boundaries change, not on a timer.
+     */
+    val currentBlock: TimeOfDay = TimeOfDay.MORNING,
 )
 
 internal val QuestInstanceEntity.isOpen: Boolean get() = status == QuestStatus.ACTIVE || status == QuestStatus.STARTED
@@ -55,15 +65,19 @@ class ObserveTodayUseCase @Inject constructor(
     private val trialReader: TrialReader,
     private val narrative: NarrativeRepository,
     private val clock: Clock,
+    private val uiPrefs: UiPrefsRepository,
 ) {
     @OptIn(ExperimentalCoroutinesApi::class)
     operator fun invoke(dayChanges: Flow<Any>): Flow<TodayModel?> =
         observeHunterState(dayChanges).flatMapLatest { hunter ->
             if (hunter == null) return@flatMapLatest flowOf(null)
-            questDao.observeForDate(hunter.gameDate).mapLatest { all ->
-                val quests = all.filter { !it.status.isHidden }
-                TodayModel(hunter, quests, systemLine(hunter, quests), trialSummary(hunter), pathBadges(quests))
-            }
+            combine(questDao.observeForDate(hunter.gameDate), uiPrefs.prefs) { all, prefs -> all to prefs.blockBounds }
+                .mapLatest { (all, bounds) ->
+                    val quests = all.filter { !it.status.isHidden }
+                    val dayStart = hunterDao.getProfile()?.dayStartHour ?: GameDay.DEFAULT_DAY_START_HOUR
+                    val block = TimeBlocks.blockAt(clock.now().atZone(clock.zone()).toLocalTime(), dayStart, bounds)
+                    TodayModel(hunter, quests, systemLine(hunter, quests), trialSummary(hunter), pathBadges(quests), block)
+                }
         }
 
     private suspend fun trialSummary(hunter: HunterState): TrialSummary? {

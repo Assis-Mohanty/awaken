@@ -17,10 +17,10 @@ import com.assismohanty.awaken.core.designsystem.lexicon.PresentationMode
 import com.assismohanty.awaken.engine.model.Rank
 
 /**
- * Two palettes, one set of tokens (DESIGN_SYSTEM §2.1). No dynamic colour: the System has one look per mode.
+ * Three palettes, one set of tokens (DESIGN_SYSTEM §2.1). No dynamic colour. Clean mode is Light (default) or Dark from
+ * the user's Appearance choice; System mode is always the System palette (dark, glow, tracked-out titles).
  *
- * @param darkTheme premium black when true, the light palette otherwise. The caller resolves the user's
- *   System / Dark / Light choice; the default follows the device.
+ * @param darkTheme the resolved Appearance choice for Clean mode; the default follows the device.
  * @param reduceMotion the in-app toggle; the system "Remove animations" setting is OR-ed in (§2.5).
  * @param hapticsEnabled the in-app toggle (§2.6).
  * @param themeId the equipped Vault theme (GD §9.2); re-tints the background glow and rank-coloured window accents ([AwakenTheme.rankAccent]) only.
@@ -32,17 +32,22 @@ fun AwakenTheme(
     reduceMotion: Boolean = false,
     hapticsEnabled: Boolean = true,
     themeId: String = "default",
-    presentation: PresentationMode = PresentationMode.SYSTEM,
+    presentation: PresentationMode = PresentationMode.CLEAN,
     content: @Composable () -> Unit,
 ) {
-    val palette = if (darkTheme) AwakenPalette.Dark else AwakenPalette.Light
-    val colors = if (darkTheme) AwakenColors.Dark else AwakenColors.Light
-    val type = remember { AwakenType() }
+    val system = presentation == PresentationMode.SYSTEM
+    val palette = when {
+        system -> AwakenPalette.System
+        darkTheme -> AwakenPalette.Dark
+        else -> AwakenPalette.Light
+    }
+    val colors = remember(palette) { AwakenColors(palette) }
+    val type = if (system) AwakenType.System else AwakenType()
     val reduce = reduceMotion || systemReduceMotion()
     val motion = remember(reduce) { AwakenMotion(reduceMotion = reduce) }
     val shapes = remember { AwakenShapes() }
     val dimens = remember { AwakenDimens() }
-    val colorScheme = remember(palette, darkTheme) { palette.toColorScheme(darkTheme) }
+    val colorScheme = remember(palette) { palette.toColorScheme(palette.isDark) }
     CompositionLocalProvider(
         LocalAwakenPalette provides palette,
         LocalAwakenColors provides colors,
@@ -67,29 +72,30 @@ private fun AwakenPalette.toColorScheme(dark: Boolean): ColorScheme {
     val base = if (dark) darkColorScheme() else lightColorScheme()
     return base.copy(
         primary = system,
-        onPrimary = void,
+        onPrimary = onAccent,
         primaryContainer = panelRaised,
         onPrimaryContainer = bone,
         secondary = aether,
-        onSecondary = void,
+        onSecondary = onAccent,
         secondaryContainer = panelRaised, // nav-bar indicator: neutral, not Material tint
         onSecondaryContainer = bone,
         tertiary = crit,
-        onTertiary = void,
+        onTertiary = onAccent,
         background = void,
         onBackground = bone,
         surface = void,
         onSurface = bone,
         surfaceVariant = depth,
         onSurfaceVariant = mist,
-        surfaceContainer = depth,
-        surfaceContainerLow = depth,
-        surfaceContainerHigh = panelRaised,
+        // Sheets (Low), menus and dialogs (High) sit on card white / charcoal, like every other card.
+        surfaceContainer = panel,
+        surfaceContainerLow = panel,
+        surfaceContainerHigh = panel,
         surfaceContainerHighest = panelRaised,
         outline = edge,
         outlineVariant = fog,
         error = ember,
-        onError = void,
+        onError = onAccent,
     )
 }
 

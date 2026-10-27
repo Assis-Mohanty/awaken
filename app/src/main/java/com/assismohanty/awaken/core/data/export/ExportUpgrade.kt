@@ -47,6 +47,10 @@ object ExportUpgrade {
                 tables = current.tables + BODY_TABLES.filter { it !in current.tables }.associateWith { emptyList() },
             )
         }
+        // v9 → v10 (time-of-day blocks): the new quest and habit columns are nullable (= Anytime), so old rows import as they are.
+        if (current.app == ExportDocument.APP_ID && current.schemaVersion == 9) {
+            current = current.copy(schemaVersion = 10)
+        }
         return current
     }
 }

@@ -20,6 +20,7 @@ import com.assismohanty.awaken.engine.model.QuestType
 import com.assismohanty.awaken.engine.model.Rank
 import com.assismohanty.awaken.engine.model.SourceType
 import com.assismohanty.awaken.engine.model.Stat
+import com.assismohanty.awaken.engine.model.TimeOfDay
 import com.assismohanty.awaken.engine.model.Verification
 import com.assismohanty.awaken.engine.path.Feedback
 import com.assismohanty.awaken.engine.path.PathMode
@@ -99,6 +100,8 @@ data class QuestInstanceEntity(
     @ColumnInfo(name = "path_slot_id") val pathSlotId: String? = null,
     /** Set counter progress (GD §6.5): reps per set as "10,8,6". Progress only, never a reward (ENGINE_DECISIONS #84). */
     @ColumnInfo(name = "set_reps", defaultValue = "") val setReps: String = "",
+    /** Time-of-day block copied at generation (GD §14.5); null = Anytime. Presentation only. */
+    @ColumnInfo(name = "time_of_day") val timeOfDay: TimeOfDay? = null,
 )
 
 /** One completion attempt; [id] is the completionId `questInstanceId#attemptN` (GD §9.3). Not a ledger table. */
@@ -137,6 +140,8 @@ data class HabitEntity(
     @ColumnInfo(name = "campaign_id") val campaignId: String? = null,
     /** The template a campaign habit was planned from, so each act re-prices it from the same targets. */
     @ColumnInfo(name = "template_id") val templateId: String? = null,
+    /** The user's time-of-day block for this habit (GD §14.5); null = Anytime. */
+    @ColumnInfo(name = "time_of_day") val timeOfDay: TimeOfDay? = null,
 )
 
 /** THE LEDGER (append-only, GD §9.3). Never update or delete rows; `stat`/`item_id` use '' instead of NULL. */

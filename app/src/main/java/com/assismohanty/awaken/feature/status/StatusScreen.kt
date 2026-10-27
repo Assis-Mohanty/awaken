@@ -72,7 +72,12 @@ import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 
 @Composable
-fun StatusRoute(onOpenSettings: () -> Unit, modifier: Modifier = Modifier, viewModel: StatusViewModel = hiltViewModel()) {
+fun StatusRoute(
+    onOpenSettings: () -> Unit,
+    modifier: Modifier = Modifier,
+    onOpenPaths: () -> Unit = {},
+    viewModel: StatusViewModel = hiltViewModel(),
+) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val chooserTitle = lexString(R.string.share_report_chooser)
@@ -87,7 +92,7 @@ fun StatusRoute(onOpenSettings: () -> Unit, modifier: Modifier = Modifier, viewM
         context.startActivity(Intent.createChooser(send, chooserTitle))
         viewModel.onEvent(StatusEvent.ShareHandled)
     }
-    StatusScreen(state = state, onEvent = viewModel::onEvent, onOpenSettings = onOpenSettings, modifier = modifier)
+    StatusScreen(state = state, onEvent = viewModel::onEvent, onOpenSettings = onOpenSettings, onOpenPaths = onOpenPaths, modifier = modifier)
 }
 
 /** Status (DESIGN_SYSTEM §4.5): header → radar → stats → heatmap → titles & achievements → chapters → weekly report. */
@@ -97,6 +102,7 @@ fun StatusScreen(
     onEvent: (StatusEvent) -> Unit,
     modifier: Modifier = Modifier,
     onOpenSettings: () -> Unit = {},
+    onOpenPaths: () -> Unit = {},
 ) {
     Column(
         modifier = modifier
@@ -114,6 +120,14 @@ fun StatusScreen(
         ) {
             val title = state.equippedTitleId?.let(::titleNameRes)?.let { lexString(it) }
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                // Paths left the bottom bar in the v1.1 redesign; they open from here.
+                IconButton(onClick = onOpenPaths) {
+                    Icon(
+                        imageVector = AwakenGlyphs.Path,
+                        contentDescription = lexString(R.string.cd_open_paths),
+                        tint = AwakenTheme.colors.textSecondary,
+                    )
+                }
                 IconButton(onClick = onOpenSettings) {
                     Icon(
                         imageVector = AwakenGlyphs.Settings,

@@ -1,5 +1,6 @@
 package com.assismohanty.awaken.feature.screentime
 
+import com.assismohanty.awaken.core.designsystem.lexicon.PresentationMode
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -27,7 +28,7 @@ class ScreenTimeScreenTest {
         onOpenUsageAccess: () -> Unit = {},
     ) {
         composeRule.setContent {
-            AwakenTheme(reduceMotion = true) {
+            AwakenTheme(reduceMotion = true, presentation = PresentationMode.SYSTEM) {
                 ScreenTimeScreen(state = state, onEvent = { events += it }, onBack = {}, onOpenUsageAccess = onOpenUsageAccess)
             }
         }
@@ -95,7 +96,7 @@ class ScreenTimeScreenTest {
     fun theEditorStepsTheLimitAndSaysItAppliesTomorrow() {
         val events = mutableListOf<ScreenTimeEvent>()
         composeRule.setContent {
-            AwakenTheme(reduceMotion = true) {
+            AwakenTheme(reduceMotion = true, presentation = PresentationMode.SYSTEM) {
                 RuleEditorContent(AppRuleEditor("pkg", "Instagram", AppCategory.DISTRACTING, 30), onEvent = { events += it })
             }
         }
@@ -113,7 +114,7 @@ class ScreenTimeScreenTest {
     @Test
     fun aNonDistractingAppHasNoLimitControls() {
         composeRule.setContent {
-            AwakenTheme(reduceMotion = true) {
+            AwakenTheme(reduceMotion = true, presentation = PresentationMode.SYSTEM) {
                 RuleEditorContent(AppRuleEditor("pkg", "Docs", AppCategory.PRODUCTIVE, null), onEvent = {})
             }
         }

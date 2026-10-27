@@ -1,5 +1,6 @@
 package com.assismohanty.awaken.feature.onboarding
 
+import com.assismohanty.awaken.core.designsystem.lexicon.PresentationMode
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
@@ -62,7 +63,7 @@ class OnboardingFlowTest {
     @Test
     fun aGoalThenEnablingAiCreatesTheFirstPathAfterTheHunterExists() {
         val viewModel = newViewModel()
-        composeRule.setContent { AwakenTheme { OnboardingRoute(viewModel = viewModel) } }
+        composeRule.setContent { AwakenTheme(presentation = PresentationMode.SYSTEM) { OnboardingRoute(viewModel = viewModel) } }
 
         walkToPathStep()
         click("Run a 10K")
@@ -93,7 +94,7 @@ class OnboardingFlowTest {
     @Test
     fun skippingTheFirstPathSendsAndCreatesNothing() {
         val viewModel = newViewModel()
-        composeRule.setContent { AwakenTheme { OnboardingRoute(viewModel = viewModel) } }
+        composeRule.setContent { AwakenTheme(presentation = PresentationMode.SYSTEM) { OnboardingRoute(viewModel = viewModel) } }
 
         walkToPathStep()
         click("Skip")
@@ -111,7 +112,7 @@ class OnboardingFlowTest {
     @Test
     fun decliningConsentDropsTheGoalAndMovesOn() {
         val viewModel = newViewModel()
-        composeRule.setContent { AwakenTheme { OnboardingRoute(viewModel = viewModel) } }
+        composeRule.setContent { AwakenTheme(presentation = PresentationMode.SYSTEM) { OnboardingRoute(viewModel = viewModel) } }
 
         walkToPathStep()
         click("Run a 10K")
@@ -133,7 +134,7 @@ class OnboardingFlowTest {
     @Test
     fun awakeningCreatesTheHunterAndTheFirstDirective() {
         val viewModel = newViewModel()
-        composeRule.setContent { AwakenTheme { OnboardingRoute(viewModel = viewModel) } }
+        composeRule.setContent { AwakenTheme(presentation = PresentationMode.SYSTEM) { OnboardingRoute(viewModel = viewModel) } }
 
         walkToPathStep()
         click("Skip")
@@ -172,7 +173,7 @@ class OnboardingFlowTest {
     @Test
     fun nameIsValidatedBeforeMovingOn() {
         val viewModel = newViewModel()
-        composeRule.setContent { AwakenTheme { OnboardingRoute(viewModel = viewModel) } }
+        composeRule.setContent { AwakenTheme(presentation = PresentationMode.SYSTEM) { OnboardingRoute(viewModel = viewModel) } }
 
         click("Accept")
         composeRule.onNode(hasSetTextAction()).performTextInput("Al")

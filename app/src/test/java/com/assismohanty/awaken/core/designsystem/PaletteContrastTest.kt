@@ -8,7 +8,7 @@ import com.assismohanty.awaken.engine.model.Stat
 import com.google.common.truth.Truth.assertWithMessage
 import org.junit.Test
 
-/** DESIGN_SYSTEM §2.1 contrast floors hold in both palettes: bone ≥ 7:1, mist ≥ 5:1, hue text ≥ 4.5:1 on `panel`. */
+/** DESIGN_SYSTEM §2.1 contrast floors hold in every palette: ink ≥ 7:1, secondary ≥ 5:1, hues and stat inks ≥ 4.5:1 on cards and stat inks on their own tint. */
 class PaletteContrastTest {
 
     private fun contrast(a: Color, b: Color): Double {
@@ -23,6 +23,10 @@ class PaletteContrastTest {
             Rank.entries.map { "rank $it" to colors.rank(it) } +
             Stat.entries.map { "stat $it" to colors.stat(it) }
         hues.forEach { (label, hue) -> assertWithMessage("$name $label").that(contrast(hue, colors.panel)).isAtLeast(4.5) }
+        Stat.entries.forEach { stat ->
+            assertWithMessage("$name stat $stat on its tint").that(contrast(colors.stat(stat), colors.statTint(stat))).isAtLeast(4.5)
+        }
+        assertWithMessage("$name text on accent").that(contrast(colors.onAccent, colors.system)).isAtLeast(4.5)
     }
 
     @Test
@@ -30,4 +34,7 @@ class PaletteContrastTest {
 
     @Test
     fun lightPaletteMeetsTheFloors() = check("light", AwakenPalette.Light)
+
+    @Test
+    fun systemPaletteMeetsTheFloors() = check("system", AwakenPalette.System)
 }

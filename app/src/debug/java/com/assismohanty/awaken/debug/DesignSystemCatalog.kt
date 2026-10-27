@@ -1,5 +1,26 @@
 package com.assismohanty.awaken.debug
 
+import com.assismohanty.awaken.core.designsystem.charts.ComparisonRow
+import com.assismohanty.awaken.core.designsystem.charts.ChartSpec
+import com.assismohanty.awaken.core.designsystem.charts.Chart
+import com.assismohanty.awaken.core.designsystem.components.TimelineQuestRow
+import com.assismohanty.awaken.core.designsystem.components.BlockState
+import com.assismohanty.awaken.core.designsystem.components.TimeBlock
+import com.assismohanty.awaken.core.designsystem.components.TimeBlockHeader
+import com.assismohanty.awaken.core.designsystem.components.StatTintCard
+import com.assismohanty.awaken.core.designsystem.components.Trend
+import com.assismohanty.awaken.core.designsystem.components.TrendPill
+import com.assismohanty.awaken.core.designsystem.components.MetricLabel
+import com.assismohanty.awaken.core.designsystem.components.AwakenCard
+import com.assismohanty.awaken.core.designsystem.components.InsightCard
+import com.assismohanty.awaken.core.designsystem.components.StreakModule
+import com.assismohanty.awaken.core.designsystem.components.LevelModule
+import com.assismohanty.awaken.core.designsystem.components.HeroStyle
+import com.assismohanty.awaken.core.designsystem.components.HeroRing
+import com.assismohanty.awaken.core.designsystem.components.HeaderIconButton
+import com.assismohanty.awaken.core.designsystem.components.GreetingHeader
+import com.assismohanty.awaken.core.designsystem.components.SegmentedTabs
+import com.assismohanty.awaken.core.designsystem.lexicon.PresentationMode
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -83,16 +104,26 @@ import kotlinx.coroutines.delay
 fun DesignSystemCatalog(onBack: () -> Unit) {
     var rank by rememberSaveable { mutableStateOf(Rank.C) }
     var reduceMotion by rememberSaveable { mutableStateOf(false) }
-    AwakenTheme(reduceMotion = reduceMotion) {
+    var look by rememberSaveable { mutableStateOf(CatalogLook.LIGHT) }
+    AwakenTheme(
+        darkTheme = look == CatalogLook.DARK,
+        reduceMotion = reduceMotion,
+        presentation = if (look == CatalogLook.SYSTEM) PresentationMode.SYSTEM else PresentationMode.CLEAN,
+    ) {
         CatalogContent(
             rank = rank,
             reduceMotion = reduceMotion,
             onRank = { rank = it },
             onReduceMotion = { reduceMotion = it },
             onBack = onBack,
+            look = look,
+            onLook = { look = it },
         )
     }
 }
+
+/** The three looks to compare on device (DESIGN_SYSTEM §2.1): Clean light, Clean dark, System. */
+private enum class CatalogLook { LIGHT, DARK, SYSTEM }
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -102,8 +133,12 @@ private fun CatalogContent(
     onRank: (Rank) -> Unit,
     onReduceMotion: (Boolean) -> Unit,
     onBack: () -> Unit,
+    look: CatalogLook = CatalogLook.LIGHT,
+    onLook: (CatalogLook) -> Unit = {},
 ) {
     val colors = AwakenTheme.palette
+    var period by remember { mutableIntStateOf(1) }
+    var morningOpen by remember { mutableStateOf(false) }
     val type = AwakenTheme.type
     val rankColor = colors.rank(rank)
     var revealKey by remember { mutableIntStateOf(0) }
@@ -136,6 +171,12 @@ private fun CatalogContent(
 
             item {
                 Section(R.string.catalog_controls) {
+                    SegmentedTabs(
+                        options = listOf("Light", "Dark", "System"),
+                        selected = look.ordinal,
+                        onSelect = { onLook(CatalogLook.entries[it]) },
+                        modifier = Modifier.fillMaxWidth(),
+                    )
                     FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
                         Rank.entries.forEach { r ->
                             if (r == rank) PrimaryButton(r.name, onClick = { onRank(r) }, color = colors.rank(r))
@@ -162,9 +203,90 @@ private fun CatalogContent(
             }
 
             item {
+                Section(R.string.catalog_hero) {
+                    GreetingHeader(greeting = "Good afternoon, Assis", subtitle = "Tuesday, 27 October 2026") {
+                        HeaderIconButton(AwakenGlyphs.Portal, "Open focus sessions", onClick = {})
+                        HeaderIconButton(AwakenGlyphs.Vault, "Open shop", onClick = {})
+                    }
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
+                        HeroRing(value = "3", unitLine = "of 5 done", kicker = "Today", progress = 0.6f, description = "3 of 5 done")
+                    }
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
+                        HeroRing(
+                            value = "61", unitLine = "out of 100", kicker = "12–18 Oct", progress = 0.61f,
+                            description = "61 out of 100", style = HeroStyle.DOTS,
+                        )
+                    }
+                    Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+                        LevelModule(level = 24, rank = rank, xpIntoLevel = xp, xpForLevel = previewHunter.xpForLevel, modifier = Modifier.weight(1.4f))
+                        StreakModule(streak = 12, best = 30, modifier = Modifier.weight(1f))
+                    }
+                    InsightCard(title = "Daily focus", body = "On days you sleep 7 h or more, you complete 38% more quests.")
+                }
+            }
+
+            item {
+                Section(R.string.catalog_metrics) {
+                    SegmentedTabs(listOf("Week", "Month", "Quarter", "Year"), selected = period, onSelect = { period = it }, modifier = Modifier.fillMaxWidth())
+                    AwakenCard(title = "Quests per day", reveal = false) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.lg), verticalAlignment = Alignment.Bottom) {
+                            MetricLabel("Result", "3.4", large = true)
+                            MetricLabel("Trend", "+12%")
+                            TrendPill("+0.4", Trend.UP)
+                        }
+                        Chart(
+                            ChartSpec.TrendLine(
+                                values = listOf(2.1f, 2.6f, 2.4f, 3.0f, 2.8f, 3.3f, 3.4f).let { if (period == 0) it else it.reversed() + it },
+                                labels = listOf("Mon 5", "Mon 12", "Mon 19", "Mon 26"),
+                                description = "Quests per day, rising from 2.1 to 3.4",
+                            ),
+                        )
+                    }
+                    Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+                        StatTintCard(Stat.STR, "Strength", "+2 levels", modifier = Modifier.weight(1f))
+                        StatTintCard(Stat.INT, "Intellect", "Stable", modifier = Modifier.weight(1f))
+                        StatTintCard(Stat.CHA, "Charisma", "1 of 9", modifier = Modifier.weight(1f))
+                    }
+                    AwakenCard(title = "Daily steps", reveal = false) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text("2,503", style = type.metricL, color = colors.bone, modifier = Modifier.weight(1f))
+                            Chart(
+                                ChartSpec.Sparkline(listOf(3f, 5f, 4f, 7f, 6f, 9f, 8f), description = "Steps over 7 days"),
+                                modifier = Modifier.weight(1f),
+                            )
+                        }
+                    }
+                    Chart(
+                        ChartSpec.Comparison(
+                            rows = listOf(
+                                ComparisonRow("After 7 h+ sleep", "3.3 / day", 1f, colors.fillVit),
+                                ComparisonRow("After less sleep", "2.4 / day", 0.73f, colors.fillWil),
+                            ),
+                            description = "3.3 quests a day after 7 hours of sleep or more, 2.4 after less",
+                        ),
+                    )
+                }
+            }
+
+            item {
+                Section(R.string.catalog_timeline) {
+                    TimeBlockHeader(TimeBlock.MORNING, done = 1, total = 1, state = BlockState.PAST, expanded = morningOpen, onToggle = { morningOpen = !morningOpen })
+                    if (morningOpen) TimelineQuestRow(previewQuests[1], onComplete = {}, onOpen = {}, first = true, last = true)
+                    TimeBlockHeader(TimeBlock.DAY, done = 0, total = 2, state = BlockState.CURRENT, expanded = true, onToggle = {})
+                    TimelineQuestRow(previewQuests[0], onComplete = {}, onOpen = {}, first = true)
+                    TimelineQuestRow(previewQuests[2], onComplete = {}, onOpen = {}, last = true)
+                    TimeBlockHeader(TimeBlock.ANYTIME, done = 0, total = 1, state = BlockState.UPCOMING, expanded = true, onToggle = {})
+                    TimelineQuestRow(previewQuests[4], onComplete = {}, onOpen = {}, first = true, last = true)
+                }
+            }
+
+            item {
                 Section(R.string.catalog_type) {
-                    Text("LV 24", style = type.metricXL, color = colors.bone)
-                    Text("C", style = type.metricL, color = rankColor)
+                    Text("61", style = type.metricXL, color = colors.bone)
+                    Text("2,503", style = type.metricL, color = colors.bone)
+                    Text("Good afternoon, Assis", style = type.headline, color = colors.bone)
+                    Text("Latest measurements", style = type.section, color = colors.bone)
+                    Text("RESULT", style = type.overline, color = colors.mist)
                     Text(stringResource(R.string.system_title_daily_directive), style = type.windowTitle, color = rankColor)
                     Text("+144 XP · 1,920", style = type.numeric, color = colors.bone)
                     Text("Do push-ups", style = type.title, color = colors.bone)
@@ -177,9 +299,9 @@ private fun CatalogContent(
             item {
                 Section(R.string.catalog_colours) {
                     val swatches = listOf(
-                        colors.void, colors.depth, colors.panelRaised, colors.edge, colors.bone, colors.mist, colors.fog,
-                        colors.system, colors.aether, colors.ember, colors.crit, colors.verified,
-                    ) + Rank.entries.map { colors.rank(it) } + Stat.entries.map { colors.stat(it) }
+                        colors.void, colors.depth, colors.panel, colors.panelRaised, colors.edge, colors.bone, colors.mist, colors.fog,
+                        colors.system, colors.aether, colors.ember, colors.crit, colors.verified, colors.heroWashA, colors.heroWashB,
+                    ) + Rank.entries.map { colors.rank(it) } + Stat.entries.flatMap { listOf(colors.stat(it), colors.statFill(it), colors.statTint(it)) }
                     FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.xxs), verticalArrangement = Arrangement.spacedBy(Spacing.xxs)) {
                         swatches.forEach { Box(Modifier.size(AwakenTheme.dimens.icon).background(it)) }
                     }
@@ -190,7 +312,11 @@ private fun CatalogContent(
                 Section(R.string.catalog_glyphs) {
                     FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
                         Stat.entries.forEach { Icon(AwakenGlyphs.stat(it), it.name, tint = colors.stat(it), modifier = Modifier.size(AwakenTheme.dimens.sigil)) }
-                        listOf(AwakenGlyphs.Shield, AwakenGlyphs.Fragment, AwakenGlyphs.Portal, AwakenGlyphs.Flame, AwakenGlyphs.Coin, AwakenGlyphs.VerifiedSeal, AwakenGlyphs.Hourglass)
+                        listOf(
+                            AwakenGlyphs.Shield, AwakenGlyphs.Fragment, AwakenGlyphs.Portal, AwakenGlyphs.Flame, AwakenGlyphs.Coin, AwakenGlyphs.VerifiedSeal,
+                            AwakenGlyphs.Hourglass, AwakenGlyphs.Home, AwakenGlyphs.Bars, AwakenGlyphs.Sparkle, AwakenGlyphs.Sunrise, AwakenGlyphs.Sun,
+                            AwakenGlyphs.Moon, AwakenGlyphs.Clock, AwakenGlyphs.ArrowUp, AwakenGlyphs.ArrowDown,
+                        )
                             .forEach { Icon(it, it.name, tint = colors.system, modifier = Modifier.size(AwakenTheme.dimens.sigil)) }
                     }
                     Row(horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) { Rank.entries.forEach { RankCrest(it, AwakenTheme.dimens.crestSmall) } }

@@ -1,5 +1,7 @@
 package com.assismohanty.awaken.feature.today
 
+import java.time.LocalDate
+import com.assismohanty.awaken.engine.model.TimeOfDay
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.assismohanty.awaken.core.data.db.entity.QuestInstanceEntity
@@ -66,6 +68,10 @@ data class TodayUiState(
     /** The running campaign's day and act, or null with [campaignOffer] when none runs (GD §6.8). */
     val campaign: CampaignCard? = null,
     val campaignOffer: Boolean = false,
+    /** The block "now" is in (GD §14.5): highlighted on the timeline, earlier blocks collapse. */
+    val currentBlock: TimeOfDay = TimeOfDay.MORNING,
+    val gameDate: LocalDate? = null,
+    val bestStreak: Int = 0,
 )
 
 data class CampaignCard(val dayIndex: Int, val act: CampaignAct)
@@ -165,6 +171,9 @@ internal fun TodayModel.toUiState(): TodayUiState {
         total = counted.size,
         cleared = hunter.todayCleared,
         systemLine = systemLine,
+        currentBlock = currentBlock,
+        gameDate = hunter.gameDate,
+        bestStreak = hunter.bestStreak,
         trial = trial,
         trialStages = quests.filter { it.type == QuestType.TRIAL }.map { it.toRowModel() },
         penaltyOpen = quests.any { it.type == QuestType.PENALTY && it.isOpen },
@@ -193,6 +202,7 @@ internal fun QuestInstanceEntity.toRowModel(badge: PathBadgeInfo? = null) = Ques
     },
     pathBadge = badge?.let { PathBadgeModel(it.pathName, it.gateRank) },
     progress = if (SetCounter.appliesTo(unit, verification) && status in OPEN_STATUSES) SetCounter.total(SetCounter.parse(setReps)).takeIf { it > 0 } else null,
+    timeOfDay = timeOfDay,
 )
 
 private val OPEN_STATUSES = setOf(QuestStatus.ACTIVE, QuestStatus.STARTED)

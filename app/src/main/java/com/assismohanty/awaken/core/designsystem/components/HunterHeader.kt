@@ -4,7 +4,9 @@ import com.assismohanty.awaken.core.designsystem.lexicon.lexString
 import com.assismohanty.awaken.core.designsystem.lexicon.lexPlural
 import androidx.compose.animation.core.animateIntAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -76,7 +78,7 @@ fun HunterHeader(model: HunterHeaderModel, modifier: Modifier = Modifier, large:
                             )
                         }
                     }
-                    Text(model.name, style = type.title, color = colors.bone, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    Text(model.name, style = if (large) type.headline else type.title, color = colors.bone, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
                 model.title?.let { Text(it, style = type.label, color = colors.mist) }
             }
@@ -94,9 +96,10 @@ fun HunterHeader(model: HunterHeaderModel, modifier: Modifier = Modifier, large:
             )
         }
         Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+            // System mode keeps the HUD "LV 24"; Clean reads "Level 24".
             Text(
-                text = lexString(R.string.level_short, level),
-                style = if (large) type.metricXL else type.metricL,
+                text = lexString(if (colors.glow) R.string.level_short else R.string.level_long, level),
+                style = if (colors.glow) (if (large) type.metricXL else type.metricL) else type.title,
                 color = colors.bone,
             )
             XpBar(
@@ -114,12 +117,16 @@ fun HunterHeader(model: HunterHeaderModel, modifier: Modifier = Modifier, large:
 @Composable
 private fun Counter(icon: ImageVector, value: String, tint: Color, description: String) {
     Row(
-        modifier = Modifier.semantics(mergeDescendants = true) { contentDescription = description },
+        modifier = Modifier
+            .clip(AwakenTheme.shapes.pill)
+            .background(AwakenTheme.palette.panelRaised)
+            .padding(horizontal = Spacing.sm, vertical = Spacing.xxs)
+            .semantics(mergeDescendants = true) { contentDescription = description },
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.xxs),
     ) {
         Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(AwakenTheme.dimens.iconSmall))
-        Text(value, style = AwakenTheme.type.numeric, color = AwakenTheme.palette.bone)
+        Text(value, style = AwakenTheme.type.numericSmall, color = AwakenTheme.palette.bone)
     }
 }
 

@@ -40,7 +40,7 @@ data class ShareCardModel(
 @Composable
 fun ShareCard(model: ShareCardModel, modifier: Modifier = Modifier) {
     // The card is an image that leaves the app: always premium black, whatever mode the hunter uses.
-    CompositionLocalProvider(LocalAwakenPalette provides AwakenPalette.Dark) { ShareCardContent(model, modifier) }
+    CompositionLocalProvider(LocalAwakenPalette provides AwakenPalette.Legacy) { ShareCardContent(model, modifier) }
 }
 
 @Composable

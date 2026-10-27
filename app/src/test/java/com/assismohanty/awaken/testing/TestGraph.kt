@@ -215,7 +215,7 @@ class TestGraph(
         db.hunterDao(), db.questDao(), db.dayRecordDao(), db.trialDao(), ledger, clock,
     )
     val observeToday = ObserveTodayUseCase(
-        observeHunterState, db.hunterDao(), db.questDao(), reader, db.trialDao(), pathDao, trialReader, narrative, clock,
+        observeHunterState, db.hunterDao(), db.questDao(), reader, db.trialDao(), pathDao, trialReader, narrative, clock, uiPrefs,
     )
     val dayRefresher = DayRefresher(runRollover)
     val setRestDay = SetRestDayUseCase(db.hunterDao(), db.dayRecordDao(), transactions, clock)

@@ -1,5 +1,6 @@
 package com.assismohanty.awaken.feature.gate
 
+import com.assismohanty.awaken.core.designsystem.lexicon.PresentationMode
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -45,7 +46,7 @@ class GatesScreenTest {
         val events = mutableListOf<GatesEvent>()
         composeRule.setContent {
             var state by remember { mutableStateOf(GatesUiState(loading = false, tiles = tiles)) }
-            AwakenTheme {
+            AwakenTheme(presentation = PresentationMode.SYSTEM) {
                 GatesScreen(
                     state = state,
                     onEvent = { event ->
@@ -81,7 +82,7 @@ class GatesScreenTest {
         graph.completionCenter.gateCollapsed(GateCollapseReason.BREACH, backgroundMs = 102_000)
         val viewModel = RewardHostViewModel(graph.completionCenter, graph.notices, graph.narrative, graph.notificationAccess, graph.uiPrefs, graph.submitFeedback)
         composeRule.setContent {
-            AwakenTheme { RewardHost(snackbarHostState = remember { SnackbarHostState() }, viewModel = viewModel) }
+            AwakenTheme(presentation = PresentationMode.SYSTEM) { RewardHost(snackbarHostState = remember { SnackbarHostState() }, viewModel = viewModel) }
         }
 
         composeRule.waitUntil(timeoutMillis = 5_000) {

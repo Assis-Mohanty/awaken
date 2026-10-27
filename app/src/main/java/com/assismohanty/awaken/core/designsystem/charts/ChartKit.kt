@@ -88,6 +88,21 @@ sealed interface ChartSpec {
 
     /** A grid of day cells, [columns] to a row (e.g. the 45-day campaign). */
     data class CalendarGrid(val cells: List<CalendarCell>, val columns: Int, val description: String) : ChartSpec
+
+    /** A smooth trend line with a soft gradient, dotted grid and the latest point marked; [labels] run under it. */
+    data class TrendLine(
+        val values: List<Float>,
+        val labels: List<String>,
+        val description: String,
+        val color: Color? = null,
+        val height: Dp? = null,
+    ) : ChartSpec
+
+    /** A tiny line for a card corner ("Daily steps"). */
+    data class Sparkline(val values: List<Float>, val description: String, val color: Color? = null, val height: Dp? = null) : ChartSpec
+
+    /** Labelled bars side by side for comparing a few values (insights: "7 h+ sleep vs less"). */
+    data class Comparison(val rows: List<ComparisonRow>, val description: String) : ChartSpec
 }
 
 enum class BarShape { SQUARE, CHAMFER, PILL }
@@ -98,6 +113,9 @@ data class Segment(val weight: Float, val color: Color)
 data class StackedColumn(val total: Float, val highlight: Float, val description: String)
 
 enum class CalendarCell { FILLED, CURRENT, PAST, UPCOMING }
+
+/** One bar of a [ChartSpec.Comparison]: [fraction] of the widest (0..1), [value] as shown text. */
+data class ComparisonRow(val label: String, val value: String, val fraction: Float, val color: Color? = null)
 
 @Composable
 fun Chart(spec: ChartSpec, modifier: Modifier = Modifier, content: @Composable () -> Unit = {}) {
@@ -124,6 +142,9 @@ fun Chart(spec: ChartSpec, modifier: Modifier = Modifier, content: @Composable (
         is ChartSpec.Columns -> ColumnsChart(spec, modifier)
         is ChartSpec.StackedColumns -> StackedColumnsChart(spec, modifier)
         is ChartSpec.CalendarGrid -> CalendarGridChart(spec, modifier)
+        is ChartSpec.TrendLine -> TrendLineChart(spec, modifier)
+        is ChartSpec.Sparkline -> SparklineChart(spec, modifier)
+        is ChartSpec.Comparison -> ComparisonChart(spec, modifier)
     }
 }
 
@@ -235,7 +256,7 @@ private fun StackedColumnsChart(spec: ChartSpec.StackedColumns, modifier: Modifi
 private fun CalendarGridChart(spec: ChartSpec.CalendarGrid, modifier: Modifier) {
     val palette = AwakenTheme.palette
     val dimens = AwakenTheme.dimens
-    val shape = AwakenTheme.shapes.xpBar
+    val shape = AwakenTheme.shapes.tile
     Column(
         verticalArrangement = Arrangement.spacedBy(Spacing.xxs),
         modifier = modifier.semantics(mergeDescendants = true) { contentDescription = spec.description },

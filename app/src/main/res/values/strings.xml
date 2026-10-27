@@ -79,4 +79,20 @@
 
     <!-- Level-up ceremony -->
     <string name="level_up_continue">Tap to continue</string>
+
+    <!-- Design-system modules (v1.1 redesign) -->
+    <string name="time_block_morning">Morning</string>
+    <string name="time_block_day">Day</string>
+    <string name="time_block_evening">Evening</string>
+    <string name="time_block_anytime">Anytime</string>
+    <string name="time_block_progress">%1$d of %2$d done</string>
+    <string name="time_block_now">Now</string>
+    <string name="state_expanded">Expanded</string>
+    <string name="state_collapsed">Collapsed</string>
+    <string name="level_word">Level</string>
+    <string name="level_long">Level %1$d</string>
+    <string name="streak_label">day streak</string>
+    <string name="best_streak_label">Best %1$d</string>
+    <string name="cd_streak_module">%1$d day streak, best %2$d</string>
+    <string name="cd_level_module">Level %1$d, rank %2$s, %3$s of %4$s XP to the next level</string>
 </resources>

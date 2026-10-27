@@ -26,6 +26,7 @@ internal fun QuestDraft.toEntity(createdAt: Instant): QuestInstanceEntity = Ques
     status = QuestStatus.ACTIVE,
     createdAt = createdAt,
     pathSlotId = pathSlotId,
+    timeOfDay = timeOfDay,
 )
 
 /** Generated quests only (they always have a template). */
@@ -44,6 +45,7 @@ internal fun QuestInstanceEntity.toDraft(): QuestDraft? = templateId?.let { temp
         difficulty = difficulty,
         verification = verification,
         minDurationSec = minDurationSec,
+        timeOfDay = timeOfDay,
     )
 }
 

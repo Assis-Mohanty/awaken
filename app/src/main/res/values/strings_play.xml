@@ -58,6 +58,11 @@
     <string name="system_title_directive_cleared">DIRECTIVE CLEARED</string>
     <string name="today_progress">%1$d / %2$d</string>
     <string name="today_habits">Habits</string>
+    <string name="today_greeting_morning">Good morning, %1$s</string>
+    <string name="today_greeting_day">Good afternoon, %1$s</string>
+    <string name="today_greeting_evening">Good evening, %1$s</string>
+    <string name="today_hero_unit">of %1$d done</string>
+    <string name="today_hero_cd">%1$d of %2$d quests done today</string>
     <string name="today_no_habits">No habits yet. Add one the System should track.</string>
     <string name="today_loading">The System is preparing your directive.</string>
     <string name="action_manage_habits">Manage habits</string>
@@ -121,6 +126,7 @@
     <string name="habit_stat">Stat</string>
     <string name="habit_difficulty">Difficulty</string>
     <string name="habit_difficulty_note">Self-reported habits go up to Normal.</string>
+    <string name="habit_block">Time of day</string>
     <string name="habit_days">Days</string>
     <string name="habit_target">Target</string>
     <string name="habit_unit">Unit</string>
@@ -397,6 +403,14 @@
     <!-- Settings (Phase 10b) -->
     <string name="settings_title">SETTINGS</string>
     <string name="cd_open_settings">Open settings</string>
+    <string name="cd_open_paths">Open paths</string>
+    <string name="settings_morning_end">Morning ends</string>
+    <string name="settings_day_end">Day ends</string>
+    <string name="settings_blocks_note">Today groups your quests into Morning, Day and Evening by these times.</string>
+    <string name="settings_presentation_title">Presentation</string>
+    <string name="clean_mode_label">Clean</string>
+    <string name="system_mode_label">System</string>
+    <string name="settings_presentation_note">Clean uses plain words and a light, calm look. The other mode is the full game: its own words, a dark look and a glow.</string>
     <string name="settings_window_profile">PROFILE</string>
     <string name="settings_window_day">DAY</string>
     <string name="settings_window_training">TRAINING</string>

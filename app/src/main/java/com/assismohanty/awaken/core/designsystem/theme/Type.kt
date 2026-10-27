@@ -13,51 +13,65 @@ import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import com.assismohanty.awaken.R
 
-/** The System's voice: titles, numerals, rank letters (DESIGN_SYSTEM §2.2). */
-val SairaCondensed = FontFamily(
-    Font(R.font.saira_condensed_semibold, FontWeight.SemiBold),
-    Font(R.font.saira_condensed_bold, FontWeight.Bold),
-)
-
-/** Everything people read. Bundled as Google Fonts' variable TTF; each weight pins the `wght` axis. */
+/**
+ * Plus Jakarta Sans (SIL OFL, `res/font/plus_jakarta_sans.ttf`, variable `wght` 200–800): one modern family for
+ * everything (DESIGN_SYSTEM §2.2). Each weight pins the axis.
+ */
 @OptIn(ExperimentalTextApi::class)
-val IbmPlexSans = FontFamily(
-    Font(R.font.ibm_plex_sans, FontWeight.Normal, variationSettings = FontVariation.Settings(FontVariation.weight(400))),
-    Font(R.font.ibm_plex_sans, FontWeight.Medium, variationSettings = FontVariation.Settings(FontVariation.weight(500))),
-    Font(R.font.ibm_plex_sans, FontWeight.SemiBold, variationSettings = FontVariation.Settings(FontVariation.weight(600))),
+val PlusJakartaSans = FontFamily(
+    Font(R.font.plus_jakarta_sans, FontWeight.Normal, variationSettings = FontVariation.Settings(FontVariation.weight(400))),
+    Font(R.font.plus_jakarta_sans, FontWeight.Medium, variationSettings = FontVariation.Settings(FontVariation.weight(500))),
+    Font(R.font.plus_jakarta_sans, FontWeight.SemiBold, variationSettings = FontVariation.Settings(FontVariation.weight(600))),
+    Font(R.font.plus_jakarta_sans, FontWeight.Bold, variationSettings = FontVariation.Settings(FontVariation.weight(700))),
+    Font(R.font.plus_jakarta_sans, FontWeight.ExtraBold, variationSettings = FontVariation.Settings(FontVariation.weight(800))),
 )
 
 private const val TABULAR_NUMS = "tnum"
 
+private fun style(weight: FontWeight, size: Int, line: Int, tracking: Double = 0.0, tabular: Boolean = false) = TextStyle(
+    fontFamily = PlusJakartaSans,
+    fontWeight = weight,
+    fontSize = size.sp,
+    lineHeight = line.sp,
+    letterSpacing = tracking.em,
+    fontFeatureSettings = if (tabular) TABULAR_NUMS else null,
+)
+
+/** Type roles (DESIGN_SYSTEM §2.2). Numbers are big and bold; words are calm. */
 @Immutable
 data class AwakenType(
-    val metricXL: TextStyle = TextStyle(fontFamily = SairaCondensed, fontWeight = FontWeight.Bold, fontSize = 64.sp, lineHeight = 64.sp),
-    val metricL: TextStyle = TextStyle(fontFamily = SairaCondensed, fontWeight = FontWeight.Bold, fontSize = 40.sp, lineHeight = 44.sp),
-    /** UPPERCASE only here — callers pass already-uppercased System titles from strings.xml. */
-    val windowTitle: TextStyle = TextStyle(
-        fontFamily = SairaCondensed, fontWeight = FontWeight.SemiBold, fontSize = 18.sp, lineHeight = 22.sp, letterSpacing = 0.06.em,
-    ),
-    val numeric: TextStyle = TextStyle(
-        fontFamily = SairaCondensed, fontWeight = FontWeight.SemiBold, fontSize = 22.sp, lineHeight = 26.sp,
-        fontFeatureSettings = TABULAR_NUMS,
-    ),
-    val numericSmall: TextStyle = TextStyle(
-        fontFamily = SairaCondensed, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, lineHeight = 18.sp,
-        fontFeatureSettings = TABULAR_NUMS,
-    ),
-    val title: TextStyle = TextStyle(fontFamily = IbmPlexSans, fontWeight = FontWeight.SemiBold, fontSize = 18.sp, lineHeight = 24.sp),
-    val body: TextStyle = TextStyle(fontFamily = IbmPlexSans, fontWeight = FontWeight.Normal, fontSize = 15.sp, lineHeight = 22.sp),
-    val label: TextStyle = TextStyle(fontFamily = IbmPlexSans, fontWeight = FontWeight.Medium, fontSize = 13.sp, lineHeight = 18.sp),
-    val caption: TextStyle = TextStyle(fontFamily = IbmPlexSans, fontWeight = FontWeight.Normal, fontSize = 12.sp, lineHeight = 16.sp),
-)
+    /** The hero numeral inside a ring ("61"). */
+    val metricXL: TextStyle = style(FontWeight.ExtraBold, 60, 64, tracking = -0.03, tabular = true),
+    /** A large value in a card ("2,503"). */
+    val metricL: TextStyle = style(FontWeight.Bold, 34, 40, tracking = -0.02, tabular = true),
+    /** Screen headlines and greetings. */
+    val headline: TextStyle = style(FontWeight.Bold, 26, 32, tracking = -0.01),
+    /** Section headings on a screen ("Latest measurements"). */
+    val section: TextStyle = style(FontWeight.Bold, 20, 26, tracking = -0.01),
+    /** Card titles. System mode passes UPPERCASE strings; Clean passes sentence case. */
+    val windowTitle: TextStyle = style(FontWeight.Bold, 17, 22),
+    /** Small uppercase label over a value ("RESULT", "TREND"). Callers uppercase the text. */
+    val overline: TextStyle = style(FontWeight.SemiBold, 11, 14, tracking = 0.1),
+    val numeric: TextStyle = style(FontWeight.SemiBold, 20, 24, tabular = true),
+    val numericSmall: TextStyle = style(FontWeight.SemiBold, 14, 18, tabular = true),
+    val title: TextStyle = style(FontWeight.SemiBold, 17, 22),
+    val body: TextStyle = style(FontWeight.Normal, 15, 22),
+    val label: TextStyle = style(FontWeight.Medium, 13, 18),
+    val caption: TextStyle = style(FontWeight.Normal, 12, 16),
+) {
+    companion object {
+        /** System mode keeps the HUD feel: tracked-out window titles. */
+        val System = AwakenType(windowTitle = style(FontWeight.Bold, 16, 22, tracking = 0.08))
+    }
+}
 
 val LocalAwakenType = staticCompositionLocalOf { AwakenType() }
 
-/** Material components (text fields, sheets, snackbars) pick up the same families. */
+/** Material components (text fields, sheets, snackbars) pick up the same family. */
 internal fun AwakenType.toMaterialTypography(): Typography = Typography(
     displayLarge = metricXL,
     displayMedium = metricL,
-    headlineMedium = metricL.copy(fontSize = 28.sp, lineHeight = 32.sp),
+    headlineMedium = headline,
     titleLarge = windowTitle,
     titleMedium = title,
     titleSmall = title.copy(fontSize = 15.sp, lineHeight = 20.sp),

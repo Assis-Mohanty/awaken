@@ -1,5 +1,7 @@
 package com.assismohanty.awaken.feature.settings
 
+import com.assismohanty.awaken.engine.TimeBlocks
+import com.assismohanty.awaken.core.designsystem.lexicon.PresentationMode
 import com.assismohanty.awaken.core.designsystem.lexicon.lexString
 import com.assismohanty.awaken.core.designsystem.lexicon.lexPlural
 import android.content.Intent
@@ -242,6 +244,27 @@ private fun DayWindow(state: SettingsUiState, onEvent: (SettingsEvent) -> Unit, 
             }
         }
         Text(lexString(R.string.settings_day_start_note), style = type.caption, color = colors.textSecondary)
+        Text(lexString(R.string.settings_morning_end), style = type.label, color = colors.textPrimary)
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.xs), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+            TimeBlocks.MORNING_END_HOURS.forEach { hour ->
+                ChoiceChip(
+                    text = lexString(R.string.settings_hour_format, hour),
+                    selected = hour == state.morningEnd,
+                    onClick = { onEvent(SettingsEvent.SetMorningEnd(hour)) },
+                )
+            }
+        }
+        Text(lexString(R.string.settings_day_end), style = type.label, color = colors.textPrimary)
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.xs), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+            TimeBlocks.DAY_END_HOURS.forEach { hour ->
+                ChoiceChip(
+                    text = lexString(R.string.settings_hour_format, hour),
+                    selected = hour == state.dayEnd,
+                    onClick = { onEvent(SettingsEvent.SetDayEnd(hour)) },
+                )
+            }
+        }
+        Text(lexString(R.string.settings_blocks_note), style = type.caption, color = colors.textSecondary)
         Text(lexString(R.string.settings_reminder_title), style = type.label, color = colors.textPrimary)
         Text(
             text = state.reminder?.let { formatTime(it) } ?: lexString(R.string.settings_reminder_off),
@@ -360,6 +383,18 @@ private fun AiPathsWindow(state: SettingsUiState, onEvent: (SettingsEvent) -> Un
 @Composable
 private fun ComfortWindow(state: SettingsUiState, onEvent: (SettingsEvent) -> Unit) {
     SystemWindow(title = lexString(R.string.settings_window_comfort), accent = accent(), reveal = false) {
+        Text(lexString(R.string.settings_presentation_title), style = AwakenTheme.type.label, color = AwakenTheme.colors.textPrimary)
+        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+            PresentationMode.entries.forEach { mode ->
+                ChoiceChip(
+                    text = lexString(if (mode == PresentationMode.CLEAN) R.string.clean_mode_label else R.string.system_mode_label),
+                    selected = mode == state.presentation,
+                    onClick = { onEvent(SettingsEvent.SetPresentation(mode)) },
+                    modifier = Modifier.weight(1f),
+                )
+            }
+        }
+        Text(lexString(R.string.settings_presentation_note), style = AwakenTheme.type.caption, color = AwakenTheme.colors.textSecondary)
         Text(lexString(R.string.settings_appearance_title), style = AwakenTheme.type.label, color = AwakenTheme.colors.textPrimary)
         FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.xs), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
             ThemeMode.entries.forEach { mode ->

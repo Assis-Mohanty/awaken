@@ -25,10 +25,13 @@ import com.assismohanty.awaken.engine.model.Rank
 import kotlin.math.cos
 import kotlin.math.sin
 
-/** Rank crest (DESIGN_SYSTEM §2.4): a hex frame in the rank colour with the rank letter. */
+/**
+ * Rank crest (DESIGN_SYSTEM §2.4): the rank letter on a soft disc of the rank colour. System mode keeps the hex frame.
+ */
 @Composable
 fun RankCrest(rank: Rank, size: Dp, modifier: Modifier = Modifier) {
-    val color = AwakenTheme.palette.rank(rank)
+    val palette = AwakenTheme.palette
+    val color = palette.rank(rank)
     val description = lexString(R.string.cd_rank_crest, rank.name)
     val edge = AwakenTheme.dimens.edgeWidth
     Box(
@@ -38,6 +41,10 @@ fun RankCrest(rank: Rank, size: Dp, modifier: Modifier = Modifier) {
         contentAlignment = Alignment.Center,
     ) {
         Canvas(modifier = Modifier.fillMaxSize()) {
+            if (!palette.glow) {
+                drawCircle(color.copy(alpha = DISC_ALPHA))
+                return@Canvas
+            }
             val radius = this.size.minDimension / 2f * CREST_INSET
             val hex = Path().apply {
                 for (i in 0 until SIDES) {
@@ -59,6 +66,7 @@ fun RankCrest(rank: Rank, size: Dp, modifier: Modifier = Modifier) {
     }
 }
 
+private const val DISC_ALPHA = 0.14f
 private const val SIDES = 6
 private const val ANGLE_OFFSET = -90.0
 private const val CREST_INSET = 0.92f

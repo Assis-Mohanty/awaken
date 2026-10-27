@@ -59,4 +59,7 @@
     <string name="catalog_gates">Gate dials</string>
     <string name="catalog_misc">Empty state and share card</string>
     <string name="debug_presentation">Presentation: %1$s (tap to switch)</string>
+    <string name="catalog_hero">Hero and modules</string>
+    <string name="catalog_metrics">Metrics and charts</string>
+    <string name="catalog_timeline">Timeline</string>
 </resources>

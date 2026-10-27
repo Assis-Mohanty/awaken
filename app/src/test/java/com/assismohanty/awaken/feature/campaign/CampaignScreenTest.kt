@@ -1,5 +1,6 @@
 package com.assismohanty.awaken.feature.campaign
 
+import com.assismohanty.awaken.core.designsystem.lexicon.PresentationMode
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -24,7 +25,7 @@ class CampaignScreenTest {
 
     private fun show(state: CampaignUiState, events: MutableList<CampaignEvent> = mutableListOf()) {
         composeRule.setContent {
-            AwakenTheme(reduceMotion = true) { CampaignScreen(state = state, onEvent = { events += it }, onBack = {}) }
+            AwakenTheme(reduceMotion = true, presentation = PresentationMode.SYSTEM) { CampaignScreen(state = state, onEvent = { events += it }, onBack = {}) }
         }
     }
 

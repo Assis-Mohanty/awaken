@@ -103,7 +103,7 @@ class LexiconResourcesTest {
 
         /** Proper names and non-System words that read the same in both modes (approved: achievement names and titles stay). */
         val SHARED_IN_BOTH_MODES = setOf(
-            "app_name", "settings_about", "settings_theme_system", "health_state_unavailable", "health_stage_rem", "campaign_act_iii",
+            "app_name", "settings_about", "settings_theme_system", "system_mode_label", "state_collapsed", "health_state_unavailable", "health_stage_rem", "campaign_act_iii",
             "achievement_awakened", "achievement_night_owl", "achievement_collector",
             "title_the_awakened", "title_rising_hunter", "title_gate_sovereign",
             "title_d_rank_hunter", "title_c_rank_hunter", "title_b_rank_hunter", "title_a_rank_hunter", "title_s_rank_hunter",

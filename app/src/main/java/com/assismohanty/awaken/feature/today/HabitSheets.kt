@@ -1,5 +1,8 @@
 package com.assismohanty.awaken.feature.today
 
+import com.assismohanty.awaken.core.designsystem.components.glyph
+import com.assismohanty.awaken.core.designsystem.components.nameRes
+import com.assismohanty.awaken.engine.model.TimeOfDay
 import com.assismohanty.awaken.core.designsystem.lexicon.lexString
 import com.assismohanty.awaken.core.designsystem.lexicon.lexPlural
 import androidx.annotation.StringRes
@@ -181,6 +184,23 @@ fun HabitEditor(editor: HabitEditorState, onEvent: (HabitsEvent) -> Unit, modifi
             }
         }
         Text(lexString(R.string.habit_difficulty_note), style = type.caption, color = colors.textSecondary)
+
+        SectionLabel(R.string.habit_block)
+        FlowRow(
+            modifier = Modifier.selectableGroup(),
+            horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
+            verticalArrangement = Arrangement.spacedBy(Spacing.xs),
+        ) {
+            (TimeOfDay.entries + null).forEach { block ->
+                val ui = block.toTimeBlock()
+                ChoiceChip(
+                    text = lexString(ui.nameRes),
+                    selected = editor.timeOfDay == block,
+                    onClick = { onEvent(HabitsEvent.BlockChanged(block)) },
+                    icon = ui.glyph,
+                )
+            }
+        }
 
         SectionLabel(R.string.habit_days)
         FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.xs), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {

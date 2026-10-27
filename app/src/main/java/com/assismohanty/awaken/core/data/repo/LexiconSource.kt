@@ -4,6 +4,7 @@ import android.content.Context
 import com.assismohanty.awaken.core.data.di.ApplicationScope
 import com.assismohanty.awaken.core.designsystem.lexicon.LexResources
 import com.assismohanty.awaken.core.designsystem.lexicon.Lexicon
+import com.assismohanty.awaken.core.designsystem.lexicon.PresentationMode
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.CoroutineScope
@@ -23,7 +24,7 @@ class LexiconSource internal constructor(private val lexicon: StateFlow<Lexicon>
 
     @Inject
     constructor(uiPrefs: UiPrefsRepository, @ApplicationScope scope: CoroutineScope) :
-        this(uiPrefs.prefs.map { Lexicon.of(it.presentationMode) }.stateIn(scope, SharingStarted.Eagerly, Lexicon.System))
+        this(uiPrefs.prefs.map { Lexicon.of(it.presentationMode ?: PresentationMode.SYSTEM) }.stateIn(scope, SharingStarted.Eagerly, Lexicon.System))
 
     val current: Lexicon get() = lexicon.value
 

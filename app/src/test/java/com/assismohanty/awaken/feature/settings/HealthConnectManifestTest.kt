@@ -1,5 +1,6 @@
 package com.assismohanty.awaken.feature.settings
 
+import com.assismohanty.awaken.core.designsystem.lexicon.PresentationMode
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -51,7 +52,7 @@ class HealthConnectManifestTest {
 
     @Test
     fun thePolicyNamesExactlyWhatIsRead() {
-        composeRule.setContent { AwakenTheme { PrivacyPolicyScreen(onClose = {}) } }
+        composeRule.setContent { AwakenTheme(presentation = PresentationMode.SYSTEM) { PrivacyPolicyScreen(onClose = {}) } }
         composeRule.onNodeWithText("Steps, Exercise sessions and Sleep sessions", substring = true).assertIsDisplayed()
     }
 }

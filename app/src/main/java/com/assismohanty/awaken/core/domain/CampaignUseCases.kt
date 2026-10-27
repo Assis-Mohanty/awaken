@@ -1,5 +1,6 @@
 package com.assismohanty.awaken.core.domain
 
+import com.assismohanty.awaken.engine.model.TimeOfDay
 import com.assismohanty.awaken.core.data.clock.Clock
 import com.assismohanty.awaken.core.data.clock.gameDate
 import com.assismohanty.awaken.core.data.db.dao.CampaignDao
@@ -41,6 +42,8 @@ data class CampaignHabitPreview(
     val days: Set<DayOfWeek>,
     val difficulty: Difficulty,
     val target: Int,
+    /** The template's time-of-day block (GD §14.5), carried onto the campaign habit. */
+    val timeOfDay: TimeOfDay? = null,
 )
 
 enum class CampaignProblem {
@@ -103,6 +106,7 @@ class PreviewCampaignUseCase @Inject constructor(
                 days = plan.days,
                 difficulty = difficulty,
                 target = CampaignPlanner.target(byId.getValue(plan.templateId), difficulty),
+                timeOfDay = byId.getValue(plan.templateId).timeOfDay,
             )
         }
         val problem = when {
@@ -177,6 +181,7 @@ class StartCampaignUseCase @Inject constructor(
                         createdAt = now,
                         campaignId = id,
                         templateId = habit.templateId,
+                        timeOfDay = habit.timeOfDay,
                     ),
                 )
             }
