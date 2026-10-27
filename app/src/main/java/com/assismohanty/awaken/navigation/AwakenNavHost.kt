@@ -155,7 +155,7 @@ private fun MainScaffold(
                     )
                 }
                 composable<PathsRoute> {
-                    PathsEntry(onOpenPath = { navController.navigate(PathDetailRoute(it)) })
+                    PathsEntry(onOpenPath = { navController.navigate(PathDetailRoute(it)) }, onBack = { navController.popBackStack() })
                 }
                 composable<PathDetailRoute> { PathDetailEntry(onBack = { navController.popBackStack() }) }
                 composable<GatesRoute> { GatesEntry(onBack = { navController.popBackStack() }) }

@@ -22,6 +22,8 @@ import androidx.compose.ui.Modifier
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.assismohanty.awaken.R
+import com.assismohanty.awaken.core.designsystem.components.IconCircle
+import com.assismohanty.awaken.core.designsystem.components.LargeTitleScaffold
 import com.assismohanty.awaken.core.designsystem.components.AwakenGlyphs
 import com.assismohanty.awaken.core.designsystem.components.LadderNode
 import com.assismohanty.awaken.core.designsystem.components.OracleStatus
@@ -59,66 +61,42 @@ fun PathDetailScreen(
         if (!state.loading && state.path == null) onBack()
     }
     val colors = AwakenTheme.colors
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState()),
-        horizontalAlignment = Alignment.CenterHorizontally,
+    val path = state.path
+    LargeTitleScaffold(
+        title = path?.goal.orEmpty(),
+        subtitle = lexString(R.string.path_detail_title),
+        onBack = onBack,
+        modifier = modifier,
+        actions = { path?.let { IconCircle(AwakenGlyphs.stat(it.primaryStat), colors.stat(it.primaryStat)) } },
     ) {
-        Box(modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.xxs)) {
-            IconButton(onClick = onBack) {
-                Icon(AwakenGlyphs.ArrowLeft, contentDescription = lexString(R.string.action_back), tint = colors.textPrimary)
+        if (path == null) return@LargeTitleScaffold
+        val accent = colors.stat(path.primaryStat)
+        SystemWindow(title = null, accent = accent, reveal = false) {
+            StatusPills(path)
+            path.recalibration?.let { Text(lexString(it.lineRes()), style = AwakenTheme.type.label, color = colors.accent) }
+            path.oracle?.let { oracle ->
+                OracleStatus(
+                    state = oracle,
+                    onRetry = if (path.canRetry) ({ onEvent(PathDetailEvent.Retry) }) else null,
+                    retryNote = if (path.retryLimitReached) lexString(R.string.oracle_retry_limit) else null,
+                )
             }
         }
-        val path = state.path ?: return@Column
-        Column(
-            modifier = Modifier
-                .widthIn(max = Spacing.contentMaxWidth)
-                .fillMaxWidth()
-                .padding(horizontal = Spacing.gutter, vertical = Spacing.sm),
-            verticalArrangement = Arrangement.spacedBy(Spacing.lg),
-        ) {
-            val accent = colors.stat(path.primaryStat)
-            SystemWindow(
-                title = lexString(R.string.path_detail_title),
-                accent = accent,
-                reveal = false,
-                headerTrailing = {
-                    Icon(
-                        AwakenGlyphs.stat(path.primaryStat),
-                        contentDescription = path.primaryStat.label(),
-                        tint = accent,
-                        modifier = Modifier.size(AwakenTheme.dimens.sigil),
-                    )
-                },
-            ) {
-                Text(path.goal, style = AwakenTheme.type.title, color = colors.textPrimary)
-                StatusPills(path)
-                path.recalibration?.let { Text(lexString(it.lineRes()), style = AwakenTheme.type.label, color = colors.accent) }
-                path.oracle?.let { oracle ->
-                    OracleStatus(
-                        state = oracle,
-                        onRetry = if (path.canRetry) ({ onEvent(PathDetailEvent.Retry) }) else null,
-                        retryNote = if (path.retryLimitReached) lexString(R.string.oracle_retry_limit) else null,
-                    )
-                }
-            }
-            path.advanceTo?.let { next ->
-                AdvanceMoment(next, onAdvance = { onEvent(PathDetailEvent.Advance) }, onStay = { onEvent(PathDetailEvent.Stay) })
-            }
-            if (path.ladder.isNotEmpty()) {
-                SystemWindow(title = lexString(R.string.path_ladder_title), accent = accent, reveal = false) {
-                    PathLadder(nodes = path.ladder, currentIndex = path.currentIndex, accent = accent)
-                }
-            }
-            SystemWindow(title = lexString(R.string.path_week_title), accent = accent, reveal = false) {
-                WeekQuests(path)
-                if (path.quests.isEmpty() && path.oracle != OracleUiState.CHARTED) {
-                    Text(lexString(R.string.path_no_quests_yet), style = AwakenTheme.type.caption, color = colors.textSecondary)
-                }
-            }
-            Actions(path, state, onEvent)
+        path.advanceTo?.let { next ->
+            AdvanceMoment(next, onAdvance = { onEvent(PathDetailEvent.Advance) }, onStay = { onEvent(PathDetailEvent.Stay) })
         }
+        if (path.ladder.isNotEmpty()) {
+            SystemWindow(title = lexString(R.string.path_ladder_title), accent = accent, reveal = false) {
+                PathLadder(nodes = path.ladder, currentIndex = path.currentIndex, accent = accent)
+            }
+        }
+        SystemWindow(title = lexString(R.string.path_week_title), accent = accent, reveal = false) {
+            WeekQuests(path)
+            if (path.quests.isEmpty() && path.oracle != OracleUiState.CHARTED) {
+                Text(lexString(R.string.path_no_quests_yet), style = AwakenTheme.type.caption, color = colors.textSecondary)
+            }
+        }
+        Actions(path, state, onEvent)
     }
     if (state.showConsent) {
         AiConsentSheet(onEnable = { onEvent(PathDetailEvent.EnableConsent) }, onNotNow = { onEvent(PathDetailEvent.DeclineConsent) })

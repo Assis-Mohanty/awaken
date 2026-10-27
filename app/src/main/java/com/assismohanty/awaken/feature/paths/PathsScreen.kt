@@ -26,6 +26,8 @@ import androidx.compose.ui.semantics.semantics
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.assismohanty.awaken.R
+import com.assismohanty.awaken.core.designsystem.components.LargeTitleScaffold
+import com.assismohanty.awaken.core.designsystem.components.SkeletonCard
 import com.assismohanty.awaken.core.designsystem.components.AwakenGlyphs
 import com.assismohanty.awaken.core.designsystem.components.EmptyState
 import com.assismohanty.awaken.core.designsystem.components.LadderNode
@@ -51,46 +53,38 @@ import com.assismohanty.awaken.engine.path.SlotOutcome
 fun PathsRoute(
     onOpenPath: (String) -> Unit,
     modifier: Modifier = Modifier,
+    onBack: (() -> Unit)? = null,
     viewModel: PathsViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
-    PathsScreen(state = state, onEvent = viewModel::onEvent, onOpenPath = onOpenPath, modifier = modifier)
+    PathsScreen(state = state, onEvent = viewModel::onEvent, onOpenPath = onOpenPath, modifier = modifier, onBack = onBack)
 }
 
-/** Paths tab (DESIGN_SYSTEM §4.8): up to three Path windows, or the empty state, plus the create action. */
+/** Paths (DESIGN_SYSTEM §4.8), opened from Progress: up to three Path cards, or the empty state, plus the create action. */
 @Composable
 fun PathsScreen(
     state: PathsUiState,
     onEvent: (PathsEvent) -> Unit,
     onOpenPath: (String) -> Unit,
     modifier: Modifier = Modifier,
+    onBack: (() -> Unit)? = null,
 ) {
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState()),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        if (state.loading) return@Column
-        Column(
-            modifier = Modifier
-                .widthIn(max = Spacing.contentMaxWidth)
-                .fillMaxWidth()
-                .padding(horizontal = Spacing.gutter, vertical = Spacing.lg),
-            verticalArrangement = Arrangement.spacedBy(Spacing.lg),
-        ) {
-            if (state.paths.isEmpty()) {
-                EmptyState(
-                    line = lexString(R.string.paths_empty_line),
-                    actionLabel = lexString(R.string.paths_create),
-                    onAction = { onEvent(PathsEvent.Create) },
-                )
-            } else {
-                state.paths.forEach { path ->
-                    PathWindow(path = path, onEvent = onEvent, onOpen = { onOpenPath(path.id) })
-                }
-                CreateAction(state, onEvent)
+    LargeTitleScaffold(title = lexString(R.string.nav_paths), onBack = onBack, modifier = modifier) {
+        if (state.loading) {
+            SkeletonCard()
+            return@LargeTitleScaffold
+        }
+        if (state.paths.isEmpty()) {
+            EmptyState(
+                line = lexString(R.string.paths_empty_line),
+                actionLabel = lexString(R.string.paths_create),
+                onAction = { onEvent(PathsEvent.Create) },
+            )
+        } else {
+            state.paths.forEach { path ->
+                PathWindow(path = path, onEvent = onEvent, onOpen = { onOpenPath(path.id) })
             }
+            CreateAction(state, onEvent)
         }
     }
     if (state.showConsent) {
@@ -128,7 +122,7 @@ private fun PathWindow(path: PathCardUi, onEvent: (PathsEvent) -> Unit, onOpen: 
     val accent = colors.stat(path.primaryStat)
     val openDescription = lexString(R.string.path_open_description, path.goal)
     SystemWindow(
-        title = path.goal.uppercase(),
+        title = path.goal,
         accent = accent,
         reveal = false,
         modifier = Modifier

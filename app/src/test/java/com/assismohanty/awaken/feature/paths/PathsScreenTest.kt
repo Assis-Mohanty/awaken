@@ -72,7 +72,7 @@ class PathsScreenTest {
     fun aPathWindowShowsItsGoalQuestsAndOracleState() {
         show(PathsUiState(loading = false, consentGiven = true, paths = listOf(card(recalibration = ProgressionSignal.UP))))
 
-        composeRule.onNodeWithText("RUN A 10K").assertExists()
+        composeRule.onNodeWithText("Run a 10K").assertExists()
         composeRule.onNodeWithText("Easy 3K run").assertExists()
         composeRule.onNodeWithText("Cleared").assertExists()
         composeRule.onNodeWithText("Week charted").assertExists()
