@@ -37,6 +37,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.material3.AlertDialog
 import com.assismohanty.awaken.R
+import com.assismohanty.awaken.core.designsystem.components.LargeTitleScaffold
 import com.assismohanty.awaken.core.designsystem.components.GateBackground
 import com.assismohanty.awaken.core.designsystem.components.PrimaryButton
 import com.assismohanty.awaken.core.designsystem.components.QuietButton
@@ -81,39 +82,15 @@ fun CampaignRoute(onBack: () -> Unit, modifier: Modifier = Modifier, viewModel: 
 fun CampaignScreen(state: CampaignUiState, onEvent: (CampaignEvent) -> Unit, onBack: () -> Unit, modifier: Modifier = Modifier) {
     val colors = AwakenTheme.colors
     GateBackground(rank = Rank.E, modifier = modifier) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState()),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Column(
-                modifier = Modifier
-                    .widthIn(max = Spacing.contentMaxWidth)
-                    .fillMaxWidth()
-                    .padding(horizontal = Spacing.gutter, vertical = Spacing.lg),
-                verticalArrangement = Arrangement.spacedBy(Spacing.lg),
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        lexString(R.string.campaign_title),
-                        style = AwakenTheme.type.metricL,
-                        color = colors.textPrimary,
-                        modifier = Modifier
-                            .weight(1f)
-                            .semantics { heading() },
-                    )
-                    QuietButton(text = lexString(R.string.action_back), onClick = onBack)
-                }
-                if (state.loading) return@Column
-                when (state.step) {
-                    CampaignStep.INTRO -> IntroStep(onEvent)
-                    CampaignStep.SCAN -> ScanStep(state, onEvent)
-                    CampaignStep.FORGE -> ForgeStep(ready = state.preview != null, onFinished = { onEvent(CampaignEvent.ForgeFinished) })
-                    CampaignStep.RESULT -> state.preview?.let { ResultStep(it, state.error, onEvent) }
-                    CampaignStep.OATH -> state.preview?.let { OathStep(state.hunterName, it.endDate, state.sealing, onSealed = { onEvent(CampaignEvent.Seal) }) }
-                    CampaignStep.PROGRESS -> state.campaign?.let { ProgressStep(it, onEvent) } ?: IntroStep(onEvent)
-                }
+        LargeTitleScaffold(title = lexString(R.string.campaign_title), onBack = onBack) {
+            if (state.loading) return@LargeTitleScaffold
+            when (state.step) {
+                CampaignStep.INTRO -> IntroStep(onEvent)
+                CampaignStep.SCAN -> ScanStep(state, onEvent)
+                CampaignStep.FORGE -> ForgeStep(ready = state.preview != null, onFinished = { onEvent(CampaignEvent.ForgeFinished) })
+                CampaignStep.RESULT -> state.preview?.let { ResultStep(it, state.error, onEvent) }
+                CampaignStep.OATH -> state.preview?.let { OathStep(state.hunterName, it.endDate, state.sealing, onSealed = { onEvent(CampaignEvent.Seal) }) }
+                CampaignStep.PROGRESS -> state.campaign?.let { ProgressStep(it, onEvent) } ?: IntroStep(onEvent)
             }
         }
     }
