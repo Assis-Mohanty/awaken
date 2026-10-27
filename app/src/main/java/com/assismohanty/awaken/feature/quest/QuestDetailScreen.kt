@@ -1,22 +1,13 @@
 package com.assismohanty.awaken.feature.quest
 
-import com.assismohanty.awaken.core.designsystem.lexicon.lexString
-import com.assismohanty.awaken.core.designsystem.lexicon.lexPlural
 import android.text.format.DateUtils
 import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -28,35 +19,45 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.style.TextAlign
+
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.assismohanty.awaken.R
+import com.assismohanty.awaken.core.designsystem.components.AwakenCard
 import com.assismohanty.awaken.core.designsystem.components.AwakenGlyphs
+import com.assismohanty.awaken.core.designsystem.components.BigValue
 import com.assismohanty.awaken.core.designsystem.components.DifficultyChip
 import com.assismohanty.awaken.core.designsystem.components.EmptyState
+import com.assismohanty.awaken.core.designsystem.components.InsightCard
+import com.assismohanty.awaken.core.designsystem.components.LargeTitleScaffold
+import com.assismohanty.awaken.core.designsystem.components.ListRow
 import com.assismohanty.awaken.core.designsystem.components.PathQuestBadge
+import com.assismohanty.awaken.core.designsystem.components.Pill
 import com.assismohanty.awaken.core.designsystem.components.PrimaryButton
 import com.assismohanty.awaken.core.designsystem.components.QuietButton
 import com.assismohanty.awaken.core.designsystem.components.SecondaryButton
+import com.assismohanty.awaken.core.designsystem.components.SkeletonCard
 import com.assismohanty.awaken.core.designsystem.components.StatChip
-import com.assismohanty.awaken.core.designsystem.components.SystemWindow
 import com.assismohanty.awaken.core.designsystem.components.VerifiedBadge
 import com.assismohanty.awaken.core.designsystem.components.formatCount
 import com.assismohanty.awaken.core.designsystem.components.label
 import com.assismohanty.awaken.core.designsystem.components.unitLabel
+import com.assismohanty.awaken.core.designsystem.lexicon.lexPlural
+import com.assismohanty.awaken.core.designsystem.lexicon.lexString
 import com.assismohanty.awaken.core.designsystem.preview.PhonePreviews
 import com.assismohanty.awaken.core.designsystem.theme.AwakenTheme
 import com.assismohanty.awaken.core.designsystem.theme.Spacing
 import com.assismohanty.awaken.engine.QuestReason
 import com.assismohanty.awaken.engine.SetCounter
-import com.assismohanty.awaken.feature.paths.ReportSheet
 import com.assismohanty.awaken.engine.model.Difficulty
 import com.assismohanty.awaken.engine.model.QuestStatus
 import com.assismohanty.awaken.engine.model.QuestType
 import com.assismohanty.awaken.engine.model.Stat
 import com.assismohanty.awaken.engine.model.VerificationSource
+import com.assismohanty.awaken.feature.paths.ReportSheet
 
 @Composable
 fun QuestDetailRoute(
@@ -71,7 +72,11 @@ fun QuestDetailRoute(
     QuestDetailScreen(state = state, onEvent = viewModel::onEvent, onBack = onBack, modifier = modifier)
 }
 
-/** Quest detail (DESIGN_SYSTEM §4.3). */
+/**
+ * Quest detail (DESIGN_SYSTEM §4.3): the quest's kind over its title as the large title, then one card with the target
+ * as the big number and its chips, the started state as an insight, what it trains and how it is checked as rows, the
+ * set counter, why the System chose it, and the actions at the end.
+ */
 @Composable
 fun QuestDetailScreen(
     state: QuestDetailUiState,
@@ -79,38 +84,26 @@ fun QuestDetailScreen(
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val colors = AwakenTheme.colors
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState()),
-        horizontalAlignment = Alignment.CenterHorizontally,
+    val loaded = !state.loading && !state.notFound
+    LargeTitleScaffold(
+        title = if (loaded) state.title else "",
+        subtitle = if (loaded) lexString(state.type.kindRes) else null,
+        onBack = onBack,
+        modifier = modifier,
     ) {
-        Box(modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.xxs)) {
-            IconButton(onClick = onBack) {
-                Icon(AwakenGlyphs.ArrowLeft, contentDescription = lexString(R.string.action_back), tint = colors.textPrimary)
-            }
-        }
-        Column(
-            modifier = Modifier
-                .widthIn(max = Spacing.contentMaxWidth)
-                .fillMaxWidth()
-                .padding(horizontal = Spacing.gutter, vertical = Spacing.xs),
-        ) {
-            when {
-                state.notFound -> EmptyState(line = lexString(R.string.msg_error), actionLabel = lexString(R.string.action_back), onAction = onBack)
-                state.loading -> Unit
-                else -> QuestDetailContent(state, onEvent)
-            }
+        when {
+            state.notFound -> EmptyState(line = lexString(R.string.msg_error), actionLabel = lexString(R.string.action_back), onAction = onBack)
+            state.loading -> SkeletonCard()
+            else -> QuestDetailContent(state, onEvent)
         }
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun QuestDetailContent(state: QuestDetailUiState, onEvent: (QuestDetailEvent) -> Unit) {
     val colors = AwakenTheme.colors
     val type = AwakenTheme.type
-    val accent = if (state.type == QuestType.PENALTY) colors.critical else colors.stat(state.stat)
     var showReport by rememberSaveable { mutableStateOf(false) }
     if (showReport) {
         ReportSheet(
@@ -121,14 +114,14 @@ private fun QuestDetailContent(state: QuestDetailUiState, onEvent: (QuestDetailE
             onDismiss = { showReport = false },
         )
     }
-    SystemWindow(title = lexString(state.type.kindRes), accent = accent) {
-        Text(state.title, style = type.metricL, color = colors.textPrimary, modifier = Modifier.semantics { heading() })
-        Text(
-            text = lexString(R.string.quest_target_line, formatCount(state.target), unitLabel(state.unit, state.target), state.difficulty.label()),
-            style = type.title,
-            color = colors.textSecondary,
-        )
-        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.xxs)) {
+
+    // The target is the one big number.
+    AwakenCard(reveal = false, modifier = Modifier.fillMaxWidth()) {
+        BigValue(formatCount(state.target), unitLabel(state.unit, state.target), large = true)
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.xs), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+            if (state.type == QuestType.PENALTY) {
+                Pill(lexString(R.string.chip_comeback), colors.critical)
+            }
             StatChip(state.stat)
             DifficultyChip(state.difficulty)
             VerifiedBadge(state.verification)
@@ -139,155 +132,166 @@ private fun QuestDetailContent(state: QuestDetailUiState, onEvent: (QuestDetailE
                 gate = state.gateRank?.let { rank -> lexString(R.string.path_badge_gate, rank.name, rank.durationMinutes) },
             )
         }
-        if (state.description.isNotBlank()) Text(state.description, style = type.body, color = colors.textPrimary)
+        if (state.description.isNotBlank()) Text(state.description, style = type.body, color = colors.textSecondary)
+    }
 
-        // Stat split: the primary stat takes full XP, the secondary 30 % (ENGINE_DECISIONS #5).
-        Text(lexString(R.string.quest_split_primary, state.stat.label()), style = type.label, color = colors.stat(state.stat))
+    if (state.status == QuestStatus.STARTED) {
+        val text = if (state.readyInSeconds > 0) {
+            lexString(R.string.quest_ready_in, DateUtils.formatElapsedTime(state.readyInSeconds))
+        } else {
+            lexString(R.string.quest_started)
+        }
+        InsightCard(text = text, icon = AwakenGlyphs.Hourglass, tint = colors.stat(state.stat))
+    }
+
+    // What it trains (ENGINE_DECISIONS #5: primary full XP, secondary 30 %) and how it is checked.
+    AwakenCard(reveal = false, contentPadding = Spacing.listCard, spacing = Spacing.zero, modifier = Modifier.fillMaxWidth()) {
+        ListRow(
+            title = lexString(R.string.quest_split_primary, state.stat.label()),
+            icon = AwakenGlyphs.stat(state.stat),
+            iconTint = colors.stat(state.stat),
+        )
         state.secondaryStat?.let { secondary ->
-            Text(lexString(R.string.quest_split_secondary, secondary.label()), style = type.label, color = colors.stat(secondary))
-        }
-
-        Text(lexString(state.verification.explanationRes), style = type.body, color = colors.textSecondary)
-        if (state.minDurationSec > 0 && state.status == QuestStatus.ACTIVE && state.verification == VerificationSource.SELF) {
-            Text(
-                text = lexString(R.string.quest_min_duration, DateUtils.formatElapsedTime(state.minDurationSec.toLong())),
-                style = type.caption,
-                color = colors.textSecondary,
+            ListRow(
+                title = lexString(R.string.quest_split_secondary, secondary.label()),
+                icon = AwakenGlyphs.stat(secondary),
+                iconTint = colors.stat(secondary),
             )
         }
-        if (state.status == QuestStatus.STARTED) {
-            val text = if (state.readyInSeconds > 0) {
-                lexString(R.string.quest_ready_in, DateUtils.formatElapsedTime(state.readyInSeconds))
+        ListRow(
+            title = lexString(state.verification.explanationRes),
+            icon = state.verification.glyph,
+            iconTint = colors.positive,
+            secondary = if (state.minDurationSec > 0 && state.status == QuestStatus.ACTIVE && state.verification == VerificationSource.SELF) {
+                lexString(R.string.quest_min_duration, DateUtils.formatElapsedTime(state.minDurationSec.toLong()))
             } else {
-                lexString(R.string.quest_started)
-            }
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
-                Icon(AwakenGlyphs.Hourglass, contentDescription = null, tint = colors.accent, modifier = Modifier.size(AwakenTheme.dimens.iconSmall))
-                Text(text, style = type.label, color = colors.accent)
-            }
-        }
+                null
+            },
+        )
+    }
 
-        state.setCounter?.let { counter ->
-            SetCounterBlock(counter, target = state.target, unit = state.unit, busy = state.busy, onEvent = onEvent)
-        }
+    state.setCounter?.let { counter ->
+        SetCounterBlock(counter, target = state.target, unit = state.unit, busy = state.busy, onEvent = onEvent)
+    }
 
-        state.rationale?.let { rationale ->
-            Text(
-                text = lexString(R.string.quest_path_rationale_label),
-                style = type.windowTitle,
-                color = colors.textMuted,
-                modifier = Modifier.padding(top = Spacing.xs),
-            )
+    state.rationale?.let { rationale ->
+        AwakenCard(title = lexString(R.string.quest_path_rationale_label), reveal = false, modifier = Modifier.fillMaxWidth()) {
             Text(rationale, style = type.body, color = colors.textPrimary)
         }
-        state.reason?.takeIf { state.rationale == null }?.let { reason ->
-            Text(
-                text = lexString(R.string.quest_reason_label),
-                style = type.windowTitle,
-                color = colors.textMuted,
-                modifier = Modifier.padding(top = Spacing.xs),
-            )
+    }
+    state.reason?.takeIf { state.rationale == null }?.let { reason ->
+        AwakenCard(title = lexString(R.string.quest_reason_label), reveal = false, modifier = Modifier.fillMaxWidth()) {
             Text(reasonText(reason), style = type.body, color = colors.textPrimary)
         }
+    }
 
-        Column(
-            modifier = Modifier.fillMaxWidth().padding(top = Spacing.md),
-            verticalArrangement = Arrangement.spacedBy(Spacing.xs),
-        ) {
-            if (state.canEnterGate) {
-                state.gateRank?.let { rank ->
-                    Text(lexString(R.string.quest_gate_required), style = type.caption, color = colors.textSecondary)
-                    PrimaryButton(
-                        lexString(R.string.action_enter_path_gate, rank.name, rank.durationMinutes),
-                        onClick = { onEvent(QuestDetailEvent.EnterGate) },
-                        enabled = !state.busy,
-                        modifier = Modifier.fillMaxWidth(),
-                    )
-                }
+    Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+        if (state.canEnterGate) {
+            state.gateRank?.let { rank ->
+                Text(lexString(R.string.quest_gate_required), style = type.caption, color = colors.textSecondary)
+                PrimaryButton(
+                    lexString(R.string.action_enter_path_gate, rank.name, rank.durationMinutes),
+                    onClick = { onEvent(QuestDetailEvent.EnterGate) },
+                    enabled = !state.busy,
+                    modifier = Modifier.fillMaxWidth(),
+                )
             }
+        }
+        if (state.canBegin) {
+            PrimaryButton(lexString(R.string.action_begin), onClick = { onEvent(QuestDetailEvent.Begin) }, enabled = !state.busy, modifier = Modifier.fillMaxWidth())
+        }
+        if (state.verification == VerificationSource.SELF && (state.status == QuestStatus.ACTIVE || state.status == QuestStatus.STARTED)) {
+            val complete = lexString(R.string.action_complete_quest)
             if (state.canBegin) {
-                PrimaryButton(lexString(R.string.action_begin), onClick = { onEvent(QuestDetailEvent.Begin) }, enabled = !state.busy, modifier = Modifier.fillMaxWidth())
+                SecondaryButton(complete, onClick = { onEvent(QuestDetailEvent.Complete) }, enabled = state.canComplete && !state.busy, modifier = Modifier.fillMaxWidth())
+            } else {
+                PrimaryButton(complete, onClick = { onEvent(QuestDetailEvent.Complete) }, enabled = state.canComplete && !state.busy, modifier = Modifier.fillMaxWidth())
             }
-            if (state.verification == VerificationSource.SELF && (state.status == QuestStatus.ACTIVE || state.status == QuestStatus.STARTED)) {
-                val complete = lexString(R.string.action_complete_quest)
-                if (state.canBegin) {
-                    SecondaryButton(complete, onClick = { onEvent(QuestDetailEvent.Complete) }, enabled = state.canComplete && !state.busy, modifier = Modifier.fillMaxWidth())
-                } else {
-                    PrimaryButton(complete, onClick = { onEvent(QuestDetailEvent.Complete) }, enabled = state.canComplete && !state.busy, modifier = Modifier.fillMaxWidth())
-                }
+        }
+        if (state.canUndo) {
+            SecondaryButton(lexString(R.string.action_undo), onClick = { onEvent(QuestDetailEvent.Undo) }, enabled = !state.busy, modifier = Modifier.fillMaxWidth())
+        }
+        if (state.canReroll) {
+            val label = if (state.rerollCost == 0) {
+                lexString(R.string.action_reroll)
+            } else {
+                lexString(R.string.action_reroll_paid, state.rerollCost)
             }
-            if (state.canUndo) {
-                SecondaryButton(lexString(R.string.action_undo), onClick = { onEvent(QuestDetailEvent.Undo) }, enabled = !state.busy, modifier = Modifier.fillMaxWidth())
-            }
-            if (state.canReroll) {
-                val label = if (state.rerollCost == 0) {
-                    lexString(R.string.action_reroll)
-                } else {
-                    lexString(R.string.action_reroll_paid, state.rerollCost)
-                }
-                SecondaryButton(label, onClick = { onEvent(QuestDetailEvent.Reroll) }, enabled = !state.busy, modifier = Modifier.fillMaxWidth())
-            }
-            if (state.reportable) {
-                QuietButton(lexString(R.string.action_report_quest), onClick = { showReport = true }, enabled = !state.busy, modifier = Modifier.fillMaxWidth())
-            }
+            SecondaryButton(label, onClick = { onEvent(QuestDetailEvent.Reroll) }, enabled = !state.busy, modifier = Modifier.fillMaxWidth())
+        }
+        if (state.reportable) {
+            QuietButton(lexString(R.string.action_report_quest), onClick = { showReport = true }, enabled = !state.busy, modifier = Modifier.fillMaxWidth())
         }
     }
 }
 
-/** Tap-per-set counter for SELF rep quests (GD §6.5): progress only, the hunter still taps Complete. */
+/**
+ * Tap-per-set counter for SELF rep quests (GD §6.5): progress only, the hunter still taps Complete. The running total is
+ * the card's number; each set is a row; a − / + stepper sets the next set's reps.
+ */
 @Composable
 private fun SetCounterBlock(counter: SetCounterUiState, target: Int, unit: String, busy: Boolean, onEvent: (QuestDetailEvent) -> Unit) {
     val colors = AwakenTheme.colors
     val type = AwakenTheme.type
     // Restarts at the suggested value after every logged or undone set.
     var reps by rememberSaveable(counter.sets.size) { mutableIntStateOf(counter.suggestedReps) }
-    Text(
-        text = lexString(R.string.quest_sets_title),
-        style = type.windowTitle,
-        color = colors.textMuted,
-        modifier = Modifier.padding(top = Spacing.xs),
-    )
-    Text(
-        text = lexString(R.string.quest_sets_total, counter.total, target, unitLabel(unit, target)),
-        style = type.numericSmall,
-        color = if (counter.total >= target) colors.positive else colors.textPrimary,
-    )
-    counter.sets.forEachIndexed { index, setReps ->
-        Text(lexString(R.string.quest_set_line, index + 1, setReps), style = type.caption, color = colors.textSecondary)
-    }
-    counter.restSeconds?.let { seconds ->
-        Text(lexString(R.string.quest_sets_rest, DateUtils.formatElapsedTime(seconds)), style = type.label, color = colors.accent)
-    }
-    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
-        val fewer = lexString(R.string.cd_reps_fewer)
-        val more = lexString(R.string.cd_reps_more)
-        QuietButton(
-            text = "−",
-            onClick = { reps = (reps - 1).coerceAtLeast(1) },
-            modifier = Modifier.semantics { contentDescription = fewer },
+    AwakenCard(title = lexString(R.string.quest_sets_title), reveal = false, modifier = Modifier.fillMaxWidth()) {
+        Text(
+            text = lexString(R.string.quest_sets_total, counter.total, target, unitLabel(unit, target)),
+            style = type.metricL,
+            color = colors.textPrimary,
         )
-        Text(lexString(R.string.quest_set_reps_value, reps), style = type.numericSmall, color = colors.textPrimary)
-        QuietButton(
-            text = "+",
-            onClick = { reps = (reps + 1).coerceAtMost(SetCounter.MAX_REPS_PER_SET) },
-            modifier = Modifier.semantics { contentDescription = more },
+        counter.sets.forEachIndexed { index, setReps ->
+            Text(lexString(R.string.quest_set_line, index + 1, setReps), style = type.body, color = colors.textSecondary)
+        }
+        counter.restSeconds?.let { seconds ->
+            Text(lexString(R.string.quest_sets_rest, DateUtils.formatElapsedTime(seconds)), style = type.label, color = colors.textPrimary)
+        }
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+            val fewer = lexString(R.string.cd_reps_fewer)
+            val more = lexString(R.string.cd_reps_more)
+            SecondaryButton(
+                text = "−",
+                onClick = { reps = (reps - 1).coerceAtLeast(1) },
+                modifier = Modifier.semantics { contentDescription = fewer },
+            )
+            Text(
+                lexString(R.string.quest_set_reps_value, reps),
+                style = type.numeric,
+                color = colors.textPrimary,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.weight(1f),
+            )
+            SecondaryButton(
+                text = "+",
+                onClick = { reps = (reps + 1).coerceAtMost(SetCounter.MAX_REPS_PER_SET) },
+                modifier = Modifier.semantics { contentDescription = more },
+            )
+        }
+        PrimaryButton(
+            lexString(R.string.action_log_set),
+            onClick = { onEvent(QuestDetailEvent.AddSet(reps)) },
+            enabled = !busy && !counter.full,
+            modifier = Modifier.fillMaxWidth(),
+        )
+        if (counter.sets.isNotEmpty()) {
+            QuietButton(lexString(R.string.action_undo_set), onClick = { onEvent(QuestDetailEvent.UndoSet) }, enabled = !busy, modifier = Modifier.fillMaxWidth())
+        }
+        Text(
+            text = lexString(if (counter.full) R.string.quest_sets_full else R.string.quest_sets_note),
+            style = type.caption,
+            color = colors.textSecondary,
         )
     }
-    PrimaryButton(
-        lexString(R.string.action_log_set),
-        onClick = { onEvent(QuestDetailEvent.AddSet(reps)) },
-        enabled = !busy && !counter.full,
-        modifier = Modifier.fillMaxWidth(),
-    )
-    if (counter.sets.isNotEmpty()) {
-        QuietButton(lexString(R.string.action_undo_set), onClick = { onEvent(QuestDetailEvent.UndoSet) }, enabled = !busy, modifier = Modifier.fillMaxWidth())
-    }
-    Text(
-        text = lexString(if (counter.full) R.string.quest_sets_full else R.string.quest_sets_note),
-        style = type.caption,
-        color = colors.textSecondary,
-    )
 }
+
+private val VerificationSource.glyph: ImageVector
+    get() = when (this) {
+        VerificationSource.SELF -> AwakenGlyphs.Check
+        VerificationSource.TIMER -> AwakenGlyphs.Timer
+        VerificationSource.HEALTH -> AwakenGlyphs.VerifiedSeal
+        VerificationSource.USAGE -> AwakenGlyphs.Phone
+    }
 
 private val QuestType.kindRes: Int
     @StringRes get() = when (this) {
