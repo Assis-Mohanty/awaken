@@ -97,6 +97,7 @@ hunter_profile(id PK='me', hunter_id,                 -- hunter_id: random UUID,
 stat_tier(stat PK, tier TEXT)                         -- EASY..EXTREME, adaptive (GD §6.4)
 
 quest_instance(id PK, game_date, type, template_id NULL, habit_id NULL, path_slot_id NULL, set_reps DEFAULT '',
+               time_of_day NULL,                     -- MORNING|DAY|EVENING, copied at generation (GD §14.5); NULL = Anytime (v10)
                stat, secondary_stat NULL, title, description, unit, target INT,
                difficulty, verification, min_duration_sec,
                status,                               -- ACTIVE|STARTED|COMPLETED|EXPIRED|MISSED|REROLLED
@@ -111,7 +112,8 @@ completion(id PK, quest_instance_id, attempt INT, game_date, quest_type, stat, v
 
 habit(id PK, title, stat, difficulty, verification, days_of_week_mask INT, target, unit,
       active BOOL, created_at,
-      campaign_id NULL, template_id NULL)       -- set for campaign habits (GD §6.8): engine-planned, read-only in the editor
+      campaign_id NULL, template_id NULL,       -- set for campaign habits (GD §6.8): engine-planned, read-only in the editor
+      time_of_day NULL)                          -- the habit's block on Today (GD §14.5); NULL = Anytime (v10)
 
 -- THE LEDGER (append-only). Every economy change is a row here.
 ledger_entry(id INTEGER PK AUTOINCREMENT,

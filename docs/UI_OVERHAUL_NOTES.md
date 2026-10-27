@@ -57,15 +57,21 @@ Every row must consume only semantic tokens, ChartKit and the Lexicon by the end
 
 Not changing: the widget (Glance; separate pass, BACKLOG "Light-mode widget"), the share image (stays dark, DS §2.1b) unless decided otherwise below.
 
-## 5. Open decisions for the redesign
+## 5. Decisions taken (2026-10-27, with the user)
 
-| Decision | Options to evaluate | Constraint |
+| Decision | Chosen | Notes |
 |---|---|---|
-| Typeface | Keep IBM Plex Sans for body; replace Saira Condensed numerals with a calmer grotesk (e.g. Inter, Manrope, Plus Jakarta Sans) or keep Saira for System mode only | OFL, subset to stay < 15 MB APK |
-| Accent colour | One restrained hue (teal / blue / warm orange) vs monochrome + rank colours | ≥ 4.5:1 text contrast in both modes; not a competitor's brand colour |
-| Card style | Radius (12/16/20dp), border vs soft shadow vs tonal surface | Works in dark without glow |
-| Chart style | Smooth line + gradient fill, bar rounding, grid density, axis labels | ChartKit only; TalkBack descriptions |
-| Icon set | Material Symbols Rounded vs Sharp vs our own | Apache/OFL; consistent stroke weight |
-| Motion language | Softer easings, shorter reveals; what the level-up ceremony becomes in Clean mode | reduce-motion parity |
-| Share image | Follow light theme or stay dark | Readable on social feeds |
-| System mode layer | Exactly which tokens it overrides (accent, glow, uppercase titles, chamfer?) | Must be a token/Lexicon override, no forked components |
+| Typeface | **Plus Jakarta Sans** (variable, OFL) everywhere | Saira Condensed and IBM Plex Sans removed (smaller APK). |
+| Accent colour | **Ink-indigo** #3446C9 (light) / #9DAAFF (dark); electric #7FD8FF in System mode | Restrained; stat pastels carry the colour. |
+| Card style | **20dp radius, warm hairline, no shadow**; tinted cards drop the hairline | System mode adds an accent edge and glow. |
+| Chart style | **Smooth line, soft gradient fill, dotted grid, latest point marked**; rounded heatmap cells and bar ends | ChartKit only. |
+| Icon set | **Our own line glyphs with rounded caps and joins** | No third-party icon set needed. |
+| Motion language | **Fade and rise 8dp**; counting numbers; calm level-up (ring fills, no expanding neon ring); type-on only in System mode | reduce-motion = crossfades. |
+| Share image | **Stays on the Legacy dark palette for now** | Redesigned with Progress. |
+| System mode layer | **System palette (near-black, electric accent), card glow, tracked-out titles, rank hex crest, type-on, System words** | Token + Lexicon overrides only; same components. |
+| Navigation | **Today · Gym · Diet · Progress** | Paths opens from Progress; Gates and Vault from Today's header. |
+| Today | Greeting, hero ring, level + streak modules, insight card, timeline by time block (F31) | Phase B review on the phone. |
+
+## 6. Rollout after the Phase B review (one commit per screen)
+
+Progress (Status) · Gates (+ run dial) · Vault · Settings · Onboarding · Quest detail · Trial · Paths / Path detail · Gym · Diet · Health · Screen time · Campaign · share card. The reward sheet and level-up ceremony were restyled with the components in Phase B.
