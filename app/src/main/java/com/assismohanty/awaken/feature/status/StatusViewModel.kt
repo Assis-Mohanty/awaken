@@ -13,7 +13,9 @@ import com.assismohanty.awaken.core.domain.CompletionCenter
 import com.assismohanty.awaken.core.domain.DayRefresher
 import com.assismohanty.awaken.core.domain.EquipTitleUseCase
 import com.assismohanty.awaken.core.domain.HeatmapEntry
+import com.assismohanty.awaken.core.domain.InsightsModel
 import com.assismohanty.awaken.core.domain.ObserveStatusUseCase
+import com.assismohanty.awaken.core.domain.RefreshHealthCacheUseCase
 import com.assismohanty.awaken.core.domain.StatProgress
 import com.assismohanty.awaken.core.domain.StatusModel
 import com.assismohanty.awaken.core.domain.UserMessage
@@ -53,6 +55,7 @@ data class StatusUiState(
     val selectedDay: HeatmapEntry? = null,
     val consistency: ConsistencyScore = ConsistencyScore(0, 0),
     val identityIds: List<String> = emptyList(),
+    val insights: InsightsModel = InsightsModel(),
     val achievements: List<AchievementEntry> = emptyList(),
     val chapters: List<ChapterEntry> = emptyList(),
     val openChapter: ChapterEntry? = null,
@@ -93,9 +96,23 @@ class StatusViewModel @Inject constructor(
     private val equipTitle: EquipTitleUseCase,
     private val shareImageWriter: ShareImageWriter,
     private val completionCenter: CompletionCenter,
+    refreshHealthCache: RefreshHealthCacheUseCase,
 ) : ViewModel() {
 
     private val local = MutableStateFlow(LocalState())
+
+    init {
+        // Foreground-only Health reads (Phase 11): fill the insight cache for days not read yet; Status re-derives on change.
+        viewModelScope.launch {
+            try {
+                refreshHealthCache()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Timber.w(e, "Health cache refresh failed")
+            }
+        }
+    }
 
     val uiState: StateFlow<StatusUiState> = combine(observeStatus(dayChanges = dayRefresher.ticks), local) { model, local ->
         model?.toUiState(local) ?: StatusUiState()
@@ -171,6 +188,7 @@ private fun StatusModel.toUiState(local: LocalState): StatusUiState = StatusUiSt
     selectedDay = local.selectedDate?.let { date -> heatmap.firstOrNull { it.date == date } },
     consistency = consistency,
     identityIds = identityIds,
+    insights = insights,
     achievements = achievements,
     chapters = chapters,
     openChapter = local.openChapterId?.let { id -> chapters.firstOrNull { it.chapter.id == id && it.unlocked } },

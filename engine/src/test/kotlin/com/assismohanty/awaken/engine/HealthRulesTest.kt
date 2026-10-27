@@ -150,4 +150,18 @@ class HealthRulesTest {
         Verification.entries.forEach { assertThat(met(it, 1, HealthDay())).isFalse() }
         assertThat(met(Verification.SELF, 0, HealthDay(steps = 99_999))).isFalse()
     }
+
+    @Test
+    fun `longest sleep is the longest trusted session ending in the window, merged across apps`() {
+        val day = HealthDay(
+            sleep = listOf(
+                HealthSession(at("22:30", "2026-10-18"), at("05:00"), origin = "a"),
+                HealthSession(at("23:00", "2026-10-18"), at("06:30"), origin = "b"),
+                HealthSession(at("14:00"), at("14:40"), origin = "a"),
+                HealthSession(at("01:00", "2026-10-18"), at("09:00", "2026-10-18"), manualEntry = true),
+            ),
+        )
+        assertThat(HealthRules.longestSleepMinutes(day, window)).isEqualTo(480)
+        assertThat(HealthRules.longestSleepMinutes(HealthDay(), window)).isNull()
+    }
 }

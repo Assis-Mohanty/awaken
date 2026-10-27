@@ -277,6 +277,9 @@ fun InsightCard(
     icon: ImageVector = AwakenGlyphs.Sparkle,
     tint: Color = AwakenTheme.colors.reward,
     onClick: (() -> Unit)? = null,
+    /** A ChartKit mini comparison under the sentence (DESIGN_SYSTEM §8.1); it carries its own description. */
+    chart: ChartSpec? = null,
+    caption: String? = null,
 ) {
     val colors = AwakenTheme.colors
     AwakenCard(modifier = modifier.semantics(mergeDescendants = true) {}, reveal = false, onClick = onClick) {
@@ -287,6 +290,8 @@ fun InsightCard(
                 Icon(AwakenGlyphs.ChevronRight, contentDescription = null, tint = colors.textSecondary, modifier = Modifier.size(AwakenTheme.dimens.iconSmall))
             }
         }
+        chart?.let { Chart(it, Modifier.fillMaxWidth()) }
+        caption?.let { Text(it, style = AwakenTheme.type.caption, color = colors.textSecondary) }
     }
 }
 

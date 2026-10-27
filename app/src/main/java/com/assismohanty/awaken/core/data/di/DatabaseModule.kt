@@ -37,4 +37,5 @@ object DatabaseModule {
     @Provides fun provideCampaignDao(db: AwakenDatabase) = db.campaignDao()
     @Provides fun provideGymDao(db: AwakenDatabase) = db.gymDao()
     @Provides fun provideDietDao(db: AwakenDatabase) = db.dietDao()
+    @Provides fun provideInsightDao(db: AwakenDatabase) = db.insightDao()
 }

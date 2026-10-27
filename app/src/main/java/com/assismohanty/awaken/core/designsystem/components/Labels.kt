@@ -192,6 +192,12 @@ fun formatCount(value: Long): String = NumberFormat.getIntegerInstance(currentLo
 @ReadOnlyComposable
 fun formatCount(value: Int): String = formatCount(value.toLong())
 
+/** "2.4": one decimal in the user's locale (insight means, recap averages). */
+@Composable
+@ReadOnlyComposable
+fun formatOneDecimal(value: Double): String =
+    NumberFormat.getNumberInstance(currentLocale()).apply { minimumFractionDigits = 1; maximumFractionDigits = 1 }.format(value)
+
 /** Multipliers: fixed two decimals ("1.20") or trimmed ("1.5", "3") per the breakdown examples. */
 @Composable
 @ReadOnlyComposable

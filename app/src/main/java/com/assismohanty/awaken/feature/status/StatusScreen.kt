@@ -70,16 +70,22 @@ import com.assismohanty.awaken.core.designsystem.theme.Spacing
 import com.assismohanty.awaken.core.domain.AchievementEntry
 import com.assismohanty.awaken.core.domain.ChapterEntry
 import com.assismohanty.awaken.core.domain.HeatmapEntry
+import com.assismohanty.awaken.core.domain.InsightsModel
 import com.assismohanty.awaken.core.domain.StatProgress
 import com.assismohanty.awaken.debug.DebugEntry
 import com.assismohanty.awaken.engine.AchievementEvaluator
 import com.assismohanty.awaken.engine.ConsistencyScore
 import com.assismohanty.awaken.engine.DifficultyAdapter
+import com.assismohanty.awaken.engine.insight.BucketInsight
+import com.assismohanty.awaken.engine.insight.FocusHourInsight
+import com.assismohanty.awaken.engine.insight.InsightRule
+import com.assismohanty.awaken.engine.insight.WeekdayInsight
 import com.assismohanty.awaken.engine.GameWeek
 import com.assismohanty.awaken.engine.StatLevel
 import com.assismohanty.awaken.engine.StatusMath
 import com.assismohanty.awaken.engine.model.Rank
 import com.assismohanty.awaken.engine.model.Stat
+import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
@@ -156,6 +162,7 @@ fun StatusScreen(
             )
         }
         RadarWindow(state)
+        InsightsSection(state.insights)
         StatsWindow(state.rank, state.stats)
         ActivityWindow(state, onEvent)
         AchievementsWindow(state.rank, state.achievements, state.equippedTitleId, onEvent)
@@ -474,6 +481,18 @@ internal fun previewStatusState(locked: Boolean = false): StatusUiState {
         projectedRecalibration = if (locked) emptyMap() else mapOf(Stat.STR to DifficultyAdapter.Change.UP),
         consistency = if (locked) ConsistencyScore(0, 0) else ConsistencyScore(cleared = 22, eligible = 28),
         identityIds = if (locked) emptyList() else listOf("trains", "reads"),
+        insights = if (locked) {
+            InsightsModel(daysNeeded = 9)
+        } else {
+            InsightsModel(
+                insights = listOf(
+                    BucketInsight(InsightRule.SLEEP, aIsHigher = true, higherMean = 3.3, lowerMean = 2.4, percent = 38),
+                    WeekdayInsight(DayOfWeek.TUESDAY, DayOfWeek.SUNDAY, bestMean = 4.0, worstMean = 2.5, percent = 60),
+                    FocusHourInsight(hour = 9, gates = 4, total = 10),
+                ),
+                daysNeeded = 0,
+            )
+        },
     )
 }
 

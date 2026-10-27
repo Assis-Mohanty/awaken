@@ -27,8 +27,8 @@ data class ExportDocument(
             "custom_food", "food_log", "nutrition_profile",
         )
 
-        /** Rebuilt after import. */
-        const val CACHE_TABLE = "balance_cache"
+        /** Rebuilt after import (balances from the ledger, Health from Health Connect), so never written to the file. */
+        val CACHE_TABLES: List<String> = listOf("balance_cache", "health_day_cache")
     }
 }
 

@@ -134,4 +134,39 @@
     <string name="identity_body">Pick up to three. They set your starting focus; you can change them any time.</string>
     <string name="identity_limit">Pick up to 3</string>
     <string name="identity_settings_title">Identities</string>
+    <!-- Personal insights (GD §14.3): correlational only, never causal, never medical, never shaming -->
+    <string name="insights_title">Insights</string>
+    <string name="insights_caption">Based on your last 84 days. A pattern, not a cause.</string>
+    <plurals name="insights_days_needed">
+        <item quantity="one">%1$d more day and your patterns will show.</item>
+        <item quantity="other">%1$d more days and your patterns will show.</item>
+    </plurals>
+    <string name="insights_none">No clear patterns yet. Keep going.</string>
+    <string name="insight_sleep_more">On days you sleep 7 h or more, you complete %1$d%% more quests.</string>
+    <string name="insight_sleep_less">On days you sleep under 7 h, you complete %1$d%% more quests.</string>
+    <string name="insight_sleep_more_abs">On days you sleep 7 h or more, you complete %1$s quests a day, against %2$s otherwise.</string>
+    <string name="insight_sleep_less_abs">On days you sleep under 7 h, you complete %1$s quests a day, against %2$s otherwise.</string>
+    <string name="insight_steps_more">On days you walk 7,000 steps or more, you complete %1$d%% more quests.</string>
+    <string name="insight_steps_less">On days under 7,000 steps, you complete %1$d%% more quests.</string>
+    <string name="insight_steps_more_abs">On days you walk 7,000 steps or more, you complete %1$s quests a day, against %2$s otherwise.</string>
+    <string name="insight_steps_less_abs">On days under 7,000 steps, you complete %1$s quests a day, against %2$s otherwise.</string>
+    <string name="insight_momentum_more">In the 3 days after a promotion challenge stage, you complete %1$d%% more quests.</string>
+    <string name="insight_momentum_less">Outside the 3 days after a promotion challenge stage, you complete %1$d%% more quests.</string>
+    <string name="insight_momentum_more_abs">In the 3 days after a promotion challenge stage, you complete %1$s quests a day, against %2$s otherwise.</string>
+    <string name="insight_momentum_less_abs">Outside the 3 days after a promotion challenge stage, you complete %1$s quests a day, against %2$s.</string>
+    <string name="insight_weekday">You complete %1$d%% more quests on %2$s than on %3$s.</string>
+    <string name="insight_weekday_abs">You complete %1$s quests on %2$s, against %3$s on %4$s.</string>
+    <string name="insight_block">You finish %1$d%% more of your %2$s quests than your %3$s ones.</string>
+    <string name="insight_block_abs">You finish %1$d%% of your %2$s quests and %3$d%% of your %4$s ones.</string>
+    <string name="insight_focus_hour">Most of your focus sessions start around %1$s.</string>
+    <string name="insight_block_morning">morning</string>
+    <string name="insight_block_day">daytime</string>
+    <string name="insight_block_evening">evening</string>
+    <string name="insight_bucket_sleep_a">7 h+</string>
+    <string name="insight_bucket_sleep_b">Under 7 h</string>
+    <string name="insight_bucket_steps_a">7,000+ steps</string>
+    <string name="insight_bucket_steps_b">Fewer</string>
+    <string name="insight_bucket_momentum_a">After a stage</string>
+    <string name="insight_bucket_momentum_b">Other days</string>
+    <string name="insight_chart_cd">%1$s: %2$s. %3$s: %4$s.</string>
 </resources>

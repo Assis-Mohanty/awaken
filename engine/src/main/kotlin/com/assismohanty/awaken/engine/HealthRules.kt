@@ -92,6 +92,13 @@ object HealthRules {
         }
     }
 
+    /**
+     * Minutes of the longest trusted sleep session that ended in [window] (GD §14.3 I1, ENGINE_DECISIONS #50); null when
+     * there is none, so the day is left out of the sleep comparison.
+     */
+    fun longestSleepMinutes(day: HealthDay, window: HealthWindow): Int? =
+        trusted(day).sleep.filter { it.end in window }.maxOfOrNull { it.duration.toMinutes().toInt() }
+
     private fun isPlausibleExercise(session: HealthSession): Boolean {
         val heartRate = session.avgHeartRate
         if (heartRate != null && heartRate < MIN_SESSION_AVG_HEART_RATE) return false

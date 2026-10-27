@@ -35,6 +35,8 @@ data class AwakenDimens(
     val xpBarHeight: Dp = 8.dp,
     /** The consistency meter track (DESIGN_SYSTEM §8.1). */
     val meterHeight: Dp = 6.dp,
+    /** The two-bar comparison inside an insight card (DESIGN_SYSTEM §8.1). */
+    val insightChartHeight: Dp = 56.dp,
     val iconSmall: Dp = 16.dp,
     val icon: Dp = 24.dp,
     /** The filled circle behind a list-row icon (36dp, stat colour at 15%). */

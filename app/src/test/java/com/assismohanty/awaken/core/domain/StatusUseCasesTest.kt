@@ -26,7 +26,7 @@ class StatusUseCasesTest {
     private val graph = TestGraph()
     private val observeStatus = ObserveStatusUseCase(
         graph.observeHunterState, graph.db.ledgerDao(), graph.db.completionDao(), graph.db.dayRecordDao(),
-        graph.db.achievementDao(), graph.db.questDao(), graph.db.hunterDao(), graph.narrative,
+        graph.db.achievementDao(), graph.db.questDao(), graph.db.hunterDao(), graph.narrative, graph.db.insightDao(), graph.loadInsights,
     )
     private val equipTitle = EquipTitleUseCase(graph.db.hunterDao(), graph.db.achievementDao())
 

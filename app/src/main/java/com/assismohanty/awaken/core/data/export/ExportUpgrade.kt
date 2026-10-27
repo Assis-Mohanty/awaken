@@ -55,6 +55,10 @@ object ExportUpgrade {
         if (current.app == ExportDocument.APP_ID && current.schemaVersion == 10) {
             current = current.copy(schemaVersion = 11)
         }
+        // v11 → v12 (insights): only a rebuildable cache table was added, and it is never exported.
+        if (current.app == ExportDocument.APP_ID && current.schemaVersion == 11) {
+            current = current.copy(schemaVersion = 12)
+        }
         return current
     }
 }

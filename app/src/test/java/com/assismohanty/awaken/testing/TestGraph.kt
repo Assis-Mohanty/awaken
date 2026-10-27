@@ -72,6 +72,8 @@ import com.assismohanty.awaken.core.domain.BuildReminderUseCase
 import com.assismohanty.awaken.core.domain.DisableHealthUseCase
 import com.assismohanty.awaken.core.domain.EnableHealthUseCase
 import com.assismohanty.awaken.core.domain.HealthSyncUseCase
+import com.assismohanty.awaken.core.domain.LoadInsightsUseCase
+import com.assismohanty.awaken.core.domain.RefreshHealthCacheUseCase
 import com.assismohanty.awaken.core.domain.ObserveSettingsUseCase
 import com.assismohanty.awaken.core.domain.UpdateSettingsUseCase
 import com.assismohanty.awaken.core.domain.EquipCosmeticUseCase
@@ -233,6 +235,8 @@ class TestGraph(
     val updateSettings = UpdateSettingsUseCase(db.hunterDao(), templates, identities, clock)
     val observeSettings = ObserveSettingsUseCase(db.hunterDao(), templates, identities)
     val healthSync = HealthSyncUseCase(db.hunterDao(), db.questDao(), health, completeQuest, completionCenter, clock)
+    val loadInsights = LoadInsightsUseCase(db.insightDao(), clock)
+    val refreshHealthCache = RefreshHealthCacheUseCase(db.hunterDao(), db.insightDao(), health, clock)
     val enableHealth = EnableHealthUseCase(db.hunterDao(), health, healthSync)
     val buildReminder = BuildReminderUseCase(db.hunterDao(), db.questDao(), db.dayRecordDao(), runRollover, clock)
     val disableHealth = DisableHealthUseCase(db.hunterDao(), health)

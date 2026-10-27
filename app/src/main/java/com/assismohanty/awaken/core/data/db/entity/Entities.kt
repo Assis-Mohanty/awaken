@@ -374,3 +374,17 @@ data class CampaignEntity(
     @ColumnInfo(name = "cleared_days") val clearedDays: Int = 0,
     @ColumnInfo(name = "ended_at") val endedAt: Instant? = null,
 )
+
+/**
+ * Per-day Health Connect aggregates for insights (GD §14.3 I1/I5). A cache, not truth (invariant 7): it can be dropped
+ * and refilled from Health Connect, so it is left out of export and cleared on import. Only finalized days are cached.
+ */
+@Entity(tableName = "health_day_cache")
+data class HealthDayCacheEntity(
+    @PrimaryKey @ColumnInfo(name = "game_date") val gameDate: LocalDate,
+    /** Null or 0 = no step data. */
+    val steps: Long? = null,
+    /** Longest merged sleep session ending in the game-day; null = none. */
+    @ColumnInfo(name = "sleep_minutes") val sleepMinutes: Int? = null,
+    @ColumnInfo(name = "read_at") val readAt: Instant,
+)

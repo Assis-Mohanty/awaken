@@ -276,6 +276,21 @@ class MigrationTest {
     }
 
     @Test
+    fun v11To12AddsAnEmptyHealthCache() = runTest {
+        val path = createFromSchema(11)
+        val db = Room.databaseBuilder(context, AwakenDatabase::class.java, path)
+            .addMigrations(*ALL_MIGRATIONS)
+            .allowMainThreadQueries()
+            .build()
+        try {
+            assertThat(db.insightDao().healthDays(java.time.LocalDate.MIN, java.time.LocalDate.MAX)).isEmpty()
+            assertThat(db.openHelper.readableDatabase.version).isEqualTo(AwakenDatabase.SCHEMA_VERSION)
+        } finally {
+            db.close()
+        }
+    }
+
+    @Test
     fun v4To5AddsThePathTablesAndKeepsExistingQuests() = runTest {
         val path = createFromSchema(4)
         SQLiteDatabase.openDatabase(path, null, SQLiteDatabase.OPEN_READWRITE).use { db ->

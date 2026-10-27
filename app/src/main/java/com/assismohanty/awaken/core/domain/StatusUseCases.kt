@@ -4,6 +4,7 @@ import com.assismohanty.awaken.core.data.db.dao.AchievementDao
 import com.assismohanty.awaken.core.data.db.dao.CompletionDao
 import com.assismohanty.awaken.core.data.db.dao.DayRecordDao
 import com.assismohanty.awaken.core.data.db.dao.HunterDao
+import com.assismohanty.awaken.core.data.db.dao.InsightDao
 import com.assismohanty.awaken.core.data.db.dao.LedgerDao
 import com.assismohanty.awaken.core.data.db.dao.QuestDao
 import com.assismohanty.awaken.core.data.db.dao.StatTotal
@@ -55,6 +56,8 @@ data class StatusModel(
     val consistency: ConsistencyScore = ConsistencyScore(0, 0),
     /** Identity ids in pick order (GD §14.7), shown under the name. */
     val identityIds: List<String> = emptyList(),
+    /** This week's personal insights (GD §14.3). */
+    val insights: InsightsModel = InsightsModel(),
 )
 
 private data class WeekRows(
@@ -76,6 +79,8 @@ class ObserveStatusUseCase @Inject constructor(
     private val questDao: QuestDao,
     private val hunterDao: HunterDao,
     private val narrative: NarrativeRepository,
+    private val insightDao: InsightDao,
+    private val loadInsights: LoadInsightsUseCase,
 ) {
     @OptIn(ExperimentalCoroutinesApi::class)
     operator fun invoke(dayChanges: Flow<Any> = flowOf(Unit)): Flow<StatusModel?> {
@@ -101,7 +106,11 @@ class ObserveStatusUseCase @Inject constructor(
             completionDao.observeCountsPerDay(heatmapStart, week.sunday),
             dayRecordDao.observeRestDays(heatmapStart, week.sunday),
             achievementDao.observeUnlockedIds(),
-            dayRecordDao.observeDatedOutcomesFrom(today.minusDays(Consistency.WINDOW_DAYS)),
+            // The Health cache count re-derives insights once a foreground Health refresh lands.
+            combine(
+                dayRecordDao.observeDatedOutcomesFrom(today.minusDays(Consistency.WINDOW_DAYS)),
+                insightDao.observeHealthDayCount(),
+            ) { outcomes, _ -> outcomes },
         ) { (before, inWeek, perDay), completions, rest, unlocked, outcomes ->
             WeekRows(
                 statXpBefore = before,
@@ -145,6 +154,7 @@ class ObserveStatusUseCase @Inject constructor(
             projectedRecalibration = projectRecalibration(week),
             consistency = Consistency.score(rows.outcomes, today, hunterDao.getProfile()?.firstGameDate ?: today),
             identityIds = hunterDao.getProfile()?.identityIds.orEmpty(),
+            insights = hunterDao.getProfile()?.let { loadInsights(it, today) } ?: InsightsModel(),
         )
     }
 

@@ -98,7 +98,7 @@ class GameDataPorterTest {
         val roomTables = source.db.openHelper.readableDatabase
             .query("SELECT name FROM sqlite_master WHERE type = 'table'")
             .use { c -> buildSet { while (c.moveToNext()) add(c.getString(0)) } }
-            .filterNot { it.startsWith("sqlite_") || it.startsWith("room_") || it == "android_metadata" || it == "balance_cache" }
+            .filterNot { it.startsWith("sqlite_") || it.startsWith("room_") || it == "android_metadata" || it in ExportDocument.CACHE_TABLES }
         assertThat(ExportDocument.TABLES).containsExactlyElementsIn(roomTables)
         assertThat(AwakenDatabase.SCHEMA_VERSION).isEqualTo(source.db.openHelper.readableDatabase.version)
     }

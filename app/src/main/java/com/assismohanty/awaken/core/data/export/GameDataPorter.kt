@@ -74,7 +74,7 @@ class GameDataPorter @Inject constructor(
 
     private suspend fun replaceAll(doc: ExportDocument): ImportResult {
         val raw = db.openHelper.writableDatabase
-        (ExportDocument.TABLES + ExportDocument.CACHE_TABLE).forEach { raw.execSQL("DELETE FROM `$it`") }
+        (ExportDocument.TABLES + ExportDocument.CACHE_TABLES).forEach { raw.execSQL("DELETE FROM `$it`") }
         for (table in ExportDocument.TABLES) {
             val columns = raw.columnNames(table)
             for (row in doc.tables.getValue(table)) {
