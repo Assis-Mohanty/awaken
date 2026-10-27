@@ -20,6 +20,8 @@ import com.assismohanty.awaken.core.domain.PathBadgeInfo
 import com.assismohanty.awaken.core.domain.StartTrialResult
 import com.assismohanty.awaken.core.domain.StartTrialUseCase
 import com.assismohanty.awaken.core.domain.TodayModel
+import com.assismohanty.awaken.engine.ConsistencyScore
+import com.assismohanty.awaken.engine.MissLine
 import com.assismohanty.awaken.core.domain.TrialSummary
 import com.assismohanty.awaken.core.domain.isOpen
 import com.assismohanty.awaken.core.domain.UserMessage
@@ -72,6 +74,10 @@ data class TodayUiState(
     val currentBlock: TimeOfDay = TimeOfDay.MORNING,
     val gameDate: LocalDate? = null,
     val bestStreak: Int = 0,
+    /** Cleared of eligible days over the last 28 (GD §14.2), beside the streak. */
+    val consistency: ConsistencyScore = ConsistencyScore(0, 0),
+    /** Shown instead of [systemLine] the day after a missed day. */
+    val missLine: MissLine? = null,
 )
 
 data class CampaignCard(val dayIndex: Int, val act: CampaignAct)
@@ -174,6 +180,8 @@ internal fun TodayModel.toUiState(): TodayUiState {
         currentBlock = currentBlock,
         gameDate = hunter.gameDate,
         bestStreak = hunter.bestStreak,
+        consistency = consistency,
+        missLine = missLine,
         trial = trial,
         trialStages = quests.filter { it.type == QuestType.TRIAL }.map { it.toRowModel() },
         penaltyOpen = quests.any { it.type == QuestType.PENALTY && it.isOpen },

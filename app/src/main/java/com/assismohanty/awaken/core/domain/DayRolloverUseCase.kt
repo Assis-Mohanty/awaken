@@ -61,6 +61,7 @@ class DayRolloverUseCase @Inject constructor(
     private val pathWeeks: PathWeekRequester,
     private val settleDiscipline: SettleDisciplineUseCase,
     private val advanceCampaign: AdvanceCampaignUseCase,
+    private val achievements: AchievementUnlocker,
     private val transactions: TransactionRunner,
     private val clock: Clock,
 ) {
@@ -163,6 +164,8 @@ class DayRolloverUseCase @Inject constructor(
                 finalizedAt = now,
             ),
         )
+        // A cleared day after a missed one is a recovery (GD §14.2); never_twice can only unlock here.
+        if (result.outcome == DayOutcome.CLEARED) hunterDao.getProfile()?.let { achievements.unlockNew(it, date, now) }
         result
     }
 

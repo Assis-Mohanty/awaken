@@ -1,6 +1,7 @@
 package com.assismohanty.awaken.core.domain
 
 import com.assismohanty.awaken.core.data.clock.Clock
+import com.assismohanty.awaken.core.data.db.dao.DayRecordDao
 import com.assismohanty.awaken.core.data.db.dao.HunterDao
 import com.assismohanty.awaken.core.data.db.dao.PathDao
 import com.assismohanty.awaken.core.data.db.dao.QuestDao
@@ -9,7 +10,10 @@ import com.assismohanty.awaken.core.data.db.entity.QuestInstanceEntity
 import com.assismohanty.awaken.core.data.repo.GameStateReader
 import com.assismohanty.awaken.core.data.repo.NarrativeRepository
 import com.assismohanty.awaken.core.data.repo.UiPrefsRepository
+import com.assismohanty.awaken.engine.Consistency
+import com.assismohanty.awaken.engine.ConsistencyScore
 import com.assismohanty.awaken.engine.GameDay
+import com.assismohanty.awaken.engine.MissLine
 import com.assismohanty.awaken.engine.TimeBlocks
 import com.assismohanty.awaken.engine.model.TimeOfDay
 import com.assismohanty.awaken.engine.RankRules
@@ -51,6 +55,10 @@ data class TodayModel(
      * changes, foreground, rollover) and when the block boundaries change, not on a timer.
      */
     val currentBlock: TimeOfDay = TimeOfDay.MORNING,
+    /** Cleared of eligible days over the last 28 finalized days (GD §14.2). */
+    val consistency: ConsistencyScore = ConsistencyScore(0, 0),
+    /** Replaces [systemLine] the day after a missed day (GD §14.2). */
+    val missLine: MissLine? = null,
 )
 
 internal val QuestInstanceEntity.isOpen: Boolean get() = status == QuestStatus.ACTIVE || status == QuestStatus.STARTED
@@ -66,17 +74,33 @@ class ObserveTodayUseCase @Inject constructor(
     private val narrative: NarrativeRepository,
     private val clock: Clock,
     private val uiPrefs: UiPrefsRepository,
+    private val dayRecordDao: DayRecordDao,
 ) {
     @OptIn(ExperimentalCoroutinesApi::class)
     operator fun invoke(dayChanges: Flow<Any>): Flow<TodayModel?> =
         observeHunterState(dayChanges).flatMapLatest { hunter ->
             if (hunter == null) return@flatMapLatest flowOf(null)
-            combine(questDao.observeForDate(hunter.gameDate), uiPrefs.prefs) { all, prefs -> all to prefs.blockBounds }
-                .mapLatest { (all, bounds) ->
+            val today = hunter.gameDate
+            combine(
+                questDao.observeForDate(today),
+                uiPrefs.prefs,
+                dayRecordDao.observeDatedOutcomesFrom(today.minusDays(Consistency.WINDOW_DAYS)),
+            ) { all, prefs, outcomes -> Triple(all, prefs.blockBounds, outcomes.associate { it.gameDate to it.outcome }) }
+                .mapLatest { (all, bounds, outcomes) ->
                     val quests = all.filter { !it.status.isHidden }
-                    val dayStart = hunterDao.getProfile()?.dayStartHour ?: GameDay.DEFAULT_DAY_START_HOUR
+                    val profile = hunterDao.getProfile()
+                    val dayStart = profile?.dayStartHour ?: GameDay.DEFAULT_DAY_START_HOUR
                     val block = TimeBlocks.blockAt(clock.now().atZone(clock.zone()).toLocalTime(), dayStart, bounds)
-                    TodayModel(hunter, quests, systemLine(hunter, quests), trialSummary(hunter), pathBadges(quests), block)
+                    TodayModel(
+                        hunter = hunter,
+                        quests = quests,
+                        systemLine = systemLine(hunter, quests),
+                        trial = trialSummary(hunter),
+                        pathBadges = pathBadges(quests),
+                        currentBlock = block,
+                        consistency = Consistency.score(outcomes, today, profile?.firstGameDate ?: today),
+                        missLine = Consistency.missLine(outcomes[today.minusDays(1)], outcomes[today.minusDays(2)]),
+                    )
                 }
         }
 

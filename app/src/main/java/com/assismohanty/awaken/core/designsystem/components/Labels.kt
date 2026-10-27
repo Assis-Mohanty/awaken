@@ -127,6 +127,7 @@ fun achievementConditionRes(achievementId: String): Int? = when (achievementId) 
     "night_owl" -> R.string.condition_night_owl
     "collector" -> R.string.condition_collector
     "reforged" -> R.string.condition_reforged
+    "never_twice" -> R.string.condition_never_twice
     else -> null
 }
 
@@ -166,6 +167,7 @@ fun achievementNameRes(achievementId: String): Int? = when (achievementId) {
     "night_owl" -> R.string.achievement_night_owl
     "collector" -> R.string.achievement_collector
     "reforged" -> R.string.achievement_reforged
+    "never_twice" -> R.string.achievement_never_twice
     else -> null
 }
 

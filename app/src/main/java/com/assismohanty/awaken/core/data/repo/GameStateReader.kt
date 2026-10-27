@@ -14,6 +14,7 @@ import com.assismohanty.awaken.core.data.db.entity.HunterProfileEntity
 import com.assismohanty.awaken.core.data.health.HealthGateway
 import com.assismohanty.awaken.engine.AchievementEvaluator
 import com.assismohanty.awaken.engine.AchievementSnapshot
+import com.assismohanty.awaken.engine.Consistency
 import com.assismohanty.awaken.engine.DirectiveGenerator
 import com.assismohanty.awaken.engine.StreakRules
 import com.assismohanty.awaken.engine.model.Balances
@@ -105,6 +106,7 @@ class GameStateReader @Inject constructor(
             },
             cachesOpened = ledgerDao.cachesOpened(),
             campaignsCompleted = campaignDao.countCompleted(),
+            recoveries = Consistency.recoveries(dayRecordDao.finalizedOutcomes()),
             alreadyUnlocked = achievementDao.unlockedIds().toSet(),
         )
     }

@@ -24,6 +24,7 @@ import com.assismohanty.awaken.core.designsystem.components.EmptyState
 import com.assismohanty.awaken.core.designsystem.components.HeaderIconButton
 import com.assismohanty.awaken.core.designsystem.components.HunterHeaderModel
 import com.assismohanty.awaken.core.designsystem.components.InsightCard
+import com.assismohanty.awaken.core.designsystem.components.NeverMissTwiceLine
 import com.assismohanty.awaken.core.designsystem.components.LargeTitleScaffold
 import com.assismohanty.awaken.core.designsystem.components.LevelModule
 import com.assismohanty.awaken.core.designsystem.components.ListRow
@@ -42,6 +43,8 @@ import com.assismohanty.awaken.core.designsystem.lexicon.lexString
 import com.assismohanty.awaken.core.designsystem.preview.PhonePreviews
 import com.assismohanty.awaken.core.designsystem.theme.AwakenTheme
 import com.assismohanty.awaken.core.designsystem.theme.Spacing
+import com.assismohanty.awaken.engine.ConsistencyScore
+import com.assismohanty.awaken.engine.MissLine
 import com.assismohanty.awaken.engine.TimeBlocks
 import com.assismohanty.awaken.engine.campaign.CampaignAct
 import com.assismohanty.awaken.engine.model.Difficulty
@@ -143,9 +146,19 @@ fun TodayScreen(
                 xpForLevel = header.xpForLevel,
                 modifier = Modifier.weight(1f).fillMaxHeight(),
             )
-            StreakModule(streak = header.streak, best = state.bestStreak, modifier = Modifier.weight(1f).fillMaxHeight())
+            StreakModule(
+                streak = header.streak,
+                best = state.bestStreak,
+                consistency = state.consistency,
+                modifier = Modifier.weight(1f).fillMaxHeight(),
+            )
         }
-        state.systemLine?.let { line -> InsightCard(text = line, modifier = Modifier.staggeredEntrance(2)) }
+        val missLine = state.missLine
+        if (missLine != null) {
+            NeverMissTwiceLine(lexString(missLine.stringRes()), modifier = Modifier.staggeredEntrance(2))
+        } else {
+            state.systemLine?.let { line -> InsightCard(text = line, modifier = Modifier.staggeredEntrance(2)) }
+        }
 
         state.trial?.let { trial ->
             TrialWindow(
@@ -370,6 +383,7 @@ internal val previewTodayState = TodayUiState(
     currentBlock = TimeOfDay.DAY,
     gameDate = LocalDate.of(2026, 10, 27),
     bestStreak = 30,
+    consistency = ConsistencyScore(cleared = 22, eligible = 28),
 )
 
 @PhonePreviews
@@ -397,4 +411,24 @@ private fun TodayScreenClearedPreview() {
             onDayPlanEvent = {},
         )
     }
+}
+
+@PhonePreviews
+@Composable
+private fun TodayMissedYesterdayPreview() {
+    AwakenTheme {
+        TodayScreen(
+            previewTodayState.copy(missLine = MissLine.MISSED_YESTERDAY, consistency = ConsistencyScore(cleared = 21, eligible = 28)),
+            onEvent = {},
+            onOpenQuest = {},
+            onOpenTrial = {},
+            onHabitsEvent = {},
+            onDayPlanEvent = {},
+        )
+    }
+}
+
+private fun MissLine.stringRes(): Int = when (this) {
+    MissLine.MISSED_YESTERDAY -> R.string.miss_line_yesterday
+    MissLine.FRESH_START -> R.string.miss_line_fresh_start
 }

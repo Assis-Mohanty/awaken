@@ -99,6 +99,12 @@ data class StatLastActive(
     @ColumnInfo(name = "game_date") val gameDate: LocalDate,
 )
 
+/** A finalized day and how it ended (GD §14.1). */
+data class DatedOutcome(
+    @ColumnInfo(name = "game_date") val gameDate: LocalDate,
+    val outcome: DayOutcome,
+)
+
 @Dao
 interface QuestDao {
     /** Returns rowId per draft, -1 where the deterministic id already existed. */
@@ -340,6 +346,13 @@ interface DayRecordDao {
 
     @Query("SELECT outcome FROM day_record WHERE finalized_at IS NOT NULL AND outcome IS NOT NULL ORDER BY game_date")
     fun observeFinalizedOutcomes(): Flow<List<DayOutcome>>
+
+    /** Finalized outcomes from [from] on, with their dates (GD §14.2 consistency window, recaps). */
+    @Query(
+        "SELECT game_date, outcome FROM day_record WHERE finalized_at IS NOT NULL AND outcome IS NOT NULL " +
+            "AND game_date >= :from ORDER BY game_date",
+    )
+    fun observeDatedOutcomesFrom(from: LocalDate): Flow<List<DatedOutcome>>
 
     @Query(
         "SELECT COUNT(*) FROM day_record WHERE finalized_at IS NOT NULL AND recovery = 1 " +

@@ -46,6 +46,7 @@ import androidx.compose.foundation.layout.height
 import com.assismohanty.awaken.core.data.repo.Chapter
 import com.assismohanty.awaken.core.designsystem.components.AwakenGlyphs
 import com.assismohanty.awaken.core.designsystem.components.ChapterRevealDialog
+import com.assismohanty.awaken.core.designsystem.components.ConsistencyMeter
 import com.assismohanty.awaken.core.designsystem.components.Heatmap
 import com.assismohanty.awaken.core.designsystem.components.HeatmapDay
 import com.assismohanty.awaken.core.designsystem.components.HunterHeader
@@ -70,6 +71,7 @@ import com.assismohanty.awaken.core.domain.HeatmapEntry
 import com.assismohanty.awaken.core.domain.StatProgress
 import com.assismohanty.awaken.debug.DebugEntry
 import com.assismohanty.awaken.engine.AchievementEvaluator
+import com.assismohanty.awaken.engine.ConsistencyScore
 import com.assismohanty.awaken.engine.DifficultyAdapter
 import com.assismohanty.awaken.engine.GameWeek
 import com.assismohanty.awaken.engine.StatLevel
@@ -220,6 +222,7 @@ private fun ActivityWindow(state: StatusUiState, onEvent: (StatusEvent) -> Unit)
             style = type.caption,
             color = if (selected == null) colors.textSecondary else colors.textPrimary,
         )
+        ConsistencyMeter(state.consistency)
     }
 }
 
@@ -464,6 +467,7 @@ internal fun previewStatusState(locked: Boolean = false): StatusUiState {
         ),
         weeklyOpen = !locked,
         projectedRecalibration = if (locked) emptyMap() else mapOf(Stat.STR to DifficultyAdapter.Change.UP),
+        consistency = if (locked) ConsistencyScore(0, 0) else ConsistencyScore(cleared = 22, eligible = 28),
     )
 }
 

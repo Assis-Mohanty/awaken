@@ -102,4 +102,17 @@
     <string name="metric_streak">Streak</string>
     <string name="rank_line">Rank %1$s</string>
     <string name="unit_days_line">days in a row</string>
+    <!-- Consistency and "never miss twice" (GD §14.2) -->
+    <plurals name="consistency_line">
+        <item quantity="one">%1$d of the last %2$d day</item>
+        <item quantity="other">%1$d of the last %2$d days</item>
+    </plurals>
+    <plurals name="consistency_cd">
+        <item quantity="one">Cleared %1$d of the last %2$d day.</item>
+        <item quantity="other">Cleared %1$d of the last %2$d days.</item>
+    </plurals>
+    <string name="consistency_none">—</string>
+    <string name="consistency_none_cd">No consistency score yet.</string>
+    <string name="miss_line_yesterday">Missed yesterday. Don\'t miss twice.</string>
+    <string name="miss_line_fresh_start">A fresh start today.</string>
 </resources>

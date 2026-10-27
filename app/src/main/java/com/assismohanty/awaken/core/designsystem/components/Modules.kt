@@ -52,10 +52,14 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.Dp
 import com.assismohanty.awaken.R
+import com.assismohanty.awaken.core.designsystem.charts.Chart
+import com.assismohanty.awaken.core.designsystem.charts.ChartSpec
+import com.assismohanty.awaken.core.designsystem.lexicon.lexPlural
 import com.assismohanty.awaken.core.designsystem.lexicon.lexString
 import com.assismohanty.awaken.core.designsystem.preview.ComponentPreview
 import com.assismohanty.awaken.core.designsystem.theme.AwakenTheme
 import com.assismohanty.awaken.core.designsystem.theme.Spacing
+import com.assismohanty.awaken.engine.ConsistencyScore
 import com.assismohanty.awaken.engine.model.Rank
 import com.assismohanty.awaken.engine.model.Stat
 
@@ -283,6 +287,14 @@ fun InsightCard(
                 Icon(AwakenGlyphs.ChevronRight, contentDescription = null, tint = colors.textSecondary, modifier = Modifier.size(AwakenTheme.dimens.iconSmall))
             }
         }
+    }
+}
+
+/** The calm line Today shows instead of the System line the day after a missed day (DESIGN_SYSTEM §8.1): no icon, no alarm colour. */
+@Composable
+fun NeverMissTwiceLine(text: String, modifier: Modifier = Modifier) {
+    AwakenCard(modifier = modifier.fillMaxWidth(), reveal = false) {
+        Text(text, style = AwakenTheme.type.body, color = AwakenTheme.colors.textSecondary)
     }
 }
 
@@ -574,7 +586,13 @@ fun LevelModule(level: Int, rank: Rank, xpIntoLevel: Long, xpForLevel: Long, mod
 
 /** The streak as a metric card: flame, the count large with "days", the best underneath. */
 @Composable
-fun StreakModule(streak: Int, best: Int, modifier: Modifier = Modifier, onClick: (() -> Unit)? = null) {
+fun StreakModule(
+    streak: Int,
+    best: Int,
+    modifier: Modifier = Modifier,
+    consistency: ConsistencyScore? = null,
+    onClick: (() -> Unit)? = null,
+) {
     val colors = AwakenTheme.colors
     val description = lexString(R.string.cd_streak_module, streak, best)
     AwakenCard(modifier = modifier.clearAndSetSemantics { contentDescription = description }, reveal = false, onClick = onClick) {
@@ -582,7 +600,40 @@ fun StreakModule(streak: Int, best: Int, modifier: Modifier = Modifier, onClick:
         BigValue(formatCount(streak), unit = null)
         Text(lexString(R.string.unit_days_line), style = AwakenTheme.type.caption, color = colors.textSecondary)
         Spacer(Modifier.weight(1f))
+        consistency?.let { ConsistencyMeter(it, Modifier.padding(bottom = Spacing.xs)) }
         Text(lexString(R.string.best_streak_label, best), style = AwakenTheme.type.caption, color = colors.textSecondary)
+    }
+}
+
+/**
+ * "22 of the last 28 days" over a thin track filled to the ratio (DESIGN_SYSTEM §8.1, GD §14.2). One colour whatever
+ * the value: no bands, no good/bad. No eligible day reads "—" over an empty track.
+ */
+@Composable
+fun ConsistencyMeter(score: ConsistencyScore, modifier: Modifier = Modifier) {
+    val colors = AwakenTheme.colors
+    val description = if (score.eligible == 0) {
+        lexString(R.string.consistency_none_cd)
+    } else {
+        lexPlural(R.plurals.consistency_cd, score.eligible, score.cleared, score.eligible)
+    }
+    Column(
+        modifier = modifier.fillMaxWidth().clearAndSetSemantics { contentDescription = description },
+        verticalArrangement = Arrangement.spacedBy(Spacing.xxs),
+    ) {
+        Text(
+            text = if (score.eligible == 0) lexString(R.string.consistency_none) else lexPlural(R.plurals.consistency_line, score.eligible, score.cleared, score.eligible),
+            style = AwakenTheme.type.caption,
+            color = colors.textSecondary,
+        )
+        Chart(
+            ChartSpec.Progress(
+                progress = score.ratio?.toFloat() ?: 0f,
+                color = colors.accent,
+                track = colors.surfaceSunken,
+                height = AwakenTheme.dimens.meterHeight,
+            ),
+        )
     }
 }
 
@@ -660,9 +711,11 @@ private fun ModulesPreview() {
             }
             Row(horizontalArrangement = Arrangement.spacedBy(Spacing.cardGap)) {
                 LevelModule(level = 24, rank = Rank.C, xpIntoLevel = 1_240, xpForLevel = 1_434, modifier = Modifier.weight(1f))
-                StreakModule(streak = 12, best = 30, modifier = Modifier.weight(1f))
+                StreakModule(streak = 12, best = 30, consistency = ConsistencyScore(22, 28), modifier = Modifier.weight(1f))
             }
             InsightCard("INT is falling behind. One short study block puts it back on track.", onClick = {})
+            NeverMissTwiceLine("Missed yesterday. Don't miss twice.")
+            AwakenCard(reveal = false) { ConsistencyMeter(ConsistencyScore(0, 0)) }
             MetricCard(
                 label = "Steps",
                 value = "8,412",

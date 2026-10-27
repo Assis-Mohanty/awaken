@@ -10,6 +10,9 @@ import com.assismohanty.awaken.core.data.db.dao.StatTotal
 import com.assismohanty.awaken.core.data.repo.Chapter
 import com.assismohanty.awaken.core.data.repo.NarrativeRepository
 import com.assismohanty.awaken.engine.AchievementEvaluator
+import com.assismohanty.awaken.engine.Consistency
+import com.assismohanty.awaken.engine.ConsistencyScore
+import com.assismohanty.awaken.engine.DayOutcome
 import com.assismohanty.awaken.engine.DifficultyAdapter
 import com.assismohanty.awaken.engine.GameWeek
 import com.assismohanty.awaken.engine.QuestOutcome
@@ -48,6 +51,8 @@ data class StatusModel(
     val weeklyReport: WeeklyReport,
     /** What recalibration would do if the week ended now (GD §6.4): only changed stats. */
     val projectedRecalibration: Map<Stat, DifficultyAdapter.Change>,
+    /** Cleared of eligible days over the last 28 (GD §14.2), next to the heatmap. */
+    val consistency: ConsistencyScore = ConsistencyScore(0, 0),
 )
 
 private data class WeekRows(
@@ -57,6 +62,7 @@ private data class WeekRows(
     val completionsPerDay: Map<LocalDate, Int>,
     val restDays: Set<LocalDate>,
     val unlocked: Set<String>,
+    val outcomes: Map<LocalDate, DayOutcome>,
 )
 
 class ObserveStatusUseCase @Inject constructor(
@@ -93,7 +99,8 @@ class ObserveStatusUseCase @Inject constructor(
             completionDao.observeCountsPerDay(heatmapStart, week.sunday),
             dayRecordDao.observeRestDays(heatmapStart, week.sunday),
             achievementDao.observeUnlockedIds(),
-        ) { (before, inWeek, perDay), completions, rest, unlocked ->
+            dayRecordDao.observeDatedOutcomesFrom(today.minusDays(Consistency.WINDOW_DAYS)),
+        ) { (before, inWeek, perDay), completions, rest, unlocked, outcomes ->
             WeekRows(
                 statXpBefore = before,
                 statXpWeek = inWeek,
@@ -101,6 +108,7 @@ class ObserveStatusUseCase @Inject constructor(
                 completionsPerDay = completions.associate { it.gameDate to it.total.toInt() },
                 restDays = rest.toSet(),
                 unlocked = unlocked.toSet(),
+                outcomes = outcomes.associate { it.gameDate to it.outcome },
             )
         }
     }
@@ -133,6 +141,7 @@ class ObserveStatusUseCase @Inject constructor(
             chapters = narrative.chapters().map { ChapterEntry(it, hunter.level >= it.unlockLevel) },
             weeklyReport = StatusMath.weeklyReport(week, rows.statXpWeek.byStat(), rows.xpPerDay, weekCompletions),
             projectedRecalibration = projectRecalibration(week),
+            consistency = Consistency.score(rows.outcomes, today, hunterDao.getProfile()?.firstGameDate ?: today),
         )
     }
 

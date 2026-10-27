@@ -184,7 +184,7 @@ class TestGraph(
     )
     val rollover = DayRolloverUseCase(
         db.hunterDao(), db.questDao(), db.dayRecordDao(), ledger, reader, templates, generateDirective, advanceTrial, pathDao, pathWeeks,
-        settleDiscipline, advanceCampaign, transactions, clock,
+        settleDiscipline, advanceCampaign, achievements, transactions, clock,
     )
     val previewCampaign = PreviewCampaignUseCase(db.hunterDao(), db.habitDao(), db.campaignDao(), reader, templates, clock)
     val startCampaign = StartCampaignUseCase(db.hunterDao(), db.habitDao(), db.campaignDao(), previewCampaign, generateDirective, transactions, clock)
@@ -216,6 +216,7 @@ class TestGraph(
     )
     val observeToday = ObserveTodayUseCase(
         observeHunterState, db.hunterDao(), db.questDao(), reader, db.trialDao(), pathDao, trialReader, narrative, clock, uiPrefs,
+        db.dayRecordDao(),
     )
     val dayRefresher = DayRefresher(runRollover)
     val setRestDay = SetRestDayUseCase(db.hunterDao(), db.dayRecordDao(), transactions, clock)

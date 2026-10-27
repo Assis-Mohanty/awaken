@@ -27,6 +27,8 @@ data class AchievementSnapshot(
     val cachesOpened: Int = 0,
     /** 45-day campaigns finished at or above the completion bar (GD §6.8). */
     val campaignsCompleted: Int = 0,
+    /** Cleared days right after a missed day (GD §14.2), replayed from day outcomes. */
+    val recoveries: Int = 0,
     val alreadyUnlocked: Set<String> = emptySet(),
 ) {
     fun statLevel(stat: Stat): Int = StatLevel.level(statXp[stat] ?: 0L)
@@ -45,6 +47,7 @@ object AchievementEvaluator {
     private val DAWN_RAID_END: LocalTime = LocalTime.of(7, 0)
     private val MIDNIGHT_GATE_START: LocalTime = LocalTime.of(23, 0)
     private const val MINUTES_PER_HOUR = 60L
+    private const val NEVER_TWICE_RECOVERIES = 5
 
     private val statMasteryTitles = mapOf(
         Stat.STR to "ironborn",
@@ -86,6 +89,7 @@ object AchievementEvaluator {
         add(Achievement("night_owl", 20) { it.midnightGates >= 1 })
         add(Achievement("collector", 50) { it.cachesOpened >= 5 })
         add(Achievement("reforged", 1_000, "reforged") { it.campaignsCompleted >= 1 })
+        add(Achievement("never_twice", 50) { it.recoveries >= NEVER_TWICE_RECOVERIES })
     }
 
     val byId: Map<String, Achievement> = all.associateBy { it.id }

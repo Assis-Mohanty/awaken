@@ -17,6 +17,7 @@ import com.assismohanty.awaken.core.domain.ObserveStatusUseCase
 import com.assismohanty.awaken.core.domain.StatProgress
 import com.assismohanty.awaken.core.domain.StatusModel
 import com.assismohanty.awaken.core.domain.UserMessage
+import com.assismohanty.awaken.engine.ConsistencyScore
 import com.assismohanty.awaken.engine.DifficultyAdapter
 import com.assismohanty.awaken.engine.WeeklyReport
 import com.assismohanty.awaken.engine.model.Rank
@@ -50,6 +51,7 @@ data class StatusUiState(
     val stats: List<StatProgress> = emptyList(),
     val heatmap: List<HeatmapDay> = emptyList(),
     val selectedDay: HeatmapEntry? = null,
+    val consistency: ConsistencyScore = ConsistencyScore(0, 0),
     val achievements: List<AchievementEntry> = emptyList(),
     val chapters: List<ChapterEntry> = emptyList(),
     val openChapter: ChapterEntry? = null,
@@ -166,6 +168,7 @@ private fun StatusModel.toUiState(local: LocalState): StatusUiState = StatusUiSt
     stats = stats,
     heatmap = heatmap.map { HeatmapDay(it.date, it.intensity, it.restDay) },
     selectedDay = local.selectedDate?.let { date -> heatmap.firstOrNull { it.date == date } },
+    consistency = consistency,
     achievements = achievements,
     chapters = chapters,
     openChapter = local.openChapterId?.let { id -> chapters.firstOrNull { it.chapter.id == id && it.unlocked } },
