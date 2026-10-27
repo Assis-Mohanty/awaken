@@ -19,7 +19,6 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.assismohanty.awaken.core.data.repo.ThemeMode
-import com.assismohanty.awaken.core.designsystem.lexicon.PresentationMode
 import com.assismohanty.awaken.core.designsystem.theme.AwakenTheme
 import com.assismohanty.awaken.core.work.ACTION_OPEN_TODAY
 import com.assismohanty.awaken.navigation.AppearanceViewModel
@@ -45,8 +44,7 @@ class MainActivity : ComponentActivity() {
                 ThemeMode.DARK -> true
                 ThemeMode.LIGHT -> false
             }
-            // System mode is always the dark System palette (GD §14.9), so the bars follow it.
-            val darkBars = dark || look.presentationMode == PresentationMode.SYSTEM
+            val darkBars = dark
             // System-bar icons follow the resolved palette, not the device setting.
             DisposableEffect(darkBars) {
                 val style = if (darkBars) SystemBarStyle.dark(Color.TRANSPARENT) else SystemBarStyle.light(Color.TRANSPARENT, Color.TRANSPARENT)
@@ -59,7 +57,6 @@ class MainActivity : ComponentActivity() {
                 reduceMotion = look.reduceMotion,
                 hapticsEnabled = look.hapticsEnabled,
                 themeId = look.themeId,
-                presentation = look.presentationMode,
             ) {
                 AwakenNavHost(openTodayRequests = openTodayRequests)
             }

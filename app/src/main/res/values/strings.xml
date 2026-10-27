@@ -31,12 +31,12 @@
     <string name="badge_verified">Verified</string>
     <string name="badge_timed">Timed</string>
     <string name="chip_main">Main</string>
+    <string name="chip_comeback">Comeback</string>
 
     <!-- Hunter header, XP, currency -->
     <string name="level_short">LV %1$d</string>
     <string name="xp_progress">%1$s / %2$s XP</string>
     <string name="xp_gain">+%1$s XP</string>
-    <string name="gold_gain">+%1$s gold</string>
     <string name="stat_gain">%1$s +%2$s</string>
     <plurals name="fragment_gain">
         <item quantity="one">+%1$d loot fragment</item>
@@ -58,14 +58,17 @@
     <string name="action_open_quest">Open quest details</string>
 
     <!-- Reward sheet: formula breakdown (GAME_DESIGN §1 pillar 4) -->
-    <string name="breakdown_base">%1$s base</string>
-    <string name="breakdown_difficulty">%1$s %2$s</string>
-    <string name="breakdown_streak">%1$s streak</string>
-    <string name="breakdown_verified">%1$s verified</string>
-    <string name="breakdown_timed">%1$s timed</string>
     <string name="breakdown_crit">%1$s crit</string>
-    <string name="breakdown_cap">%1$s self-report limit</string>
-    <string name="breakdown_total">= %1$s XP</string>
+    <string name="reward_xp_unit">XP</string>
+    <string name="reward_gold">Gold</string>
+    <string name="reward_row_base">Base</string>
+    <string name="reward_row_streak">Streak</string>
+    <string name="reward_row_verified">Verified</string>
+    <string name="reward_row_timed">Timed</string>
+    <string name="reward_row_crit">Bonus</string>
+    <string name="reward_row_cap">Self-report limit</string>
+    <string name="reward_row_total">Total</string>
+    <string name="reward_total_value">%1$s XP</string>
     <string name="cap_reached_note">Self-report limit reached — verified quests still count fully.</string>
     <string name="action_done">Done</string>
 
@@ -91,8 +94,11 @@
     <string name="state_collapsed">Collapsed</string>
     <string name="level_word">Level</string>
     <string name="level_long">Level %1$d</string>
-    <string name="streak_label">day streak</string>
     <string name="best_streak_label">Best %1$d</string>
     <string name="cd_streak_module">%1$d day streak, best %2$d</string>
     <string name="cd_level_module">Level %1$d, rank %2$s, %3$s of %4$s XP to the next level</string>
+    <string name="metric_level">Level</string>
+    <string name="metric_streak">Streak</string>
+    <string name="rank_line">Rank %1$s</string>
+    <string name="unit_days_line">days in a row</string>
 </resources>

@@ -67,6 +67,8 @@ data class GymOverview(
     val weekVolumeKg: Double,
     /** Sets per muscle this week; drive the body-map bands. */
     val weekMuscleLoad: Map<Muscle, Double>,
+    /** Volume (kg × reps) per muscle this week, for the body-map sheet (ENGINE_DECISIONS #101). */
+    val weekMuscleVolume: Map<Muscle, Double> = emptyMap(),
     val history: List<WorkoutSummary>,
     val records: List<PersonalRecord>,
     val routines: List<RoutineSummary>,
@@ -284,6 +286,7 @@ class GymTracker @Inject constructor(
             weekSets = weekSets.count { it.done },
             weekVolumeKg = TrainingMath.volume(weekSets.map { it.toLogged() }),
             weekMuscleLoad = TrainingMath.muscleLoad(weekSets.map { it.targets() to it.toLogged() }),
+            weekMuscleVolume = TrainingMath.muscleVolume(weekSets.map { it.targets() to it.toLogged() }),
             history = workouts.map { w ->
                 val own = setsByWorkout[w.id].orEmpty()
                 WorkoutSummary(

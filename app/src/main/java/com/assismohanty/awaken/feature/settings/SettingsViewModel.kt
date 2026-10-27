@@ -1,7 +1,6 @@
 package com.assismohanty.awaken.feature.settings
 
 import com.assismohanty.awaken.engine.TimeBlocks
-import com.assismohanty.awaken.core.designsystem.lexicon.PresentationMode
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -66,7 +65,6 @@ data class SettingsUiState(
     val hapticsEnabled: Boolean = true,
     val reduceMotion: Boolean = false,
     val themeMode: ThemeMode = ThemeMode.SYSTEM,
-    val presentation: PresentationMode = PresentationMode.CLEAN,
     /** Time-of-day block boundaries (GD §14.5). */
     val morningEnd: Int = TimeBlocks.DEFAULT_MORNING_END,
     val dayEnd: Int = TimeBlocks.DEFAULT_DAY_END,
@@ -105,7 +103,6 @@ sealed interface SettingsEvent {
     data class SetHaptics(val enabled: Boolean) : SettingsEvent
     data class SetReduceMotion(val enabled: Boolean) : SettingsEvent
     data class SetThemeMode(val mode: ThemeMode) : SettingsEvent
-    data class SetPresentation(val mode: PresentationMode) : SettingsEvent
     data class SetMorningEnd(val hour: Int) : SettingsEvent
     data class SetDayEnd(val hour: Int) : SettingsEvent
     data class ExportTo(val uri: Uri) : SettingsEvent
@@ -208,7 +205,6 @@ class SettingsViewModel @Inject constructor(
             is SettingsEvent.SetHaptics -> viewModelScope.launch { uiPrefs.setHaptics(event.enabled) }
             is SettingsEvent.SetReduceMotion -> viewModelScope.launch { uiPrefs.setReduceMotion(event.enabled) }
             is SettingsEvent.SetThemeMode -> viewModelScope.launch { uiPrefs.setThemeMode(event.mode) }
-            is SettingsEvent.SetPresentation -> viewModelScope.launch { uiPrefs.setPresentationMode(event.mode) }
             is SettingsEvent.SetMorningEnd -> viewModelScope.launch { uiPrefs.setMorningEnd(event.hour) }
             is SettingsEvent.SetDayEnd -> viewModelScope.launch { uiPrefs.setDayEnd(event.hour) }
             is SettingsEvent.ExportTo -> export(event.uri)
@@ -395,7 +391,6 @@ private fun SettingsModel.toUiState(prefs: UiPrefs, drafts: Drafts, aiConsent: B
     hapticsEnabled = prefs.hapticsEnabled,
     reduceMotion = prefs.reduceMotion,
     themeMode = prefs.themeMode,
-    presentation = prefs.presentationMode ?: PresentationMode.CLEAN,
     morningEnd = prefs.blockBounds.morningEnd,
     dayEnd = prefs.blockBounds.dayEnd,
     importPending = drafts.pendingImport != null,

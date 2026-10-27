@@ -31,7 +31,7 @@ import com.assismohanty.awaken.core.designsystem.theme.AwakenTheme
 import com.assismohanty.awaken.core.designsystem.theme.Spacing
 
 /*
- * Line charts for ChartKit (DESIGN_SYSTEM §8.5): smooth curves, a soft gradient under the line, dotted grid lines and a
+ * Line charts for ChartKit (DESIGN_SYSTEM §8.5): smooth curves (no fill, v2 bans gradients), dotted grid lines and a
  * marked latest point. Calm, minimal, data first.
  */
 
@@ -52,7 +52,7 @@ internal fun TrendLineChart(spec: ChartSpec.TrendLine, modifier: Modifier) {
                 val y = size.height * i / (GRID_LINES - 1)
                 drawLine(grid, Offset(0f, y), Offset(size.width, y), strokeWidth = 1.dp.toPx(), pathEffect = dash)
             }
-            drawSmoothLine(spec.values, color, fill = true, markLast = true, inset = MARK_RADIUS.dp.toPx() * 2)
+            drawSmoothLine(spec.values, color, fill = false, markLast = true, inset = MARK_RADIUS.dp.toPx() * 2)
         }
         if (spec.labels.isNotEmpty()) {
             Row(modifier = Modifier.fillMaxWidth()) {

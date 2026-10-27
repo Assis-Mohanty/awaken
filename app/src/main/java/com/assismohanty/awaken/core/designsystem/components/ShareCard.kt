@@ -18,6 +18,8 @@ import com.assismohanty.awaken.R
 import com.assismohanty.awaken.core.designsystem.theme.AwakenPalette
 import com.assismohanty.awaken.core.designsystem.theme.AwakenTheme
 import com.assismohanty.awaken.core.designsystem.theme.LocalAwakenPalette
+import com.assismohanty.awaken.core.designsystem.theme.LocalAwakenColors
+import com.assismohanty.awaken.core.designsystem.theme.AwakenColors
 import com.assismohanty.awaken.core.designsystem.theme.Spacing
 import com.assismohanty.awaken.engine.model.Rank
 import com.assismohanty.awaken.engine.model.Stat
@@ -39,8 +41,8 @@ data class ShareCardModel(
  */
 @Composable
 fun ShareCard(model: ShareCardModel, modifier: Modifier = Modifier) {
-    // The card is an image that leaves the app: always premium black, whatever mode the hunter uses.
-    CompositionLocalProvider(LocalAwakenPalette provides AwakenPalette.Legacy) { ShareCardContent(model, modifier) }
+    // The card is an image that leaves the app: always the dark look, whatever theme the phone uses.
+    CompositionLocalProvider(LocalAwakenPalette provides AwakenPalette.Dark, LocalAwakenColors provides AwakenColors.Dark) { ShareCardContent(model, modifier) }
 }
 
 @Composable

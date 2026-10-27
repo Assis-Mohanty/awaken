@@ -72,7 +72,7 @@ class TodayWidgetReceiver : GlanceAppWidgetReceiver() {
     override val glanceAppWidget: GlanceAppWidget = TodayWidget()
 }
 
-private val colors = AwakenPalette.Legacy
+private val colors = AwakenPalette.Dark
 
 private fun text(color: Color, size: Int, bold: Boolean = false) =
     TextStyle(color = ColorProvider(color), fontSize = size.sp, fontWeight = if (bold) FontWeight.Bold else FontWeight.Normal)

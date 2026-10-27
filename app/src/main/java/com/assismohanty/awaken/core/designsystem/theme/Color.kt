@@ -12,9 +12,9 @@ import com.assismohanty.awaken.engine.model.Stat
  * Raw palettes — DESIGN_SYSTEM.md §2.1. Only this file holds hex values. Feature code reads the semantic AwakenColors
  * (DS §8.4); AwakenPalette is for core/designsystem (and the widget, which can't read the theme).
  *
- * Light is the default: a warm off-white page, white cards with a warm hairline, near-black ink, one restrained indigo
- * accent, and a soft pastel per stat (tint for card washes, fill for rings and charts, ink for text on either). Dark is
- * a soft charcoal with the same structure. System is the dark layout on near-black with an electric accent and glow.
+ * Two equal looks that follow the phone's light/dark setting: a warm neutral page, flat cards separated by colour alone
+ * (no borders, no shadows), ink in three steps, and one small set of accents (the five stats plus positive/negative)
+ * used only on icons, chips, chart lines and progress fills, never as text or card backgrounds.
  */
 
 /** Raw colour values for one look. Field names are historical; DESIGN_SYSTEM §2.1 lists each role. */
@@ -22,67 +22,47 @@ import com.assismohanty.awaken.engine.model.Stat
 data class AwakenPalette(
     /** The page. */
     val void: Color,
-    /** Below the page: bottom bar, recessed wells. */
+    /** Recessed wells and tracks; same as [panelRaised]. */
     val depth: Color,
     /** Cards. */
     val panel: Color,
-    /** Sheets, pressed states, wells inside cards. */
+    /** Pressed cards, the selected nav pill, wells inside cards. */
     val panelRaised: Color,
-    /** Bottom stop of a card's fill; equal to [panel] when cards are flat. */
-    val panelShade: Color,
-    /** A 1dp lit top edge on cards; transparent when unused. */
-    val panelSheen: Color,
-    /** Hairlines and empty tracks. */
+    /** Hairlines and empty ring tracks. */
     val edge: Color,
     /** Primary ink. */
     val bone: Color,
     /** Secondary ink (≥ 5:1 on cards). */
     val mist: Color,
-    /** Disabled / tertiary; never for text people need to read. */
+    /** Tertiary ink: captions people may skip, disabled. */
     val fog: Color,
-    /** The accent: primary buttons, fills, checks. */
+    /** The primary-button fill: the primary ink, so actions read by weight, not hue. */
     val system: Color,
-    /** The bright end of an accent gradient. */
-    val aether: Color,
-    /** Text and icons on an [system] fill. */
+    /** Text and icons on a [system] fill: the page colour. */
     val onAccent: Color,
+    /** Negative: penalties, errors, a fall. */
     val ember: Color,
+    /** Reward gold (the STR accent). */
     val crit: Color,
+    /** Positive: verified, a rise. */
     val verified: Color,
-    /** Two soft colours washed behind a screen's hero area. */
-    val heroWashA: Color,
-    val heroWashB: Color,
-    /** System mode: cards and the page carry an accent glow. */
-    val glow: Boolean,
     val rankE: Color,
     val rankD: Color,
     val rankC: Color,
     val rankB: Color,
     val rankA: Color,
     val rankS: Color,
-    /** Stat ink: text and icons in a stat's colour (≥ 4.5:1 on cards and on the stat's tint). */
+    /** Stat accents: small icons, chips, chart lines, progress fills. */
     val statStr: Color,
     val statInt: Color,
     val statWil: Color,
     val statVit: Color,
     val statCha: Color,
-    /** Stat tint: soft card and chip backgrounds. */
-    val tintStr: Color,
-    val tintInt: Color,
-    val tintWil: Color,
-    val tintVit: Color,
-    val tintCha: Color,
-    /** Stat fill: rings, bars, chart lines and dots. */
-    val fillStr: Color,
-    val fillInt: Color,
-    val fillWil: Color,
-    val fillVit: Color,
-    val fillCha: Color,
-    // Vault themes (GD §9.2): re-tint accents, never the rank crest.
+    // Vault themes (GD §9.2): re-tint small accents, never the rank crest, never a background.
     val themeCrimson: Color,
     val themeViolet: Color,
     val themeGold: Color,
-    // Title frame outlines (GD §9.2), cheapest to most prestigious.
+    // Title frame marks (GD §9.2), cheapest to most prestigious.
     val frameIron: Color,
     val frameEmber: Color,
     val frameUmbral: Color,
@@ -125,196 +105,75 @@ data class AwakenPalette(
         Stat.CHA -> statCha
     }
 
-    fun statTint(stat: Stat): Color = when (stat) {
-        Stat.STR -> tintStr
-        Stat.INT -> tintInt
-        Stat.WIL -> tintWil
-        Stat.VIT -> tintVit
-        Stat.CHA -> tintCha
-    }
+    /** The 15% wash behind a stat icon in a list row or chip. */
+    fun statTint(stat: Stat): Color = stat(stat).copy(alpha = AwakenAlpha.TINT)
 
-    fun statFill(stat: Stat): Color = when (stat) {
-        Stat.STR -> fillStr
-        Stat.INT -> fillInt
-        Stat.WIL -> fillWil
-        Stat.VIT -> fillVit
-        Stat.CHA -> fillCha
-    }
+    /** Rings, bars and chart lines: the accent itself. */
+    fun statFill(stat: Stat): Color = stat(stat)
 
     companion object {
-        /** The default look (DESIGN_SYSTEM §2.1): warm, light, calm. */
-        val Light = AwakenPalette(
-            void = Color(0xFFF6F4EF),
-            depth = Color(0xFFEFECE6),
-            panel = Color(0xFFFFFFFF),
-            panelRaised = Color(0xFFF4F1EC),
-            panelShade = Color(0xFFFFFFFF),
-            panelSheen = Color(0x00FFFFFF),
-            edge = Color(0xFFE8E3DA),
-            bone = Color(0xFF1B1A18),
-            mist = Color(0xFF67635C),
-            fog = Color(0xFFABA69D),
-            system = Color(0xFF3446C9),
-            aether = Color(0xFF7182F2),
-            onAccent = Color(0xFFFFFFFF),
-            ember = Color(0xFFC63D36),
-            crit = Color(0xFF8F6200),
-            verified = Color(0xFF1D7C51),
-            heroWashA = Color(0xFFEDE6FF),
-            heroWashB = Color(0xFFFFEFD9),
-            glow = false,
-            rankE = Color(0xFF5F6B7C),
-            rankD = Color(0xFF237D4D),
-            rankC = Color(0xFF0E7380),
-            rankB = Color(0xFF3558C4),
-            rankA = Color(0xFF6C4BCB),
-            rankS = Color(0xFF8F6200),
-            statStr = Color(0xFF7F5600),
-            statInt = Color(0xFF5640BA),
-            statWil = Color(0xFF2B5DB5),
-            statVit = Color(0xFF1A6F4D),
-            statCha = Color(0xFFA6385D),
-            tintStr = Color(0xFFFFF3D1),
-            tintInt = Color(0xFFEEE9FF),
-            tintWil = Color(0xFFE5EEFF),
-            tintVit = Color(0xFFDFF4E9),
-            tintCha = Color(0xFFFFE6EE),
-            fillStr = Color(0xFFF2BC45),
-            fillInt = Color(0xFF9F8BF5),
-            fillWil = Color(0xFF75A1F1),
-            fillVit = Color(0xFF5CC598),
-            fillCha = Color(0xFFEF8BAE),
-            themeCrimson = Color(0xFFB8323F),
-            themeViolet = Color(0xFF6B45D8),
-            themeGold = Color(0xFF8F6200),
-            frameIron = Color(0xFF6B7380),
-            frameEmber = Color(0xFFC0532F),
-            frameUmbral = Color(0xFF6B45D8),
-            frameRegal = Color(0xFF8F6200),
+        private val AccentStr = Color(0xFFE8B931)
+        private val AccentInt = Color(0xFFA99BF0)
+        private val AccentVit = Color(0xFF5FBF8F)
+        private val AccentWil = Color(0xFF6FA8F5)
+        private val AccentCha = Color(0xFFF08A7A)
+        private val Positive = Color(0xFF4CC38A)
+        private val Negative = Color(0xFFE5675A)
+
+        @Suppress("LongParameterList")
+        private fun look(page: Color, card: Color, pressed: Color, divider: Color, ink: Color, ink2: Color, ink3: Color) =
+            AwakenPalette(
+                void = page,
+                depth = pressed,
+                panel = card,
+                panelRaised = pressed,
+                edge = divider,
+                bone = ink,
+                mist = ink2,
+                fog = ink3,
+                system = ink,
+                onAccent = page,
+                ember = Negative,
+                crit = AccentStr,
+                verified = Positive,
+                rankE = ink2,
+                rankD = AccentVit,
+                rankC = AccentWil,
+                rankB = AccentInt,
+                rankA = AccentCha,
+                rankS = AccentStr,
+                statStr = AccentStr,
+                statInt = AccentInt,
+                statWil = AccentWil,
+                statVit = AccentVit,
+                statCha = AccentCha,
+                themeCrimson = Negative,
+                themeViolet = AccentInt,
+                themeGold = AccentStr,
+                frameIron = ink2,
+                frameEmber = AccentCha,
+                frameUmbral = AccentInt,
+                frameRegal = AccentStr,
+            )
+
+        val Light = look(
+            page = Color(0xFFF5F4F1),
+            card = Color(0xFFFFFFFF),
+            pressed = Color(0xFFEFEDE8),
+            divider = Color(0xFFE6E4DF),
+            ink = Color(0xFF111111),
+            ink2 = Color(0xFF6B6965),
+            ink3 = Color(0xFF9A978F),
         )
 
-        /** Equally polished dark: soft charcoal, never pure black. */
-        val Dark = AwakenPalette(
-            void = Color(0xFF131416),
-            depth = Color(0xFF0F1012),
-            panel = Color(0xFF1C1D20),
-            panelRaised = Color(0xFF25272B),
-            panelShade = Color(0xFF1C1D20),
-            panelSheen = Color(0x00FFFFFF),
-            edge = Color(0xFF2E3034),
-            bone = Color(0xFFF1EFEA),
-            mist = Color(0xFFA7A39C),
-            fog = Color(0xFF6F6C66),
-            system = Color(0xFF9DAAFF),
-            aether = Color(0xFFC7CEFF),
-            onAccent = Color(0xFF141625),
-            ember = Color(0xFFFF7D73),
-            crit = Color(0xFFF2C35C),
-            verified = Color(0xFF62D4A2),
-            heroWashA = Color(0xFF262238),
-            heroWashB = Color(0xFF2B2519),
-            glow = false,
-            rankE = Color(0xFFA9B3C1),
-            rankD = Color(0xFF6FD49D),
-            rankC = Color(0xFF62D2DE),
-            rankB = Color(0xFF8CA7FF),
-            rankA = Color(0xFFBBA1FF),
-            rankS = Color(0xFFF2C35C),
-            statStr = Color(0xFFF4CB68),
-            statInt = Color(0xFFBBACFF),
-            statWil = Color(0xFF96B7FF),
-            statVit = Color(0xFF77DBAF),
-            statCha = Color(0xFFFFA6C4),
-            tintStr = Color(0xFF2F2918),
-            tintInt = Color(0xFF26233A),
-            tintWil = Color(0xFF1E2739),
-            tintVit = Color(0xFF1A2D25),
-            tintCha = Color(0xFF34222B),
-            fillStr = Color(0xFFE9B547),
-            fillInt = Color(0xFF9F8CF5),
-            fillWil = Color(0xFF7EA6F5),
-            fillVit = Color(0xFF58C795),
-            fillCha = Color(0xFFEE8BAE),
-            themeCrimson = Color(0xFFFF6B77),
-            themeViolet = Color(0xFFA98BFF),
-            themeGold = Color(0xFFF2C35C),
-            frameIron = Color(0xFFB4BCC8),
-            frameEmber = Color(0xFFFF8A65),
-            frameUmbral = Color(0xFFB79CFF),
-            frameRegal = Color(0xFFF2C35C),
-        )
-
-        /** System mode (GD §14.9): the same layout on near-black with an electric accent and glow. */
-        val System = AwakenPalette(
-            void = Color(0xFF09090B),
-            depth = Color(0xFF050506),
-            panel = Color(0xFF111115),
-            panelRaised = Color(0xFF1A1A20),
-            panelShade = Color(0xFF0C0C0F),
-            panelSheen = Color(0x14FFFFFF),
-            edge = Color(0xFF26262E),
-            bone = Color(0xFFEDEDED),
-            mist = Color(0xFF9A9AA3),
-            fog = Color(0xFF5A5A63),
-            system = Color(0xFF7FD8FF),
-            aether = Color(0xFFD2F4FF),
-            onAccent = Color(0xFF041219),
-            ember = Color(0xFFFF5468),
-            crit = Color(0xFFFFC94D),
-            verified = Color(0xFF5BE3B0),
-            heroWashA = Color(0xFF0E2230),
-            heroWashB = Color(0xFF1B1430),
-            glow = true,
-            rankE = Color(0xFF8A96A8),
-            rankD = Color(0xFF5BD08A),
-            rankC = Color(0xFF4FD6E8),
-            rankB = Color(0xFF6E99FF),
-            rankA = Color(0xFFA97BFF),
-            rankS = Color(0xFFFFC94D),
-            statStr = Color(0xFFFF8A6A),
-            statInt = Color(0xFF6CC8FF),
-            statWil = Color(0xFFB28CFF),
-            statVit = Color(0xFF5BE3B0),
-            statCha = Color(0xFFFFB3D1),
-            tintStr = Color(0xFF2A1812),
-            tintInt = Color(0xFF0F2230),
-            tintWil = Color(0xFF1F1830),
-            tintVit = Color(0xFF0F2A21),
-            tintCha = Color(0xFF2E1A24),
-            fillStr = Color(0xFFFF7A59),
-            fillInt = Color(0xFF5CC2FF),
-            fillWil = Color(0xFFA97BFF),
-            fillVit = Color(0xFF5BE3B0),
-            fillCha = Color(0xFFFFB3D1),
-            themeCrimson = Color(0xFFE0364B),
-            themeViolet = Color(0xFF8E5CFF),
-            themeGold = Color(0xFFD9AE3C),
-            frameIron = Color(0xFFB4BCC8),
-            frameEmber = Color(0xFFFF7A59),
-            frameUmbral = Color(0xFFA97BFF),
-            frameRegal = Color(0xFFFFC94D),
-        )
-
-        /** The v1.0 premium-black look, kept for the share image and the widget until their own redesign (BACKLOG). */
-        val Legacy = System.copy(
-            void = Color(0xFF000000),
-            depth = Color(0xFF0A0A0A),
-            panel = Color(0xFF0E0E0E),
-            panelRaised = Color(0xFF161616),
-            panelShade = Color(0xFF090909),
-            panelSheen = Color(0x12FFFFFF),
-            edge = Color(0xFF262626),
-            bone = Color(0xFFEDEDED),
-            mist = Color(0xFF8A8A8A),
-            fog = Color(0xFF525252),
-            system = Color(0xFFEDEDED),
-            aether = Color(0xFFFFFFFF),
-            onAccent = Color(0xFF000000),
-            glow = false,
-            rankB = Color(0xFF5C8DFF),
-            statStr = Color(0xFFFF7A59),
-            statInt = Color(0xFF5CC2FF),
-            statWil = Color(0xFFA97BFF),
+        val Dark = look(
+            page = Color(0xFF0F0F0F),
+            card = Color(0xFF1F1E1C),
+            pressed = Color(0xFF2A2927),
+            divider = Color(0xFF343330),
+            ink = Color(0xFFF5F4F1),
+            ink2 = Color(0xFFA8A6A1),
+            ink3 = Color(0xFF75736E),
         )
     }
 }
@@ -327,46 +186,46 @@ data class AwakenPalette(
 class AwakenColors(private val palette: AwakenPalette) {
     /** The page. */
     val surface: Color get() = palette.void
-    /** Below the page: bottom bar, recessed tracks. */
+    /** Recessed wells and tracks. */
     val surfaceSunken: Color get() = palette.depth
-    /** Cards and windows. */
+    /** Cards. */
     val surfaceElevated: Color get() = palette.panel
-    /** Sheets, pressed states and wells inside cards. */
+    /** Pressed cards, the selected nav pill, wells inside cards. */
     val surfaceOverlay: Color get() = palette.panelRaised
+    /** The selected segment of a segmented control: lighter than its track in both looks (card white / a raised grey). */
+    val surfaceSelected: Color get() = if (palette.isDark) palette.edge else palette.panel
     val textPrimary: Color get() = palette.bone
     val textSecondary: Color get() = palette.mist
-    /** Disabled and tertiary; never for text people need to read. */
+    /** Tertiary: captions people may skip, disabled. */
     val textMuted: Color get() = palette.fog
-    /** Primary actions, fills, checks. */
+    /** Primary button fill and checks: the primary ink. */
     val accent: Color get() = palette.system
     /** Empty tracks and quiet outlines. */
     val accentMuted: Color get() = palette.edge
-    /** The bright leading edge of a fill. */
-    val accentHighlight: Color get() = palette.aether
     /** Text on an [accent] fill. */
     val onAccent: Color get() = palette.onAccent
     val divider: Color get() = palette.edge
-    /** Verified, held, healthy, a rise. */
+    /** Verified, held, healthy, a rise (graphics only; text stays ink). */
     val positive: Color get() = palette.verified
-    /** Caution that is not an error. */
+    /** Caution that is not an error (graphics only). */
     val warning: Color get() = palette.crit
-    /** Errors, destructive actions, penalties, breaches, a fall. */
+    /** Errors, destructive actions, penalties, a fall (graphics only; text stays ink). */
     val critical: Color get() = palette.ember
     /** Gold, crits, level-ups. */
     val reward: Color get() = palette.crit
     /** Chart series in stat order (STR, INT, WIL, VIT, CHA), then a neutral. */
-    val chartSeries1: Color get() = palette.fillStr
-    val chartSeries2: Color get() = palette.fillInt
-    val chartSeries3: Color get() = palette.fillWil
-    val chartSeries4: Color get() = palette.fillVit
-    val chartSeries5: Color get() = palette.fillCha
+    val chartSeries1: Color get() = palette.statStr
+    val chartSeries2: Color get() = palette.statInt
+    val chartSeries3: Color get() = palette.statWil
+    val chartSeries4: Color get() = palette.statVit
+    val chartSeries5: Color get() = palette.statCha
     val chartSeries6: Color get() = palette.mist
     val chartGrid: Color get() = palette.edge
 
     fun rank(rank: Rank): Color = palette.rank(rank)
-    /** A stat's ink: text and icons. */
+    /** A stat's accent: icons, chips, lines (never body text). */
     fun stat(stat: Stat): Color = palette.stat(stat)
-    /** A stat's soft background tint. */
+    /** A stat's 15% wash behind its icon. */
     fun statTint(stat: Stat): Color = palette.statTint(stat)
     /** A stat's fill for rings, bars and charts. */
     fun statFill(stat: Stat): Color = palette.statFill(stat)
@@ -380,7 +239,6 @@ class AwakenColors(private val palette: AwakenPalette) {
     companion object {
         val Light = AwakenColors(AwakenPalette.Light)
         val Dark = AwakenColors(AwakenPalette.Dark)
-        val System = AwakenColors(AwakenPalette.System)
     }
 }
 
@@ -390,15 +248,12 @@ private const val HALF = 0.5f
 object AwakenAlpha {
     /** Pill borders. */
     const val EDGE = 0.70f
-    /** Faint tint behind crests and swipe reveals. */
-    const val TINT = 0.10f
-    /** Background haze. */
-    const val HAZE = 0.05f
+    /** The wash behind a stat icon, chip or crest. */
+    const val TINT = 0.15f
     const val RADAR_FILL = 0.18f
     const val DIM_SCRIM = 0.90f
-    /** System-mode glow around cards and the hero. */
-    const val GLOW = 0.35f
-    val HEATMAP_STEPS = listOf(0.08f, 0.30f, 0.50f, 0.72f, 1.0f)
+    /** Five fill steps: heatmap cells and the body map's trained muscles. */
+    val HEATMAP_STEPS = listOf(0.20f, 0.38f, 0.56f, 0.78f, 1.0f)
 }
 
 val LocalAwakenPalette = staticCompositionLocalOf { AwakenPalette.Light }

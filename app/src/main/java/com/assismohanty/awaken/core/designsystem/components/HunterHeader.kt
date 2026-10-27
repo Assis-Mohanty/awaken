@@ -73,7 +73,7 @@ fun HunterHeader(model: HunterHeaderModel, modifier: Modifier = Modifier, large:
                             Icon(
                                 imageVector = glyph,
                                 contentDescription = shopItemNameRes(sigilId)?.let { lexString(it) },
-                                tint = colors.system,
+                                tint = colors.crit,
                                 modifier = Modifier.size(dimens.iconSmall),
                             )
                         }
@@ -96,10 +96,9 @@ fun HunterHeader(model: HunterHeaderModel, modifier: Modifier = Modifier, large:
             )
         }
         Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-            // System mode keeps the HUD "LV 24"; Clean reads "Level 24".
             Text(
-                text = lexString(if (colors.glow) R.string.level_short else R.string.level_long, level),
-                style = if (colors.glow) (if (large) type.metricXL else type.metricL) else type.title,
+                text = lexString(R.string.level_long, level),
+                style = type.title,
                 color = colors.bone,
             )
             XpBar(

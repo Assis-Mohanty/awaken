@@ -1,24 +1,19 @@
 package com.assismohanty.awaken.feature.today
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Text
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.semantics.heading
-import androidx.compose.ui.semantics.semantics
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.assismohanty.awaken.R
@@ -26,25 +21,24 @@ import com.assismohanty.awaken.core.designsystem.components.AwakenCard
 import com.assismohanty.awaken.core.designsystem.components.AwakenGlyphs
 import com.assismohanty.awaken.core.designsystem.components.BlockState
 import com.assismohanty.awaken.core.designsystem.components.EmptyState
-import com.assismohanty.awaken.core.designsystem.components.GreetingHeader
 import com.assismohanty.awaken.core.designsystem.components.HeaderIconButton
-import com.assismohanty.awaken.core.designsystem.components.HeroRing
 import com.assismohanty.awaken.core.designsystem.components.HunterHeaderModel
 import com.assismohanty.awaken.core.designsystem.components.InsightCard
+import com.assismohanty.awaken.core.designsystem.components.LargeTitleScaffold
 import com.assismohanty.awaken.core.designsystem.components.LevelModule
+import com.assismohanty.awaken.core.designsystem.components.ListRow
 import com.assismohanty.awaken.core.designsystem.components.QuestRow
 import com.assismohanty.awaken.core.designsystem.components.QuestRowModel
 import com.assismohanty.awaken.core.designsystem.components.QuestRowState
-import com.assismohanty.awaken.core.designsystem.components.QuietButton
+import com.assismohanty.awaken.core.designsystem.components.RingCard
+import com.assismohanty.awaken.core.designsystem.components.RingSpec
+import com.assismohanty.awaken.core.designsystem.components.SkeletonCard
 import com.assismohanty.awaken.core.designsystem.components.StreakModule
 import com.assismohanty.awaken.core.designsystem.components.TimeBlockHeader
-import com.assismohanty.awaken.core.designsystem.components.TimelineQuestRow
-import com.assismohanty.awaken.core.designsystem.components.heroWash
-import com.assismohanty.awaken.core.designsystem.components.penaltyTint
+import com.assismohanty.awaken.core.designsystem.components.formatCount
 import com.assismohanty.awaken.core.designsystem.components.staggeredEntrance
-import com.assismohanty.awaken.core.designsystem.lexicon.Term
+import com.assismohanty.awaken.core.designsystem.lexicon.lexPlural
 import com.assismohanty.awaken.core.designsystem.lexicon.lexString
-import com.assismohanty.awaken.core.designsystem.lexicon.termString
 import com.assismohanty.awaken.core.designsystem.preview.PhonePreviews
 import com.assismohanty.awaken.core.designsystem.theme.AwakenTheme
 import com.assismohanty.awaken.core.designsystem.theme.Spacing
@@ -93,9 +87,10 @@ fun TodayRoute(
 }
 
 /**
- * Today (DESIGN_SYSTEM §4.2): a greeting over a soft wash, one hero ring for the day's progress, level and streak as
- * compact modules, the daily line as an insight, then the plan as a timeline grouped Morning → Day → Evening → Anytime
- * (GD §14.5). A penalty quest stays pinned above it and the screen carries a faint ember tint (GD §7.3).
+ * Today (DESIGN_SYSTEM §4.2): "Good morning, Sam" as the large title over the date; one ring card for the day ("3 of 10
+ * done today"); Level and Streak as two metric cards; one insight; then the quests grouped Morning → Day → Evening →
+ * Anytime (GD §14.5) as list rows with a hollow check. The penalty quest is a normal row with a Comeback chip at the top
+ * of the current block (GD §7.3); planning, habits, campaign and screen limits follow as quiet rows.
  */
 @Composable
 fun TodayScreen(
@@ -112,148 +107,81 @@ fun TodayScreen(
     onOpenVault: () -> Unit = {},
 ) {
     val colors = AwakenTheme.colors
-    val type = AwakenTheme.type
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .penaltyTint(state.penaltyOpen)
-            .verticalScroll(rememberScrollState()),
-        horizontalAlignment = Alignment.CenterHorizontally,
+    val header = state.header
+    LargeTitleScaffold(
+        title = greeting(state.currentBlock, header?.name),
+        subtitle = state.gameDate?.let(::formatDay),
+        modifier = modifier,
+        actions = {
+            HeaderIconButton(AwakenGlyphs.Portal, lexString(R.string.action_open_gates), onOpenGates)
+            HeaderIconButton(AwakenGlyphs.Vault, lexString(R.string.action_open_vault), onOpenVault)
+        },
     ) {
-        val header = state.header
-        // The hero area: greeting, the day's ring and the game modules, over a soft wash.
-        Box(modifier = Modifier.fillMaxWidth().heroWash(), contentAlignment = Alignment.TopCenter) {
-            Column(
-                modifier = Modifier
-                    .widthIn(max = Spacing.contentMaxWidth)
-                    .fillMaxWidth()
-                    .padding(horizontal = Spacing.gutter, vertical = Spacing.md),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(Spacing.lg),
-            ) {
-                GreetingHeader(
-                    greeting = greeting(state.currentBlock, header?.name),
-                    subtitle = state.gameDate?.let(::formatDay),
-                    modifier = Modifier.staggeredEntrance(0),
-                ) {
-                    HeaderIconButton(AwakenGlyphs.Portal, lexString(R.string.action_open_gates), onOpenGates)
-                    HeaderIconButton(AwakenGlyphs.Vault, lexString(R.string.action_open_vault), onOpenVault)
-                }
-                if (state.loading || header == null) {
-                    Text(lexString(R.string.today_loading), style = type.body, color = colors.textSecondary)
-                    return@Column
-                }
-                HeroRing(
-                    value = state.completed.toString(),
-                    unitLine = lexString(R.string.today_hero_unit, state.total),
-                    kicker = lexString(if (state.cleared) R.string.system_title_directive_cleared else R.string.nav_today),
-                    progress = if (state.total > 0) state.completed.toFloat() / state.total else 0f,
-                    description = lexString(R.string.today_hero_cd, state.completed, state.total),
-                    modifier = Modifier.staggeredEntrance(1),
-                )
-                Row(
-                    modifier = Modifier.fillMaxWidth().staggeredEntrance(2),
-                    horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
-                ) {
-                    LevelModule(
-                        level = header.level,
-                        rank = header.rank,
-                        xpIntoLevel = header.xpIntoLevel,
-                        xpForLevel = header.xpForLevel,
-                        modifier = Modifier.weight(LEVEL_WEIGHT),
-                    )
-                    StreakModule(streak = header.streak, best = state.bestStreak, modifier = Modifier.weight(1f))
-                }
-            }
+        if (state.loading || header == null) {
+            SkeletonCard()
+            SkeletonCard(lines = 4)
+            return@LargeTitleScaffold
         }
-        if (state.loading || header == null) return@Column
-
-        Column(
-            modifier = Modifier
-                .widthIn(max = Spacing.contentMaxWidth)
-                .fillMaxWidth()
-                .padding(horizontal = Spacing.gutter)
-                .padding(bottom = Spacing.xl),
-            verticalArrangement = Arrangement.spacedBy(Spacing.md),
+        RingCard(
+            label = lexString(if (state.cleared) R.string.system_title_directive_cleared else R.string.nav_today),
+            value = formatCount(state.completed),
+            unit = lexString(R.string.today_ring_unit, state.total),
+            secondary = lexString(R.string.today_ring_done),
+            rings = listOf(RingSpec(if (state.total > 0) state.completed.toFloat() / state.total else 0f, colors.positive)),
+            description = lexString(R.string.today_hero_cd, state.completed, state.total),
+            modifier = Modifier.staggeredEntrance(0),
+        )
+        // Equal heights: the taller card (at large font sizes) sets both.
+        Row(
+            modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min).staggeredEntrance(1),
+            horizontalArrangement = Arrangement.spacedBy(Spacing.cardGap),
         ) {
-            state.systemLine?.let { line ->
-                InsightCard(title = termString(Term.SYSTEM_MESSAGE), body = line, modifier = Modifier.staggeredEntrance(3))
-            }
-
-            state.penalty?.let { penalty ->
-                AwakenCard(title = lexString(R.string.quest_kind_penalty), accent = colors.critical, modifier = Modifier.staggeredEntrance(3)) {
-                    QuestRow(
-                        model = penalty,
-                        onComplete = { onEvent(TodayEvent.Complete(penalty.id)) },
-                        onOpen = { onOpenQuest(penalty.id) },
-                        showDivider = false,
-                    )
-                }
-            }
-
-            state.trial?.let { trial ->
-                TrialWindow(
-                    trial = trial,
-                    stages = state.trialStages,
-                    onBegin = { onEvent(TodayEvent.BeginTrial) },
-                    onOpenTrial = onOpenTrial,
-                    onComplete = { onEvent(TodayEvent.Complete(it)) },
-                    onOpenQuest = onOpenQuest,
-                )
-            }
-
-            Row(modifier = Modifier.fillMaxWidth().padding(top = Spacing.xs), verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    text = lexString(R.string.system_title_daily_directive),
-                    style = type.section,
-                    color = colors.textPrimary,
-                    modifier = Modifier.weight(1f).semantics { heading() },
-                )
-                QuietButton(text = lexString(R.string.action_day_plan), onClick = { onDayPlanEvent(DayPlanEvent.Open) })
-            }
-
-            Timeline(state, onEvent, onOpenQuest)
-
-            Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    text = lexString(R.string.today_habits),
-                    style = type.title,
-                    color = colors.textPrimary,
-                    modifier = Modifier.weight(1f).semantics { heading() },
-                )
-                QuietButton(text = lexString(R.string.action_manage_habits), onClick = { onHabitsEvent(HabitsEvent.OpenList) })
-            }
-            if (state.habits.isEmpty()) {
-                EmptyState(
-                    line = lexString(R.string.today_no_habits),
-                    actionLabel = lexString(R.string.action_add_habit),
-                    onAction = { onHabitsEvent(HabitsEvent.Add) },
-                )
-            }
-
-            CampaignCardWindow(state, onOpenCampaign)
-
-            state.discipline?.let { card ->
-                DisciplineCardWindow(card, onOpenScreenTime)
-            }
+            LevelModule(
+                level = header.level,
+                rank = header.rank,
+                xpIntoLevel = header.xpIntoLevel,
+                xpForLevel = header.xpForLevel,
+                modifier = Modifier.weight(1f).fillMaxHeight(),
+            )
+            StreakModule(streak = header.streak, best = state.bestStreak, modifier = Modifier.weight(1f).fillMaxHeight())
         }
+        state.systemLine?.let { line -> InsightCard(text = line, modifier = Modifier.staggeredEntrance(2)) }
+
+        state.trial?.let { trial ->
+            TrialWindow(
+                trial = trial,
+                stages = state.trialStages,
+                onBegin = { onEvent(TodayEvent.BeginTrial) },
+                onOpenTrial = onOpenTrial,
+                onComplete = { onEvent(TodayEvent.Complete(it)) },
+                onOpenQuest = onOpenQuest,
+            )
+        }
+
+        Timeline(state, onEvent, onOpenQuest)
+
+        PlanCard(state, onHabitsEvent, onDayPlanEvent)
+        CampaignRow(state, onOpenCampaign)
+        state.discipline?.let { card -> DisciplineRow(card, onOpenScreenTime) }
     }
 }
 
 /**
- * The plan as a vertical timeline (GD §14.5): Morning → Day → Evening → Anytime, empty blocks hidden. The block "now"
- * is in is marked; earlier blocks start collapsed and expand on tap, and their open quests stay completable.
+ * The quests as sections (GD §14.5): Morning → Day → Evening → Anytime, empty blocks hidden, each a card of list rows.
+ * The block "now" is in is marked; earlier blocks start collapsed and expand on tap, and their open quests stay
+ * completable. An open penalty quest leads the current block.
  */
 @Composable
 private fun Timeline(state: TodayUiState, onEvent: (TodayEvent) -> Unit, onOpenQuest: (String) -> Unit) {
-    val quests = listOfNotNull(state.main) + state.paths + state.sides + state.habits
+    val comeback = state.penalty?.copy(timeOfDay = state.currentBlock, comeback = true)
+    val quests = listOfNotNull(comeback, state.main) + state.paths + state.sides + state.habits
     val byBlock = quests.groupBy { it.timeOfDay }.toSortedMap(compareBy(TimeBlocks::order))
     val expanded = rememberSaveable(saver = expandedSaver) { mutableStateMapOf() }
-    Column(verticalArrangement = Arrangement.spacedBy(Spacing.xxs)) {
-        byBlock.forEach { (block, rows) ->
-            val blockState = blockState(block, state.currentBlock)
-            val key = block?.name ?: ANYTIME_KEY
-            val isExpanded = expanded[key] ?: (blockState != BlockState.PAST)
+    byBlock.forEach { (block, rows) ->
+        val blockState = blockState(block, state.currentBlock)
+        val key = block?.name ?: ANYTIME_KEY
+        val isExpanded = expanded[key] ?: (blockState != BlockState.PAST)
+        Column {
             TimeBlockHeader(
                 block = block.toTimeBlock(),
                 done = rows.count { it.state == QuestRowState.DONE },
@@ -263,18 +191,97 @@ private fun Timeline(state: TodayUiState, onEvent: (TodayEvent) -> Unit, onOpenQ
                 onToggle = { expanded[key] = !isExpanded },
             )
             if (isExpanded) {
-                rows.forEachIndexed { index, row ->
-                    TimelineQuestRow(
-                        model = row,
-                        onComplete = { onEvent(TodayEvent.Complete(row.id)) },
-                        onOpen = { onOpenQuest(row.id) },
-                        first = index == 0,
-                        last = index == rows.lastIndex,
-                    )
+                AwakenCard(reveal = false, contentPadding = Spacing.listCard) {
+                    Column {
+                        rows.forEachIndexed { index, row ->
+                            QuestRow(
+                                model = row,
+                                onComplete = { onEvent(TodayEvent.Complete(row.id)) },
+                                onOpen = { onOpenQuest(row.id) },
+                                showDivider = index > 0,
+                            )
+                        }
+                    }
                 }
             }
         }
     }
+}
+
+/** Planning and habits as two quiet rows in one card; an empty habit list offers to add one. */
+@Composable
+private fun PlanCard(state: TodayUiState, onHabitsEvent: (HabitsEvent) -> Unit, onDayPlanEvent: (DayPlanEvent) -> Unit) {
+    val colors = AwakenTheme.colors
+    AwakenCard(reveal = false, contentPadding = Spacing.listCard, modifier = Modifier.fillMaxWidth()) {
+        ListRow(
+            title = lexString(R.string.action_day_plan),
+            icon = AwakenGlyphs.Calendar,
+            iconTint = colors.stat(Stat.WIL),
+            secondary = lexString(R.string.today_plan_secondary),
+            onClick = { onDayPlanEvent(DayPlanEvent.Open) },
+            trailing = { Chevron() },
+        )
+        ListRow(
+            title = lexString(R.string.today_habits),
+            icon = AwakenGlyphs.Directive,
+            iconTint = colors.stat(Stat.CHA),
+            secondary = if (state.habits.isEmpty()) null else lexPlural(R.plurals.today_habits_count, state.habits.size, state.habits.size),
+            onClick = { onHabitsEvent(HabitsEvent.OpenList) },
+            trailing = { Chevron() },
+        )
+        if (state.habits.isEmpty()) {
+            EmptyState(
+                line = lexString(R.string.today_no_habits),
+                actionLabel = lexString(R.string.action_add_habit),
+                onAction = { onHabitsEvent(HabitsEvent.Add) },
+            )
+        }
+    }
+}
+
+/** The campaign (GD §6.8): its day and act while one runs, otherwise a quiet offer to begin one. */
+@Composable
+private fun CampaignRow(state: TodayUiState, onOpenCampaign: () -> Unit) {
+    val card = state.campaign
+    if (card == null && !state.campaignOffer) return
+    AwakenCard(reveal = false, contentPadding = Spacing.listCard, modifier = Modifier.fillMaxWidth()) {
+        ListRow(
+            title = lexString(R.string.campaign_window_progress),
+            icon = AwakenGlyphs.Path,
+            iconTint = AwakenTheme.colors.reward,
+            secondary = if (card != null) {
+                lexString(R.string.today_campaign_day, card.dayIndex, lexString(card.act.todayNameRes))
+            } else {
+                lexString(R.string.today_campaign_begin)
+            },
+            onClick = onOpenCampaign,
+            trailing = { Chevron() },
+        )
+    }
+}
+
+@Composable
+private fun DisciplineRow(card: DisciplineCard, onOpenScreenTime: () -> Unit) {
+    val colors = AwakenTheme.colors
+    AwakenCard(reveal = false, contentPadding = Spacing.listCard, modifier = Modifier.fillMaxWidth()) {
+        ListRow(
+            title = lexString(R.string.quest_kind_discipline),
+            icon = AwakenGlyphs.Phone,
+            iconTint = if (card.held) colors.positive else colors.critical,
+            secondary = if (card.held) {
+                lexString(R.string.today_discipline_on_track, card.xpAtStake)
+            } else {
+                lexString(R.string.today_discipline_forfeited)
+            },
+            onClick = onOpenScreenTime,
+            trailing = { Chevron() },
+        )
+    }
+}
+
+@Composable
+private fun Chevron() {
+    Icon(AwakenGlyphs.ChevronRight, contentDescription = null, tint = AwakenTheme.colors.textSecondary, modifier = Modifier.size(AwakenTheme.dimens.iconSmall))
 }
 
 /** Anytime is never "past": it has no clock time. */
@@ -302,52 +309,6 @@ private fun greeting(block: TimeOfDay, name: String?): String {
 
 private fun formatDay(date: LocalDate): String = DateTimeFormatter.ofLocalizedDate(FormatStyle.FULL).format(date)
 
-@Composable
-private fun DisciplineCardWindow(card: DisciplineCard, onOpenScreenTime: () -> Unit, modifier: Modifier = Modifier) {
-    val colors = AwakenTheme.colors
-    AwakenCard(
-        title = lexString(R.string.quest_kind_discipline),
-        accent = if (card.held) colors.positive else colors.critical,
-        modifier = modifier,
-        reveal = false,
-        headerTrailing = { QuietButton(text = lexString(R.string.action_open_screen_time), onClick = onOpenScreenTime) },
-    ) {
-        Text(
-            text = if (card.held) {
-                lexString(R.string.today_discipline_on_track, card.xpAtStake)
-            } else {
-                lexString(R.string.today_discipline_forfeited)
-            },
-            style = AwakenTheme.type.body,
-            color = if (card.held) colors.textPrimary else colors.textSecondary,
-        )
-    }
-}
-
-/** The campaign on Today (GD §6.8): its day and act while one runs, otherwise a quiet offer to begin one. */
-@Composable
-private fun CampaignCardWindow(state: TodayUiState, onOpenCampaign: () -> Unit) {
-    val colors = AwakenTheme.colors
-    val card = state.campaign
-    if (card == null && !state.campaignOffer) return
-    AwakenCard(
-        title = lexString(R.string.campaign_window_progress),
-        accent = if (card != null) colors.reward else colors.accent,
-        reveal = false,
-        headerTrailing = { QuietButton(text = lexString(R.string.action_open_campaign), onClick = onOpenCampaign) },
-    ) {
-        Text(
-            text = if (card != null) {
-                lexString(R.string.today_campaign_day, card.dayIndex, lexString(card.act.todayNameRes))
-            } else {
-                lexString(R.string.today_campaign_begin)
-            },
-            style = if (card != null) AwakenTheme.type.numeric else AwakenTheme.type.body,
-            color = if (card != null) colors.textPrimary else colors.textSecondary,
-        )
-    }
-}
-
 private val CampaignAct.todayNameRes: Int
     get() = when (this) {
         CampaignAct.FOUNDATION -> R.string.campaign_act_foundation
@@ -355,7 +316,6 @@ private val CampaignAct.todayNameRes: Int
         CampaignAct.ASCEND -> R.string.campaign_act_ascend
     }
 
-private const val LEVEL_WEIGHT = 1.4f
 private const val ANYTIME_KEY = "ANYTIME"
 
 // region previews

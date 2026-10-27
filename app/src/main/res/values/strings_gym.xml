@@ -82,6 +82,12 @@
 
     <string name="body_front">Front</string>
     <string name="body_back">Back</string>
+    <string name="body_muscle_trained">Trained this week</string>
+    <string name="body_muscle_untrained">Not trained this week</string>
+    <string name="gym_muscle_sheet_sets">Sets</string>
+    <string name="gym_muscle_sheet_volume">Volume</string>
+    <string name="gym_muscle_sheet_note">Since Monday. A set counts 1 for the main muscle and ½ for the helpers.</string>
+    <string name="gym_muscle_sheet_empty">Not trained since Monday.</string>
 
     <string name="muscle_abdominals">Abs</string>
     <string name="muscle_abductors">Abductors</string>

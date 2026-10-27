@@ -1,7 +1,6 @@
 package com.assismohanty.awaken.feature.settings
 
 import com.assismohanty.awaken.engine.TimeBlocks
-import com.assismohanty.awaken.core.designsystem.lexicon.PresentationMode
 import com.assismohanty.awaken.core.designsystem.lexicon.lexString
 import com.assismohanty.awaken.core.designsystem.lexicon.lexPlural
 import android.content.Intent
@@ -45,7 +44,11 @@ import androidx.compose.ui.window.Dialog
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import com.assismohanty.awaken.R
+import com.assismohanty.awaken.debug.DebugEntry
 import com.assismohanty.awaken.core.data.health.HealthStatus
 import com.assismohanty.awaken.core.data.repo.ThemeMode
 import com.assismohanty.awaken.core.designsystem.components.ChoiceChip
@@ -74,6 +77,7 @@ fun SettingsRoute(
     onOpenHealth: () -> Unit,
     modifier: Modifier = Modifier,
     onOpenScreenTime: () -> Unit = {},
+    onOpenDebug: () -> Unit = {},
     viewModel: SettingsViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -104,6 +108,7 @@ fun SettingsRoute(
         onOpenPrivacy = { context.startActivity(Intent(context, PrivacyPolicyActivity::class.java)) },
         onOpenHealth = onOpenHealth,
         onOpenScreenTime = onOpenScreenTime,
+        onOpenDebug = onOpenDebug,
         onOpenNotificationSettings = {
             context.startActivity(
                 Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName),
@@ -126,6 +131,7 @@ fun SettingsScreen(
     onOpenNotificationSettings: () -> Unit = {},
     onOpenHealth: () -> Unit = {},
     onOpenScreenTime: () -> Unit = {},
+    onOpenDebug: () -> Unit = {},
 ) {
     GateBackground(rank = Rank.E, modifier = modifier) {
         Column(
@@ -159,6 +165,12 @@ fun SettingsScreen(
                     AiPathsWindow(state, onEvent)
                     ComfortWindow(state, onEvent)
                     DataWindow(state, onExport, onImport, onOpenPrivacy)
+                    // Debug builds only (DebugEntry is a no-op in release): never floats over content.
+                    if (DebugEntry.ENABLED) {
+                        SystemWindow(title = lexString(R.string.settings_window_developer), accent = accent(), reveal = false) {
+                            DebugEntry.LauncherButton(onClick = onOpenDebug)
+                        }
+                    }
                 }
             }
         }
@@ -383,18 +395,6 @@ private fun AiPathsWindow(state: SettingsUiState, onEvent: (SettingsEvent) -> Un
 @Composable
 private fun ComfortWindow(state: SettingsUiState, onEvent: (SettingsEvent) -> Unit) {
     SystemWindow(title = lexString(R.string.settings_window_comfort), accent = accent(), reveal = false) {
-        Text(lexString(R.string.settings_presentation_title), style = AwakenTheme.type.label, color = AwakenTheme.colors.textPrimary)
-        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
-            PresentationMode.entries.forEach { mode ->
-                ChoiceChip(
-                    text = lexString(if (mode == PresentationMode.CLEAN) R.string.clean_mode_label else R.string.system_mode_label),
-                    selected = mode == state.presentation,
-                    onClick = { onEvent(SettingsEvent.SetPresentation(mode)) },
-                    modifier = Modifier.weight(1f),
-                )
-            }
-        }
-        Text(lexString(R.string.settings_presentation_note), style = AwakenTheme.type.caption, color = AwakenTheme.colors.textSecondary)
         Text(lexString(R.string.settings_appearance_title), style = AwakenTheme.type.label, color = AwakenTheme.colors.textPrimary)
         FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.xs), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
             ThemeMode.entries.forEach { mode ->
@@ -441,6 +441,9 @@ private fun DataWindow(state: SettingsUiState, onExport: () -> Unit, onImport: (
             runCatching { context.packageManager.getPackageInfo(context.packageName, 0).versionName }.getOrNull().orEmpty()
         }
         QuietButton(text = lexString(R.string.action_privacy_policy), onClick = onOpenPrivacy, modifier = Modifier.fillMaxWidth())
+        var licences by rememberSaveable { mutableStateOf(false) }
+        QuietButton(text = lexString(R.string.settings_licences), onClick = { licences = true }, modifier = Modifier.fillMaxWidth())
+        if (licences) LicencesSheet(onDismiss = { licences = false })
         Text(lexString(R.string.settings_about, version), style = AwakenTheme.type.caption, color = colors.textMuted)
     }
 }

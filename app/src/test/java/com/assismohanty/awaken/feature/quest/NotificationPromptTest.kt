@@ -10,6 +10,7 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.assismohanty.awaken.core.designsystem.theme.AwakenTheme
@@ -56,7 +57,7 @@ class NotificationPromptTest {
         val quest = runBlocking { graph.fixtureQuest(name) }
         runBlocking { graph.completionCenter.complete(quest.id) }
         composeRule.waitUntil(timeoutMillis = 5_000) { composeRule.onAllNodesWithText("Done").fetchSemanticsNodes().isNotEmpty() }
-        composeRule.onNodeWithText("Done").performClick()
+        composeRule.onNodeWithText("Done").performScrollTo().performClick()
     }
 
     private fun promptVisible() = composeRule.onAllNodesWithText("REMINDERS").fetchSemanticsNodes().isNotEmpty()

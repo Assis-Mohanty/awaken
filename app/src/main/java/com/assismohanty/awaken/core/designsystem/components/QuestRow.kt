@@ -15,14 +15,10 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -38,16 +34,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import com.assismohanty.awaken.R
 import com.assismohanty.awaken.core.designsystem.preview.ComponentPreview
@@ -81,12 +73,15 @@ data class QuestRowModel(
     val progress: Int? = null,
     /** Today's timeline block (GD §14.5); null = Anytime. */
     val timeOfDay: TimeOfDay? = null,
+    /** The penalty quest (GD §7.3): a normal row with a coral "Comeback" chip. */
+    val comeback: Boolean = false,
 )
 
 /**
- * Quest row inside a card (DESIGN_SYSTEM §3): the stat's glyph on its pastel, title, target line and badges, and a round
- * check. Swipe right past the threshold completes (haptic tick at the threshold); tap or long-press opens details. Only
- * SELF quests show a check: HEALTH/TIMER quests complete through their verifier (GAME_DESIGN §6.5).
+ * Quest row inside a card (DESIGN_SYSTEM §3, the list-row pattern): the stat's glyph in a 36dp tinted circle, title, a
+ * target line and small chips, and a hollow check circle. Rows are split by an inset hairline. Swipe right past the
+ * threshold completes (haptic tick at the threshold); tap or long-press opens details. Only SELF quests show a check:
+ * HEALTH/TIMER quests complete through their verifier (GAME_DESIGN §6.5).
  */
 @Composable
 fun QuestRow(
@@ -101,7 +96,7 @@ fun QuestRow(
         if (showDivider) {
             HorizontalDivider(
                 thickness = dimens.hairline,
-                color = AwakenTheme.palette.edge,
+                color = AwakenTheme.colors.divider,
                 modifier = Modifier.padding(start = dimens.iconWell + Spacing.sm),
             )
         }
@@ -119,85 +114,6 @@ fun QuestRow(
     }
 }
 
-/**
- * One quest on Today's vertical timeline (DESIGN_SYSTEM §4.2): a node on a rail (filled once done) and the quest as its
- * own soft card. The main quest's card carries its stat's pastel. [first] / [last] trim the rail at the ends.
- */
-@Composable
-fun TimelineQuestRow(
-    model: QuestRowModel,
-    onComplete: () -> Unit,
-    onOpen: () -> Unit,
-    modifier: Modifier = Modifier,
-    first: Boolean = false,
-    last: Boolean = false,
-) {
-    val palette = AwakenTheme.palette
-    val dimens = AwakenTheme.dimens
-    val shape = AwakenTheme.shapes.inner
-    Row(modifier = modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-        TimelineNode(model, first = first, last = last, modifier = Modifier.fillMaxHeight())
-        Box(
-            modifier = Modifier
-                .weight(1f)
-                .padding(vertical = Spacing.xxs)
-                .clip(shape)
-                .background(if (model.isMain && model.state != QuestRowState.CLOSED) palette.statTint(model.stat) else palette.panel)
-                .border(dimens.hairline, if (model.isMain) Color.Transparent else palette.edge, shape),
-        ) {
-            SwipeToComplete(model, onComplete, onOpen) {
-                Row(
-                    modifier = Modifier.padding(start = Spacing.md, top = Spacing.sm, bottom = Spacing.sm, end = Spacing.xxs),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
-                ) {
-                    QuestText(model, modifier = Modifier.weight(1f))
-                    CheckControl(model, onComplete)
-                }
-            }
-        }
-    }
-}
-
-/** The node and rail of [TimelineQuestRow]: done = filled accent with a check, open = a ring in the stat's colour. */
-@Composable
-private fun TimelineNode(model: QuestRowModel, first: Boolean, last: Boolean, modifier: Modifier = Modifier) {
-    val palette = AwakenTheme.palette
-    val dimens = AwakenTheme.dimens
-    val rail = palette.edge
-    Box(
-        modifier = modifier
-            .width(dimens.timelineNode)
-            .drawBehind {
-                val x = size.width / 2f
-                val stroke = dimens.timelineRail.toPx()
-                val nodeTop = size.height / 2f - dimens.timelineNode.toPx() / 2f
-                val nodeBottom = size.height / 2f + dimens.timelineNode.toPx() / 2f
-                if (!first) drawLine(rail, Offset(x, 0f), Offset(x, nodeTop), stroke)
-                if (!last) drawLine(rail, Offset(x, nodeBottom), Offset(x, size.height), stroke)
-            },
-        contentAlignment = Alignment.Center,
-    ) {
-        val node = Modifier
-            .size(dimens.timelineNode)
-            .clip(AwakenTheme.shapes.pill)
-        when (model.state) {
-            QuestRowState.DONE -> Box(node.background(palette.system), contentAlignment = Alignment.Center) {
-                Icon(AwakenGlyphs.Check, contentDescription = null, tint = palette.onAccent, modifier = Modifier.size(dimens.iconSmall))
-            }
-            QuestRowState.OPEN -> Box(
-                node
-                    .background(palette.panel)
-                    .border(dimens.timelineRail, palette.statFill(model.stat), AwakenTheme.shapes.pill),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(AwakenGlyphs.stat(model.stat), contentDescription = null, tint = palette.stat(model.stat), modifier = Modifier.size(dimens.iconSmall))
-            }
-            QuestRowState.CLOSED -> Box(node.background(palette.edge))
-        }
-    }
-}
-
 /** Swipe right to complete (SELF, open quests only), tap or long-press to open. Wraps the row's visible content. */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -207,7 +123,7 @@ private fun SwipeToComplete(
     onOpen: () -> Unit,
     content: @Composable () -> Unit,
 ) {
-    val palette = AwakenTheme.palette
+    val colors = AwakenTheme.colors
     val haptics = AwakenTheme.haptics
     val motion = AwakenTheme.motion
     val canComplete = model.state == QuestRowState.OPEN && model.verification == VerificationSource.SELF
@@ -233,13 +149,13 @@ private fun SwipeToComplete(
             Box(
                 modifier = Modifier
                     .matchParentSize()
-                    .background(palette.verified.copy(alpha = SWIPE_WASH)),
+                    .background(colors.positive.copy(alpha = SWIPE_WASH)),
                 contentAlignment = Alignment.CenterStart,
             ) {
                 Icon(
                     AwakenGlyphs.Check,
                     contentDescription = null,
-                    tint = palette.verified,
+                    tint = colors.positive,
                     modifier = Modifier.padding(start = Spacing.md).size(AwakenTheme.dimens.icon),
                 )
             }
@@ -270,22 +186,22 @@ private fun SwipeToComplete(
     }
 }
 
-/** The stat's glyph on its pastel disc. */
+/** The stat's glyph in its 36dp tinted circle; neutral when the quest is closed. */
 @Composable
 fun StatWell(stat: Stat, modifier: Modifier = Modifier, dimmed: Boolean = false) {
-    val palette = AwakenTheme.palette
+    val colors = AwakenTheme.colors
     val dimens = AwakenTheme.dimens
     Box(
         modifier = modifier
             .size(dimens.iconWell)
             .clip(AwakenTheme.shapes.pill)
-            .background(if (dimmed) palette.panelRaised else palette.statTint(stat)),
+            .background(if (dimmed) colors.surfaceOverlay else colors.statTint(stat)),
         contentAlignment = Alignment.Center,
     ) {
         Icon(
             AwakenGlyphs.stat(stat),
             contentDescription = stat.label(),
-            tint = if (dimmed) palette.fog else palette.stat(stat),
+            tint = if (dimmed) colors.textMuted else colors.stat(stat),
             modifier = Modifier.size(dimens.icon * WELL_GLYPH),
         )
     }
@@ -294,15 +210,16 @@ fun StatWell(stat: Stat, modifier: Modifier = Modifier, dimmed: Boolean = false)
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun QuestText(model: QuestRowModel, modifier: Modifier = Modifier) {
-    val palette = AwakenTheme.palette
+    val colors = AwakenTheme.colors
     val type = AwakenTheme.type
     val dimmed = model.state == QuestRowState.CLOSED
+    val done = model.state == QuestRowState.DONE
     val decoration = if (dimmed) TextDecoration.LineThrough else TextDecoration.None
-    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(Spacing.xxs)) {
+    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(Spacing.xxs / 2)) {
         Text(
             text = model.title,
-            style = if (model.isMain) type.title else type.body.copy(fontWeight = FontWeight.SemiBold),
-            color = if (dimmed) palette.fog else palette.bone,
+            style = type.windowTitle,
+            color = if (dimmed || done) colors.textSecondary else colors.textPrimary,
             textDecoration = decoration,
         )
         Text(
@@ -317,17 +234,18 @@ private fun QuestText(model: QuestRowModel, modifier: Modifier = Modifier) {
             } else {
                 lexString(R.string.quest_target_line, formatCount(model.target), unitLabel(model.unit, model.target), model.difficulty.label())
             },
-            style = type.label,
-            color = if (dimmed) palette.fog else palette.mist,
+            style = type.caption,
+            color = if (dimmed) colors.textMuted else colors.textSecondary,
             textDecoration = decoration,
         )
-        if (model.isMain || model.verification != VerificationSource.SELF || model.pathBadge != null) {
+        if (model.isMain || model.comeback || model.verification != VerificationSource.SELF || model.pathBadge != null) {
             FlowRow(
                 horizontalArrangement = Arrangement.spacedBy(Spacing.xxs),
                 verticalArrangement = Arrangement.spacedBy(Spacing.xxs),
                 modifier = Modifier.padding(top = Spacing.xxs),
             ) {
-                if (model.isMain) Pill(lexString(R.string.chip_main), palette.stat(model.stat), background = palette.panel)
+                if (model.comeback) Pill(lexString(R.string.chip_comeback), colors.critical)
+                if (model.isMain) Pill(lexString(R.string.chip_main), colors.textPrimary, background = colors.surfaceOverlay)
                 model.pathBadge?.let { badge ->
                     PathQuestBadge(
                         name = badge.name,
@@ -342,22 +260,22 @@ private fun QuestText(model: QuestRowModel, modifier: Modifier = Modifier) {
 
 @Composable
 private fun CheckControl(model: QuestRowModel, onComplete: () -> Unit) {
-    val palette = AwakenTheme.palette
+    val colors = AwakenTheme.colors
     val dimens = AwakenTheme.dimens
     val canComplete = model.state == QuestRowState.OPEN && model.verification == VerificationSource.SELF
     when {
         model.state == QuestRowState.DONE -> Box(
             modifier = Modifier
-                .padding(Spacing.xs)
-                .size(dimens.sigil + Spacing.xxs)
+                .padding(Spacing.sm)
+                .size(dimens.sigil - Spacing.xxs)
                 .clip(AwakenTheme.shapes.pill)
-                .background(palette.system),
+                .background(colors.accent),
             contentAlignment = Alignment.Center,
         ) {
             Icon(
                 AwakenGlyphs.Check,
                 contentDescription = lexString(R.string.cd_quest_done, model.title),
-                tint = palette.onAccent,
+                tint = colors.onAccent,
                 modifier = Modifier.size(dimens.iconSmall),
             )
         }
@@ -371,8 +289,8 @@ private fun CheckControl(model: QuestRowModel, onComplete: () -> Unit) {
             ) {
                 Box(
                     modifier = Modifier
-                        .size(dimens.sigil + Spacing.xxs)
-                        .border(dimens.accentWidth, palette.edge, AwakenTheme.shapes.pill),
+                        .size(dimens.sigil - Spacing.xxs)
+                        .border(dimens.accentWidth, colors.textMuted, AwakenTheme.shapes.pill),
                 )
             }
         }
@@ -410,14 +328,3 @@ private fun QuestRowPreview() {
     }
 }
 
-@ComponentPreview
-@Composable
-private fun TimelineQuestRowPreview() {
-    AwakenTheme {
-        Column(modifier = Modifier.padding(Spacing.gutter)) {
-            previewQuests.take(4).forEachIndexed { index, quest ->
-                TimelineQuestRow(quest, onComplete = {}, onOpen = {}, first = index == 0, last = index == 3)
-            }
-        }
-    }
-}

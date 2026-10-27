@@ -1,97 +1,123 @@
-# AWAKEN — Design System & UX Spec (v1.1 redesign)
+# AWAKEN — Design System & UX Spec (v2 redesign)
 
 ## 1. Direction in one paragraph
 
-A **premium, calm, light-first health app that plays like a game** (v1.1 redesign; references in `docs/ui-reference/`, Withings Health Mate as inspiration only). Data is the hero: one very large number per screen inside a ring, small uppercase labels over values, smooth trend lines. The page is a warm off-white with soft rounded white cards and hairline borders instead of shadows; each stat has a soft pastel used for card tints and washes behind the hero. Game elements (level, XP, rank, streak) are compact, elegant modules, never glowing windows. Dark mode is an equally polished soft charcoal. **System mode** is the same layout on near-black with an electric accent, a glow around cards and the System's own words (Lexicon, §8.3); it is a theme layer, not a separate UI.
+**Premium, Apple-quality, calm** (v2, 2026-10-27; references in `docs/ui-reference/`, inspiration only). Apple HIG spirit:
+- **Clarity:** one primary thing per screen, a big number or a single question. Hierarchy comes from type size and weight, not colour.
+- **Deference:** content first. No decoration that doesn't carry information.
+- **Restraint:** if in doubt, remove it. Whitespace is a feature.
 
-What we are explicitly not: Habitica's pixel-art toybox, a generic Material app with a purple FAB, an anime fan-page, or a copy of any health app's assets, icons or colours.
+The page is a warm neutral and cards are flat, separated from it by colour alone. Accents are small and few. The app follows the phone's light or dark setting (or the Appearance choice), and both looks are equally finished. The old **System mode** (dark palette, glow, System words) was **retired in v2**: the app always speaks Clean words (the Lexicon stays as infrastructure, §8.3).
+
+**Banned everywhere:**
+- Effects and colour: gradients on backgrounds or cards, glows, neon, navy or purple tints, coloured card borders, more than one accent colour per card.
+- Shapes and icons: outlined coloured icon circles, emoji in UI, mixed icon sets.
+- Type: uppercase headers.
+- Motion: pulsing or bouncing animations.
+
+What we are explicitly not: Habitica's pixel-art toybox, a generic Material app, an anime fan-page, or a copy of any app's assets, icons or colours.
 
 ## 2. Tokens
 
-### 2.1 Colour — three palettes, one set of tokens
+### 2.1 Colour — two looks, one set of tokens
 
-`AwakenPalette` (only `core/designsystem/theme/Color.kt` holds hex values) has three instances: **Light** (default), **Dark** and **System**, plus a frozen **Legacy** premium-black palette used only by the share image and the widget until their own redesign. Feature code reads the semantic `AwakenColors` (§8.4) and never a palette. Clean mode picks Light or Dark from Settings → Appearance; System mode always uses System.
+Only `core/designsystem/theme/Color.kt` holds hex values. `AwakenPalette` has two instances, **Light** and **Dark**. Feature code reads the semantic `AwakenColors` (§8.4), never a palette.
 
-| Role (palette field) | Light | Dark | System |
-|---|---|---|---|
-| Page (`void`) | `#F6F4EF` warm off-white | `#131416` | `#09090B` |
-| Sunken (`depth`) | `#EFECE6` | `#0F1012` | `#050506` |
-| Card (`panel`) | `#FFFFFF` | `#1C1D20` | `#111115` |
-| Well / sheet (`panelRaised`) | `#F4F1EC` | `#25272B` | `#1A1A20` |
-| Hairline (`edge`) | `#E8E3DA` | `#2E3034` | `#26262E` |
-| Ink (`bone`) | `#1B1A18` | `#F1EFEA` | `#EDEDED` |
-| Secondary ink (`mist`) | `#67635C` | `#A7A39C` | `#9A9AA3` |
-| Muted (`fog`) | `#ABA69D` | `#6F6C66` | `#5A5A63` |
-| Accent (`system`) | `#3446C9` ink-indigo | `#9DAAFF` | `#7FD8FF` electric |
-| On accent | `#FFFFFF` | `#141625` | `#041219` |
-| Critical (`ember`) | `#C63D36` | `#FF7D73` | `#FF5468` |
-| Reward / gold (`crit`) | `#8F6200` | `#F2C35C` | `#FFC94D` |
-| Positive (`verified`) | `#1D7C51` | `#62D4A2` | `#5BE3B0` |
-| Hero wash A / B | `#EDE6FF` lavender / `#FFEFD9` peach | `#262238` / `#2B2519` | `#0E2230` / `#1B1430` |
-
-**Stat pastels** (as the user asked: STR warm yellow, INT lavender, WIL blue, VIT mint, CHA pink). Each stat has an **ink** (text and icons, ≥ 4.5:1 on cards and on its own tint), a **tint** (card and chip backgrounds) and a **fill** (rings, bars, chart lines and dots):
-
-| Stat | Light ink / tint / fill | Dark ink / tint / fill |
+| Role (semantic token) | Light | Dark |
 |---|---|---|
-| STR | `#7F5600` / `#FFF3D1` / `#F2BC45` | `#F4CB68` / `#2F2918` / `#E9B547` |
-| INT | `#5640BA` / `#EEE9FF` / `#9F8BF5` | `#BBACFF` / `#26233A` / `#9F8CF5` |
-| WIL | `#2B5DB5` / `#E5EEFF` / `#75A1F1` | `#96B7FF` / `#1E2739` / `#7EA6F5` |
-| VIT | `#1A6F4D` / `#DFF4E9` / `#5CC598` | `#77DBAF` / `#1A2D25` / `#58C795` |
-| CHA | `#A6385D` / `#FFE6EE` / `#EF8BAE` | `#FFA6C4` / `#34222B` / `#EE8BAE` |
+| Page (`surface`) | `#F5F4F1` | `#0F0F0F` |
+| Card (`surfaceElevated`) | `#FFFFFF` | `#1F1E1C` |
+| Card pressed, wells, selected nav pill, body map (`surfaceOverlay`) | `#EFEDE8` | `#2A2927` |
+| Divider, ring tracks (`divider`) | `#E6E4DF` | `#343330` |
+| Text primary / secondary / muted | `#111111` / `#6B6965` / `#9A978F` | `#F5F4F1` / `#A8A6A1` / `#75736E` |
+| Primary button fill (`accent`) / its text (`onAccent`) | the primary ink / the page colour | same |
 
-Ranks E–S keep their meaning colours, darkened for text on white in Light and brightened in Dark (`Color.kt`). Colour is never the only signal: chips carry text, verification carries an icon and a word. `PaletteContrastTest` enforces the floors (ink ≥ 7:1, secondary ≥ 5:1, every hue and stat ink ≥ 4.5:1 on cards and on its tint) for Light, Dark and System.
+**Accents** are the same in both looks. They appear only on small icons, chips, chart lines and progress fills. They never colour a card background or body text.
 
-Stay on Legacy: the share image (an image that leaves the app) and the Glance widget (BACKLOG "Light-mode widget").
+| STR | INT | VIT | WIL | CHA | positive | negative |
+|---|---|---|---|---|---|---|
+| `#E8B931` | `#A99BF0` | `#5FBF8F` | `#6FA8F5` | `#F08A7A` | `#4CC38A` | `#E5675A` |
 
-### 2.2 Typography — Plus Jakarta Sans (SIL OFL, `res/font/plus_jakarta_sans.ttf`, variable 200–800)
+How the accents are used:
+- **Stat icon wash:** `statTint` is the accent at 15 %, the circle behind a stat icon.
+- **Reward:** reward gold = STR.
+- **Ranks:** E is secondary ink; D, C, B, A and S take VIT, WIL, INT, CHA and STR.
+- **Vault themes and frames:** they re-tint small marks only.
+- **Fixed looks:** the share image and the widget use Dark.
 
-One modern family for everything; weights pinned via `FontVariation`. Numbers are big and bold with tabular figures; words are calm.
+`PaletteContrastTest` keeps these floors on cards:
+- Ink ≥ 7:1.
+- Secondary ≥ 5:1 on cards, ≥ 4.5:1 (AA) on the page; the light page measures 4.98:1.
+- Button text on its fill ≥ 4.5:1.
+
+The accents are fixed by the brief and are decorative: several (STR, VIT, CHA, positive) fall under 3:1 on white. They therefore never carry meaning alone: every stat icon and chip carries text. Colour is never the only signal.
+
+### 2.2 Typography — Inter (SIL OFL, `res/font/inter.ttf`, variable)
+
+One family, weights pinned via `FontVariation`. Every style has **tabular figures** (`tnum`) so numbers never jitter while counting. Large roles tighten tracking.
 
 | Style | Weight | Size (line) | Use |
 |---|---|---|---|
-| `metricXL` | 800, −3 % tracking | 60 (64) | The hero number in a ring |
-| `metricL` | 700, −2 % | 34 (40) | A large value in a card |
-| `headline` | 700 | 26 (32) | Greetings, screen titles |
-| `section` | 700 | 20 (26) | Section headings ("Today's plan") |
-| `windowTitle` | 700 | 17 (22) | Card titles (System mode: 16, +8 % tracking, UPPERCASE strings) |
-| `title` | 600 | 17 (22) | Quest titles, module titles |
-| `overline` | 600, +10 % tracking | 11 (14) | Small uppercase labels over values (RESULT, TREND) |
-| `numeric` / `numericSmall` | 600, tabular | 20 (24) / 14 (18) | XP, gold, timers |
-| `body` | 400 | 15 (22) | Descriptions |
-| `label` | 500 | 13 (18) | Chips, metadata |
-| `caption` | 400 | 12 (16) | Hints |
+| `metricXL` | 600, −2 % | 56 (60) | The one big number on a screen |
+| `metricUnit` | 500 | 20 (24) | Unit beside a big number ("kg", "of 10"), secondary ink |
+| `metricL` | 600, −2 % | 34 (40) | A value in a metric card |
+| `headline` | 700, −2 % | 34 (41) | Large title; collapses to `title` on scroll |
+| `section` | 600 | 22 (28) | Section headings ("Morning") |
+| `windowTitle` | 500 | 17 (22) | Card titles, list-row titles |
+| `title` | 600 | 17 (22) | Collapsed screen title, buttons |
+| `numeric` / `numericSmall` | 600 / 500 | 20 / 15 | Values in rows |
+| `body` | 400 | 15 (21) | Text |
+| `label` / `overline` | 500 | 13 (18) | Chips, small labels over values |
+| `caption` | 400 | 13 (18) | Secondary lines, hints |
 
-Sentence case everywhere in Clean mode; UPPERCASE belongs to System-mode window titles and `overline` labels. Font scaling up to 200 % must reflow.
+Sentence case everywhere. No truncation at 200 % font scale: text wraps, rows grow.
 
 ### 2.3 Shape, space, elevation
 
-- **Cards** (`shapes.window`): 20dp radius, `panel` fill, 1dp `edge` hairline (none on tinted cards), 20dp padding (`Spacing.card`). No shadows. System mode adds a 1dp accent edge at 35 % and a soft accent glow (`dimens.glow`).
-- **Inner wells and tiles** (`shapes.inner`): 14dp; small swatches and calendar cells (`shapes.tile`): 8dp; sheets: 28dp top corners.
-- **Buttons and chips**: fully rounded pills. Primary button 52dp tall, accent fill, on-accent text; secondary = hairline pill on card white; quiet = accent text.
-- Spacing scale 4, 8, 12, 16, 24, 32, 48; screen gutter 20dp; card padding 20dp; section gap 28dp; content max width 560dp.
-- XP bar 8dp pill with an accent → `aether` gradient.
+- **Grid:** 8dp. Screen margin 16dp (`Spacing.gutter`), 12dp between cards (`Spacing.cardGap`), 32dp between sections, content max width 560dp.
+- **Cards** (`shapes.window`): 24dp radius, card colour, **no border, no shadow**, 20dp padding. Cards that hold rows use 16dp. A tappable card turns the pressed colour while held.
+- **Inner wells** 16dp radius; tiles 10dp; **sheets** 28dp top corners.
+- **Buttons:** pills, 52dp tall.
+  - Primary: solid primary ink with page-coloured text. Destructive uses negative.
+  - Secondary: the pressed-card colour.
+  - Quiet: ink text.
+- **Chips:** 24dp pills, ink text on a 15 % wash of their accent.
+- **Choice chips:** 44dp. Selected is solid ink with a check.
+- **XP bar:** an 8dp pill, divider track, solid gold fill.
 
-### 2.4 Iconography
+### 2.4 Iconography — one hand-drawn set (`AwakenGlyphs`)
 
-Custom line glyphs (`AwakenGlyphs`), 24-unit grid, 1.75 stroke, **rounded caps and joins**. Stat sigils sit on their pastel disc (`StatWell`). Header actions are icons on a 40dp round well with a hairline (`HeaderIconButton`). Time blocks use sunrise / sun / moon / clock; the bottom bar uses home, dumbbell, bowl and rising bars.
+All icons are drawn in `components/Glyphs.kt`, after the solid, friendly glyphs in the references. No icon library is used.
+- **Grid:** 24 units, 2-unit safe area.
+- **Line icons** (chrome, unselected nav): 1.75 stroke, round caps and joins.
+- **Solid icons** (selected nav, stats, streak flame, insights): filled shapes rounded by a 1.5 stroke of the same colour.
+- **Stat glyphs:** STR bolt, INT open book, WIL target, VIT heart, CHA two people.
+- **Nav icons:** home, dumbbell, bowl with a leaf, rising bars, each with a solid twin.
+- **Catalog:** `AwakenGlyphs.all` lists every icon and the catalog shows them as a grid.
 
-### 2.5 Motion — gentle
+### 2.5 Motion — 200–300ms ease-out, nothing pulses or bounces
 
 | Token | Value | Use |
 |---|---|---|
-| `quick` | 120 ms, `FastOutSlowIn` | Press, toggles |
-| `standard` | 240 ms, emphasized decelerate | Sheets, list changes |
-| `reveal` | 420 ms | Cards fade in and rise 8dp; the hero ring and numbers count to their value |
-| `stagger` | 40 ms step | Screen entrance: top-level items rise 8dp and fade in (max 6 steps) |
+| `quick` | 200 ms | Press, toggles, nav pill, card press colour |
+| `standard` | 250 ms | Sheets, list changes, stagger items |
+| `reveal` | 300 ms | Cards fade in and rise 8dp; body-map fill |
+| `countUp` | 900 ms | Numbers count up; rings close |
+| `stagger` | 30 ms step | Screen entrance (max 6 steps) |
 | press | `quick`, scale 0.98 | Buttons settle slightly while held |
-| `ceremony` | ~2.2 s | Level-up / rank-up only |
+| `ceremony` | ~1.6 s | Level-up / rank-up only |
 
-- **Level-up**: the page veils over, the hero ring fills while the level number rolls up, the title appears, stat gains fade in as pastel pills, heavy haptic when the number lands. No expanding neon ring.
-- **Type-on** is the System's voice: System mode only, and only for important event titles.
-- `reduceMotion` (system setting or in-app toggle) → crossfades only, no counting, no rising; the ceremony is a still final state.
+- **Easing:** ease-out `cubic(0.2, 0, 0, 1)` for all of them.
+- **Reward sheet and level-up:** restrained and celebratory. The number counts up, a thin ring closes, one haptic lands, and the formula shows as clean rows. No explosions, no type-on.
+- **Reduce motion** (system setting or in-app toggle): crossfades only, no counting, no rising; ceremonies are a still final state.
 
 ### 2.6 Haptics
-`Haptics` wrapper (respects in-app toggle): `tick` (checkbox, chip, swipe threshold), `confirm` (quest completed), `crit` (two quick clicks), `levelUp`, `reject` (gate collapse / penalty). Implementation in ENGINE_DECISIONS #26.
+The `Haptics` wrapper respects the in-app toggle (ENGINE_DECISIONS #26):
+- `tick`: checkbox, chip, swipe threshold, nav.
+- `confirm`: quest completed.
+- `crit`: two quick clicks.
+- `levelUp`: when the level lands.
+- `reject`: gate collapse, penalty.
 
 ### 2.7 Sound
 Off by default (toggle ready, assets later). Never ship a sound you didn't license.
@@ -100,25 +126,33 @@ Off by default (toggle ready, assets later). Never ship a sound you didn't licen
 
 | Component | Spec |
 |---|---|
-| `AwakenCard(title?, accent, tint?)` | The card (§2.3). `SystemWindow` is kept as its v1.0 name so screens not yet redesigned compile unchanged. |
-| `HeroRing(value, progress, unitLine?, kicker?, style)` | One hero number per screen: `RING` = a thick track with a stat-pastel sweep gradient and round caps; `DOTS` = two rings of soft pastel dots ("61 out of 100"). One TalkBack node. System mode glows. |
-| `Modifier.heroWash()` | The lavender-to-peach wash behind a hero area. |
-| `GreetingHeader` / `HeaderIconButton` | "Good afternoon, Assis" + date, with round header actions. |
-| `LevelModule` / `StreakModule` | Level + rank crest + XP bar, and the streak with its best, as compact cards. |
-| `InsightCard` | An insight or the daily line on the wash, with a sparkle. |
-| `MetricLabel` / `TrendPill` | Uppercase label over a value; a green / ember / grey pill with an arrow. |
-| `SegmentedTabs` | Week / Month / Quarter / Year: a soft pill track with the selected option on card white. |
-| `StatTintCard` | A stat's pastel card: glyph well, name, short status. |
-| `TimeBlockHeader` / `TimelineQuestRow` | Today's timeline (GD §14.5): block header with glyph, "2 of 3 done", "Now" pill and chevron; a node on a rail (filled check when done, ring in the stat's fill when open) and the quest as its own soft card (the main quest on its stat's tint). |
-| `QuestRow` | A quest inside a card: stat glyph on its pastel disc, title, target line, badges, round check. Swipe right completes (SELF only). |
-| `StatChip`, `DifficultyChip`, `VerifiedBadge`, `Pill`, `ChoiceChip` | Soft filled pills; choice chips are 48dp pills with an accent wash, edge and check when selected. |
-| `PrimaryButton`, `SecondaryButton`, `QuietButton` | §2.3. |
-| `XpBar`, `RankCrest` | Slim gradient pill; rank letter on a soft disc of its colour (System mode keeps the hex). |
-| `RewardSheet` | Check on a soft disc, the XP as a hero number counting up, gains as pastel pills, the formula in a quiet well, Done. |
+| `AwakenCard(title?, onClick?)` | The card (§2.3). `SystemWindow` is its v1.0 name, kept so older screens compile; `accent`/`tint` are ignored. |
+| `MetricCard` | Icon + label top-left, timestamp + chevron top-right, big value + unit, a secondary line or `DeltaPill`, optional `Spark` (line or mini-bars) on the right. One TalkBack node. |
+| `RingCard` / `Rings` | Apple Fitness rings: concentric, 10dp stroke, round caps, divider-coloured track, closing from 0 (`countUp`). The card puts label, big value + unit and a secondary line left, rings right. `HeroRing` is the single ring with the number inside (level-up). |
+| `InsightCard(text)` | "Highlights": one sentence, a small accent icon in a 15 % circle, chevron when it opens something. |
+| `ListRow` / `IconCircle` | 36dp filled circle at 15 % of the stat colour with the icon, title (17sp), secondary line, trailing control. `QuestRow` is built the same way with a hollow 24dp check circle (filled ink + check when done), a small `Main` chip and a coral `Comeback` chip on the penalty quest; rows split by an inset hairline. Swipe right completes (SELF only). |
+| `DeltaPill` (`TrendPill`), `Pill`, `StatChip`, `DifficultyChip`, `VerifiedBadge`, `ChoiceChip` | §2.3. |
+| `SegmentedControl` (`SegmentedTabs`) | Pressed-colour track; the selected segment in the card colour. Week / Month / Year, Front / Back. |
+| `AwakenBottomSheet` / `ValueRow` | Card colour, 28dp corners, short divider handle, 22sp title, 24dp padding; label / value rows. |
+| `EmptyState`, `SkeletonCard` | One line + one action; static pressed-colour blocks (never pulsing). |
+| `LargeTitleScaffold` / `GreetingHeader` / `HeaderIconButton` | Date over the 34sp large title with header actions (ink icons on a card-coloured circle); a 17sp title fades in, pinned with a hairline, once the large title scrolls away. |
+| `FloatingNavBar` | A floating pill bar on the card colour, 16dp from the edges. The selected item sits in a lighter inner pill with its solid icon + label; the others show their line icon. |
+| `LevelModule` / `StreakModule` | Level and streak as two metric cards (Today). |
+| `TimeBlockHeader` | A block as a section heading: name (22sp), "Now" chip on the current block, "2 of 3 done", chevron. |
+| `XpBar`, `RankCrest` | §2.3; rank letter in ink on a 15 % disc of its colour. |
+| `RewardSheet` | Ring closing around a check, "Quest complete", **+94 XP** counting up, gains as list rows, the formula as label / value rows (Base, difficulty, Streak ×1.20, Verified ×1.30 … Total 94 XP), Done. |
 | `LevelUpCeremony` | §2.5. |
-| `SystemToast`, `SystemWarning`, `ChapterReveal`, `EmptyState`, `GateDial`, `PathLadder`, `PathQuestBadge`, `FeedbackChips`, `OracleStatus`, `BodyMap`, `ShareCard` | Restyled through the tokens; their per-screen redesign lands with each screen (UI_OVERHAUL_NOTES). |
-| ChartKit (`core/designsystem/charts`) | §8.5: `TrendLine` (smooth line, soft gradient, dotted grid, marked latest point), `Sparkline`, `Comparison`, `Ring`, `Progress`, `Segmented`, `Columns`, `StackedColumns`, `CalendarGrid`, `Radar`, `Heatmap` (rounded cells). |
-| Bottom bar | Four items (Today · Gym · Diet · Progress), icon + label, card-white bar with a top hairline; the selected item gets an accent icon on a soft accent pill. |
+| `BodyMap` | §4.11. |
+| `SystemToast`, `SystemWarning`, `ChapterReveal`, `GateDial`, `PathLadder`, `PathQuestBadge`, `FeedbackChips`, `OracleStatus`, `ShareCard` | Wear the tokens; restyled with their screens (step 3). |
+| ChartKit (`core/designsystem/charts`) | §8.5. Trend charts get a Week / Month / Year control, clean axes, a callout on tap and a dashed average line in step 3. |
+
+**Quality bar for every screen:**
+- Aligned to the 8dp grid, with consistent spacing.
+- Numbers use tabular figures.
+- No truncated text at 200 % font scale.
+- Contrast passes.
+- Works in light and dark.
+- `@PhonePreviews` renders both looks.
 
 ## 4. Screens & flows
 
@@ -150,33 +184,38 @@ First quest is guaranteed Easy and doable now (e.g., "Drink a glass of water" VI
 
 ### 4.2 Today
 ```
-┌──────────────────────────────────┐   soft lavender → peach wash behind the hero
-│ Good afternoon,           (◎)(▣) │  GreetingHeader + Gates / Vault actions
-│ Assis                            │
-│ Tuesday, October 27, 2026        │
-│            ╭─────────╮           │
-│           │  Today   │           │  HeroRing: quests done today
-│           │    2     │           │
-│           │ of 6 done│           │
-│            ╰─────────╯           │
-│ ┌ (C) Level 24 ──────┐ ┌ 🔥 12 ─┐ │  LevelModule + StreakModule
-│ │ ▬▬▬▬▬▬▬▬▬▬▬░░░     │ │ Best 30│ │
-│ └────────────────────┘ └────────┘ │
-│ ┌ ✦ Daily focus ─────────────────┐│  InsightCard (the daily line until insights, F29)
-│ └────────────────────────────────┘│
-│ Today's plan            Day plan │
-│ ☀ Morning          1 of 1 done › │  past block: collapsed
-│ ☼ Day  [Now]       0 of 1 done ⌄ │  current block
-│ ●─┌ Call your family       ◯ ┐  │  TimelineQuestRow
-│ ☾ Evening          0 of 1 done ⌄ │
-│ ◷ Anytime          1 of 3 done ⌄ │
-│ Habits             Manage habits │
+┌──────────────────────────────────┐
+│ Tuesday, 27 October       (◎)(▣) │  date over the large title; Gates / Vault actions
+│ Good morning, Assis              │  34sp; collapses to a 17sp pinned title on scroll
+│ ┌ Today ───────────────── ╭──╮ ┐ │  RingCard: one green ring
+│ │ 3 of 10                 │  │ │ │
+│ │ done today              ╰──╯ │ │
+│ └──────────────────────────────┘ │
+│ ┌ ⚡ Level ────┐ ┌ 🔥 Streak ───┐ │  LevelModule + StreakModule (metric cards)
+│ │ 24 rank C   │ │ 12 days      │ │
+│ │ ▬▬▬▬▬░░     │ │ Best 30      │ │
+│ └─────────────┘ └──────────────┘ │
+│ ┌ ✦ INT is falling behind…   › ┐ │  InsightCard (one sentence)
+│ Morning            1 of 1 done › │  past block: collapsed
+│ Day  [Now]         0 of 2 done ⌄ │
+│ ┌ (♥) Take a short walk  ◯ ┐    │  penalty quest: normal row + coral "Comeback" chip
+│ │ (♥) Call your family   ◯ │    │  list rows, hollow check
+│ └──────────────────────────┘    │
+│ Evening / Anytime …              │
+│ ┌ (▦) Day plan              › ┐ │  quiet rows: plan, habits, campaign, screen limits
+│ │ (☰) Habits                › │ │
+│ └──────────────────────────────┘ │
 └──────────────────────────────────┘
 ```
-- The plan is every directive item and habit, grouped by time-of-day block (GD §14.5) in the order Morning → Day → Evening → Anytime; empty blocks are hidden. The current block is marked "Now"; earlier blocks start collapsed (tap to expand; open quests stay completable). The current block is recomputed whenever Today re-derives (opening the app, completing a quest, rollover, changing the boundaries), not on a timer.
-- A penalty quest sits in a card under the insight and the screen carries a faint ember tint; the Rank Trial card follows.
-- Day cleared → the hero's kicker reads "Plan complete" (System: "DIRECTIVE CLEARED").
-- Campaign and Screen Discipline cards close the screen.
+- **The plan:** every directive item and habit, grouped by time-of-day block (GD §14.5) in the order Morning → Day → Evening → Anytime.
+  - Each block is a section title over a card of rows; empty blocks are hidden.
+  - The current block is marked "Now"; earlier blocks start collapsed (tap to expand; open quests stay completable).
+  - The current block is recomputed whenever Today re-derives, not on a timer.
+- **The penalty quest** (GD §7.3) leads the current block as a normal row with a coral "Comeback" chip. No red tint, no glow.
+- **Rank Trial:** its card follows the insight.
+- **Day cleared:** the ring card's label reads "Plan complete".
+- **Closing rows:** Day plan, Habits (with "Add habit" when empty), Campaign and Screen limits close the screen as quiet rows with chevrons.
+- **Debug:** the Debug entry lives in Settings → Developer (debug builds only), never floating over content.
 
 ### 4.3 Quest detail (long-press / tap title)
 Description, target, stat split, verification method with explanation, [Begin] (starts min-duration timer) / [Complete], reroll (side and Path quests), "Why this quest?" line ("INT neglected for 3 days"; for Path quests, the model's `rationale`). GATE-mode Path quests replace [Begin]/[Complete] with [Enter C-Gate · 50 min]. Path quests have an overflow menu item "Report this quest".
@@ -225,7 +264,7 @@ Opened from the Today card ("CAMPAIGN · Day 12 / 45 · Build" while one runs, o
 - Campaign habits appear as ordinary habit rows on Today; their editor refuses edits with "This habit belongs to your campaign…".
 
 ### 4.11 Gym (GD §13.2)
-Bottom tab. No session: [Start workout], THIS WEEK (workouts · sets · volume in `numeric`, then the **body map**: front and back figures of angular plates, each muscle lit in `system` at the heatmap alpha steps for its weekly band, caption "Brighter = more work"), ROUTINES ([Start], remove), PERSONAL RECORDS (`crit` accent; "80 kg × 5 · e1RM 93.3 kg"), HISTORY. Running session: a window with the name and an "elapsed" timer, one window per exercise with columns Set · Previous · kg · Reps · ✓ (compact `NumberField`s; ✓ disabled at 0 reps), [Add set] / [Remove last set], then [Add exercise], [Finish], [Save as routine], [Discard] behind a confirm. Exercise library sheet: search, equipment chips, the body map as a tap-to-filter control plus the same choice as chips (the map is one TalkBack node), result rows with [Add to workout]; detail sheet with primary (full) and secondary (40 %) muscles lit, pills for equipment/level/mechanic and numbered how-to steps. A quiet caption says the tracker grants no XP yet.
+Bottom tab. No session: [Start workout], THIS WEEK (workouts · sets · volume in `numeric`, then the **body map** (v2): one stylised figure from the MIT react-native-body-highlighter paths (`core/designsystem/body`, regenerate with `tools/body`), front / back via a segmented control, body in the pressed-card colour with hairline divider outlines, no face, no skin tone; trained muscles fill in the STR accent at the heat steps for their weekly band (GD §13.2: Mon–Sun, four lit steps), animating in 300ms; each muscle is its own TalkBack node; tapping one opens a sheet with its sets and volume this week (ENGINE_DECISIONS #101), caption "Brighter = more work"), ROUTINES ([Start], remove), PERSONAL RECORDS (`crit` accent; "80 kg × 5 · e1RM 93.3 kg"), HISTORY. Running session: a window with the name and an "elapsed" timer, one window per exercise with columns Set · Previous · kg · Reps · ✓ (compact `NumberField`s; ✓ disabled at 0 reps), [Add set] / [Remove last set], then [Add exercise], [Finish], [Save as routine], [Discard] behind a confirm. Exercise library sheet: search, equipment chips, the body map as a tap-to-filter control plus the same choice as chips, result rows with [Add to workout]; detail sheet with primary (full) and secondary (40 %) muscles lit, pills for equipment/level/mechanic and numbered how-to steps. A quiet caption says the tracker grants no XP yet.
 
 ### 4.12 Diet (GD §13.1)
 Bottom tab. First open: CALORIE BUDGET window (goal, sex, birth year/height/weight, activity as full-width choices) with a live engine preview ("2,749 kcal / day", BMR and maintenance, macros); [Save budget] is enabled only when every field is valid. Then: a date stepper (no future days), DAILY ENERGY with a `ProgressRing` (remaining kcal in the middle; `ember` once over) beside Eaten / Goal and bars for protein, carbs, fat and fiber; one window per meal with its kcal, rows "2 × 1 piece · 404 kcal" (tap to edit) and [Add food]; NUTRIENTS with a bar per target, limits turning `ember` with "Over limit". Sheets: food search (recent foods when empty; "kcal · P · C · F per 100 g"), amount (grams or a household portion × count, live macro line, meal chips), targets (grouped like a label, defaults shown, empty = default), custom food (per-100 g values and an optional serving).

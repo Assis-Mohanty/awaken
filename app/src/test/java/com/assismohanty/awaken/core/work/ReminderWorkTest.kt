@@ -125,7 +125,7 @@ class ReminderWorkTest {
 
         assertThat(result).isEqualTo(ListenableWorker.Result.success())
         val posted = postedNotifications().single()
-        assertThat(posted.extras.getCharSequence("android.text").toString()).startsWith("Your directive is ready: ")
+        assertThat(posted.extras.getCharSequence("android.text").toString()).startsWith("Today's plan is ready: ")
         assertThat(posted.channelId).isEqualTo("directive")
         assertThat(work(ReminderKind.DIRECTIVE)?.state).isEqualTo(WorkInfo.State.ENQUEUED)
     }

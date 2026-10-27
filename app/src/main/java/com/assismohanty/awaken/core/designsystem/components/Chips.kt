@@ -1,8 +1,6 @@
 package com.assismohanty.awaken.core.designsystem.components
 
-import com.assismohanty.awaken.core.designsystem.lexicon.lexString
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -23,7 +21,9 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import com.assismohanty.awaken.R
+import com.assismohanty.awaken.core.designsystem.lexicon.lexString
 import com.assismohanty.awaken.core.designsystem.preview.ComponentPreview
+import com.assismohanty.awaken.core.designsystem.theme.AwakenAlpha
 import com.assismohanty.awaken.core.designsystem.theme.AwakenTheme
 import com.assismohanty.awaken.core.designsystem.theme.Spacing
 import com.assismohanty.awaken.engine.model.Difficulty
@@ -31,8 +31,9 @@ import com.assismohanty.awaken.engine.model.Stat
 import com.assismohanty.awaken.engine.model.VerificationSource
 
 /**
- * Soft pill (DESIGN_SYSTEM §3): [color] text on a light wash of itself, or on [background] when given. Colour is never
- * the only signal: every pill carries text.
+ * Chip (DESIGN_SYSTEM §3): ink text on a 15% wash of [color], with an optional icon in [color]. The accent marks the
+ * chip; the words stay ink so they read in both themes. [background] overrides the wash (a neutral chip). Colour is
+ * never the only signal: every chip carries text.
  */
 @Composable
 fun Pill(
@@ -43,25 +44,27 @@ fun Pill(
     description: String? = null,
     background: Color? = null,
 ) {
+    val colors = AwakenTheme.colors
     val dimens = AwakenTheme.dimens
     Row(
         modifier = modifier
             .defaultMinSize(minHeight = dimens.chipHeight)
             .clip(AwakenTheme.shapes.pill)
-            .background(background ?: color.copy(alpha = PILL_WASH))
-            .padding(horizontal = Spacing.sm, vertical = Spacing.xxs)
+            .background(background ?: color.copy(alpha = AwakenAlpha.TINT))
+            .padding(horizontal = Spacing.xs + Spacing.xxs / 2, vertical = Spacing.xxs / 2)
             .then(if (description != null) Modifier.semantics(mergeDescendants = true) { contentDescription = description } else Modifier),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.xxs),
     ) {
-        if (icon != null) Icon(icon, contentDescription = null, tint = color, modifier = Modifier.size(dimens.iconSmall))
-        Text(text = text, style = AwakenTheme.type.label, color = color)
+        if (icon != null) Icon(icon, contentDescription = null, tint = color, modifier = Modifier.size(dimens.iconSmall - Spacing.xxs / 2))
+        Text(text = text, style = AwakenTheme.type.label, color = colors.textPrimary)
     }
 }
 
 /**
  * A selectable choice (onboarding answers, habit editor). [multiSelect] = checkbox semantics, else radio. Meets the
- * 48dp touch target; selection shows as an accent wash, a stronger edge and a check, never by colour alone.
+ * 48dp target. Selected is the primary ink with page-coloured text and a check, so it never relies on hue.
+ * [color] tints only the optional [icon].
  */
 @Composable
 fun ChoiceChip(
@@ -69,43 +72,45 @@ fun ChoiceChip(
     selected: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    color: Color = AwakenTheme.palette.system,
+    color: Color = AwakenTheme.colors.textPrimary,
     icon: ImageVector? = null,
     multiSelect: Boolean = false,
     enabled: Boolean = true,
 ) {
-    val palette = AwakenTheme.palette
+    val colors = AwakenTheme.colors
     val dimens = AwakenTheme.dimens
-    val shape = AwakenTheme.shapes.pill
     val selection = if (multiSelect) {
         Modifier.toggleable(value = selected, enabled = enabled, role = Role.Checkbox, onValueChange = { onClick() })
     } else {
         Modifier.selectable(selected = selected, enabled = enabled, role = Role.RadioButton, onClick = onClick)
     }
+    val ink = when {
+        !enabled -> colors.textMuted
+        selected -> colors.onAccent
+        else -> colors.textPrimary
+    }
     Row(
         modifier = modifier
-            .defaultMinSize(minHeight = dimens.touchTarget)
-            .clip(shape)
-            .background(if (selected) color.copy(alpha = PILL_WASH) else palette.panel)
-            .border(if (selected) dimens.accentWidth else dimens.hairline, if (selected) color else palette.edge, shape)
+            .defaultMinSize(minHeight = dimens.touchTarget - Spacing.xxs)
+            .clip(AwakenTheme.shapes.pill)
+            .background(if (selected) colors.accent else colors.surfaceOverlay)
             .then(selection)
             .padding(horizontal = Spacing.md, vertical = Spacing.xs),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.xs, Alignment.CenterHorizontally),
     ) {
-        if (icon != null) Icon(icon, contentDescription = null, tint = color, modifier = Modifier.size(dimens.iconSmall))
-        Text(text = text, style = AwakenTheme.type.label, color = if (enabled) palette.bone else palette.fog)
-        if (selected) Icon(AwakenGlyphs.Check, contentDescription = null, tint = color, modifier = Modifier.size(dimens.iconSmall))
+        if (icon != null) Icon(icon, contentDescription = null, tint = if (selected) ink else color, modifier = Modifier.size(dimens.iconSmall))
+        Text(text = text, style = AwakenTheme.type.label, color = ink)
+        if (selected) Icon(AwakenGlyphs.Check, contentDescription = null, tint = ink, modifier = Modifier.size(dimens.iconSmall))
     }
 }
 
-/** Stat chip: the stat's pastel with its sigil and 3-letter code; TalkBack reads the full name. */
+/** Stat chip: the stat's glyph in its accent on a 15% wash, and its 3-letter code; TalkBack reads the full name. */
 @Composable
 fun StatChip(stat: Stat, modifier: Modifier = Modifier) {
     Pill(
         text = stat.name,
-        color = AwakenTheme.palette.stat(stat),
-        background = AwakenTheme.palette.statTint(stat),
+        color = AwakenTheme.colors.stat(stat),
         icon = AwakenGlyphs.stat(stat),
         description = stat.label(),
         modifier = modifier,
@@ -114,19 +119,13 @@ fun StatChip(stat: Stat, modifier: Modifier = Modifier) {
 
 @Composable
 fun DifficultyChip(difficulty: Difficulty, modifier: Modifier = Modifier) {
-    val palette = AwakenTheme.palette
-    val color = when (difficulty) {
-        Difficulty.EASY, Difficulty.NORMAL -> palette.mist
-        Difficulty.HARD -> palette.bone
-        Difficulty.EXTREME -> palette.crit
-    }
-    Pill(text = difficulty.label(), color = color, background = palette.panelRaised, modifier = modifier)
+    Pill(text = difficulty.label(), color = AwakenTheme.colors.textPrimary, background = AwakenTheme.colors.surfaceOverlay, modifier = modifier)
 }
 
 /** Verified = Health Connect or phone usage; Timed = Focus Gate. Nothing for self-reported quests. */
 @Composable
 fun VerifiedBadge(source: VerificationSource, modifier: Modifier = Modifier) {
-    val color = AwakenTheme.palette.verified
+    val color = AwakenTheme.colors.positive
     when (source) {
         VerificationSource.SELF -> Unit
         VerificationSource.HEALTH ->
@@ -137,9 +136,6 @@ fun VerifiedBadge(source: VerificationSource, modifier: Modifier = Modifier) {
             Pill(lexString(R.string.badge_verified), color, modifier, icon = AwakenGlyphs.VerifiedSeal)
     }
 }
-
-/** Light enough to read the pill's own colour on top (≥ 4.5:1 in every palette). */
-private const val PILL_WASH = 0.12f
 
 @ComponentPreview
 @Composable
@@ -152,7 +148,7 @@ private fun ChipsPreview() {
             Row(horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
                 VerifiedBadge(VerificationSource.HEALTH)
                 VerifiedBadge(VerificationSource.TIMER)
-                Pill(lexString(R.string.chip_main), AwakenTheme.palette.system)
+                Pill(lexString(R.string.chip_main), AwakenTheme.colors.textPrimary, background = AwakenTheme.colors.surfaceOverlay)
             }
             ChoiceChip("Sometimes", selected = true, onClick = {})
             ChoiceChip("Often", selected = false, onClick = {})

@@ -49,10 +49,10 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 /**
- * The level-up ceremony (DESIGN_SYSTEM §2.5), ~2.2 s, calm: the page veils over, the hero ring fills while the level
- * number rolls from [oldLevel] to [newLevel] → [title] appears in [accent] (System mode types it on) → stat gains fade in
- * as pastel pills → heavy haptic when the number lands. Tap to skip after 600 ms (jumps to the end), tap again to
- * dismiss. Reduce-motion: the final state, still.
+ * The level-up moment (DESIGN_SYSTEM §2.5), ~1.6 s, restrained: the page veils over, a thin ring closes in [accent]
+ * while the level number counts from [oldLevel] to [newLevel] → a heavy haptic as it lands → [title] and the stat gains
+ * fade in as chips. No explosions. Tap to skip after 400 ms (jumps to the end), tap again to dismiss. Reduce-motion:
+ * the final state, still.
  *
  * Reused for rank promotion (Phase 7) by passing a different [title] and a [crest].
  */
@@ -134,10 +134,10 @@ fun LevelUpCeremony(
                 kicker = lexString(R.string.level_word),
                 progress = ring.value,
                 description = lexString(R.string.level_long, newLevel),
-                colors = listOf(accent, colors.aether, accent),
+                colors = listOf(accent),
             )
             if (titleVisible) {
-                TypeOnText(text = title, style = type.windowTitle, color = accent, animate = animate)
+                TypeOnText(text = title, style = type.section, color = colors.bone, animate = animate)
             }
             AnimatedVisibility(visible = gainsVisible, enter = fadeIn(tween(motion.duration(motion.standardMs)))) {
                 FlowRow(
@@ -148,7 +148,6 @@ fun LevelUpCeremony(
                         Pill(
                             text = lexString(R.string.stat_gain, stat.label(), formatCount(gain)),
                             color = colors.stat(stat),
-                            background = colors.statTint(stat),
                             icon = AwakenGlyphs.stat(stat),
                         )
                     }
@@ -161,16 +160,16 @@ fun LevelUpCeremony(
     }
 }
 
-private const val RING_MS = 1_400
+private const val RING_MS = 1_200
 private const val NUMBER_DELAY_MS = 300L
-private const val NUMBER_MS = 900
-private const val GAINS_DELAY_MS = 450L
+private const val NUMBER_MS = 800
+private const val GAINS_DELAY_MS = 250L
 
 @PhonePreviews
 @Composable
 private fun LevelUpCeremonyPreview() {
     AwakenTheme(reduceMotion = true) {
-        GateBackground(tint = AwakenTheme.palette.rankC) {
+        GateBackground(rank = Rank.C) {
             LevelUpCeremony(oldLevel = 9, newLevel = 10, statGains = mapOf(Stat.STR to 94, Stat.WIL to 28), onDismiss = {}, crest = {
                 RankCrest(Rank.D, AwakenTheme.dimens.crestLarge)
             })

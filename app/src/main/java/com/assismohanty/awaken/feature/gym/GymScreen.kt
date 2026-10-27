@@ -3,6 +3,7 @@ package com.assismohanty.awaken.feature.gym
 import com.assismohanty.awaken.core.designsystem.lexicon.lexString
 import com.assismohanty.awaken.core.designsystem.components.heatAlpha
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -53,6 +54,10 @@ import com.assismohanty.awaken.core.designsystem.components.awakenTextFieldColor
 import com.assismohanty.awaken.core.designsystem.components.currentLocale
 import com.assismohanty.awaken.core.designsystem.components.formatCount
 import com.assismohanty.awaken.core.designsystem.components.formatNumber
+import com.assismohanty.awaken.core.designsystem.components.AwakenCard
+import com.assismohanty.awaken.core.designsystem.components.AwakenBottomSheet
+import com.assismohanty.awaken.core.designsystem.components.ValueRow
+import com.assismohanty.awaken.core.designsystem.body.BodyGeometry
 import com.assismohanty.awaken.core.designsystem.components.nameRes
 import com.assismohanty.awaken.core.designsystem.components.staggeredEntrance
 import com.assismohanty.awaken.core.designsystem.preview.PhonePreviews
@@ -161,6 +166,7 @@ private fun WeekWindow(overview: GymOverview, modifier: Modifier = Modifier) {
         }
         val trained = overview.weekMuscleLoad.filterValues { it > 0.0 }.keys.sortedBy { it.ordinal }
         val names = trained.map { lexString(it.nameRes()) }
+        var opened by rememberSaveable { mutableStateOf<Muscle?>(null) }
         BodyMap(
             intensity = loadIntensity(overview.weekMuscleLoad),
             description = if (names.isEmpty()) {
@@ -168,8 +174,35 @@ private fun WeekWindow(overview: GymOverview, modifier: Modifier = Modifier) {
             } else {
                 lexString(R.string.cd_gym_week_map, names.joinToString())
             },
+            onMuscleClick = { opened = it },
         )
         Text(lexString(R.string.gym_week_map_caption), style = AwakenTheme.type.caption, color = colors.textSecondary)
+        opened?.let { muscle -> MuscleSheet(muscle, overview, onDismiss = { opened = null }) }
+    }
+}
+
+/** A muscle's week (DESIGN_SYSTEM §3, Gym): sets and volume since Monday, for every catalog group its region covers. */
+@Composable
+private fun MuscleSheet(muscle: Muscle, overview: GymOverview, onDismiss: () -> Unit) {
+    val muscles = BodyGeometry.regionMuscles(muscle)
+    val names = muscles.map { lexString(it.nameRes()) }
+    AwakenBottomSheet(onDismiss = onDismiss, title = names.joinToString()) {
+        muscles.forEach { m ->
+            val sets = overview.weekMuscleLoad[m] ?: 0.0
+            AwakenCard(reveal = false, contentPadding = PaddingValues(Spacing.md), modifier = Modifier.fillMaxWidth()) {
+                if (muscles.size > 1) Text(lexString(m.nameRes()), style = AwakenTheme.type.windowTitle, color = AwakenTheme.colors.textPrimary)
+                if (sets <= 0.0) {
+                    Text(lexString(R.string.gym_muscle_sheet_empty), style = AwakenTheme.type.body, color = AwakenTheme.colors.textSecondary)
+                } else {
+                    ValueRow(lexString(R.string.gym_muscle_sheet_sets), formatNumber(sets))
+                    ValueRow(
+                        lexString(R.string.gym_muscle_sheet_volume),
+                        lexString(R.string.gym_kg_value, formatCount((overview.weekMuscleVolume[m] ?: 0.0).roundToLong())),
+                    )
+                }
+            }
+        }
+        Text(lexString(R.string.gym_muscle_sheet_note), style = AwakenTheme.type.caption, color = AwakenTheme.colors.textSecondary)
     }
 }
 

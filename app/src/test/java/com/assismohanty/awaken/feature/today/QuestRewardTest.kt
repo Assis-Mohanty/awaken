@@ -75,7 +75,7 @@ class QuestRewardTest {
             composeRule.onAllNodesWithContentDescription("+60 XP").fetchSemanticsNodes().isNotEmpty()
         }
         composeRule.onNodeWithContentDescription("+60 XP").assertExists()
-        composeRule.onNodeWithText("= 60 XP", substring = true).assertExists()
+        composeRule.onNodeWithText("60 XP").assertExists() // the formula's Total row
         assertThat(runBlocking { graph.db.questDao().get(quest.id)?.status }).isEqualTo(QuestStatus.COMPLETED)
     }
 }

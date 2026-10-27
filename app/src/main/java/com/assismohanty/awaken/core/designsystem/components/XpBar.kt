@@ -18,7 +18,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.progressBarRangeInfo
@@ -29,7 +28,7 @@ import com.assismohanty.awaken.core.designsystem.theme.AwakenTheme
 import com.assismohanty.awaken.core.designsystem.theme.Spacing
 
 /**
- * XP bar (DESIGN_SYSTEM §3): a slim pill, `edge` track, accent fill fading to `aether` at its leading edge.
+ * XP bar (DESIGN_SYSTEM §3): a slim pill, divider-coloured track, a solid reward-gold fill rounded at both ends.
  * Animates changes with the `standard` motion; shows "1,240 / 1,434 XP" underneath.
  */
 @Composable
@@ -65,9 +64,8 @@ fun XpBar(
                     drawRect(colors.edge)
                     val fillWidth = size.width * fraction
                     if (fillWidth > 0f) {
-                        // A soft accent gradient across the filled part, rounded at both ends.
                         drawRoundRect(
-                            brush = Brush.horizontalGradient(listOf(colors.system, colors.aether), startX = 0f, endX = fillWidth),
+                            color = colors.crit,
                             size = Size(fillWidth.coerceAtLeast(size.height), size.height),
                             cornerRadius = CornerRadius(size.height / 2f),
                         )

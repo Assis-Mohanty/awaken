@@ -205,10 +205,9 @@ fun CosmeticSwatch(color: Color, outlined: Boolean, modifier: Modifier = Modifie
     )
 }
 
-/** The faint ember wash over a screen while a penalty quest is open (GD §7.3: visual pressure only). */
-@Composable
-fun Modifier.penaltyTint(active: Boolean): Modifier =
-    then(if (active) Modifier.background(AwakenTheme.palette.ember.copy(alpha = AwakenAlpha.HAZE)) else Modifier)
+/** Kept for callers before v2: the penalty no longer tints the screen; the Comeback chip carries it (GD §7.3). */
+@Suppress("UnusedReceiverParameter", "UNUSED_PARAMETER")
+fun Modifier.penaltyTint(active: Boolean): Modifier = this
 
 /** Alpha for a heat band 0..4 (body map, heatmap), from the shared steps (DESIGN_SYSTEM §3). */
 fun heatAlpha(band: Int): Float = AwakenAlpha.HEATMAP_STEPS[band.coerceIn(0, AwakenAlpha.HEATMAP_STEPS.lastIndex)]

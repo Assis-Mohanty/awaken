@@ -3,7 +3,6 @@ package com.assismohanty.awaken.debug
 import com.assismohanty.awaken.core.designsystem.charts.ComparisonRow
 import com.assismohanty.awaken.core.designsystem.charts.ChartSpec
 import com.assismohanty.awaken.core.designsystem.charts.Chart
-import com.assismohanty.awaken.core.designsystem.components.TimelineQuestRow
 import com.assismohanty.awaken.core.designsystem.components.BlockState
 import com.assismohanty.awaken.core.designsystem.components.TimeBlock
 import com.assismohanty.awaken.core.designsystem.components.TimeBlockHeader
@@ -15,12 +14,21 @@ import com.assismohanty.awaken.core.designsystem.components.AwakenCard
 import com.assismohanty.awaken.core.designsystem.components.InsightCard
 import com.assismohanty.awaken.core.designsystem.components.StreakModule
 import com.assismohanty.awaken.core.designsystem.components.LevelModule
-import com.assismohanty.awaken.core.designsystem.components.HeroStyle
-import com.assismohanty.awaken.core.designsystem.components.HeroRing
+import com.assismohanty.awaken.core.designsystem.components.RingCard
+import com.assismohanty.awaken.core.designsystem.components.RingSpec
+import com.assismohanty.awaken.core.designsystem.components.MetricCard
+import com.assismohanty.awaken.core.designsystem.components.Spark
+import com.assismohanty.awaken.core.designsystem.components.DeltaPill
+import com.assismohanty.awaken.core.designsystem.components.FloatingNavBar
+import com.assismohanty.awaken.core.designsystem.components.NavBarItem
+import com.assismohanty.awaken.core.designsystem.components.SkeletonCard
+import com.assismohanty.awaken.core.designsystem.components.SegmentedControl
+import com.assismohanty.awaken.core.designsystem.components.IconCircle
+import com.assismohanty.awaken.core.designsystem.charts.TrendChart
+import com.assismohanty.awaken.core.designsystem.charts.TrendSeries
 import com.assismohanty.awaken.core.designsystem.components.HeaderIconButton
 import com.assismohanty.awaken.core.designsystem.components.GreetingHeader
 import com.assismohanty.awaken.core.designsystem.components.SegmentedTabs
-import com.assismohanty.awaken.core.designsystem.lexicon.PresentationMode
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -108,7 +116,6 @@ fun DesignSystemCatalog(onBack: () -> Unit) {
     AwakenTheme(
         darkTheme = look == CatalogLook.DARK,
         reduceMotion = reduceMotion,
-        presentation = if (look == CatalogLook.SYSTEM) PresentationMode.SYSTEM else PresentationMode.CLEAN,
     ) {
         CatalogContent(
             rank = rank,
@@ -122,8 +129,8 @@ fun DesignSystemCatalog(onBack: () -> Unit) {
     }
 }
 
-/** The three looks to compare on device (DESIGN_SYSTEM §2.1): Clean light, Clean dark, System. */
-private enum class CatalogLook { LIGHT, DARK, SYSTEM }
+/** The two looks to compare on device (DESIGN_SYSTEM §2.1). */
+private enum class CatalogLook { LIGHT, DARK }
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -172,14 +179,14 @@ private fun CatalogContent(
             item {
                 Section(R.string.catalog_controls) {
                     SegmentedTabs(
-                        options = listOf("Light", "Dark", "System"),
+                        options = listOf("Light", "Dark"),
                         selected = look.ordinal,
                         onSelect = { onLook(CatalogLook.entries[it]) },
                         modifier = Modifier.fillMaxWidth(),
                     )
                     FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
                         Rank.entries.forEach { r ->
-                            if (r == rank) PrimaryButton(r.name, onClick = { onRank(r) }, color = colors.rank(r))
+                            if (r == rank) PrimaryButton(r.name, onClick = { onRank(r) })
                             else SecondaryButton(r.name, onClick = { onRank(r) })
                         }
                     }
@@ -208,26 +215,55 @@ private fun CatalogContent(
                         HeaderIconButton(AwakenGlyphs.Portal, "Open focus sessions", onClick = {})
                         HeaderIconButton(AwakenGlyphs.Vault, "Open shop", onClick = {})
                     }
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-                        HeroRing(value = "3", unitLine = "of 5 done", kicker = "Today", progress = 0.6f, description = "3 of 5 done")
-                    }
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-                        HeroRing(
-                            value = "61", unitLine = "out of 100", kicker = "12–18 Oct", progress = 0.61f,
-                            description = "61 out of 100", style = HeroStyle.DOTS,
-                        )
-                    }
-                    Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-                        LevelModule(level = 24, rank = rank, xpIntoLevel = xp, xpForLevel = previewHunter.xpForLevel, modifier = Modifier.weight(1.4f))
+                    RingCard(
+                        label = "Today", value = "3", unit = "of 10", secondary = "done today",
+                        rings = listOf(RingSpec(0.3f, AwakenTheme.colors.positive)), description = "3 of 10 done today",
+                    )
+                    Row(horizontalArrangement = Arrangement.spacedBy(Spacing.cardGap)) {
+                        LevelModule(level = 24, rank = rank, xpIntoLevel = xp, xpForLevel = previewHunter.xpForLevel, modifier = Modifier.weight(1f))
                         StreakModule(streak = 12, best = 30, modifier = Modifier.weight(1f))
                     }
-                    InsightCard(title = "Daily focus", body = "On days you sleep 7 h or more, you complete 38% more quests.")
+                    InsightCard("On days you sleep 7 h or more, you complete 38% more quests.", onClick = {})
+                    MetricCard(
+                        label = "Steps", value = "8,412", timestamp = "10:50", secondary = "84% of goal",
+                        icon = AwakenGlyphs.Vitality, iconTint = AwakenTheme.colors.stat(Stat.VIT),
+                        spark = Spark(listOf(2f, 5f, 3f, 6f, 4f, 7f, 8f), bars = true), description = "Steps 8,412", onClick = {},
+                    )
+                    MetricCard(
+                        label = "Body weight", value = "82.0", unit = "kg", timestamp = "03:52",
+                        icon = AwakenGlyphs.Strength, iconTint = AwakenTheme.colors.stat(Stat.STR),
+                        delta = { DeltaPill("+0.0 kg", Trend.FLAT) }, spark = Spark(listOf(82.4f, 82.1f, 82.3f, 82f, 82f)),
+                        description = "Body weight 82.0 kg", onClick = {},
+                    )
+                    FloatingNavBar(
+                        items = listOf(
+                            NavBarItem("Today", AwakenGlyphs.Home, AwakenGlyphs.HomeSolid),
+                            NavBarItem("Gym", AwakenGlyphs.Dumbbell, AwakenGlyphs.DumbbellSolid),
+                            NavBarItem("Diet", AwakenGlyphs.Bowl, AwakenGlyphs.BowlSolid),
+                            NavBarItem("Progress", AwakenGlyphs.Bars, AwakenGlyphs.BarsSolid),
+                        ),
+                        selectedIndex = period % 4, onSelect = { period = it },
+                    )
+                    SkeletonCard()
                 }
             }
 
             item {
                 Section(R.string.catalog_metrics) {
-                    SegmentedTabs(listOf("Week", "Month", "Quarter", "Year"), selected = period, onSelect = { period = it }, modifier = Modifier.fillMaxWidth())
+                    SegmentedControl(listOf("Week", "Month", "Year"), selected = period, onSelect = { period = it }, modifier = Modifier.fillMaxWidth())
+                    AwakenCard(title = "Quests per day", reveal = false) {
+                        TrendChart(
+                            periods = listOf("Week", "Month", "Year"),
+                            series = List(3) { k ->
+                                val values = listOf(2.1f, 2.6f, 2.4f, 3.0f, 2.8f, 3.3f, 3.4f).map { it + k * 0.3f }
+                                TrendSeries(values, listOf("Mon", "Thu", "Sun"), values.map { "%.1f".format(it) }, values.average().toFloat(), "Average")
+                            },
+                            selected = period.coerceIn(0, 2),
+                            onSelect = { period = it },
+                            description = "Quests per day",
+                            color = AwakenTheme.colors.chartSeries2,
+                        )
+                    }
                     AwakenCard(title = "Quests per day", reveal = false) {
                         Row(horizontalArrangement = Arrangement.spacedBy(Spacing.lg), verticalAlignment = Alignment.Bottom) {
                             MetricLabel("Result", "3.4", large = true)
@@ -259,8 +295,8 @@ private fun CatalogContent(
                     Chart(
                         ChartSpec.Comparison(
                             rows = listOf(
-                                ComparisonRow("After 7 h+ sleep", "3.3 / day", 1f, colors.fillVit),
-                                ComparisonRow("After less sleep", "2.4 / day", 0.73f, colors.fillWil),
+                                ComparisonRow("After 7 h+ sleep", "3.3 / day", 1f, colors.statVit),
+                                ComparisonRow("After less sleep", "2.4 / day", 0.73f, colors.statWil),
                             ),
                             description = "3.3 quests a day after 7 hours of sleep or more, 2.4 after less",
                         ),
@@ -271,12 +307,15 @@ private fun CatalogContent(
             item {
                 Section(R.string.catalog_timeline) {
                     TimeBlockHeader(TimeBlock.MORNING, done = 1, total = 1, state = BlockState.PAST, expanded = morningOpen, onToggle = { morningOpen = !morningOpen })
-                    if (morningOpen) TimelineQuestRow(previewQuests[1], onComplete = {}, onOpen = {}, first = true, last = true)
+                    if (morningOpen) AwakenCard(reveal = false, contentPadding = Spacing.listCard) { QuestRow(previewQuests[1], onComplete = {}, onOpen = {}, showDivider = false) }
                     TimeBlockHeader(TimeBlock.DAY, done = 0, total = 2, state = BlockState.CURRENT, expanded = true, onToggle = {})
-                    TimelineQuestRow(previewQuests[0], onComplete = {}, onOpen = {}, first = true)
-                    TimelineQuestRow(previewQuests[2], onComplete = {}, onOpen = {}, last = true)
+                    AwakenCard(reveal = false, contentPadding = Spacing.listCard) {
+                        QuestRow(previewQuests[0].copy(id = "c", title = "Take a short walk", isMain = false, comeback = true), onComplete = {}, onOpen = {}, showDivider = false)
+                        QuestRow(previewQuests[0], onComplete = {}, onOpen = {})
+                        QuestRow(previewQuests[2], onComplete = {}, onOpen = {})
+                    }
                     TimeBlockHeader(TimeBlock.ANYTIME, done = 0, total = 1, state = BlockState.UPCOMING, expanded = true, onToggle = {})
-                    TimelineQuestRow(previewQuests[4], onComplete = {}, onOpen = {}, first = true, last = true)
+                    AwakenCard(reveal = false, contentPadding = Spacing.listCard) { QuestRow(previewQuests[4], onComplete = {}, onOpen = {}, showDivider = false) }
                 }
             }
 
@@ -286,8 +325,8 @@ private fun CatalogContent(
                     Text("2,503", style = type.metricL, color = colors.bone)
                     Text("Good afternoon, Assis", style = type.headline, color = colors.bone)
                     Text("Latest measurements", style = type.section, color = colors.bone)
-                    Text("RESULT", style = type.overline, color = colors.mist)
-                    Text(stringResource(R.string.system_title_daily_directive), style = type.windowTitle, color = rankColor)
+                    Text("Result", style = type.overline, color = colors.mist)
+                    Text("Today's plan", style = type.windowTitle, color = colors.bone)
                     Text("+144 XP · 1,920", style = type.numeric, color = colors.bone)
                     Text("Do push-ups", style = type.title, color = colors.bone)
                     Text("Complete 80 push-ups. Sets of any size.", style = type.body, color = colors.bone)
@@ -300,8 +339,8 @@ private fun CatalogContent(
                 Section(R.string.catalog_colours) {
                     val swatches = listOf(
                         colors.void, colors.depth, colors.panel, colors.panelRaised, colors.edge, colors.bone, colors.mist, colors.fog,
-                        colors.system, colors.aether, colors.ember, colors.crit, colors.verified, colors.heroWashA, colors.heroWashB,
-                    ) + Rank.entries.map { colors.rank(it) } + Stat.entries.flatMap { listOf(colors.stat(it), colors.statFill(it), colors.statTint(it)) }
+                        colors.ember, colors.crit, colors.verified,
+                    ) + Stat.entries.flatMap { listOf(colors.stat(it), colors.statTint(it)) }
                     FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.xxs), verticalArrangement = Arrangement.spacedBy(Spacing.xxs)) {
                         swatches.forEach { Box(Modifier.size(AwakenTheme.dimens.icon).background(it)) }
                     }
@@ -310,15 +349,10 @@ private fun CatalogContent(
 
             item {
                 Section(R.string.catalog_glyphs) {
-                    FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-                        Stat.entries.forEach { Icon(AwakenGlyphs.stat(it), it.name, tint = colors.stat(it), modifier = Modifier.size(AwakenTheme.dimens.sigil)) }
-                        listOf(
-                            AwakenGlyphs.Shield, AwakenGlyphs.Fragment, AwakenGlyphs.Portal, AwakenGlyphs.Flame, AwakenGlyphs.Coin, AwakenGlyphs.VerifiedSeal,
-                            AwakenGlyphs.Hourglass, AwakenGlyphs.Home, AwakenGlyphs.Bars, AwakenGlyphs.Sparkle, AwakenGlyphs.Sunrise, AwakenGlyphs.Sun,
-                            AwakenGlyphs.Moon, AwakenGlyphs.Clock, AwakenGlyphs.ArrowUp, AwakenGlyphs.ArrowDown,
-                        )
-                            .forEach { Icon(it, it.name, tint = colors.system, modifier = Modifier.size(AwakenTheme.dimens.sigil)) }
+                    FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.md), verticalArrangement = Arrangement.spacedBy(Spacing.md)) {
+                        AwakenGlyphs.all.forEach { Icon(it, it.name, tint = colors.bone, modifier = Modifier.size(AwakenTheme.dimens.icon)) }
                     }
+                    Row(horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) { Stat.entries.forEach { IconCircle(AwakenGlyphs.stat(it), colors.stat(it)) } }
                     Row(horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) { Rank.entries.forEach { RankCrest(it, AwakenTheme.dimens.crestSmall) } }
                 }
             }
@@ -337,7 +371,8 @@ private fun CatalogContent(
                         Difficulty.entries.forEach { DifficultyChip(it) }
                         VerifiedBadge(VerificationSource.HEALTH)
                         VerifiedBadge(VerificationSource.TIMER)
-                        Pill(stringResource(R.string.chip_main), colors.system)
+                        Pill(stringResource(R.string.chip_main), colors.bone, background = colors.panelRaised)
+                        Pill(stringResource(R.string.chip_comeback), colors.ember)
                     }
                 }
             }
@@ -430,7 +465,7 @@ private fun CatalogContent(
 @Composable
 private fun Section(titleRes: Int, content: @Composable androidx.compose.foundation.layout.ColumnScope.() -> Unit) {
     Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-        Text(stringResource(titleRes), style = AwakenTheme.type.title, color = AwakenTheme.palette.mist)
+        Text(stringResource(titleRes), style = AwakenTheme.type.section, color = AwakenTheme.palette.bone)
         content()
     }
 }

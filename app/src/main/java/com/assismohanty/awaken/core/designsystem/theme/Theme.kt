@@ -17,14 +17,14 @@ import com.assismohanty.awaken.core.designsystem.lexicon.PresentationMode
 import com.assismohanty.awaken.engine.model.Rank
 
 /**
- * Three palettes, one set of tokens (DESIGN_SYSTEM §2.1). No dynamic colour. Clean mode is Light (default) or Dark from
- * the user's Appearance choice; System mode is always the System palette (dark, glow, tracked-out titles).
+ * Two palettes, one set of tokens (DESIGN_SYSTEM §2.1). No dynamic colour. Light or Dark follows the phone unless the
+ * user picked one in Appearance.
  *
- * @param darkTheme the resolved Appearance choice for Clean mode; the default follows the device.
+ * @param darkTheme the resolved Appearance choice; the default follows the device.
  * @param reduceMotion the in-app toggle; the system "Remove animations" setting is OR-ed in (§2.5).
  * @param hapticsEnabled the in-app toggle (§2.6).
- * @param themeId the equipped Vault theme (GD §9.2); re-tints the background glow and rank-coloured window accents ([AwakenTheme.rankAccent]) only.
- * @param presentation Clean or System words (GD §14.9), provided as [LocalLexicon].
+ * @param themeId the equipped Vault theme (GD §9.2); re-tints small rank-coloured accents ([AwakenTheme.rankAccent]) only.
+ * @param presentation the words, provided as [LocalLexicon]. The app always passes Clean; tests may pin System words.
  */
 @Composable
 fun AwakenTheme(
@@ -35,14 +35,9 @@ fun AwakenTheme(
     presentation: PresentationMode = PresentationMode.CLEAN,
     content: @Composable () -> Unit,
 ) {
-    val system = presentation == PresentationMode.SYSTEM
-    val palette = when {
-        system -> AwakenPalette.System
-        darkTheme -> AwakenPalette.Dark
-        else -> AwakenPalette.Light
-    }
+    val palette = if (darkTheme) AwakenPalette.Dark else AwakenPalette.Light
     val colors = remember(palette) { AwakenColors(palette) }
-    val type = if (system) AwakenType.System else AwakenType()
+    val type = remember { AwakenType() }
     val reduce = reduceMotion || systemReduceMotion()
     val motion = remember(reduce) { AwakenMotion(reduceMotion = reduce) }
     val shapes = remember { AwakenShapes() }
@@ -75,12 +70,12 @@ private fun AwakenPalette.toColorScheme(dark: Boolean): ColorScheme {
         onPrimary = onAccent,
         primaryContainer = panelRaised,
         onPrimaryContainer = bone,
-        secondary = aether,
+        secondary = mist,
         onSecondary = onAccent,
         secondaryContainer = panelRaised, // nav-bar indicator: neutral, not Material tint
         onSecondaryContainer = bone,
         tertiary = crit,
-        onTertiary = onAccent,
+        onTertiary = bone,
         background = void,
         onBackground = bone,
         surface = void,
@@ -95,7 +90,7 @@ private fun AwakenPalette.toColorScheme(dark: Boolean): ColorScheme {
         outline = edge,
         outlineVariant = fog,
         error = ember,
-        onError = onAccent,
+        onError = void,
     )
 }
 

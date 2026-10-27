@@ -103,5 +103,4 @@
     <!-- Today card -->
     <string name="today_campaign_day">Day %1$d / 45 · %2$s</string>
     <string name="today_campaign_begin">Begin a 45-day campaign built around your weakest stat.</string>
-    <string name="action_open_campaign">Campaign</string>
 </resources>

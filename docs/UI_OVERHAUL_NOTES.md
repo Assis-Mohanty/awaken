@@ -75,3 +75,37 @@ Not changing: the widget (Glance; separate pass, BACKLOG "Light-mode widget"), t
 ## 6. Rollout after the Phase B review (one commit per screen)
 
 Progress (Status) · Gates (+ run dial) · Vault · Settings · Onboarding · Quest detail · Trial · Paths / Path detail · Gym · Diet · Health · Screen time · Campaign · share card. The reward sheet and level-up ceremony were restyled with the components in Phase B.
+
+## 5. v2 review: Today and the Gym muscle map vs the references (2026-10-27)
+
+The user rejected the 049cc21 look. The v2 brief (DESIGN_SYSTEM §1–3) replaced it:
+- Inter.
+- One hand-drawn icon set.
+- System mode retired.
+- Flat cards, accents only on small marks.
+
+Today and the body map were rendered (Roborazzi, light and dark, phone, small phone and 200 % font) and compared side by side with `docs/ui-reference/` (Withings screens, refero shots).
+
+### Differences found, and fixed
+
+| # | Difference from the reference quality | Fix |
+|---|---|---|
+| 1 | The large title wrapped next to the header actions ("Good afternoon, / Assis") | Actions moved up onto the date row; the title gets the full width |
+| 2 | Dark previews sat on pure black, not the `#0F0F0F` page | Preview backgrounds now use the page tokens |
+| 3 | Quest cards had ~30dp of empty space above and below each row | List cards use `Spacing.listCard` (16 / 4) and rows 12dp |
+| 4 | The body figure filled about half its frame (the source viewport has wide margins) | The frame is cropped to both figures' bounds |
+| 5 | In dark, the selected segment was darker than its track | New `surfaceSelected` token (card white / a raised grey) |
+| 6 | At 200 % font, "24 rank C" and the XP line truncated | Values and labels wrap, the rank has its own line, and the two metric cards share one height |
+| 7 | The reward formula was a card on a card-coloured sheet, so it vanished | It is now a pressed-colour well |
+| 8 | The reward sheet was taller than a small phone and Done could be off screen | The sheet scrolls |
+| 9 | Line charts had a gradient fill | Removed; a new `TrendChart` has Week / Month / Year, a tap callout and a dashed average |
+
+### Still different, by decision or for step 3
+
+- **Level and Streak cards:** no sparkline or timestamp like the Withings metric cards. Today's state has no history to plot, and adding it is a data change, not a visual one.
+- **Muscle-map shading:** four lit steps over the Mon–Sun week, from GD §13.2's bands. The brief said five steps over the last 7 days; changing the bands is a rule change that needs the user's call.
+- **Figure proportions:** these are the source's athletic build. No V-taper retouch yet; scaling path groups is possible if the user wants it after the phone review.
+- **Accent contrast:** the light-mode accents STR, VIT, CHA and positive are under 3:1 on white (brief hexes). They stay decorative and always sit next to text.
+- **Light secondary text on the page:** 4.98:1, which passes AA but not the old 5:1 floor.
+- **Step 3 items:** shared-element card → detail transitions and every other screen's layout. Those screens already wear the new tokens and components.
+- **Screenshots:** this machine's emulator image is missing (`system-images/android-37.0/google_apis_playstore/x86_64` is empty), so the comparison used Roborazzi renders, not emulator captures.

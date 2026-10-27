@@ -102,6 +102,18 @@ object TrainingMath {
         return load
     }
 
+    /**
+     * Volume (kg × reps) per muscle for the body-map sheet: each done set counts in full for every muscle it works,
+     * primary or secondary (ENGINE_DECISIONS #101). Display only; no reward reads it.
+     */
+    fun muscleVolume(work: Iterable<Pair<MuscleTargets, LoggedSet>>): Map<Muscle, Double> {
+        val volume = mutableMapOf<Muscle, Double>()
+        work.filter { (_, set) -> set.done }.forEach { (targets, set) ->
+            (targets.primary + targets.secondary).forEach { volume.merge(it, set.weightKg * set.reps, Double::plus) }
+        }
+        return volume
+    }
+
     /** Body-map band 0..4 for a week's sets on one muscle: 0 · ≤5 · ≤10 · ≤15 · more. */
     fun band(sets: Double): Int = when {
         sets <= 0.0 -> 0

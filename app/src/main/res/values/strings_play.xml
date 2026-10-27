@@ -61,11 +61,16 @@
     <string name="today_greeting_morning">Good morning, %1$s</string>
     <string name="today_greeting_day">Good afternoon, %1$s</string>
     <string name="today_greeting_evening">Good evening, %1$s</string>
-    <string name="today_hero_unit">of %1$d done</string>
     <string name="today_hero_cd">%1$d of %2$d quests done today</string>
+    <string name="today_ring_unit">of %1$d</string>
+    <string name="today_ring_done">done today</string>
+    <string name="today_plan_secondary">Move quests between morning, day and evening</string>
+    <plurals name="today_habits_count">
+        <item quantity="one">%1$d habit today</item>
+        <item quantity="other">%1$d habits today</item>
+    </plurals>
     <string name="today_no_habits">No habits yet. Add one the System should track.</string>
     <string name="today_loading">The System is preparing your directive.</string>
-    <string name="action_manage_habits">Manage habits</string>
     <plurals name="habit_count">
         <item quantity="one">%1$d of %2$d habit</item>
         <item quantity="other">%1$d of %2$d habits</item>
@@ -402,15 +407,13 @@
 
     <!-- Settings (Phase 10b) -->
     <string name="settings_title">SETTINGS</string>
+    <string name="settings_window_developer">Developer</string>
+    <string name="settings_licences">Open-source licences</string>
     <string name="cd_open_settings">Open settings</string>
     <string name="cd_open_paths">Open paths</string>
     <string name="settings_morning_end">Morning ends</string>
     <string name="settings_day_end">Day ends</string>
     <string name="settings_blocks_note">Today groups your quests into Morning, Day and Evening by these times.</string>
-    <string name="settings_presentation_title">Presentation</string>
-    <string name="clean_mode_label">Clean</string>
-    <string name="system_mode_label">System</string>
-    <string name="settings_presentation_note">Clean uses plain words and a light, calm look. The other mode is the full game: its own words, a dark look and a glow.</string>
     <string name="settings_window_profile">PROFILE</string>
     <string name="settings_window_day">DAY</string>
     <string name="settings_window_training">TRAINING</string>

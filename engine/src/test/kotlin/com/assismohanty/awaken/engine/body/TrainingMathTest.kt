@@ -51,6 +51,24 @@ class TrainingMathTest {
     }
 
     @Test
+    fun `muscle volume counts each done set in full for every muscle it works`() {
+        val bench = MuscleTargets(setOf(Muscle.CHEST), setOf(Muscle.SHOULDERS, Muscle.TRICEPS))
+        val dip = MuscleTargets(setOf(Muscle.TRICEPS), setOf(Muscle.CHEST, Muscle.TRICEPS))
+        val work = listOf(
+            bench to LoggedSet(60.0, 10),
+            bench to LoggedSet(60.0, 8),
+            bench to LoggedSet(60.0, 6, done = false),
+            dip to LoggedSet(20.0, 12),
+        )
+
+        assertThat(TrainingMath.muscleVolume(work)).containsExactly(
+            Muscle.CHEST, 1_320.0,
+            Muscle.SHOULDERS, 1_080.0,
+            Muscle.TRICEPS, 1_320.0,
+        )
+    }
+
+    @Test
     fun `weekly bands are 0, up to 5, 10, 15, then more`() {
         assertThat(listOf(0.0, 0.5, 5.0, 5.5, 10.0, 15.0, 15.5, 30.0).map(TrainingMath::band))
             .containsExactly(0, 1, 1, 2, 2, 3, 4, 4).inOrder()

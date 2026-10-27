@@ -1,11 +1,14 @@
 package com.assismohanty.awaken.core.designsystem.components
 
-import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.PathFillType
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
@@ -15,312 +18,342 @@ import androidx.compose.ui.graphics.vector.path
 import androidx.compose.ui.unit.dp
 import com.assismohanty.awaken.core.designsystem.preview.ComponentPreview
 import com.assismohanty.awaken.core.designsystem.theme.AwakenTheme
+import com.assismohanty.awaken.core.designsystem.theme.Spacing
 import com.assismohanty.awaken.engine.model.Stat
+import kotlin.math.PI
+import kotlin.math.cos
+import kotlin.math.sin
 
 /**
- * Custom line glyphs (DESIGN_SYSTEM §2.4), 24-unit grid, rounded caps and joins. Drawn in black and
- * tinted at the call site via `Icon(tint = …)`.
+ * AWAKEN's one icon set (DESIGN_SYSTEM §2.4). Drawn here, not imported: a 24-unit grid with a 2-unit safe area, soft
+ * geometry, and two weights that share every outline:
+ * - **Line** icons for chrome and unselected states: 1.75-unit strokes, round caps and joins.
+ * - **Solid** icons for the selected nav item, stats and small accents: filled shapes whose corners are rounded by a
+ *   matching 1.5-unit stroke, so they read as friendly, not sharp.
+ *
+ * Drawn in black and tinted at the call site via `Icon(tint = …)`.
  */
 object AwakenGlyphs {
+
+    // ---- Stats (solid: they sit in a 15% tinted circle) ----
+
+    /** STR: a bolt of power. */
     val Strength: ImageVector by lazy {
-        glyph("Strength") {
-            moveTo(5f, 13f); lineTo(12f, 6f); lineTo(19f, 13f)
-            moveTo(5f, 19f); lineTo(12f, 12f); lineTo(19f, 19f)
-        }
+        solid("Strength") { moveTo(13.5f, 2.75f); lineTo(5.25f, 13.25f); lineTo(11.25f, 13.25f); lineTo(10.5f, 21.25f); lineTo(18.75f, 10.75f); lineTo(12.75f, 10.75f); close() }
     }
 
+    /** INT: an open book. */
     val Intelligence: ImageVector by lazy {
-        glyph("Intelligence") {
-            moveTo(12f, 3f); lineTo(20f, 12f); lineTo(12f, 21f); lineTo(4f, 12f); close()
-            moveTo(12f, 9f); lineTo(15f, 12f); lineTo(12f, 15f); lineTo(9f, 12f); close()
+        solid("Intelligence") {
+            moveTo(11.25f, 6.25f); curveTo(9.5f, 5f, 6.75f, 4.5f, 3.5f, 4.9f); lineTo(3.5f, 18.4f); curveTo(6.5f, 18.1f, 9.25f, 18.6f, 11.25f, 19.9f); close()
+            moveTo(12.75f, 6.25f); curveTo(14.5f, 5f, 17.25f, 4.5f, 20.5f, 4.9f); lineTo(20.5f, 18.4f); curveTo(17.5f, 18.1f, 14.75f, 18.6f, 12.75f, 19.9f); close()
         }
     }
 
+    /** WIL: a target, focus held. */
     val Willpower: ImageVector by lazy {
-        glyph("Willpower") {
-            // Concentric target: focus held under pressure.
-            moveTo(12f, 3f); lineTo(20f, 7.5f); lineTo(20f, 16.5f); lineTo(12f, 21f); lineTo(4f, 16.5f); lineTo(4f, 7.5f); close()
-            moveTo(12f, 8f); lineTo(15.5f, 10f); lineTo(15.5f, 14f); lineTo(12f, 16f); lineTo(8.5f, 14f); lineTo(8.5f, 10f); close()
+        solid("Willpower", rounded = false, evenOdd = true) {
+            circle(12f, 12f, 9.25f); circle(12f, 12f, 6.75f); circle(12f, 12f, 3.75f)
         }
     }
 
+    /** VIT: a heart. */
     val Vitality: ImageVector by lazy {
-        glyph("Vitality") {
-            // Leaf with a central vein.
-            moveTo(12f, 21f); curveTo(5f, 16f, 5f, 8f, 12f, 3f); curveTo(19f, 8f, 19f, 16f, 12f, 21f); close()
-            moveTo(12f, 7f); lineTo(12f, 21f)
+        solid("Vitality") {
+            moveTo(12f, 20.25f); curveTo(12f, 20.25f, 3.25f, 15.1f, 3.25f, 9f); curveTo(3.25f, 6.3f, 5.35f, 4.25f, 7.9f, 4.25f)
+            curveTo(9.65f, 4.25f, 11.15f, 5.2f, 12f, 6.6f); curveTo(12.85f, 5.2f, 14.35f, 4.25f, 16.1f, 4.25f)
+            curveTo(18.65f, 4.25f, 20.75f, 6.3f, 20.75f, 9f); curveTo(20.75f, 15.1f, 12f, 20.25f, 12f, 20.25f); close()
         }
     }
 
+    /** CHA: two people. */
     val Charisma: ImageVector by lazy {
-        glyph("Charisma") {
-            // Two linked rings: connection.
-            moveTo(3.5f, 12f); arcToRelative(5f, 5f, 0f, true, true, 10f, 0f); arcToRelative(5f, 5f, 0f, true, true, -10f, 0f)
-            moveTo(10.5f, 12f); arcToRelative(5f, 5f, 0f, true, true, 10f, 0f); arcToRelative(5f, 5f, 0f, true, true, -10f, 0f)
+        solid("Charisma") {
+            circle(9f, 7.75f, 3.25f)
+            moveTo(2.75f, 19.5f); curveTo(2.75f, 15.75f, 5.5f, 13.25f, 9f, 13.25f); curveTo(12.5f, 13.25f, 15.25f, 15.75f, 15.25f, 19.5f); close()
+            circle(16.75f, 8.25f, 2.75f)
+            moveTo(16.4f, 13.4f); curveTo(19.3f, 13.5f, 21.25f, 15.8f, 21.25f, 19.5f); lineTo(17.25f, 19.5f); curveTo(17.25f, 17.1f, 16.9f, 15f, 16.4f, 13.4f); close()
         }
     }
+
+    // ---- Rewards and status ----
 
     val Shield: ImageVector by lazy {
-        glyph("Shield") {
-            moveTo(12f, 3f); lineTo(19f, 6f); lineTo(19f, 12f)
-            curveTo(19f, 16.5f, 16f, 19.5f, 12f, 21f); curveTo(8f, 19.5f, 5f, 16.5f, 5f, 12f)
-            lineTo(5f, 6f); close()
+        line("Shield") {
+            moveTo(12f, 3.5f); lineTo(18.75f, 6f); lineTo(18.75f, 11.5f)
+            curveTo(18.75f, 15.6f, 15.9f, 19f, 12f, 20.5f); curveTo(8.1f, 19f, 5.25f, 15.6f, 5.25f, 11.5f); lineTo(5.25f, 6f); close()
         }
     }
 
+    /** A gem: fragments. */
     val Fragment: ImageVector by lazy {
-        glyph("Fragment") {
-            moveTo(12f, 2.5f); lineTo(17.5f, 9f); lineTo(14f, 21.5f); lineTo(10f, 21.5f); lineTo(6.5f, 9f); close()
-            moveTo(6.5f, 9f); lineTo(17.5f, 9f)
-            moveTo(12f, 9f); lineTo(12f, 21.5f)
+        line("Fragment") {
+            moveTo(7.5f, 4.5f); lineTo(16.5f, 4.5f); lineTo(20.5f, 9.5f); lineTo(12f, 20f); lineTo(3.5f, 9.5f); close()
+            moveTo(3.5f, 9.5f); lineTo(20.5f, 9.5f)
+            moveTo(9f, 9.5f); lineTo(12f, 20f); lineTo(15f, 9.5f)
         }
     }
 
     val Portal: ImageVector by lazy {
-        glyph("Portal") {
-            moveTo(4f, 12f); arcToRelative(8f, 9f, 0f, true, true, 16f, 0f); arcToRelative(8f, 9f, 0f, true, true, -16f, 0f)
+        line("Portal") {
+            circle(12f, 12f, 8.5f)
             moveTo(8f, 12f); arcToRelative(4f, 5f, 0f, true, true, 8f, 0f); arcToRelative(4f, 5f, 0f, true, true, -8f, 0f)
         }
     }
 
+    /** Streaks (solid). */
     val Flame: ImageVector by lazy {
-        glyph("Flame") {
-            moveTo(12f, 2.5f); curveTo(16f, 7f, 18.5f, 10.5f, 18.5f, 14.5f)
-            curveTo(18.5f, 18.5f, 15.5f, 21.5f, 12f, 21.5f); curveTo(8.5f, 21.5f, 5.5f, 18.5f, 5.5f, 14.5f)
-            curveTo(5.5f, 11.5f, 7.5f, 9.5f, 9f, 8f); curveTo(9f, 10.5f, 10f, 12f, 11.5f, 12.5f)
-            curveTo(11f, 9f, 11.5f, 5.5f, 12f, 2.5f); close()
+        solid("Flame") {
+            moveTo(12f, 21.25f); curveTo(8.2f, 21.25f, 5.5f, 18.6f, 5.5f, 15.1f); curveTo(5.5f, 11.6f, 8.1f, 9.4f, 9.4f, 6.6f)
+            curveTo(10.1f, 8.3f, 10.9f, 9.3f, 11.9f, 9.8f); curveTo(12.1f, 7.3f, 13.2f, 4.9f, 15.3f, 2.9f)
+            curveTo(15.7f, 6.6f, 18.5f, 9.5f, 18.5f, 14.8f); curveTo(18.5f, 18.5f, 15.8f, 21.25f, 12f, 21.25f); close()
         }
     }
 
+    /** Gold. */
     val Coin: ImageVector by lazy {
-        glyph("Coin") {
-            moveTo(12f, 3f); lineTo(20f, 12f); lineTo(12f, 21f); lineTo(4f, 12f); close()
-            moveTo(12f, 7.5f); lineTo(16f, 12f); lineTo(12f, 16.5f); lineTo(8f, 12f); close()
-        }
+        line("Coin") { circle(12f, 12f, 8.5f); circle(12f, 12f, 4.75f) }
     }
 
     val VerifiedSeal: ImageVector by lazy {
-        glyph("Verified") {
-            moveTo(12f, 2.5f); lineTo(20f, 7f); lineTo(20f, 17f); lineTo(12f, 21.5f); lineTo(4f, 17f); lineTo(4f, 7f); close()
-            moveTo(8f, 12f); lineTo(11f, 15f); lineTo(16.5f, 9f)
-        }
+        line("Verified") { circle(12f, 12f, 8.5f); moveTo(8.5f, 12.2f); lineTo(11f, 14.7f); lineTo(15.7f, 9.6f) }
     }
 
     val Hourglass: ImageVector by lazy {
-        glyph("Timed") {
-            moveTo(6f, 3f); lineTo(18f, 3f); moveTo(6f, 21f); lineTo(18f, 21f)
-            moveTo(7f, 3f); lineTo(17f, 21f); moveTo(17f, 3f); lineTo(7f, 21f)
+        line("Timed") {
+            moveTo(6.5f, 3.5f); lineTo(17.5f, 3.5f); moveTo(6.5f, 20.5f); lineTo(17.5f, 20.5f)
+            moveTo(8f, 3.5f); lineTo(8f, 6.5f); curveTo(8f, 8.8f, 12f, 10.4f, 12f, 12f); curveTo(12f, 13.6f, 8f, 15.2f, 8f, 17.5f); lineTo(8f, 20.5f)
+            moveTo(16f, 3.5f); lineTo(16f, 6.5f); curveTo(16f, 8.8f, 12f, 10.4f, 12f, 12f); curveTo(12f, 13.6f, 16f, 15.2f, 16f, 17.5f); lineTo(16f, 20.5f)
         }
     }
 
     val Check: ImageVector by lazy {
-        glyph("Check") {
-            moveTo(5f, 12.5f); lineTo(10f, 17.5f); lineTo(19f, 7f)
+        line("Check", width = CHECK_STROKE) { moveTo(5.5f, 12.5f); lineTo(10f, 17f); lineTo(18.5f, 7.5f) }
+    }
+
+    /** Level: a step up. */
+    val Level: ImageVector by lazy {
+        line("Level") { circle(12f, 12f, 8.75f); moveTo(8.25f, 13.75f); lineTo(12f, 10f); lineTo(15.75f, 13.75f) }
+    }
+
+    val Trophy: ImageVector by lazy {
+        line("Trophy") {
+            moveTo(7.5f, 4f); lineTo(16.5f, 4f); lineTo(16.5f, 9.75f); curveTo(16.5f, 12.25f, 14.5f, 14.25f, 12f, 14.25f); curveTo(9.5f, 14.25f, 7.5f, 12.25f, 7.5f, 9.75f); close()
+            moveTo(7.5f, 6f); lineTo(5.5f, 6f); curveTo(4.7f, 6f, 4f, 6.7f, 4f, 7.5f); curveTo(4f, 9.4f, 5.6f, 11f, 7.6f, 11f)
+            moveTo(16.5f, 6f); lineTo(18.5f, 6f); curveTo(19.3f, 6f, 20f, 6.7f, 20f, 7.5f); curveTo(20f, 9.4f, 18.4f, 11f, 16.4f, 11f)
+            moveTo(12f, 14.25f); lineTo(12f, 19.5f); moveTo(8.5f, 19.75f); lineTo(15.5f, 19.75f)
         }
     }
 
-    // Bottom-bar destinations (DESIGN_SYSTEM §2.4: sharp line icons instead of Material defaults).
+    // ---- Navigation (line = unselected, solid = selected) ----
+
+    /** Today tab. */
+    val Home: ImageVector by lazy { line("Home") { house() } }
+    val HomeSolid: ImageVector by lazy { solid("HomeSolid", evenOdd = true) { house(); roundRect(10.25f, 14.5f, 3.5f, 5.5f, 1f) } }
+
+    /** Gym tab. */
+    val Dumbbell: ImageVector by lazy {
+        line("Dumbbell") {
+            roundRect(5.25f, 6.75f, 3.25f, 10.5f, 1.25f); roundRect(15.5f, 6.75f, 3.25f, 10.5f, 1.25f)
+            moveTo(8.5f, 12f); lineTo(15.5f, 12f); moveTo(2.75f, 10f); lineTo(2.75f, 14f); moveTo(21.25f, 10f); lineTo(21.25f, 14f)
+        }
+    }
+    val DumbbellSolid: ImageVector by lazy {
+        solid("DumbbellSolid") {
+            roundRect(5.25f, 6.75f, 3.25f, 10.5f, 1.25f); roundRect(15.5f, 6.75f, 3.25f, 10.5f, 1.25f)
+            roundRect(8.5f, 11.1f, 7f, 1.8f, 0.4f); roundRect(2.1f, 9.6f, 1.3f, 4.8f, 0.6f); roundRect(20.6f, 9.6f, 1.3f, 4.8f, 0.6f)
+        }
+    }
+
+    /** Diet tab: a bowl with a leaf. */
+    val Bowl: ImageVector by lazy { line("Bowl") { bowl(); leaf() } }
+    val BowlSolid: ImageVector by lazy { solid("BowlSolid") { bowl(); leaf() } }
+
+    /** Progress tab: three rising bars. */
+    val Bars: ImageVector by lazy { line("Bars") { bars() } }
+    val BarsSolid: ImageVector by lazy { solid("BarsSolid") { bars() } }
+
+    /** Quest list. */
     val Directive: ImageVector by lazy {
-        glyph("Directive") {
-            moveTo(4f, 6f); lineTo(6f, 8f); lineTo(9f, 4.5f)
-            moveTo(12f, 6.5f); lineTo(20f, 6.5f)
-            moveTo(4f, 12f); lineTo(9f, 12f); moveTo(12f, 12f); lineTo(20f, 12f)
-            moveTo(4f, 17.5f); lineTo(9f, 17.5f); moveTo(12f, 17.5f); lineTo(20f, 17.5f)
+        line("Directive") {
+            moveTo(4f, 6.5f); lineTo(5.75f, 8.25f); lineTo(8.75f, 5f)
+            moveTo(11.75f, 6.5f); lineTo(20f, 6.5f); moveTo(11.75f, 12f); lineTo(20f, 12f); moveTo(11.75f, 17.5f); lineTo(20f, 17.5f)
+            circle(6.25f, 12f, 1.5f); circle(6.25f, 17.5f, 1.5f)
         }
     }
 
+    /** Status radar. */
     val Pentagon: ImageVector by lazy {
-        glyph("Status") {
-            moveTo(12f, 3f); lineTo(20.5f, 9.2f); lineTo(17.3f, 19.5f); lineTo(6.7f, 19.5f); lineTo(3.5f, 9.2f); close()
-            moveTo(12f, 8f); lineTo(16f, 11f); lineTo(14.5f, 16f); lineTo(9.5f, 16f); lineTo(8f, 11f); close()
+        line("Status") {
+            star(points = 5, outer = 9f, inner = 9f * cos(PI / 5).toFloat(), cy = 12.6f)
+            star(points = 5, outer = 4.5f, inner = 4.5f * cos(PI / 5).toFloat(), cy = 12.6f)
         }
     }
 
+    /** Vault: a safe. */
     val Vault: ImageVector by lazy {
-        glyph("Vault") {
-            moveTo(3.5f, 8f); lineTo(20.5f, 8f); lineTo(20.5f, 20f); lineTo(3.5f, 20f); close()
-            moveTo(5.5f, 4f); lineTo(18.5f, 4f); lineTo(20.5f, 8f); moveTo(5.5f, 4f); lineTo(3.5f, 8f)
-            moveTo(10f, 12f); lineTo(14f, 12f); lineTo(14f, 15f); lineTo(10f, 15f); close()
+        line("Vault") {
+            roundRect(3.75f, 4f, 16.5f, 15f, 3f); circle(12f, 11.5f, 3.5f)
+            moveTo(12f, 8f); lineTo(12f, 9.25f); moveTo(7f, 19f); lineTo(7f, 20.75f); moveTo(17f, 19f); lineTo(17f, 20.75f)
         }
     }
 
-    /** Paths tab: a stepped trail climbing to a flag, the ladder of milestones. */
+    /** Paths: a winding route to a flag. */
     val Path: ImageVector by lazy {
-        glyph("Path") {
-            moveTo(5f, 20f); lineTo(5f, 14f); lineTo(12f, 14f); lineTo(12f, 8f); lineTo(19f, 8f); lineTo(19f, 3f)
-            moveTo(3f, 20f); lineTo(7f, 20f)
-            moveTo(19f, 3f); lineTo(22f, 5f); lineTo(19f, 7f)
+        line("Path") {
+            moveTo(5f, 20.25f); curveTo(5f, 15.5f, 15f, 17f, 15f, 12.25f); curveTo(15f, 10.25f, 14f, 9.5f, 14f, 8.5f)
+            moveTo(14f, 8.5f); lineTo(14f, 3.25f); lineTo(19.5f, 3.25f); lineTo(18f, 5.25f); lineTo(19.5f, 7.25f); lineTo(14f, 7.25f)
         }
     }
 
-    val Settings: ImageVector by lazy {
-        glyph("Settings") {
-            moveTo(12f, 3f); lineTo(19f, 7f); lineTo(19f, 17f); lineTo(12f, 21f); lineTo(5f, 17f); lineTo(5f, 7f); close()
-            moveTo(9f, 12f); arcToRelative(3f, 3f, 0f, true, true, 6f, 0f); arcToRelative(3f, 3f, 0f, true, true, -6f, 0f)
+    val Settings: ImageVector by lazy { line("Settings") { gear(); circle(12f, 12f, 3f) } }
+
+    val Bell: ImageVector by lazy {
+        line("Bell") {
+            moveTo(6f, 16.75f); lineTo(6f, 11f); curveTo(6f, 7.7f, 8.7f, 5f, 12f, 5f); curveTo(15.3f, 5f, 18f, 7.7f, 18f, 11f); lineTo(18f, 16.75f); lineTo(19.5f, 18.25f); lineTo(4.5f, 18.25f); close()
+            moveTo(10f, 20.75f); curveTo(10.5f, 21.4f, 11.2f, 21.75f, 12f, 21.75f); curveTo(12.8f, 21.75f, 13.5f, 21.4f, 14f, 20.75f)
+            moveTo(12f, 3f); lineTo(12f, 5f)
         }
     }
 
-    // Hunter sigils (Vault, GD §9.2): eight line badges; flame and hourglass reuse the HUD glyphs.
+    // ---- Sigils (Vault, GD §9.2); flame and hourglass reuse the glyphs above ----
+
     val Blade: ImageVector by lazy {
-        glyph("Blade") {
-            moveTo(12f, 2f); lineTo(15f, 14f); lineTo(12f, 16f); lineTo(9f, 14f); close()
-            moveTo(7f, 16f); lineTo(17f, 16f)
-            moveTo(12f, 16f); lineTo(12f, 22f)
+        line("Blade") {
+            moveTo(12f, 2.75f); lineTo(14.25f, 5.25f); lineTo(14.25f, 15f); lineTo(9.75f, 15f); lineTo(9.75f, 5.25f); close()
+            moveTo(7f, 15f); lineTo(17f, 15f); moveTo(12f, 15f); lineTo(12f, 21.25f)
         }
     }
 
     val Eye: ImageVector by lazy {
-        glyph("Eye") {
-            moveTo(2f, 12f); lineTo(12f, 5f); lineTo(22f, 12f); lineTo(12f, 19f); close()
-            moveTo(9f, 12f); lineTo(12f, 9f); lineTo(15f, 12f); lineTo(12f, 15f); close()
+        line("Eye") {
+            moveTo(2.75f, 12f); curveTo(5.1f, 7.6f, 8.3f, 5.5f, 12f, 5.5f); curveTo(15.7f, 5.5f, 18.9f, 7.6f, 21.25f, 12f)
+            curveTo(18.9f, 16.4f, 15.7f, 18.5f, 12f, 18.5f); curveTo(8.3f, 18.5f, 5.1f, 16.4f, 2.75f, 12f); close()
+            circle(12f, 12f, 3f)
         }
     }
 
     val Wolf: ImageVector by lazy {
-        glyph("Wolf") {
-            moveTo(4f, 4f); lineTo(9f, 8f); lineTo(15f, 8f); lineTo(20f, 4f); lineTo(19f, 13f)
-            lineTo(14f, 20f); lineTo(12f, 21f); lineTo(10f, 20f); lineTo(5f, 13f); close()
-            moveTo(8f, 12f); lineTo(10f, 13f)
-            moveTo(16f, 12f); lineTo(14f, 13f)
+        line("Wolf") {
+            moveTo(4.5f, 4f); lineTo(9f, 7.75f); lineTo(15f, 7.75f); lineTo(19.5f, 4f); lineTo(19f, 12.5f)
+            lineTo(14.25f, 19.5f); lineTo(12f, 20.75f); lineTo(9.75f, 19.5f); lineTo(5f, 12.5f); close()
+            moveTo(8.5f, 12f); lineTo(10f, 12.75f); moveTo(15.5f, 12f); lineTo(14f, 12.75f)
         }
     }
 
     val Crown: ImageVector by lazy {
-        glyph("Crown") {
-            moveTo(3f, 18f); lineTo(3f, 8f); lineTo(8f, 12f); lineTo(12f, 5f); lineTo(16f, 12f)
-            lineTo(21f, 8f); lineTo(21f, 18f); close()
+        line("Crown") {
+            moveTo(4.5f, 17f); lineTo(3.25f, 8f); lineTo(8f, 11.5f); lineTo(12f, 5f); lineTo(16f, 11.5f); lineTo(20.75f, 8f); lineTo(19.5f, 17f); close()
+            moveTo(5f, 20.25f); lineTo(19f, 20.25f)
         }
     }
 
-    val Star: ImageVector by lazy {
-        glyph("Star") {
-            moveTo(12f, 2f); lineTo(14f, 10f); lineTo(22f, 12f); lineTo(14f, 14f)
-            lineTo(12f, 22f); lineTo(10f, 14f); lineTo(2f, 12f); lineTo(10f, 10f); close()
-        }
-    }
+    val Star: ImageVector by lazy { line("Star") { star(points = 5, outer = 9.5f, inner = 4.2f, cy = 12.75f) } }
 
     val Gate: ImageVector by lazy {
-        glyph("Gate") {
-            moveTo(5f, 21f); lineTo(5f, 8f); lineTo(12f, 3f); lineTo(19f, 8f); lineTo(19f, 21f)
-            moveTo(9f, 21f); lineTo(9f, 12f); lineTo(15f, 12f); lineTo(15f, 21f)
+        line("Gate") {
+            moveTo(5f, 20.5f); lineTo(5f, 11f); curveTo(5f, 7.1f, 8.1f, 4f, 12f, 4f); curveTo(15.9f, 4f, 19f, 7.1f, 19f, 11f); lineTo(19f, 20.5f)
+            moveTo(3.5f, 20.5f); lineTo(20.5f, 20.5f)
+            moveTo(9.5f, 20.5f); lineTo(9.5f, 14f); curveTo(9.5f, 12.6f, 10.6f, 11.5f, 12f, 11.5f); curveTo(13.4f, 11.5f, 14.5f, 12.6f, 14.5f, 14f); lineTo(14.5f, 20.5f)
         }
     }
 
-    /** Gym tab: a dumbbell, plates and bar. */
-    val Dumbbell: ImageVector by lazy {
-        glyph("Dumbbell") {
-            moveTo(4f, 7f); lineTo(7f, 7f); lineTo(7f, 17f); lineTo(4f, 17f); close()
-            moveTo(17f, 7f); lineTo(20f, 7f); lineTo(20f, 17f); lineTo(17f, 17f); close()
-            moveTo(7f, 12f); lineTo(17f, 12f)
-            moveTo(2f, 10f); lineTo(2f, 14f); moveTo(22f, 10f); lineTo(22f, 14f)
-        }
-    }
+    // ---- Chrome ----
 
-    /** Diet tab: a bowl with chopsticks. */
-    val Bowl: ImageVector by lazy {
-        glyph("Bowl") {
-            moveTo(3f, 11f); lineTo(21f, 11f); curveTo(21f, 16f, 17f, 20f, 12f, 20f); curveTo(7f, 20f, 3f, 16f, 3f, 11f); close()
-            moveTo(12f, 9f); lineTo(18f, 3f); moveTo(15f, 9f); lineTo(21f, 4f)
-        }
-    }
+    val Close: ImageVector by lazy { line("Close") { moveTo(6.5f, 6.5f); lineTo(17.5f, 17.5f); moveTo(17.5f, 6.5f); lineTo(6.5f, 17.5f) } }
 
-    /** Remove / close. */
-    val Close: ImageVector by lazy {
-        glyph("Close") {
-            moveTo(6f, 6f); lineTo(18f, 18f); moveTo(18f, 6f); lineTo(6f, 18f)
-        }
-    }
+    val Plus: ImageVector by lazy { line("Plus") { moveTo(12f, 5f); lineTo(12f, 19f); moveTo(5f, 12f); lineTo(19f, 12f) } }
 
-    val Plus: ImageVector by lazy {
-        glyph("Plus") {
-            moveTo(12f, 5f); lineTo(12f, 19f); moveTo(5f, 12f); lineTo(19f, 12f)
-        }
-    }
-
-    /** Details: a framed "i". */
     val Info: ImageVector by lazy {
-        glyph("Info") {
-            moveTo(12f, 3f); lineTo(20f, 7.5f); lineTo(20f, 16.5f); lineTo(12f, 21f); lineTo(4f, 16.5f); lineTo(4f, 7.5f); close()
-            moveTo(12f, 11f); lineTo(12f, 16.5f); moveTo(12f, 7.5f); lineTo(12f, 8.5f)
+        line("Info") { circle(12f, 12f, 8.75f); moveTo(12f, 11f); lineTo(12f, 16.25f); moveTo(12f, 7.75f); lineTo(12f, 7.9f) }
+    }
+
+    val ChevronLeft: ImageVector by lazy { line("ChevronLeft") { moveTo(14.5f, 5.5f); lineTo(8f, 12f); lineTo(14.5f, 18.5f) } }
+    val ChevronDown: ImageVector by lazy { line("ChevronDown") { moveTo(5.5f, 9f); lineTo(12f, 15.5f); lineTo(18.5f, 9f) } }
+    val ChevronRight: ImageVector by lazy { line("ChevronRight") { moveTo(9.5f, 5.5f); lineTo(16f, 12f); lineTo(9.5f, 18.5f) } }
+
+    /** Back navigation. */
+    val ArrowLeft: ImageVector by lazy { line("ArrowLeft") { moveTo(19.5f, 12f); lineTo(4.75f, 12f); moveTo(11f, 5.75f); lineTo(4.75f, 12f); lineTo(11f, 18.25f) } }
+    val ArrowUp: ImageVector by lazy { line("ArrowUp") { moveTo(12f, 19f); lineTo(12f, 5f); moveTo(6f, 11f); lineTo(12f, 5f); lineTo(18f, 11f) } }
+    val ArrowDown: ImageVector by lazy { line("ArrowDown") { moveTo(12f, 5f); lineTo(12f, 19f); moveTo(6f, 13f); lineTo(12f, 19f); lineTo(18f, 13f) } }
+
+    val More: ImageVector by lazy { solid("More", rounded = false) { circle(5.75f, 12f, 1.75f); circle(12f, 12f, 1.75f); circle(18.25f, 12f, 1.75f) } }
+
+    val Search: ImageVector by lazy { line("Search") { circle(10.5f, 10.5f, 6.5f); moveTo(15.4f, 15.4f); lineTo(20f, 20f) } }
+
+    val Pencil: ImageVector by lazy {
+        line("Pencil") {
+            moveTo(4.25f, 19.75f); lineTo(4.9f, 16.2f); lineTo(15.6f, 5.5f); curveTo(16.4f, 4.7f, 17.7f, 4.7f, 18.5f, 5.5f)
+            curveTo(19.3f, 6.3f, 19.3f, 7.6f, 18.5f, 8.4f); lineTo(7.8f, 19.1f); close()
+            moveTo(13.75f, 7.35f); lineTo(16.65f, 10.25f)
         }
     }
 
-    val ChevronLeft: ImageVector by lazy {
-        glyph("ChevronLeft") { moveTo(15f, 5f); lineTo(8f, 12f); lineTo(15f, 19f) }
+    val Trash: ImageVector by lazy {
+        line("Trash") {
+            moveTo(4.5f, 7f); lineTo(19.5f, 7f)
+            moveTo(9.5f, 7f); lineTo(9.5f, 5f); curveTo(9.5f, 4.45f, 9.95f, 4f, 10.5f, 4f); lineTo(13.5f, 4f); curveTo(14.05f, 4f, 14.5f, 4.45f, 14.5f, 5f); lineTo(14.5f, 7f)
+            moveTo(6.5f, 7f); lineTo(7.4f, 19f); curveTo(7.45f, 19.6f, 7.9f, 20f, 8.5f, 20f); lineTo(15.5f, 20f); curveTo(16.1f, 20f, 16.55f, 19.6f, 16.6f, 19f); lineTo(17.5f, 7f)
+            moveTo(10.5f, 11f); lineTo(10.5f, 16f); moveTo(13.5f, 11f); lineTo(13.5f, 16f)
+        }
     }
 
-    val ChevronDown: ImageVector by lazy {
-        glyph("ChevronDown") { moveTo(5f, 9f); lineTo(12f, 16f); lineTo(19f, 9f) }
+    val Lock: ImageVector by lazy {
+        line("Lock") {
+            roundRect(5f, 10.5f, 14f, 10f, 2.5f)
+            moveTo(8f, 10.5f); lineTo(8f, 8f); curveTo(8f, 5.8f, 9.8f, 4f, 12f, 4f); curveTo(14.2f, 4f, 16f, 5.8f, 16f, 8f); lineTo(16f, 10.5f)
+            moveTo(12f, 14.5f); lineTo(12f, 16.5f)
+        }
     }
 
-    val ChevronRight: ImageVector by lazy {
-        glyph("ChevronRight") { moveTo(9f, 5f); lineTo(16f, 12f); lineTo(9f, 19f) }
+    val Calendar: ImageVector by lazy {
+        line("Calendar") { roundRect(4f, 5.5f, 16f, 14.75f, 3f); moveTo(4f, 10f); lineTo(20f, 10f); moveTo(8.5f, 3.5f); lineTo(8.5f, 7f); moveTo(15.5f, 3.5f); lineTo(15.5f, 7f) }
     }
 
-    val ArrowUp: ImageVector by lazy {
-        glyph("ArrowUp") { moveTo(12f, 19f); lineTo(12f, 5f); moveTo(6f, 11f); lineTo(12f, 5f); lineTo(18f, 11f) }
+    val Timer: ImageVector by lazy {
+        line("Timer") { circle(12f, 13.5f, 7.5f); moveTo(12f, 13.5f); lineTo(12f, 10f); moveTo(10f, 3f); lineTo(14f, 3f); moveTo(17.8f, 7.7f); lineTo(19f, 6.5f) }
     }
 
-    val ArrowDown: ImageVector by lazy {
-        glyph("ArrowDown") { moveTo(12f, 5f); lineTo(12f, 19f); moveTo(6f, 13f); lineTo(12f, 19f); lineTo(18f, 13f) }
+    val Drop: ImageVector by lazy {
+        line("Drop") {
+            moveTo(12f, 3.5f); curveTo(12f, 3.5f, 5.5f, 10.5f, 5.5f, 14.5f); curveTo(5.5f, 18.1f, 8.4f, 21f, 12f, 21f)
+            curveTo(15.6f, 21f, 18.5f, 18.1f, 18.5f, 14.5f); curveTo(18.5f, 10.5f, 12f, 3.5f, 12f, 3.5f); close()
+        }
     }
 
-    /** Insights: a four-point sparkle. */
+    /** Screen time. */
+    val Phone: ImageVector by lazy { line("Phone") { roundRect(6.75f, 2.75f, 10.5f, 18.5f, 2.75f); moveTo(10.5f, 18f); lineTo(13.5f, 18f) } }
+
+    /** Insights (solid). */
     val Sparkle: ImageVector by lazy {
-        glyph("Sparkle") {
-            moveTo(12f, 3f); quadTo(13f, 11f, 21f, 12f); quadTo(13f, 13f, 12f, 21f); quadTo(11f, 13f, 3f, 12f); quadTo(11f, 11f, 12f, 3f); close()
-        }
+        solid("Sparkle") { moveTo(12f, 3f); quadTo(13f, 11f, 21f, 12f); quadTo(13f, 13f, 12f, 21f); quadTo(11f, 13f, 3f, 12f); quadTo(11f, 11f, 12f, 3f); close() }
     }
 
-    /** Morning: the sun on the horizon. */
+    // ---- Time of day ----
+
     val Sunrise: ImageVector by lazy {
-        glyph("Sunrise") {
-            moveTo(3f, 18f); lineTo(21f, 18f)
-            moveTo(7f, 18f); arcTo(5f, 5f, 0f, false, true, 17f, 18f)
-            moveTo(12f, 6f); lineTo(12f, 9f); moveTo(5f, 10f); lineTo(7f, 12f); moveTo(19f, 10f); lineTo(17f, 12f)
+        line("Sunrise") {
+            moveTo(3f, 18.5f); lineTo(21f, 18.5f)
+            moveTo(7f, 18.5f); arcTo(5f, 5f, 0f, false, true, 17f, 18.5f)
+            moveTo(12f, 6f); lineTo(12f, 9f); moveTo(5f, 10.5f); lineTo(6.75f, 12.25f); moveTo(19f, 10.5f); lineTo(17.25f, 12.25f)
         }
     }
 
-    /** Day: the full sun. */
     val Sun: ImageVector by lazy {
-        glyph("Sun") {
-            moveTo(8f, 12f); arcTo(4f, 4f, 0f, true, true, 16f, 12f); arcTo(4f, 4f, 0f, true, true, 8f, 12f); close()
-            moveTo(12f, 2.5f); lineTo(12f, 4.5f); moveTo(12f, 19.5f); lineTo(12f, 21.5f)
-            moveTo(2.5f, 12f); lineTo(4.5f, 12f); moveTo(19.5f, 12f); lineTo(21.5f, 12f)
-            moveTo(5.3f, 5.3f); lineTo(6.7f, 6.7f); moveTo(17.3f, 17.3f); lineTo(18.7f, 18.7f)
-            moveTo(5.3f, 18.7f); lineTo(6.7f, 17.3f); moveTo(17.3f, 6.7f); lineTo(18.7f, 5.3f)
+        line("Sun") {
+            circle(12f, 12f, 4f)
+            moveTo(12f, 2.75f); lineTo(12f, 4.5f); moveTo(12f, 19.5f); lineTo(12f, 21.25f)
+            moveTo(2.75f, 12f); lineTo(4.5f, 12f); moveTo(19.5f, 12f); lineTo(21.25f, 12f)
+            moveTo(5.45f, 5.45f); lineTo(6.7f, 6.7f); moveTo(17.3f, 17.3f); lineTo(18.55f, 18.55f)
+            moveTo(5.45f, 18.55f); lineTo(6.7f, 17.3f); moveTo(17.3f, 6.7f); lineTo(18.55f, 5.45f)
         }
     }
 
-    /** Evening: a crescent moon. */
     val Moon: ImageVector by lazy {
-        glyph("Moon") {
-            moveTo(20f, 14.5f); arcTo(8f, 8f, 0f, true, true, 9.5f, 4f); arcTo(6.5f, 6.5f, 0f, false, false, 20f, 14.5f); close()
-        }
+        line("Moon") { moveTo(19.75f, 14.5f); arcTo(8f, 8f, 0f, true, true, 9.5f, 4.25f); arcTo(6.5f, 6.5f, 0f, false, false, 19.75f, 14.5f); close() }
     }
 
-    /** Anytime: a clock face. */
-    val Clock: ImageVector by lazy {
-        glyph("Clock") {
-            moveTo(3.5f, 12f); arcTo(8.5f, 8.5f, 0f, true, true, 20.5f, 12f); arcTo(8.5f, 8.5f, 0f, true, true, 3.5f, 12f); close()
-            moveTo(12f, 7f); lineTo(12f, 12f); lineTo(15.5f, 14f)
-        }
-    }
-
-    /** Today tab: a house. */
-    val Home: ImageVector by lazy {
-        glyph("Home") {
-            moveTo(4f, 10.5f); lineTo(12f, 4f); lineTo(20f, 10.5f); lineTo(20f, 20f); lineTo(4f, 20f); close()
-            moveTo(10f, 20f); lineTo(10f, 14f); lineTo(14f, 14f); lineTo(14f, 20f)
-        }
-    }
-
-    /** Progress tab: three rising bars. */
-    val Bars: ImageVector by lazy {
-        glyph("Bars") {
-            moveTo(5f, 20f); lineTo(5f, 13f); moveTo(12f, 20f); lineTo(12f, 8f); moveTo(19f, 20f); lineTo(19f, 4f)
-        }
-    }
+    val Clock: ImageVector by lazy { line("Clock") { circle(12f, 12f, 8.75f); moveTo(12f, 7.25f); lineTo(12f, 12f); lineTo(15.25f, 14f) } }
 
     /** Glyph for a sigil id from the shop catalogue; null for an id this build doesn't know. */
     fun sigil(sigilId: String): ImageVector? = when (sigilId) {
@@ -343,33 +376,132 @@ object AwakenGlyphs {
         Stat.CHA -> Charisma
     }
 
+    /** Every glyph, for the catalog and the preview grid. */
+    val all: List<ImageVector> by lazy {
+        listOf(
+            Strength, Intelligence, Willpower, Vitality, Charisma, Flame, Sparkle, More,
+            Home, HomeSolid, Dumbbell, DumbbellSolid, Bowl, BowlSolid, Bars, BarsSolid,
+            Directive, Pentagon, Vault, Path, Settings, Bell, Level, Trophy,
+            Shield, Fragment, Portal, Coin, VerifiedSeal, Hourglass, Check, Gate,
+            Blade, Eye, Wolf, Crown, Star, Close, Plus, Info,
+            ChevronLeft, ChevronDown, ChevronRight, ArrowLeft, ArrowUp, ArrowDown, Search, Pencil,
+            Trash, Lock, Calendar, Timer, Drop, Phone, Sunrise, Sun, Moon, Clock,
+        )
+    }
+
+    // ---- Construction ----
+
     private const val GRID = 24f
     private const val STROKE = 1.75f
+    private const val CHECK_STROKE = 2f
+    /** Softens a solid shape's corners; adds 0.75 units outside the path, which the geometry above allows for. */
+    private const val SOLID_ROUNDING = 1.5f
 
-    private fun glyph(name: String, pathBuilder: PathBuilder.() -> Unit): ImageVector =
+    private fun builder(name: String) =
         ImageVector.Builder(name = name, defaultWidth = 24.dp, defaultHeight = 24.dp, viewportWidth = GRID, viewportHeight = GRID)
+
+    private fun line(name: String, width: Float = STROKE, pathBuilder: PathBuilder.() -> Unit): ImageVector =
+        builder(name)
             .path(
                 fill = null,
                 stroke = SolidColor(Color.Black),
-                strokeLineWidth = STROKE,
+                strokeLineWidth = width,
                 strokeLineCap = StrokeCap.Round,
                 strokeLineJoin = StrokeJoin.Round,
                 pathBuilder = pathBuilder,
             )
             .build()
+
+    private fun solid(name: String, rounded: Boolean = true, evenOdd: Boolean = false, pathBuilder: PathBuilder.() -> Unit): ImageVector =
+        builder(name)
+            .path(
+                fill = SolidColor(Color.Black),
+                stroke = if (rounded) SolidColor(Color.Black) else null,
+                strokeLineWidth = if (rounded) SOLID_ROUNDING else 0f,
+                strokeLineJoin = StrokeJoin.Round,
+                pathFillType = if (evenOdd) PathFillType.EvenOdd else PathFillType.NonZero,
+                pathBuilder = pathBuilder,
+            )
+            .build()
+
+    private fun PathBuilder.circle(cx: Float, cy: Float, r: Float) {
+        moveTo(cx - r, cy)
+        arcToRelative(r, r, 0f, true, true, 2 * r, 0f)
+        arcToRelative(r, r, 0f, true, true, -2 * r, 0f)
+        close()
+    }
+
+    @Suppress("LongParameterList")
+    private fun PathBuilder.roundRect(x: Float, y: Float, w: Float, h: Float, r: Float) {
+        moveTo(x + r, y)
+        lineTo(x + w - r, y); arcTo(r, r, 0f, false, true, x + w, y + r)
+        lineTo(x + w, y + h - r); arcTo(r, r, 0f, false, true, x + w - r, y + h)
+        lineTo(x + r, y + h); arcTo(r, r, 0f, false, true, x, y + h - r)
+        lineTo(x, y + r); arcTo(r, r, 0f, false, true, x + r, y)
+        close()
+    }
+
+    /** A regular star (or polygon when inner = outer·cos(π/n)) pointing up, centred on (12, [cy]). */
+    private fun PathBuilder.star(points: Int, outer: Float, inner: Float, cy: Float) {
+        val steps = points * 2
+        for (i in 0 until steps) {
+            val r = if (i % 2 == 0) outer else inner
+            val angle = -PI / 2 + i * PI / points
+            val x = 12f + r * cos(angle).toFloat()
+            val y = cy + r * sin(angle).toFloat()
+            if (i == 0) moveTo(x, y) else lineTo(x, y)
+        }
+        close()
+    }
+
+    /** Eight flat-topped teeth around a 7.25-unit body. */
+    private fun PathBuilder.gear() {
+        val teeth = 8
+        val outer = 9.25f
+        val body = 7.25f
+        val step = 2 * PI / teeth
+        for (k in 0 until teeth) {
+            val a = k * step
+            val pts = listOf(body to a - step * 0.5 + step * 0.12, outer to a - step * 0.2, outer to a + step * 0.2, body to a + step * 0.5 - step * 0.12)
+            pts.forEachIndexed { i, (r, angle) ->
+                val x = 12f + r * cos(angle).toFloat()
+                val y = 12f + r * sin(angle).toFloat()
+                if (k == 0 && i == 0) moveTo(x, y) else lineTo(x, y)
+            }
+        }
+        close()
+    }
+
+    private fun PathBuilder.house() {
+        moveTo(4.25f, 10.4f); lineTo(11.1f, 4.6f); curveTo(11.6f, 4.15f, 12.4f, 4.15f, 12.9f, 4.6f); lineTo(19.75f, 10.4f)
+        lineTo(19.75f, 18.5f); curveTo(19.75f, 19.33f, 19.08f, 20f, 18.25f, 20f); lineTo(5.75f, 20f)
+        curveTo(4.92f, 20f, 4.25f, 19.33f, 4.25f, 18.5f); close()
+    }
+
+    private fun PathBuilder.bowl() {
+        moveTo(3.5f, 11.5f); lineTo(20.5f, 11.5f); curveTo(20.5f, 16.2f, 16.7f, 20f, 12f, 20f); curveTo(7.3f, 20f, 3.5f, 16.2f, 3.5f, 11.5f); close()
+    }
+
+    private fun PathBuilder.leaf() {
+        moveTo(12.5f, 8.75f); curveTo(12.5f, 5.5f, 15f, 3.5f, 18.5f, 3.5f); curveTo(18.5f, 6.75f, 16f, 8.75f, 12.5f, 8.75f); close()
+    }
+
+    private fun PathBuilder.bars() {
+        roundRect(4f, 12.5f, 4f, 7.5f, 1.25f); roundRect(10f, 8f, 4f, 12f, 1.25f); roundRect(16f, 4f, 4f, 16f, 1.25f)
+    }
 }
 
 @ComponentPreview
 @Composable
 private fun GlyphsPreview() {
     AwakenTheme {
-        val colors = AwakenTheme.palette
-        Row {
-            Stat.entries.forEach { stat ->
-                Icon(AwakenGlyphs.stat(stat), contentDescription = null, tint = colors.stat(stat), modifier = Modifier.size(AwakenTheme.dimens.sigil))
-            }
-            listOf(AwakenGlyphs.Shield, AwakenGlyphs.Fragment, AwakenGlyphs.Portal, AwakenGlyphs.Flame, AwakenGlyphs.Coin, AwakenGlyphs.VerifiedSeal, AwakenGlyphs.Hourglass)
-                .forEach { Icon(it, contentDescription = null, tint = colors.system, modifier = Modifier.size(AwakenTheme.dimens.sigil)) }
+        val colors = AwakenTheme.colors
+        FlowRow(
+            modifier = Modifier.padding(Spacing.md),
+            horizontalArrangement = Arrangement.spacedBy(Spacing.md),
+            verticalArrangement = Arrangement.spacedBy(Spacing.md),
+        ) {
+            AwakenGlyphs.all.forEach { Icon(it, contentDescription = null, tint = colors.textPrimary, modifier = Modifier.size(AwakenTheme.dimens.icon)) }
         }
     }
 }

@@ -9,10 +9,11 @@ import com.assismohanty.awaken.core.designsystem.components.AwakenGlyphs
 enum class TopLevelDestination(
     val route: Any,
     val icon: ImageVector,
+    val selectedIcon: ImageVector,
     @StringRes val labelRes: Int,
 ) {
-    TODAY(TodayRoute, AwakenGlyphs.Home, R.string.nav_today),
-    GYM(GymRoute, AwakenGlyphs.Dumbbell, R.string.nav_gym),
-    DIET(DietRoute, AwakenGlyphs.Bowl, R.string.nav_diet),
-    STATUS(StatusRoute, AwakenGlyphs.Bars, R.string.nav_status),
+    TODAY(TodayRoute, AwakenGlyphs.Home, AwakenGlyphs.HomeSolid, R.string.nav_today),
+    GYM(GymRoute, AwakenGlyphs.Dumbbell, AwakenGlyphs.DumbbellSolid, R.string.nav_gym),
+    DIET(DietRoute, AwakenGlyphs.Bowl, AwakenGlyphs.BowlSolid, R.string.nav_diet),
+    STATUS(StatusRoute, AwakenGlyphs.Bars, AwakenGlyphs.BarsSolid, R.string.nav_status),
 }

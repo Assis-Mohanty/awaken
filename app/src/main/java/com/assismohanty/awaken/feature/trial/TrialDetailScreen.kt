@@ -1,5 +1,6 @@
 package com.assismohanty.awaken.feature.trial
 
+import com.assismohanty.awaken.core.designsystem.components.AwakenGlyphs
 import com.assismohanty.awaken.core.designsystem.lexicon.lexString
 import com.assismohanty.awaken.core.designsystem.lexicon.lexPlural
 import androidx.compose.foundation.layout.Arrangement
@@ -12,8 +13,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -74,7 +73,7 @@ fun TrialDetailScreen(
     ) {
         Box(modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.xxs)) {
             IconButton(onClick = onBack) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = lexString(R.string.action_back), tint = colors.textPrimary)
+                Icon(AwakenGlyphs.ArrowLeft, contentDescription = lexString(R.string.action_back), tint = colors.textPrimary)
             }
         }
         Column(

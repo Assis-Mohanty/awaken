@@ -14,7 +14,10 @@ import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import com.assismohanty.awaken.R
 
-/** How the app talks (GD §14.9): plain Clean words, or the full System voice. Numbers are identical in both. */
+/**
+ * How the app talks (GD §14.9): plain Clean words, or the System voice. The app ships Clean only since the v2 redesign
+ * dropped the System mode toggle; SYSTEM remains so the word pairs stay checked by tests until the strings are retired.
+ */
 enum class PresentationMode { CLEAN, SYSTEM }
 
 /** Game terms with a Clean and a System name (DESIGN_SYSTEM §8.3). */
@@ -60,9 +63,6 @@ class Lexicon private constructor(val mode: PresentationMode) {
     @StringRes
     fun term(term: Term): Int = if (mode == PresentationMode.CLEAN) term.clean else term.system
 
-    /** System mode keeps the gate glow; Clean turns it off (DESIGN_SYSTEM §8.3). */
-    val glow: Boolean get() = mode == PresentationMode.SYSTEM
-
     companion object {
         val System = Lexicon(PresentationMode.SYSTEM)
         val Clean = Lexicon(PresentationMode.CLEAN)
@@ -71,7 +71,7 @@ class Lexicon private constructor(val mode: PresentationMode) {
     }
 }
 
-val LocalLexicon = staticCompositionLocalOf { Lexicon.System }
+val LocalLexicon = staticCompositionLocalOf { Lexicon.Clean }
 
 /** `stringResource` through the Lexicon. Feature code uses this, never `stringResource`. */
 @Composable

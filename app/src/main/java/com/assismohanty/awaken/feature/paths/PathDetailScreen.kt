@@ -11,8 +11,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
@@ -69,7 +67,7 @@ fun PathDetailScreen(
     ) {
         Box(modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.xxs)) {
             IconButton(onClick = onBack) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = lexString(R.string.action_back), tint = colors.textPrimary)
+                Icon(AwakenGlyphs.ArrowLeft, contentDescription = lexString(R.string.action_back), tint = colors.textPrimary)
             }
         }
         val path = state.path ?: return@Column

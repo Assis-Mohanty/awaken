@@ -1,70 +1,134 @@
 package com.assismohanty.awaken.core.designsystem.components
 
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
-import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.unit.Dp
 import com.assismohanty.awaken.R
 import com.assismohanty.awaken.core.designsystem.lexicon.lexString
 import com.assismohanty.awaken.core.designsystem.preview.ComponentPreview
-import com.assismohanty.awaken.core.designsystem.theme.AwakenAlpha
 import com.assismohanty.awaken.core.designsystem.theme.AwakenTheme
 import com.assismohanty.awaken.core.designsystem.theme.Spacing
 import com.assismohanty.awaken.engine.model.Rank
 import com.assismohanty.awaken.engine.model.Stat
-import kotlin.math.cos
-import kotlin.math.sin
 
 /*
- * The v1.1 modules (DESIGN_SYSTEM §3): one hero number per screen, calm cards, small uppercase labels over large values.
+ * The v2 modules (DESIGN_SYSTEM §3): Apple-style metric cards, ring cards, insight cards, list rows, segmented
+ * controls and delta pills. One primary thing per card; hierarchy from type size and weight; one accent per card.
  */
 
-enum class HeroStyle { RING, DOTS }
+// ---- Rings ----
+
+/** One ring of a [Rings] stack: its 0..1 [progress] and accent [color]. */
+@Immutable
+data class RingSpec(val progress: Float, val color: Color)
 
 /**
- * The hero (DESIGN_SYSTEM §3): a very large number in a progress ring ([HeroStyle.RING]) or a ring of soft pastel dots
- * ([HeroStyle.DOTS], "61 out of 100"). [kicker] sits above the number (a date), [unitLine] under it ("of 5 done").
- * [colors] tint the arc or the dots; defaults to the five stat fills. One TalkBack node: [description].
+ * Apple Fitness–style rings: concentric, 10dp stroke, round caps, a divider-coloured track. Each ring closes from 0 on
+ * first composition (300ms ease-out); reduce-motion draws it closed. Decorative: the caller describes it.
  */
+@Composable
+fun Rings(rings: List<RingSpec>, modifier: Modifier = Modifier, size: Dp = AwakenTheme.dimens.heroRing, stroke: Dp = AwakenTheme.dimens.heroRingStroke) {
+    val colors = AwakenTheme.colors
+    val motion = AwakenTheme.motion
+    val grow = remember { Animatable(if (motion.reduceMotion) 1f else 0f) }
+    LaunchedEffect(Unit) { if (grow.value < 1f) grow.animateTo(1f, tween(motion.countUpMs, easing = motion.standardEasing)) }
+    val targets = rings.map { it.progress.coerceIn(0f, 1f) }
+    Canvas(modifier = modifier.size(size)) {
+        val w = stroke.toPx()
+        val gap = w * RING_GAP
+        rings.forEachIndexed { i, ring ->
+            val inset = w / 2f + i * (w + gap)
+            val arcSize = Size(this.size.width - inset * 2, this.size.height - inset * 2)
+            if (arcSize.width <= 0f) return@forEachIndexed
+            drawArc(colors.divider, 0f, FULL_TURN, false, Offset(inset, inset), arcSize, style = Stroke(w))
+            val sweep = FULL_TURN * targets[i] * grow.value
+            if (sweep > 0f) {
+                drawArc(ring.color, START_ANGLE, sweep.coerceAtLeast(MIN_SWEEP), false, Offset(inset, inset), arcSize, style = Stroke(w, cap = StrokeCap.Round))
+            }
+        }
+    }
+}
+
+/**
+ * The ring card (DESIGN_SYSTEM §3): a label, the big count with its unit ("3 of 10"), a secondary line, and the rings on
+ * the right. One TalkBack node: [description].
+ */
+@Composable
+fun RingCard(
+    label: String,
+    value: String,
+    rings: List<RingSpec>,
+    description: String,
+    modifier: Modifier = Modifier,
+    unit: String? = null,
+    secondary: String? = null,
+    icon: ImageVector? = null,
+    iconTint: Color = AwakenTheme.colors.textPrimary,
+    onClick: (() -> Unit)? = null,
+) {
+    val colors = AwakenTheme.colors
+    AwakenCard(modifier = modifier.clearAndSetSemantics { contentDescription = description }, reveal = false, onClick = onClick) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+                CardLabel(label, icon, iconTint)
+                BigValue(value, unit, large = true)
+                secondary?.let { Text(it, style = AwakenTheme.type.body, color = colors.textSecondary) }
+            }
+            Spacer(Modifier.width(Spacing.md))
+            Rings(rings)
+        }
+    }
+}
+
+/** The pre-v2 hero ring, now a single thin ring with the number inside. [colors] picks the arc colour (first entry). */
 @Composable
 fun HeroRing(
     value: String,
@@ -73,106 +137,227 @@ fun HeroRing(
     modifier: Modifier = Modifier,
     unitLine: String? = null,
     kicker: String? = null,
-    style: HeroStyle = HeroStyle.RING,
+    @Suppress("UNUSED_PARAMETER") style: HeroStyle = HeroStyle.RING,
     colors: List<Color>? = null,
 ) {
-    val palette = AwakenTheme.palette
-    val dimens = AwakenTheme.dimens
-    val motion = AwakenTheme.motion
+    val tokens = AwakenTheme.colors
     val type = AwakenTheme.type
-    val fills = colors ?: Stat.entries.map(palette::statFill)
-    val shown by animateFloatAsState(progress.coerceIn(0f, 1f), tween(motion.duration(motion.revealMs), easing = motion.standardEasing), label = "hero")
-    Box(
-        modifier = modifier
-            .size(dimens.heroRing)
-            .clearAndSetSemantics { contentDescription = description },
-        contentAlignment = Alignment.Center,
-    ) {
-        Canvas(modifier = Modifier.fillMaxSize()) {
-            if (palette.glow) {
-                drawCircle(Brush.radialGradient(listOf(palette.system.copy(alpha = AwakenAlpha.GLOW), Color.Transparent)))
-            }
-            val stroke = dimens.heroRingStroke.toPx()
-            when (style) {
-                HeroStyle.RING -> {
-                    val inset = stroke / 2f
-                    val arcSize = Size(size.width - stroke, size.height - stroke)
-                    drawArc(palette.edge, 0f, FULL_TURN, false, Offset(inset, inset), arcSize, style = Stroke(stroke))
-                    if (shown > 0f) {
-                        rotate(START_ANGLE.toFloat()) {
-                            drawArc(
-                                brush = Brush.sweepGradient(fills + fills.first()),
-                                startAngle = 0f,
-                                sweepAngle = FULL_TURN * shown,
-                                useCenter = false,
-                                topLeft = Offset(inset, inset),
-                                size = arcSize,
-                                style = Stroke(stroke, cap = StrokeCap.Round),
-                            )
-                        }
-                    }
-                }
-                HeroStyle.DOTS -> {
-                    val dot = dimens.heroDot.toPx()
-                    listOf(OUTER_DOTS to 0f, INNER_DOTS to dot * 2.6f).forEach { (count, inward) ->
-                        val radius = size.minDimension / 2f - dot - inward
-                        val filled = (count * shown).toInt()
-                        for (i in 0 until count) {
-                            val angle = Math.toRadians(START_ANGLE + i * FULL_TURN / count.toDouble())
-                            val center = Offset(
-                                x = size.width / 2f + radius * cos(angle).toFloat(),
-                                y = size.height / 2f + radius * sin(angle).toFloat(),
-                            )
-                            // A gentle rhythm of sizes so the ring feels organic, not mechanical.
-                            val r = dot / 2f * DOT_SIZES[i % DOT_SIZES.size] * (if (inward > 0f) INNER_SCALE else 1f)
-                            drawCircle(if (i < filled) fills[i % fills.size] else palette.edge, radius = r, center = center)
-                        }
-                    }
-                }
-            }
-        }
+    Box(modifier = modifier.clearAndSetSemantics { contentDescription = description }, contentAlignment = Alignment.Center) {
+        Rings(listOf(RingSpec(progress, colors?.firstOrNull() ?: tokens.positive)), size = AwakenTheme.dimens.calorieRing)
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            kicker?.let { Text(it, style = type.caption, color = palette.mist) }
-            Text(value, style = type.metricXL, color = palette.bone)
-            unitLine?.let { Text(it, style = type.label, color = palette.mist, textAlign = TextAlign.Center) }
+            kicker?.let { Text(it, style = type.caption, color = tokens.textSecondary) }
+            Text(value, style = type.metricL, color = tokens.textPrimary)
+            unitLine?.let { Text(it, style = type.caption, color = tokens.textSecondary) }
         }
     }
 }
 
-/** A soft two-colour wash behind a screen's hero area (DESIGN_SYSTEM §2.1). Decorative. */
+enum class HeroStyle { RING, DOTS }
+
+// ---- Metric card ----
+
+/**
+ * Metric card (DESIGN_SYSTEM §3, Withings "Latest measurements"): icon + label top-left, [timestamp] + chevron top-right
+ * (the chevron when [onClick] is set), the big [value] with its [unit], a [secondary] line or [delta], and an optional
+ * [spark] chart on the right. One TalkBack node: [description].
+ */
 @Composable
-fun Modifier.heroWash(): Modifier {
-    val a = AwakenTheme.palette.heroWashA
-    val b = AwakenTheme.palette.heroWashB
-    return heroWash(a, b)
+fun MetricCard(
+    label: String,
+    value: String,
+    description: String,
+    modifier: Modifier = Modifier,
+    icon: ImageVector? = null,
+    iconTint: Color = AwakenTheme.colors.textPrimary,
+    unit: String? = null,
+    timestamp: String? = null,
+    secondary: String? = null,
+    delta: (@Composable () -> Unit)? = null,
+    spark: Spark? = null,
+    large: Boolean = false,
+    onClick: (() -> Unit)? = null,
+) {
+    val colors = AwakenTheme.colors
+    AwakenCard(modifier = modifier.clearAndSetSemantics { contentDescription = description }, reveal = false, onClick = onClick) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            CardLabel(label, icon, iconTint, Modifier.weight(1f))
+            timestamp?.let { Text(it, style = AwakenTheme.type.caption, color = colors.textSecondary, maxLines = 1) }
+            if (onClick != null) {
+                Icon(AwakenGlyphs.ChevronRight, contentDescription = null, tint = colors.textSecondary, modifier = Modifier.size(AwakenTheme.dimens.iconSmall))
+            }
+        }
+        Row(verticalAlignment = Alignment.Bottom) {
+            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(Spacing.xxs)) {
+                BigValue(value, unit, large = large)
+                secondary?.let { Text(it, style = AwakenTheme.type.caption, color = colors.textSecondary, maxLines = 2, overflow = TextOverflow.Ellipsis) }
+                delta?.invoke()
+            }
+            spark?.let { SparkChart(it, iconTint) }
+        }
+    }
 }
 
-private fun Modifier.heroWash(a: Color, b: Color): Modifier = drawBehind {
-    drawRect(Brush.radialGradient(listOf(a, Color.Transparent), center = Offset(size.width * 0.15f, 0f), radius = size.width * 0.9f))
-    drawRect(Brush.radialGradient(listOf(b, Color.Transparent), center = Offset(size.width * 0.9f, size.height * 0.2f), radius = size.width * 0.8f))
+/** A tiny chart at the right of a metric card: a line of [values], or mini [bars]. Values are scaled to their own max. */
+@Immutable
+data class Spark(val values: List<Float>, val bars: Boolean = false)
+
+@Composable
+private fun SparkChart(spark: Spark, color: Color) {
+    val colors = AwakenTheme.colors
+    val dimens = AwakenTheme.dimens
+    Canvas(modifier = Modifier.width(dimens.sparkWidth).height(dimens.sparkHeight)) {
+        val values = spark.values
+        if (values.isEmpty()) return@Canvas
+        val max = values.max().coerceAtLeast(MIN_SPARK_MAX)
+        if (spark.bars) {
+            val slot = size.width / values.size
+            val barWidth = slot * BAR_FILL
+            values.forEachIndexed { i, v ->
+                val h = (v / max * size.height).coerceAtLeast(barWidth)
+                drawRoundRect(
+                    color = if (v > 0f) color else colors.divider,
+                    topLeft = Offset(i * slot + (slot - barWidth) / 2f, size.height - h),
+                    size = Size(barWidth, h),
+                    cornerRadius = CornerRadius(barWidth / 2f),
+                )
+            }
+        } else {
+            val step = if (values.size > 1) size.width / (values.size - 1) else 0f
+            val path = Path()
+            values.forEachIndexed { i, v ->
+                val p = Offset(i * step, size.height - v / max * size.height)
+                if (i == 0) path.moveTo(p.x, p.y) else path.lineTo(p.x, p.y)
+            }
+            drawPath(path, color, style = Stroke(SPARK_STROKE.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round))
+            drawCircle(color, radius = SPARK_DOT.toPx(), center = Offset((values.size - 1) * step, size.height - values.last() / max * size.height))
+        }
+    }
 }
 
-/** Small uppercase label over a large value ("RESULT · High"). */
+/** Icon + label, the top-left of every card. */
+@Composable
+private fun CardLabel(label: String, icon: ImageVector?, tint: Color, modifier: Modifier = Modifier) {
+    Row(modifier = modifier, verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+        icon?.let { Icon(it, contentDescription = null, tint = tint, modifier = Modifier.size(AwakenTheme.dimens.iconSmall + Spacing.xxs)) }
+        Text(label, style = AwakenTheme.type.windowTitle, color = AwakenTheme.colors.textPrimary)
+    }
+}
+
+/** "82.0 kg": the number in the metric style, the unit smaller and secondary on the same baseline. */
+@Composable
+fun BigValue(value: String, unit: String?, modifier: Modifier = Modifier, large: Boolean = false) {
+    val type = AwakenTheme.type
+    val colors = AwakenTheme.colors
+    val number = if (large) type.metricXL else type.metricL
+    Text(
+        text = buildAnnotatedString {
+            withStyle(number.toSpanStyle()) { append(value) }
+            if (unit != null) {
+                append(" ")
+                withStyle(type.metricUnit.toSpanStyle().copy(color = colors.textSecondary)) { append(unit) }
+            }
+        },
+        style = number,
+        color = colors.textPrimary,
+        modifier = modifier,
+    )
+}
+
+// ---- Insight card ----
+
+/** "Highlights" (DESIGN_SYSTEM §3): one sentence, a small accent icon, a chevron when it opens something. */
+@Composable
+fun InsightCard(
+    text: String,
+    modifier: Modifier = Modifier,
+    icon: ImageVector = AwakenGlyphs.Sparkle,
+    tint: Color = AwakenTheme.colors.reward,
+    onClick: (() -> Unit)? = null,
+) {
+    val colors = AwakenTheme.colors
+    AwakenCard(modifier = modifier.semantics(mergeDescendants = true) {}, reveal = false, onClick = onClick) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+            IconCircle(icon, tint)
+            Text(text, style = AwakenTheme.type.body, color = colors.textPrimary, modifier = Modifier.weight(1f))
+            if (onClick != null) {
+                Icon(AwakenGlyphs.ChevronRight, contentDescription = null, tint = colors.textSecondary, modifier = Modifier.size(AwakenTheme.dimens.iconSmall))
+            }
+        }
+    }
+}
+
+/** A 36dp filled circle at 15% of [tint] with the icon in [tint]: the leading mark of list rows and insights. */
+@Composable
+fun IconCircle(icon: ImageVector, tint: Color, modifier: Modifier = Modifier, size: Dp = AwakenTheme.dimens.iconWell) {
+    Box(
+        modifier = modifier
+            .size(size)
+            .clip(AwakenTheme.shapes.pill)
+            .background(tint.copy(alpha = ICON_WASH)),
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(size * ICON_IN_CIRCLE))
+    }
+}
+
+// ---- List row ----
+
+/**
+ * List row (DESIGN_SYSTEM §3): leading [IconCircle], title (17sp), secondary line, trailing control. The whole row is
+ * one target when [onClick] is set. Use inside a card; rows separate by spacing, not lines.
+ */
+@Composable
+fun ListRow(
+    title: String,
+    modifier: Modifier = Modifier,
+    icon: ImageVector? = null,
+    iconTint: Color = AwakenTheme.colors.textPrimary,
+    secondary: String? = null,
+    onClick: (() -> Unit)? = null,
+    trailing: (@Composable RowScope.() -> Unit)? = null,
+) {
+    val colors = AwakenTheme.colors
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .defaultMinSize(minHeight = AwakenTheme.dimens.touchTarget + Spacing.xs)
+            .then(if (onClick != null) Modifier.clip(AwakenTheme.shapes.inner).clickable(onClick = onClick) else Modifier)
+            .padding(vertical = Spacing.xxs),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+    ) {
+        icon?.let { IconCircle(it, iconTint) }
+        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(Spacing.xxs / 2)) {
+            Text(title, style = AwakenTheme.type.windowTitle, color = colors.textPrimary)
+            secondary?.let { Text(it, style = AwakenTheme.type.caption, color = colors.textSecondary) }
+        }
+        trailing?.invoke(this)
+    }
+}
+
+// ---- Small pieces ----
+
+/** Small sentence-case label over a value ("Result · High"). */
 @Composable
 fun MetricLabel(label: String, value: String, modifier: Modifier = Modifier, valueColor: Color? = null, large: Boolean = false) {
-    val palette = AwakenTheme.palette
+    val colors = AwakenTheme.colors
     val type = AwakenTheme.type
     Column(modifier = modifier.semantics(mergeDescendants = true) {}, verticalArrangement = Arrangement.spacedBy(Spacing.xxs)) {
-        Text(label.uppercase(LocalConfiguration.current.locales[0]), style = type.overline, color = palette.mist)
-        Text(value, style = if (large) type.metricL else type.numeric, color = valueColor ?: palette.bone, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Text(label, style = type.overline, color = colors.textSecondary)
+        Text(value, style = if (large) type.metricL else type.numeric, color = valueColor ?: colors.textPrimary)
     }
 }
 
 enum class Trend { UP, DOWN, FLAT }
 
-/** A small trend pill: "+3.6 %" with an arrow, green for up, ember for down, grey when flat. */
+/** Delta pill (Withings "+0.0 kg"): a 15% wash of positive / negative / neutral, an arrow, ink text. */
 @Composable
 fun TrendPill(text: String, trend: Trend, modifier: Modifier = Modifier) {
-    val palette = AwakenTheme.palette
+    val colors = AwakenTheme.colors
     val color = when (trend) {
-        Trend.UP -> palette.verified
-        Trend.DOWN -> palette.ember
-        Trend.FLAT -> palette.mist
+        Trend.UP -> colors.positive
+        Trend.DOWN -> colors.critical
+        Trend.FLAT -> colors.textSecondary
     }
     Pill(
         text = text,
@@ -180,138 +365,119 @@ fun TrendPill(text: String, trend: Trend, modifier: Modifier = Modifier) {
         icon = when (trend) {
             Trend.UP -> AwakenGlyphs.ArrowUp
             Trend.DOWN -> AwakenGlyphs.ArrowDown
-            Trend.FLAT -> null
+            Trend.FLAT -> AwakenGlyphs.ChevronRight
         },
         modifier = modifier,
     )
 }
 
-/** Week / Month / Quarter / Year: a soft segmented control. Each option is a 48dp radio. */
+/** The v2 name for [TrendPill]. */
+@Composable
+fun DeltaPill(text: String, trend: Trend, modifier: Modifier = Modifier) = TrendPill(text, trend, modifier)
+
+/**
+ * Segmented control (Week / Month / Year, Front / Back): a pressed-colour track with the selected segment in the card
+ * colour. Each segment is a 48dp tab.
+ */
 @Composable
 fun SegmentedTabs(options: List<String>, selected: Int, onSelect: (Int) -> Unit, modifier: Modifier = Modifier) {
-    val palette = AwakenTheme.palette
+    val colors = AwakenTheme.colors
     val shape = AwakenTheme.shapes.pill
     Row(
         modifier = modifier
             .clip(shape)
-            .background(palette.panelRaised)
-            .padding(Spacing.xxs),
-        horizontalArrangement = Arrangement.spacedBy(Spacing.xxs),
+            .background(colors.surfaceOverlay)
+            .padding(Spacing.xxs / 2)
+            .selectableGroup(),
     ) {
         options.forEachIndexed { index, option ->
             val isSelected = index == selected
             Box(
                 modifier = Modifier
                     .weight(1f)
-                    .defaultMinSize(minHeight = AwakenTheme.dimens.touchTarget - Spacing.xs)
+                    .defaultMinSize(minHeight = AwakenTheme.dimens.segmentedHeight)
                     .clip(shape)
-                    .background(if (isSelected) palette.panel else Color.Transparent)
-                    .selectable(selected = isSelected, role = Role.Tab, onClick = { onSelect(index) }),
+                    .background(if (isSelected) colors.surfaceSelected else Color.Transparent)
+                    .selectable(selected = isSelected, role = Role.Tab, onClick = { onSelect(index) })
+                    .padding(horizontal = Spacing.sm),
                 contentAlignment = Alignment.Center,
             ) {
-                Text(option, style = AwakenTheme.type.label, color = if (isSelected) palette.bone else palette.mist)
+                Text(option, style = AwakenTheme.type.label, color = if (isSelected) colors.textPrimary else colors.textSecondary, maxLines = 1)
             }
         }
     }
 }
 
-/** A stat's card (Withings-style "Following" row): its pastel, glyph well, name and a short status. */
+/** The v2 name for [SegmentedTabs]. */
+@Composable
+fun SegmentedControl(options: List<String>, selected: Int, onSelect: (Int) -> Unit, modifier: Modifier = Modifier) =
+    SegmentedTabs(options, selected, onSelect, modifier)
+
+/** A stat card: its glyph in a tinted circle, the name and a short status. Card colour, never a stat wash. */
 @Composable
 fun StatTintCard(stat: Stat, title: String, value: String, modifier: Modifier = Modifier, onClick: (() -> Unit)? = null) {
-    val palette = AwakenTheme.palette
-    val shape = AwakenTheme.shapes.window
-    Column(
-        modifier = modifier
-            .clip(shape)
-            .background(palette.statTint(stat))
-            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
-            .semantics(mergeDescendants = true) {}
-            .padding(Spacing.md),
-        verticalArrangement = Arrangement.spacedBy(Spacing.xs),
-    ) {
-        Box(
-            modifier = Modifier
-                .size(AwakenTheme.dimens.iconWell)
-                .clip(AwakenTheme.shapes.pill)
-                .background(palette.panel.copy(alpha = WELL_ALPHA)),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(AwakenGlyphs.stat(stat), contentDescription = null, tint = palette.stat(stat), modifier = Modifier.size(AwakenTheme.dimens.icon))
-        }
-        Text(title, style = AwakenTheme.type.title, color = palette.bone, maxLines = 1, overflow = TextOverflow.Ellipsis)
-        Text(value, style = AwakenTheme.type.label, color = palette.stat(stat))
+    val colors = AwakenTheme.colors
+    AwakenCard(modifier = modifier.semantics(mergeDescendants = true) {}, reveal = false, onClick = onClick) {
+        IconCircle(AwakenGlyphs.stat(stat), colors.stat(stat))
+        Text(title, style = AwakenTheme.type.windowTitle, color = colors.textPrimary)
+        Text(value, style = AwakenTheme.type.caption, color = colors.textSecondary)
     }
 }
 
-/** Screen greeting ("Good afternoon, Assis") with a quiet subtitle and room for header actions. */
+/**
+ * The large title ("Good morning, Sam", 34sp bold) at full width, under a row with the quiet [subtitle] (the date) on
+ * the left and the header [actions] on the right, so the title never shares its line.
+ */
 @Composable
 fun GreetingHeader(greeting: String, modifier: Modifier = Modifier, subtitle: String? = null, actions: @Composable RowScope.() -> Unit = {}) {
-    val palette = AwakenTheme.palette
-    Row(modifier = modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(Spacing.xxs)) {
-            Text(greeting, style = AwakenTheme.type.headline, color = palette.bone, modifier = Modifier.semantics { heading() })
-            subtitle?.let { Text(it, style = AwakenTheme.type.body, color = palette.mist) }
+    val colors = AwakenTheme.colors
+    Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(Spacing.xxs)) {
+        Row(
+            modifier = Modifier.fillMaxWidth().defaultMinSize(minHeight = AwakenTheme.dimens.touchTarget),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(subtitle.orEmpty(), style = AwakenTheme.type.label, color = colors.textSecondary, modifier = Modifier.weight(1f))
+            Row(horizontalArrangement = Arrangement.spacedBy(Spacing.xs), content = actions)
         }
-        actions()
+        Text(greeting, style = AwakenTheme.type.headline, color = colors.textPrimary, modifier = Modifier.semantics { heading() })
     }
 }
 
-/** A round header action (Gates, Vault, settings): an icon on a soft well, 48dp target. */
+/** A round header action (Gates, Vault, settings): an ink icon on a card-coloured circle, 48dp target. */
 @Composable
 fun HeaderIconButton(icon: ImageVector, description: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
-    val palette = AwakenTheme.palette
+    val colors = AwakenTheme.colors
     IconButton(onClick = onClick, modifier = modifier.size(AwakenTheme.dimens.touchTarget)) {
         Box(
             modifier = Modifier
-                .size(AwakenTheme.dimens.iconWell)
+                .size(AwakenTheme.dimens.touchTarget - Spacing.xxs)
                 .clip(AwakenTheme.shapes.pill)
-                .background(palette.panel)
-                .border(AwakenTheme.dimens.hairline, palette.edge, AwakenTheme.shapes.pill),
+                .background(colors.surfaceElevated),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(icon, contentDescription = description, tint = palette.bone, modifier = Modifier.size(AwakenTheme.dimens.icon * ICON_IN_WELL))
+            Icon(icon, contentDescription = description, tint = colors.textPrimary, modifier = Modifier.size(AwakenTheme.dimens.icon * ICON_IN_BUTTON))
         }
     }
 }
 
-/** An insight or daily line on a soft lavender-to-peach wash, with a sparkle (DESIGN_SYSTEM §8.1). */
+/** A section heading on a screen ("Morning", 22sp semibold) with an optional trailing caption. */
 @Composable
-fun InsightCard(title: String, body: String, modifier: Modifier = Modifier, onClick: (() -> Unit)? = null) {
-    val palette = AwakenTheme.palette
-    val shape = AwakenTheme.shapes.window
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .clip(shape)
-            .background(Brush.horizontalGradient(listOf(palette.heroWashA, palette.heroWashB)))
-            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
-            .semantics(mergeDescendants = true) {}
-            .padding(Spacing.md),
-        horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
-    ) {
-        Box(
-            modifier = Modifier
-                .size(AwakenTheme.dimens.iconWell)
-                .clip(AwakenTheme.shapes.pill)
-                .background(palette.panel),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(AwakenGlyphs.Sparkle, contentDescription = null, tint = palette.system, modifier = Modifier.size(AwakenTheme.dimens.icon * ICON_IN_WELL))
-        }
-        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(Spacing.xxs)) {
-            Text(title, style = AwakenTheme.type.label, color = palette.mist)
-            Text(body, style = AwakenTheme.type.body, color = palette.bone)
-        }
+fun SectionTitle(title: String, modifier: Modifier = Modifier, trailing: String? = null) {
+    Row(modifier = modifier.fillMaxWidth().padding(top = Spacing.md, bottom = Spacing.xxs), verticalAlignment = Alignment.Bottom) {
+        Text(title, style = AwakenTheme.type.section, color = AwakenTheme.colors.textPrimary, modifier = Modifier.weight(1f).semantics { heading() })
+        trailing?.let { Text(it, style = AwakenTheme.type.caption, color = AwakenTheme.colors.textSecondary) }
     }
 }
+
+// ---- Time blocks (Today, GD §14.5) ----
 
 enum class TimeBlock { MORNING, DAY, EVENING, ANYTIME }
 
 enum class BlockState { PAST, CURRENT, UPCOMING }
 
 /**
- * Header of a time block on Today's timeline (DESIGN_SYSTEM §8.1): glyph, name, "2 of 3 done" and a chevron. The current
- * block is marked "Now"; past blocks can be collapsed. One 48dp toggle with its state announced.
+ * Header of a time block on Today (DESIGN_SYSTEM §8.1): the block name as a section title, "2 of 3 done", a "Now" chip
+ * on the current block and a chevron. One 48dp toggle with its state announced.
  */
 @Composable
 fun TimeBlockHeader(
@@ -323,16 +489,14 @@ fun TimeBlockHeader(
     onToggle: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val palette = AwakenTheme.palette
+    val colors = AwakenTheme.colors
     val name = lexString(block.nameRes)
     val progress = lexString(R.string.time_block_progress, done, total)
     val stateText = lexString(if (expanded) R.string.state_expanded else R.string.state_collapsed)
-    val tint = if (state == BlockState.PAST) palette.mist else palette.bone
     Row(
         modifier = modifier
             .fillMaxWidth()
             .defaultMinSize(minHeight = AwakenTheme.dimens.touchTarget)
-            .clip(AwakenTheme.shapes.inner)
             .clickable(onClick = onToggle)
             .semantics(mergeDescendants = true) {
                 heading()
@@ -341,16 +505,16 @@ fun TimeBlockHeader(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
     ) {
-        Icon(block.glyph, contentDescription = null, tint = if (state == BlockState.CURRENT) palette.system else tint, modifier = Modifier.size(AwakenTheme.dimens.icon))
-        Text(name, style = AwakenTheme.type.title, color = tint)
+        Text(name, style = AwakenTheme.type.section, color = if (state == BlockState.PAST) colors.textSecondary else colors.textPrimary)
         if (state == BlockState.CURRENT) {
-            Pill(lexString(R.string.time_block_now), palette.system)
+            Pill(lexString(R.string.time_block_now), colors.textPrimary, background = colors.surfaceElevated)
         }
-        Text(progress, style = AwakenTheme.type.label, color = palette.mist, modifier = Modifier.weight(1f), textAlign = TextAlign.End)
+        Spacer(Modifier.weight(1f))
+        Text(progress, style = AwakenTheme.type.caption, color = colors.textSecondary)
         Icon(
             if (expanded) AwakenGlyphs.ChevronDown else AwakenGlyphs.ChevronRight,
             contentDescription = null,
-            tint = palette.mist,
+            tint = colors.textSecondary,
             modifier = Modifier.size(AwakenTheme.dimens.iconSmall),
         )
     }
@@ -372,91 +536,97 @@ val TimeBlock.glyph: ImageVector
         TimeBlock.ANYTIME -> AwakenGlyphs.Clock
     }
 
-/** Level, rank and XP as one compact card: the game, kept small and elegant. */
+// ---- Level and streak ----
+
+/** Level as a metric card: the number large, XP toward the next level and a slim bar. */
 @Composable
 fun LevelModule(level: Int, rank: Rank, xpIntoLevel: Long, xpForLevel: Long, modifier: Modifier = Modifier, onClick: (() -> Unit)? = null) {
-    val palette = AwakenTheme.palette
+    val colors = AwakenTheme.colors
     val description = lexString(R.string.cd_level_module, level, rank.name, formatCount(xpIntoLevel), formatCount(xpForLevel))
-    ModuleSurface(modifier, onClick, description) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-            RankCrest(rank, AwakenTheme.dimens.crestSmall)
-            Column(verticalArrangement = Arrangement.spacedBy(Spacing.xxs)) {
-                Text(lexString(R.string.level_long, level), style = AwakenTheme.type.title, color = palette.bone)
-                Text(lexString(R.string.xp_progress, formatCount(xpIntoLevel), formatCount(xpForLevel)), style = AwakenTheme.type.caption, color = palette.mist)
-            }
-        }
+    AwakenCard(modifier = modifier.clearAndSetSemantics { contentDescription = description }, reveal = false, onClick = onClick) {
+        CardLabel(lexString(R.string.metric_level), AwakenGlyphs.Level, colors.reward)
+        BigValue(formatCount(level), unit = null)
+        Text(lexString(R.string.rank_line, rank.name), style = AwakenTheme.type.caption, color = colors.textSecondary)
+        Spacer(Modifier.weight(1f))
         XpBar(level = level, xpIntoLevel = xpIntoLevel, xpForLevel = xpForLevel, showLabel = false)
+        Text(lexString(R.string.xp_progress, formatCount(xpIntoLevel), formatCount(xpForLevel)), style = AwakenTheme.type.caption, color = colors.textSecondary)
     }
 }
 
-/** The streak as a compact card: flame, the count large, the best underneath. */
+/** The streak as a metric card: flame, the count large with "days", the best underneath. */
 @Composable
 fun StreakModule(streak: Int, best: Int, modifier: Modifier = Modifier, onClick: (() -> Unit)? = null) {
-    val palette = AwakenTheme.palette
+    val colors = AwakenTheme.colors
     val description = lexString(R.string.cd_streak_module, streak, best)
-    ModuleSurface(modifier, onClick, description) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
-            Box(
-                modifier = Modifier
-                    .size(AwakenTheme.dimens.crestSmall)
-                    .clip(AwakenTheme.shapes.pill)
-                    .background(palette.tintStr),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(AwakenGlyphs.Flame, contentDescription = null, tint = palette.statStr, modifier = Modifier.size(AwakenTheme.dimens.icon))
-            }
-            Column {
-                Text(formatCount(streak), style = AwakenTheme.type.numeric, color = palette.bone)
-                Text(lexString(R.string.streak_label), style = AwakenTheme.type.caption, color = palette.mist)
-            }
-        }
-        Text(lexString(R.string.best_streak_label, best), style = AwakenTheme.type.caption, color = palette.mist)
+    AwakenCard(modifier = modifier.clearAndSetSemantics { contentDescription = description }, reveal = false, onClick = onClick) {
+        CardLabel(lexString(R.string.metric_streak), AwakenGlyphs.Flame, colors.stat(Stat.CHA))
+        BigValue(formatCount(streak), unit = null)
+        Text(lexString(R.string.unit_days_line), style = AwakenTheme.type.caption, color = colors.textSecondary)
+        Spacer(Modifier.weight(1f))
+        Text(lexString(R.string.best_streak_label, best), style = AwakenTheme.type.caption, color = colors.textSecondary)
     }
 }
 
+// ---- Skeleton ----
+
+/** Skeleton loader: quiet static blocks in the pressed colour where content will land. Never pulses. */
 @Composable
-private fun ModuleSurface(modifier: Modifier, onClick: (() -> Unit)?, description: String, content: @Composable () -> Unit) {
-    val palette = AwakenTheme.palette
-    val shape = AwakenTheme.shapes.window
-    Column(
-        modifier = modifier
-            .clip(shape)
-            .background(palette.panel)
-            .border(AwakenTheme.dimens.hairline, if (palette.glow) palette.system.copy(alpha = AwakenAlpha.GLOW) else palette.edge, shape)
-            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
-            .clearAndSetSemantics { contentDescription = description }
-            .padding(Spacing.md),
-        verticalArrangement = Arrangement.spacedBy(Spacing.sm),
-    ) {
-        content()
+fun SkeletonCard(modifier: Modifier = Modifier, lines: Int = 3) {
+    val colors = AwakenTheme.colors
+    val dimens = AwakenTheme.dimens
+    AwakenCard(modifier = modifier.clearAndSetSemantics { }, reveal = false) {
+        repeat(lines) { i ->
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth(if (i == 0) SKELETON_FIRST else if (i == lines - 1) SKELETON_LAST else 1f)
+                    .height(if (i == 0) dimens.skeletonLine * 2 else dimens.skeletonLine)
+                    .clip(AwakenTheme.shapes.pill)
+                    .background(colors.surfaceOverlay),
+            )
+        }
     }
+}
+
+/** Fills the available space with a ring track; used while a ring card's numbers load. */
+@Composable
+fun SkeletonRing(modifier: Modifier = Modifier) {
+    Box(modifier = modifier.fillMaxSize()) { Rings(emptyList()) }
 }
 
 private const val FULL_TURN = 360f
-private const val START_ANGLE = -90.0
-private const val OUTER_DOTS = 72
-private const val INNER_DOTS = 54
-private const val INNER_SCALE = 0.75f
-private val DOT_SIZES = floatArrayOf(1f, 0.7f, 0.85f, 0.6f, 0.95f)
-private const val WELL_ALPHA = 0.7f
-private const val ICON_IN_WELL = 0.85f
+private const val START_ANGLE = -90f
+private const val MIN_SWEEP = 0.5f
+/** Space between concentric rings, as a fraction of the stroke. */
+private const val RING_GAP = 0.25f
+private const val ICON_WASH = 0.15f
+private const val ICON_IN_CIRCLE = 0.5f
+private const val ICON_IN_BUTTON = 0.85f
+private const val BAR_FILL = 0.55f
+private const val MIN_SPARK_MAX = 0.0001f
+private val SPARK_STROKE = Spacing.xxs / 2
+private val SPARK_DOT = Spacing.xxs * 0.75f
+private const val SKELETON_FIRST = 0.4f
+private const val SKELETON_LAST = 0.6f
 
 @ComponentPreview
 @Composable
-private fun HeroRingPreview() {
+private fun RingCardPreview() {
     AwakenTheme {
-        Row(modifier = Modifier.padding(Spacing.gutter), horizontalArrangement = Arrangement.spacedBy(Spacing.md)) {
-            HeroRing(value = "3", unitLine = "of 5 done", kicker = "Today", progress = 0.6f, description = "3 of 5 done", modifier = Modifier.weight(1f))
-        }
-    }
-}
-
-@ComponentPreview
-@Composable
-private fun HeroDotsPreview() {
-    AwakenTheme {
-        Box(modifier = Modifier.padding(Spacing.gutter)) {
-            HeroRing(value = "61", unitLine = "out of 100", kicker = "12–18 Feb", progress = 0.61f, description = "61 out of 100", style = HeroStyle.DOTS)
+        Column(modifier = Modifier.padding(Spacing.gutter), verticalArrangement = Arrangement.spacedBy(Spacing.cardGap)) {
+            RingCard(
+                label = "Today",
+                value = "3",
+                unit = "of 10",
+                secondary = "done today",
+                rings = listOf(RingSpec(0.3f, AwakenTheme.colors.positive)),
+                description = "3 of 10 done today",
+            )
+            RingCard(
+                label = "Stats",
+                value = "61",
+                rings = Stat.entries.take(3).mapIndexed { i, s -> RingSpec(0.4f + i * 0.2f, AwakenTheme.colors.stat(s)) },
+                description = "",
+            )
         }
     }
 }
@@ -465,27 +635,51 @@ private fun HeroDotsPreview() {
 @Composable
 private fun ModulesPreview() {
     AwakenTheme {
-        Column(modifier = Modifier.padding(Spacing.gutter), verticalArrangement = Arrangement.spacedBy(Spacing.md)) {
-            GreetingHeader(greeting = "Good afternoon, Assis", subtitle = "Tuesday, 27 October") {
+        Column(modifier = Modifier.padding(Spacing.gutter), verticalArrangement = Arrangement.spacedBy(Spacing.cardGap)) {
+            GreetingHeader(greeting = "Good morning, Assis", subtitle = "Tuesday, 27 October") {
                 HeaderIconButton(AwakenGlyphs.Portal, "Open focus sessions", onClick = {})
             }
-            InsightCard(title = "Daily focus", body = "INT is falling behind. One short study block puts it back on track.")
-            Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-                LevelModule(level = 24, rank = Rank.C, xpIntoLevel = 1_240, xpForLevel = 1_434, modifier = Modifier.weight(1.4f))
+            Row(horizontalArrangement = Arrangement.spacedBy(Spacing.cardGap)) {
+                LevelModule(level = 24, rank = Rank.C, xpIntoLevel = 1_240, xpForLevel = 1_434, modifier = Modifier.weight(1f))
                 StreakModule(streak = 12, best = 30, modifier = Modifier.weight(1f))
             }
-            Row(horizontalArrangement = Arrangement.spacedBy(Spacing.md)) {
-                MetricLabel("Result", "High")
-                MetricLabel("Trend", "+3.6%")
-                TrendPill("+2 points", Trend.UP)
+            InsightCard("INT is falling behind. One short study block puts it back on track.", onClick = {})
+            MetricCard(
+                label = "Steps",
+                value = "8,412",
+                timestamp = "10:50",
+                secondary = "84% of goal",
+                icon = AwakenGlyphs.Vitality,
+                iconTint = AwakenTheme.colors.stat(Stat.VIT),
+                spark = Spark(listOf(2f, 5f, 3f, 6f, 4f, 7f, 8f), bars = true),
+                description = "",
+                onClick = {},
+            )
+            MetricCard(
+                label = "Body weight",
+                value = "82.0",
+                unit = "kg",
+                timestamp = "03:52",
+                icon = AwakenGlyphs.Strength,
+                iconTint = AwakenTheme.colors.stat(Stat.STR),
+                delta = { DeltaPill("+0.0 kg", Trend.FLAT) },
+                spark = Spark(listOf(82.4f, 82.1f, 82.3f, 82f, 82f)),
+                description = "",
+                onClick = {},
+            )
+            SegmentedControl(listOf("Week", "Month", "Year"), selected = 0, onSelect = {})
+            AwakenCard(reveal = false) {
+                ListRow("Morning run", icon = AwakenGlyphs.Vitality, iconTint = AwakenTheme.colors.stat(Stat.VIT), secondary = "30 min · +40 XP")
+                ListRow("Read 20 pages", icon = AwakenGlyphs.Intelligence, iconTint = AwakenTheme.colors.stat(Stat.INT), secondary = "+25 XP")
             }
-            SegmentedTabs(listOf("Week", "Month", "Quarter", "Year"), selected = 1, onSelect = {})
-            Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-                StatTintCard(Stat.STR, "Strength", "+2 levels", modifier = Modifier.weight(1f))
-                StatTintCard(Stat.INT, "Intellect", "Stable", modifier = Modifier.weight(1f))
+            Row(horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+                TrendPill("+2", Trend.UP)
+                TrendPill("−1", Trend.DOWN)
+                TrendPill("0", Trend.FLAT)
             }
             TimeBlockHeader(TimeBlock.MORNING, done = 2, total = 3, state = BlockState.PAST, expanded = false, onToggle = {})
             TimeBlockHeader(TimeBlock.DAY, done = 0, total = 2, state = BlockState.CURRENT, expanded = true, onToggle = {})
+            SkeletonCard()
         }
     }
 }
