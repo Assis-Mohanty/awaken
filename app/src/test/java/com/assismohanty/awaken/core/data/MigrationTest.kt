@@ -251,6 +251,31 @@ class MigrationTest {
     }
 
     @Test
+    fun v10To11GivesExistingHuntersNoIdentities() = runTest {
+        val path = createFromSchema(10)
+        SQLiteDatabase.openDatabase(path, null, SQLiteDatabase.OPEN_READWRITE).use { db ->
+            db.execSQL(
+                "INSERT INTO hunter_profile (id, hunter_id, name, created_at, first_game_date, focus_stat_1, focus_stat_2, " +
+                    "day_start_hour, theme_id, onboarding_done, owned_equipment, injury_mode, health_enabled) " +
+                    "VALUES ('me', 'h', 'Assis', 0, '2026-10-18', 'STR', 'INT', 4, 'default', 1, '', 0, 0)",
+            )
+        }
+
+        val db = Room.databaseBuilder(context, AwakenDatabase::class.java, path)
+            .addMigrations(*ALL_MIGRATIONS)
+            .allowMainThreadQueries()
+            .build()
+        try {
+            val profile = db.hunterDao().getProfile()
+            assertThat(profile?.name).isEqualTo("Assis")
+            assertThat(profile?.identityIds).isEmpty()
+            assertThat(db.openHelper.readableDatabase.version).isEqualTo(AwakenDatabase.SCHEMA_VERSION)
+        } finally {
+            db.close()
+        }
+    }
+
+    @Test
     fun v4To5AddsThePathTablesAndKeepsExistingQuests() = runTest {
         val path = createFromSchema(4)
         SQLiteDatabase.openDatabase(path, null, SQLiteDatabase.OPEN_READWRITE).use { db ->

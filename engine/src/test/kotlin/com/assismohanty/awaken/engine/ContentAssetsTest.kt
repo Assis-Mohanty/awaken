@@ -139,4 +139,11 @@ class ContentAssetsTest {
         lines.getValue("streak_milestone").jsonArray.forEach { assertThat(it.jsonPrimitive.content).contains("{streak}") }
         (lines - "streak_milestone").values.flatMap { it.jsonArray }.forEach { assertThat(it.jsonPrimitive.content).doesNotContain("{") }
     }
+
+    @Test
+    fun `identities file has the 12 launch identities and passes validation`() {
+        val catalog = IdentityCatalog.parse(resource("identities.json"))
+        assertWithMessage(catalog.validate().joinToString("\n")).that(catalog.validate()).isEmpty()
+        assertThat(catalog.identities).hasSize(12)
+    }
 }

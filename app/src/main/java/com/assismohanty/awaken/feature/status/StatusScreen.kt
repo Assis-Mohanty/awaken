@@ -36,6 +36,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.assismohanty.awaken.R
 import com.assismohanty.awaken.core.designsystem.components.HeaderIconButton
 import com.assismohanty.awaken.core.designsystem.components.LargeTitleScaffold
+import com.assismohanty.awaken.core.designsystem.components.identityLine
+import com.assismohanty.awaken.core.designsystem.components.identityPhraseRes
 import com.assismohanty.awaken.core.designsystem.components.LevelModule
 import com.assismohanty.awaken.core.designsystem.components.ListRow
 import com.assismohanty.awaken.core.designsystem.components.MetricCard
@@ -130,6 +132,9 @@ fun StatusScreen(
         if (header == null) {
             SkeletonCard()
             return@LargeTitleScaffold
+        }
+        identityLine(state.identityIds.mapNotNull { id -> identityPhraseRes(id)?.let { lexString(it) } })?.let { line ->
+            Text(line, style = AwakenTheme.type.body, color = AwakenTheme.colors.textSecondary)
         }
         // Level and gold side by side, equal heights.
         Row(modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(Spacing.cardGap)) {
@@ -468,6 +473,7 @@ internal fun previewStatusState(locked: Boolean = false): StatusUiState {
         weeklyOpen = !locked,
         projectedRecalibration = if (locked) emptyMap() else mapOf(Stat.STR to DifficultyAdapter.Change.UP),
         consistency = if (locked) ConsistencyScore(0, 0) else ConsistencyScore(cleared = 22, eligible = 28),
+        identityIds = if (locked) emptyList() else listOf("trains", "reads"),
     )
 }
 

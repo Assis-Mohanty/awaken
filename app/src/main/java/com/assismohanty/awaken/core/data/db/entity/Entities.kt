@@ -58,12 +58,19 @@ data class HunterProfileEntity(
     @ColumnInfo(name = "last_recalibrated_on") val lastRecalibratedOn: LocalDate? = null,
     /** First game-day Screen Discipline runs (GD §6.7); null = off. Turning it on sets tomorrow (ENGINE_DECISIONS #88). */
     @ColumnInfo(name = "screen_time_from") val screenTimeFrom: LocalDate? = null,
+    /** Chosen identity ids in pick order, comma-separated (GD §14.7); empty = none. Order matters, so not a Set column. */
+    @ColumnInfo(name = "identities", defaultValue = "") val identities: String = "",
 ) {
     val focusStats: List<Stat> get() = listOf(focusStat1, focusStat2)
+
+    val identityIds: List<String> get() = identities.split(IDENTITY_SEPARATOR).filter { it.isNotEmpty() }
 
     companion object {
         const val SINGLETON_ID = "me"
         const val DEFAULT_THEME_ID = "default"
+        const val IDENTITY_SEPARATOR = ","
+
+        fun identitiesOf(ids: List<String>): String = ids.joinToString(IDENTITY_SEPARATOR)
     }
 }
 

@@ -51,6 +51,10 @@ object ExportUpgrade {
         if (current.app == ExportDocument.APP_ID && current.schemaVersion == 9) {
             current = current.copy(schemaVersion = 10)
         }
+        // v10 → v11 (identities): the new profile column defaults to empty (= none), so old rows import as they are.
+        if (current.app == ExportDocument.APP_ID && current.schemaVersion == 10) {
+            current = current.copy(schemaVersion = 11)
+        }
         return current
     }
 }

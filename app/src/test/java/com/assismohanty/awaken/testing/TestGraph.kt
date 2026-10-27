@@ -15,6 +15,7 @@ import com.assismohanty.awaken.core.data.repo.GameStateReader
 import com.assismohanty.awaken.core.data.repo.LedgerRepository
 import com.assismohanty.awaken.core.data.repo.NarrativeRepository
 import com.assismohanty.awaken.core.data.repo.NoticeStore
+import com.assismohanty.awaken.core.data.repo.IdentityRepository
 import com.assismohanty.awaken.core.data.repo.TemplateRepository
 import com.assismohanty.awaken.core.data.repo.TransactionRunner
 import com.assismohanty.awaken.core.domain.AcceptPlanUseCase
@@ -146,6 +147,7 @@ class TestGraph(
     val transactions = TransactionRunner(db)
     val ledger = LedgerRepository(db.ledgerDao(), transactions)
     val templates = TemplateRepository(context, Dispatchers.Unconfined)
+    val identities = IdentityRepository(context, Dispatchers.Unconfined)
     val health = FakeHealthGateway()
     val reader = GameStateReader(
         db.hunterDao(), db.questDao(), db.completionDao(), db.ledgerDao(), db.dayRecordDao(),
@@ -228,8 +230,8 @@ class TestGraph(
     val equipCosmetic = EquipCosmeticUseCase(db.hunterDao(), db.ownedCosmeticDao())
     val observeVault = ObserveVaultUseCase(db.hunterDao(), db.ownedCosmeticDao(), db.trialDao(), ledger)
     val porter = GameDataPorter(db, ledger, transactions, clock, Dispatchers.Unconfined)
-    val updateSettings = UpdateSettingsUseCase(db.hunterDao(), templates, clock)
-    val observeSettings = ObserveSettingsUseCase(db.hunterDao(), templates)
+    val updateSettings = UpdateSettingsUseCase(db.hunterDao(), templates, identities, clock)
+    val observeSettings = ObserveSettingsUseCase(db.hunterDao(), templates, identities)
     val healthSync = HealthSyncUseCase(db.hunterDao(), db.questDao(), health, completeQuest, completionCenter, clock)
     val enableHealth = EnableHealthUseCase(db.hunterDao(), health, healthSync)
     val buildReminder = BuildReminderUseCase(db.hunterDao(), db.questDao(), db.dayRecordDao(), runRollover, clock)

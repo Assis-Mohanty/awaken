@@ -66,6 +66,10 @@ interface HunterDao {
     @Query("UPDATE hunter_profile SET owned_equipment = :equipment WHERE id = 'me'")
     suspend fun setOwnedEquipment(equipment: Set<String>)
 
+    /** Comma-separated identity ids in pick order (GD §14.7). */
+    @Query("UPDATE hunter_profile SET identities = :identities WHERE id = 'me'")
+    suspend fun setIdentities(identities: String)
+
     @Query("UPDATE hunter_profile SET health_enabled = :enabled WHERE id = 'me'")
     suspend fun setHealthEnabled(enabled: Boolean)
 

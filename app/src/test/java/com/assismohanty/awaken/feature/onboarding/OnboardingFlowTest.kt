@@ -37,7 +37,7 @@ class OnboardingFlowTest {
         composeRule.onNodeWithText(text, substring = substring).performScrollTo().performClick()
 
     private fun newViewModel() = OnboardingViewModel(
-        graph.completeOnboarding, graph.completionCenter, graph.health, graph.grantConsent, graph.createPath,
+        graph.completeOnboarding, graph.completionCenter, graph.health, graph.grantConsent, graph.createPath, graph.identities,
     )
 
     /** Welcome through Health Connect, ending on step 6 "Your first Path". */
@@ -45,6 +45,7 @@ class OnboardingFlowTest {
         click("Accept")
         composeRule.onNode(hasSetTextAction()).performTextInput("Jinwoo")
         click("Continue")
+        click("Skip")
         click("Strength", substring = true)
         click("Intelligence", substring = true)
         click("Continue")
@@ -89,6 +90,37 @@ class OnboardingFlowTest {
             assertThat(path.primaryStat).isEqualTo(Stat.VIT)
             assertThat(graph.aiPrefs.hasConsent()).isTrue()
         }
+    }
+
+    @Test
+    fun identityPicksPreselectFocusAndAreSavedInOrder() {
+        val viewModel = newViewModel()
+        composeRule.setContent { AwakenTheme(presentation = PresentationMode.SYSTEM) { OnboardingRoute(viewModel = viewModel) } }
+
+        click("Accept")
+        composeRule.onNode(hasSetTextAction()).performTextInput("Jinwoo")
+        click("Continue")
+        click("Someone who reads")
+        click("Someone who trains")
+        click("Someone who ships")
+        click("Someone who runs")
+        composeRule.onNodeWithText("Pick up to 3").assertExists()
+        click("Continue")
+
+        assertThat(viewModel.uiState.value.step).isEqualTo(OnboardingStep.FOCUS)
+        assertThat(viewModel.uiState.value.focus).containsExactly(Stat.INT, Stat.STR)
+        click("Continue")
+        click("Sometimes")
+        click("1–3")
+        click("7h+")
+        click("Continue")
+        click("Not now")
+        click("Skip")
+        click("Continue")
+        click("Enter")
+        awaitAwakened()
+
+        runBlocking { assertThat(graph.db.hunterDao().getProfile()?.identityIds).containsExactly("reads", "trains", "ships").inOrder() }
     }
 
     @Test

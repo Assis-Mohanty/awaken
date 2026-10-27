@@ -4,6 +4,7 @@ import com.assismohanty.awaken.core.data.clock.Clock
 import com.assismohanty.awaken.core.data.clock.gameDate
 import com.assismohanty.awaken.core.data.repo.TransactionRunner
 import com.assismohanty.awaken.engine.Awakening
+import com.assismohanty.awaken.engine.IdentityCatalog
 import com.assismohanty.awaken.engine.model.Stat
 import java.time.LocalTime
 import javax.inject.Inject
@@ -36,6 +37,8 @@ class CompleteOnboardingUseCase @Inject constructor(
         reminderTime: LocalTime,
         /** All three Health Connect read permissions were granted during step 5 (ARCH §3.4). */
         healthEnabled: Boolean = false,
+        /** "Who are you becoming?" picks in order (GD §14.7); empty when skipped. */
+        identities: List<String> = emptyList(),
     ): OnboardingResult {
         if (!Awakening.isValidName(name)) return OnboardingResult.InvalidName
         if (focusStats.size != 2) return OnboardingResult.InvalidFocus
@@ -46,6 +49,7 @@ class CompleteOnboardingUseCase @Inject constructor(
                 baselineTiers = Awakening.baselineTiers(training, study, sleep),
                 reminderTime = reminderTime,
                 healthEnabled = healthEnabled,
+                identities = identities.take(IdentityCatalog.MAX_PICKS),
             )
             achievements.unlockNew(profile, clock.gameDate(profile.dayStartHour), clock.now())
         }

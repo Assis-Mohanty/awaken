@@ -115,4 +115,23 @@
     <string name="consistency_none_cd">No consistency score yet.</string>
     <string name="miss_line_yesterday">Missed yesterday. Don\'t miss twice.</string>
     <string name="miss_line_fresh_start">A fresh start today.</string>
+    <!-- Identities (GD §14.7): the words after "Someone who" -->
+    <string name="identity_trains">trains</string>
+    <string name="identity_runs">runs</string>
+    <string name="identity_reads">reads</string>
+    <string name="identity_ships">ships</string>
+    <string name="identity_learns">keeps learning</string>
+    <string name="identity_focuses">focuses deeply</string>
+    <string name="identity_keeps_promises">keeps their promises</string>
+    <string name="identity_meditates">meditates</string>
+    <string name="identity_sleeps_well">sleeps well</string>
+    <string name="identity_eats_well">eats well</string>
+    <string name="identity_stays_in_touch">stays in touch</string>
+    <string name="identity_speaks_up">speaks up</string>
+    <string name="identity_statement">Someone who %1$s</string>
+    <string name="identity_separator">" · "</string>
+    <string name="identity_title">Who are you becoming?</string>
+    <string name="identity_body">Pick up to three. They set your starting focus; you can change them any time.</string>
+    <string name="identity_limit">Pick up to 3</string>
+    <string name="identity_settings_title">Identities</string>
 </resources>

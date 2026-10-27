@@ -5,6 +5,7 @@ import com.assismohanty.awaken.engine.DayOutcome.CLEARED
 import com.assismohanty.awaken.engine.DayOutcome.RECOVERY
 import com.assismohanty.awaken.engine.DayOutcome.REST
 import com.assismohanty.awaken.engine.DayOutcome.SHIELDED
+import com.assismohanty.awaken.engine.model.Stat
 import com.google.common.truth.Truth.assertThat
 import org.junit.jupiter.api.Test
 import java.time.LocalDate
@@ -91,5 +92,24 @@ class GrowthVectorsTest {
         assertThat(AchievementEvaluator.byId.getValue("never_twice").gold).isEqualTo(50)
         val sixth = AchievementSnapshot(recoveries = 6, alreadyUnlocked = setOf("never_twice"))
         assertThat(AchievementEvaluator.evaluate(sixth)).doesNotContain("never_twice")
+    }
+
+    private val identities = IdentityCatalog(
+        version = 1,
+        identities = listOf(
+            Identity("trains", Stat.STR),
+            Identity("reads", Stat.INT),
+            Identity("ships", Stat.INT),
+        ),
+    )
+
+    @Test
+    fun `vector 75 - picks reads, trains, ships pre-select INT and STR`() {
+        assertThat(identities.preselect(listOf("reads", "trains", "ships"))).containsExactly(Stat.INT, Stat.STR).inOrder()
+    }
+
+    @Test
+    fun `vector 76 - picks reads, ships pre-select INT only`() {
+        assertThat(identities.preselect(listOf("reads", "ships"))).containsExactly(Stat.INT)
     }
 }

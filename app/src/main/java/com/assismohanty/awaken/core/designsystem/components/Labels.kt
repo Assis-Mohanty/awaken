@@ -246,3 +246,21 @@ fun injuryTagNameRes(tag: String): Int? = when (tag) {
     "upper" -> R.string.injury_tag_upper
     else -> null
 }
+
+/** The words after "Someone who" for an identity id (GD §14.7); null for an id this build doesn't know. */
+@StringRes
+fun identityPhraseRes(id: String): Int? = when (id) {
+    "trains" -> R.string.identity_trains
+    "runs" -> R.string.identity_runs
+    "reads" -> R.string.identity_reads
+    "ships" -> R.string.identity_ships
+    "learns" -> R.string.identity_learns
+    "focuses" -> R.string.identity_focuses
+    "keeps_promises" -> R.string.identity_keeps_promises
+    "meditates" -> R.string.identity_meditates
+    "sleeps_well" -> R.string.identity_sleeps_well
+    "eats_well" -> R.string.identity_eats_well
+    "stays_in_touch" -> R.string.identity_stays_in_touch
+    "speaks_up" -> R.string.identity_speaks_up
+    else -> null
+}
