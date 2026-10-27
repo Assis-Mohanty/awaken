@@ -189,6 +189,8 @@
     <string name="system_title_rank_up">RANK UP</string>
     <string name="trial_available">RANK TRIAL · %1$s</string>
     <string name="trial_available_body">Your level has reached the %1$s band. Clear the trial to be promoted.</string>
+    <string name="trial_stages_label">Stages</string>
+    <string name="trial_ring_cd">%1$d of %2$d stages cleared</string>
     <string name="action_begin_trial">Begin trial</string>
     <string name="action_view_trial">View trial</string>
     <plurals name="trial_progress">
