@@ -169,4 +169,27 @@
     <string name="insight_bucket_momentum_a">After a stage</string>
     <string name="insight_bucket_momentum_b">Other days</string>
     <string name="insight_chart_cd">%1$s: %2$s. %3$s: %4$s.</string>
+    <!-- Weekly review (GD §14.4): no XP anywhere on these screens -->
+    <string name="msg_review_saved">Review saved</string>
+    <string name="review_title">Weekly review</string>
+    <string name="review_step">%1$d / %2$d</string>
+    <string name="review_numbers_title">Your week</string>
+    <string name="review_numbers_so_far">So far this week</string>
+    <string name="review_quests">Quests completed</string>
+    <string name="review_xp">XP earned</string>
+    <string name="review_best_day">Best day</string>
+    <string name="review_went_well">What went well?</string>
+    <string name="review_identity_prompt">Did you act like someone who %1$s?</string>
+    <string name="review_slipped">What slipped?</string>
+    <string name="review_focus_title">Next week\'s focus</string>
+    <string name="review_focus_body">Pick two. They shape your plans from the next one on.</string>
+    <string name="review_intention">One line for next week</string>
+    <string name="review_text_label">Optional</string>
+    <string name="review_counter">%1$d / %2$d</string>
+    <string name="review_finish">Save review</string>
+    <string name="review_closed">The weekly review opens on Saturday.</string>
+    <string name="today_review_open">Your weekly review is open</string>
+    <string name="today_review_open_body">Five quick steps. Nothing to earn, just a look back.</string>
+    <string name="notification_review_line">Your weekly review is open.</string>
+    <string name="action_open_review">Review</string>
 </resources>

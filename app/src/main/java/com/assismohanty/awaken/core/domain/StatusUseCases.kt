@@ -5,6 +5,7 @@ import com.assismohanty.awaken.core.data.db.dao.CompletionDao
 import com.assismohanty.awaken.core.data.db.dao.DayRecordDao
 import com.assismohanty.awaken.core.data.db.dao.HunterDao
 import com.assismohanty.awaken.core.data.db.dao.InsightDao
+import com.assismohanty.awaken.core.data.db.dao.WeeklyReviewDao
 import com.assismohanty.awaken.core.data.db.dao.LedgerDao
 import com.assismohanty.awaken.core.data.db.dao.QuestDao
 import com.assismohanty.awaken.core.data.db.dao.StatTotal
@@ -14,6 +15,7 @@ import com.assismohanty.awaken.engine.AchievementEvaluator
 import com.assismohanty.awaken.engine.Consistency
 import com.assismohanty.awaken.engine.ConsistencyScore
 import com.assismohanty.awaken.engine.DayOutcome
+import com.assismohanty.awaken.engine.WeeklyReviewRules
 import com.assismohanty.awaken.engine.DifficultyAdapter
 import com.assismohanty.awaken.engine.GameWeek
 import com.assismohanty.awaken.engine.QuestOutcome
@@ -58,6 +60,8 @@ data class StatusModel(
     val identityIds: List<String> = emptyList(),
     /** This week's personal insights (GD §14.3). */
     val insights: InsightsModel = InsightsModel(),
+    /** The weekly review can be done now (GD §14.4). */
+    val reviewOpen: Boolean = false,
 )
 
 private data class WeekRows(
@@ -81,6 +85,7 @@ class ObserveStatusUseCase @Inject constructor(
     private val narrative: NarrativeRepository,
     private val insightDao: InsightDao,
     private val loadInsights: LoadInsightsUseCase,
+    private val weeklyReviewDao: WeeklyReviewDao,
 ) {
     @OptIn(ExperimentalCoroutinesApi::class)
     operator fun invoke(dayChanges: Flow<Any> = flowOf(Unit)): Flow<StatusModel?> {
@@ -155,6 +160,7 @@ class ObserveStatusUseCase @Inject constructor(
             consistency = Consistency.score(rows.outcomes, today, hunterDao.getProfile()?.firstGameDate ?: today),
             identityIds = hunterDao.getProfile()?.identityIds.orEmpty(),
             insights = hunterDao.getProfile()?.let { loadInsights(it, today) } ?: InsightsModel(),
+            reviewOpen = WeeklyReviewRules.isOpen(today, weeklyReviewDao.submittedWeeks().toSet()),
         )
     }
 

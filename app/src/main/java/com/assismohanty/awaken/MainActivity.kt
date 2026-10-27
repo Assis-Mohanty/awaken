@@ -20,6 +20,7 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.assismohanty.awaken.core.data.repo.ThemeMode
 import com.assismohanty.awaken.core.designsystem.theme.AwakenTheme
+import com.assismohanty.awaken.core.work.ACTION_OPEN_REVIEW
 import com.assismohanty.awaken.core.work.ACTION_OPEN_TODAY
 import com.assismohanty.awaken.navigation.AppearanceViewModel
 import com.assismohanty.awaken.navigation.AwakenNavHost
@@ -31,6 +32,7 @@ class MainActivity : ComponentActivity() {
 
     /** Bumped for every notification/widget tap that asks for Today, so the same request can repeat. */
     private var openTodayRequests by mutableIntStateOf(0)
+    private var openReviewRequests by mutableIntStateOf(0)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
@@ -58,7 +60,7 @@ class MainActivity : ComponentActivity() {
                 hapticsEnabled = look.hapticsEnabled,
                 themeId = look.themeId,
             ) {
-                AwakenNavHost(openTodayRequests = openTodayRequests)
+                AwakenNavHost(openTodayRequests = openTodayRequests, openReviewRequests = openReviewRequests)
             }
         }
     }
@@ -86,6 +88,9 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun handle(intent: Intent?) {
-        if (intent?.action == ACTION_OPEN_TODAY) openTodayRequests++
+        when (intent?.action) {
+            ACTION_OPEN_TODAY -> openTodayRequests++
+            ACTION_OPEN_REVIEW -> openReviewRequests++
+        }
     }
 }

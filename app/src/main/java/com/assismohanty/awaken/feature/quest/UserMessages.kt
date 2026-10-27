@@ -75,6 +75,7 @@ fun UserMessage.text(resources: LexResources): String = when (this) {
     UserMessage.ImportUnreadable -> resources.getString(R.string.msg_import_unreadable)
     is UserMessage.ImportRejected -> resources.getString(problem.messageRes())
     UserMessage.SettingsSaved -> resources.getString(R.string.msg_settings_saved)
+    UserMessage.ReviewSaved -> resources.getString(R.string.msg_review_saved)
     UserMessage.HealthConnected -> resources.getString(R.string.msg_health_connected)
     UserMessage.HealthDeclined -> resources.getString(R.string.health_declined)
     UserMessage.HealthNotInstalled -> resources.getString(R.string.health_not_installed)

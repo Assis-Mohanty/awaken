@@ -5,16 +5,22 @@ import com.assismohanty.awaken.core.data.clock.gameDate
 import com.assismohanty.awaken.core.data.db.dao.DayRecordDao
 import com.assismohanty.awaken.core.data.db.dao.HunterDao
 import com.assismohanty.awaken.core.data.db.dao.QuestDao
+import com.assismohanty.awaken.core.data.db.dao.WeeklyReviewDao
 import com.assismohanty.awaken.engine.ReminderRules
 import com.assismohanty.awaken.engine.model.QuestStatus
+import com.assismohanty.awaken.engine.WeeklyReviewRules
 import com.assismohanty.awaken.engine.model.QuestType
+import java.time.DayOfWeek
 import java.time.LocalTime
 import javax.inject.Inject
 
 /** What a daily notification says. The app turns it into text (plurals in strings.xml). */
 sealed interface ReminderContent {
-    /** "Your directive is ready: [count] quests." */
-    data class Directive(val count: Int) : ReminderContent
+    /**
+     * "Your directive is ready: [count] quests." [reviewOpen]: on game-day Sunday with no review for the week, the same
+     * notification gains a second line and a review action (GD §14.4), so the 2-per-day cap is untouched.
+     */
+    data class Directive(val count: Int, val reviewOpen: Boolean = false) : ReminderContent
 
     /** "[remaining] quests from clearing the day." */
     data class LastCall(val remaining: Int) : ReminderContent
@@ -29,6 +35,7 @@ class BuildReminderUseCase @Inject constructor(
     private val questDao: QuestDao,
     private val dayRecordDao: DayRecordDao,
     private val runRollover: RunRolloverUseCase,
+    private val weeklyReviewDao: WeeklyReviewDao,
     private val clock: Clock,
 ) {
     /** Runs the rollover first, so today's directive exists even if the app hasn't been opened. */
@@ -38,7 +45,9 @@ class BuildReminderUseCase @Inject constructor(
         if (profile.reminderTime == null) return null
         val today = clock.gameDate(profile.dayStartHour)
         val count = questDao.getForDate(today).count { !it.status.isHidden && it.type in DIRECTIVE_TYPES }
-        return if (count > 0) ReminderContent.Directive(count) else null
+        val reviewOpen = today.dayOfWeek == DayOfWeek.SUNDAY &&
+            WeeklyReviewRules.isOpen(today, weeklyReviewDao.submittedWeeks().toSet())
+        return if (count > 0) ReminderContent.Directive(count, reviewOpen) else null
     }
 
     suspend fun lastCall(): ReminderContent? {

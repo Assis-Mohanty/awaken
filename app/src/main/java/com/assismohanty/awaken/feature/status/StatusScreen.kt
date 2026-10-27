@@ -54,6 +54,7 @@ import com.assismohanty.awaken.core.designsystem.components.HeatmapDay
 import com.assismohanty.awaken.core.designsystem.components.HunterHeader
 import com.assismohanty.awaken.core.designsystem.components.HunterHeaderModel
 import com.assismohanty.awaken.core.designsystem.components.Pill
+import com.assismohanty.awaken.core.designsystem.components.PrimaryButton
 import com.assismohanty.awaken.core.designsystem.components.QuietButton
 import com.assismohanty.awaken.core.designsystem.components.SecondaryButton
 import com.assismohanty.awaken.core.designsystem.components.ShareCardModel
@@ -95,6 +96,7 @@ fun StatusRoute(
     onOpenSettings: () -> Unit,
     modifier: Modifier = Modifier,
     onOpenPaths: () -> Unit = {},
+    onOpenReview: () -> Unit = {},
     viewModel: StatusViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -111,7 +113,14 @@ fun StatusRoute(
         context.startActivity(Intent.createChooser(send, chooserTitle))
         viewModel.onEvent(StatusEvent.ShareHandled)
     }
-    StatusScreen(state = state, onEvent = viewModel::onEvent, onOpenSettings = onOpenSettings, onOpenPaths = onOpenPaths, modifier = modifier)
+    StatusScreen(
+        state = state,
+        onEvent = viewModel::onEvent,
+        onOpenSettings = onOpenSettings,
+        onOpenPaths = onOpenPaths,
+        onOpenReview = onOpenReview,
+        modifier = modifier,
+    )
 }
 
 /** Status (DESIGN_SYSTEM §4.5): header → radar → stats → heatmap → titles & achievements → chapters → weekly report. */
@@ -122,6 +131,7 @@ fun StatusScreen(
     modifier: Modifier = Modifier,
     onOpenSettings: () -> Unit = {},
     onOpenPaths: () -> Unit = {},
+    onOpenReview: () -> Unit = {},
 ) {
     val header = state.header
     val title = state.equippedTitleId?.let(::titleNameRes)?.let { lexString(it) }
@@ -167,7 +177,7 @@ fun StatusScreen(
         ActivityWindow(state, onEvent)
         AchievementsWindow(state.rank, state.achievements, state.equippedTitleId, onEvent)
         ChaptersWindow(state.rank, state.chapters, onEvent)
-        WeeklyWindow(state, onEvent)
+        WeeklyWindow(state, onEvent, onOpenReview)
     }
     state.openChapter?.let { entry ->
         ChapterRevealDialog(
@@ -357,7 +367,7 @@ private fun ChaptersWindow(rank: Rank, chapters: List<ChapterEntry>, onEvent: (S
 }
 
 @Composable
-private fun WeeklyWindow(state: StatusUiState, onEvent: (StatusEvent) -> Unit) {
+private fun WeeklyWindow(state: StatusUiState, onEvent: (StatusEvent) -> Unit, onOpenReview: () -> Unit) {
     val colors = AwakenTheme.colors
     val type = AwakenTheme.type
     val report = state.weeklyReport ?: return
@@ -391,6 +401,9 @@ private fun WeeklyWindow(state: StatusUiState, onEvent: (StatusEvent) -> Unit) {
                 enabled = !state.capturing,
                 modifier = Modifier.fillMaxWidth(),
             )
+        }
+        if (state.reviewOpen) {
+            PrimaryButton(text = lexString(R.string.review_title), onClick = onOpenReview, modifier = Modifier.fillMaxWidth())
         }
         if (DebugEntry.ENABLED) {
             QuietButton(text = lexString(R.string.debug_show_weekly), onClick = { onEvent(StatusEvent.ToggleDebugWeekly) })

@@ -35,6 +35,7 @@ object ExportValidator {
     /** Column → allowed names per table; a nullable column also accepts null. */
     private val enumColumns: Map<String, Map<String, Set<String>>> = mapOf(
         "hunter_profile" to mapOf("focus_stat_1" to stats, "focus_stat_2" to stats),
+        "weekly_review" to mapOf("focus_stat_1" to stats, "focus_stat_2" to stats),
         "stat_tier" to mapOf("stat" to stats, "tier" to names(Difficulty.entries.toTypedArray())),
         "quest_instance" to mapOf(
             "type" to names(QuestType.entries.toTypedArray()),

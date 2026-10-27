@@ -388,3 +388,19 @@ data class HealthDayCacheEntity(
     @ColumnInfo(name = "sleep_minutes") val sleepMinutes: Int? = null,
     @ColumnInfo(name = "read_at") val readAt: Instant,
 )
+
+/**
+ * One submitted weekly review (GD §14.4). [isoWeek] ("2026-W44") is unique, so a second submit is a no-op; a review is
+ * read-only once saved. Free text is cleaned and never leaves the phone. Not a ledger table: reviews grant nothing.
+ */
+@Entity(tableName = "weekly_review", indices = [Index(value = ["iso_week"], unique = true)])
+data class WeeklyReviewEntity(
+    @PrimaryKey val id: String,
+    @ColumnInfo(name = "iso_week") val isoWeek: String,
+    @ColumnInfo(name = "submitted_at") val submittedAt: Instant,
+    @ColumnInfo(name = "went_well") val wentWell: String? = null,
+    val slipped: String? = null,
+    @ColumnInfo(name = "focus_stat_1") val focusStat1: Stat,
+    @ColumnInfo(name = "focus_stat_2") val focusStat2: Stat,
+    val intention: String? = null,
+)

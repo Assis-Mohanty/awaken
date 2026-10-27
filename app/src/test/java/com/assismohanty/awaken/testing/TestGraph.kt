@@ -74,6 +74,8 @@ import com.assismohanty.awaken.core.domain.EnableHealthUseCase
 import com.assismohanty.awaken.core.domain.HealthSyncUseCase
 import com.assismohanty.awaken.core.domain.LoadInsightsUseCase
 import com.assismohanty.awaken.core.domain.RefreshHealthCacheUseCase
+import com.assismohanty.awaken.core.domain.SubmitWeeklyReviewUseCase
+import com.assismohanty.awaken.core.domain.LoadWeeklyReviewUseCase
 import com.assismohanty.awaken.core.domain.ObserveSettingsUseCase
 import com.assismohanty.awaken.core.domain.UpdateSettingsUseCase
 import com.assismohanty.awaken.core.domain.EquipCosmeticUseCase
@@ -153,7 +155,7 @@ class TestGraph(
     val health = FakeHealthGateway()
     val reader = GameStateReader(
         db.hunterDao(), db.questDao(), db.completionDao(), db.ledgerDao(), db.dayRecordDao(),
-        db.gateRunDao(), db.trialDao(), db.achievementDao(), clock, health, db.campaignDao(),
+        db.gateRunDao(), db.trialDao(), db.achievementDao(), clock, health, db.campaignDao(), db.weeklyReviewDao(),
     )
 
     val pathDao = db.pathDao()
@@ -220,7 +222,7 @@ class TestGraph(
     )
     val observeToday = ObserveTodayUseCase(
         observeHunterState, db.hunterDao(), db.questDao(), reader, db.trialDao(), pathDao, trialReader, narrative, clock, uiPrefs,
-        db.dayRecordDao(),
+        db.dayRecordDao(), db.weeklyReviewDao(),
     )
     val dayRefresher = DayRefresher(runRollover)
     val setRestDay = SetRestDayUseCase(db.hunterDao(), db.dayRecordDao(), transactions, clock)
@@ -237,8 +239,12 @@ class TestGraph(
     val healthSync = HealthSyncUseCase(db.hunterDao(), db.questDao(), health, completeQuest, completionCenter, clock)
     val loadInsights = LoadInsightsUseCase(db.insightDao(), clock)
     val refreshHealthCache = RefreshHealthCacheUseCase(db.hunterDao(), db.insightDao(), health, clock)
+    val submitReview = SubmitWeeklyReviewUseCase(db.hunterDao(), db.weeklyReviewDao(), achievements, transactions, clock)
+    val loadReview = LoadWeeklyReviewUseCase(
+        db.hunterDao(), db.ledgerDao(), db.completionDao(), db.dayRecordDao(), db.weeklyReviewDao(), loadInsights, clock,
+    )
     val enableHealth = EnableHealthUseCase(db.hunterDao(), health, healthSync)
-    val buildReminder = BuildReminderUseCase(db.hunterDao(), db.questDao(), db.dayRecordDao(), runRollover, clock)
+    val buildReminder = BuildReminderUseCase(db.hunterDao(), db.questDao(), db.dayRecordDao(), runRollover, db.weeklyReviewDao(), clock)
     val disableHealth = DisableHealthUseCase(db.hunterDao(), health)
 
     // Gym and Diet (trackers, GD §13).

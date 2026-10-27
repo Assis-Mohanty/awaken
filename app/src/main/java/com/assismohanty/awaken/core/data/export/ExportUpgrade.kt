@@ -10,6 +10,7 @@ object ExportUpgrade {
     private val PATH_TABLES = listOf("path", "path_milestone", "path_week", "path_slot", "ai_report")
     private const val APP_RULE_TABLE = "app_rule"
     private const val CAMPAIGN_TABLE = "campaign"
+    private const val REVIEW_TABLE = "weekly_review"
     private val BODY_TABLES = listOf(
         "custom_exercise", "routine", "routine_exercise", "workout", "workout_set", "custom_food", "food_log", "nutrition_profile",
     )
@@ -58,6 +59,13 @@ object ExportUpgrade {
         // v11 → v12 (insights): only a rebuildable cache table was added, and it is never exported.
         if (current.app == ExportDocument.APP_ID && current.schemaVersion == 11) {
             current = current.copy(schemaVersion = 12)
+        }
+        // v12 → v13 (weekly review): no reviews existed, so the old file has none.
+        if (current.app == ExportDocument.APP_ID && current.schemaVersion == 12) {
+            current = current.copy(
+                schemaVersion = 13,
+                tables = current.tables + (REVIEW_TABLE to current.tables[REVIEW_TABLE].orEmpty()),
+            )
         }
         return current
     }

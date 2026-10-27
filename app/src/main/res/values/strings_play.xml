@@ -175,6 +175,9 @@
     <string name="achievement_collector">Relic Hunter</string>
     <string name="achievement_reforged">Reforged</string>
     <string name="achievement_never_twice">Never Twice</string>
+    <string name="achievement_review1">First Look</string>
+    <string name="achievement_review4">Taking Stock</string>
+    <string name="achievement_review12">The Reflective</string>
 
     <!-- Days, streaks, penalty, trials (Phase 7; GAME_DESIGN §5, §6.4, §7; DESIGN_SYSTEM §5 voice) -->
     <string name="penalty_warning_body">You missed yesterday. One quest stands between you and redemption.</string>
@@ -275,6 +278,7 @@
     <string name="title_evergreen">Evergreen</string>
     <string name="title_silver_tongue">Silver Tongue</string>
     <string name="title_reforged">Reforged</string>
+    <string name="title_the_reflective">The Reflective</string>
     <string name="title_d_rank_hunter">D-Rank Hunter</string>
     <string name="title_c_rank_hunter">C-Rank Hunter</string>
     <string name="title_b_rank_hunter">B-Rank Hunter</string>
@@ -314,6 +318,9 @@
     <string name="condition_collector">Open 5 Relic Caches.</string>
     <string name="condition_reforged">Clear 32 of the 45 days of a campaign.</string>
     <string name="condition_never_twice">Clear the day after a missed day, 5 times.</string>
+    <string name="condition_review1">Finish a weekly review.</string>
+    <string name="condition_review4">Finish 4 weekly reviews.</string>
+    <string name="condition_review12">Finish 12 weekly reviews.</string>
 
     <string name="status_window_radar">STAT PENTAGON</string>
     <string name="status_window_stats">STATS</string>

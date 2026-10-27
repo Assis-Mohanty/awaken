@@ -6,22 +6,26 @@ import com.assismohanty.awaken.core.data.db.dao.HunterDao
 import com.assismohanty.awaken.core.data.db.dao.PathDao
 import com.assismohanty.awaken.core.data.db.dao.QuestDao
 import com.assismohanty.awaken.core.data.db.dao.TrialDao
+import com.assismohanty.awaken.core.data.db.dao.WeeklyReviewDao
 import com.assismohanty.awaken.core.data.db.entity.QuestInstanceEntity
 import com.assismohanty.awaken.core.data.repo.GameStateReader
 import com.assismohanty.awaken.core.data.repo.NarrativeRepository
 import com.assismohanty.awaken.core.data.repo.UiPrefsRepository
 import com.assismohanty.awaken.engine.Consistency
 import com.assismohanty.awaken.engine.ConsistencyScore
+import com.assismohanty.awaken.engine.DayOutcome
 import com.assismohanty.awaken.engine.GameDay
 import com.assismohanty.awaken.engine.MissLine
 import com.assismohanty.awaken.engine.TimeBlocks
 import com.assismohanty.awaken.engine.model.TimeOfDay
 import com.assismohanty.awaken.engine.RankRules
 import com.assismohanty.awaken.engine.SystemLines
+import com.assismohanty.awaken.engine.WeeklyReviewRules
 import com.assismohanty.awaken.engine.model.GateRank
 import com.assismohanty.awaken.engine.model.QuestStatus
 import com.assismohanty.awaken.engine.model.QuestType
 import com.assismohanty.awaken.engine.model.Rank
+import java.time.LocalDate
 import java.time.temporal.ChronoUnit
 import javax.inject.Inject
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -59,6 +63,15 @@ data class TodayModel(
     val consistency: ConsistencyScore = ConsistencyScore(0, 0),
     /** Replaces [systemLine] the day after a missed day (GD §14.2). */
     val missLine: MissLine? = null,
+    /** The weekly review is open and not yet done (GD §14.4: Saturday to Monday). */
+    val reviewOpen: Boolean = false,
+)
+
+private data class TodayInputs(
+    val quests: List<QuestInstanceEntity>,
+    val bounds: TimeBlocks.Bounds,
+    val outcomes: Map<LocalDate, DayOutcome>,
+    val reviewOpen: Boolean,
 )
 
 internal val QuestInstanceEntity.isOpen: Boolean get() = status == QuestStatus.ACTIVE || status == QuestStatus.STARTED
@@ -75,6 +88,7 @@ class ObserveTodayUseCase @Inject constructor(
     private val clock: Clock,
     private val uiPrefs: UiPrefsRepository,
     private val dayRecordDao: DayRecordDao,
+    private val weeklyReviewDao: WeeklyReviewDao,
 ) {
     @OptIn(ExperimentalCoroutinesApi::class)
     operator fun invoke(dayChanges: Flow<Any>): Flow<TodayModel?> =
@@ -85,8 +99,12 @@ class ObserveTodayUseCase @Inject constructor(
                 questDao.observeForDate(today),
                 uiPrefs.prefs,
                 dayRecordDao.observeDatedOutcomesFrom(today.minusDays(Consistency.WINDOW_DAYS)),
-            ) { all, prefs, outcomes -> Triple(all, prefs.blockBounds, outcomes.associate { it.gameDate to it.outcome }) }
-                .mapLatest { (all, bounds, outcomes) ->
+                weeklyReviewDao.observeSubmittedWeeks(),
+            ) { all, prefs, outcomes, reviewed ->
+                val dated = outcomes.associate { it.gameDate to it.outcome }
+                TodayInputs(all, prefs.blockBounds, dated, WeeklyReviewRules.isOpen(today, reviewed.toSet()))
+            }
+                .mapLatest { (all, bounds, outcomes, reviewOpen) ->
                     val quests = all.filter { !it.status.isHidden }
                     val profile = hunterDao.getProfile()
                     val dayStart = profile?.dayStartHour ?: GameDay.DEFAULT_DAY_START_HOUR
@@ -100,6 +118,7 @@ class ObserveTodayUseCase @Inject constructor(
                         currentBlock = block,
                         consistency = Consistency.score(outcomes, today, profile?.firstGameDate ?: today),
                         missLine = Consistency.missLine(outcomes[today.minusDays(1)], outcomes[today.minusDays(2)]),
+                        reviewOpen = reviewOpen,
                     )
                 }
         }

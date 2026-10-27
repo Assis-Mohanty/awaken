@@ -112,4 +112,35 @@ class GrowthVectorsTest {
     fun `vector 76 - picks reads, ships pre-select INT only`() {
         assertThat(identities.preselect(listOf("reads", "ships"))).containsExactly(Stat.INT)
     }
+
+    @Test
+    fun `vector 71 - the review is open Saturday to Monday`() {
+        val friday = LocalDate.of(2026, 10, 30)
+        val week = GameWeek.of(friday)
+        assertThat(WeeklyReviewRules.reviewedWeek(friday)).isNull()
+        assertThat(WeeklyReviewRules.reviewedWeek(friday.plusDays(1))).isEqualTo(week)
+        assertThat(WeeklyReviewRules.reviewedWeek(friday.plusDays(2))).isEqualTo(week)
+        assertThat(WeeklyReviewRules.reviewedWeek(friday.plusDays(3))).isEqualTo(week)
+        assertThat(WeeklyReviewRules.reviewedWeek(friday.plusDays(4))).isNull()
+        val key = WeeklyReviewRules.isoKey(week)
+        assertThat(key).isEqualTo("2026-W44")
+        assertThat(WeeklyReviewRules.isOpen(friday.plusDays(1), submittedWeeks = setOf(key))).isFalse()
+    }
+
+    @Test
+    fun `vector 73 - the 4th review unlocks review4 for 50 gold`() {
+        val after4 = AchievementEvaluator.evaluate(AchievementSnapshot(reviewsSubmitted = 4, alreadyUnlocked = setOf("review1")))
+        assertThat(after4).containsExactly("review4")
+        assertThat(AchievementEvaluator.byId.getValue("review4").gold).isEqualTo(50)
+        assertThat(AchievementEvaluator.byId.getValue("review12").titleId).isEqualTo("the_reflective")
+    }
+
+    @Test
+    fun `review text is cleaned, capped by code points and blank becomes null`() {
+        assertThat(WeeklyReviewRules.cleanText("  ran\n\tthree   times  ",WeeklyReviewRules.TEXT_MAX)).isEqualTo("ran three times")
+        assertThat(WeeklyReviewRules.cleanText("   ", WeeklyReviewRules.TEXT_MAX)).isNull()
+        assertThat(WeeklyReviewRules.cleanText("😀".repeat(200), WeeklyReviewRules.INTENTION_MAX)?.codePointCount(0, 240)).isEqualTo(120)
+        assertThat(WeeklyReviewRules.identityFor("h", "2026-W44", emptyList())).isNull()
+        assertThat(WeeklyReviewRules.identityFor("h", "2026-W44", listOf("reads"))).isEqualTo("reads")
+    }
 }

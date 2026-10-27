@@ -78,6 +78,8 @@ data class TodayUiState(
     val consistency: ConsistencyScore = ConsistencyScore(0, 0),
     /** Shown instead of [systemLine] the day after a missed day. */
     val missLine: MissLine? = null,
+    /** "Your weekly review is open" row, Saturday to Monday until done (GD §14.4). */
+    val reviewOpen: Boolean = false,
 )
 
 data class CampaignCard(val dayIndex: Int, val act: CampaignAct)
@@ -182,6 +184,7 @@ internal fun TodayModel.toUiState(): TodayUiState {
         bestStreak = hunter.bestStreak,
         consistency = consistency,
         missLine = missLine,
+        reviewOpen = reviewOpen,
         trial = trial,
         trialStages = quests.filter { it.type == QuestType.TRIAL }.map { it.toRowModel() },
         penaltyOpen = quests.any { it.type == QuestType.PENALTY && it.isOpen },

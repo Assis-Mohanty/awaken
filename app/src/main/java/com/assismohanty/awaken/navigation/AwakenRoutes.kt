@@ -46,6 +46,10 @@ data object HealthRoute
 data object ScreenTimeRoute
 
 /** The 45-day Campaign (GD §6.8), opened from the Today card. */
+/** The weekly review (GD §14.4). */
+@Serializable
+data object ReviewRoute
+
 @Serializable
 data object CampaignRoute
 

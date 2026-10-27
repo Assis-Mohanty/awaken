@@ -24,7 +24,7 @@ data class ExportDocument(
             "gate_run", "trial", "achievement_unlock", "owned_cosmetic", "health_sync_state",
             "path", "path_milestone", "path_week", "path_slot", "ai_report", "app_rule", "campaign",
             "custom_exercise", "routine", "routine_exercise", "workout", "workout_set",
-            "custom_food", "food_log", "nutrition_profile",
+            "custom_food", "food_log", "nutrition_profile", "weekly_review",
         )
 
         /** Rebuilt after import (balances from the ledger, Health from Health Connect), so never written to the file. */

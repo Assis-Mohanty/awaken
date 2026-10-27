@@ -23,6 +23,9 @@ import javax.inject.Singleton
 /** Intent action every notification and the widget use to land on Today (ARCH §3.5, §3.6). */
 const val ACTION_OPEN_TODAY = "com.assismohanty.awaken.OPEN_TODAY"
 
+/** The Sunday directive notification's review action (GD §14.4). */
+const val ACTION_OPEN_REVIEW = "com.assismohanty.awaken.OPEN_REVIEW"
+
 /**
  * Whether we may post notifications, and whether the pre-prompt is still worth showing. The SDK level is a parameter
  * so tests can cover Android 10 (no runtime permission) and Android 13+ (POST_NOTIFICATIONS).
@@ -81,6 +84,13 @@ class ReminderNotifications @Inject constructor(
             .setContentTitle(title)
             .setContentText(text)
             .setContentIntent(open)
+            .apply {
+                if (content is ReminderContent.Directive && content.reviewOpen) {
+                    val review = words.resources(context).getString(R.string.notification_review_line)
+                    setStyle(NotificationCompat.BigTextStyle().bigText("$text\n$review"))
+                    addAction(0, words.resources(context).getString(R.string.action_open_review), reviewIntent())
+                }
+            }
             .setAutoCancel(true)
             .setCategory(NotificationCompat.CATEGORY_REMINDER)
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
@@ -88,6 +98,15 @@ class ReminderNotifications @Inject constructor(
         NotificationManagerCompat.from(context).notify(id, notification)
         return true
     }
+
+    private fun reviewIntent(): PendingIntent = PendingIntent.getActivity(
+        context,
+        REVIEW_REQUEST,
+        Intent(context, MainActivity::class.java)
+            .setAction(ACTION_OPEN_REVIEW)
+            .addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP),
+        PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
+    )
 
     /** Clears both, e.g. once the hunter has seen them or the day is cleared. */
     fun cancelAll() {
@@ -115,5 +134,6 @@ class ReminderNotifications @Inject constructor(
         const val CHANNEL_LAST_CALL = "last_call"
         private const val DIRECTIVE_ID = 811
         private const val LAST_CALL_ID = 812
+        private const val REVIEW_REQUEST = 813
     }
 }

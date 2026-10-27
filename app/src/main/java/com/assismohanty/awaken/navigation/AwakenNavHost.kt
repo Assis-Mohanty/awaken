@@ -46,6 +46,7 @@ import com.assismohanty.awaken.feature.screentime.ScreenTimeRoute as ScreenTimeE
 import com.assismohanty.awaken.feature.settings.SettingsRoute as SettingsEntry
 import com.assismohanty.awaken.feature.status.StatusRoute as StatusEntry
 import com.assismohanty.awaken.feature.today.TodayRoute as TodayEntry
+import com.assismohanty.awaken.feature.review.ReviewRoute as ReviewEntry
 import com.assismohanty.awaken.feature.trial.TrialDetailRoute as TrialDetailEntry
 import com.assismohanty.awaken.feature.vault.VaultRoute as VaultEntry
 
@@ -53,7 +54,12 @@ import com.assismohanty.awaken.feature.vault.VaultRoute as VaultEntry
 
 /** Onboarding until a hunter exists, then the four tabs (DESIGN_SYSTEM §4). */
 @Composable
-fun AwakenNavHost(modifier: Modifier = Modifier, openTodayRequests: Int = 0, appViewModel: AppViewModel = hiltViewModel()) {
+fun AwakenNavHost(
+    modifier: Modifier = Modifier,
+    openTodayRequests: Int = 0,
+    openReviewRequests: Int = 0,
+    appViewModel: AppViewModel = hiltViewModel(),
+) {
     val launch by appViewModel.state.collectAsStateWithLifecycle()
     LifecycleStartEffect(appViewModel) {
         appViewModel.onEvent(AppEvent.Started)
@@ -63,7 +69,12 @@ fun AwakenNavHost(modifier: Modifier = Modifier, openTodayRequests: Int = 0, app
         // One frame of void while Room answers; no spinner for a local read.
         LaunchState.Loading -> Box(modifier = modifier.fillMaxSize().background(AwakenTheme.palette.void))
         LaunchState.NeedsOnboarding -> GateBackground(rank = Rank.E, modifier = modifier) { OnboardingEntry() }
-        is LaunchState.Ready -> MainScaffold(rank = state.rank, openTodayRequests = openTodayRequests, modifier = modifier)
+        is LaunchState.Ready -> MainScaffold(
+            rank = state.rank,
+            openTodayRequests = openTodayRequests,
+            openReviewRequests = openReviewRequests,
+            modifier = modifier,
+        )
     }
 }
 
@@ -71,6 +82,7 @@ fun AwakenNavHost(modifier: Modifier = Modifier, openTodayRequests: Int = 0, app
 private fun MainScaffold(
     openTodayRequests: Int,
     rank: Rank,
+    openReviewRequests: Int,
     modifier: Modifier = Modifier,
     navController: NavHostController = rememberNavController(),
 ) {
@@ -85,6 +97,10 @@ private fun MainScaffold(
                 launchSingleTop = true
             }
         }
+    }
+    // The Sunday notification's review action (GD §14.4) opens the review on top of Today.
+    LaunchedEffect(openReviewRequests) {
+        if (openReviewRequests > 0) navController.navigate(ReviewRoute) { launchSingleTop = true }
     }
     val showBottomBar = TopLevelDestination.entries.any { destination ->
         currentDestination?.hierarchy?.any { it.hasRoute(destination.route::class) } == true
@@ -137,6 +153,7 @@ private fun MainScaffold(
                         onOpenQuest = { navController.navigate(QuestDetailRoute(it)) },
                         onOpenScreenTime = { navController.navigate(ScreenTimeRoute) },
                         onOpenCampaign = { navController.navigate(CampaignRoute) },
+                        onOpenReview = { navController.navigate(ReviewRoute) { launchSingleTop = true } },
                         onOpenTrial = { navController.navigate(TrialRoute) },
                         onOpenGates = { navController.navigate(GatesRoute) { launchSingleTop = true } },
                         onOpenVault = { navController.navigate(VaultRoute) { launchSingleTop = true } },
@@ -165,6 +182,7 @@ private fun MainScaffold(
                     StatusEntry(
                         onOpenSettings = { navController.navigate(SettingsRoute) },
                         onOpenPaths = { navController.navigate(PathsRoute) { launchSingleTop = true } },
+                        onOpenReview = { navController.navigate(ReviewRoute) { launchSingleTop = true } },
                     )
                 }
                 composable<SettingsRoute> {
@@ -177,6 +195,7 @@ private fun MainScaffold(
                 }
                 composable<HealthRoute> { HealthEntry(onBack = { navController.popBackStack() }) }
                 composable<ScreenTimeRoute> { ScreenTimeEntry(onBack = { navController.popBackStack() }) }
+                composable<ReviewRoute> { ReviewEntry(onClose = { navController.popBackStack() }) }
                 composable<CampaignRoute> { CampaignEntry(onBack = { navController.popBackStack() }) }
                 composable<VaultRoute> { VaultEntry(onBack = { navController.popBackStack() }) }
                 if (DebugEntry.ENABLED) {

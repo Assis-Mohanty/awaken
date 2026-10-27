@@ -10,6 +10,7 @@ import com.assismohanty.awaken.core.data.db.dao.HunterDao
 import com.assismohanty.awaken.core.data.db.dao.LedgerDao
 import com.assismohanty.awaken.core.data.db.dao.QuestDao
 import com.assismohanty.awaken.core.data.db.dao.TrialDao
+import com.assismohanty.awaken.core.data.db.dao.WeeklyReviewDao
 import com.assismohanty.awaken.core.data.db.entity.HunterProfileEntity
 import com.assismohanty.awaken.core.data.health.HealthGateway
 import com.assismohanty.awaken.engine.AchievementEvaluator
@@ -44,6 +45,7 @@ class GameStateReader @Inject constructor(
     private val clock: Clock,
     private val healthGateway: HealthGateway,
     private val campaignDao: CampaignDao,
+    private val weeklyReviewDao: WeeklyReviewDao,
 ) {
     /** Streak over finalized days only (ENGINE_DECISIONS #2, #23). */
     suspend fun finalizedStreak(): StreakSummary {
@@ -107,6 +109,7 @@ class GameStateReader @Inject constructor(
             cachesOpened = ledgerDao.cachesOpened(),
             campaignsCompleted = campaignDao.countCompleted(),
             recoveries = Consistency.recoveries(dayRecordDao.finalizedOutcomes()),
+            reviewsSubmitted = weeklyReviewDao.count(),
             alreadyUnlocked = achievementDao.unlockedIds().toSet(),
         )
     }

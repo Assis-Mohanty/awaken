@@ -65,6 +65,7 @@ fun TodayRoute(
     onOpenCampaign: () -> Unit = {},
     onOpenGates: () -> Unit = {},
     onOpenVault: () -> Unit = {},
+    onOpenReview: () -> Unit = {},
     viewModel: TodayViewModel = hiltViewModel(),
     habitsViewModel: HabitsViewModel = hiltViewModel(),
     dayPlanViewModel: DayPlanViewModel = hiltViewModel(),
@@ -82,6 +83,7 @@ fun TodayRoute(
         modifier = modifier,
         onOpenScreenTime = onOpenScreenTime,
         onOpenCampaign = onOpenCampaign,
+        onOpenReview = onOpenReview,
         onOpenGates = onOpenGates,
         onOpenVault = onOpenVault,
     )
@@ -108,6 +110,7 @@ fun TodayScreen(
     onOpenCampaign: () -> Unit = {},
     onOpenGates: () -> Unit = {},
     onOpenVault: () -> Unit = {},
+    onOpenReview: () -> Unit = {},
 ) {
     val colors = AwakenTheme.colors
     val header = state.header
@@ -173,6 +176,7 @@ fun TodayScreen(
 
         Timeline(state, onEvent, onOpenQuest)
 
+        if (state.reviewOpen) ReviewRow(onOpenReview)
         PlanCard(state, onHabitsEvent, onDayPlanEvent)
         CampaignRow(state, onOpenCampaign)
         state.discipline?.let { card -> DisciplineRow(card, onOpenScreenTime) }
@@ -249,6 +253,21 @@ private fun PlanCard(state: TodayUiState, onHabitsEvent: (HabitsEvent) -> Unit, 
                 onAction = { onHabitsEvent(HabitsEvent.Add) },
             )
         }
+    }
+}
+
+/** The weekly review is open (GD §14.4): one quiet row, nothing to earn. */
+@Composable
+private fun ReviewRow(onOpenReview: () -> Unit) {
+    AwakenCard(reveal = false, contentPadding = Spacing.listCard, spacing = Spacing.zero, modifier = Modifier.fillMaxWidth()) {
+        ListRow(
+            title = lexString(R.string.today_review_open),
+            icon = AwakenGlyphs.Calendar,
+            iconTint = AwakenTheme.colors.accent,
+            secondary = lexString(R.string.today_review_open_body),
+            onClick = onOpenReview,
+            trailing = { Chevron() },
+        )
     }
 }
 

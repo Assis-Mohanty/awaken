@@ -64,6 +64,8 @@ sealed interface UserMessage {
     data object ImportUnreadable : UserMessage
     data class ImportRejected(val problem: ImportProblem) : UserMessage
     data object SettingsSaved : UserMessage
+    /** The weekly review was saved (GD §14.4); it grants nothing. */
+    data object ReviewSaved : UserMessage
     data object HealthConnected : UserMessage
     data object HealthDeclined : UserMessage
     data object HealthNotInstalled : UserMessage

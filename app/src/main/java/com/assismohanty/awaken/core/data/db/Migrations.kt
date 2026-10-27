@@ -209,8 +209,20 @@ val MIGRATION_11_12 = object : Migration(11, 12) {
     }
 }
 
+/** v12 → v13: weekly reviews (GD §14.4). No review existed before. */
+val MIGRATION_12_13 = object : Migration(12, 13) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS `weekly_review` (`id` TEXT NOT NULL, `iso_week` TEXT NOT NULL, `submitted_at` INTEGER NOT NULL, " +
+                "`went_well` TEXT, `slipped` TEXT, `focus_stat_1` TEXT NOT NULL, `focus_stat_2` TEXT NOT NULL, `intention` TEXT, " +
+                "PRIMARY KEY(`id`))",
+        )
+        db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS `index_weekly_review_iso_week` ON `weekly_review` (`iso_week`)")
+    }
+}
+
 /** Every migration, in order. The database builder and the migration test both use this list. */
 val ALL_MIGRATIONS: Array<Migration> = arrayOf(
     MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9,
-    MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12,
+    MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13,
 )
