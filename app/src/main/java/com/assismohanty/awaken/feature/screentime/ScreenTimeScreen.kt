@@ -51,6 +51,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.assismohanty.awaken.R
+import com.assismohanty.awaken.core.designsystem.components.LargeTitleScaffold
 import com.assismohanty.awaken.core.designsystem.components.ChoiceChip
 import com.assismohanty.awaken.core.designsystem.components.GateBackground
 import com.assismohanty.awaken.core.designsystem.components.Pill
@@ -112,45 +113,21 @@ fun ScreenTimeScreen(
 ) {
     val colors = AwakenTheme.colors
     GateBackground(rank = Rank.E, modifier = modifier) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState()),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Column(
-                modifier = Modifier
-                    .widthIn(max = Spacing.contentMaxWidth)
-                    .fillMaxWidth()
-                    .padding(horizontal = Spacing.gutter, vertical = Spacing.lg),
-                verticalArrangement = Arrangement.spacedBy(Spacing.lg),
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        lexString(R.string.screentime_title),
-                        style = AwakenTheme.type.metricL,
-                        color = colors.textPrimary,
-                        modifier = Modifier
-                            .weight(1f)
-                            .semantics { heading() },
-                    )
-                    QuietButton(text = lexString(R.string.action_back), onClick = onBack)
+        LargeTitleScaffold(title = lexString(R.string.screentime_title), onBack = onBack) {
+            val overview = state.overview
+            when {
+                overview == null && state.failed -> MessageWindow(lexString(R.string.screentime_failed))
+                overview == null -> MessageWindow(lexString(R.string.screentime_loading))
+                !overview.hasAccess -> {
+                    AccessWindow(onOpenUsageAccess, Modifier.staggeredEntrance(0))
+                    DisciplineWindow(overview, onEvent, Modifier.staggeredEntrance(1))
                 }
-                val overview = state.overview
-                when {
-                    overview == null && state.failed -> MessageWindow(lexString(R.string.screentime_failed))
-                    overview == null -> MessageWindow(lexString(R.string.screentime_loading))
-                    !overview.hasAccess -> {
-                        AccessWindow(onOpenUsageAccess, Modifier.staggeredEntrance(0))
-                        DisciplineWindow(overview, onEvent, Modifier.staggeredEntrance(1))
-                    }
-                    else -> {
-                        UsageTodayWindow(overview, Modifier.staggeredEntrance(0))
-                        DisciplineWindow(overview, onEvent, Modifier.staggeredEntrance(1))
-                        AppsWindow(state, onEvent, Modifier.staggeredEntrance(2))
-                        TrendWindow(overview.trend, Modifier.staggeredEntrance(3))
-                        Text(lexString(R.string.screentime_privacy_note), style = AwakenTheme.type.caption, color = colors.textSecondary)
-                    }
+                else -> {
+                    UsageTodayWindow(overview, Modifier.staggeredEntrance(0))
+                    DisciplineWindow(overview, onEvent, Modifier.staggeredEntrance(1))
+                    AppsWindow(state, onEvent, Modifier.staggeredEntrance(2))
+                    TrendWindow(overview.trend, Modifier.staggeredEntrance(3))
+                    Text(lexString(R.string.screentime_privacy_note), style = AwakenTheme.type.caption, color = colors.textSecondary)
                 }
             }
         }
