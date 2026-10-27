@@ -53,6 +53,7 @@ import com.assismohanty.awaken.core.data.health.HealthStatus
 import com.assismohanty.awaken.core.data.repo.ThemeMode
 import com.assismohanty.awaken.core.designsystem.components.ChoiceChip
 import com.assismohanty.awaken.core.designsystem.components.GateBackground
+import com.assismohanty.awaken.core.designsystem.components.LargeTitleScaffold
 import com.assismohanty.awaken.core.designsystem.components.PrimaryButton
 import com.assismohanty.awaken.core.designsystem.components.QuietButton
 import com.assismohanty.awaken.core.designsystem.components.SecondaryButton
@@ -134,42 +135,18 @@ fun SettingsScreen(
     onOpenDebug: () -> Unit = {},
 ) {
     GateBackground(rank = Rank.E, modifier = modifier) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState()),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Column(
-                modifier = Modifier
-                    .widthIn(max = Spacing.contentMaxWidth)
-                    .fillMaxWidth()
-                    .padding(horizontal = Spacing.gutter, vertical = Spacing.lg),
-                verticalArrangement = Arrangement.spacedBy(Spacing.lg),
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        lexString(R.string.settings_title),
-                        style = AwakenTheme.type.metricL,
-                        color = AwakenTheme.colors.textPrimary,
-                        modifier = Modifier
-                            .weight(1f)
-                            .semantics { heading() },
-                    )
-                    QuietButton(text = lexString(R.string.action_back), onClick = onBack)
-                }
-                if (!state.loading) {
-                    ProfileWindow(state, onEvent)
-                    DayWindow(state, onEvent, onOpenNotificationSettings)
-                    TrainingWindow(state, onEvent, onOpenHealth, onOpenScreenTime)
-                    AiPathsWindow(state, onEvent)
-                    ComfortWindow(state, onEvent)
-                    DataWindow(state, onExport, onImport, onOpenPrivacy)
-                    // Debug builds only (DebugEntry is a no-op in release): never floats over content.
-                    if (DebugEntry.ENABLED) {
-                        SystemWindow(title = lexString(R.string.settings_window_developer), accent = accent(), reveal = false) {
-                            DebugEntry.LauncherButton(onClick = onOpenDebug)
-                        }
+        LargeTitleScaffold(title = lexString(R.string.settings_title), onBack = onBack) {
+            if (!state.loading) {
+                ProfileWindow(state, onEvent)
+                DayWindow(state, onEvent, onOpenNotificationSettings)
+                TrainingWindow(state, onEvent, onOpenHealth, onOpenScreenTime)
+                AiPathsWindow(state, onEvent)
+                ComfortWindow(state, onEvent)
+                DataWindow(state, onExport, onImport, onOpenPrivacy)
+                // Debug builds only (DebugEntry is a no-op in release): never floats over content.
+                if (DebugEntry.ENABLED) {
+                    SystemWindow(title = lexString(R.string.settings_window_developer), accent = accent(), reveal = false) {
+                        DebugEntry.LauncherButton(onClick = onOpenDebug)
                     }
                 }
             }
@@ -488,7 +465,7 @@ private fun ReminderDialog(current: LocalTime?, onEvent: (SettingsEvent) -> Unit
         is24Hour = DateFormat.is24HourFormat(LocalContext.current),
     )
     Dialog(onDismissRequest = { onEvent(SettingsEvent.DismissReminderPicker) }) {
-        SystemWindow(title = lexString(R.string.settings_reminder_title).uppercase(), accent = accent()) {
+        SystemWindow(title = lexString(R.string.settings_reminder_title), accent = accent()) {
             // TimeInput (not the dial) so the dialog fits small phones.
             TimeInput(state = timeState, modifier = Modifier.align(Alignment.CenterHorizontally))
             Row(horizontalArrangement = Arrangement.spacedBy(Spacing.xs), modifier = Modifier.fillMaxWidth()) {
