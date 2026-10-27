@@ -149,6 +149,7 @@ internal object LexiconPairs {
         R.string.status_window_stats to R.string.status_window_stats_clean,
         R.string.status_window_activity to R.string.status_window_activity_clean,
         R.string.status_window_chapters to R.string.status_window_chapters_clean,
+        R.string.status_window_achievements to R.string.status_window_achievements_clean,
         R.string.status_window_weekly to R.string.status_window_weekly_clean,
         R.string.status_chapter_number to R.string.status_chapter_number_clean,
         R.string.action_read_chapter to R.string.action_read_chapter_clean,

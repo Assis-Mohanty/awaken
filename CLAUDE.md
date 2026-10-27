@@ -42,6 +42,7 @@ Proxy (`/proxy`): TypeScript on Cloudflare Workers · zod · Wrangler · Vitest.
 - Strings in `strings.xml`. Content descriptions on all icons. Touch targets ≥ 48dp.
 - Every screen has `@Preview`s at phone + small phone sizes via `@PhonePreviews`, which renders both the dark and light palettes (DESIGN_SYSTEM §2.1b). Never hard-code a colour that only works on black.
 - Colours: feature code uses only the semantic tokens on `AwakenTheme.colors` (`surface`, `textPrimary`, `accent`, `critical`, `reward`, …, DESIGN_SYSTEM §8.4). Raw palette names (`AwakenTheme.palette`, `AwakenPalette`) are for `core/designsystem` and the widget only.
+- Feature screens do layout only: charts through ChartKit (`core/designsystem/charts`, `Chart(ChartSpec)`), any drawing or styling (`Canvas`, `background`, `border`, `clip`) inside a `core/designsystem` component, and every word through the Lexicon (`lexString`/`lexPlural`, `LexResources`; notifications via `LexiconSource`). A string that speaks in System terms or voice needs a `<name>_clean` twin in `strings_clean.xml` (then regenerate `LexiconPairs`). `FeatureBoundaryTest` and `LexiconResourcesTest` enforce this.
 - Debug-only code lives in `app/src/debug` (Debug screen, `DebugClock` time travel) with a no-op twin in `app/src/release` (`DebugEntry`, `ClockModule`). Never reference debug classes from `src/main` except through `DebugEntry`.
 
 ## Workflow rules for you (Claude Code)

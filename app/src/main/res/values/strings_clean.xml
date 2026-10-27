@@ -209,6 +209,7 @@
     <string name="status_window_stats_clean">Stats</string>
     <string name="status_window_activity_clean">Activity</string>
     <string name="status_window_chapters_clean">Story</string>
+    <string name="status_window_achievements_clean">Titles &amp; achievements</string>
     <string name="status_window_weekly_clean">Weekly report</string>
     <string name="status_chapter_number_clean">Story %1$d</string>
     <string name="action_read_chapter_clean">Read story</string>

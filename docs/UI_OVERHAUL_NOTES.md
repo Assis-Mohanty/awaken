@@ -28,28 +28,28 @@ Written 2026-10-27 with the v1.1 brief (`docs/V1_1_FEATURES_PROMPT.md`, Part 4).
 
 ## 4. Screens and components that will change
 
-Every row must consume only semantic tokens, ChartKit and the Lexicon by the end of Part 2. The **Part 2 audit** column is filled in when Part 2 lands; anything marked ✗ there is a Part 2 bug to fix, not a redesign task.
+Every row must consume only semantic tokens, ChartKit and the Lexicon by the end of Part 2. The **Part 2 audit** column records the Phase A refactor (2026-10-27); `FeatureBoundaryTest` keeps it true. Anything that regresses is a bug, not a redesign task.
 
 **Screens** (`feature/**`)
 
 | Screen | Expected change | Part 2 audit |
 |---|---|---|
-| Today (`TodayScreen`) | Header becomes a metrics row (level, streak, consistency); Directive as cards grouped by time block | pending |
-| Quest detail | Card layout, plain hierarchy | pending |
-| Gates (`GatesScreen`, gate run) | Calm timer; glow only in System mode | pending |
-| Trial detail | Compact module | pending |
-| Status | Dashboard: big metrics, trend charts, insights, radar as one module | pending |
-| Vault | Shop grid in cards | pending |
-| Paths, Path detail (dormant AI) | Card ladder | pending |
-| Campaign | Calendar and progress as dashboard modules | pending |
-| Gym | Already data-first; re-skin cards and body map colours | pending |
-| Diet | Ring + macro bars re-skinned | pending |
-| Health | Trend charts via ChartKit | pending |
-| Screen time | Bars via ChartKit | pending |
-| Onboarding | Light, airy steps; System intro only in System mode | pending |
-| Settings | Grouped list cards | pending |
+| Today (`TodayScreen`) | Header becomes a metrics row (level, streak, consistency); Directive as cards grouped by time block | ✓ tokens, ChartKit, Lexicon (Phase A) |
+| Quest detail | Card layout, plain hierarchy | ✓ tokens, ChartKit, Lexicon (Phase A) |
+| Gates (`GatesScreen`, gate run) | Calm timer; glow only in System mode | ✓ tokens, ChartKit, Lexicon (Phase A) |
+| Trial detail | Compact module | ✓ tokens, ChartKit, Lexicon (Phase A) |
+| Status | Dashboard: big metrics, trend charts, insights, radar as one module | ✓ tokens, ChartKit, Lexicon (Phase A) |
+| Vault | Shop grid in cards | ✓ tokens, ChartKit, Lexicon (Phase A) |
+| Paths, Path detail (dormant AI) | Card ladder | ✓ tokens, ChartKit, Lexicon (Phase A) |
+| Campaign | Calendar and progress as dashboard modules | ✓ tokens, ChartKit, Lexicon (Phase A) |
+| Gym | Already data-first; re-skin cards and body map colours | ✓ tokens, ChartKit, Lexicon (Phase A) |
+| Diet | Ring + macro bars re-skinned | ✓ tokens, ChartKit, Lexicon (Phase A) |
+| Health | Trend charts via ChartKit | ✓ tokens, ChartKit, Lexicon (Phase A) |
+| Screen time | Bars via ChartKit | ✓ tokens, ChartKit, Lexicon (Phase A) |
+| Onboarding | Light, airy steps; System intro only in System mode | ✓ tokens, ChartKit, Lexicon (Phase A) |
+| Settings | Grouped list cards | ✓ tokens, ChartKit, Lexicon (Phase A) |
 | New in v1.1: Weekly Review, Recap, Insights section | Built on tokens from day one | n/a (new) |
-| Debug screen, component catalog | Must render every component in both modes | pending |
+| Debug screen, component catalog | Must render every component in both modes | ✓ tokens, ChartKit, Lexicon (Phase A) |
 
 **Components** (`core/designsystem/components`)
 

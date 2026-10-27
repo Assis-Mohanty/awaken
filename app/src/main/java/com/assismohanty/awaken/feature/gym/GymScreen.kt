@@ -56,7 +56,6 @@ import com.assismohanty.awaken.core.designsystem.components.formatNumber
 import com.assismohanty.awaken.core.designsystem.components.nameRes
 import com.assismohanty.awaken.core.designsystem.components.staggeredEntrance
 import com.assismohanty.awaken.core.designsystem.preview.PhonePreviews
-import com.assismohanty.awaken.core.designsystem.theme.AwakenAlpha
 import com.assismohanty.awaken.core.designsystem.theme.AwakenTheme
 import com.assismohanty.awaken.core.designsystem.theme.Spacing
 import com.assismohanty.awaken.core.domain.ActiveWorkout
