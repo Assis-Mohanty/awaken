@@ -297,7 +297,7 @@ Rules for everything below: semantic tokens only (§8.4), charts only through Ch
 | `ReviewFlow` steps | `ReviewStepNumbers`, `ReviewTextStep(prompt, maxChars=280)` with a live counter, `ReviewFocusStep` (5 stat tiles, exactly 2 selected), `ReviewIntentionStep(maxChars=120)`; a step indicator "2 / 5"; [Skip] on every optional step with the same weight as [Next]. |
 | `RecapCard(page)` | Full-bleed story card: period kicker, one `metricXL` hero number, 1–3 supporting rows, page dots; swipe or tap edges to move; reduce-motion = crossfade, never auto-advance. The last card hosts [Share] (ShareCard path, dark in every mode). |
 | `IdentityChips(selected, max=3)` | Wrapping selectable pills "Someone who reads" with the stat sigil; a 4th tap shows "Pick up to 3"; read-only variant under the name on Status. |
-| `ModeSwitch(mode)` | Two-segment control Clean / System with one line of explanation each ("Plain words, calm look." / "The full System: Gates, Hunters, glow."). Also used inside the one-time invite sheet. |
+| ~~`ModeSwitch(mode)`~~ | **Not built (F34 superseded by the v2 redesign).** Two-segment control Clean / System with one line of explanation each ("Plain words, calm look." / "The full System: Gates, Hunters, glow."). Also used inside the one-time invite sheet. |
 
 ### 8.2 New and changed screens
 
@@ -306,9 +306,9 @@ Rules for everything below: semantic tokens only (§8.4), charts only through Ch
 - **Weekly Review** (new route, from the Today row, the Sunday notification and Status): five steps in one window; finishing shows "Review saved" and any achievement toast. No XP anywhere on these screens.
 - **Recap** (new route): auto-opens once per GD §14.6, else from Status → Recaps.
 - **Onboarding:** new step "Who are you becoming?" (`IdentityChips`, [Skip]) before focus stats; the focus-stat step arrives pre-selected.
-- **Settings:** Presentation (`ModeSwitch`), Identities, Time blocks ("Morning ends", "Day ends" hour pickers), Light/Dark debug toggle stays debug-only (Part 2).
+- **Settings:** Identities, Time blocks ("Morning ends", "Day ends" hour pickers), Light/Dark debug toggle stays debug-only (Part 2).
 - **Habit editor:** a block picker (Morning / Day / Evening / Anytime).
-- **System invite sheet:** after the first level-up in Clean mode; [Try it] / [Keep clean].
+- ~~**System invite sheet**~~: not built (F34 superseded).
 
 ### 8.3 Lexicon (Clean ↔ System)
 

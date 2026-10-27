@@ -73,7 +73,7 @@ Habit/RPG apps are a crowded but low-quality niche on Play: Habitica (aging, pun
 | F31 | **Time-of-day blocks**: Morning / Day / Evening / Anytime grouping on Today with editable boundaries; templates and habits carry a block; no change to generation or rewards | GD §14.5; DS §8.2 |
 | F32 | **Monthly and yearly recap**: 3–5 story cards, reopenable, last card shared as a 1080×1350 image | GD §14.6; DS §8.2 |
 | F33 | **Identity framing**: "Who are you becoming?" (1–3 of 12) in onboarding, pre-selects focus stats, shown on Status, used in the review; no rewards | GD §14.7; DS §8.2 |
-| F34 | **Clean / System presentation**: Clean by default for new installs, one-time invite after the first level-up; a Lexicon swaps game terms and voice; numbers identical | GD §14.9; DS §8.3 |
+| F34 | **Superseded (2026-10-27).** The v2 redesign dropped System mode, so the app always uses Clean words; no ModeSwitch, invite or clean voice-line file was built. Original spec — **Clean / System presentation**: Clean by default for new installs, one-time invite after the first level-up; a Lexicon swaps game terms and voice; numbers identical | GD §14.9; DS §8.3 |
 
 ## 5. Explicitly OUT of scope for v1.0 (put in `BACKLOG.md`)
 Accounts/sync · global/friends leaderboards · guilds · PvP duels & wagers · premium currency / IAP / ads · AI mentor chat (free-form conversation) · AI deciding any reward · on-device LLM · photo/video proof · multi-day dungeons · hardcore/permadeath · prestige · territory wars · iOS · web · Wear OS · localisation beyond English (strings are externalised though; Path goals may be typed in any language).
