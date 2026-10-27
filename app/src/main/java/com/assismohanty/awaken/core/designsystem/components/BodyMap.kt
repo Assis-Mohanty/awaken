@@ -38,6 +38,7 @@ import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.dp
 import com.assismohanty.awaken.R
 import com.assismohanty.awaken.core.designsystem.body.BodyGeometry
 import com.assismohanty.awaken.core.designsystem.body.BodySide
@@ -50,8 +51,8 @@ import com.assismohanty.awaken.engine.model.Stat
 import kotlin.math.roundToInt
 
 /**
- * The muscle map (DESIGN_SYSTEM §3, Gym): one stylised figure, front or back via a segmented control. The body is the
- * pressed-card colour with hairline divider outlines, no face and no skin tone; trained muscles fill in [accent] at the
+ * The muscle map (DESIGN_SYSTEM §3, Gym): one stylised V-taper figure, front or back via a segmented control. The body is
+ * the divider tone with a muted-ink outline and seams (visible on any card), no face and no skin tone; trained muscles fill in [accent] at the
  * alpha in [intensity] (0..1, the five heat steps; missing = unlit), animating in over 300ms.
  *
  * Paths come from react-native-body-highlighter (MIT, see `core/designsystem/body/BodyPaths.kt`). Each muscle region is its own TalkBack node
@@ -119,18 +120,26 @@ private fun BodyFigure(side: BodySide, intensity: Map<Muscle, Float>, accent: Co
                     },
                 ),
         ) {
-            val hairline = Stroke(width = HAIRLINE_PX / scale)
+            // Strokes are set in dp and divided by the path scale so they keep their on-screen width.
+            val outline = Stroke(width = OUTLINE.toPx() / scale)
+            val seam = Stroke(width = SEAM.toPx() / scale)
+            val bodyFill = colors.divider
+            val outlineInk = colors.textMuted
+            val seamInk = colors.textMuted.copy(alpha = SEAM_ALPHA)
             translate(left = left, top = top) {
                 withTransform({ scale(scale, scale, pivot = Offset.Zero) }) {
-                    drawPath(figure.outline, colors.surfaceOverlay)
-                    figure.base.forEach { drawPath(it, colors.surfaceOverlay) }
+                    drawPath(figure.outline, bodyFill)
+                    figure.base.forEach {
+                        drawPath(it, bodyFill)
+                        drawPath(it, seamInk, style = seam)
+                    }
                     figure.regions.forEach { region ->
                         val level = region.muscles.maxOf { intensity[it] ?: 0f } * fill.value
-                        drawPath(region.path, colors.surfaceOverlay)
+                        drawPath(region.path, bodyFill)
                         if (level > 0f) drawPath(region.path, accent.copy(alpha = level.coerceIn(0f, 1f)))
-                        drawPath(region.path, colors.divider, style = hairline)
+                        drawPath(region.path, seamInk, style = seam)
                     }
-                    drawPath(figure.outline, colors.divider, style = hairline)
+                    drawPath(figure.outline, outlineInk, style = outline)
                 }
             }
         }
@@ -161,8 +170,10 @@ private fun BodyFigure(side: BodySide, intensity: Map<Muscle, Float>, accent: Co
 /** The muscle a region reports: its more-loaded catalog group (first one when equal). */
 private fun BodyGeometry.MuscleRegion.primary(intensity: Map<Muscle, Float>): Muscle = muscles.maxBy { intensity[it] ?: 0f }
 
-/** Hairline width in pixels; divided by the path scale so it stays thin at any size. */
-private const val HAIRLINE_PX = 1.5f
+/** The silhouette outline and the seams between muscles, in the muted ink so the figure reads on any card. */
+private val OUTLINE = 1.25.dp
+private val SEAM = 0.75.dp
+private const val SEAM_ALPHA = 0.55f
 private const val FILL_MS = 300
 
 /** The union of both sides' bounds plus a little air, in source units. */

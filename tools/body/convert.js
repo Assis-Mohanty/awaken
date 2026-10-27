@@ -9,17 +9,41 @@ const svgpath = require('svgpath');
 const [repo, out] = process.argv.slice(2);
 const read = (p) => fs.readFileSync(path.join(repo, p), 'utf8');
 
-function regions(src, dx) {
+function regions(src, dx, side) {
   const parts = src.split(/slug:\s*"/).slice(1);
   return parts.map((part) => {
     const slug = part.slice(0, part.indexOf('"'));
-    const paths = [...part.matchAll(/"(M[^"]+)"/g)].map((m) => norm(m[1], dx));
+    const paths = [...part.matchAll(/"(M[^"]+)"/g)].map((m) => norm(m[1], dx, side));
     return { slug, paths };
   });
 }
 
-function norm(d, dx) {
-  return svgpath(d).translate(-dx, 0).abs().unarc().round(2).toString();
+// V-taper (user, 2026-10-27): a smooth horizontal warp around each figure's centre line. Shoulders, chest, lats and
+// upper arms widen (a bump centred on the deltoids); the torso narrows at the waist; arms and hands are left alone at
+// waist height so they never touch the body. Numbers are in the source's 724 × 1448 viewport.
+const CENTRE_X = { front: 368, back: 359.5 }; // midpoint of the deltoids
+const SHOULDER = { y: 350, spread: 85, amount: 0.11 };
+const WAIST = { y: 600, spread: 70, amount: 0.09, torsoHalfWidth: 105, fade: 30 };
+
+function taper(side) {
+  const cx = CENTRE_X[side];
+  return (x, y) => {
+    const dx = x - cx;
+    const bump = SHOULDER.amount * Math.exp(-(((y - SHOULDER.y) / SHOULDER.spread) ** 2));
+    const torso = Math.min(1, Math.max(0, 1 - (Math.abs(dx) - WAIST.torsoHalfWidth) / WAIST.fade));
+    const pinch = WAIST.amount * Math.exp(-(((y - WAIST.y) / WAIST.spread) ** 2)) * torso;
+    return cx + dx * (1 + bump - pinch);
+  };
+}
+
+function norm(d, dx, side) {
+  const warp = taper(side);
+  return svgpath(d).translate(-dx, 0).abs().unarc()
+    .iterate((s) => {
+      if ('HVZ'.includes(s[0].toUpperCase())) return; // absent after unarc in this source; nothing to warp
+      for (let k = 1; k < s.length; k += 2) s[k] = warp(s[k], s[k + 1]);
+    })
+    .round(2).toString();
 }
 
 function outline(side) {
@@ -27,11 +51,11 @@ function outline(side) {
   const re = new RegExp('d="([^"]+)"\\s*accessible=\\{true\\}\\s*accessibilityLabel="male-body-outline-' + side + '"');
   const m = wrapper.match(re);
   if (!m) throw new Error('no outline for ' + side);
-  return norm(m[1], side === 'back' ? 724 : 0);
+  return norm(m[1], side === 'back' ? 724 : 0, side);
 }
 
-const front = regions(read('assets/bodyFront.ts'), 0);
-const back = regions(read('assets/bodyBack.ts'), 724);
+const front = regions(read('assets/bodyFront.ts'), 0, 'front');
+const back = regions(read('assets/bodyBack.ts'), 724, 'back');
 
 const kt = (list) => list.map((r) =>
   `        Region("${r.slug}", listOf(\n${r.paths.map((p) => `            "${p}",`).join('\n')}\n        )),`).join('\n');
@@ -44,7 +68,8 @@ const src = `package com.assismohanty.awaken.core.designsystem.body
  *
  * MIT License, Copyright (c) 2022 ELABBASSI Hicham. Full text: assets/licenses/MIT_react-native-body-highlighter.txt.
  *
- * Paths are absolute, arcs converted to cubics, back view shifted to x = 0, in a ${724} × ${1448} viewport.
+ * Paths are absolute, arcs converted to cubics, back view shifted to x = 0, in a ${724} × ${1448} viewport, with the
+ * V-taper warp from convert.js (broader shoulders, narrower waist).
  */
 
 internal object BodyPaths {
