@@ -1,5 +1,12 @@
 package com.assismohanty.awaken.feature.screentime
 
+import com.assismohanty.awaken.core.designsystem.charts.Chart
+import com.assismohanty.awaken.core.designsystem.charts.ChartSpec
+import com.assismohanty.awaken.core.designsystem.charts.BarShape
+import com.assismohanty.awaken.core.designsystem.charts.Segment
+import com.assismohanty.awaken.core.designsystem.charts.StackedColumn
+import com.assismohanty.awaken.core.designsystem.components.LegendSwatch
+import com.assismohanty.awaken.core.designsystem.components.IconPlaceholder
 import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.provider.Settings
@@ -184,11 +191,7 @@ private fun UsageTodayWindow(overview: ScreenTimeOverview, modifier: Modifier = 
         SplitBar(overview.minutesByCategory, overview.totalMinutes)
         AppCategory.entries.forEach { category ->
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
-                Box(
-                    modifier = Modifier
-                        .size(Spacing.xs)
-                        .background(categoryColor(category)),
-                )
+                LegendSwatch(categoryColor(category))
                 Text(stringResource(category.labelRes), style = type.label, color = colors.textPrimary, modifier = Modifier.weight(1f))
                 Text(formatMinutes(overview.minutesByCategory[category] ?: 0), style = type.numericSmall, color = colors.textSecondary)
             }
@@ -199,29 +202,15 @@ private fun UsageTodayWindow(overview: ScreenTimeOverview, modifier: Modifier = 
 /** Distracting / productive / neutral as one segmented hairline bar; empty when nothing was used. */
 @Composable
 private fun SplitBar(byCategory: Map<AppCategory, Int>, total: Int) {
-    val colors = AwakenTheme.colors
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(AwakenTheme.dimens.xpBarHeight)
-            .clip(AwakenTheme.shapes.xpBar)
-            .background(colors.divider)
-            .clearAndSetSemantics { },
-    ) {
-        if (total > 0) {
-            AppCategory.entries.forEach { category ->
-                val minutes = byCategory[category] ?: 0
-                if (minutes > 0) {
-                    Box(
-                        modifier = Modifier
-                            .weight(minutes.toFloat())
-                            .fillMaxHeight()
-                            .background(categoryColor(category)),
-                    )
-                }
-            }
+    val segments = if (total > 0) {
+        AppCategory.entries.mapNotNull { category ->
+            val minutes = byCategory[category] ?: 0
+            if (minutes > 0) Segment(minutes.toFloat(), categoryColor(category)) else null
         }
+    } else {
+        emptyList()
     }
+    Chart(ChartSpec.Segmented(segments = segments, track = AwakenTheme.colors.divider))
 }
 
 @Composable
@@ -289,20 +278,14 @@ private fun LimitBar(row: AppUsageRow) {
                 color = if (row.breached) colors.critical else colors.textSecondary,
             )
         }
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(AwakenTheme.dimens.xpBarHeight)
-                .clip(AwakenTheme.shapes.xpBar)
-                .background(colors.divider),
-        ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth(fraction)
-                    .fillMaxHeight()
-                    .background(if (row.breached || fraction >= WARN_FRACTION) colors.critical else colors.accent),
-            )
-        }
+        Chart(
+            ChartSpec.Progress(
+                progress = fraction,
+                color = if (row.breached || fraction >= WARN_FRACTION) colors.critical else colors.accent,
+                track = colors.divider,
+                shape = BarShape.CHAMFER,
+            ),
+        )
     }
 }
 
@@ -395,12 +378,7 @@ private fun AppIcon(packageName: String) {
     if (bitmap != null) {
         Image(bitmap = bitmap, contentDescription = null, modifier = Modifier.size(size))
     } else {
-        Box(
-            modifier = Modifier
-                .size(size)
-                .clip(AwakenTheme.shapes.button)
-                .background(AwakenTheme.colors.surfaceOverlay),
-        )
+        IconPlaceholder()
     }
 }
 
@@ -410,33 +388,14 @@ private fun TrendWindow(trend: List<ScreenTimeDay>, modifier: Modifier = Modifie
     val max = (trend.maxOfOrNull { it.totalMinutes } ?: 0).coerceAtLeast(1)
     SystemWindow(title = stringResource(R.string.screentime_window_trend), accent = colors.accent, modifier = modifier, reveal = false) {
         Text(stringResource(R.string.screentime_trend_note), style = AwakenTheme.type.caption, color = colors.textSecondary)
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(AwakenTheme.dimens.trendBarHeight),
-            horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
-            verticalAlignment = Alignment.Bottom,
-        ) {
-            trend.forEach { day ->
-                val description = stringResource(R.string.screentime_trend_day, dayName(day.gameDate), formatMinutes(day.totalMinutes), formatMinutes(day.distractingMinutes))
-                Column(
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxHeight()
-                        .semantics(mergeDescendants = true) { contentDescription = description },
-                    verticalArrangement = Arrangement.Bottom,
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                ) {
-                    val total = day.totalMinutes.toFloat() / max
-                    val distracting = day.distractingMinutes.toFloat() / max
-                    Box(modifier = Modifier.fillMaxWidth().weight((total - distracting).coerceAtLeast(MIN_BAR), fill = true).background(colors.divider))
-                    if (distracting > 0f) {
-                        Box(modifier = Modifier.fillMaxWidth().weight(distracting, fill = true).background(colors.critical))
-                    }
-                    Spacer(modifier = Modifier.weight((1f - total).coerceAtLeast(MIN_BAR)))
-                }
-            }
+        val columns = trend.map { day ->
+            StackedColumn(
+                total = day.totalMinutes.toFloat() / max,
+                highlight = day.distractingMinutes.toFloat() / max,
+                description = stringResource(R.string.screentime_trend_day, dayName(day.gameDate), formatMinutes(day.totalMinutes), formatMinutes(day.distractingMinutes)),
+            )
         }
+        Chart(ChartSpec.StackedColumns(columns = columns, base = colors.divider, highlight = colors.critical))
         Row(horizontalArrangement = Arrangement.spacedBy(Spacing.xs), modifier = Modifier.fillMaxWidth()) {
             trend.forEach { day ->
                 Text(dayName(day.gameDate), style = AwakenTheme.type.caption, color = colors.textSecondary, modifier = Modifier.weight(1f))
@@ -548,7 +507,6 @@ private fun dayName(date: LocalDate): String = date.dayOfWeek.getDisplayName(Tex
 private const val MINUTES_PER_HOUR = 60
 private const val LIMIT_PREVIEW_COUNT = 4
 private const val WARN_FRACTION = 0.84f
-private const val MIN_BAR = 0.001f
 
 internal fun previewScreenTimeState(): ScreenTimeUiState {
     val today = LocalDate.of(2026, 10, 25)

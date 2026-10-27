@@ -1,5 +1,7 @@
 package com.assismohanty.awaken.feature.diet
 
+import com.assismohanty.awaken.core.designsystem.charts.Chart
+import com.assismohanty.awaken.core.designsystem.charts.ChartSpec
 import androidx.annotation.StringRes
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -245,10 +247,12 @@ private fun BudgetWindow(plan: DietPlan, totals: Nutrients, modifier: Modifier =
     val remaining = goal - eaten
     SystemWindow(title = stringResource(R.string.diet_window_budget), accent = colors.accent, modifier = modifier) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.lg)) {
-            ProgressRing(
-                progress = if (goal > 0) eaten.toFloat() / goal else 0f,
-                description = stringResource(R.string.cd_diet_ring, formatCount(eaten), formatCount(goal)),
-                color = if (remaining < 0) colors.critical else colors.accent,
+            Chart(
+                ChartSpec.Ring(
+                    progress = if (goal > 0) eaten.toFloat() / goal else 0f,
+                    description = stringResource(R.string.cd_diet_ring, formatCount(eaten), formatCount(goal)),
+                    color = if (remaining < 0) colors.critical else colors.accent,
+                ),
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(formatCount(abs(remaining)), style = type.numeric, color = if (remaining < 0) colors.critical else colors.textPrimary)
@@ -297,7 +301,7 @@ private fun NutrientLine(nutrient: Nutrient, amount: Double, target: Double?, ki
             )
         }
         if (target != null && target > 0.0) {
-            ProgressBar(progress = (amount / target).toFloat(), color = if (over) colors.critical else colors.accent)
+            Chart(ChartSpec.Progress(progress = (amount / target).toFloat(), color = if (over) colors.critical else colors.accent))
         }
     }
 }

@@ -1,5 +1,6 @@
 package com.assismohanty.awaken.feature.gate
 
+import com.assismohanty.awaken.core.designsystem.components.SelectableTile
 import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Build
@@ -142,8 +143,6 @@ private fun GatePicker(state: GatesUiState, onEvent: (GatesEvent) -> Unit, onBac
 @Composable
 private fun GatePortal(tile: GateTile, selected: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
     val colors = AwakenTheme.colors
-    val dimens = AwakenTheme.dimens
-    val shape = AwakenTheme.shapes.window
     val gateColor = if (tile.available) colors.gate(tile.rank) else colors.textMuted
     val name = stringResource(R.string.gate_name, tile.rank.name)
     val minutes = stringResource(R.string.gate_minutes, tile.minutes)
@@ -152,15 +151,13 @@ private fun GatePortal(tile: GateTile, selected: Boolean, onClick: () -> Unit, m
     } else {
         stringResource(R.string.cd_gate_tile_late, name, minutes)
     }
-    Column(
-        modifier = modifier
-            .defaultMinSize(minHeight = dimens.gateTileHeight)
-            .background(if (selected) gateColor.copy(alpha = AwakenAlpha.TINT) else colors.surfaceElevated, shape)
-            .border(if (selected) dimens.accentWidth else dimens.hairline, if (selected) gateColor else colors.divider, shape)
-            .clickable(enabled = tile.available, role = Role.RadioButton, onClick = onClick)
-            .semantics(mergeDescendants = true) { contentDescription = description }
-            .padding(Spacing.md),
-        verticalArrangement = Arrangement.spacedBy(Spacing.xxs),
+    SelectableTile(
+        accent = gateColor,
+        selected = selected,
+        enabled = tile.available,
+        description = description,
+        onClick = onClick,
+        modifier = modifier,
     ) {
         Text(name, style = AwakenTheme.type.windowTitle, color = gateColor)
         Text(minutes, style = AwakenTheme.type.numeric, color = if (tile.available) colors.textPrimary else colors.textMuted)

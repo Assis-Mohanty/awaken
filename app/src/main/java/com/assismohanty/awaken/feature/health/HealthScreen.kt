@@ -1,5 +1,9 @@
 package com.assismohanty.awaken.feature.health
 
+import com.assismohanty.awaken.core.designsystem.charts.Chart
+import com.assismohanty.awaken.core.designsystem.charts.ChartSpec
+import com.assismohanty.awaken.core.designsystem.charts.Segment
+import com.assismohanty.awaken.core.designsystem.components.MetricTile
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -215,20 +219,6 @@ private fun TodayWindow(overview: HealthOverview, state: HealthUiState, onEvent:
 }
 
 @Composable
-private fun MetricTile(label: String, value: String, modifier: Modifier = Modifier, dim: Boolean = false) {
-    val colors = AwakenTheme.colors
-    Column(
-        modifier = modifier
-            .background(colors.surfaceOverlay)
-            .padding(Spacing.sm),
-        verticalArrangement = Arrangement.spacedBy(Spacing.xxs),
-    ) {
-        Text(label, style = AwakenTheme.type.caption, color = colors.textSecondary)
-        Text(value, style = AwakenTheme.type.numericSmall, color = if (dim) colors.textMuted else colors.textPrimary)
-    }
-}
-
-@Composable
 private fun WorkoutsWindow(sessions: List<HealthSession>, zone: ZoneId) {
     val colors = AwakenTheme.colors
     val type = AwakenTheme.type
@@ -294,22 +284,13 @@ private fun StageTimeline(session: HealthSession) {
         Duration.ofMillis(session.stages.filter { it.type == stage }.sumOf { Duration.between(it.start, it.end).toMillis() })
     }.filterValues { !it.isZero }
     // The bar is a picture of the same numbers listed below it, so a screen reader skips it and reads the list once.
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(STAGE_BAR_HEIGHT)
-            .clearAndSetSemantics {},
-    ) {
-        session.stages.sortedBy(SleepStage::start).forEach { segment ->
-            val weight = (Duration.between(segment.start, segment.end).toMillis() / totalMillis).coerceAtLeast(MIN_SEGMENT_WEIGHT)
-            Box(
-                Modifier
-                    .weight(weight)
-                    .height(STAGE_BAR_HEIGHT)
-                    .background(stageColor(segment.type, colors.critical, colors.textSecondary, colors.chartSeries2, colors.chartSeries3, colors.textMuted)),
-            )
-        }
+    val segments = session.stages.sortedBy(SleepStage::start).map { segment ->
+        Segment(
+            weight = (Duration.between(segment.start, segment.end).toMillis() / totalMillis).coerceAtLeast(MIN_SEGMENT_WEIGHT),
+            color = stageColor(segment.type, colors.critical, colors.textSecondary, colors.chartSeries2, colors.chartSeries3, colors.textMuted),
+        )
     }
+    Chart(ChartSpec.Segmented(segments = segments, shape = null, height = AwakenTheme.dimens.stageBarHeight))
     FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.sm), verticalArrangement = Arrangement.spacedBy(Spacing.xxs)) {
         totals.forEach { (stage, duration) ->
             Text(
@@ -377,29 +358,14 @@ private fun TrendChart(title: String, days: List<HealthTrendDay>, value: (Health
     val numbers = NumberFormat.getIntegerInstance()
     val description = stringResource(R.string.cd_trend_chart, title, values.joinToString(", ") { numbers.format(it.toLong()) })
     Text(title, style = AwakenTheme.type.label, color = colors.textPrimary)
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clearAndSetSemantics { contentDescription = description },
-        horizontalArrangement = Arrangement.spacedBy(Spacing.xxs),
-        verticalAlignment = Alignment.Bottom,
-    ) {
-        days.forEachIndexed { index, day ->
-            Column(modifier = Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
-                Box(
-                    Modifier
-                        .fillMaxWidth()
-                        .height(BAR_AREA_HEIGHT * (values[index] / max).toFloat().coerceAtLeast(MIN_BAR_FRACTION))
-                        .background(color),
-                )
-                Text(
-                    day.date.dayOfWeek.getDisplayName(TextStyle.NARROW, Locale.current.platformLocale),
-                    style = AwakenTheme.type.caption,
-                    color = colors.textSecondary,
-                )
-            }
-        }
-    }
+    Chart(
+        ChartSpec.Columns(
+            fractions = values.map { (it / max).toFloat().coerceAtLeast(MIN_BAR_FRACTION) },
+            labels = days.map { it.date.dayOfWeek.getDisplayName(TextStyle.NARROW, Locale.current.platformLocale) },
+            color = color,
+            description = description,
+        ),
+    )
 }
 
 @Composable
@@ -435,8 +401,6 @@ private const val METERS_PER_KM = 1_000.0
 private const val MINUTES_PER_HOUR = 60L
 private const val MIN_SEGMENT_WEIGHT = 0.004f
 private const val MIN_BAR_FRACTION = 0.04f
-private val STAGE_BAR_HEIGHT = 18.dp
-private val BAR_AREA_HEIGHT = 72.dp
 
 // region previews
 

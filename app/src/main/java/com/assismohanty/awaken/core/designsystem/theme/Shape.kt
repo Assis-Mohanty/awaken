@@ -55,6 +55,10 @@ data class AwakenDimens(
     val navIndicatorHeight: Dp = 2.dp,
     /** Screen Time 7-day bars (DS §4.9). */
     val trendBarHeight: Dp = 96.dp,
+    /** Health 7-day columns: the area the tallest bar fills. */
+    val columnChartHeight: Dp = 72.dp,
+    /** Sleep-stage timeline bar. */
+    val stageBarHeight: Dp = 18.dp,
     /** Gym body map: front + back figures side by side (DS §3). */
     val bodyMapHeight: Dp = 260.dp,
     /** Diet calorie ring and its stroke. */

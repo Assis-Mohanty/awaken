@@ -1,5 +1,8 @@
 package com.assismohanty.awaken.feature.status
 
+import com.assismohanty.awaken.core.designsystem.charts.Chart
+import com.assismohanty.awaken.core.designsystem.charts.ChartSpec
+import com.assismohanty.awaken.core.designsystem.components.ShareCapture
 import android.content.ClipData
 import android.content.Intent
 import android.graphics.Bitmap
@@ -165,7 +168,7 @@ private fun RadarWindow(state: StatusUiState) {
     val colors = AwakenTheme.colors
     SystemWindow(title = stringResource(R.string.status_window_radar), accent = AwakenTheme.rankAccent(state.rank), reveal = false) {
         Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-            RadarChart(values = state.radarNow, maxValue = state.radarMax, previous = state.radarLastWeek)
+            Chart(ChartSpec.Radar(values = state.radarNow, maxValue = state.radarMax, previous = state.radarLastWeek))
         }
         Text(stringResource(R.string.status_radar_legend), style = AwakenTheme.type.caption, color = colors.textSecondary)
     }
@@ -196,7 +199,7 @@ private fun ActivityWindow(state: StatusUiState, onEvent: (StatusEvent) -> Unit)
     val type = AwakenTheme.type
     SystemWindow(title = stringResource(R.string.status_window_activity), accent = AwakenTheme.rankAccent(state.rank), reveal = false) {
         Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-            Heatmap(days = state.heatmap, onDayClick = { onEvent(StatusEvent.SelectDay(it.date)) })
+            Chart(ChartSpec.Heatmap(days = state.heatmap, onDayClick = { onEvent(StatusEvent.SelectDay(it.date)) }))
         }
         val selected = state.selectedDay
         Text(
@@ -393,38 +396,6 @@ private fun shareCardModel(state: StatusUiState): ShareCardModel {
     )
 }
 
-/**
- * Lays the share card out at 360×450dp with density 3 (exactly 1080×1350px, DESIGN_SYSTEM §3) and records it into a
- * graphics layer without drawing it on screen, then hands back the bitmap.
- */
-@Composable
-private fun ShareCapture(model: ShareCardModel, onCaptured: (Bitmap) -> Unit, onFailed: () -> Unit) {
-    val layer = rememberGraphicsLayer()
-    val captured by rememberUpdatedState(onCaptured)
-    val failed by rememberUpdatedState(onFailed)
-    Box(modifier = Modifier.size(0.dp).clearAndSetSemantics { }) {
-        CompositionLocalProvider(LocalDensity provides Density(SHARE_DENSITY, fontScale = 1f)) {
-            ShareCard(
-                model = model,
-                modifier = Modifier
-                    .wrapContentSize(align = Alignment.TopStart, unbounded = true)
-                    .drawWithContent { layer.record { this@drawWithContent.drawContent() } },
-            )
-        }
-    }
-    LaunchedEffect(Unit) {
-        try {
-            // Two frames: one to lay out and record, one so the recording is complete.
-            withFrameNanos { }
-            withFrameNanos { }
-            captured(layer.toImageBitmap().asAndroidBitmap())
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            failed()
-        }
-    }
-}
 
 @Composable
 private fun formatDate(date: LocalDate): String {
@@ -433,7 +404,6 @@ private fun formatDate(date: LocalDate): String {
 }
 
 private const val GRID_COLUMNS = 2
-private const val SHARE_DENSITY = 3f
 private const val PNG_MIME = "image/png"
 
 internal fun previewStatusState(locked: Boolean = false): StatusUiState {

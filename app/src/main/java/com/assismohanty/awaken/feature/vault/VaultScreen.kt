@@ -1,5 +1,6 @@
 package com.assismohanty.awaken.feature.vault
 
+import com.assismohanty.awaken.core.designsystem.components.CosmeticSwatch
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -259,8 +260,8 @@ private fun ItemMark(item: ShopItem) {
             Icon(it, contentDescription = null, tint = colors.accent, modifier = Modifier.size(markSize))
         }
         ShopKind.SHIELD -> Icon(AwakenGlyphs.Shield, contentDescription = null, tint = colors.accent, modifier = Modifier.size(markSize))
-        ShopKind.FRAME -> Box(Modifier.size(markSize).border(dimens.hairline, colors.frame(item.id), AwakenTheme.shapes.button))
-        ShopKind.THEME -> Box(Modifier.size(markSize).background(colors.theme(item.id) ?: colors.divider, AwakenTheme.shapes.button))
+        ShopKind.FRAME -> CosmeticSwatch(color = colors.frame(item.id), outlined = true)
+        ShopKind.THEME -> CosmeticSwatch(color = colors.theme(item.id) ?: colors.divider, outlined = false)
     }
 }
 

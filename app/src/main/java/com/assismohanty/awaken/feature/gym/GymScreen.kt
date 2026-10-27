@@ -1,5 +1,6 @@
 package com.assismohanty.awaken.feature.gym
 
+import com.assismohanty.awaken.core.designsystem.components.heatAlpha
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -178,7 +179,7 @@ private fun WeekWindow(overview: GymOverview, modifier: Modifier = Modifier) {
 internal fun loadIntensity(load: Map<Muscle, Double>): Map<Muscle, Float> =
     load.mapValues { (_, sets) -> TrainingMath.band(sets) }
         .filterValues { it > 0 }
-        .mapValues { (_, band) -> AwakenAlpha.HEATMAP_STEPS[band.coerceAtMost(AwakenAlpha.HEATMAP_STEPS.lastIndex)] }
+        .mapValues { (_, band) -> heatAlpha(band) }
 
 @Composable
 private fun Stat(label: String, value: String, modifier: Modifier = Modifier) {

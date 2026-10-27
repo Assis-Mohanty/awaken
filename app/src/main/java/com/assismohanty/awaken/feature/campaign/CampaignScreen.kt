@@ -1,5 +1,10 @@
 package com.assismohanty.awaken.feature.campaign
 
+import com.assismohanty.awaken.core.designsystem.charts.Chart
+import com.assismohanty.awaken.core.designsystem.charts.ChartSpec
+import com.assismohanty.awaken.core.designsystem.charts.BarShape
+import com.assismohanty.awaken.core.designsystem.charts.CalendarCell
+import com.assismohanty.awaken.core.designsystem.components.HoldToConfirmRing
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
@@ -212,19 +217,7 @@ private fun ForgeStep(ready: Boolean, onFinished: () -> Unit) {
             style = type.metricXL,
             color = colors.textPrimary,
         )
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(AwakenTheme.dimens.xpBarHeight)
-                .background(colors.divider),
-        ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth(progress.value)
-                    .height(AwakenTheme.dimens.xpBarHeight)
-                    .background(colors.accent),
-            )
-        }
+        Chart(ChartSpec.Progress(progress = progress.value, color = colors.accent, track = colors.divider, shape = BarShape.SQUARE))
         FORGE_STEPS.forEachIndexed { index, step ->
             val done = progress.value >= (index + 1f) / FORGE_STEPS.size
             Text(
@@ -244,9 +237,11 @@ private fun ResultStep(preview: CampaignPreview, error: CampaignProblem?, onEven
     SystemWindow(title = stringResource(R.string.campaign_window_result), accent = accent, modifier = Modifier.staggeredEntrance(0)) {
         Text(stringResource(preview.archetype.nameRes), style = type.metricL, color = colors.textPrimary)
         Text(stringResource(preview.archetype.lineRes), style = type.body, color = colors.textSecondary)
-        RadarChart(
-            values = preview.scores.mapValues { (_, score) -> score + 1f },
-            maxValue = (CampaignScan.MAX_ANSWER * 2 + 1).toFloat(),
+        Chart(
+            ChartSpec.Radar(
+                values = preview.scores.mapValues { (_, score) -> score + 1f },
+                maxValue = (CampaignScan.MAX_ANSWER * 2 + 1).toFloat(),
+            ),
             modifier = Modifier
                 .fillMaxWidth()
                 .aspectRatio(1f),
@@ -297,63 +292,14 @@ private fun OathStep(name: String, endDate: LocalDate, sealing: Boolean, onSeale
     SystemWindow(title = stringResource(R.string.campaign_window_oath), accent = colors.reward) {
         Text(stringResource(R.string.campaign_oath_body, name.ifBlank { stringResource(R.string.campaign_oath_hunter) }), style = type.body, color = colors.textPrimary)
         Text(stringResource(R.string.campaign_oath_end, formatDate(endDate)), style = type.title, color = colors.reward)
-        HoldToSeal(enabled = !sealing, onSealed = onSealed)
+        HoldToConfirmRing(
+            label = stringResource(R.string.campaign_oath_hold),
+            idleText = stringResource(R.string.campaign_oath_hold_short),
+            doneText = stringResource(R.string.campaign_oath_sealed),
+            enabled = !sealing,
+            onConfirmed = onSealed,
+        )
         Text(stringResource(R.string.campaign_oath_note), style = type.caption, color = colors.textSecondary, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
-    }
-}
-
-@Composable
-private fun HoldToSeal(enabled: Boolean, onSealed: () -> Unit) {
-    val colors = AwakenTheme.colors
-    val haptics = AwakenTheme.haptics
-    val motion = AwakenTheme.motion
-    val progress = remember { Animatable(0f) }
-    val scope = rememberCoroutineScope()
-    val sealed by rememberUpdatedState(onSealed)
-    val label = stringResource(R.string.campaign_oath_hold)
-    val size = AwakenTheme.dimens.gateDialSize / 2
-    Box(
-        contentAlignment = Alignment.Center,
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = Spacing.md),
-    ) {
-        Box(
-            contentAlignment = Alignment.Center,
-            modifier = Modifier
-                .size(size)
-                .semantics {
-                    contentDescription = label
-                    onClick(label) { if (enabled) sealed(); enabled }
-                }
-                .pointerInput(enabled) {
-                    if (!enabled) return@pointerInput
-                    detectTapGestures(
-                        onPress = {
-                            var job: Job? = null
-                            job = scope.launch {
-                                progress.animateTo(1f, tween(if (motion.reduceMotion) HOLD_MS / 3 else HOLD_MS, easing = LinearEasing))
-                                haptics.confirm()
-                                sealed()
-                            }
-                            val released = tryAwaitRelease()
-                            if (released && progress.value < 1f) {
-                                job.cancel()
-                                scope.launch { progress.animateTo(0f, tween(motion.duration(motion.quickMs))) }
-                            }
-                        },
-                    )
-                },
-        ) {
-            Canvas(modifier = Modifier.fillMaxSize()) {
-                val stroke = this.size.minDimension * RING_FRACTION
-                val inset = stroke / 2
-                val arcSize = Size(this.size.width - stroke, this.size.height - stroke)
-                drawArc(colors.divider, 0f, 360f, false, Offset(inset, inset), arcSize, style = Stroke(stroke))
-                drawArc(colors.reward, -90f, 360f * progress.value, false, Offset(inset, inset), arcSize, style = Stroke(stroke))
-            }
-            Text(stringResource(if (progress.value >= 1f) R.string.campaign_oath_sealed else R.string.campaign_oath_hold_short), style = AwakenTheme.type.windowTitle, color = colors.textPrimary)
-        }
     }
 }
 
@@ -411,37 +357,20 @@ private fun FinishedWindow(title: String, body: String, accent: androidx.compose
     }
 }
 
-/** 45 cells, nine to a row: cleared (system), missed (fog outline), today (outlined), still to come (edge). */
+/** 45 cells, nine to a row: cleared, today, missed and still to come. */
 @Composable
 private fun CampaignCalendar(model: CampaignModel) {
-    val colors = AwakenTheme.colors
     val description = pluralStringResource(R.plurals.campaign_calendar_cd, model.clearedDays, model.clearedDays, model.dayIndex ?: 0)
-    Column(
-        verticalArrangement = Arrangement.spacedBy(Spacing.xxs),
-        modifier = Modifier.semantics(mergeDescendants = true) { contentDescription = description },
-    ) {
-        (0 until CampaignRules.LENGTH_DAYS).chunked(CALENDAR_COLUMNS).forEach { week ->
-            Row(horizontalArrangement = Arrangement.spacedBy(Spacing.xxs), modifier = Modifier.fillMaxWidth()) {
-                week.forEach { offset ->
-                    val date = model.campaign.startDate.plusDays(offset.toLong())
-                    val cleared = date in model.clearedDates
-                    val isToday = date == model.today
-                    val past = date.isBefore(model.today)
-                    val cell = Modifier
-                        .weight(1f)
-                        .aspectRatio(1f)
-                    Box(
-                        modifier = when {
-                            cleared -> cell.background(colors.accent, AwakenTheme.shapes.xpBar)
-                            isToday -> cell.border(AwakenTheme.dimens.accentWidth, colors.reward, AwakenTheme.shapes.xpBar)
-                            past -> cell.border(AwakenTheme.dimens.hairline, colors.textMuted, AwakenTheme.shapes.xpBar)
-                            else -> cell.background(colors.divider, AwakenTheme.shapes.xpBar)
-                        },
-                    )
-                }
-            }
+    val cells = (0 until CampaignRules.LENGTH_DAYS).map { offset ->
+        val date = model.campaign.startDate.plusDays(offset.toLong())
+        when {
+            date in model.clearedDates -> CalendarCell.FILLED
+            date == model.today -> CalendarCell.CURRENT
+            date.isBefore(model.today) -> CalendarCell.PAST
+            else -> CalendarCell.UPCOMING
         }
     }
+    Chart(ChartSpec.CalendarGrid(cells = cells, columns = CALENDAR_COLUMNS, description = description))
 }
 
 @Composable
@@ -516,8 +445,6 @@ private fun questionRes(id: String): Int = when (id) {
 private val ANSWER_LABELS = listOf(R.string.scan_answer_never, R.string.scan_answer_sometimes, R.string.scan_answer_often, R.string.scan_answer_always)
 private val FORGE_STEPS = listOf(R.string.campaign_forge_step_scan, R.string.campaign_forge_step_quests, R.string.campaign_forge_step_schedule)
 private const val FORGE_MS = 2_400
-private const val HOLD_MS = 1_500
-private const val RING_FRACTION = 0.06f
 private const val CALENDAR_COLUMNS = 9
 
 internal fun previewCampaignPreview(): CampaignPreview {

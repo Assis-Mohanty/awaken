@@ -1,5 +1,6 @@
 package com.assismohanty.awaken.feature.today
 
+import com.assismohanty.awaken.core.designsystem.components.penaltyTint
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -103,7 +104,7 @@ fun TodayScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .then(if (state.penaltyOpen) Modifier.background(colors.critical.copy(alpha = AwakenAlpha.HAZE)) else Modifier)
+            .penaltyTint(state.penaltyOpen)
             .verticalScroll(rememberScrollState()),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
