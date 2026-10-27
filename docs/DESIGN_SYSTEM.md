@@ -43,7 +43,7 @@ How the accents are used:
 - **Reward:** reward gold = STR.
 - **Ranks:** E is secondary ink; D, C, B, A and S take VIT, WIL, INT, CHA and STR.
 - **Vault themes and frames:** they re-tint small marks only.
-- **Fixed looks:** the share image and the widget use Dark.
+- **Fixed looks:** the share image uses Dark. The widget follows the phone setting (Glance day/night colours from the Light and Dark palettes).
 
 `PaletteContrastTest` keeps these floors on cards:
 - Ink ≥ 7:1.
@@ -156,7 +156,7 @@ Off by default (toggle ready, assets later). Never ship a sound you didn't licen
 
 ## 4. Screens & flows
 
-Navigation: bottom bar (§3) with 4 destinations — **Today**, **Gym**, **Diet**, **Progress** (the Status screen; "Status" in System mode). **Gates** and **Vault** open from round icon buttons in Today's greeting header; **Paths** opens from the Progress header; Settings from Progress top-right. Screens below are redesigned one by one (UI_OVERHAUL_NOTES §4); until then they wear the new tokens through the shared components.
+Navigation: bottom bar (§3) with 4 destinations — **Today**, **Gym**, **Diet**, **Progress** (the Status screen). **Gates** and **Vault** open from round icon buttons in Today's greeting header; **Paths** opens from the Progress header; Settings from Progress top-right. Every screen is on the v2 design (2026-10-27): a large title that collapses on scroll, an icon back button on pushed screens, flat cards; the sketches below show layout, not final copy.
 
 ### 4.1 Awakening (onboarding) — target < 60 seconds without a Path, < 2 minutes with one; no account
 

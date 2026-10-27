@@ -28,7 +28,7 @@ Written 2026-10-27 with the v1.1 brief (`docs/V1_1_FEATURES_PROMPT.md`, Part 4).
 
 ## 4. Screens and components that will change
 
-Every row must consume only semantic tokens, ChartKit and the Lexicon by the end of Part 2. The **Part 2 audit** column records the Phase A refactor (2026-10-27); `FeatureBoundaryTest` keeps it true. Anything that regresses is a bug, not a redesign task.
+**v2 status (2026-10-27): every screen below and the widget are redesigned and committed (4ddb1eb…2f0ef20); System-mode notes in this table are historical.** Every row must consume only semantic tokens, ChartKit and the Lexicon by the end of Part 2. The **Part 2 audit** column records the Phase A refactor (2026-10-27); `FeatureBoundaryTest` keeps it true. Anything that regresses is a bug, not a redesign task.
 
 **Screens** (`feature/**`)
 
