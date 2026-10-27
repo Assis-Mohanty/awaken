@@ -307,15 +307,15 @@ private fun CatalogContent(
             item {
                 Section(R.string.catalog_timeline) {
                     TimeBlockHeader(TimeBlock.MORNING, done = 1, total = 1, state = BlockState.PAST, expanded = morningOpen, onToggle = { morningOpen = !morningOpen })
-                    if (morningOpen) AwakenCard(reveal = false, contentPadding = Spacing.listCard) { QuestRow(previewQuests[1], onComplete = {}, onOpen = {}, showDivider = false) }
+                    if (morningOpen) AwakenCard(reveal = false, contentPadding = Spacing.listCard, spacing = Spacing.zero) { QuestRow(previewQuests[1], onComplete = {}, onOpen = {}, showDivider = false) }
                     TimeBlockHeader(TimeBlock.DAY, done = 0, total = 2, state = BlockState.CURRENT, expanded = true, onToggle = {})
-                    AwakenCard(reveal = false, contentPadding = Spacing.listCard) {
+                    AwakenCard(reveal = false, contentPadding = Spacing.listCard, spacing = Spacing.zero) {
                         QuestRow(previewQuests[0].copy(id = "c", title = "Take a short walk", isMain = false, comeback = true), onComplete = {}, onOpen = {}, showDivider = false)
                         QuestRow(previewQuests[0], onComplete = {}, onOpen = {})
                         QuestRow(previewQuests[2], onComplete = {}, onOpen = {})
                     }
                     TimeBlockHeader(TimeBlock.ANYTIME, done = 0, total = 1, state = BlockState.UPCOMING, expanded = true, onToggle = {})
-                    AwakenCard(reveal = false, contentPadding = Spacing.listCard) { QuestRow(previewQuests[4], onComplete = {}, onOpen = {}, showDivider = false) }
+                    AwakenCard(reveal = false, contentPadding = Spacing.listCard, spacing = Spacing.zero) { QuestRow(previewQuests[4], onComplete = {}, onOpen = {}, showDivider = false) }
                 }
             }
 

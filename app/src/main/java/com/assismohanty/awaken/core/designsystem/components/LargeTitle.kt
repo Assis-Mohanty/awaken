@@ -44,6 +44,7 @@ fun LargeTitleScaffold(
     title: String,
     modifier: Modifier = Modifier,
     subtitle: String? = null,
+    onBack: (() -> Unit)? = null,
     scrollState: ScrollState = rememberScrollState(),
     actions: @Composable RowScope.() -> Unit = {},
     content: @Composable ColumnScope.() -> Unit,
@@ -71,6 +72,7 @@ fun LargeTitleScaffold(
                 GreetingHeader(
                     greeting = title,
                     subtitle = subtitle,
+                    onBack = onBack,
                     actions = actions,
                     modifier = Modifier
                         .padding(bottom = Spacing.sm)
@@ -84,19 +86,20 @@ fun LargeTitleScaffold(
                 modifier = Modifier
                     .fillMaxWidth()
                     .graphicsLayer { alpha = barAlpha }
-                    .background(colors.surface)
-                    // The large title is the accessible heading; the pinned copy is decoration.
-                    .clearAndSetSemantics { },
+                    .background(colors.surface),
             ) {
                 Box(modifier = Modifier.fillMaxWidth().height(AwakenTheme.dimens.topBarHeight), contentAlignment = Alignment.Center) {
+                    // The large title is the accessible heading; the pinned copy is decoration.
                     Text(
                         title,
                         style = AwakenTheme.type.title,
                         color = colors.textPrimary,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.padding(horizontal = Spacing.xxl),
+                        modifier = Modifier.padding(horizontal = Spacing.xxl + Spacing.md).clearAndSetSemantics { },
                     )
+                    // Back stays reachable once the large header has scrolled away.
+                    onBack?.let { BackButton(it, Modifier.align(Alignment.CenterStart).padding(start = Spacing.xs)) }
                 }
                 HorizontalDivider(thickness = AwakenTheme.dimens.hairline, color = colors.divider)
             }

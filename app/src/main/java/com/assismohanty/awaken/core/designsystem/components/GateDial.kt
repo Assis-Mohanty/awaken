@@ -27,8 +27,8 @@ import com.assismohanty.awaken.engine.model.GateRank
 import java.time.Duration
 
 /**
- * Focus Gate countdown (DESIGN_SYSTEM §3): thick ring in the gate's rank colour for remaining time, `displayXL` timer,
- * and a thin inner ring for the breach budget that shifts from `mist` to `ember` as it fills.
+ * Focus Gate countdown (DESIGN_SYSTEM §3): a 10dp ring with round caps in the gate's rank colour for the time left, the
+ * timer as the big number, and a thin inner ring for the breach budget that shifts from secondary ink to negative.
  */
 @Composable
 fun GateDial(
@@ -59,7 +59,7 @@ fun GateDial(
             val outerInset = ring / 2f
             val outerSize = Size(size.width - ring, size.height - ring)
             drawArc(colors.edge, 0f, FULL, false, Offset(outerInset, outerInset), outerSize, style = Stroke(ring))
-            drawArc(gateColor, START, FULL * remainingFraction, false, Offset(outerInset, outerInset), outerSize, style = Stroke(ring, cap = StrokeCap.Butt))
+            if (remainingFraction > 0f) drawArc(gateColor, START, FULL * remainingFraction, false, Offset(outerInset, outerInset), outerSize, style = Stroke(ring, cap = StrokeCap.Round))
 
             val innerInset = ring + Spacing.sm.toPx() + inner / 2f
             val innerSize = Size(size.width - innerInset * 2, size.height - innerInset * 2)

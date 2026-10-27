@@ -97,10 +97,10 @@ fun ChoiceChip(
             .then(selection)
             .padding(horizontal = Spacing.md, vertical = Spacing.xs),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(Spacing.xs, Alignment.CenterHorizontally),
+        horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
     ) {
         if (icon != null) Icon(icon, contentDescription = null, tint = if (selected) ink else color, modifier = Modifier.size(dimens.iconSmall))
-        Text(text = text, style = AwakenTheme.type.label, color = ink)
+        Text(text = text, style = AwakenTheme.type.label, color = ink, modifier = Modifier.weight(1f, fill = false))
         if (selected) Icon(AwakenGlyphs.Check, contentDescription = null, tint = ink, modifier = Modifier.size(dimens.iconSmall))
     }
 }

@@ -13,6 +13,7 @@ object Spacing {
     val xl = 32.dp
     val xxl = 48.dp
     /** Screen margin. */
+    val zero = 0.dp
     val gutter = 16.dp
     /** Inner padding of a card. */
     val card = 20.dp

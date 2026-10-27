@@ -28,6 +28,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.unit.Dp
 import com.assismohanty.awaken.core.designsystem.preview.ComponentPreview
 import com.assismohanty.awaken.core.designsystem.theme.AwakenTheme
 import com.assismohanty.awaken.core.designsystem.theme.Spacing
@@ -48,6 +49,8 @@ fun AwakenCard(
     reveal: Boolean = true,
     onClick: (() -> Unit)? = null,
     contentPadding: PaddingValues = PaddingValues(Spacing.card),
+    /** Gap between children; list cards pass [Spacing.zero] because rows carry their own padding. */
+    spacing: Dp = Spacing.sm,
     headerTrailing: (@Composable RowScope.() -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
@@ -77,7 +80,7 @@ fun AwakenCard(
             .background(fill)
             .then(if (onClick != null) Modifier.clickable(interactionSource = interaction, indication = null, onClick = onClick) else Modifier)
             .padding(contentPadding),
-        verticalArrangement = Arrangement.spacedBy(Spacing.sm),
+        verticalArrangement = Arrangement.spacedBy(spacing),
     ) {
         if (title != null || headerTrailing != null) {
             Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {

@@ -125,12 +125,12 @@ fun HoldToConfirmRing(
 }
 
 /**
- * A selectable tile (gate picker): tinted fill and accent border when [selected], hairline otherwise. [accent] is the
- * tile's meaning colour; [description] is its single TalkBack label.
+ * A selectable tile (gate picker): a card; when [selected] it gains an ink outline (no colour fills or coloured borders,
+ * DESIGN_SYSTEM §1). [accent] is kept for callers and ignored; [description] is its single TalkBack label.
  */
 @Composable
 fun SelectableTile(
-    accent: Color,
+    @Suppress("UNUSED_PARAMETER") accent: Color,
     selected: Boolean,
     enabled: Boolean,
     description: String,
@@ -144,8 +144,9 @@ fun SelectableTile(
     Column(
         modifier = modifier
             .defaultMinSize(minHeight = dimens.gateTileHeight)
-            .background(if (selected) accent.copy(alpha = AwakenAlpha.TINT) else palette.panel, shape)
-            .border(if (selected) dimens.accentWidth else dimens.hairline, if (selected) accent else palette.edge, shape)
+            .background(palette.panel, shape)
+            // Selection is an ink outline, never a coloured border (DESIGN_SYSTEM §1).
+            .then(if (selected) Modifier.border(dimens.accentWidth, palette.bone, shape) else Modifier)
             .clickable(enabled = enabled, role = Role.RadioButton, onClick = onClick)
             .semantics(mergeDescendants = true) { contentDescription = description }
             .padding(Spacing.md),

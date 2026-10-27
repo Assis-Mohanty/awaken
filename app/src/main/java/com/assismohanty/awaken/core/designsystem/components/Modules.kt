@@ -429,19 +429,38 @@ fun StatTintCard(stat: Stat, title: String, value: String, modifier: Modifier = 
  * the left and the header [actions] on the right, so the title never shares its line.
  */
 @Composable
-fun GreetingHeader(greeting: String, modifier: Modifier = Modifier, subtitle: String? = null, actions: @Composable RowScope.() -> Unit = {}) {
+fun GreetingHeader(
+    greeting: String,
+    modifier: Modifier = Modifier,
+    subtitle: String? = null,
+    onBack: (() -> Unit)? = null,
+    actions: @Composable RowScope.() -> Unit = {},
+) {
     val colors = AwakenTheme.colors
     Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(Spacing.xxs)) {
         Row(
             modifier = Modifier.fillMaxWidth().defaultMinSize(minHeight = AwakenTheme.dimens.touchTarget),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text(subtitle.orEmpty(), style = AwakenTheme.type.label, color = colors.textSecondary, modifier = Modifier.weight(1f))
+            if (onBack != null) {
+                BackButton(onBack)
+                Spacer(Modifier.weight(1f))
+            } else {
+                Text(subtitle.orEmpty(), style = AwakenTheme.type.label, color = colors.textSecondary, modifier = Modifier.weight(1f))
+            }
             Row(horizontalArrangement = Arrangement.spacedBy(Spacing.xs), content = actions)
+        }
+        if (onBack != null && subtitle != null) {
+            Text(subtitle, style = AwakenTheme.type.label, color = colors.textSecondary, modifier = Modifier.padding(top = Spacing.xs))
         }
         Text(greeting, style = AwakenTheme.type.headline, color = colors.textPrimary, modifier = Modifier.semantics { heading() })
     }
 }
+
+/** Back: an arrow on a card-coloured circle, top-left of every pushed screen. */
+@Composable
+fun BackButton(onBack: () -> Unit, modifier: Modifier = Modifier) =
+    HeaderIconButton(AwakenGlyphs.ArrowLeft, lexString(R.string.action_back), onBack, modifier)
 
 /** A round header action (Gates, Vault, settings): an ink icon on a card-coloured circle, 48dp target. */
 @Composable
