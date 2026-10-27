@@ -29,6 +29,7 @@ import androidx.compose.ui.text.intl.Locale
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.assismohanty.awaken.R
+import com.assismohanty.awaken.core.designsystem.components.LargeTitleScaffold
 import com.assismohanty.awaken.core.designsystem.components.GateBackground
 import com.assismohanty.awaken.core.designsystem.components.Pill
 import com.assismohanty.awaken.core.designsystem.components.PrimaryButton
@@ -79,37 +80,13 @@ fun HealthScreen(
 ) {
     val colors = AwakenTheme.colors
     GateBackground(rank = Rank.E, modifier = modifier) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState()),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Column(
-                modifier = Modifier
-                    .widthIn(max = Spacing.contentMaxWidth)
-                    .fillMaxWidth()
-                    .padding(horizontal = Spacing.gutter, vertical = Spacing.lg),
-                verticalArrangement = Arrangement.spacedBy(Spacing.lg),
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        lexString(R.string.health_title),
-                        style = AwakenTheme.type.metricL,
-                        color = colors.textPrimary,
-                        modifier = Modifier
-                            .weight(1f)
-                            .semantics { heading() },
-                    )
-                    QuietButton(text = lexString(R.string.action_back), onClick = onBack)
+        LargeTitleScaffold(title = lexString(R.string.health_title), onBack = onBack) {
+            val overview = state.overview
+            when {
+                overview != null -> {
+                    OverviewContent(overview, state, onEvent, zone)
                 }
-                val overview = state.overview
-                when {
-                    overview != null -> {
-                        OverviewContent(overview, state, onEvent, zone)
-                    }
-                    else -> MessageWindow(state.status, onEvent)
-                }
+                else -> MessageWindow(state.status, onEvent)
             }
         }
     }
