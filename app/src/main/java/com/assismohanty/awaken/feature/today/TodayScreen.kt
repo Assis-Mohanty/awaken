@@ -191,7 +191,7 @@ private fun Timeline(state: TodayUiState, onEvent: (TodayEvent) -> Unit, onOpenQ
                 onToggle = { expanded[key] = !isExpanded },
             )
             if (isExpanded) {
-                AwakenCard(reveal = false, contentPadding = Spacing.listCard) {
+                AwakenCard(reveal = false, contentPadding = Spacing.listCard, spacing = Spacing.zero) {
                     Column {
                         rows.forEachIndexed { index, row ->
                             QuestRow(
@@ -212,7 +212,7 @@ private fun Timeline(state: TodayUiState, onEvent: (TodayEvent) -> Unit, onOpenQ
 @Composable
 private fun PlanCard(state: TodayUiState, onHabitsEvent: (HabitsEvent) -> Unit, onDayPlanEvent: (DayPlanEvent) -> Unit) {
     val colors = AwakenTheme.colors
-    AwakenCard(reveal = false, contentPadding = Spacing.listCard, modifier = Modifier.fillMaxWidth()) {
+    AwakenCard(reveal = false, contentPadding = Spacing.listCard, spacing = Spacing.zero, modifier = Modifier.fillMaxWidth()) {
         ListRow(
             title = lexString(R.string.action_day_plan),
             icon = AwakenGlyphs.Calendar,
@@ -244,7 +244,7 @@ private fun PlanCard(state: TodayUiState, onHabitsEvent: (HabitsEvent) -> Unit, 
 private fun CampaignRow(state: TodayUiState, onOpenCampaign: () -> Unit) {
     val card = state.campaign
     if (card == null && !state.campaignOffer) return
-    AwakenCard(reveal = false, contentPadding = Spacing.listCard, modifier = Modifier.fillMaxWidth()) {
+    AwakenCard(reveal = false, contentPadding = Spacing.listCard, spacing = Spacing.zero, modifier = Modifier.fillMaxWidth()) {
         ListRow(
             title = lexString(R.string.campaign_window_progress),
             icon = AwakenGlyphs.Path,
@@ -263,7 +263,7 @@ private fun CampaignRow(state: TodayUiState, onOpenCampaign: () -> Unit) {
 @Composable
 private fun DisciplineRow(card: DisciplineCard, onOpenScreenTime: () -> Unit) {
     val colors = AwakenTheme.colors
-    AwakenCard(reveal = false, contentPadding = Spacing.listCard, modifier = Modifier.fillMaxWidth()) {
+    AwakenCard(reveal = false, contentPadding = Spacing.listCard, spacing = Spacing.zero, modifier = Modifier.fillMaxWidth()) {
         ListRow(
             title = lexString(R.string.quest_kind_discipline),
             icon = AwakenGlyphs.Phone,
