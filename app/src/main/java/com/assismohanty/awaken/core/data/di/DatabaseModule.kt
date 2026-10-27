@@ -39,4 +39,5 @@ object DatabaseModule {
     @Provides fun provideDietDao(db: AwakenDatabase) = db.dietDao()
     @Provides fun provideInsightDao(db: AwakenDatabase) = db.insightDao()
     @Provides fun provideWeeklyReviewDao(db: AwakenDatabase) = db.weeklyReviewDao()
+    @Provides fun provideRecapDao(db: AwakenDatabase) = db.recapDao()
 }

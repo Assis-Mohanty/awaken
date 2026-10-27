@@ -15,6 +15,7 @@ import com.assismohanty.awaken.core.domain.EquipTitleUseCase
 import com.assismohanty.awaken.core.domain.HeatmapEntry
 import com.assismohanty.awaken.core.domain.InsightsModel
 import com.assismohanty.awaken.core.domain.ObserveStatusUseCase
+import com.assismohanty.awaken.core.domain.RecapEntry
 import com.assismohanty.awaken.core.domain.RefreshHealthCacheUseCase
 import com.assismohanty.awaken.core.domain.StatProgress
 import com.assismohanty.awaken.core.domain.StatusModel
@@ -57,6 +58,7 @@ data class StatusUiState(
     val identityIds: List<String> = emptyList(),
     val insights: InsightsModel = InsightsModel(),
     val reviewOpen: Boolean = false,
+    val recaps: List<RecapEntry> = emptyList(),
     val achievements: List<AchievementEntry> = emptyList(),
     val chapters: List<ChapterEntry> = emptyList(),
     val openChapter: ChapterEntry? = null,
@@ -191,6 +193,7 @@ private fun StatusModel.toUiState(local: LocalState): StatusUiState = StatusUiSt
     identityIds = identityIds,
     insights = insights,
     reviewOpen = reviewOpen,
+    recaps = recaps,
     achievements = achievements,
     chapters = chapters,
     openChapter = local.openChapterId?.let { id -> chapters.firstOrNull { it.chapter.id == id && it.unlocked } },

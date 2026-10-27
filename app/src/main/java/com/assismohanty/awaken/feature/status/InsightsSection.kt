@@ -60,7 +60,7 @@ internal fun insightLine(model: InsightsModel): String = when {
 }
 
 @Composable
-private fun insightText(insight: Insight): String = when (insight) {
+internal fun insightText(insight: Insight): String = when (insight) {
     is BucketInsight -> {
         val copy = insight.copyRes()
         val percent = insight.percent

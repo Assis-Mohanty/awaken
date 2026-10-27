@@ -10,6 +10,7 @@ import com.assismohanty.awaken.core.data.db.dao.DayRecordDao
 import com.assismohanty.awaken.core.data.db.dao.DietDao
 import com.assismohanty.awaken.core.data.db.dao.InsightDao
 import com.assismohanty.awaken.core.data.db.dao.WeeklyReviewDao
+import com.assismohanty.awaken.core.data.db.dao.RecapDao
 import com.assismohanty.awaken.core.data.db.dao.GateRunDao
 import com.assismohanty.awaken.core.data.db.dao.GymDao
 import com.assismohanty.awaken.core.data.db.dao.HabitDao
@@ -27,6 +28,7 @@ import com.assismohanty.awaken.core.data.db.entity.CampaignEntity
 import com.assismohanty.awaken.core.data.db.entity.BalanceCacheEntity
 import com.assismohanty.awaken.core.data.db.entity.HealthDayCacheEntity
 import com.assismohanty.awaken.core.data.db.entity.WeeklyReviewEntity
+import com.assismohanty.awaken.core.data.db.entity.RecapEntity
 import com.assismohanty.awaken.core.data.db.entity.CompletionEntity
 import com.assismohanty.awaken.core.data.db.entity.CustomExerciseEntity
 import com.assismohanty.awaken.core.data.db.entity.CustomFoodEntity
@@ -64,6 +66,7 @@ import com.assismohanty.awaken.core.data.db.entity.WorkoutSetEntity
         BalanceCacheEntity::class,
         HealthDayCacheEntity::class,
         WeeklyReviewEntity::class,
+        RecapEntity::class,
         DayRecordEntity::class,
         GateRunEntity::class,
         TrialEntity::class,
@@ -106,11 +109,12 @@ abstract class AwakenDatabase : RoomDatabase() {
     abstract fun dietDao(): DietDao
     abstract fun insightDao(): InsightDao
     abstract fun weeklyReviewDao(): WeeklyReviewDao
+    abstract fun recapDao(): RecapDao
 
     companion object {
         const val NAME = "awaken.db"
 
         /** Also the export format version: an export is only importable into the schema it was written from. */
-        const val SCHEMA_VERSION = 13
+        const val SCHEMA_VERSION = 14
     }
 }

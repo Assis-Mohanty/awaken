@@ -100,8 +100,9 @@ object InsightEngine {
     private val ABS_RATE = Ratio(15, 100)
     private val REL = Ratio(1, 4)
 
-    fun evaluate(history: InsightHistory, asOf: LocalDate): InsightResult {
-        val from = asOf.minusDays(WINDOW_DAYS - 1)
+    /** [windowDays]: 84 for Status and the review; a recap passes its whole period (GD §14.6). */
+    fun evaluate(history: InsightHistory, asOf: LocalDate, windowDays: Long = WINDOW_DAYS): InsightResult {
+        val from = asOf.minusDays(windowDays - 1)
         val days = history.days.filter { it.date in from..asOf }.distinctBy { it.date }
         if (days.size < MIN_DAYS) return InsightResult(days.size, emptyList())
         val insights = listOfNotNull(

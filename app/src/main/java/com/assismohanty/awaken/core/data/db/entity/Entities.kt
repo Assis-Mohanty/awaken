@@ -386,6 +386,8 @@ data class HealthDayCacheEntity(
     val steps: Long? = null,
     /** Longest merged sleep session ending in the game-day; null = none. */
     @ColumnInfo(name = "sleep_minutes") val sleepMinutes: Int? = null,
+    /** Total distance; null = no data (recaps, GD §14.6). */
+    @ColumnInfo(name = "distance_meters") val distanceMeters: Double? = null,
     @ColumnInfo(name = "read_at") val readAt: Instant,
 )
 
@@ -403,4 +405,16 @@ data class WeeklyReviewEntity(
     @ColumnInfo(name = "focus_stat_1") val focusStat1: Stat,
     @ColumnInfo(name = "focus_stat_2") val focusStat2: Stat,
     val intention: String? = null,
+)
+
+/**
+ * A generated monthly or yearly recap (GD §14.6). [periodKey] is "M:2026-10" or "Y:2026"; generation is idempotent on
+ * it. [payloadJson] is a snapshot cache of `RecapPayload`, rebuildable from Room, kept so a recap can be reopened.
+ */
+@Entity(tableName = "recap")
+data class RecapEntity(
+    @PrimaryKey @ColumnInfo(name = "period_key") val periodKey: String,
+    @ColumnInfo(name = "generated_at") val generatedAt: Instant,
+    @ColumnInfo(name = "payload_version") val payloadVersion: Int,
+    @ColumnInfo(name = "payload_json") val payloadJson: String,
 )

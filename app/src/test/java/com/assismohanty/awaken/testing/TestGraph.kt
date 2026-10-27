@@ -71,6 +71,7 @@ import com.assismohanty.awaken.core.work.NotificationAccess
 import com.assismohanty.awaken.core.domain.BuildReminderUseCase
 import com.assismohanty.awaken.core.domain.DisableHealthUseCase
 import com.assismohanty.awaken.core.domain.EnableHealthUseCase
+import com.assismohanty.awaken.core.domain.GenerateRecapsUseCase
 import com.assismohanty.awaken.core.domain.HealthSyncUseCase
 import com.assismohanty.awaken.core.domain.LoadInsightsUseCase
 import com.assismohanty.awaken.core.domain.RefreshHealthCacheUseCase
@@ -213,7 +214,8 @@ class TestGraph(
         PreferenceDataStoreFactory.create(scope = noticeScope) { File(context.filesDir, "ui-prefs-${UUID.randomUUID()}.preferences_pb") },
     )
     val notificationAccess = NotificationAccess(context)
-    val runRollover = RunRolloverUseCase(rollover, notices)
+    val generateRecaps = GenerateRecapsUseCase(db.hunterDao(), db.recapDao(), db.insightDao(), clock)
+    val runRollover = RunRolloverUseCase(rollover, notices, generateRecaps)
     val completionCenter = CompletionCenter(completeQuest, undoCompletion)
     val completeOnboarding = CompleteOnboardingUseCase(createHunter, achievements, rollover, transactions, clock)
     val narrative = NarrativeRepository(context, Dispatchers.Unconfined)

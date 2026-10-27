@@ -65,6 +65,7 @@ class RefreshHealthCacheUseCase @Inject constructor(
                     gameDate = date,
                     steps = day.steps.takeIf { it > 0 },
                     sleepMinutes = HealthRules.longestSleepMinutes(day, window),
+                    distanceMeters = day.distanceMeters.takeIf { it > 0 },
                     readAt = clock.now(),
                 )
             }
@@ -99,7 +100,8 @@ class LoadInsightsUseCase @Inject constructor(
         return InsightsModel(insights = selected, daysNeeded = soFar.daysNeeded)
     }
 
-    private suspend fun history(profile: HunterProfileEntity, from: LocalDate, to: LocalDate): InsightHistory {
+    /** Analysable days in `[from, to]` with their Health, block, gate and trial data (also used for recap insights). */
+    suspend fun history(profile: HunterProfileEntity, from: LocalDate, to: LocalDate): InsightHistory {
         val counts = insightDao.completionCounts(from, to).associate { it.gameDate to it.total.toInt() }
         val health = if (profile.healthEnabled) insightDao.healthDays(from, to).associateBy { it.gameDate } else emptyMap()
         val blocks = insightDao.blockTallies(from, to).groupBy { it.gameDate }

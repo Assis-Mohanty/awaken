@@ -72,6 +72,7 @@ import com.assismohanty.awaken.core.domain.AchievementEntry
 import com.assismohanty.awaken.core.domain.ChapterEntry
 import com.assismohanty.awaken.core.domain.HeatmapEntry
 import com.assismohanty.awaken.core.domain.InsightsModel
+import com.assismohanty.awaken.core.domain.RecapEntry
 import com.assismohanty.awaken.core.domain.StatProgress
 import com.assismohanty.awaken.debug.DebugEntry
 import com.assismohanty.awaken.engine.AchievementEvaluator
@@ -97,6 +98,7 @@ fun StatusRoute(
     modifier: Modifier = Modifier,
     onOpenPaths: () -> Unit = {},
     onOpenReview: () -> Unit = {},
+    onOpenRecap: (periodKey: String) -> Unit = {},
     viewModel: StatusViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -119,6 +121,7 @@ fun StatusRoute(
         onOpenSettings = onOpenSettings,
         onOpenPaths = onOpenPaths,
         onOpenReview = onOpenReview,
+        onOpenRecap = onOpenRecap,
         modifier = modifier,
     )
 }
@@ -132,6 +135,7 @@ fun StatusScreen(
     onOpenSettings: () -> Unit = {},
     onOpenPaths: () -> Unit = {},
     onOpenReview: () -> Unit = {},
+    onOpenRecap: (periodKey: String) -> Unit = {},
 ) {
     val header = state.header
     val title = state.equippedTitleId?.let(::titleNameRes)?.let { lexString(it) }
@@ -178,6 +182,7 @@ fun StatusScreen(
         AchievementsWindow(state.rank, state.achievements, state.equippedTitleId, onEvent)
         ChaptersWindow(state.rank, state.chapters, onEvent)
         WeeklyWindow(state, onEvent, onOpenReview)
+        if (state.recaps.isNotEmpty()) RecapsSection(state.recaps, onOpenRecap)
     }
     state.openChapter?.let { entry ->
         ChapterRevealDialog(
@@ -494,6 +499,7 @@ internal fun previewStatusState(locked: Boolean = false): StatusUiState {
         projectedRecalibration = if (locked) emptyMap() else mapOf(Stat.STR to DifficultyAdapter.Change.UP),
         consistency = if (locked) ConsistencyScore(0, 0) else ConsistencyScore(cleared = 22, eligible = 28),
         identityIds = if (locked) emptyList() else listOf("trains", "reads"),
+        recaps = if (locked) emptyList() else listOfNotNull(RecapEntry.of("M:2026-09"), RecapEntry.of("Y:2025")),
         insights = if (locked) {
             InsightsModel(daysNeeded = 9)
         } else {

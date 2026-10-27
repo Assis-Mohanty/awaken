@@ -17,12 +17,15 @@ import kotlinx.coroutines.sync.withLock
 class RunRolloverUseCase @Inject constructor(
     private val rollover: DayRolloverUseCase,
     private val notices: NoticeStore,
+    private val generateRecaps: GenerateRecapsUseCase,
 ) {
     private val mutex = Mutex()
 
     suspend operator fun invoke(): RolloverOutcome? = mutex.withLock {
         val outcome = rollover() ?: return@withLock null
-        notices.add(outcome.toNotices())
+        // Recaps are generated on the first run of a new month (GD §14.6); the first new one opens once.
+        val recap = generateRecaps().firstOrNull()?.let { Notice.RecapReady(it) }
+        notices.add(outcome.toNotices() + listOfNotNull(recap))
         outcome
     }
 }

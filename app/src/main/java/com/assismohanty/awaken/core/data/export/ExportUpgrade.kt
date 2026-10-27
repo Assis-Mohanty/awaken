@@ -11,6 +11,7 @@ object ExportUpgrade {
     private const val APP_RULE_TABLE = "app_rule"
     private const val CAMPAIGN_TABLE = "campaign"
     private const val REVIEW_TABLE = "weekly_review"
+    private const val RECAP_TABLE = "recap"
     private val BODY_TABLES = listOf(
         "custom_exercise", "routine", "routine_exercise", "workout", "workout_set", "custom_food", "food_log", "nutrition_profile",
     )
@@ -65,6 +66,13 @@ object ExportUpgrade {
             current = current.copy(
                 schemaVersion = 13,
                 tables = current.tables + (REVIEW_TABLE to current.tables[REVIEW_TABLE].orEmpty()),
+            )
+        }
+        // v13 → v14 (recaps): none existed; the new Health cache column is never exported.
+        if (current.app == ExportDocument.APP_ID && current.schemaVersion == 13) {
+            current = current.copy(
+                schemaVersion = 14,
+                tables = current.tables + (RECAP_TABLE to current.tables[RECAP_TABLE].orEmpty()),
             )
         }
         return current

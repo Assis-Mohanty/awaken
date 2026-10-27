@@ -47,6 +47,7 @@ import com.assismohanty.awaken.feature.settings.SettingsRoute as SettingsEntry
 import com.assismohanty.awaken.feature.status.StatusRoute as StatusEntry
 import com.assismohanty.awaken.feature.today.TodayRoute as TodayEntry
 import com.assismohanty.awaken.feature.review.ReviewRoute as ReviewEntry
+import com.assismohanty.awaken.feature.recap.RecapRoute as RecapEntry
 import com.assismohanty.awaken.feature.trial.TrialDetailRoute as TrialDetailEntry
 import com.assismohanty.awaken.feature.vault.VaultRoute as VaultEntry
 
@@ -183,6 +184,7 @@ private fun MainScaffold(
                         onOpenSettings = { navController.navigate(SettingsRoute) },
                         onOpenPaths = { navController.navigate(PathsRoute) { launchSingleTop = true } },
                         onOpenReview = { navController.navigate(ReviewRoute) { launchSingleTop = true } },
+                        onOpenRecap = { navController.navigate(RecapRoute(it)) { launchSingleTop = true } },
                     )
                 }
                 composable<SettingsRoute> {
@@ -196,6 +198,7 @@ private fun MainScaffold(
                 composable<HealthRoute> { HealthEntry(onBack = { navController.popBackStack() }) }
                 composable<ScreenTimeRoute> { ScreenTimeEntry(onBack = { navController.popBackStack() }) }
                 composable<ReviewRoute> { ReviewEntry(onClose = { navController.popBackStack() }) }
+                composable<RecapRoute> { RecapEntry(onBack = { navController.popBackStack() }) }
                 composable<CampaignRoute> { CampaignEntry(onBack = { navController.popBackStack() }) }
                 composable<VaultRoute> { VaultEntry(onBack = { navController.popBackStack() }) }
                 if (DebugEntry.ENABLED) {
@@ -204,6 +207,9 @@ private fun MainScaffold(
             }
         }
         // Above the scaffold so reward sheets and toasts cover every tab and Quest detail.
-        RewardHost(snackbarHostState = snackbarHostState)
+        RewardHost(
+            snackbarHostState = snackbarHostState,
+            onOpenRecap = { navController.navigate(RecapRoute(it)) { launchSingleTop = true } },
+        )
     }
 }

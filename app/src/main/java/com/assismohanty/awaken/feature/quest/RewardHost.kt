@@ -152,7 +152,12 @@ private data class ToastItem(val key: Long, val title: String, val message: Stri
  * rollover notices become the Penalty Zone warning or System toasts.
  */
 @Composable
-fun RewardHost(snackbarHostState: SnackbarHostState, modifier: Modifier = Modifier, viewModel: RewardHostViewModel = hiltViewModel()) {
+fun RewardHost(
+    snackbarHostState: SnackbarHostState,
+    modifier: Modifier = Modifier,
+    onOpenRecap: (periodKey: String) -> Unit = {},
+    viewModel: RewardHostViewModel = hiltViewModel(),
+) {
     val event by viewModel.current.collectAsStateWithLifecycle()
     val chapters by viewModel.chapters.collectAsStateWithLifecycle()
     val resources = rememberLexResources()
@@ -211,6 +216,11 @@ fun RewardHost(snackbarHostState: SnackbarHostState, modifier: Modifier = Modifi
                 actionLabel = lexString(R.string.action_face_it),
                 onDismiss = { viewModel.consume(current.id) },
             )
+            // A new recap opens once (GD §14.6); afterwards it is reopened from Status.
+            is Notice.RecapReady -> LaunchedEffect(current.id) {
+                onOpenRecap(current.notice.periodKey)
+                viewModel.consume(current.id)
+            }
             else -> LaunchedEffect(current.id) {
                 toasts += current.notice.toToasts(resources, current.id)
                 viewModel.consume(current.id)
@@ -289,6 +299,7 @@ private fun Notice.toToasts(resources: LexResources, eventId: Long): List<ToastI
         ToastItem(eventId * TOAST_KEY_STRIDE, resources.getString(R.string.notice_trial_failed_title), resources.getString(R.string.notice_trial_failed_body, rank.name), ToastTone.WARNING),
     )
     is Notice.PenaltyWarning -> emptyList() // presented as a dialog, never a toast
+    is Notice.RecapReady -> emptyList() // opens the recap instead
 }
 
 private enum class Phase { SHEET, LEVEL_UP, CHAPTER, RANK_UP }

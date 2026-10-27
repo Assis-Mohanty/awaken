@@ -40,6 +40,11 @@ sealed interface Notice {
     @Serializable
     @SerialName("trial_failed")
     data class TrialFailed(val rank: Rank) : Notice
+
+    /** GD §14.6: a new recap was generated; the app opens it once. */
+    @Serializable
+    @SerialName("recap_ready")
+    data class RecapReady(val periodKey: String) : Notice
 }
 
 @Singleton

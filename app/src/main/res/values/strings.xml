@@ -192,4 +192,31 @@
     <string name="today_review_open_body">Five quick steps. Nothing to earn, just a look back.</string>
     <string name="notification_review_line">Your weekly review is open.</string>
     <string name="action_open_review">Review</string>
+    <!-- Monthly and yearly recaps (GD §14.6): nothing is granted -->
+    <string name="recap_title">Recap</string>
+    <string name="recaps_title">Recaps</string>
+    <string name="recap_page_cd">Page %1$d of %2$d</string>
+    <string name="recap_quests">quests completed</string>
+    <string name="recap_levels">Levels gained</string>
+    <string name="recap_effort">Effort</string>
+    <string name="recap_best_streak">best streak, in days</string>
+    <string name="recap_focus_hours">Focus hours</string>
+    <string name="recap_consistency">Consistency</string>
+    <plurals name="recap_consistency_value">
+        <item quantity="one">%1$d of %2$d day</item>
+        <item quantity="other">%1$d of %2$d days</item>
+    </plurals>
+    <string name="recap_growth">Growth</string>
+    <string name="recap_top_stat">your most trained stat</string>
+    <string name="recap_stat_levels">Levels gained in it</string>
+    <string name="recap_body">Body</string>
+    <string name="recap_distance">Distance</string>
+    <string name="recap_distance_value">%1$s km</string>
+    <string name="recap_steps">Daily steps</string>
+    <string name="recap_sleep">Sleep a night</string>
+    <string name="recap_sleep_value">%1$s h</string>
+    <string name="recap_summary">In short</string>
+    <string name="recap_achievements">achievements earned</string>
+    <string name="recap_missing">This recap is no longer available.</string>
+    <string name="recap_open_cd">Open the recap for %1$s</string>
 </resources>

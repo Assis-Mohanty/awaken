@@ -221,8 +221,19 @@ val MIGRATION_12_13 = object : Migration(12, 13) {
     }
 }
 
+/** v13 → v14: stored recaps (GD §14.6), and distance in the rebuildable Health cache for the recap body card. */
+val MIGRATION_13_14 = object : Migration(13, 14) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS `recap` (`period_key` TEXT NOT NULL, `generated_at` INTEGER NOT NULL, " +
+                "`payload_version` INTEGER NOT NULL, `payload_json` TEXT NOT NULL, PRIMARY KEY(`period_key`))",
+        )
+        db.execSQL("ALTER TABLE `health_day_cache` ADD COLUMN `distance_meters` REAL")
+    }
+}
+
 /** Every migration, in order. The database builder and the migration test both use this list. */
 val ALL_MIGRATIONS: Array<Migration> = arrayOf(
     MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9,
-    MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13,
+    MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14,
 )

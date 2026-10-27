@@ -50,6 +50,10 @@ data object ScreenTimeRoute
 @Serializable
 data object ReviewRoute
 
+/** A monthly or yearly recap by its period key, "M:2026-10" or "Y:2026" (GD §14.6). */
+@Serializable
+data class RecapRoute(val periodKey: String)
+
 @Serializable
 data object CampaignRoute
 

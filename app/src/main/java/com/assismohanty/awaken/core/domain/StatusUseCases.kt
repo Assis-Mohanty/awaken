@@ -5,6 +5,7 @@ import com.assismohanty.awaken.core.data.db.dao.CompletionDao
 import com.assismohanty.awaken.core.data.db.dao.DayRecordDao
 import com.assismohanty.awaken.core.data.db.dao.HunterDao
 import com.assismohanty.awaken.core.data.db.dao.InsightDao
+import com.assismohanty.awaken.core.data.db.dao.RecapDao
 import com.assismohanty.awaken.core.data.db.dao.WeeklyReviewDao
 import com.assismohanty.awaken.core.data.db.dao.LedgerDao
 import com.assismohanty.awaken.core.data.db.dao.QuestDao
@@ -62,6 +63,8 @@ data class StatusModel(
     val insights: InsightsModel = InsightsModel(),
     /** The weekly review can be done now (GD §14.4). */
     val reviewOpen: Boolean = false,
+    /** Stored recaps, newest first (GD §14.6: reopenable from Status). */
+    val recaps: List<RecapEntry> = emptyList(),
 )
 
 private data class WeekRows(
@@ -86,6 +89,7 @@ class ObserveStatusUseCase @Inject constructor(
     private val insightDao: InsightDao,
     private val loadInsights: LoadInsightsUseCase,
     private val weeklyReviewDao: WeeklyReviewDao,
+    private val recapDao: RecapDao,
 ) {
     @OptIn(ExperimentalCoroutinesApi::class)
     operator fun invoke(dayChanges: Flow<Any> = flowOf(Unit)): Flow<StatusModel?> {
@@ -93,8 +97,12 @@ class ObserveStatusUseCase @Inject constructor(
         val rows = hunters.map { it?.gameDate }.distinctUntilChanged().flatMapLatest { today ->
             if (today == null) flowOf(null) else observeRows(today)
         }
-        return combine(hunters, rows) { hunter, week ->
-            if (hunter == null || week == null) null else build(hunter, week)
+        return combine(hunters, rows, recapDao.observeAll()) { hunter, week, recaps ->
+            if (hunter == null || week == null) {
+                null
+            } else {
+                build(hunter, week).copy(recaps = recaps.mapNotNull { RecapEntry.of(it.periodKey) })
+            }
         }
     }
 

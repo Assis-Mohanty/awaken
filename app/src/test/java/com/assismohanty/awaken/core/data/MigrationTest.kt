@@ -283,7 +283,7 @@ class MigrationTest {
             .allowMainThreadQueries()
             .build()
         try {
-            assertThat(db.insightDao().healthDays(java.time.LocalDate.MIN, java.time.LocalDate.MAX)).isEmpty()
+            assertThat(db.insightDao().healthDays(java.time.LocalDate.parse("2026-01-01"), java.time.LocalDate.parse("2026-12-31"))).isEmpty()
             assertThat(db.openHelper.readableDatabase.version).isEqualTo(AwakenDatabase.SCHEMA_VERSION)
         } finally {
             db.close()
@@ -299,6 +299,27 @@ class MigrationTest {
             .build()
         try {
             assertThat(db.weeklyReviewDao().count()).isEqualTo(0)
+            assertThat(db.openHelper.readableDatabase.version).isEqualTo(AwakenDatabase.SCHEMA_VERSION)
+        } finally {
+            db.close()
+        }
+    }
+
+    @Test
+    fun v13To14AddsRecapsAndHealthDistance() = runTest {
+        val path = createFromSchema(13)
+        SQLiteDatabase.openDatabase(path, null, SQLiteDatabase.OPEN_READWRITE).use { db ->
+            db.execSQL("INSERT INTO health_day_cache (game_date, steps, sleep_minutes, read_at) VALUES ('2026-10-01', 9000, 420, 0)")
+        }
+        val db = Room.databaseBuilder(context, AwakenDatabase::class.java, path)
+            .addMigrations(*ALL_MIGRATIONS)
+            .allowMainThreadQueries()
+            .build()
+        try {
+            assertThat(db.recapDao().keys()).isEmpty()
+            val cached = db.insightDao().healthDays(java.time.LocalDate.parse("2026-01-01"), java.time.LocalDate.parse("2026-12-31")).single()
+            assertThat(cached.steps).isEqualTo(9000L)
+            assertThat(cached.distanceMeters).isNull()
             assertThat(db.openHelper.readableDatabase.version).isEqualTo(AwakenDatabase.SCHEMA_VERSION)
         } finally {
             db.close()
