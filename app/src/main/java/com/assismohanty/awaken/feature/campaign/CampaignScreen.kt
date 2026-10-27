@@ -1,5 +1,7 @@
 package com.assismohanty.awaken.feature.campaign
 
+import com.assismohanty.awaken.core.designsystem.lexicon.lexString
+import com.assismohanty.awaken.core.designsystem.lexicon.lexPlural
 import com.assismohanty.awaken.core.designsystem.charts.Chart
 import com.assismohanty.awaken.core.designsystem.charts.ChartSpec
 import com.assismohanty.awaken.core.designsystem.charts.BarShape
@@ -39,8 +41,6 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.res.pluralStringResource
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.onClick
@@ -112,14 +112,14 @@ fun CampaignScreen(state: CampaignUiState, onEvent: (CampaignEvent) -> Unit, onB
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
-                        stringResource(R.string.campaign_title),
+                        lexString(R.string.campaign_title),
                         style = AwakenTheme.type.metricL,
                         color = colors.textPrimary,
                         modifier = Modifier
                             .weight(1f)
                             .semantics { heading() },
                     )
-                    QuietButton(text = stringResource(R.string.action_back), onClick = onBack)
+                    QuietButton(text = lexString(R.string.action_back), onClick = onBack)
                 }
                 if (state.loading) return@Column
                 when (state.step) {
@@ -137,10 +137,10 @@ fun CampaignScreen(state: CampaignUiState, onEvent: (CampaignEvent) -> Unit, onB
         AlertDialog(
             onDismissRequest = { onEvent(CampaignEvent.DismissAbandon) },
             containerColor = colors.surfaceOverlay,
-            title = { Text(stringResource(R.string.campaign_abandon_title), style = AwakenTheme.type.title, color = colors.textPrimary) },
-            text = { Text(stringResource(R.string.campaign_abandon_body), style = AwakenTheme.type.body, color = colors.textSecondary) },
-            confirmButton = { QuietButton(text = stringResource(R.string.campaign_abandon_confirm), onClick = { onEvent(CampaignEvent.ConfirmAbandon) }) },
-            dismissButton = { QuietButton(text = stringResource(R.string.action_cancel), onClick = { onEvent(CampaignEvent.DismissAbandon) }) },
+            title = { Text(lexString(R.string.campaign_abandon_title), style = AwakenTheme.type.title, color = colors.textPrimary) },
+            text = { Text(lexString(R.string.campaign_abandon_body), style = AwakenTheme.type.body, color = colors.textSecondary) },
+            confirmButton = { QuietButton(text = lexString(R.string.campaign_abandon_confirm), onClick = { onEvent(CampaignEvent.ConfirmAbandon) }) },
+            dismissButton = { QuietButton(text = lexString(R.string.action_cancel), onClick = { onEvent(CampaignEvent.DismissAbandon) }) },
         )
     }
 }
@@ -149,20 +149,20 @@ fun CampaignScreen(state: CampaignUiState, onEvent: (CampaignEvent) -> Unit, onB
 private fun IntroStep(onEvent: (CampaignEvent) -> Unit) {
     val colors = AwakenTheme.colors
     val type = AwakenTheme.type
-    SystemWindow(title = stringResource(R.string.campaign_window_intro), accent = colors.accent, modifier = Modifier.staggeredEntrance(0)) {
-        Text(stringResource(R.string.campaign_intro_headline), style = type.title, color = colors.textPrimary)
-        Text(stringResource(R.string.campaign_intro_body), style = type.body, color = colors.textSecondary)
+    SystemWindow(title = lexString(R.string.campaign_window_intro), accent = colors.accent, modifier = Modifier.staggeredEntrance(0)) {
+        Text(lexString(R.string.campaign_intro_headline), style = type.title, color = colors.textPrimary)
+        Text(lexString(R.string.campaign_intro_body), style = type.body, color = colors.textSecondary)
         CampaignAct.entries.forEach { act ->
             Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm), verticalAlignment = Alignment.CenterVertically) {
-                Text(stringResource(act.numeralRes), style = type.numeric, color = colors.accent)
+                Text(lexString(act.numeralRes), style = type.numeric, color = colors.accent)
                 Column {
-                    Text(stringResource(act.nameRes), style = type.label, color = colors.textPrimary)
-                    Text(stringResource(act.daysRes), style = type.caption, color = colors.textSecondary)
+                    Text(lexString(act.nameRes), style = type.label, color = colors.textPrimary)
+                    Text(lexString(act.daysRes), style = type.caption, color = colors.textSecondary)
                 }
             }
         }
-        Text(stringResource(R.string.campaign_intro_rule), style = type.caption, color = colors.reward)
-        PrimaryButton(text = stringResource(R.string.campaign_begin_scan), onClick = { onEvent(CampaignEvent.Begin) }, modifier = Modifier.fillMaxWidth())
+        Text(lexString(R.string.campaign_intro_rule), style = type.caption, color = colors.reward)
+        PrimaryButton(text = lexString(R.string.campaign_begin_scan), onClick = { onEvent(CampaignEvent.Begin) }, modifier = Modifier.fillMaxWidth())
     }
 }
 
@@ -172,23 +172,23 @@ private fun ScanStep(state: CampaignUiState, onEvent: (CampaignEvent) -> Unit) {
     val type = AwakenTheme.type
     val (id, stat) = CampaignScan.QUESTIONS[state.question]
     SystemWindow(
-        title = stringResource(R.string.campaign_window_scan),
+        title = lexString(R.string.campaign_window_scan),
         accent = colors.stat(stat),
         headerTrailing = {
-            Text(stringResource(R.string.campaign_scan_progress, state.question + 1, state.questionCount), style = type.numericSmall, color = colors.textSecondary)
+            Text(lexString(R.string.campaign_scan_progress, state.question + 1, state.questionCount), style = type.numericSmall, color = colors.textSecondary)
         },
     ) {
         StatChip(stat)
-        Text(stringResource(questionRes(id)), style = type.title, color = colors.textPrimary)
+        Text(lexString(questionRes(id)), style = type.title, color = colors.textPrimary)
         ANSWER_LABELS.forEachIndexed { value, label ->
             val chosen = state.answers[id] == value
             if (chosen) {
-                PrimaryButton(text = stringResource(label), onClick = { onEvent(CampaignEvent.Answer(value)) }, modifier = Modifier.fillMaxWidth())
+                PrimaryButton(text = lexString(label), onClick = { onEvent(CampaignEvent.Answer(value)) }, modifier = Modifier.fillMaxWidth())
             } else {
-                SecondaryButton(text = stringResource(label), onClick = { onEvent(CampaignEvent.Answer(value)) }, modifier = Modifier.fillMaxWidth())
+                SecondaryButton(text = lexString(label), onClick = { onEvent(CampaignEvent.Answer(value)) }, modifier = Modifier.fillMaxWidth())
             }
         }
-        QuietButton(text = stringResource(R.string.action_back), onClick = { onEvent(CampaignEvent.BackQuestion) })
+        QuietButton(text = lexString(R.string.action_back), onClick = { onEvent(CampaignEvent.BackQuestion) })
     }
 }
 
@@ -210,10 +210,10 @@ private fun ForgeStep(ready: Boolean, onFinished: () -> Unit) {
         }
     }
     val percent = (progress.value * 100).toInt()
-    SystemWindow(title = stringResource(R.string.campaign_window_forge), accent = colors.accent, reveal = false) {
-        Text(stringResource(R.string.campaign_forge_headline), style = type.title, color = colors.textPrimary)
+    SystemWindow(title = lexString(R.string.campaign_window_forge), accent = colors.accent, reveal = false) {
+        Text(lexString(R.string.campaign_forge_headline), style = type.title, color = colors.textPrimary)
         Text(
-            stringResource(R.string.campaign_forge_percent, percent),
+            lexString(R.string.campaign_forge_percent, percent),
             style = type.metricXL,
             color = colors.textPrimary,
         )
@@ -221,7 +221,7 @@ private fun ForgeStep(ready: Boolean, onFinished: () -> Unit) {
         FORGE_STEPS.forEachIndexed { index, step ->
             val done = progress.value >= (index + 1f) / FORGE_STEPS.size
             Text(
-                text = (if (done) "✓  " else "·  ") + stringResource(step),
+                text = (if (done) "✓  " else "·  ") + lexString(step),
                 style = type.label,
                 color = if (done) colors.textPrimary else colors.textMuted,
             )
@@ -234,9 +234,9 @@ private fun ResultStep(preview: CampaignPreview, error: CampaignProblem?, onEven
     val colors = AwakenTheme.colors
     val type = AwakenTheme.type
     val accent = colors.stat(preview.weakest)
-    SystemWindow(title = stringResource(R.string.campaign_window_result), accent = accent, modifier = Modifier.staggeredEntrance(0)) {
-        Text(stringResource(preview.archetype.nameRes), style = type.metricL, color = colors.textPrimary)
-        Text(stringResource(preview.archetype.lineRes), style = type.body, color = colors.textSecondary)
+    SystemWindow(title = lexString(R.string.campaign_window_result), accent = accent, modifier = Modifier.staggeredEntrance(0)) {
+        Text(lexString(preview.archetype.nameRes), style = type.metricL, color = colors.textPrimary)
+        Text(lexString(preview.archetype.lineRes), style = type.body, color = colors.textSecondary)
         Chart(
             ChartSpec.Radar(
                 values = preview.scores.mapValues { (_, score) -> score + 1f },
@@ -248,22 +248,22 @@ private fun ResultStep(preview: CampaignPreview, error: CampaignProblem?, onEven
         )
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
             StatChip(preview.weakest)
-            Text(stringResource(R.string.campaign_weakest, preview.weakest.label()), style = type.title, color = accent)
+            Text(lexString(R.string.campaign_weakest, preview.weakest.label()), style = type.title, color = accent)
         }
     }
-    SystemWindow(title = stringResource(R.string.campaign_window_plan), accent = colors.accent, modifier = Modifier.staggeredEntrance(1)) {
+    SystemWindow(title = lexString(R.string.campaign_window_plan), accent = colors.accent, modifier = Modifier.staggeredEntrance(1)) {
         Text(
-            stringResource(R.string.campaign_plan_dates, formatDate(preview.startDate), formatDate(preview.endDate)),
+            lexString(R.string.campaign_plan_dates, formatDate(preview.startDate), formatDate(preview.endDate)),
             style = type.caption,
             color = colors.textSecondary,
         )
         preview.habits.forEach { PlannedHabitRow(it) }
         val problem = error ?: preview.problem
         if (problem != null) {
-            Text(stringResource(problem.messageRes), style = type.body, color = colors.critical)
+            Text(lexString(problem.messageRes), style = type.body, color = colors.critical)
         } else {
-            Text(stringResource(R.string.campaign_plan_note), style = type.caption, color = colors.textSecondary)
-            PrimaryButton(text = stringResource(R.string.campaign_to_oath), onClick = { onEvent(CampaignEvent.ToOath) }, modifier = Modifier.fillMaxWidth())
+            Text(lexString(R.string.campaign_plan_note), style = type.caption, color = colors.textSecondary)
+            PrimaryButton(text = lexString(R.string.campaign_to_oath), onClick = { onEvent(CampaignEvent.ToOath) }, modifier = Modifier.fillMaxWidth())
         }
     }
 }
@@ -289,17 +289,17 @@ private fun PlannedHabitRow(habit: CampaignHabitPreview) {
 private fun OathStep(name: String, endDate: LocalDate, sealing: Boolean, onSealed: () -> Unit) {
     val colors = AwakenTheme.colors
     val type = AwakenTheme.type
-    SystemWindow(title = stringResource(R.string.campaign_window_oath), accent = colors.reward) {
-        Text(stringResource(R.string.campaign_oath_body, name.ifBlank { stringResource(R.string.campaign_oath_hunter) }), style = type.body, color = colors.textPrimary)
-        Text(stringResource(R.string.campaign_oath_end, formatDate(endDate)), style = type.title, color = colors.reward)
+    SystemWindow(title = lexString(R.string.campaign_window_oath), accent = colors.reward) {
+        Text(lexString(R.string.campaign_oath_body, name.ifBlank { lexString(R.string.campaign_oath_hunter) }), style = type.body, color = colors.textPrimary)
+        Text(lexString(R.string.campaign_oath_end, formatDate(endDate)), style = type.title, color = colors.reward)
         HoldToConfirmRing(
-            label = stringResource(R.string.campaign_oath_hold),
-            idleText = stringResource(R.string.campaign_oath_hold_short),
-            doneText = stringResource(R.string.campaign_oath_sealed),
+            label = lexString(R.string.campaign_oath_hold),
+            idleText = lexString(R.string.campaign_oath_hold_short),
+            doneText = lexString(R.string.campaign_oath_sealed),
             enabled = !sealing,
             onConfirmed = onSealed,
         )
-        Text(stringResource(R.string.campaign_oath_note), style = type.caption, color = colors.textSecondary, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
+        Text(lexString(R.string.campaign_oath_note), style = type.caption, color = colors.textSecondary, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
     }
 }
 
@@ -312,39 +312,39 @@ private fun ProgressStep(model: CampaignModel, onEvent: (CampaignEvent) -> Unit)
         CampaignStatus.ACTIVE -> {
             val day = model.dayIndex ?: 1
             SystemWindow(
-                title = stringResource(R.string.campaign_window_progress),
+                title = lexString(R.string.campaign_window_progress),
                 accent = colors.accent,
                 modifier = Modifier.staggeredEntrance(0),
-                headerTrailing = { Text(stringResource(model.act.numeralRes), style = type.numericSmall, color = colors.accent) },
+                headerTrailing = { Text(lexString(model.act.numeralRes), style = type.numericSmall, color = colors.accent) },
             ) {
-                Text(stringResource(R.string.campaign_day_of, day, CampaignRules.LENGTH_DAYS), style = type.metricXL, color = colors.textPrimary)
-                Text(stringResource(model.act.nameRes), style = type.title, color = colors.textPrimary)
+                Text(lexString(R.string.campaign_day_of, day, CampaignRules.LENGTH_DAYS), style = type.metricXL, color = colors.textPrimary)
+                Text(lexString(model.act.nameRes), style = type.title, color = colors.textPrimary)
                 Text(
-                    pluralStringResource(R.plurals.campaign_cleared_of_needed, model.clearedDays, model.clearedDays, CampaignRules.COMPLETION_CLEARED_DAYS),
+                    lexPlural(R.plurals.campaign_cleared_of_needed, model.clearedDays, model.clearedDays, CampaignRules.COMPLETION_CLEARED_DAYS),
                     style = type.label,
                     color = colors.textSecondary,
                 )
                 Text(
-                    stringResource(if (model.reachable) R.string.campaign_reachable else R.string.campaign_unreachable),
+                    lexString(if (model.reachable) R.string.campaign_reachable else R.string.campaign_unreachable),
                     style = type.caption,
                     color = if (model.reachable) colors.positive else colors.reward,
                 )
                 CampaignCalendar(model)
-                Text(stringResource(R.string.campaign_ends, formatDate(model.endDate)), style = type.caption, color = colors.textSecondary)
+                Text(lexString(R.string.campaign_ends, formatDate(model.endDate)), style = type.caption, color = colors.textSecondary)
             }
         }
-        CampaignStatus.COMPLETED -> FinishedWindow(stringResource(R.string.campaign_completed_title), stringResource(R.string.campaign_completed_body, campaign.clearedDays), colors.reward, onEvent)
-        CampaignStatus.ENDED -> FinishedWindow(stringResource(R.string.campaign_ended_title), stringResource(R.string.campaign_ended_body, campaign.clearedDays), colors.accent, onEvent)
-        CampaignStatus.ABANDONED -> FinishedWindow(stringResource(R.string.campaign_abandoned_title), stringResource(R.string.campaign_abandoned_body), colors.textSecondary, onEvent)
+        CampaignStatus.COMPLETED -> FinishedWindow(lexString(R.string.campaign_completed_title), lexString(R.string.campaign_completed_body, campaign.clearedDays), colors.reward, onEvent)
+        CampaignStatus.ENDED -> FinishedWindow(lexString(R.string.campaign_ended_title), lexString(R.string.campaign_ended_body, campaign.clearedDays), colors.accent, onEvent)
+        CampaignStatus.ABANDONED -> FinishedWindow(lexString(R.string.campaign_abandoned_title), lexString(R.string.campaign_abandoned_body), colors.textSecondary, onEvent)
     }
     if (campaign.status == CampaignStatus.ACTIVE) {
-        SystemWindow(title = stringResource(R.string.campaign_window_habits), accent = colors.accent, modifier = Modifier.staggeredEntrance(1)) {
-            Text(stringResource(campaign.archetype.nameRes), style = type.label, color = colors.textSecondary)
+        SystemWindow(title = lexString(R.string.campaign_window_habits), accent = colors.accent, modifier = Modifier.staggeredEntrance(1)) {
+            Text(lexString(campaign.archetype.nameRes), style = type.label, color = colors.textSecondary)
             model.habits.filter { it.active }.forEach { habit ->
                 PlannedHabitRow(CampaignHabitPreview(habit.templateId.orEmpty(), habit.stat, habit.title, habit.unit, habit.daysOfWeekMask.toDays(), habit.difficulty, habit.target))
             }
-            Text(stringResource(R.string.campaign_habits_note), style = type.caption, color = colors.textSecondary)
-            QuietButton(text = stringResource(R.string.campaign_abandon), onClick = { onEvent(CampaignEvent.AskAbandon) })
+            Text(lexString(R.string.campaign_habits_note), style = type.caption, color = colors.textSecondary)
+            QuietButton(text = lexString(R.string.campaign_abandon), onClick = { onEvent(CampaignEvent.AskAbandon) })
         }
     }
 }
@@ -353,14 +353,14 @@ private fun ProgressStep(model: CampaignModel, onEvent: (CampaignEvent) -> Unit)
 private fun FinishedWindow(title: String, body: String, accent: androidx.compose.ui.graphics.Color, onEvent: (CampaignEvent) -> Unit) {
     SystemWindow(title = title, accent = accent, modifier = Modifier.staggeredEntrance(0)) {
         Text(body, style = AwakenTheme.type.body, color = AwakenTheme.colors.textPrimary)
-        PrimaryButton(text = stringResource(R.string.campaign_start_new), onClick = { onEvent(CampaignEvent.StartAnew) }, modifier = Modifier.fillMaxWidth())
+        PrimaryButton(text = lexString(R.string.campaign_start_new), onClick = { onEvent(CampaignEvent.StartAnew) }, modifier = Modifier.fillMaxWidth())
     }
 }
 
 /** 45 cells, nine to a row: cleared, today, missed and still to come. */
 @Composable
 private fun CampaignCalendar(model: CampaignModel) {
-    val description = pluralStringResource(R.plurals.campaign_calendar_cd, model.clearedDays, model.clearedDays, model.dayIndex ?: 0)
+    val description = lexPlural(R.plurals.campaign_calendar_cd, model.clearedDays, model.clearedDays, model.dayIndex ?: 0)
     val cells = (0 until CampaignRules.LENGTH_DAYS).map { offset ->
         val date = model.campaign.startDate.plusDays(offset.toLong())
         when {
@@ -376,7 +376,7 @@ private fun CampaignCalendar(model: CampaignModel) {
 @Composable
 private fun daysText(days: Set<DayOfWeek>): String =
     if (days.size == DayOfWeek.entries.size) {
-        stringResource(R.string.campaign_every_day)
+        lexString(R.string.campaign_every_day)
     } else {
         days.sorted().joinToString(" · ") { it.getDisplayName(TextStyle.SHORT, Locale.getDefault()) }
     }

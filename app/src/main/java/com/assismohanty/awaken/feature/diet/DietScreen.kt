@@ -1,5 +1,6 @@
 package com.assismohanty.awaken.feature.diet
 
+import com.assismohanty.awaken.core.designsystem.lexicon.lexString
 import com.assismohanty.awaken.core.designsystem.charts.Chart
 import com.assismohanty.awaken.core.designsystem.charts.ChartSpec
 import androidx.annotation.StringRes
@@ -22,7 +23,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
@@ -92,7 +92,7 @@ fun DietScreen(state: DietUiState, onEvent: (DietEvent) -> Unit, modifier: Modif
                 .padding(horizontal = Spacing.gutter, vertical = Spacing.lg),
             verticalArrangement = Arrangement.spacedBy(Spacing.lg),
         ) {
-            Text(stringResource(R.string.diet_title), style = AwakenTheme.type.metricL, color = colors.textPrimary, modifier = Modifier.semantics { heading() })
+            Text(lexString(R.string.diet_title), style = AwakenTheme.type.metricL, color = colors.textPrimary, modifier = Modifier.semantics { heading() })
             if (state.loading) return@Column
             val setup = state.setup
             val plan = state.plan
@@ -100,7 +100,7 @@ fun DietScreen(state: DietUiState, onEvent: (DietEvent) -> Unit, modifier: Modif
                 setup != null -> SetupWindow(setup, canCancel = plan != null, onEvent = onEvent)
                 plan != null -> Diary(state, plan, onEvent)
             }
-            Text(stringResource(R.string.diet_tracker_note), style = AwakenTheme.type.caption, color = colors.textMuted)
+            Text(lexString(R.string.diet_tracker_note), style = AwakenTheme.type.caption, color = colors.textMuted)
         }
     }
     state.search?.let { FoodSearchSheet(it, onEvent) }
@@ -115,16 +115,16 @@ private fun SetupWindow(form: SetupForm, canCancel: Boolean, onEvent: (DietEvent
     val colors = AwakenTheme.colors
     val type = AwakenTheme.type
     val change: ((SetupForm) -> SetupForm) -> Unit = { onEvent(DietEvent.SetupChanged(it)) }
-    SystemWindow(title = stringResource(R.string.diet_window_setup), accent = colors.accent, reveal = false) {
-        Text(stringResource(R.string.diet_setup_intro), style = type.body, color = colors.textSecondary)
+    SystemWindow(title = lexString(R.string.diet_window_setup), accent = colors.accent, reveal = false) {
+        Text(lexString(R.string.diet_setup_intro), style = type.body, color = colors.textSecondary)
         Question(R.string.diet_setup_goal)
         WeightGoal.entries.forEach { goal ->
-            ChoiceChip(text = stringResource(goal.nameRes()), selected = form.goal == goal, onClick = { change { it.copy(goal = goal) } }, modifier = Modifier.fillMaxWidth())
+            ChoiceChip(text = lexString(goal.nameRes()), selected = form.goal == goal, onClick = { change { it.copy(goal = goal) } }, modifier = Modifier.fillMaxWidth())
         }
         Question(R.string.diet_setup_sex)
         Row(horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
             Sex.entries.forEach { sex ->
-                ChoiceChip(text = stringResource(sex.nameRes()), selected = form.sex == sex, onClick = { change { it.copy(sex = sex) } }, modifier = Modifier.weight(1f))
+                ChoiceChip(text = lexString(sex.nameRes()), selected = form.sex == sex, onClick = { change { it.copy(sex = sex) } }, modifier = Modifier.weight(1f))
             }
         }
         FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.md), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
@@ -132,7 +132,7 @@ private fun SetupWindow(form: SetupForm, canCancel: Boolean, onEvent: (DietEvent
                 NumberField(
                     value = form.birthYear.toDouble(),
                     onValueChange = { change { f -> f.copy(birthYear = it.toInt()) } },
-                    description = stringResource(R.string.diet_setup_birth_year),
+                    description = lexString(R.string.diet_setup_birth_year),
                     decimals = false,
                 )
             }
@@ -140,31 +140,31 @@ private fun SetupWindow(form: SetupForm, canCancel: Boolean, onEvent: (DietEvent
                 NumberField(
                     value = form.heightCm,
                     onValueChange = { change { f -> f.copy(heightCm = it) } },
-                    description = stringResource(R.string.diet_setup_height),
-                    suffix = stringResource(R.string.diet_unit_cm),
+                    description = lexString(R.string.diet_setup_height),
+                    suffix = lexString(R.string.diet_unit_cm),
                 )
             }
             LabeledNumber(R.string.diet_setup_weight) {
                 NumberField(
                     value = form.weightKg,
                     onValueChange = { change { f -> f.copy(weightKg = it) } },
-                    description = stringResource(R.string.diet_setup_weight),
-                    suffix = stringResource(R.string.diet_unit_kg),
+                    description = lexString(R.string.diet_setup_weight),
+                    suffix = lexString(R.string.diet_unit_kg),
                 )
             }
         }
         Question(R.string.diet_setup_activity)
         ActivityLevel.entries.forEach { level ->
-            ChoiceChip(text = stringResource(level.nameRes()), selected = form.activity == level, onClick = { change { it.copy(activity = level) } }, modifier = Modifier.fillMaxWidth())
+            ChoiceChip(text = lexString(level.nameRes()), selected = form.activity == level, onClick = { change { it.copy(activity = level) } }, modifier = Modifier.fillMaxWidth())
         }
         val preview = form.preview
         if (preview == null) {
-            Text(stringResource(R.string.diet_setup_incomplete), style = type.caption, color = colors.textSecondary)
+            Text(lexString(R.string.diet_setup_incomplete), style = type.caption, color = colors.textSecondary)
         } else {
-            Text(stringResource(R.string.diet_setup_budget, formatCount(preview.kcal)), style = type.numeric, color = colors.accent)
-            Text(stringResource(R.string.diet_setup_preview, formatCount(preview.bmr), formatCount(preview.tdee)), style = type.caption, color = colors.textSecondary)
+            Text(lexString(R.string.diet_setup_budget, formatCount(preview.kcal)), style = type.numeric, color = colors.accent)
+            Text(lexString(R.string.diet_setup_preview, formatCount(preview.bmr), formatCount(preview.tdee)), style = type.caption, color = colors.textSecondary)
             Text(
-                stringResource(
+                lexString(
                     R.string.diet_setup_macros,
                     formatAmount(preview.targets[Nutrient.PROTEIN]?.amount ?: 0.0),
                     formatAmount(preview.targets[Nutrient.CARBS]?.amount ?: 0.0),
@@ -175,24 +175,24 @@ private fun SetupWindow(form: SetupForm, canCancel: Boolean, onEvent: (DietEvent
             )
         }
         PrimaryButton(
-            text = stringResource(R.string.diet_setup_save),
+            text = lexString(R.string.diet_setup_save),
             onClick = { onEvent(DietEvent.SaveProfile) },
             enabled = preview != null,
             modifier = Modifier.fillMaxWidth(),
         )
-        if (canCancel) QuietButton(text = stringResource(R.string.action_cancel), onClick = { onEvent(DietEvent.CancelProfile) })
+        if (canCancel) QuietButton(text = lexString(R.string.action_cancel), onClick = { onEvent(DietEvent.CancelProfile) })
     }
 }
 
 @Composable
 private fun Question(@StringRes text: Int) {
-    Text(stringResource(text), style = AwakenTheme.type.label, color = AwakenTheme.colors.textPrimary)
+    Text(lexString(text), style = AwakenTheme.type.label, color = AwakenTheme.colors.textPrimary)
 }
 
 @Composable
 private fun LabeledNumber(@StringRes label: Int, field: @Composable () -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(Spacing.xxs)) {
-        Text(stringResource(label), style = AwakenTheme.type.caption, color = AwakenTheme.colors.textSecondary)
+        Text(lexString(label), style = AwakenTheme.type.caption, color = AwakenTheme.colors.textSecondary)
         field()
     }
 }
@@ -209,8 +209,8 @@ private fun Diary(state: DietUiState, plan: DietPlan, onEvent: (DietEvent) -> Un
     }
     NutrientsWindow(plan, day.totals)
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-        QuietButton(text = stringResource(R.string.diet_edit_targets), onClick = { onEvent(DietEvent.OpenTargets) })
-        QuietButton(text = stringResource(R.string.diet_edit_profile), onClick = { onEvent(DietEvent.EditProfile) })
+        QuietButton(text = lexString(R.string.diet_edit_targets), onClick = { onEvent(DietEvent.OpenTargets) })
+        QuietButton(text = lexString(R.string.diet_edit_profile), onClick = { onEvent(DietEvent.EditProfile) })
     }
 }
 
@@ -219,10 +219,10 @@ private fun DateStepper(date: LocalDate, isToday: Boolean, onEvent: (DietEvent) 
     val colors = AwakenTheme.colors
     Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         IconButton(onClick = { onEvent(DietEvent.PreviousDay) }) {
-            Icon(AwakenGlyphs.ChevronLeft, contentDescription = stringResource(R.string.cd_diet_previous_day), tint = colors.textPrimary)
+            Icon(AwakenGlyphs.ChevronLeft, contentDescription = lexString(R.string.cd_diet_previous_day), tint = colors.textPrimary)
         }
         Text(
-            if (isToday) stringResource(R.string.diet_today) else formatDate(date),
+            if (isToday) lexString(R.string.diet_today) else formatDate(date),
             style = AwakenTheme.type.title,
             color = colors.textPrimary,
             textAlign = TextAlign.Center,
@@ -231,7 +231,7 @@ private fun DateStepper(date: LocalDate, isToday: Boolean, onEvent: (DietEvent) 
                 .clickable(enabled = !isToday) { onEvent(DietEvent.Today) },
         )
         IconButton(onClick = { onEvent(DietEvent.NextDay) }, enabled = !isToday) {
-            Icon(AwakenGlyphs.ChevronRight, contentDescription = stringResource(R.string.cd_diet_next_day), tint = if (isToday) colors.textMuted else colors.textPrimary)
+            Icon(AwakenGlyphs.ChevronRight, contentDescription = lexString(R.string.cd_diet_next_day), tint = if (isToday) colors.textMuted else colors.textPrimary)
         }
     }
 }
@@ -245,27 +245,27 @@ private fun BudgetWindow(plan: DietPlan, totals: Nutrients, modifier: Modifier =
     val goal = plan.plan.kcal
     val eaten = totals[Nutrient.KCAL].roundToInt()
     val remaining = goal - eaten
-    SystemWindow(title = stringResource(R.string.diet_window_budget), accent = colors.accent, modifier = modifier) {
+    SystemWindow(title = lexString(R.string.diet_window_budget), accent = colors.accent, modifier = modifier) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.lg)) {
             Chart(
                 ChartSpec.Ring(
                     progress = if (goal > 0) eaten.toFloat() / goal else 0f,
-                    description = stringResource(R.string.cd_diet_ring, formatCount(eaten), formatCount(goal)),
+                    description = lexString(R.string.cd_diet_ring, formatCount(eaten), formatCount(goal)),
                     color = if (remaining < 0) colors.critical else colors.accent,
                 ),
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(formatCount(abs(remaining)), style = type.numeric, color = if (remaining < 0) colors.critical else colors.textPrimary)
                     Text(
-                        stringResource(if (remaining < 0) R.string.diet_kcal_over else R.string.diet_kcal_remaining),
+                        lexString(if (remaining < 0) R.string.diet_kcal_over else R.string.diet_kcal_remaining),
                         style = type.caption,
                         color = colors.textSecondary,
                     )
                 }
             }
             Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-                Figure(stringResource(R.string.diet_eaten), formatCount(eaten))
-                Figure(stringResource(R.string.diet_goal), formatCount(goal))
+                Figure(lexString(R.string.diet_eaten), formatCount(eaten))
+                Figure(lexString(R.string.diet_goal), formatCount(goal))
             }
         }
         MACROS.forEach { nutrient -> NutrientLine(nutrient, totals[nutrient], plan.plan.targets[nutrient]?.amount, TargetKind.GOAL) }
@@ -284,17 +284,17 @@ private fun Figure(label: String, value: String) {
 @Composable
 private fun NutrientLine(nutrient: Nutrient, amount: Double, target: Double?, kind: TargetKind) {
     val colors = AwakenTheme.colors
-    val unit = stringResource(nutrient.unit.symbolRes())
+    val unit = lexString(nutrient.unit.symbolRes())
     val over = kind == TargetKind.LIMIT && target != null && amount > target
     Column(verticalArrangement = Arrangement.spacedBy(Spacing.xxs)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(stringResource(nutrient.nameRes()), style = AwakenTheme.type.label, color = colors.textPrimary, modifier = Modifier.weight(1f))
-            if (over) Text(stringResource(R.string.diet_limit_over) + "  ", style = AwakenTheme.type.caption, color = colors.critical)
+            Text(lexString(nutrient.nameRes()), style = AwakenTheme.type.label, color = colors.textPrimary, modifier = Modifier.weight(1f))
+            if (over) Text(lexString(R.string.diet_limit_over) + "  ", style = AwakenTheme.type.caption, color = colors.critical)
             Text(
                 if (target != null) {
-                    stringResource(R.string.diet_amount_of_target, formatAmount(amount), formatAmount(target), unit)
+                    lexString(R.string.diet_amount_of_target, formatAmount(amount), formatAmount(target), unit)
                 } else {
-                    stringResource(R.string.diet_amount_only, formatAmount(amount), unit)
+                    lexString(R.string.diet_amount_only, formatAmount(amount), unit)
                 },
                 style = AwakenTheme.type.caption,
                 color = if (over) colors.critical else colors.textSecondary,
@@ -311,34 +311,34 @@ private fun MealWindow(meal: Meal, entries: List<DiaryEntry>, onEvent: (DietEven
     val colors = AwakenTheme.colors
     val kcal = entries.sumOf { it.amounts[Nutrient.KCAL] }.roundToInt()
     SystemWindow(
-        title = stringResource(meal.nameRes()),
+        title = lexString(meal.nameRes()),
         accent = colors.accent,
         modifier = modifier,
         reveal = false,
-        headerTrailing = { Text(stringResource(R.string.diet_meal_kcal, formatCount(kcal)), style = AwakenTheme.type.label, color = colors.textSecondary) },
+        headerTrailing = { Text(lexString(R.string.diet_meal_kcal, formatCount(kcal)), style = AwakenTheme.type.label, color = colors.textSecondary) },
     ) {
-        if (entries.isEmpty()) Text(stringResource(R.string.diet_meal_empty), style = AwakenTheme.type.caption, color = colors.textMuted)
+        if (entries.isEmpty()) Text(lexString(R.string.diet_meal_empty), style = AwakenTheme.type.caption, color = colors.textMuted)
         entries.forEachIndexed { i, entry ->
             if (i > 0) HorizontalDivider(color = colors.divider, thickness = AwakenTheme.dimens.hairline)
             EntryRow(entry.row, entry.amounts, onEvent)
         }
-        QuietButton(text = stringResource(R.string.diet_add_food), onClick = { onEvent(DietEvent.OpenSearch(meal)) })
+        QuietButton(text = lexString(R.string.diet_add_food), onClick = { onEvent(DietEvent.OpenSearch(meal)) })
     }
 }
 
 @Composable
 private fun EntryRow(row: FoodLogEntity, amounts: Nutrients, onEvent: (DietEvent) -> Unit) {
     val colors = AwakenTheme.colors
-    val amount = row.portionLabel ?: stringResource(R.string.diet_entry_grams, formatAmount(row.grams))
+    val amount = row.portionLabel ?: lexString(R.string.diet_entry_grams, formatAmount(row.grams))
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClickLabel = stringResource(R.string.diet_entry_edit, row.name)) { onEvent(DietEvent.EditEntry(row)) }
+            .clickable(onClickLabel = lexString(R.string.diet_entry_edit, row.name)) { onEvent(DietEvent.EditEntry(row)) }
             .padding(vertical = Spacing.xs),
     ) {
         Text(row.name, style = AwakenTheme.type.label, color = colors.textPrimary, maxLines = 2)
         Text(
-            stringResource(R.string.diet_entry_meta, amount, formatCount(amounts[Nutrient.KCAL].roundToInt())),
+            lexString(R.string.diet_entry_meta, amount, formatCount(amounts[Nutrient.KCAL].roundToInt())),
             style = AwakenTheme.type.caption,
             color = colors.textSecondary,
         )
@@ -350,7 +350,7 @@ private fun EntryRow(row: FoodLogEntity, amounts: Nutrients, onEvent: (DietEvent
 private fun NutrientsWindow(plan: DietPlan, totals: Nutrients) {
     val colors = AwakenTheme.colors
     val shown = Nutrient.entries.filter { it != Nutrient.KCAL && it !in MACROS && (it in plan.plan.targets || totals[it] > 0.0) }
-    SystemWindow(title = stringResource(R.string.diet_window_nutrients), accent = colors.accent, reveal = false) {
+    SystemWindow(title = lexString(R.string.diet_window_nutrients), accent = colors.accent, reveal = false) {
         shown.forEach { nutrient ->
             val target = plan.plan.targets[nutrient]
             NutrientLine(nutrient, totals[nutrient], target?.amount, target?.kind ?: NutritionMath.kindOf(nutrient))

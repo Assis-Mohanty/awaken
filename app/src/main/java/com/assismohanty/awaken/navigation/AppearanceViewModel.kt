@@ -12,6 +12,7 @@ import javax.inject.Inject
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import com.assismohanty.awaken.core.designsystem.lexicon.PresentationMode
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
@@ -22,6 +23,7 @@ data class Appearance(
     val hapticsEnabled: Boolean = true,
     val reduceMotion: Boolean = false,
     val themeMode: ThemeMode = ThemeMode.SYSTEM,
+    val presentationMode: PresentationMode = PresentationMode.SYSTEM,
 )
 
 @HiltViewModel
@@ -29,6 +31,6 @@ class AppearanceViewModel @Inject constructor(hunterDao: HunterDao, uiPrefs: UiP
     val appearance: StateFlow<Appearance> = combine(
         hunterDao.observeProfile().map { it?.themeId ?: ShopRules.DEFAULT_THEME_ID }.distinctUntilChanged(),
         uiPrefs.prefs,
-    ) { themeId, prefs: UiPrefs -> Appearance(themeId, prefs.hapticsEnabled, prefs.reduceMotion, prefs.themeMode) }
+    ) { themeId, prefs: UiPrefs -> Appearance(themeId, prefs.hapticsEnabled, prefs.reduceMotion, prefs.themeMode, prefs.presentationMode) }
         .stateIn(viewModelScope, SharingStarted.Eagerly, Appearance())
 }

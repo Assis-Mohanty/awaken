@@ -1,5 +1,7 @@
 package com.assismohanty.awaken.feature.quest
 
+import com.assismohanty.awaken.core.designsystem.lexicon.lexString
+import com.assismohanty.awaken.core.designsystem.lexicon.lexPlural
 import android.text.format.DateUtils
 import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Arrangement
@@ -27,8 +29,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.pluralStringResource
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
@@ -90,7 +90,7 @@ fun QuestDetailScreen(
     ) {
         Box(modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.xxs)) {
             IconButton(onClick = onBack) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.action_back), tint = colors.textPrimary)
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = lexString(R.string.action_back), tint = colors.textPrimary)
             }
         }
         Column(
@@ -100,7 +100,7 @@ fun QuestDetailScreen(
                 .padding(horizontal = Spacing.gutter, vertical = Spacing.xs),
         ) {
             when {
-                state.notFound -> EmptyState(line = stringResource(R.string.msg_error), actionLabel = stringResource(R.string.action_back), onAction = onBack)
+                state.notFound -> EmptyState(line = lexString(R.string.msg_error), actionLabel = lexString(R.string.action_back), onAction = onBack)
                 state.loading -> Unit
                 else -> QuestDetailContent(state, onEvent)
             }
@@ -123,10 +123,10 @@ private fun QuestDetailContent(state: QuestDetailUiState, onEvent: (QuestDetailE
             onDismiss = { showReport = false },
         )
     }
-    SystemWindow(title = stringResource(state.type.kindRes), accent = accent) {
+    SystemWindow(title = lexString(state.type.kindRes), accent = accent) {
         Text(state.title, style = type.metricL, color = colors.textPrimary, modifier = Modifier.semantics { heading() })
         Text(
-            text = stringResource(R.string.quest_target_line, formatCount(state.target), unitLabel(state.unit, state.target), state.difficulty.label()),
+            text = lexString(R.string.quest_target_line, formatCount(state.target), unitLabel(state.unit, state.target), state.difficulty.label()),
             style = type.title,
             color = colors.textSecondary,
         )
@@ -138,30 +138,30 @@ private fun QuestDetailContent(state: QuestDetailUiState, onEvent: (QuestDetailE
         state.pathName?.let { name ->
             PathQuestBadge(
                 name = name,
-                gate = state.gateRank?.let { rank -> stringResource(R.string.path_badge_gate, rank.name, rank.durationMinutes) },
+                gate = state.gateRank?.let { rank -> lexString(R.string.path_badge_gate, rank.name, rank.durationMinutes) },
             )
         }
         if (state.description.isNotBlank()) Text(state.description, style = type.body, color = colors.textPrimary)
 
         // Stat split: the primary stat takes full XP, the secondary 30 % (ENGINE_DECISIONS #5).
-        Text(stringResource(R.string.quest_split_primary, state.stat.label()), style = type.label, color = colors.stat(state.stat))
+        Text(lexString(R.string.quest_split_primary, state.stat.label()), style = type.label, color = colors.stat(state.stat))
         state.secondaryStat?.let { secondary ->
-            Text(stringResource(R.string.quest_split_secondary, secondary.label()), style = type.label, color = colors.stat(secondary))
+            Text(lexString(R.string.quest_split_secondary, secondary.label()), style = type.label, color = colors.stat(secondary))
         }
 
-        Text(stringResource(state.verification.explanationRes), style = type.body, color = colors.textSecondary)
+        Text(lexString(state.verification.explanationRes), style = type.body, color = colors.textSecondary)
         if (state.minDurationSec > 0 && state.status == QuestStatus.ACTIVE && state.verification == VerificationSource.SELF) {
             Text(
-                text = stringResource(R.string.quest_min_duration, DateUtils.formatElapsedTime(state.minDurationSec.toLong())),
+                text = lexString(R.string.quest_min_duration, DateUtils.formatElapsedTime(state.minDurationSec.toLong())),
                 style = type.caption,
                 color = colors.textSecondary,
             )
         }
         if (state.status == QuestStatus.STARTED) {
             val text = if (state.readyInSeconds > 0) {
-                stringResource(R.string.quest_ready_in, DateUtils.formatElapsedTime(state.readyInSeconds))
+                lexString(R.string.quest_ready_in, DateUtils.formatElapsedTime(state.readyInSeconds))
             } else {
-                stringResource(R.string.quest_started)
+                lexString(R.string.quest_started)
             }
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
                 Icon(AwakenGlyphs.Hourglass, contentDescription = null, tint = colors.accent, modifier = Modifier.size(AwakenTheme.dimens.iconSmall))
@@ -175,7 +175,7 @@ private fun QuestDetailContent(state: QuestDetailUiState, onEvent: (QuestDetailE
 
         state.rationale?.let { rationale ->
             Text(
-                text = stringResource(R.string.quest_path_rationale_label),
+                text = lexString(R.string.quest_path_rationale_label),
                 style = type.windowTitle,
                 color = colors.textMuted,
                 modifier = Modifier.padding(top = Spacing.xs),
@@ -184,7 +184,7 @@ private fun QuestDetailContent(state: QuestDetailUiState, onEvent: (QuestDetailE
         }
         state.reason?.takeIf { state.rationale == null }?.let { reason ->
             Text(
-                text = stringResource(R.string.quest_reason_label),
+                text = lexString(R.string.quest_reason_label),
                 style = type.windowTitle,
                 color = colors.textMuted,
                 modifier = Modifier.padding(top = Spacing.xs),
@@ -198,9 +198,9 @@ private fun QuestDetailContent(state: QuestDetailUiState, onEvent: (QuestDetailE
         ) {
             if (state.canEnterGate) {
                 state.gateRank?.let { rank ->
-                    Text(stringResource(R.string.quest_gate_required), style = type.caption, color = colors.textSecondary)
+                    Text(lexString(R.string.quest_gate_required), style = type.caption, color = colors.textSecondary)
                     PrimaryButton(
-                        stringResource(R.string.action_enter_path_gate, rank.name, rank.durationMinutes),
+                        lexString(R.string.action_enter_path_gate, rank.name, rank.durationMinutes),
                         onClick = { onEvent(QuestDetailEvent.EnterGate) },
                         enabled = !state.busy,
                         modifier = Modifier.fillMaxWidth(),
@@ -208,10 +208,10 @@ private fun QuestDetailContent(state: QuestDetailUiState, onEvent: (QuestDetailE
                 }
             }
             if (state.canBegin) {
-                PrimaryButton(stringResource(R.string.action_begin), onClick = { onEvent(QuestDetailEvent.Begin) }, enabled = !state.busy, modifier = Modifier.fillMaxWidth())
+                PrimaryButton(lexString(R.string.action_begin), onClick = { onEvent(QuestDetailEvent.Begin) }, enabled = !state.busy, modifier = Modifier.fillMaxWidth())
             }
             if (state.verification == VerificationSource.SELF && (state.status == QuestStatus.ACTIVE || state.status == QuestStatus.STARTED)) {
-                val complete = stringResource(R.string.action_complete_quest)
+                val complete = lexString(R.string.action_complete_quest)
                 if (state.canBegin) {
                     SecondaryButton(complete, onClick = { onEvent(QuestDetailEvent.Complete) }, enabled = state.canComplete && !state.busy, modifier = Modifier.fillMaxWidth())
                 } else {
@@ -219,18 +219,18 @@ private fun QuestDetailContent(state: QuestDetailUiState, onEvent: (QuestDetailE
                 }
             }
             if (state.canUndo) {
-                SecondaryButton(stringResource(R.string.action_undo), onClick = { onEvent(QuestDetailEvent.Undo) }, enabled = !state.busy, modifier = Modifier.fillMaxWidth())
+                SecondaryButton(lexString(R.string.action_undo), onClick = { onEvent(QuestDetailEvent.Undo) }, enabled = !state.busy, modifier = Modifier.fillMaxWidth())
             }
             if (state.canReroll) {
                 val label = if (state.rerollCost == 0) {
-                    stringResource(R.string.action_reroll)
+                    lexString(R.string.action_reroll)
                 } else {
-                    stringResource(R.string.action_reroll_paid, state.rerollCost)
+                    lexString(R.string.action_reroll_paid, state.rerollCost)
                 }
                 SecondaryButton(label, onClick = { onEvent(QuestDetailEvent.Reroll) }, enabled = !state.busy, modifier = Modifier.fillMaxWidth())
             }
             if (state.reportable) {
-                QuietButton(stringResource(R.string.action_report_quest), onClick = { showReport = true }, enabled = !state.busy, modifier = Modifier.fillMaxWidth())
+                QuietButton(lexString(R.string.action_report_quest), onClick = { showReport = true }, enabled = !state.busy, modifier = Modifier.fillMaxWidth())
             }
         }
     }
@@ -244,31 +244,31 @@ private fun SetCounterBlock(counter: SetCounterUiState, target: Int, unit: Strin
     // Restarts at the suggested value after every logged or undone set.
     var reps by rememberSaveable(counter.sets.size) { mutableIntStateOf(counter.suggestedReps) }
     Text(
-        text = stringResource(R.string.quest_sets_title),
+        text = lexString(R.string.quest_sets_title),
         style = type.windowTitle,
         color = colors.textMuted,
         modifier = Modifier.padding(top = Spacing.xs),
     )
     Text(
-        text = stringResource(R.string.quest_sets_total, counter.total, target, unitLabel(unit, target)),
+        text = lexString(R.string.quest_sets_total, counter.total, target, unitLabel(unit, target)),
         style = type.numericSmall,
         color = if (counter.total >= target) colors.positive else colors.textPrimary,
     )
     counter.sets.forEachIndexed { index, setReps ->
-        Text(stringResource(R.string.quest_set_line, index + 1, setReps), style = type.caption, color = colors.textSecondary)
+        Text(lexString(R.string.quest_set_line, index + 1, setReps), style = type.caption, color = colors.textSecondary)
     }
     counter.restSeconds?.let { seconds ->
-        Text(stringResource(R.string.quest_sets_rest, DateUtils.formatElapsedTime(seconds)), style = type.label, color = colors.accent)
+        Text(lexString(R.string.quest_sets_rest, DateUtils.formatElapsedTime(seconds)), style = type.label, color = colors.accent)
     }
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
-        val fewer = stringResource(R.string.cd_reps_fewer)
-        val more = stringResource(R.string.cd_reps_more)
+        val fewer = lexString(R.string.cd_reps_fewer)
+        val more = lexString(R.string.cd_reps_more)
         QuietButton(
             text = "−",
             onClick = { reps = (reps - 1).coerceAtLeast(1) },
             modifier = Modifier.semantics { contentDescription = fewer },
         )
-        Text(stringResource(R.string.quest_set_reps_value, reps), style = type.numericSmall, color = colors.textPrimary)
+        Text(lexString(R.string.quest_set_reps_value, reps), style = type.numericSmall, color = colors.textPrimary)
         QuietButton(
             text = "+",
             onClick = { reps = (reps + 1).coerceAtMost(SetCounter.MAX_REPS_PER_SET) },
@@ -276,16 +276,16 @@ private fun SetCounterBlock(counter: SetCounterUiState, target: Int, unit: Strin
         )
     }
     PrimaryButton(
-        stringResource(R.string.action_log_set),
+        lexString(R.string.action_log_set),
         onClick = { onEvent(QuestDetailEvent.AddSet(reps)) },
         enabled = !busy && !counter.full,
         modifier = Modifier.fillMaxWidth(),
     )
     if (counter.sets.isNotEmpty()) {
-        QuietButton(stringResource(R.string.action_undo_set), onClick = { onEvent(QuestDetailEvent.UndoSet) }, enabled = !busy, modifier = Modifier.fillMaxWidth())
+        QuietButton(lexString(R.string.action_undo_set), onClick = { onEvent(QuestDetailEvent.UndoSet) }, enabled = !busy, modifier = Modifier.fillMaxWidth())
     }
     Text(
-        text = stringResource(if (counter.full) R.string.quest_sets_full else R.string.quest_sets_note),
+        text = lexString(if (counter.full) R.string.quest_sets_full else R.string.quest_sets_note),
         style = type.caption,
         color = colors.textSecondary,
     )
@@ -313,13 +313,13 @@ private val VerificationSource.explanationRes: Int
 
 @Composable
 private fun reasonText(reason: QuestReason): String = when (reason) {
-    is QuestReason.Main -> stringResource(R.string.reason_main, reason.stat.label())
-    is QuestReason.Focus -> stringResource(R.string.reason_focus, reason.stat.label())
-    is QuestReason.Neglected -> pluralStringResource(R.plurals.reason_neglected, reason.days.toInt(), reason.stat.label(), reason.days.toInt())
-    is QuestReason.New -> stringResource(R.string.reason_new, reason.stat.label())
-    QuestReason.Balance -> stringResource(R.string.reason_balance)
-    QuestReason.Penalty -> stringResource(R.string.reason_penalty)
-    QuestReason.Habit -> stringResource(R.string.reason_habit)
+    is QuestReason.Main -> lexString(R.string.reason_main, reason.stat.label())
+    is QuestReason.Focus -> lexString(R.string.reason_focus, reason.stat.label())
+    is QuestReason.Neglected -> lexPlural(R.plurals.reason_neglected, reason.days.toInt(), reason.stat.label(), reason.days.toInt())
+    is QuestReason.New -> lexString(R.string.reason_new, reason.stat.label())
+    QuestReason.Balance -> lexString(R.string.reason_balance)
+    QuestReason.Penalty -> lexString(R.string.reason_penalty)
+    QuestReason.Habit -> lexString(R.string.reason_habit)
 }
 
 private val previewState = QuestDetailUiState(

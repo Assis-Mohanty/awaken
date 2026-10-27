@@ -1,5 +1,6 @@
 package com.assismohanty.awaken.feature.health
 
+import com.assismohanty.awaken.core.designsystem.lexicon.lexString
 import com.assismohanty.awaken.core.designsystem.charts.Chart
 import com.assismohanty.awaken.core.designsystem.charts.ChartSpec
 import com.assismohanty.awaken.core.designsystem.charts.Segment
@@ -24,7 +25,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
@@ -99,14 +99,14 @@ fun HealthScreen(
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
-                        stringResource(R.string.health_title),
+                        lexString(R.string.health_title),
                         style = AwakenTheme.type.metricL,
                         color = colors.textPrimary,
                         modifier = Modifier
                             .weight(1f)
                             .semantics { heading() },
                     )
-                    QuietButton(text = stringResource(R.string.action_back), onClick = onBack)
+                    QuietButton(text = lexString(R.string.action_back), onClick = onBack)
                 }
                 val overview = state.overview
                 when {
@@ -131,10 +131,10 @@ private fun MessageWindow(status: HealthScreenStatus, onEvent: (HealthEvent) -> 
         HealthScreenStatus.READY -> R.string.health_loading to false
     }
     SystemWindow(title = null, accent = colors.positive, reveal = false) {
-        Text(stringResource(text), style = AwakenTheme.type.body, color = colors.textSecondary)
+        Text(lexString(text), style = AwakenTheme.type.body, color = colors.textSecondary)
         if (retry) {
             SecondaryButton(
-                text = stringResource(R.string.health_action_refresh),
+                text = lexString(R.string.health_action_refresh),
                 onClick = { onEvent(HealthEvent.Refresh) },
                 modifier = Modifier.fillMaxWidth(),
             )
@@ -152,9 +152,9 @@ private fun OverviewContent(overview: HealthOverview, state: HealthUiState, onEv
     SourcesWindow(overview.today)
     if (!overview.canDistance || !overview.canCalories || !overview.canHeartRate) {
         SystemWindow(title = null, accent = colors.positive, reveal = false) {
-            Text(stringResource(R.string.health_allow_more_note), style = AwakenTheme.type.caption, color = colors.textSecondary)
+            Text(lexString(R.string.health_allow_more_note), style = AwakenTheme.type.caption, color = colors.textSecondary)
             PrimaryButton(
-                text = stringResource(R.string.health_allow_more),
+                text = lexString(R.string.health_allow_more),
                 onClick = { onEvent(HealthEvent.AllowMoreMetrics) },
                 color = colors.positive,
                 modifier = Modifier.fillMaxWidth(),
@@ -171,45 +171,45 @@ private fun TodayWindow(overview: HealthOverview, state: HealthUiState, onEvent:
     val numbers = NumberFormat.getIntegerInstance()
     val oneDecimal = remember { NumberFormat.getNumberInstance().apply { maximumFractionDigits = 1; minimumFractionDigits = 1 } }
     SystemWindow(
-        title = stringResource(R.string.health_window_today),
+        title = lexString(R.string.health_window_today),
         accent = colors.positive,
         reveal = false,
         headerTrailing = {
             QuietButton(
-                text = stringResource(R.string.health_action_refresh),
+                text = lexString(R.string.health_action_refresh),
                 onClick = { onEvent(HealthEvent.Refresh) },
                 enabled = !state.refreshing,
             )
         },
     ) {
         Text(
-            stringResource(R.string.health_updated, formatTime(overview.updatedAt, zone)),
+            lexString(R.string.health_updated, formatTime(overview.updatedAt, zone)),
             style = AwakenTheme.type.caption,
             color = colors.textSecondary,
         )
-        val notAllowed = stringResource(R.string.health_not_allowed)
+        val notAllowed = lexString(R.string.health_not_allowed)
         Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm), modifier = Modifier.fillMaxWidth()) {
-            MetricTile(stringResource(R.string.health_metric_steps), numbers.format(today.steps), Modifier.weight(1f))
+            MetricTile(lexString(R.string.health_metric_steps), numbers.format(today.steps), Modifier.weight(1f))
             MetricTile(
-                label = stringResource(R.string.health_metric_distance),
-                value = if (overview.canDistance) stringResource(R.string.health_value_distance, oneDecimal.format(today.distanceMeters / METERS_PER_KM)) else notAllowed,
+                label = lexString(R.string.health_metric_distance),
+                value = if (overview.canDistance) lexString(R.string.health_value_distance, oneDecimal.format(today.distanceMeters / METERS_PER_KM)) else notAllowed,
                 modifier = Modifier.weight(1f),
                 dim = !overview.canDistance,
             )
         }
         Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm), modifier = Modifier.fillMaxWidth()) {
             MetricTile(
-                label = stringResource(R.string.health_metric_calories),
-                value = if (overview.canCalories) stringResource(R.string.health_value_kcal, numbers.format(today.activeKcal.toLong())) else notAllowed,
+                label = lexString(R.string.health_metric_calories),
+                value = if (overview.canCalories) lexString(R.string.health_value_kcal, numbers.format(today.activeKcal.toLong())) else notAllowed,
                 modifier = Modifier.weight(1f),
                 dim = !overview.canCalories,
             )
             MetricTile(
-                label = stringResource(R.string.health_metric_heart_rate),
+                label = lexString(R.string.health_metric_heart_rate),
                 value = when {
                     !overview.canHeartRate -> notAllowed
-                    heartRate == null -> stringResource(R.string.health_no_data)
-                    else -> stringResource(R.string.health_value_bpm, heartRate)
+                    heartRate == null -> lexString(R.string.health_no_data)
+                    else -> lexString(R.string.health_value_bpm, heartRate)
                 },
                 modifier = Modifier.weight(1f),
                 dim = !overview.canHeartRate || heartRate == null,
@@ -222,30 +222,30 @@ private fun TodayWindow(overview: HealthOverview, state: HealthUiState, onEvent:
 private fun WorkoutsWindow(sessions: List<HealthSession>, zone: ZoneId) {
     val colors = AwakenTheme.colors
     val type = AwakenTheme.type
-    SystemWindow(title = stringResource(R.string.health_window_workouts), accent = colors.positive, reveal = false) {
+    SystemWindow(title = lexString(R.string.health_window_workouts), accent = colors.positive, reveal = false) {
         if (sessions.isEmpty()) {
-            Text(stringResource(R.string.health_no_workouts), style = type.body, color = colors.textSecondary)
+            Text(lexString(R.string.health_no_workouts), style = type.body, color = colors.textSecondary)
         }
         sessions.forEach { session ->
-            val name = prettyWorkoutLabel(session.label) ?: stringResource(R.string.health_workout_default)
+            val name = prettyWorkoutLabel(session.label) ?: lexString(R.string.health_workout_default)
             Text(
-                stringResource(R.string.health_workout_title, name, formatDuration(session.duration)),
+                lexString(R.string.health_workout_title, name, formatDuration(session.duration)),
                 style = type.label,
                 color = colors.textPrimary,
             )
             Text(
-                stringResource(R.string.health_workout_window, formatTime(session.start, zone), formatTime(session.end, zone)),
+                lexString(R.string.health_workout_window, formatTime(session.start, zone), formatTime(session.end, zone)),
                 style = type.caption,
                 color = colors.textSecondary,
             )
             FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.xs), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
                 session.distanceMeters?.let {
-                    Pill(text = stringResource(R.string.health_value_distance, NumberFormat.getNumberInstance().apply { maximumFractionDigits = 1 }.format(it / METERS_PER_KM)), color = colors.textSecondary)
+                    Pill(text = lexString(R.string.health_value_distance, NumberFormat.getNumberInstance().apply { maximumFractionDigits = 1 }.format(it / METERS_PER_KM)), color = colors.textSecondary)
                 }
                 session.activeKcal?.let {
-                    Pill(text = stringResource(R.string.health_value_kcal, NumberFormat.getIntegerInstance().format(it.toLong())), color = colors.textSecondary)
+                    Pill(text = lexString(R.string.health_value_kcal, NumberFormat.getIntegerInstance().format(it.toLong())), color = colors.textSecondary)
                 }
-                session.avgHeartRate?.let { Pill(text = stringResource(R.string.health_value_bpm, it), color = colors.critical) }
+                session.avgHeartRate?.let { Pill(text = lexString(R.string.health_value_bpm, it), color = colors.critical) }
                 session.origin?.let { Pill(text = healthSourceName(it), color = colors.positive) }
             }
         }
@@ -256,19 +256,19 @@ private fun WorkoutsWindow(sessions: List<HealthSession>, zone: ZoneId) {
 private fun SleepWindow(session: HealthSession?, zone: ZoneId) {
     val colors = AwakenTheme.colors
     val type = AwakenTheme.type
-    SystemWindow(title = stringResource(R.string.health_window_sleep), accent = colors.chartSeries3, reveal = false) {
+    SystemWindow(title = lexString(R.string.health_window_sleep), accent = colors.chartSeries3, reveal = false) {
         if (session == null) {
-            Text(stringResource(R.string.health_no_sleep), style = type.body, color = colors.textSecondary)
+            Text(lexString(R.string.health_no_sleep), style = type.body, color = colors.textSecondary)
             return@SystemWindow
         }
-        Text(stringResource(R.string.health_sleep_total, formatDuration(session.duration)), style = type.numericSmall, color = colors.textPrimary)
+        Text(lexString(R.string.health_sleep_total, formatDuration(session.duration)), style = type.numericSmall, color = colors.textPrimary)
         Text(
-            stringResource(R.string.health_workout_window, formatTime(session.start, zone), formatTime(session.end, zone)),
+            lexString(R.string.health_workout_window, formatTime(session.start, zone), formatTime(session.end, zone)),
             style = type.caption,
             color = colors.textSecondary,
         )
         if (session.stages.isEmpty()) {
-            Text(stringResource(R.string.health_sleep_no_stages), style = type.caption, color = colors.textSecondary)
+            Text(lexString(R.string.health_sleep_no_stages), style = type.caption, color = colors.textSecondary)
         } else {
             StageTimeline(session)
         }
@@ -294,7 +294,7 @@ private fun StageTimeline(session: HealthSession) {
     FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.sm), verticalArrangement = Arrangement.spacedBy(Spacing.xxs)) {
         totals.forEach { (stage, duration) ->
             Text(
-                stringResource(R.string.health_stage_line, stageName(stage), formatDuration(duration)),
+                lexString(R.string.health_stage_line, stageName(stage), formatDuration(duration)),
                 style = AwakenTheme.type.caption,
                 color = stageColor(stage, colors.critical, colors.textSecondary, colors.chartSeries2, colors.chartSeries3, colors.textMuted),
             )
@@ -311,7 +311,7 @@ private fun stageColor(stage: SleepStageType, awake: Color, light: Color, deep: 
 }
 
 @Composable
-private fun stageName(stage: SleepStageType): String = stringResource(
+private fun stageName(stage: SleepStageType): String = lexString(
     when (stage) {
         SleepStageType.AWAKE -> R.string.health_stage_awake
         SleepStageType.LIGHT -> R.string.health_stage_light
@@ -324,16 +324,16 @@ private fun stageName(stage: SleepStageType): String = stringResource(
 @Composable
 private fun TrendWindow(overview: HealthOverview) {
     val colors = AwakenTheme.colors
-    SystemWindow(title = stringResource(R.string.health_window_trend), accent = colors.positive, reveal = false) {
+    SystemWindow(title = lexString(R.string.health_window_trend), accent = colors.positive, reveal = false) {
         TrendChart(
-            title = stringResource(R.string.health_metric_steps),
+            title = lexString(R.string.health_metric_steps),
             days = overview.trend,
             value = { it.steps.toDouble() },
             color = colors.chartSeries4,
         )
         if (overview.canDistance) {
             TrendChart(
-                title = stringResource(R.string.health_metric_distance),
+                title = lexString(R.string.health_metric_distance),
                 days = overview.trend,
                 value = { it.distanceMeters / METERS_PER_KM },
                 color = colors.chartSeries2,
@@ -341,7 +341,7 @@ private fun TrendWindow(overview: HealthOverview) {
         }
         if (overview.canCalories) {
             TrendChart(
-                title = stringResource(R.string.health_metric_calories),
+                title = lexString(R.string.health_metric_calories),
                 days = overview.trend,
                 value = { it.activeKcal },
                 color = colors.chartSeries1,
@@ -356,7 +356,7 @@ private fun TrendChart(title: String, days: List<HealthTrendDay>, value: (Health
     val values = days.map(value)
     val max = (values.maxOrNull() ?: 0.0).coerceAtLeast(1.0)
     val numbers = NumberFormat.getIntegerInstance()
-    val description = stringResource(R.string.cd_trend_chart, title, values.joinToString(", ") { numbers.format(it.toLong()) })
+    val description = lexString(R.string.cd_trend_chart, title, values.joinToString(", ") { numbers.format(it.toLong()) })
     Text(title, style = AwakenTheme.type.label, color = colors.textPrimary)
     Chart(
         ChartSpec.Columns(
@@ -372,15 +372,15 @@ private fun TrendChart(title: String, days: List<HealthTrendDay>, value: (Health
 private fun SourcesWindow(today: HealthDay) {
     val colors = AwakenTheme.colors
     val origins = (today.exercise + today.sleep).mapNotNull { it.origin }.distinct()
-    SystemWindow(title = stringResource(R.string.health_window_sources), accent = colors.positive, reveal = false) {
+    SystemWindow(title = lexString(R.string.health_window_sources), accent = colors.positive, reveal = false) {
         if (origins.isEmpty()) {
-            Text(stringResource(R.string.health_sources_none), style = AwakenTheme.type.body, color = colors.textSecondary)
+            Text(lexString(R.string.health_sources_none), style = AwakenTheme.type.body, color = colors.textSecondary)
         } else {
             FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.xs), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
                 origins.forEach { Pill(text = healthSourceName(it), color = colors.positive) }
             }
         }
-        Text(stringResource(R.string.health_sources_note), style = AwakenTheme.type.caption, color = colors.textSecondary)
+        Text(lexString(R.string.health_sources_note), style = AwakenTheme.type.caption, color = colors.textSecondary)
     }
 }
 
@@ -391,9 +391,9 @@ private fun formatTime(instant: Instant, zone: ZoneId): String =
 private fun formatDuration(duration: Duration): String {
     val minutes = duration.toMinutes().coerceAtLeast(0)
     return if (minutes >= MINUTES_PER_HOUR) {
-        stringResource(R.string.health_duration_hm, minutes / MINUTES_PER_HOUR, minutes % MINUTES_PER_HOUR)
+        lexString(R.string.health_duration_hm, minutes / MINUTES_PER_HOUR, minutes % MINUTES_PER_HOUR)
     } else {
-        stringResource(R.string.health_duration_min, minutes)
+        lexString(R.string.health_duration_min, minutes)
     }
 }
 

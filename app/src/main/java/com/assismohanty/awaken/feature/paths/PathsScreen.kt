@@ -1,5 +1,7 @@
 package com.assismohanty.awaken.feature.paths
 
+import com.assismohanty.awaken.core.designsystem.lexicon.lexString
+import com.assismohanty.awaken.core.designsystem.lexicon.lexPlural
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -18,8 +20,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.pluralStringResource
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -81,8 +81,8 @@ fun PathsScreen(
         ) {
             if (state.paths.isEmpty()) {
                 EmptyState(
-                    line = stringResource(R.string.paths_empty_line),
-                    actionLabel = stringResource(R.string.paths_create),
+                    line = lexString(R.string.paths_empty_line),
+                    actionLabel = lexString(R.string.paths_create),
                     onAction = { onEvent(PathsEvent.Create) },
                 )
             } else {
@@ -109,13 +109,13 @@ private fun CreateAction(state: PathsUiState, onEvent: (PathsEvent) -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
         // A missing consent does not disable Create: it opens the consent sheet first.
         SecondaryButton(
-            text = stringResource(R.string.paths_create),
+            text = lexString(R.string.paths_create),
             onClick = { onEvent(PathsEvent.Create) },
             enabled = state.createBlock == null,
             modifier = Modifier.fillMaxWidth(),
         )
         if (reason != null && state.createBlock != null) {
-            Text(stringResource(reason), style = AwakenTheme.type.caption, color = AwakenTheme.colors.textSecondary)
+            Text(lexString(reason), style = AwakenTheme.type.caption, color = AwakenTheme.colors.textSecondary)
         }
     }
 }
@@ -126,7 +126,7 @@ private fun PathWindow(path: PathCardUi, onEvent: (PathsEvent) -> Unit, onOpen: 
     val colors = AwakenTheme.colors
     val type = AwakenTheme.type
     val accent = colors.stat(path.primaryStat)
-    val openDescription = stringResource(R.string.path_open_description, path.goal)
+    val openDescription = lexString(R.string.path_open_description, path.goal)
     SystemWindow(
         title = path.goal.uppercase(),
         accent = accent,
@@ -150,19 +150,19 @@ private fun PathWindow(path: PathCardUi, onEvent: (PathsEvent) -> Unit, onOpen: 
                 currentIndex = path.currentIndex,
                 accent = accent,
                 collapsed = true,
-                progressLine = stringResource(R.string.path_milestone_position, path.currentIndex + 1, path.ladder.size),
+                progressLine = lexString(R.string.path_milestone_position, path.currentIndex + 1, path.ladder.size),
             )
         }
         path.advanceTo?.let { next -> AdvanceMoment(next, onAdvance = { onEvent(PathsEvent.Advance(path.id)) }, onStay = { onEvent(PathsEvent.Stay(path.id)) }) }
         path.recalibration?.let { signal ->
-            Text(stringResource(signal.lineRes()), style = type.label, color = colors.accent)
+            Text(lexString(signal.lineRes()), style = type.label, color = colors.accent)
         }
         WeekQuests(path)
         path.oracle?.let { oracle ->
             OracleStatus(
                 state = oracle,
                 onRetry = if (path.canRetry) ({ onEvent(PathsEvent.Retry(path.id)) }) else null,
-                retryNote = if (path.retryLimitReached) stringResource(R.string.oracle_retry_limit) else null,
+                retryNote = if (path.retryLimitReached) lexString(R.string.oracle_retry_limit) else null,
             )
         }
     }
@@ -173,13 +173,13 @@ internal fun StatusPills(path: PathCardUi) {
     val colors = AwakenTheme.colors
     Row(horizontalArrangement = Arrangement.spacedBy(Spacing.xs), verticalAlignment = Alignment.CenterVertically) {
         when (path.status) {
-            PathStatus.PAUSED -> Pill(text = stringResource(R.string.path_status_paused), color = colors.textSecondary)
-            PathStatus.PLANNING -> Pill(text = stringResource(R.string.path_status_planning), color = colors.accent)
-            else -> Pill(text = stringResource(R.string.path_status_active), color = colors.positive)
+            PathStatus.PAUSED -> Pill(text = lexString(R.string.path_status_paused), color = colors.textSecondary)
+            PathStatus.PLANNING -> Pill(text = lexString(R.string.path_status_planning), color = colors.accent)
+            else -> Pill(text = lexString(R.string.path_status_active), color = colors.positive)
         }
         if (path.weekTotal > 0) {
             Text(
-                pluralStringResource(R.plurals.path_week_progress, path.weekTotal, path.weekDone, path.weekTotal),
+                lexPlural(R.plurals.path_week_progress, path.weekTotal, path.weekDone, path.weekTotal),
                 style = AwakenTheme.type.caption,
                 color = colors.textSecondary,
             )
@@ -190,11 +190,11 @@ internal fun StatusPills(path: PathCardUi) {
 /** "MILESTONE CLEARED" with the next milestone title; no reward numbers, there are none (DS §4.8). */
 @Composable
 internal fun AdvanceMoment(next: String, onAdvance: () -> Unit, onStay: () -> Unit) {
-    SystemWindow(title = stringResource(R.string.advance_title), accent = AwakenTheme.colors.accent, reveal = false) {
-        Text(stringResource(R.string.advance_body, next), style = AwakenTheme.type.body, color = AwakenTheme.colors.textPrimary)
+    SystemWindow(title = lexString(R.string.advance_title), accent = AwakenTheme.colors.accent, reveal = false) {
+        Text(lexString(R.string.advance_body, next), style = AwakenTheme.type.body, color = AwakenTheme.colors.textPrimary)
         Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm), verticalAlignment = Alignment.CenterVertically) {
-            PrimaryButton(text = stringResource(R.string.advance_confirm), onClick = onAdvance)
-            QuietButton(text = stringResource(R.string.advance_stay), onClick = onStay)
+            PrimaryButton(text = lexString(R.string.advance_confirm), onClick = onAdvance)
+            QuietButton(text = lexString(R.string.advance_stay), onClick = onStay)
         }
     }
 }
@@ -205,7 +205,7 @@ internal fun WeekQuests(path: PathCardUi) {
     val type = AwakenTheme.type
     if (path.quests.isEmpty()) {
         if (path.oracle == OracleUiState.CHARTED) {
-            Text(stringResource(R.string.path_no_quests_yet), style = type.caption, color = colors.textSecondary)
+            Text(lexString(R.string.path_no_quests_yet), style = type.caption, color = colors.textSecondary)
         }
         return
     }
@@ -223,10 +223,10 @@ internal fun WeekQuests(path: PathCardUi) {
                     color = if (quest.outcome == SlotOutcome.COMPLETED) colors.textSecondary else colors.textPrimary,
                     modifier = Modifier.weight(1f),
                 )
-                Text(stringResource(quest.outcome.labelRes()), style = type.caption, color = quest.outcome.color())
+                Text(lexString(quest.outcome.labelRes()), style = type.caption, color = quest.outcome.color())
             }
             if (quest.carried) {
-                Text(stringResource(R.string.slot_carried), style = type.caption, color = colors.textSecondary)
+                Text(lexString(R.string.slot_carried), style = type.caption, color = colors.textSecondary)
             }
         }
     }

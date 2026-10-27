@@ -1,5 +1,6 @@
 package com.assismohanty.awaken.feature.gate
 
+import com.assismohanty.awaken.core.designsystem.lexicon.lexString
 import com.assismohanty.awaken.core.designsystem.components.SelectableTile
 import android.Manifest
 import android.content.pm.PackageManager
@@ -30,7 +31,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
@@ -113,15 +113,15 @@ private fun GatePicker(state: GatesUiState, onEvent: (GatesEvent) -> Unit, onBac
     val colors = AwakenTheme.colors
     Row(verticalAlignment = Alignment.CenterVertically) {
         Text(
-            stringResource(R.string.gates_title),
+            lexString(R.string.gates_title),
             style = AwakenTheme.type.windowTitle,
             color = colors.textPrimary,
             modifier = Modifier.weight(1f).semantics { heading() },
         )
-        QuietButton(text = stringResource(R.string.action_back), onClick = onBack)
+        QuietButton(text = lexString(R.string.action_back), onClick = onBack)
     }
     Text(
-        stringResource(R.string.gates_body, shortClock(GateRules.BREACH_BUDGET_MS)),
+        lexString(R.string.gates_body, shortClock(GateRules.BREACH_BUDGET_MS)),
         style = AwakenTheme.type.body,
         color = colors.textSecondary,
     )
@@ -144,12 +144,12 @@ private fun GatePicker(state: GatesUiState, onEvent: (GatesEvent) -> Unit, onBac
 private fun GatePortal(tile: GateTile, selected: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
     val colors = AwakenTheme.colors
     val gateColor = if (tile.available) colors.gate(tile.rank) else colors.textMuted
-    val name = stringResource(R.string.gate_name, tile.rank.name)
-    val minutes = stringResource(R.string.gate_minutes, tile.minutes)
+    val name = lexString(R.string.gate_name, tile.rank.name)
+    val minutes = lexString(R.string.gate_minutes, tile.minutes)
     val description = if (tile.available) {
-        stringResource(R.string.cd_gate_tile, name, minutes)
+        lexString(R.string.cd_gate_tile, name, minutes)
     } else {
-        stringResource(R.string.cd_gate_tile_late, name, minutes)
+        lexString(R.string.cd_gate_tile_late, name, minutes)
     }
     SelectableTile(
         accent = gateColor,
@@ -164,7 +164,7 @@ private fun GatePortal(tile: GateTile, selected: Boolean, onClick: () -> Unit, m
         if (tile.available) {
             DifficultyChip(tile.rank.difficulty)
         } else {
-            Text(stringResource(R.string.gate_tile_late), style = AwakenTheme.type.caption, color = colors.textSecondary)
+            Text(lexString(R.string.gate_tile_late), style = AwakenTheme.type.caption, color = colors.textSecondary)
         }
     }
 }
@@ -173,8 +173,8 @@ private fun GatePortal(tile: GateTile, selected: Boolean, onClick: () -> Unit, m
 @Composable
 private fun GateSetupWindow(setup: GateSetup, onEvent: (GatesEvent) -> Unit) {
     val colors = AwakenTheme.colors
-    SystemWindow(title = stringResource(R.string.gate_name, setup.rank.name), accent = colors.gate(setup.rank)) {
-        Text(stringResource(R.string.gate_stat_label), style = AwakenTheme.type.label, color = colors.textSecondary)
+    SystemWindow(title = lexString(R.string.gate_name, setup.rank.name), accent = colors.gate(setup.rank)) {
+        Text(lexString(R.string.gate_stat_label), style = AwakenTheme.type.label, color = colors.textSecondary)
         FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.xs), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
             GATE_STATS.forEach { stat ->
                 ChoiceChip(
@@ -188,7 +188,7 @@ private fun GateSetupWindow(setup: GateSetup, onEvent: (GatesEvent) -> Unit) {
         OutlinedTextField(
             value = setup.label,
             onValueChange = { onEvent(GatesEvent.LabelChanged(it)) },
-            label = { Text(stringResource(R.string.gate_label_hint)) },
+            label = { Text(lexString(R.string.gate_label_hint)) },
             singleLine = true,
             keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences, imeAction = ImeAction.Done),
             colors = OutlinedTextFieldDefaults.colors(
@@ -199,14 +199,14 @@ private fun GateSetupWindow(setup: GateSetup, onEvent: (GatesEvent) -> Unit) {
             ),
             modifier = Modifier.fillMaxWidth(),
         )
-        Text(stringResource(R.string.gate_rule, shortClock(GateRules.BREACH_BUDGET_MS)), style = AwakenTheme.type.caption, color = colors.textSecondary)
+        Text(lexString(R.string.gate_rule, shortClock(GateRules.BREACH_BUDGET_MS)), style = AwakenTheme.type.caption, color = colors.textSecondary)
         PrimaryButton(
-            text = stringResource(R.string.action_enter_gate),
+            text = lexString(R.string.action_enter_gate),
             onClick = { onEvent(GatesEvent.Enter) },
             color = colors.gate(setup.rank),
             modifier = Modifier.fillMaxWidth(),
         )
-        QuietButton(text = stringResource(R.string.action_back), onClick = { onEvent(GatesEvent.CloseSetup) }, modifier = Modifier.fillMaxWidth())
+        QuietButton(text = lexString(R.string.action_back), onClick = { onEvent(GatesEvent.CloseSetup) }, modifier = Modifier.fillMaxWidth())
     }
 }
 
@@ -218,37 +218,37 @@ private fun GateRun(active: ActiveGate, confirmAbandon: Boolean, onEvent: (Gates
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(Spacing.md),
     ) {
-        Text(stringResource(R.string.gate_name, active.rank.name), style = AwakenTheme.type.windowTitle, color = colors.gate(active.rank))
+        Text(lexString(R.string.gate_name, active.rank.name), style = AwakenTheme.type.windowTitle, color = colors.gate(active.rank))
         Row(horizontalArrangement = Arrangement.spacedBy(Spacing.xs), verticalAlignment = Alignment.CenterVertically) {
             StatChip(active.stat)
             active.label?.let { Text(it, style = AwakenTheme.type.label, color = colors.textPrimary) }
         }
         GateDial(gate = active.rank, remaining = active.remaining, total = active.total, breachUsed = active.breachUsed)
         Text(
-            stringResource(R.string.gate_breach_line, shortClock(active.breachUsed.toMillis()), shortClock(GateRules.BREACH_BUDGET_MS)),
+            lexString(R.string.gate_breach_line, shortClock(active.breachUsed.toMillis()), shortClock(GateRules.BREACH_BUDGET_MS)),
             style = AwakenTheme.type.label,
             color = if (active.breachUsed.isZero) colors.textSecondary else colors.critical,
         )
         when {
             active.paused -> {
-                Text(stringResource(R.string.gate_paused_left, shortClock(active.pauseLeft.toMillis())), style = AwakenTheme.type.label, color = colors.textPrimary)
-                PrimaryButton(stringResource(R.string.action_resume), onClick = { onEvent(GatesEvent.Resume) }, modifier = Modifier.fillMaxWidth())
+                Text(lexString(R.string.gate_paused_left, shortClock(active.pauseLeft.toMillis())), style = AwakenTheme.type.label, color = colors.textPrimary)
+                PrimaryButton(lexString(R.string.action_resume), onClick = { onEvent(GatesEvent.Resume) }, modifier = Modifier.fillMaxWidth())
             }
             active.canPause -> SecondaryButton(
-                text = stringResource(R.string.action_pause, shortClock(GateRules.MAX_PAUSE.toMillis())),
+                text = lexString(R.string.action_pause, shortClock(GateRules.MAX_PAUSE.toMillis())),
                 onClick = { onEvent(GatesEvent.Pause) },
                 modifier = Modifier.fillMaxWidth(),
             )
-            else -> Text(stringResource(R.string.gate_pause_used), style = AwakenTheme.type.caption, color = colors.textSecondary)
+            else -> Text(lexString(R.string.gate_pause_used), style = AwakenTheme.type.caption, color = colors.textSecondary)
         }
         if (confirmAbandon) {
             SystemWindow(title = null, accent = colors.critical, reveal = false) {
-                Text(stringResource(R.string.gate_abandon_confirm), style = AwakenTheme.type.body, color = colors.textPrimary)
-                PrimaryButton(stringResource(R.string.action_abandon_gate), onClick = { onEvent(GatesEvent.ConfirmAbandon) }, color = colors.critical, modifier = Modifier.fillMaxWidth())
-                QuietButton(stringResource(R.string.action_keep_going), onClick = { onEvent(GatesEvent.CancelAbandon) }, modifier = Modifier.fillMaxWidth())
+                Text(lexString(R.string.gate_abandon_confirm), style = AwakenTheme.type.body, color = colors.textPrimary)
+                PrimaryButton(lexString(R.string.action_abandon_gate), onClick = { onEvent(GatesEvent.ConfirmAbandon) }, color = colors.critical, modifier = Modifier.fillMaxWidth())
+                QuietButton(lexString(R.string.action_keep_going), onClick = { onEvent(GatesEvent.CancelAbandon) }, modifier = Modifier.fillMaxWidth())
             }
         } else {
-            QuietButton(stringResource(R.string.action_abandon_gate), onClick = { onEvent(GatesEvent.Abandon) }, modifier = Modifier.fillMaxWidth())
+            QuietButton(lexString(R.string.action_abandon_gate), onClick = { onEvent(GatesEvent.Abandon) }, modifier = Modifier.fillMaxWidth())
         }
     }
 }

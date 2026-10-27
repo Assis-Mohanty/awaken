@@ -1,5 +1,6 @@
 package com.assismohanty.awaken.feature.paths
 
+import com.assismohanty.awaken.core.designsystem.lexicon.lexString
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -20,7 +21,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.assismohanty.awaken.R
@@ -69,7 +69,7 @@ fun PathDetailScreen(
     ) {
         Box(modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.xxs)) {
             IconButton(onClick = onBack) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.action_back), tint = colors.textPrimary)
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = lexString(R.string.action_back), tint = colors.textPrimary)
             }
         }
         val path = state.path ?: return@Column
@@ -82,7 +82,7 @@ fun PathDetailScreen(
         ) {
             val accent = colors.stat(path.primaryStat)
             SystemWindow(
-                title = stringResource(R.string.path_detail_title),
+                title = lexString(R.string.path_detail_title),
                 accent = accent,
                 reveal = false,
                 headerTrailing = {
@@ -96,12 +96,12 @@ fun PathDetailScreen(
             ) {
                 Text(path.goal, style = AwakenTheme.type.title, color = colors.textPrimary)
                 StatusPills(path)
-                path.recalibration?.let { Text(stringResource(it.lineRes()), style = AwakenTheme.type.label, color = colors.accent) }
+                path.recalibration?.let { Text(lexString(it.lineRes()), style = AwakenTheme.type.label, color = colors.accent) }
                 path.oracle?.let { oracle ->
                     OracleStatus(
                         state = oracle,
                         onRetry = if (path.canRetry) ({ onEvent(PathDetailEvent.Retry) }) else null,
-                        retryNote = if (path.retryLimitReached) stringResource(R.string.oracle_retry_limit) else null,
+                        retryNote = if (path.retryLimitReached) lexString(R.string.oracle_retry_limit) else null,
                     )
                 }
             }
@@ -109,14 +109,14 @@ fun PathDetailScreen(
                 AdvanceMoment(next, onAdvance = { onEvent(PathDetailEvent.Advance) }, onStay = { onEvent(PathDetailEvent.Stay) })
             }
             if (path.ladder.isNotEmpty()) {
-                SystemWindow(title = stringResource(R.string.path_ladder_title), accent = accent, reveal = false) {
+                SystemWindow(title = lexString(R.string.path_ladder_title), accent = accent, reveal = false) {
                     PathLadder(nodes = path.ladder, currentIndex = path.currentIndex, accent = accent)
                 }
             }
-            SystemWindow(title = stringResource(R.string.path_week_title), accent = accent, reveal = false) {
+            SystemWindow(title = lexString(R.string.path_week_title), accent = accent, reveal = false) {
                 WeekQuests(path)
                 if (path.quests.isEmpty() && path.oracle != OracleUiState.CHARTED) {
-                    Text(stringResource(R.string.path_no_quests_yet), style = AwakenTheme.type.caption, color = colors.textSecondary)
+                    Text(lexString(R.string.path_no_quests_yet), style = AwakenTheme.type.caption, color = colors.textSecondary)
                 }
             }
             Actions(path, state, onEvent)
@@ -133,40 +133,40 @@ private fun Actions(path: PathCardUi, state: PathDetailUiState, onEvent: (PathDe
     val colors = AwakenTheme.colors
     Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
         SecondaryButton(
-            text = stringResource(R.string.path_action_edit),
+            text = lexString(R.string.path_action_edit),
             onClick = { onEvent(PathDetailEvent.Edit) },
             modifier = Modifier.fillMaxWidth(),
         )
         if (state.replanUsed) {
-            Text(stringResource(R.string.path_action_replan_used), style = AwakenTheme.type.caption, color = colors.textSecondary)
+            Text(lexString(R.string.path_action_replan_used), style = AwakenTheme.type.caption, color = colors.textSecondary)
         }
         if (path.status.canPause()) {
             SecondaryButton(
-                text = stringResource(R.string.path_action_pause),
+                text = lexString(R.string.path_action_pause),
                 onClick = { onEvent(PathDetailEvent.Pause) },
                 modifier = Modifier.fillMaxWidth(),
             )
         }
         if (path.status.canResume()) {
             PrimaryButton(
-                text = stringResource(R.string.path_action_resume),
+                text = lexString(R.string.path_action_resume),
                 onClick = { onEvent(PathDetailEvent.Resume) },
                 modifier = Modifier.fillMaxWidth(),
             )
         }
         if (state.confirmArchive) {
             SystemWindow(title = null, accent = colors.critical, reveal = false) {
-                Text(stringResource(R.string.path_archive_confirm), style = AwakenTheme.type.body, color = colors.textPrimary)
+                Text(lexString(R.string.path_archive_confirm), style = AwakenTheme.type.body, color = colors.textPrimary)
                 PrimaryButton(
-                    text = stringResource(R.string.path_action_archive),
+                    text = lexString(R.string.path_action_archive),
                     onClick = { onEvent(PathDetailEvent.ConfirmArchive) },
                     color = colors.critical,
                     modifier = Modifier.fillMaxWidth(),
                 )
-                QuietButton(text = stringResource(R.string.action_cancel), onClick = { onEvent(PathDetailEvent.CancelArchive) })
+                QuietButton(text = lexString(R.string.action_cancel), onClick = { onEvent(PathDetailEvent.CancelArchive) })
             }
         } else {
-            QuietButton(text = stringResource(R.string.path_action_archive), onClick = { onEvent(PathDetailEvent.AskArchive) })
+            QuietButton(text = lexString(R.string.path_action_archive), onClick = { onEvent(PathDetailEvent.AskArchive) })
         }
     }
 }

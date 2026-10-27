@@ -1,5 +1,6 @@
 package com.assismohanty.awaken.feature.paths
 
+import com.assismohanty.awaken.core.designsystem.lexicon.lexString
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -21,7 +22,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.KeyboardCapitalization
@@ -70,7 +70,7 @@ fun PathEditorContent(state: PathEditorState, onEvent: (PathEditorEvent) -> Unit
         verticalArrangement = Arrangement.spacedBy(Spacing.sm),
     ) {
         Text(
-            text = stringResource(if (state.isEdit) R.string.editor_title_edit else R.string.editor_title_new),
+            text = lexString(if (state.isEdit) R.string.editor_title_edit else R.string.editor_title_new),
             style = type.windowTitle,
             color = colors.accent,
             modifier = Modifier.semantics { heading() },
@@ -79,15 +79,15 @@ fun PathEditorContent(state: PathEditorState, onEvent: (PathEditorEvent) -> Unit
         PathTextField(
             value = state.goal,
             onValueChange = { onEvent(PathEditorEvent.GoalChanged(it)) },
-            label = stringResource(R.string.editor_goal_label),
-            error = if (PathInputProblem.GOAL_LENGTH in problems) stringResource(R.string.editor_error_goal) else null,
+            label = lexString(R.string.editor_goal_label),
+            error = if (PathInputProblem.GOAL_LENGTH in problems) lexString(R.string.editor_error_goal) else null,
         )
         if (!state.isEdit) {
             FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.xs), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
                 listOf(
                     R.string.editor_example_cf, R.string.editor_example_run, R.string.editor_example_read, R.string.editor_example_japanese,
                 ).forEach { example ->
-                    val text = stringResource(example)
+                    val text = lexString(example)
                     ChoiceChip(text = text, selected = state.goal == text, onClick = { onEvent(PathEditorEvent.GoalChanged(text)) })
                 }
             }
@@ -95,33 +95,33 @@ fun PathEditorContent(state: PathEditorState, onEvent: (PathEditorEvent) -> Unit
         PathTextField(
             value = state.currentLevel,
             onValueChange = { onEvent(PathEditorEvent.LevelChanged(it)) },
-            label = stringResource(R.string.editor_level_label),
-            error = if (PathInputProblem.LEVEL_LENGTH in problems) stringResource(R.string.editor_error_level) else null,
+            label = lexString(R.string.editor_level_label),
+            error = if (PathInputProblem.LEVEL_LENGTH in problems) lexString(R.string.editor_error_level) else null,
         )
         PathTextField(
             value = state.notes,
             onValueChange = { onEvent(PathEditorEvent.NotesChanged(it)) },
-            label = stringResource(R.string.editor_notes_label),
-            error = if (PathInputProblem.NOTES_LENGTH in problems) stringResource(R.string.editor_error_notes) else null,
+            label = lexString(R.string.editor_notes_label),
+            error = if (PathInputProblem.NOTES_LENGTH in problems) lexString(R.string.editor_error_notes) else null,
             singleLine = false,
         )
 
-        SectionLabel(stringResource(R.string.editor_primary_stat))
+        SectionLabel(lexString(R.string.editor_primary_stat))
         state.suggestedStat?.takeIf { state.chosenPrimary == null }?.let { suggested ->
-            Text(stringResource(R.string.editor_suggested_stat, suggested.label()), style = type.caption, color = colors.textSecondary)
+            Text(lexString(R.string.editor_suggested_stat, suggested.label()), style = type.caption, color = colors.textSecondary)
         }
         StatChoices(selected = state.primary, onPick = { onEvent(PathEditorEvent.PrimaryPicked(it)) }, exclude = null)
         if (state.showErrors && state.primaryMissing) {
-            Text(stringResource(R.string.editor_error_primary), style = type.caption, color = colors.critical)
+            Text(lexString(R.string.editor_error_primary), style = type.caption, color = colors.critical)
         }
 
-        SectionLabel(stringResource(R.string.editor_secondary_stat))
+        SectionLabel(lexString(R.string.editor_secondary_stat))
         StatChoices(selected = state.secondary, onPick = { onEvent(PathEditorEvent.SecondaryPicked(it)) }, exclude = state.primary)
         if (PathInputProblem.SAME_STATS in problems) {
-            Text(stringResource(R.string.editor_error_stats), style = type.caption, color = colors.critical)
+            Text(lexString(R.string.editor_error_stats), style = type.caption, color = colors.critical)
         }
 
-        SectionLabel(stringResource(R.string.editor_days))
+        SectionLabel(lexString(R.string.editor_days))
         FlowRow(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
@@ -136,9 +136,9 @@ fun PathEditorContent(state: PathEditorState, onEvent: (PathEditorEvent) -> Unit
                 )
             }
         }
-        if (PathInputProblem.NO_DAYS in problems) Text(stringResource(R.string.editor_error_days), style = type.caption, color = colors.critical)
+        if (PathInputProblem.NO_DAYS in problems) Text(lexString(R.string.editor_error_days), style = type.caption, color = colors.critical)
 
-        SectionLabel(stringResource(R.string.editor_quests_per_day))
+        SectionLabel(lexString(R.string.editor_quests_per_day))
         FlowRow(modifier = Modifier.selectableGroup(), horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
             PathRules.QUESTS_PER_DAY.forEach { count ->
                 ChoiceChip(
@@ -149,7 +149,7 @@ fun PathEditorContent(state: PathEditorState, onEvent: (PathEditorEvent) -> Unit
             }
         }
 
-        SectionLabel(stringResource(R.string.editor_weekly_minutes, state.weeklyMinutes))
+        SectionLabel(lexString(R.string.editor_weekly_minutes, state.weeklyMinutes))
         Slider(
             value = state.weeklyMinutes.toFloat(),
             onValueChange = { onEvent(PathEditorEvent.MinutesChanged(snapMinutes(it))) },
@@ -160,12 +160,12 @@ fun PathEditorContent(state: PathEditorState, onEvent: (PathEditorEvent) -> Unit
                 inactiveTrackColor = colors.divider,
             ),
         )
-        Text(stringResource(R.string.editor_minutes_hint, state.minutesPerActiveDay), style = type.caption, color = colors.textSecondary)
-        if (PathInputProblem.WEEKLY_MINUTES in problems) Text(stringResource(R.string.editor_error_minutes), style = type.caption, color = colors.critical)
+        Text(lexString(R.string.editor_minutes_hint, state.minutesPerActiveDay), style = type.caption, color = colors.textSecondary)
+        if (PathInputProblem.WEEKLY_MINUTES in problems) Text(lexString(R.string.editor_error_minutes), style = type.caption, color = colors.critical)
 
         if (state.isEdit) {
             ChoiceChip(
-                text = stringResource(if (state.canReplan) R.string.editor_replan_toggle else R.string.path_action_replan_used),
+                text = lexString(if (state.canReplan) R.string.editor_replan_toggle else R.string.path_action_replan_used),
                 selected = state.replan,
                 onClick = { onEvent(PathEditorEvent.ReplanToggled) },
                 multiSelect = true,
@@ -176,7 +176,7 @@ fun PathEditorContent(state: PathEditorState, onEvent: (PathEditorEvent) -> Unit
 
         state.failure?.let { failure ->
             Text(
-                text = stringResource(
+                text = lexString(
                     when (failure) {
                         EditorFailure.GENERIC -> R.string.editor_failed
                         EditorFailure.LIMIT -> R.string.editor_error_limit
@@ -190,13 +190,13 @@ fun PathEditorContent(state: PathEditorState, onEvent: (PathEditorEvent) -> Unit
         }
 
         PrimaryButton(
-            text = stringResource(if (state.isEdit) R.string.editor_save_edit else R.string.editor_save_new),
+            text = lexString(if (state.isEdit) R.string.editor_save_edit else R.string.editor_save_new),
             onClick = { onEvent(PathEditorEvent.Save) },
             enabled = !state.submitting,
             modifier = Modifier.fillMaxWidth().padding(top = Spacing.xs),
         )
         QuietButton(
-            text = stringResource(R.string.action_cancel),
+            text = lexString(R.string.action_cancel),
             onClick = { onEvent(PathEditorEvent.Dismiss) },
             enabled = !state.submitting,
             modifier = Modifier.fillMaxWidth(),

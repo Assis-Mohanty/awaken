@@ -1,5 +1,7 @@
 package com.assismohanty.awaken.core.designsystem.components
 
+import com.assismohanty.awaken.core.designsystem.lexicon.lexString
+import com.assismohanty.awaken.core.designsystem.lexicon.lexPlural
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Arrangement
@@ -22,8 +24,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.pluralStringResource
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import com.assismohanty.awaken.R
@@ -89,7 +89,7 @@ fun RewardSheetContent(
         if (model.crit) haptics.crit() else haptics.confirm()
         shownXp.animateTo(model.xp.toFloat(), tween(motion.duration(COUNT_UP_MS), easing = motion.standardEasing))
     }
-    val finalXp = stringResource(R.string.xp_gain, formatCount(model.xp))
+    val finalXp = lexString(R.string.xp_gain, formatCount(model.xp))
 
     Column(
         modifier = modifier
@@ -98,12 +98,12 @@ fun RewardSheetContent(
         verticalArrangement = Arrangement.spacedBy(Spacing.sm),
     ) {
         Text(
-            text = stringResource(if (model.crit) R.string.system_title_critical_clear else R.string.system_title_quest_cleared),
+            text = lexString(if (model.crit) R.string.system_title_critical_clear else R.string.system_title_quest_cleared),
             style = type.windowTitle,
             color = accent,
         )
         Text(
-            text = stringResource(R.string.xp_gain, formatCount(shownXp.value.toInt())),
+            text = lexString(R.string.xp_gain, formatCount(shownXp.value.toInt())),
             style = type.metricL,
             color = colors.bone,
             modifier = Modifier.semantics { contentDescription = finalXp },
@@ -112,27 +112,27 @@ fun RewardSheetContent(
             model.statXp.forEach { (stat, xp) ->
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.xxs)) {
                     Icon(AwakenGlyphs.stat(stat), contentDescription = null, tint = colors.stat(stat), modifier = Modifier.size(AwakenTheme.dimens.iconSmall))
-                    Text(stringResource(R.string.stat_gain, stat.label(), formatCount(xp)), style = type.label, color = colors.bone)
+                    Text(lexString(R.string.stat_gain, stat.label(), formatCount(xp)), style = type.label, color = colors.bone)
                 }
             }
             if (model.gold > 0) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.xxs)) {
                     Icon(AwakenGlyphs.Coin, contentDescription = null, tint = colors.crit, modifier = Modifier.size(AwakenTheme.dimens.iconSmall))
-                    Text(stringResource(R.string.gold_gain, formatCount(model.gold)), style = type.label, color = colors.bone)
+                    Text(lexString(R.string.gold_gain, formatCount(model.gold)), style = type.label, color = colors.bone)
                 }
             }
             if (model.fragments > 0) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.xxs)) {
                     Icon(AwakenGlyphs.Fragment, contentDescription = null, tint = colors.aether, modifier = Modifier.size(AwakenTheme.dimens.iconSmall))
-                    Text(pluralStringResource(R.plurals.fragment_gain, model.fragments, model.fragments), style = type.label, color = colors.bone)
+                    Text(lexPlural(R.plurals.fragment_gain, model.fragments, model.fragments), style = type.label, color = colors.bone)
                 }
             }
         }
         Text(text = breakdownText(model), style = type.caption, color = colors.mist)
-        if (model.capped) Text(stringResource(R.string.cap_reached_note), style = type.caption, color = colors.mist)
+        if (model.capped) Text(lexString(R.string.cap_reached_note), style = type.caption, color = colors.mist)
         if (model.pathQuest) FeedbackChips(selected = feedback, onSelect = onFeedback)
         PrimaryButton(
-            text = stringResource(R.string.action_done),
+            text = lexString(R.string.action_done),
             onClick = onDone,
             color = accent,
             modifier = Modifier.fillMaxWidth(),
@@ -145,20 +145,20 @@ fun RewardSheetContent(
 private fun breakdownText(model: RewardModel): String {
     val parts = model.breakdown.mapNotNull { item ->
         when (item.kind) {
-            BreakdownItem.Kind.BASE -> stringResource(R.string.breakdown_base, formatMultiplier(item.value, fixed = false))
+            BreakdownItem.Kind.BASE -> lexString(R.string.breakdown_base, formatMultiplier(item.value, fixed = false))
             BreakdownItem.Kind.DIFFICULTY ->
-                stringResource(R.string.breakdown_difficulty, formatMultiplier(item.value, fixed = false), model.difficulty.label())
-            BreakdownItem.Kind.STREAK -> stringResource(R.string.breakdown_streak, formatMultiplier(item.value, fixed = true))
+                lexString(R.string.breakdown_difficulty, formatMultiplier(item.value, fixed = false), model.difficulty.label())
+            BreakdownItem.Kind.STREAK -> lexString(R.string.breakdown_streak, formatMultiplier(item.value, fixed = true))
             BreakdownItem.Kind.VERIFICATION -> when (model.verification) {
                 VerificationSource.SELF -> null // ×1.00 adds nothing to explain
-                VerificationSource.HEALTH, VerificationSource.USAGE -> stringResource(R.string.breakdown_verified, formatMultiplier(item.value, fixed = true))
-                VerificationSource.TIMER -> stringResource(R.string.breakdown_timed, formatMultiplier(item.value, fixed = true))
+                VerificationSource.HEALTH, VerificationSource.USAGE -> lexString(R.string.breakdown_verified, formatMultiplier(item.value, fixed = true))
+                VerificationSource.TIMER -> lexString(R.string.breakdown_timed, formatMultiplier(item.value, fixed = true))
             }
-            BreakdownItem.Kind.CRIT -> stringResource(R.string.breakdown_crit, formatMultiplier(item.value, fixed = false))
-            BreakdownItem.Kind.DAILY_CAP -> stringResource(R.string.breakdown_cap, formatMultiplier(item.value, fixed = true))
+            BreakdownItem.Kind.CRIT -> lexString(R.string.breakdown_crit, formatMultiplier(item.value, fixed = false))
+            BreakdownItem.Kind.DAILY_CAP -> lexString(R.string.breakdown_cap, formatMultiplier(item.value, fixed = true))
         }
     }
-    return parts.joinToString(separator = " × ") + " " + stringResource(R.string.breakdown_total, formatCount(model.xp))
+    return parts.joinToString(separator = " × ") + " " + lexString(R.string.breakdown_total, formatCount(model.xp))
 }
 
 private const val COUNT_UP_MS = 700

@@ -1,5 +1,6 @@
 package com.assismohanty.awaken.feature.onboarding
 
+import com.assismohanty.awaken.core.designsystem.lexicon.lexString
 import android.text.format.DateFormat
 import androidx.activity.compose.BackHandler
 import androidx.annotation.StringRes
@@ -39,7 +40,6 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.ImeAction
@@ -104,9 +104,9 @@ fun OnboardingScreen(state: OnboardingUiState, onEvent: (OnboardingEvent) -> Uni
                     .verticalScroll(rememberScrollState())
                     .padding(horizontal = Spacing.gutter, vertical = Spacing.lg),
             ) {
-                SystemWindow(title = stringResource(step.titleRes), accent = AwakenTheme.colors.accent) {
+                SystemWindow(title = lexString(step.titleRes), accent = AwakenTheme.colors.accent) {
                     Text(
-                        text = stringResource(R.string.onboarding_step, step.ordinal + 1, OnboardingStep.entries.size),
+                        text = lexString(R.string.onboarding_step, step.ordinal + 1, OnboardingStep.entries.size),
                         style = AwakenTheme.type.caption,
                         color = AwakenTheme.colors.textMuted,
                     )
@@ -141,12 +141,12 @@ private val OnboardingStep.titleRes: Int
 @Composable
 private fun WelcomeStep(onEvent: (OnboardingEvent) -> Unit) {
     TypeOnText(
-        text = stringResource(R.string.onboarding_welcome_body),
+        text = lexString(R.string.onboarding_welcome_body),
         style = AwakenTheme.type.body,
         color = AwakenTheme.colors.textPrimary,
     )
     PrimaryButton(
-        text = stringResource(R.string.action_accept),
+        text = lexString(R.string.action_accept),
         onClick = { onEvent(OnboardingEvent.Next) },
         modifier = Modifier.fillMaxWidth().padding(top = Spacing.md),
     )
@@ -158,10 +158,10 @@ private fun NameStep(state: OnboardingUiState, onEvent: (OnboardingEvent) -> Uni
     OutlinedTextField(
         value = state.name,
         onValueChange = { onEvent(OnboardingEvent.NameChanged(it)) },
-        label = { Text(stringResource(R.string.onboarding_name_label)) },
+        label = { Text(lexString(R.string.onboarding_name_label)) },
         isError = state.showNameError,
         supportingText = if (state.showNameError) {
-            { Text(stringResource(R.string.onboarding_name_error)) }
+            { Text(lexString(R.string.onboarding_name_error)) }
         } else {
             null
         },
@@ -184,12 +184,12 @@ private fun NameStep(state: OnboardingUiState, onEvent: (OnboardingEvent) -> Uni
 
 @Composable
 private fun FocusStep(state: OnboardingUiState, onEvent: (OnboardingEvent) -> Unit) {
-    Text(stringResource(R.string.onboarding_focus_body), style = AwakenTheme.type.body, color = AwakenTheme.colors.textSecondary)
+    Text(lexString(R.string.onboarding_focus_body), style = AwakenTheme.type.body, color = AwakenTheme.colors.textSecondary)
     Column(verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
         Stat.entries.forEach { stat ->
             val selected = stat in state.focus
             ChoiceChip(
-                text = stringResource(R.string.onboarding_focus_option, stat.label(), stringResource(stat.meaningRes)),
+                text = lexString(R.string.onboarding_focus_option, stat.label(), lexString(stat.meaningRes)),
                 selected = selected,
                 onClick = { onEvent(OnboardingEvent.FocusToggled(stat)) },
                 color = AwakenTheme.colors.stat(stat),
@@ -216,7 +216,7 @@ private val Stat.meaningRes: Int
 private fun CalibrationStep(state: OnboardingUiState, onEvent: (OnboardingEvent) -> Unit) {
     CalibrationQuestion.entries.forEach { question ->
         Text(
-            text = stringResource(question.promptRes),
+            text = lexString(question.promptRes),
             style = AwakenTheme.type.label,
             color = AwakenTheme.colors.textPrimary,
             modifier = Modifier.padding(top = Spacing.xs).semantics { heading() },
@@ -227,7 +227,7 @@ private fun CalibrationStep(state: OnboardingUiState, onEvent: (OnboardingEvent)
         ) {
             Awakening.Answer.entries.forEach { answer ->
                 ChoiceChip(
-                    text = stringResource(question.answerRes(answer)),
+                    text = lexString(question.answerRes(answer)),
                     selected = state.answers[question] == answer,
                     onClick = { onEvent(OnboardingEvent.Answered(question, answer)) },
                     modifier = Modifier.weight(1f),
@@ -266,26 +266,26 @@ private fun CalibrationQuestion.answerRes(answer: Awakening.Answer): Int = when 
 
 @Composable
 private fun HealthStep(state: OnboardingUiState, onEvent: (OnboardingEvent) -> Unit) {
-    Text(stringResource(R.string.onboarding_health_body), style = AwakenTheme.type.body, color = AwakenTheme.colors.textPrimary)
+    Text(lexString(R.string.onboarding_health_body), style = AwakenTheme.type.body, color = AwakenTheme.colors.textPrimary)
     when {
-        state.healthNotInstalled -> Text(stringResource(R.string.health_not_installed), style = AwakenTheme.type.label, color = AwakenTheme.colors.textSecondary)
-        state.healthDeclined -> Text(stringResource(R.string.health_declined), style = AwakenTheme.type.label, color = AwakenTheme.colors.textSecondary)
+        state.healthNotInstalled -> Text(lexString(R.string.health_not_installed), style = AwakenTheme.type.label, color = AwakenTheme.colors.textSecondary)
+        state.healthDeclined -> Text(lexString(R.string.health_declined), style = AwakenTheme.type.label, color = AwakenTheme.colors.textSecondary)
     }
     Column(
         modifier = Modifier.fillMaxWidth().padding(top = Spacing.md),
         verticalArrangement = Arrangement.spacedBy(Spacing.xs),
     ) {
         PrimaryButton(
-            text = stringResource(R.string.action_connect),
+            text = lexString(R.string.action_connect),
             onClick = { onEvent(OnboardingEvent.ConnectHealth) },
             modifier = Modifier.fillMaxWidth(),
         )
         SecondaryButton(
-            text = stringResource(R.string.action_not_now),
+            text = lexString(R.string.action_not_now),
             onClick = { onEvent(OnboardingEvent.Next) },
             modifier = Modifier.fillMaxWidth(),
         )
-        QuietButton(text = stringResource(R.string.action_back), onClick = { onEvent(OnboardingEvent.Back) })
+        QuietButton(text = lexString(R.string.action_back), onClick = { onEvent(OnboardingEvent.Back) })
     }
 }
 
@@ -297,11 +297,11 @@ private fun HealthStep(state: OnboardingUiState, onEvent: (OnboardingEvent) -> U
 @Composable
 private fun PathStep(state: OnboardingUiState, onEvent: (OnboardingEvent) -> Unit) {
     val colors = AwakenTheme.colors
-    Text(stringResource(R.string.onboarding_path_body), style = AwakenTheme.type.body, color = colors.textSecondary)
+    Text(lexString(R.string.onboarding_path_body), style = AwakenTheme.type.body, color = colors.textSecondary)
     OutlinedTextField(
         value = state.pathGoal,
         onValueChange = { onEvent(OnboardingEvent.PathGoalChanged(it)) },
-        label = { Text(stringResource(R.string.editor_goal_label)) },
+        label = { Text(lexString(R.string.editor_goal_label)) },
         singleLine = true,
         keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences, imeAction = ImeAction.Next),
         colors = onboardingFieldColors(),
@@ -311,7 +311,7 @@ private fun PathStep(state: OnboardingUiState, onEvent: (OnboardingEvent) -> Uni
         listOf(
             R.string.editor_example_cf, R.string.editor_example_run, R.string.editor_example_read, R.string.editor_example_japanese,
         ).forEach { example ->
-            val text = stringResource(example)
+            val text = lexString(example)
             ChoiceChip(
                 text = text,
                 selected = state.pathGoal == text,
@@ -322,7 +322,7 @@ private fun PathStep(state: OnboardingUiState, onEvent: (OnboardingEvent) -> Uni
     OutlinedTextField(
         value = state.pathLevel,
         onValueChange = { onEvent(OnboardingEvent.PathLevelChanged(it)) },
-        label = { Text(stringResource(R.string.editor_level_label)) },
+        label = { Text(lexString(R.string.editor_level_label)) },
         singleLine = true,
         keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences, imeAction = ImeAction.Done),
         keyboardActions = KeyboardActions(onDone = { if (state.canContinue) onEvent(OnboardingEvent.Next) }),
@@ -334,18 +334,18 @@ private fun PathStep(state: OnboardingUiState, onEvent: (OnboardingEvent) -> Uni
         horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
     ) {
         SecondaryButton(
-            text = stringResource(R.string.action_skip),
+            text = lexString(R.string.action_skip),
             onClick = { onEvent(OnboardingEvent.SkipPath) },
             modifier = Modifier.weight(1f),
         )
         PrimaryButton(
-            text = stringResource(R.string.action_continue),
+            text = lexString(R.string.action_continue),
             onClick = { onEvent(OnboardingEvent.Next) },
             enabled = state.canContinue,
             modifier = Modifier.weight(1f),
         )
     }
-    QuietButton(text = stringResource(R.string.action_back), onClick = { onEvent(OnboardingEvent.Back) })
+    QuietButton(text = lexString(R.string.action_back), onClick = { onEvent(OnboardingEvent.Back) })
     if (state.showConsent) {
         AiConsentSheet(
             onEnable = { onEvent(OnboardingEvent.EnableAiConsent) },
@@ -370,7 +370,7 @@ private fun onboardingFieldColors() = AwakenTheme.colors.let { colors ->
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ColumnScope.ReminderStep(state: OnboardingUiState, onEvent: (OnboardingEvent) -> Unit) {
-    Text(stringResource(R.string.onboarding_reminder_body), style = AwakenTheme.type.body, color = AwakenTheme.colors.textSecondary)
+    Text(lexString(R.string.onboarding_reminder_body), style = AwakenTheme.type.body, color = AwakenTheme.colors.textSecondary)
     val timeState = rememberTimePickerState(
         initialHour = state.reminder.hour,
         initialMinute = state.reminder.minute,
@@ -387,17 +387,17 @@ private fun ColumnScope.ReminderStep(state: OnboardingUiState, onEvent: (Onboard
 
 @Composable
 private fun CompleteStep(state: OnboardingUiState, onEvent: (OnboardingEvent) -> Unit) {
-    Text(stringResource(R.string.onboarding_complete_body), style = AwakenTheme.type.body, color = AwakenTheme.colors.textPrimary)
+    Text(lexString(R.string.onboarding_complete_body), style = AwakenTheme.type.body, color = AwakenTheme.colors.textPrimary)
     if (state.failed) {
-        Text(stringResource(R.string.msg_error), style = AwakenTheme.type.label, color = AwakenTheme.colors.critical)
+        Text(lexString(R.string.msg_error), style = AwakenTheme.type.label, color = AwakenTheme.colors.critical)
     }
     Row(
         modifier = Modifier.fillMaxWidth().padding(top = Spacing.md),
         horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
     ) {
-        QuietButton(text = stringResource(R.string.action_back), onClick = { onEvent(OnboardingEvent.Back) }, enabled = !state.submitting)
+        QuietButton(text = lexString(R.string.action_back), onClick = { onEvent(OnboardingEvent.Back) }, enabled = !state.submitting)
         PrimaryButton(
-            text = stringResource(R.string.action_enter),
+            text = lexString(R.string.action_enter),
             onClick = { onEvent(OnboardingEvent.Finish) },
             enabled = !state.submitting,
             modifier = Modifier.weight(1f),
@@ -411,9 +411,9 @@ private fun StepButtons(onEvent: (OnboardingEvent) -> Unit, continueEnabled: Boo
         modifier = Modifier.fillMaxWidth().padding(top = Spacing.md),
         horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
     ) {
-        QuietButton(text = stringResource(R.string.action_back), onClick = { onEvent(OnboardingEvent.Back) })
+        QuietButton(text = lexString(R.string.action_back), onClick = { onEvent(OnboardingEvent.Back) })
         PrimaryButton(
-            text = stringResource(R.string.action_continue),
+            text = lexString(R.string.action_continue),
             onClick = { onEvent(OnboardingEvent.Next) },
             enabled = continueEnabled,
             modifier = Modifier.weight(1f),

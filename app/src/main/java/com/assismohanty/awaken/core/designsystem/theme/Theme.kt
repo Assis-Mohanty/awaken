@@ -11,6 +11,9 @@ import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.ui.graphics.Color
+import com.assismohanty.awaken.core.designsystem.lexicon.Lexicon
+import com.assismohanty.awaken.core.designsystem.lexicon.LocalLexicon
+import com.assismohanty.awaken.core.designsystem.lexicon.PresentationMode
 import com.assismohanty.awaken.engine.model.Rank
 
 /**
@@ -21,6 +24,7 @@ import com.assismohanty.awaken.engine.model.Rank
  * @param reduceMotion the in-app toggle; the system "Remove animations" setting is OR-ed in (§2.5).
  * @param hapticsEnabled the in-app toggle (§2.6).
  * @param themeId the equipped Vault theme (GD §9.2); re-tints the background glow and rank-coloured window accents ([AwakenTheme.rankAccent]) only.
+ * @param presentation Clean or System words (GD §14.9), provided as [LocalLexicon].
  */
 @Composable
 fun AwakenTheme(
@@ -28,6 +32,7 @@ fun AwakenTheme(
     reduceMotion: Boolean = false,
     hapticsEnabled: Boolean = true,
     themeId: String = "default",
+    presentation: PresentationMode = PresentationMode.SYSTEM,
     content: @Composable () -> Unit,
 ) {
     val palette = if (darkTheme) AwakenPalette.Dark else AwakenPalette.Light
@@ -47,6 +52,7 @@ fun AwakenTheme(
         LocalAwakenDimens provides dimens,
         LocalHaptics provides rememberHaptics(hapticsEnabled),
         LocalThemeTint provides palette.theme(themeId),
+        LocalLexicon provides Lexicon.of(presentation),
     ) {
         MaterialTheme(
             colorScheme = colorScheme,

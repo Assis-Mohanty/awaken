@@ -51,7 +51,13 @@ class MainActivity : ComponentActivity() {
                 onDispose { }
             }
             LaunchedEffect(look.themeMode) { applyWindowNightMode(look.themeMode) }
-            AwakenTheme(darkTheme = dark, reduceMotion = look.reduceMotion, hapticsEnabled = look.hapticsEnabled, themeId = look.themeId) {
+            AwakenTheme(
+                darkTheme = dark,
+                reduceMotion = look.reduceMotion,
+                hapticsEnabled = look.hapticsEnabled,
+                themeId = look.themeId,
+                presentation = look.presentationMode,
+            ) {
                 AwakenNavHost(openTodayRequests = openTodayRequests)
             }
         }

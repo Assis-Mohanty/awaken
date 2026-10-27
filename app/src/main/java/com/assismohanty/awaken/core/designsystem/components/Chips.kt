@@ -1,5 +1,6 @@
 package com.assismohanty.awaken.core.designsystem.components
 
+import com.assismohanty.awaken.core.designsystem.lexicon.lexString
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -17,7 +18,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -123,11 +123,11 @@ fun VerifiedBadge(source: VerificationSource, modifier: Modifier = Modifier) {
     when (source) {
         VerificationSource.SELF -> Unit
         VerificationSource.HEALTH ->
-            Pill(stringResource(R.string.badge_verified), color, modifier, icon = AwakenGlyphs.VerifiedSeal)
+            Pill(lexString(R.string.badge_verified), color, modifier, icon = AwakenGlyphs.VerifiedSeal)
         VerificationSource.TIMER ->
-            Pill(stringResource(R.string.badge_timed), color, modifier, icon = AwakenGlyphs.Hourglass)
+            Pill(lexString(R.string.badge_timed), color, modifier, icon = AwakenGlyphs.Hourglass)
         VerificationSource.USAGE ->
-            Pill(stringResource(R.string.badge_verified), color, modifier, icon = AwakenGlyphs.VerifiedSeal)
+            Pill(lexString(R.string.badge_verified), color, modifier, icon = AwakenGlyphs.VerifiedSeal)
     }
 }
 
@@ -141,7 +141,7 @@ private fun ChipsPreview() {
             Row(horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
                 VerifiedBadge(VerificationSource.HEALTH)
                 VerifiedBadge(VerificationSource.TIMER)
-                Pill(stringResource(R.string.chip_main), AwakenTheme.palette.system)
+                Pill(lexString(R.string.chip_main), AwakenTheme.palette.system)
             }
         }
     }

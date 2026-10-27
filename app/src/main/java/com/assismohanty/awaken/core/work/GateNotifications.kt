@@ -13,6 +13,7 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import com.assismohanty.awaken.MainActivity
 import com.assismohanty.awaken.R
+import com.assismohanty.awaken.core.data.repo.LexiconSource
 import com.assismohanty.awaken.feature.quest.shortClock
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.time.Duration
@@ -25,18 +26,21 @@ import javax.inject.Singleton
  * (`setUsesChronometer` + `setChronometerCountDown`), so nothing in the app has to run while it's away.
  */
 @Singleton
-class GateNotifications @Inject constructor(@ApplicationContext private val context: Context) {
+class GateNotifications @Inject constructor(
+    @ApplicationContext private val context: Context,
+    private val words: LexiconSource = LexiconSource.Fixed,
+) {
 
     /** Shown when the app leaves the foreground mid-run: the countdown and how much breach budget is left. */
     fun showRunning(gateName: String, endAt: Instant, breachLeft: Duration, paused: Boolean, pauseEndsAt: Instant?) {
         val text = if (paused) {
-            context.getString(R.string.gate_notif_paused)
+            words.resources(context).getString(R.string.gate_notif_paused)
         } else {
-            context.getString(R.string.gate_notif_running, shortClock(breachLeft.toMillis()))
+            words.resources(context).getString(R.string.gate_notif_running, shortClock(breachLeft.toMillis()))
         }
         val countdownTo = if (paused && pauseEndsAt != null) pauseEndsAt else endAt
         val builder = base()
-            .setContentTitle(context.getString(R.string.gate_notif_title, gateName))
+            .setContentTitle(words.resources(context).getString(R.string.gate_notif_title, gateName))
             .setContentText(text)
             .setOngoing(true)
             .setOnlyAlertOnce(true)
@@ -56,8 +60,8 @@ class GateNotifications @Inject constructor(@ApplicationContext private val cont
         notify(
             ENDED_ID,
             base()
-                .setContentTitle(context.getString(R.string.gate_notif_ended_title, gateName))
-                .setContentText(context.getString(R.string.gate_notif_ended_body))
+                .setContentTitle(words.resources(context).getString(R.string.gate_notif_ended_title, gateName))
+                .setContentText(words.resources(context).getString(R.string.gate_notif_ended_body))
                 .setAutoCancel(true)
                 .setCategory(NotificationCompat.CATEGORY_REMINDER),
         )
@@ -93,8 +97,8 @@ class GateNotifications @Inject constructor(@ApplicationContext private val cont
     }
 
     private fun ensureChannel() {
-        val channel = NotificationChannel(CHANNEL_ID, context.getString(R.string.gate_channel_name), NotificationManager.IMPORTANCE_DEFAULT)
-            .apply { description = context.getString(R.string.gate_channel_description) }
+        val channel = NotificationChannel(CHANNEL_ID, words.resources(context).getString(R.string.gate_channel_name), NotificationManager.IMPORTANCE_DEFAULT)
+            .apply { description = words.resources(context).getString(R.string.gate_channel_description) }
         context.getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
     }
 

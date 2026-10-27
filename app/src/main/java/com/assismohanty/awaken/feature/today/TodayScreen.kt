@@ -1,5 +1,6 @@
 package com.assismohanty.awaken.feature.today
 
+import com.assismohanty.awaken.core.designsystem.lexicon.lexString
 import com.assismohanty.awaken.core.designsystem.components.penaltyTint
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -21,7 +22,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -117,23 +117,23 @@ fun TodayScreen(
         ) {
             // Gates and Vault live up here since Gym and Diet took their tabs.
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                HeaderAction(AwakenGlyphs.Portal, stringResource(R.string.action_open_gates), onOpenGates)
-                HeaderAction(AwakenGlyphs.Vault, stringResource(R.string.action_open_vault), onOpenVault)
+                HeaderAction(AwakenGlyphs.Portal, lexString(R.string.action_open_gates), onOpenGates)
+                HeaderAction(AwakenGlyphs.Vault, lexString(R.string.action_open_vault), onOpenVault)
             }
             val header = state.header
             if (state.loading || header == null) {
-                Text(stringResource(R.string.today_loading), style = type.body, color = colors.textSecondary)
+                Text(lexString(R.string.today_loading), style = type.body, color = colors.textSecondary)
                 return@Column
             }
-            val title = state.equippedTitleId?.let(::titleNameRes)?.let { stringResource(it) }
+            val title = state.equippedTitleId?.let(::titleNameRes)?.let { lexString(it) }
             HunterHeader(header.copy(title = title), modifier = Modifier.staggeredEntrance(0))
             Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterEnd) {
-                QuietButton(text = stringResource(R.string.action_day_plan), onClick = { onDayPlanEvent(DayPlanEvent.Open) })
+                QuietButton(text = lexString(R.string.action_day_plan), onClick = { onDayPlanEvent(DayPlanEvent.Open) })
             }
 
             state.penalty?.let { penalty ->
                 SystemWindow(
-                    title = stringResource(R.string.quest_kind_penalty),
+                    title = lexString(R.string.quest_kind_penalty),
                     accent = colors.critical,
                     modifier = Modifier.staggeredEntrance(1),
                 ) {
@@ -158,12 +158,12 @@ fun TodayScreen(
             }
 
             SystemWindow(
-                title = stringResource(if (state.cleared) R.string.system_title_directive_cleared else R.string.system_title_daily_directive),
+                title = lexString(if (state.cleared) R.string.system_title_directive_cleared else R.string.system_title_daily_directive),
                 accent = clearedPulseAccent(state.cleared, base = AwakenTheme.rankAccent(state.rank)),
                 modifier = Modifier.staggeredEntrance(2),
                 headerTrailing = {
                     Text(
-                        text = stringResource(R.string.today_progress, state.completed, state.total),
+                        text = lexString(R.string.today_progress, state.completed, state.total),
                         style = type.numericSmall,
                         color = colors.textSecondary,
                     )
@@ -184,17 +184,17 @@ fun TodayScreen(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
-                        text = stringResource(R.string.today_habits),
+                        text = lexString(R.string.today_habits),
                         style = type.windowTitle,
                         color = colors.textMuted,
                         modifier = Modifier.weight(1f).semantics { heading() },
                     )
-                    QuietButton(text = stringResource(R.string.action_manage_habits), onClick = { onHabitsEvent(HabitsEvent.OpenList) })
+                    QuietButton(text = lexString(R.string.action_manage_habits), onClick = { onHabitsEvent(HabitsEvent.OpenList) })
                 }
                 if (state.habits.isEmpty()) {
                     EmptyState(
-                        line = stringResource(R.string.today_no_habits),
-                        actionLabel = stringResource(R.string.action_add_habit),
+                        line = lexString(R.string.today_no_habits),
+                        actionLabel = lexString(R.string.action_add_habit),
                         onAction = { onHabitsEvent(HabitsEvent.Add) },
                     )
                 } else {
@@ -297,17 +297,17 @@ private fun HeaderAction(icon: ImageVector, label: String, onClick: () -> Unit) 
 private fun DisciplineCardWindow(card: DisciplineCard, onOpenScreenTime: () -> Unit, modifier: Modifier = Modifier) {
     val colors = AwakenTheme.colors
     SystemWindow(
-        title = stringResource(R.string.quest_kind_discipline),
+        title = lexString(R.string.quest_kind_discipline),
         accent = if (card.held) colors.positive else colors.critical,
         modifier = modifier,
         reveal = false,
-        headerTrailing = { QuietButton(text = stringResource(R.string.action_open_screen_time), onClick = onOpenScreenTime) },
+        headerTrailing = { QuietButton(text = lexString(R.string.action_open_screen_time), onClick = onOpenScreenTime) },
     ) {
         Text(
             text = if (card.held) {
-                stringResource(R.string.today_discipline_on_track, card.xpAtStake)
+                lexString(R.string.today_discipline_on_track, card.xpAtStake)
             } else {
-                stringResource(R.string.today_discipline_forfeited)
+                lexString(R.string.today_discipline_forfeited)
             },
             style = AwakenTheme.type.body,
             color = if (card.held) colors.textPrimary else colors.textSecondary,
@@ -323,16 +323,16 @@ private fun CampaignCardWindow(state: TodayUiState, onOpenCampaign: () -> Unit) 
     val card = state.campaign
     if (card == null && !state.campaignOffer) return
     SystemWindow(
-        title = stringResource(R.string.campaign_window_progress),
+        title = lexString(R.string.campaign_window_progress),
         accent = if (card != null) colors.reward else colors.accent,
         reveal = false,
-        headerTrailing = { QuietButton(text = stringResource(R.string.action_open_campaign), onClick = onOpenCampaign) },
+        headerTrailing = { QuietButton(text = lexString(R.string.action_open_campaign), onClick = onOpenCampaign) },
     ) {
         Text(
             text = if (card != null) {
-                stringResource(R.string.today_campaign_day, card.dayIndex, stringResource(card.act.todayNameRes))
+                lexString(R.string.today_campaign_day, card.dayIndex, lexString(card.act.todayNameRes))
             } else {
-                stringResource(R.string.today_campaign_begin)
+                lexString(R.string.today_campaign_begin)
             },
             style = if (card != null) AwakenTheme.type.numeric else AwakenTheme.type.body,
             color = if (card != null) colors.textPrimary else colors.textSecondary,

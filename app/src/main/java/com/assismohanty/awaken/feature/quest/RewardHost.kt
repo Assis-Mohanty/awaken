@@ -1,7 +1,9 @@
 package com.assismohanty.awaken.feature.quest
 
+import com.assismohanty.awaken.core.designsystem.lexicon.lexString
 import android.Manifest
-import android.content.res.Resources
+import com.assismohanty.awaken.core.designsystem.lexicon.LexResources
+import com.assismohanty.awaken.core.designsystem.lexicon.rememberLexResources
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -24,8 +26,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalResources
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.window.Dialog
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
@@ -155,7 +155,7 @@ private data class ToastItem(val key: Long, val title: String, val message: Stri
 fun RewardHost(snackbarHostState: SnackbarHostState, modifier: Modifier = Modifier, viewModel: RewardHostViewModel = hiltViewModel()) {
     val event by viewModel.current.collectAsStateWithLifecycle()
     val chapters by viewModel.chapters.collectAsStateWithLifecycle()
-    val resources = LocalResources.current
+    val resources = rememberLexResources()
     // Snackbars and toasts outlive the event that started them, so they run in the host's scope.
     val scope = rememberCoroutineScope()
     val toasts = remember { mutableStateListOf<ToastItem>() }
@@ -176,7 +176,7 @@ fun RewardHost(snackbarHostState: SnackbarHostState, modifier: Modifier = Modifi
 
     fun queueAchievements(achievementIds: List<String>, eventId: Long) {
         achievementIds.forEachIndexed { index, id ->
-            val name = achievementNameRes(id)?.let(resources::getString) ?: return@forEachIndexed
+            val name = achievementNameRes(id)?.let { resources.getString(it) } ?: return@forEachIndexed
             val gold = AchievementEvaluator.byId[id]?.gold ?: 0
             val message = if (gold > 0) resources.getString(R.string.achievement_with_gold, name, gold) else name
             toasts += ToastItem(eventId * TOAST_KEY_STRIDE + index, resources.getString(R.string.system_title_achievement), message, ToastTone.ACHIEVEMENT)
@@ -206,9 +206,9 @@ fun RewardHost(snackbarHostState: SnackbarHostState, modifier: Modifier = Modifi
         is CompletionEvent.SystemNotice -> when (current.notice) {
             // The Penalty Zone holds the queue until acknowledged (GD §7.3).
             is Notice.PenaltyWarning -> SystemWarningDialog(
-                body = stringResource(R.string.penalty_warning_body),
-                detail = stringResource(R.string.penalty_warning_detail),
-                actionLabel = stringResource(R.string.action_face_it),
+                body = lexString(R.string.penalty_warning_body),
+                detail = lexString(R.string.penalty_warning_detail),
+                actionLabel = lexString(R.string.action_face_it),
                 onDismiss = { viewModel.consume(current.id) },
             )
             else -> LaunchedEffect(current.id) {
@@ -217,9 +217,9 @@ fun RewardHost(snackbarHostState: SnackbarHostState, modifier: Modifier = Modifi
             }
         }
         is CompletionEvent.GateCollapsed -> SystemWarningDialog(
-            body = stringResource(R.string.gate_collapsed_body),
+            body = lexString(R.string.gate_collapsed_body),
             detail = collapseDetail(current.reason, current.backgroundMs, resources),
-            actionLabel = stringResource(R.string.action_continue),
+            actionLabel = lexString(R.string.action_continue),
             onDismiss = { viewModel.consume(current.id) },
         )
         null -> Unit
@@ -268,7 +268,7 @@ fun RewardHost(snackbarHostState: SnackbarHostState, modifier: Modifier = Modifi
     }
 }
 
-private fun Notice.toToasts(resources: Resources, eventId: Long): List<ToastItem> = when (this) {
+private fun Notice.toToasts(resources: LexResources, eventId: Long): List<ToastItem> = when (this) {
     is Notice.ShieldUsed -> listOf(
         ToastItem(eventId * TOAST_KEY_STRIDE, resources.getString(R.string.notice_shield_title), resources.getString(R.string.notice_shield_body), ToastTone.SYSTEM),
     )
@@ -340,7 +340,7 @@ private fun CompletedPresentation(
                 newLevel = outcome.levelAfter,
                 statGains = emptyMap(),
                 onDismiss = onFinished,
-                title = stringResource(R.string.system_title_rank_up),
+                title = lexString(R.string.system_title_rank_up),
                 accent = AwakenTheme.colors.rank(promotedTo),
                 crest = { RankCrest(rank = promotedTo, size = AwakenTheme.dimens.crestLarge) },
             )
@@ -369,10 +369,10 @@ private const val TOAST_KEY_STRIDE = 100L
 private fun NotificationPromptDialog(onAllow: () -> Unit, onNotNow: () -> Unit) {
     val colors = AwakenTheme.colors
     Dialog(onDismissRequest = onNotNow) {
-        SystemWindow(title = stringResource(R.string.notif_prompt_title), accent = colors.accent) {
-            Text(stringResource(R.string.notif_prompt_body), style = AwakenTheme.type.body, color = colors.textPrimary)
-            PrimaryButton(text = stringResource(R.string.action_allow_reminders), onClick = onAllow, modifier = Modifier.fillMaxWidth())
-            QuietButton(text = stringResource(R.string.action_not_now), onClick = onNotNow, modifier = Modifier.fillMaxWidth())
+        SystemWindow(title = lexString(R.string.notif_prompt_title), accent = colors.accent) {
+            Text(lexString(R.string.notif_prompt_body), style = AwakenTheme.type.body, color = colors.textPrimary)
+            PrimaryButton(text = lexString(R.string.action_allow_reminders), onClick = onAllow, modifier = Modifier.fillMaxWidth())
+            QuietButton(text = lexString(R.string.action_not_now), onClick = onNotNow, modifier = Modifier.fillMaxWidth())
         }
     }
 }

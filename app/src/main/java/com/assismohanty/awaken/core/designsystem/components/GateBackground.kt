@@ -13,6 +13,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import com.assismohanty.awaken.core.designsystem.preview.PhonePreviews
+import com.assismohanty.awaken.core.designsystem.lexicon.LocalLexicon
 import com.assismohanty.awaken.core.designsystem.theme.AwakenAlpha
 import com.assismohanty.awaken.core.designsystem.theme.AwakenTheme
 import com.assismohanty.awaken.engine.model.Rank
@@ -29,6 +30,8 @@ fun GateBackground(
 ) {
     val colors = AwakenTheme.palette
     val motion = AwakenTheme.motion
+    // Clean mode turns the glow off (DESIGN_SYSTEM §8.3); System mode keeps it.
+    val showGlow = LocalLexicon.current.glow
     val glow by animateColorAsState(tint, tween(motion.duration(motion.revealMs)), label = "gateGlow")
     Box(
         modifier = modifier
@@ -38,13 +41,15 @@ fun GateBackground(
                 val centre = Offset(size.width / 2f, size.height * GLOW_CENTRE_Y)
                 val radius = maxOf(size.width, size.height) * DEPTH_RADIUS
                 drawRect(Brush.radialGradient(listOf(colors.depth, colors.void), center = centre, radius = radius))
-                drawRect(
-                    Brush.radialGradient(
-                        listOf(glow.copy(alpha = AwakenAlpha.HAZE), Color.Transparent),
-                        center = centre,
-                        radius = size.width * GLOW_RADIUS,
-                    ),
-                )
+                if (showGlow) {
+                    drawRect(
+                        Brush.radialGradient(
+                            listOf(glow.copy(alpha = AwakenAlpha.HAZE), Color.Transparent),
+                            center = centre,
+                            radius = size.width * GLOW_RADIUS,
+                        ),
+                    )
+                }
             },
         content = content,
     )

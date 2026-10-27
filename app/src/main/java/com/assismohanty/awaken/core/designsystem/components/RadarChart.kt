@@ -1,5 +1,6 @@
 package com.assismohanty.awaken.core.designsystem.components
 
+import com.assismohanty.awaken.core.designsystem.lexicon.lexString
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
@@ -12,7 +13,6 @@ import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import com.assismohanty.awaken.R
@@ -87,7 +87,7 @@ fun RadarChart(
 @Composable
 fun radarDescription(values: Map<Stat, Float>): String {
     val items = ArrayList<String>(Stat.entries.size)
-    for (stat in Stat.entries) items += stringResource(R.string.cd_radar_item, stat.label(), (values[stat] ?: 0f).toInt())
+    for (stat in Stat.entries) items += lexString(R.string.cd_radar_item, stat.label(), (values[stat] ?: 0f).toInt())
     return items.joinToString(", ")
 }
 

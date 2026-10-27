@@ -1,5 +1,6 @@
 package com.assismohanty.awaken.core.designsystem.components
 
+import com.assismohanty.awaken.core.designsystem.lexicon.lexPlural
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.padding
@@ -11,7 +12,6 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import com.assismohanty.awaken.R
@@ -45,7 +45,7 @@ fun Heatmap(
     val firstMonday = days.minOfOrNull { it.date }?.let { it.minusDays((it.dayOfWeek.value - 1).toLong()) }
     val grid = days.associateBy { it.date }
     val clearedDays = days.count { it.intensity > 0 }
-    val description = pluralStringResource(R.plurals.cd_heatmap, clearedDays, weeks, clearedDays)
+    val description = lexPlural(R.plurals.cd_heatmap, clearedDays, weeks, clearedDays)
     val cell = dimens.heatmapCell
     val gap = dimens.heatmapGap
 

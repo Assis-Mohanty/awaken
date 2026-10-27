@@ -1,5 +1,6 @@
 package com.assismohanty.awaken.core.designsystem.components
 
+import com.assismohanty.awaken.core.designsystem.lexicon.lexString
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Arrangement
@@ -18,7 +19,6 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.progressBarRangeInfo
@@ -47,7 +47,7 @@ fun XpBar(
     val fraction by animateFloatAsState(target, tween(motion.duration(motion.standardMs), easing = motion.standardEasing), label = "xp")
     val into = formatCount(xpIntoLevel)
     val total = formatCount(xpForLevel)
-    val description = stringResource(R.string.cd_xp_bar, level, into, total)
+    val description = lexString(R.string.cd_xp_bar, level, into, total)
 
     Column(
         modifier = modifier.semantics(mergeDescendants = true) {
@@ -81,7 +81,7 @@ fun XpBar(
         )
         if (showLabel) {
             Text(
-                text = stringResource(R.string.xp_progress, into, total),
+                text = lexString(R.string.xp_progress, into, total),
                 style = AwakenTheme.type.numericSmall,
                 color = colors.mist,
                 modifier = Modifier.align(Alignment.End),

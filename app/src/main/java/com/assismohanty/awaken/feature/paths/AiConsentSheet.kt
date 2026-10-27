@@ -1,5 +1,6 @@
 package com.assismohanty.awaken.feature.paths
 
+import com.assismohanty.awaken.core.designsystem.lexicon.lexString
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -17,7 +18,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import com.assismohanty.awaken.R
@@ -56,13 +56,13 @@ fun AiConsentContent(onEnable: () -> Unit, onNotNow: () -> Unit, modifier: Modif
             .padding(horizontal = Spacing.gutter, vertical = Spacing.md),
         verticalArrangement = Arrangement.spacedBy(Spacing.sm),
     ) {
-        Text(stringResource(R.string.consent_title), style = type.windowTitle, color = colors.accent, modifier = Modifier.semantics { heading() })
-        Text(stringResource(R.string.consent_headline), style = type.title, color = colors.textPrimary)
-        Text(stringResource(R.string.consent_body), style = type.body, color = colors.textPrimary)
-        Text(stringResource(R.string.consent_rewards), style = type.body, color = colors.textSecondary)
+        Text(lexString(R.string.consent_title), style = type.windowTitle, color = colors.accent, modifier = Modifier.semantics { heading() })
+        Text(lexString(R.string.consent_headline), style = type.title, color = colors.textPrimary)
+        Text(lexString(R.string.consent_body), style = type.body, color = colors.textPrimary)
+        Text(lexString(R.string.consent_rewards), style = type.body, color = colors.textSecondary)
         WhatIsSent()
-        PrimaryButton(text = stringResource(R.string.consent_enable), onClick = onEnable, modifier = Modifier.fillMaxWidth().padding(top = Spacing.xs))
-        SecondaryButton(text = stringResource(R.string.consent_not_now), onClick = onNotNow, modifier = Modifier.fillMaxWidth())
+        PrimaryButton(text = lexString(R.string.consent_enable), onClick = onEnable, modifier = Modifier.fillMaxWidth().padding(top = Spacing.xs))
+        SecondaryButton(text = lexString(R.string.consent_not_now), onClick = onNotNow, modifier = Modifier.fillMaxWidth())
     }
 }
 
@@ -72,15 +72,15 @@ fun WhatIsSent(modifier: Modifier = Modifier) {
     var open by rememberSaveable { mutableStateOf(false) }
     Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(Spacing.xxs)) {
         QuietButton(
-            text = stringResource(R.string.consent_what_is_sent),
+            text = lexString(R.string.consent_what_is_sent),
             onClick = { open = !open },
         )
         if (open) {
-            Text(stringResource(R.string.consent_sent_title), style = AwakenTheme.type.label, color = AwakenTheme.colors.textPrimary)
+            Text(lexString(R.string.consent_sent_title), style = AwakenTheme.type.label, color = AwakenTheme.colors.textPrimary)
             listOf(R.string.consent_sent_1, R.string.consent_sent_2, R.string.consent_sent_3, R.string.consent_sent_4).forEach { line ->
-                Text("• " + stringResource(line), style = AwakenTheme.type.body, color = AwakenTheme.colors.textPrimary)
+                Text("• " + lexString(line), style = AwakenTheme.type.body, color = AwakenTheme.colors.textPrimary)
             }
-            Text(stringResource(R.string.consent_not_sent), style = AwakenTheme.type.caption, color = AwakenTheme.colors.textSecondary)
+            Text(lexString(R.string.consent_not_sent), style = AwakenTheme.type.caption, color = AwakenTheme.colors.textSecondary)
         }
     }
 }

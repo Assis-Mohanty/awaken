@@ -1,5 +1,7 @@
 package com.assismohanty.awaken.feature.today
 
+import com.assismohanty.awaken.core.designsystem.lexicon.lexString
+import com.assismohanty.awaken.core.designsystem.lexicon.lexPlural
 import androidx.annotation.StringRes
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -30,8 +32,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.res.pluralStringResource
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
@@ -85,19 +85,19 @@ fun HabitOverview(state: HabitsUiState, onEvent: (HabitsEvent) -> Unit, modifier
     val locale = LocalConfiguration.current.locales[0]
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
         Text(
-            text = stringResource(R.string.habit_overview_title),
+            text = lexString(R.string.habit_overview_title),
             style = type.windowTitle,
             color = colors.accent,
             modifier = Modifier.semantics { heading() },
         )
-        Text(pluralStringResource(R.plurals.habit_count, state.max, state.habits.size, state.max), style = type.caption, color = colors.textSecondary)
+        Text(lexPlural(R.plurals.habit_count, state.max, state.habits.size, state.max), style = type.caption, color = colors.textSecondary)
         state.habits.forEachIndexed { index, habit ->
             if (index > 0) HorizontalDivider(thickness = AwakenTheme.dimens.hairline, color = colors.divider)
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .defaultMinSize(minHeight = AwakenTheme.dimens.touchTarget)
-                    .clickable(role = Role.Button, onClickLabel = stringResource(R.string.action_edit_habit)) { onEvent(HabitsEvent.Edit(habit.id)) }
+                    .clickable(role = Role.Button, onClickLabel = lexString(R.string.action_edit_habit)) { onEvent(HabitsEvent.Edit(habit.id)) }
                     .padding(vertical = Spacing.xs),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
@@ -111,16 +111,16 @@ fun HabitOverview(state: HabitsUiState, onEvent: (HabitsEvent) -> Unit, modifier
                 Column(modifier = Modifier.weight(1f)) {
                     Text(habit.title, style = type.body, color = colors.textPrimary)
                     Text(
-                        text = stringResource(R.string.habit_schedule_line, habit.days.sorted().joinToString(" ") { it.shortName(locale) }, habit.difficulty.label()),
+                        text = lexString(R.string.habit_schedule_line, habit.days.sorted().joinToString(" ") { it.shortName(locale) }, habit.difficulty.label()),
                         style = type.caption,
                         color = colors.textSecondary,
                     )
                 }
             }
         }
-        if (!state.canAdd) Text(stringResource(R.string.habit_limit), style = type.label, color = colors.textSecondary)
+        if (!state.canAdd) Text(lexString(R.string.habit_limit), style = type.label, color = colors.textSecondary)
         PrimaryButton(
-            text = stringResource(R.string.action_add_habit),
+            text = lexString(R.string.action_add_habit),
             onClick = { onEvent(HabitsEvent.Add) },
             enabled = state.canAdd,
             modifier = Modifier.fillMaxWidth().padding(top = Spacing.xs),
@@ -137,7 +137,7 @@ fun HabitEditor(editor: HabitEditorState, onEvent: (HabitsEvent) -> Unit, modifi
     val fieldColors = awakenFieldColors()
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
         Text(
-            text = stringResource(if (editor.habitId == null) R.string.habit_editor_new else R.string.habit_editor_edit),
+            text = lexString(if (editor.habitId == null) R.string.habit_editor_new else R.string.habit_editor_edit),
             style = type.windowTitle,
             color = colors.accent,
             modifier = Modifier.semantics { heading() },
@@ -145,7 +145,7 @@ fun HabitEditor(editor: HabitEditorState, onEvent: (HabitsEvent) -> Unit, modifi
         OutlinedTextField(
             value = editor.title,
             onValueChange = { onEvent(HabitsEvent.TitleChanged(it)) },
-            label = { Text(stringResource(R.string.habit_name)) },
+            label = { Text(lexString(R.string.habit_name)) },
             singleLine = true,
             keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
             colors = fieldColors,
@@ -180,7 +180,7 @@ fun HabitEditor(editor: HabitEditorState, onEvent: (HabitsEvent) -> Unit, modifi
                 )
             }
         }
-        Text(stringResource(R.string.habit_difficulty_note), style = type.caption, color = colors.textSecondary)
+        Text(lexString(R.string.habit_difficulty_note), style = type.caption, color = colors.textSecondary)
 
         SectionLabel(R.string.habit_days)
         FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.xs), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
@@ -198,7 +198,7 @@ fun HabitEditor(editor: HabitEditorState, onEvent: (HabitsEvent) -> Unit, modifi
             OutlinedTextField(
                 value = editor.target,
                 onValueChange = { onEvent(HabitsEvent.TargetChanged(it)) },
-                label = { Text(stringResource(R.string.habit_target)) },
+                label = { Text(lexString(R.string.habit_target)) },
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 colors = fieldColors,
@@ -207,36 +207,36 @@ fun HabitEditor(editor: HabitEditorState, onEvent: (HabitsEvent) -> Unit, modifi
             OutlinedTextField(
                 value = editor.unit,
                 onValueChange = { onEvent(HabitsEvent.UnitChanged(it)) },
-                label = { Text(stringResource(R.string.habit_unit)) },
+                label = { Text(lexString(R.string.habit_unit)) },
                 singleLine = true,
                 colors = fieldColors,
                 modifier = Modifier.weight(1f),
             )
         }
 
-        editor.error?.let { Text(stringResource(it), style = type.label, color = colors.critical) }
+        editor.error?.let { Text(lexString(it), style = type.label, color = colors.critical) }
 
         PrimaryButton(
-            text = stringResource(R.string.action_save),
+            text = lexString(R.string.action_save),
             onClick = { onEvent(HabitsEvent.Save) },
             enabled = !editor.saving,
             modifier = Modifier.fillMaxWidth(),
         )
         if (editor.habitId != null) {
             SecondaryButton(
-                text = stringResource(R.string.action_archive_habit),
+                text = lexString(R.string.action_archive_habit),
                 onClick = { onEvent(HabitsEvent.Archive) },
                 enabled = !editor.saving,
                 modifier = Modifier.fillMaxWidth(),
             )
         }
-        QuietButton(text = stringResource(R.string.action_back), onClick = { onEvent(HabitsEvent.OpenList) })
+        QuietButton(text = lexString(R.string.action_back), onClick = { onEvent(HabitsEvent.OpenList) })
     }
 }
 
 @Composable
 private fun SectionLabel(@StringRes resId: Int) {
-    Text(stringResource(resId), style = AwakenTheme.type.label, color = AwakenTheme.colors.textPrimary, modifier = Modifier.semantics { heading() })
+    Text(lexString(resId), style = AwakenTheme.type.label, color = AwakenTheme.colors.textPrimary, modifier = Modifier.semantics { heading() })
 }
 
 private fun DayOfWeek.shortName(locale: Locale): String = getDisplayName(TextStyle.SHORT, locale)

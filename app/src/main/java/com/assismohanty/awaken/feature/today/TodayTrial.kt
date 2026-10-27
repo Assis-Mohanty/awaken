@@ -1,5 +1,7 @@
 package com.assismohanty.awaken.feature.today
 
+import com.assismohanty.awaken.core.designsystem.lexicon.lexString
+import com.assismohanty.awaken.core.designsystem.lexicon.lexPlural
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Arrangement
@@ -17,8 +19,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.lerp
-import androidx.compose.ui.res.pluralStringResource
-import androidx.compose.ui.res.stringResource
 import com.assismohanty.awaken.R
 import com.assismohanty.awaken.core.designsystem.components.PrimaryButton
 import com.assismohanty.awaken.core.designsystem.components.QuestRow
@@ -48,17 +48,17 @@ fun TrialWindow(
         is TrialSummary.Active -> trial.rank
     }
     SystemWindow(
-        title = stringResource(R.string.trial_available, rank.name),
+        title = lexString(R.string.trial_available, rank.name),
         accent = AwakenTheme.rankAccent(rank),
         modifier = modifier,
         headerTrailing = { RankCrest(rank = rank, size = AwakenTheme.dimens.icon) },
     ) {
         when (trial) {
             is TrialSummary.Available -> {
-                Text(stringResource(R.string.trial_available_body, rank.name), style = type.body, color = colors.textPrimary)
-                Text(stringResource(R.string.trial_rule), style = type.caption, color = colors.textSecondary)
+                Text(lexString(R.string.trial_available_body, rank.name), style = type.body, color = colors.textPrimary)
+                Text(lexString(R.string.trial_rule), style = type.caption, color = colors.textSecondary)
                 PrimaryButton(
-                    text = stringResource(R.string.action_begin_trial),
+                    text = lexString(R.string.action_begin_trial),
                     onClick = onBegin,
                     color = colors.rank(rank),
                     modifier = Modifier.fillMaxWidth().padding(top = Spacing.xs),
@@ -67,12 +67,12 @@ fun TrialWindow(
             is TrialSummary.Active -> {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
                     Text(
-                        text = pluralStringResource(R.plurals.trial_progress, trial.stages, trial.cleared, trial.stages),
+                        text = lexPlural(R.plurals.trial_progress, trial.stages, trial.cleared, trial.stages),
                         style = type.label,
                         color = colors.textPrimary,
                         modifier = Modifier.weight(1f),
                     )
-                    Text(pluralStringResource(R.plurals.trial_days_left, trial.daysLeft, trial.daysLeft), style = type.label, color = colors.textSecondary)
+                    Text(lexPlural(R.plurals.trial_days_left, trial.daysLeft, trial.daysLeft), style = type.label, color = colors.textSecondary)
                 }
                 stages.forEachIndexed { index, row ->
                     QuestRow(
@@ -82,7 +82,7 @@ fun TrialWindow(
                         showDivider = index > 0,
                     )
                 }
-                QuietButton(text = stringResource(R.string.action_view_trial), onClick = onOpenTrial)
+                QuietButton(text = lexString(R.string.action_view_trial), onClick = onOpenTrial)
             }
         }
     }

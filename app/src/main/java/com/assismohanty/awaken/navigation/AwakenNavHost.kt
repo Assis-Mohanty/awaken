@@ -1,5 +1,6 @@
 package com.assismohanty.awaken.navigation
 
+import com.assismohanty.awaken.core.designsystem.lexicon.lexString
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -30,7 +31,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.res.stringResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.LifecycleStartEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -128,7 +128,7 @@ private fun MainScaffold(
                         TopLevelDestination.entries.forEach { destination ->
                             val selected = currentDestination?.hierarchy
                                 ?.any { it.hasRoute(destination.route::class) } == true
-                            val label = stringResource(destination.labelRes)
+                            val label = lexString(destination.labelRes)
                             NavigationBarItem(
                                 selected = selected,
                                 onClick = {

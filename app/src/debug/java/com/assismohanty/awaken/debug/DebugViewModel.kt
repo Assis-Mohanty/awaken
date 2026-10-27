@@ -13,6 +13,8 @@ import com.assismohanty.awaken.core.data.db.entity.LedgerEntryEntity
 import com.assismohanty.awaken.core.data.db.entity.QuestInstanceEntity
 import com.assismohanty.awaken.core.data.di.IoDispatcher
 import com.assismohanty.awaken.core.data.repo.LedgerRepository
+import com.assismohanty.awaken.core.data.repo.UiPrefsRepository
+import com.assismohanty.awaken.core.designsystem.lexicon.PresentationMode
 import com.assismohanty.awaken.core.domain.CompleteQuestUseCase
 import com.assismohanty.awaken.core.domain.CreateHunterUseCase
 import com.assismohanty.awaken.core.domain.CreatePathUseCase
@@ -66,6 +68,7 @@ data class DebugUiState(
     val useFakeOracle: Boolean = true,
     val oracleFailure: OracleFailure = OracleFailure.NONE,
     val aiConsent: Boolean = false,
+    val presentation: PresentationMode = PresentationMode.SYSTEM,
 )
 
 sealed interface DebugEvent {
@@ -84,6 +87,7 @@ sealed interface DebugEvent {
     data class SetUseFakeOracle(val enabled: Boolean) : DebugEvent
     data object CycleOracleFailure : DebugEvent
     data class SetAiConsent(val enabled: Boolean) : DebugEvent
+    data object TogglePresentation : DebugEvent
     data object SeedPath : DebugEvent
     data object GrantLevel : DebugEvent
     data object ScreenshotMode : DebugEvent
@@ -118,6 +122,7 @@ class DebugViewModel @Inject constructor(
     private val createPath: CreatePathUseCase,
     private val demoSeeder: DemoSeeder,
     aiPrefs: AiPrefsRepository,
+    private val uiPrefs: UiPrefsRepository,
     private val db: AwakenDatabase,
     @IoDispatcher private val ioDispatcher: CoroutineDispatcher,
 ) : ViewModel() {
@@ -132,9 +137,11 @@ class DebugViewModel @Inject constructor(
 
     private val ledgerView = combine(ledger.observeBalances(), ledgerDao.observeRecent(LEDGER_ROWS)) { balances, rows -> balances to rows }
 
-    private val oracleView = combine(settings.useFakeOracle, settings.oracleFailure, aiPrefs.consent) { fake, failure, consent ->
-        Triple(fake, failure, consent.given)
+    private val oracleView = combine(settings.useFakeOracle, settings.oracleFailure, aiPrefs.consent, uiPrefs.prefs) { fake, failure, consent, prefs ->
+        OracleView(fake, failure, consent.given, prefs.presentationMode)
     }
+
+    private data class OracleView(val fake: Boolean, val failure: OracleFailure, val consent: Boolean, val presentation: PresentationMode)
 
     val uiState: StateFlow<DebugUiState> = combine(
         observeHunterState(dayChanges = settings.offsetDays),
@@ -142,7 +149,7 @@ class DebugViewModel @Inject constructor(
         ledgerView,
         combine(settings.offsetDays, lastResult, settings.simulateSteps) { offset, result, simulate -> Triple(offset, result, simulate) },
         oracleView,
-    ) { hunter, quests, (balances, rows), (offset, result, simulate), (fake, failure, consent) ->
+    ) { hunter, quests, (balances, rows), (offset, result, simulate), (fake, failure, consent, presentation) ->
         DebugUiState(
             hunter = hunter,
             now = clock.now(),
@@ -156,6 +163,7 @@ class DebugViewModel @Inject constructor(
             useFakeOracle = fake,
             oracleFailure = failure,
             aiConsent = consent,
+            presentation = presentation,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), DebugUiState())
 
@@ -240,6 +248,11 @@ class DebugViewModel @Inject constructor(
             val next = entries[(settings.oracleFailure.value.ordinal + 1) % entries.size]
             settings.setOracleFailure(next)
             "Every Oracle call now: $next"
+        }
+        DebugEvent.TogglePresentation -> {
+            val next = if (uiPrefs.prefs.first().presentationMode == PresentationMode.CLEAN) PresentationMode.SYSTEM else PresentationMode.CLEAN
+            uiPrefs.setPresentationMode(next)
+            "Presentation: $next"
         }
         is DebugEvent.SetAiConsent -> {
             if (event.enabled) grantAiConsent() else revokeAiConsent()

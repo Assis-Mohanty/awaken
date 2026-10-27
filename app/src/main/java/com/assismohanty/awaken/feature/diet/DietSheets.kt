@@ -1,5 +1,6 @@
 package com.assismohanty.awaken.feature.diet
 
+import com.assismohanty.awaken.core.designsystem.lexicon.lexString
 import androidx.annotation.StringRes
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -27,7 +28,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.ImeAction
@@ -88,7 +88,7 @@ fun FoodSearchSheet(search: FoodSearch, onEvent: (DietEvent) -> Unit) {
 @Composable
 fun FoodSearchContent(search: FoodSearch, onEvent: (DietEvent) -> Unit) {
     val colors = AwakenTheme.colors
-    SheetTitle(stringResource(R.string.diet_search_title, stringResource(search.meal.nameRes())))
+    SheetTitle(lexString(R.string.diet_search_title, lexString(search.meal.nameRes())))
     if (search.showCustomForm) {
         CustomFoodForm(onEvent)
         return
@@ -96,17 +96,17 @@ fun FoodSearchContent(search: FoodSearch, onEvent: (DietEvent) -> Unit) {
     OutlinedTextField(
         value = search.query,
         onValueChange = { onEvent(DietEvent.Query(it)) },
-        label = { Text(stringResource(R.string.diet_search_hint)) },
+        label = { Text(lexString(R.string.diet_search_hint)) },
         singleLine = true,
         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
         colors = awakenTextFieldColors(),
         modifier = Modifier.fillMaxWidth(),
     )
     val blank = search.query.isBlank()
-    if (blank) Text(stringResource(R.string.diet_search_recent), style = AwakenTheme.type.label, color = colors.textSecondary)
+    if (blank) Text(lexString(R.string.diet_search_recent), style = AwakenTheme.type.label, color = colors.textSecondary)
     if (search.results.isEmpty()) {
         Text(
-            stringResource(if (blank) R.string.diet_search_recent_empty else R.string.diet_search_empty),
+            lexString(if (blank) R.string.diet_search_recent_empty else R.string.diet_search_empty),
             style = AwakenTheme.type.body,
             color = colors.textSecondary,
         )
@@ -115,7 +115,7 @@ fun FoodSearchContent(search: FoodSearch, onEvent: (DietEvent) -> Unit) {
         if (i > 0) HorizontalDivider(color = colors.divider, thickness = AwakenTheme.dimens.hairline)
         FoodRow(food, onClick = { onEvent(DietEvent.PickFood(food)) })
     }
-    SecondaryButton(text = stringResource(R.string.diet_custom_create), onClick = { onEvent(DietEvent.OpenCustomFood) }, modifier = Modifier.fillMaxWidth())
+    SecondaryButton(text = lexString(R.string.diet_custom_create), onClick = { onEvent(DietEvent.OpenCustomFood) }, modifier = Modifier.fillMaxWidth())
 }
 
 @Composable
@@ -131,10 +131,10 @@ private fun FoodRow(food: Food, onClick: () -> Unit) {
     ) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
             Text(food.name, style = AwakenTheme.type.label, color = colors.textPrimary, modifier = Modifier.weight(1f))
-            if (food.source == FoodSource.CUSTOM) Pill(text = stringResource(R.string.diet_source_custom), color = colors.accent)
+            if (food.source == FoodSource.CUSTOM) Pill(text = lexString(R.string.diet_source_custom), color = colors.accent)
         }
         Text(
-            stringResource(
+            lexString(
                 R.string.diet_search_per100,
                 formatAmount(per100[Nutrient.KCAL]),
                 formatAmount(per100[Nutrient.PROTEIN]),
@@ -160,7 +160,7 @@ fun AmountContent(form: AmountForm, onEvent: (DietEvent) -> Unit) {
     val change: ((AmountForm) -> AmountForm) -> Unit = { onEvent(DietEvent.AmountChanged(it)) }
     Text(form.food.name, style = AwakenTheme.type.title, color = colors.textPrimary, modifier = Modifier.semantics { heading() })
     FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.xs), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
-        ChoiceChip(text = stringResource(R.string.diet_amount_grams), selected = form.portion == null, onClick = { change { it.copy(portion = null) } })
+        ChoiceChip(text = lexString(R.string.diet_amount_grams), selected = form.portion == null, onClick = { change { it.copy(portion = null) } })
         form.portions.forEach { portion ->
             ChoiceChip(
                 text = "${portion.label} (${formatAmount(portion.grams)} g)",
@@ -175,23 +175,23 @@ fun AmountContent(form: AmountForm, onEvent: (DietEvent) -> Unit) {
             NumberField(
                 value = form.grams,
                 onValueChange = { change { f -> f.copy(grams = it) } },
-                description = stringResource(R.string.diet_amount_grams),
+                description = lexString(R.string.diet_amount_grams),
                 key = "grams",
-                suffix = stringResource(R.string.nutrient_unit_g),
+                suffix = lexString(R.string.nutrient_unit_g),
             )
         } else {
             NumberField(
                 value = form.count,
                 onValueChange = { change { f -> f.copy(count = it) } },
-                description = stringResource(R.string.diet_amount_count),
+                description = lexString(R.string.diet_amount_count),
                 key = portion,
             )
-            Text(stringResource(R.string.diet_amount_total, formatAmount(form.totalGrams)), style = AwakenTheme.type.label, color = colors.textSecondary)
+            Text(lexString(R.string.diet_amount_total, formatAmount(form.totalGrams)), style = AwakenTheme.type.label, color = colors.textSecondary)
         }
     }
     val amounts = form.amounts
     Text(
-        stringResource(
+        lexString(
             R.string.diet_amount_preview,
             formatAmount(amounts[Nutrient.KCAL]),
             formatAmount(amounts[Nutrient.PROTEIN]),
@@ -201,19 +201,19 @@ fun AmountContent(form: AmountForm, onEvent: (DietEvent) -> Unit) {
         style = AwakenTheme.type.numericSmall,
         color = colors.accent,
     )
-    Text(stringResource(R.string.diet_amount_meal), style = AwakenTheme.type.label, color = colors.textSecondary)
+    Text(lexString(R.string.diet_amount_meal), style = AwakenTheme.type.label, color = colors.textSecondary)
     FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.xs), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
         Meal.entries.forEach { meal ->
-            ChoiceChip(text = stringResource(meal.nameRes()), selected = form.meal == meal, onClick = { change { it.copy(meal = meal) } })
+            ChoiceChip(text = lexString(meal.nameRes()), selected = form.meal == meal, onClick = { change { it.copy(meal = meal) } })
         }
     }
     PrimaryButton(
-        text = stringResource(if (form.editingRowId != null) R.string.diet_amount_save else R.string.diet_amount_add),
+        text = lexString(if (form.editingRowId != null) R.string.diet_amount_save else R.string.diet_amount_add),
         onClick = { onEvent(DietEvent.ConfirmAmount) },
         enabled = form.valid,
         modifier = Modifier.fillMaxWidth(),
     )
-    if (form.editingRowId != null) QuietButton(text = stringResource(R.string.diet_amount_delete), onClick = { onEvent(DietEvent.DeleteEntry) })
+    if (form.editingRowId != null) QuietButton(text = lexString(R.string.diet_amount_delete), onClick = { onEvent(DietEvent.DeleteEntry) })
 }
 
 // Targets
@@ -240,19 +240,19 @@ fun TargetsContent(plan: DietPlan, onEvent: (DietEvent) -> Unit) {
     var draft by remember(plan) { mutableStateOf(plan.overrides) }
     var resets by remember { mutableIntStateOf(0) }
     val defaults = remember(plan) { plan.plan.targets - plan.overrides.keys }
-    SheetTitle(stringResource(R.string.diet_targets_title))
-    Text(stringResource(R.string.diet_targets_intro), style = AwakenTheme.type.caption, color = colors.textSecondary)
+    SheetTitle(lexString(R.string.diet_targets_title))
+    Text(lexString(R.string.diet_targets_intro), style = AwakenTheme.type.caption, color = colors.textSecondary)
     TARGET_GROUPS.forEach { (title, nutrients) ->
-        Text(stringResource(title), style = AwakenTheme.type.label, color = colors.accent)
+        Text(lexString(title), style = AwakenTheme.type.label, color = colors.accent)
         nutrients.forEach { nutrient ->
-            val unit = stringResource(nutrient.unit.symbolRes())
+            val unit = lexString(nutrient.unit.symbolRes())
             val fallback = defaults[nutrient]?.amount
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(stringResource(nutrient.nameRes()), style = AwakenTheme.type.label, color = colors.textPrimary)
+                    Text(lexString(nutrient.nameRes()), style = AwakenTheme.type.label, color = colors.textPrimary)
                     Text(
-                        fallback?.let { stringResource(R.string.diet_targets_default, "${formatAmount(it)} $unit") }
-                            ?: stringResource(R.string.diet_targets_none),
+                        fallback?.let { lexString(R.string.diet_targets_default, "${formatAmount(it)} $unit") }
+                            ?: lexString(R.string.diet_targets_none),
                         style = AwakenTheme.type.caption,
                         color = colors.textMuted,
                     )
@@ -260,16 +260,16 @@ fun TargetsContent(plan: DietPlan, onEvent: (DietEvent) -> Unit) {
                 NumberField(
                     value = draft[nutrient] ?: 0.0,
                     onValueChange = { value -> draft = if (value > 0.0) draft + (nutrient to value) else draft - nutrient },
-                    description = stringResource(R.string.cd_diet_target, stringResource(nutrient.nameRes()), unit),
+                    description = lexString(R.string.cd_diet_target, lexString(nutrient.nameRes()), unit),
                     key = nutrient to resets,
                     suffix = unit,
                 )
             }
         }
     }
-    PrimaryButton(text = stringResource(R.string.action_save), onClick = { onEvent(DietEvent.SaveTargets(draft)) }, modifier = Modifier.fillMaxWidth())
+    PrimaryButton(text = lexString(R.string.action_save), onClick = { onEvent(DietEvent.SaveTargets(draft)) }, modifier = Modifier.fillMaxWidth())
     QuietButton(
-        text = stringResource(R.string.diet_targets_reset),
+        text = lexString(R.string.diet_targets_reset),
         onClick = {
             draft = emptyMap()
             resets++
@@ -291,34 +291,34 @@ private fun CustomFoodForm(onEvent: (DietEvent) -> Unit) {
     var values by remember { mutableStateOf(emptyMap<Nutrient, Double>()) }
     var portionLabel by rememberSaveable { mutableStateOf("") }
     var portionGrams by remember { mutableStateOf(0.0) }
-    Text(stringResource(R.string.diet_custom_title), style = AwakenTheme.type.title, color = colors.textPrimary)
+    Text(lexString(R.string.diet_custom_title), style = AwakenTheme.type.title, color = colors.textPrimary)
     OutlinedTextField(
         value = name,
         onValueChange = { name = it.take(MAX_NAME) },
-        label = { Text(stringResource(R.string.diet_custom_name)) },
+        label = { Text(lexString(R.string.diet_custom_name)) },
         singleLine = true,
         keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
         colors = awakenTextFieldColors(),
         modifier = Modifier.fillMaxWidth(),
     )
-    Text(stringResource(R.string.diet_custom_per100), style = AwakenTheme.type.label, color = colors.accent)
+    Text(lexString(R.string.diet_custom_per100), style = AwakenTheme.type.label, color = colors.accent)
     CUSTOM_FIELDS.forEach { nutrient ->
-        val unit = stringResource(nutrient.unit.symbolRes())
+        val unit = lexString(nutrient.unit.symbolRes())
         LabeledRow(nutrient.nameRes()) {
             NumberField(
                 value = values[nutrient] ?: 0.0,
                 onValueChange = { v -> values = if (v > 0.0) values + (nutrient to v) else values - nutrient },
-                description = stringResource(R.string.cd_diet_custom_value, stringResource(nutrient.nameRes()), unit),
+                description = lexString(R.string.cd_diet_custom_value, lexString(nutrient.nameRes()), unit),
                 key = nutrient,
                 suffix = unit,
             )
         }
     }
-    Text(stringResource(R.string.diet_custom_portion), style = AwakenTheme.type.label, color = colors.accent)
+    Text(lexString(R.string.diet_custom_portion), style = AwakenTheme.type.label, color = colors.accent)
     OutlinedTextField(
         value = portionLabel,
         onValueChange = { portionLabel = it.take(MAX_NAME) },
-        label = { Text(stringResource(R.string.diet_custom_portion_label)) },
+        label = { Text(lexString(R.string.diet_custom_portion_label)) },
         singleLine = true,
         colors = awakenTextFieldColors(),
         modifier = Modifier.fillMaxWidth(),
@@ -327,12 +327,12 @@ private fun CustomFoodForm(onEvent: (DietEvent) -> Unit) {
         NumberField(
             value = portionGrams,
             onValueChange = { portionGrams = it },
-            description = stringResource(R.string.diet_custom_portion_grams),
-            suffix = stringResource(R.string.nutrient_unit_g),
+            description = lexString(R.string.diet_custom_portion_grams),
+            suffix = lexString(R.string.nutrient_unit_g),
         )
     }
     PrimaryButton(
-        text = stringResource(R.string.diet_custom_save),
+        text = lexString(R.string.diet_custom_save),
         onClick = {
             val portion = if (portionLabel.isNotBlank() && portionGrams > 0.0) Portion(portionLabel.trim(), portionGrams) else null
             onEvent(DietEvent.CreateCustomFood(name, Nutrients(values + (Nutrient.KCAL to (values[Nutrient.KCAL] ?: 0.0))), portion))
@@ -340,13 +340,13 @@ private fun CustomFoodForm(onEvent: (DietEvent) -> Unit) {
         enabled = name.isNotBlank(),
         modifier = Modifier.fillMaxWidth(),
     )
-    QuietButton(text = stringResource(R.string.action_cancel), onClick = { onEvent(DietEvent.CloseCustomFood) })
+    QuietButton(text = lexString(R.string.action_cancel), onClick = { onEvent(DietEvent.CloseCustomFood) })
 }
 
 @Composable
 private fun LabeledRow(@StringRes label: Int, field: @Composable () -> Unit) {
     Row(verticalAlignment = Alignment.CenterVertically) {
-        Text(stringResource(label), style = AwakenTheme.type.label, color = AwakenTheme.colors.textPrimary, modifier = Modifier.weight(1f))
+        Text(lexString(label), style = AwakenTheme.type.label, color = AwakenTheme.colors.textPrimary, modifier = Modifier.weight(1f))
         field()
     }
 }

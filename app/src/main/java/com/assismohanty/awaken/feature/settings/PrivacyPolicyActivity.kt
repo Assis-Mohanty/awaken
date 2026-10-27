@@ -1,5 +1,6 @@
 package com.assismohanty.awaken.feature.settings
 
+import com.assismohanty.awaken.core.designsystem.lexicon.lexString
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -18,7 +19,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import com.assismohanty.awaken.R
@@ -76,17 +76,17 @@ fun PrivacyPolicyScreen(onClose: () -> Unit, modifier: Modifier = Modifier) {
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
-                        stringResource(R.string.privacy_title),
+                        lexString(R.string.privacy_title),
                         style = type.windowTitle,
                         color = colors.textPrimary,
                         modifier = Modifier
                             .weight(1f)
                             .semantics { heading() },
                     )
-                    QuietButton(text = stringResource(R.string.action_back), onClick = onClose)
+                    QuietButton(text = lexString(R.string.action_back), onClick = onClose)
                 }
-                Text(stringResource(R.string.privacy_effective), style = type.label, color = colors.textSecondary)
-                paragraphs.forEach { Text(stringResource(it), style = type.body, color = colors.textPrimary) }
+                Text(lexString(R.string.privacy_effective), style = type.label, color = colors.textSecondary)
+                paragraphs.forEach { Text(lexString(it), style = type.body, color = colors.textPrimary) }
             }
         }
     }

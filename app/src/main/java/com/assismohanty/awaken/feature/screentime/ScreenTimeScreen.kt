@@ -1,5 +1,7 @@
 package com.assismohanty.awaken.feature.screentime
 
+import com.assismohanty.awaken.core.designsystem.lexicon.lexString
+import com.assismohanty.awaken.core.designsystem.lexicon.lexPlural
 import com.assismohanty.awaken.core.designsystem.charts.Chart
 import com.assismohanty.awaken.core.designsystem.charts.ChartSpec
 import com.assismohanty.awaken.core.designsystem.charts.BarShape
@@ -46,8 +48,6 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalInspectionMode
-import androidx.compose.ui.res.pluralStringResource
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
@@ -134,19 +134,19 @@ fun ScreenTimeScreen(
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
-                        stringResource(R.string.screentime_title),
+                        lexString(R.string.screentime_title),
                         style = AwakenTheme.type.metricL,
                         color = colors.textPrimary,
                         modifier = Modifier
                             .weight(1f)
                             .semantics { heading() },
                     )
-                    QuietButton(text = stringResource(R.string.action_back), onClick = onBack)
+                    QuietButton(text = lexString(R.string.action_back), onClick = onBack)
                 }
                 val overview = state.overview
                 when {
-                    overview == null && state.failed -> MessageWindow(stringResource(R.string.screentime_failed))
-                    overview == null -> MessageWindow(stringResource(R.string.screentime_loading))
+                    overview == null && state.failed -> MessageWindow(lexString(R.string.screentime_failed))
+                    overview == null -> MessageWindow(lexString(R.string.screentime_loading))
                     !overview.hasAccess -> {
                         AccessWindow(onOpenUsageAccess, Modifier.staggeredEntrance(0))
                         DisciplineWindow(overview, onEvent, Modifier.staggeredEntrance(1))
@@ -156,7 +156,7 @@ fun ScreenTimeScreen(
                         DisciplineWindow(overview, onEvent, Modifier.staggeredEntrance(1))
                         AppsWindow(state, onEvent, Modifier.staggeredEntrance(2))
                         TrendWindow(overview.trend, Modifier.staggeredEntrance(3))
-                        Text(stringResource(R.string.screentime_privacy_note), style = AwakenTheme.type.caption, color = colors.textSecondary)
+                        Text(lexString(R.string.screentime_privacy_note), style = AwakenTheme.type.caption, color = colors.textSecondary)
                     }
                 }
             }
@@ -175,10 +175,10 @@ private fun MessageWindow(text: String) {
 @Composable
 private fun AccessWindow(onOpenUsageAccess: () -> Unit, modifier: Modifier = Modifier) {
     val colors = AwakenTheme.colors
-    SystemWindow(title = stringResource(R.string.screentime_window_access), accent = colors.accent, modifier = modifier, reveal = false) {
-        Text(stringResource(R.string.screentime_access_body), style = AwakenTheme.type.body, color = colors.textPrimary)
-        Text(stringResource(R.string.screentime_access_steps), style = AwakenTheme.type.caption, color = colors.textSecondary)
-        PrimaryButton(text = stringResource(R.string.screentime_access_action), onClick = onOpenUsageAccess, modifier = Modifier.fillMaxWidth())
+    SystemWindow(title = lexString(R.string.screentime_window_access), accent = colors.accent, modifier = modifier, reveal = false) {
+        Text(lexString(R.string.screentime_access_body), style = AwakenTheme.type.body, color = colors.textPrimary)
+        Text(lexString(R.string.screentime_access_steps), style = AwakenTheme.type.caption, color = colors.textSecondary)
+        PrimaryButton(text = lexString(R.string.screentime_access_action), onClick = onOpenUsageAccess, modifier = Modifier.fillMaxWidth())
     }
 }
 
@@ -186,13 +186,13 @@ private fun AccessWindow(onOpenUsageAccess: () -> Unit, modifier: Modifier = Mod
 private fun UsageTodayWindow(overview: ScreenTimeOverview, modifier: Modifier = Modifier) {
     val colors = AwakenTheme.colors
     val type = AwakenTheme.type
-    SystemWindow(title = stringResource(R.string.screentime_window_today), accent = colors.accent, modifier = modifier, reveal = false) {
+    SystemWindow(title = lexString(R.string.screentime_window_today), accent = colors.accent, modifier = modifier, reveal = false) {
         Text(formatMinutes(overview.totalMinutes), style = type.metricXL, color = colors.textPrimary)
         SplitBar(overview.minutesByCategory, overview.totalMinutes)
         AppCategory.entries.forEach { category ->
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
                 LegendSwatch(categoryColor(category))
-                Text(stringResource(category.labelRes), style = type.label, color = colors.textPrimary, modifier = Modifier.weight(1f))
+                Text(lexString(category.labelRes), style = type.label, color = colors.textPrimary, modifier = Modifier.weight(1f))
                 Text(formatMinutes(overview.minutesByCategory[category] ?: 0), style = type.numericSmall, color = colors.textSecondary)
             }
         }
@@ -223,22 +223,22 @@ private fun DisciplineWindow(overview: ScreenTimeOverview, onEvent: (ScreenTimeE
         else -> colors.accent
     }
     SystemWindow(
-        title = stringResource(R.string.quest_kind_discipline),
+        title = lexString(R.string.quest_kind_discipline),
         accent = accent,
         modifier = modifier,
         reveal = false,
         headerTrailing = {
             if (overview.status != DisciplineStatus.OFF) {
-                Text(stringResource(R.string.screentime_xp_at_stake, overview.xpAtStake), style = type.numericSmall, color = colors.reward)
+                Text(lexString(R.string.screentime_xp_at_stake, overview.xpAtStake), style = type.numericSmall, color = colors.reward)
             }
         },
     ) {
         val line = when (overview.status) {
-            DisciplineStatus.OFF -> stringResource(R.string.screentime_discipline_off, overview.xpAtStake)
-            DisciplineStatus.STARTS_LATER -> stringResource(R.string.screentime_discipline_starts)
-            DisciplineStatus.NO_LIMITS -> stringResource(R.string.screentime_discipline_no_limits)
-            DisciplineStatus.ON_TRACK -> stringResource(R.string.screentime_discipline_on_track, overview.xpAtStake)
-            DisciplineStatus.FORFEITED -> stringResource(R.string.screentime_discipline_forfeited)
+            DisciplineStatus.OFF -> lexString(R.string.screentime_discipline_off, overview.xpAtStake)
+            DisciplineStatus.STARTS_LATER -> lexString(R.string.screentime_discipline_starts)
+            DisciplineStatus.NO_LIMITS -> lexString(R.string.screentime_discipline_no_limits)
+            DisciplineStatus.ON_TRACK -> lexString(R.string.screentime_discipline_on_track, overview.xpAtStake)
+            DisciplineStatus.FORFEITED -> lexString(R.string.screentime_discipline_forfeited)
         }
         Text(line, style = type.body, color = colors.textPrimary)
         overview.apps.filter { it.category == AppCategory.DISTRACTING && it.limitMinutes != null && it.usedMinutes > 0 }
@@ -246,14 +246,14 @@ private fun DisciplineWindow(overview: ScreenTimeOverview, onEvent: (ScreenTimeE
             .forEach { LimitBar(it) }
         if (overview.status == DisciplineStatus.OFF) {
             PrimaryButton(
-                text = stringResource(R.string.screentime_discipline_turn_on),
+                text = lexString(R.string.screentime_discipline_turn_on),
                 onClick = { onEvent(ScreenTimeEvent.SetDiscipline(true)) },
                 modifier = Modifier.fillMaxWidth(),
             )
-            Text(stringResource(R.string.screentime_discipline_rules), style = type.caption, color = colors.textSecondary)
+            Text(lexString(R.string.screentime_discipline_rules), style = type.caption, color = colors.textSecondary)
         } else {
             QuietButton(
-                text = stringResource(R.string.screentime_discipline_turn_off),
+                text = lexString(R.string.screentime_discipline_turn_off),
                 onClick = { onEvent(ScreenTimeEvent.SetDiscipline(false)) },
             )
         }
@@ -265,7 +265,7 @@ private fun LimitBar(row: AppUsageRow) {
     val colors = AwakenTheme.colors
     val limit = row.limitMinutes ?: return
     val fraction = (row.usedMinutes.toFloat() / limit).coerceIn(0f, 1f)
-    val description = stringResource(R.string.screentime_limit_progress, row.label, row.usedMinutes, limit)
+    val description = lexString(R.string.screentime_limit_progress, row.label, row.usedMinutes, limit)
     Column(
         modifier = Modifier.semantics(mergeDescendants = true) { contentDescription = description },
         verticalArrangement = Arrangement.spacedBy(Spacing.xxs),
@@ -273,7 +273,7 @@ private fun LimitBar(row: AppUsageRow) {
         Row {
             Text(row.label, style = AwakenTheme.type.label, color = colors.textPrimary, modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
             Text(
-                stringResource(R.string.screentime_minutes_of_limit, row.usedMinutes, limit),
+                lexString(R.string.screentime_minutes_of_limit, row.usedMinutes, limit),
                 style = AwakenTheme.type.numericSmall,
                 color = if (row.breached) colors.critical else colors.textSecondary,
             )
@@ -292,13 +292,13 @@ private fun LimitBar(row: AppUsageRow) {
 @Composable
 private fun AppsWindow(state: ScreenTimeUiState, onEvent: (ScreenTimeEvent) -> Unit, modifier: Modifier = Modifier) {
     val colors = AwakenTheme.colors
-    SystemWindow(title = stringResource(R.string.screentime_window_apps), accent = colors.accent, modifier = modifier, reveal = false) {
-        Text(stringResource(R.string.screentime_apps_note), style = AwakenTheme.type.caption, color = colors.textSecondary)
+    SystemWindow(title = lexString(R.string.screentime_window_apps), accent = colors.accent, modifier = modifier, reveal = false) {
+        Text(lexString(R.string.screentime_apps_note), style = AwakenTheme.type.caption, color = colors.textSecondary)
         FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.xs), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
-            ChoiceChip(text = stringResource(R.string.screentime_filter_all), selected = state.filter == null, onClick = { onEvent(ScreenTimeEvent.Filter(null)) })
+            ChoiceChip(text = lexString(R.string.screentime_filter_all), selected = state.filter == null, onClick = { onEvent(ScreenTimeEvent.Filter(null)) })
             AppCategory.entries.forEach { category ->
                 ChoiceChip(
-                    text = stringResource(category.labelRes),
+                    text = lexString(category.labelRes),
                     selected = state.filter == category,
                     onClick = { onEvent(ScreenTimeEvent.Filter(category)) },
                     color = categoryColor(category),
@@ -307,7 +307,7 @@ private fun AppsWindow(state: ScreenTimeUiState, onEvent: (ScreenTimeEvent) -> U
         }
         val apps = state.visibleApps
         if (apps.isEmpty()) {
-            Text(stringResource(R.string.screentime_apps_empty), style = AwakenTheme.type.body, color = colors.textSecondary)
+            Text(lexString(R.string.screentime_apps_empty), style = AwakenTheme.type.body, color = colors.textSecondary)
         }
         apps.forEachIndexed { index, row ->
             if (index > 0) HorizontalDivider(thickness = AwakenTheme.dimens.hairline, color = colors.divider)
@@ -316,9 +316,9 @@ private fun AppsWindow(state: ScreenTimeUiState, onEvent: (ScreenTimeEvent) -> U
         if (state.hiddenCount > 0 || state.showUnused) {
             QuietButton(
                 text = if (state.showUnused) {
-                    stringResource(R.string.screentime_hide_unused)
+                    lexString(R.string.screentime_hide_unused)
                 } else {
-                    pluralStringResource(R.plurals.screentime_show_unused, state.hiddenCount, state.hiddenCount)
+                    lexPlural(R.plurals.screentime_show_unused, state.hiddenCount, state.hiddenCount)
                 },
                 onClick = { onEvent(ScreenTimeEvent.ToggleUnused) },
             )
@@ -330,7 +330,7 @@ private fun AppsWindow(state: ScreenTimeUiState, onEvent: (ScreenTimeEvent) -> U
 private fun AppRow(row: AppUsageRow, onClick: () -> Unit) {
     val colors = AwakenTheme.colors
     val type = AwakenTheme.type
-    val editLabel = stringResource(R.string.screentime_edit_app, row.label)
+    val editLabel = lexString(R.string.screentime_edit_app, row.label)
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -344,20 +344,20 @@ private fun AppRow(row: AppUsageRow, onClick: () -> Unit) {
         Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(Spacing.xxs)) {
             Text(row.label, style = type.title, color = colors.textPrimary, maxLines = 1, overflow = TextOverflow.Ellipsis)
             val detail = buildList {
-                add(stringResource(row.category.labelRes))
-                row.limitMinutes?.let { add(stringResource(R.string.screentime_limit_short, it)) }
+                add(lexString(row.category.labelRes))
+                row.limitMinutes?.let { add(lexString(R.string.screentime_limit_short, it)) }
             }.joinToString(" · ")
             Text(detail, style = type.label, color = colors.textSecondary)
             if (row.hasPendingChange) {
                 val next = row.nextCategory ?: row.category
-                val nextText = row.nextLimitMinutes?.let { stringResource(R.string.screentime_pending_limit, stringResource(next.labelRes), it) }
-                    ?: stringResource(R.string.screentime_pending, stringResource(next.labelRes))
+                val nextText = row.nextLimitMinutes?.let { lexString(R.string.screentime_pending_limit, lexString(next.labelRes), it) }
+                    ?: lexString(R.string.screentime_pending, lexString(next.labelRes))
                 Text(nextText, style = type.caption, color = colors.reward)
             }
         }
         Column(horizontalAlignment = Alignment.End) {
             Text(formatMinutes(row.usedMinutes), style = type.numericSmall, color = if (row.breached) colors.critical else colors.textPrimary)
-            Pill(stringResource(row.category.shortRes), categoryColor(row.category))
+            Pill(lexString(row.category.shortRes), categoryColor(row.category))
         }
     }
 }
@@ -386,13 +386,13 @@ private fun AppIcon(packageName: String) {
 private fun TrendWindow(trend: List<ScreenTimeDay>, modifier: Modifier = Modifier) {
     val colors = AwakenTheme.colors
     val max = (trend.maxOfOrNull { it.totalMinutes } ?: 0).coerceAtLeast(1)
-    SystemWindow(title = stringResource(R.string.screentime_window_trend), accent = colors.accent, modifier = modifier, reveal = false) {
-        Text(stringResource(R.string.screentime_trend_note), style = AwakenTheme.type.caption, color = colors.textSecondary)
+    SystemWindow(title = lexString(R.string.screentime_window_trend), accent = colors.accent, modifier = modifier, reveal = false) {
+        Text(lexString(R.string.screentime_trend_note), style = AwakenTheme.type.caption, color = colors.textSecondary)
         val columns = trend.map { day ->
             StackedColumn(
                 total = day.totalMinutes.toFloat() / max,
                 highlight = day.distractingMinutes.toFloat() / max,
-                description = stringResource(R.string.screentime_trend_day, dayName(day.gameDate), formatMinutes(day.totalMinutes), formatMinutes(day.distractingMinutes)),
+                description = lexString(R.string.screentime_trend_day, dayName(day.gameDate), formatMinutes(day.totalMinutes), formatMinutes(day.distractingMinutes)),
             )
         }
         Chart(ChartSpec.StackedColumns(columns = columns, base = colors.divider, highlight = colors.critical))
@@ -428,11 +428,11 @@ internal fun RuleEditorContent(editor: AppRuleEditor, onEvent: (ScreenTimeEvent)
         verticalArrangement = Arrangement.spacedBy(Spacing.sm),
     ) {
         Text(editor.label, style = type.title, color = colors.textPrimary, modifier = Modifier.semantics { heading() })
-        Text(stringResource(R.string.screentime_editor_category), style = type.label, color = colors.textSecondary)
+        Text(lexString(R.string.screentime_editor_category), style = type.label, color = colors.textSecondary)
         FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.xs), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
             AppCategory.entries.forEach { category ->
                 ChoiceChip(
-                    text = stringResource(category.labelRes),
+                    text = lexString(category.labelRes),
                     selected = editor.category == category,
                     onClick = { onEvent(ScreenTimeEvent.EditCategory(category)) },
                     color = categoryColor(category),
@@ -440,33 +440,33 @@ internal fun RuleEditorContent(editor: AppRuleEditor, onEvent: (ScreenTimeEvent)
             }
         }
         if (editor.category == AppCategory.DISTRACTING) {
-            Text(stringResource(R.string.screentime_editor_limit), style = type.label, color = colors.textSecondary)
+            Text(lexString(R.string.screentime_editor_limit), style = type.label, color = colors.textSecondary)
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
                 val limit = editor.limitMinutes
                 SecondaryButton(
-                    text = stringResource(R.string.screentime_limit_minus),
+                    text = lexString(R.string.screentime_limit_minus),
                     onClick = { onEvent(ScreenTimeEvent.StepLimit(-ScreenTimeRules.LIMIT_STEP_MINUTES)) },
                     enabled = limit != null && limit > ScreenTimeRules.MIN_LIMIT_MINUTES,
                 )
                 Text(
-                    text = limit?.let { formatMinutes(it) } ?: stringResource(R.string.screentime_no_limit),
+                    text = limit?.let { formatMinutes(it) } ?: lexString(R.string.screentime_no_limit),
                     style = type.numeric,
                     color = colors.textPrimary,
                     modifier = Modifier.weight(1f),
                 )
                 SecondaryButton(
-                    text = stringResource(R.string.screentime_limit_plus),
+                    text = lexString(R.string.screentime_limit_plus),
                     onClick = { onEvent(ScreenTimeEvent.StepLimit(ScreenTimeRules.LIMIT_STEP_MINUTES)) },
                     enabled = limit == null || limit < ScreenTimeRules.MAX_LIMIT_MINUTES,
                 )
             }
             QuietButton(
-                text = stringResource(if (editor.limitMinutes == null) R.string.screentime_set_limit else R.string.screentime_remove_limit),
+                text = lexString(if (editor.limitMinutes == null) R.string.screentime_set_limit else R.string.screentime_remove_limit),
                 onClick = { onEvent(ScreenTimeEvent.ToggleNoLimit) },
             )
         }
-        Text(stringResource(R.string.screentime_editor_tomorrow), style = type.caption, color = colors.reward)
-        PrimaryButton(text = stringResource(R.string.action_save), onClick = { onEvent(ScreenTimeEvent.SaveEditor) }, modifier = Modifier.fillMaxWidth())
+        Text(lexString(R.string.screentime_editor_tomorrow), style = type.caption, color = colors.reward)
+        PrimaryButton(text = lexString(R.string.action_save), onClick = { onEvent(ScreenTimeEvent.SaveEditor) }, modifier = Modifier.fillMaxWidth())
     }
 }
 
@@ -496,9 +496,9 @@ internal fun formatMinutes(minutes: Int): String {
     val hours = minutes / MINUTES_PER_HOUR
     val rest = minutes % MINUTES_PER_HOUR
     return when {
-        hours == 0 -> stringResource(R.string.screentime_duration_minutes, formatCount(rest))
-        rest == 0 -> stringResource(R.string.screentime_duration_hours, formatCount(hours))
-        else -> stringResource(R.string.screentime_duration_hours_minutes, formatCount(hours), formatCount(rest))
+        hours == 0 -> lexString(R.string.screentime_duration_minutes, formatCount(rest))
+        rest == 0 -> lexString(R.string.screentime_duration_hours, formatCount(hours))
+        else -> lexString(R.string.screentime_duration_hours_minutes, formatCount(hours), formatCount(rest))
     }
 }
 

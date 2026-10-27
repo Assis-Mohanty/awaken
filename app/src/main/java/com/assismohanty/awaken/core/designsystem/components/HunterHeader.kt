@@ -1,5 +1,7 @@
 package com.assismohanty.awaken.core.designsystem.components
 
+import com.assismohanty.awaken.core.designsystem.lexicon.lexString
+import com.assismohanty.awaken.core.designsystem.lexicon.lexPlural
 import androidx.compose.animation.core.animateIntAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.border
@@ -18,8 +20,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.res.pluralStringResource
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
@@ -70,7 +70,7 @@ fun HunterHeader(model: HunterHeaderModel, modifier: Modifier = Modifier, large:
                         AwakenGlyphs.sigil(sigilId)?.let { glyph ->
                             Icon(
                                 imageVector = glyph,
-                                contentDescription = shopItemNameRes(sigilId)?.let { stringResource(it) },
+                                contentDescription = shopItemNameRes(sigilId)?.let { lexString(it) },
                                 tint = colors.system,
                                 modifier = Modifier.size(dimens.iconSmall),
                             )
@@ -84,18 +84,18 @@ fun HunterHeader(model: HunterHeaderModel, modifier: Modifier = Modifier, large:
                 icon = AwakenGlyphs.Flame,
                 value = formatCount(model.streak),
                 tint = colors.crit,
-                description = pluralStringResource(R.plurals.cd_streak, model.streak, model.streak),
+                description = lexPlural(R.plurals.cd_streak, model.streak, model.streak),
             )
             Counter(
                 icon = AwakenGlyphs.Coin,
                 value = formatCount(gold.toLong()),
                 tint = colors.crit,
-                description = stringResource(R.string.cd_gold, formatCount(model.gold)),
+                description = lexString(R.string.cd_gold, formatCount(model.gold)),
             )
         }
         Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
             Text(
-                text = stringResource(R.string.level_short, level),
+                text = lexString(R.string.level_short, level),
                 style = if (large) type.metricXL else type.metricL,
                 color = colors.bone,
             )

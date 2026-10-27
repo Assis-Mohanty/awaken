@@ -113,6 +113,9 @@ fun DebugScreen(
                 OutlinedButton(onClick = { onEvent(DebugEvent.SetAiConsent(!state.aiConsent)) }) {
                     Text(stringResource(if (state.aiConsent) R.string.debug_ai_revoke else R.string.debug_ai_grant))
                 }
+                OutlinedButton(onClick = { onEvent(DebugEvent.TogglePresentation) }) {
+                    Text(stringResource(R.string.debug_presentation, state.presentation.name))
+                }
                 OutlinedButton(onClick = { onEvent(DebugEvent.SeedPath) }) { Text(stringResource(R.string.debug_seed_path)) }
                 OutlinedButton(onClick = { onEvent(DebugEvent.ScreenshotMode) }) { Text(stringResource(R.string.debug_screenshot_mode)) }
                 OutlinedButton(onClick = { onEvent(DebugEvent.WipeData) }) { Text(stringResource(R.string.debug_wipe)) }

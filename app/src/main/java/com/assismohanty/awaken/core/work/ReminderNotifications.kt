@@ -14,6 +14,7 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import com.assismohanty.awaken.MainActivity
 import com.assismohanty.awaken.R
+import com.assismohanty.awaken.core.data.repo.LexiconSource
 import com.assismohanty.awaken.core.domain.ReminderContent
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
@@ -46,6 +47,7 @@ class NotificationAccess @Inject constructor(@ApplicationContext private val con
 class ReminderNotifications @Inject constructor(
     @ApplicationContext private val context: Context,
     private val access: NotificationAccess,
+    private val words: LexiconSource = LexiconSource.Fixed,
 ) {
     /** Posts [content] if the permission allows; returns whether it was posted. */
     @SuppressLint("MissingPermission") // guarded by NotificationAccess.isGranted() on the first line
@@ -55,14 +57,14 @@ class ReminderNotifications @Inject constructor(
             is ReminderContent.Directive -> Parts(
                 CHANNEL_DIRECTIVE,
                 DIRECTIVE_ID,
-                context.getString(R.string.system_title_daily_directive),
-                context.resources.getQuantityString(R.plurals.reminder_directive, content.count, content.count),
+                words.resources(context).getString(R.string.system_title_daily_directive),
+                words.resources(context).getQuantityString(R.plurals.reminder_directive, content.count, content.count),
             )
             is ReminderContent.LastCall -> Parts(
                 CHANNEL_LAST_CALL,
                 LAST_CALL_ID,
-                context.getString(R.string.reminder_last_call_title),
-                context.resources.getQuantityString(R.plurals.reminder_last_call, content.remaining, content.remaining),
+                words.resources(context).getString(R.string.reminder_last_call_title),
+                words.resources(context).getQuantityString(R.plurals.reminder_last_call, content.remaining, content.remaining),
             )
         }
         ensureChannels()
@@ -97,12 +99,12 @@ class ReminderNotifications @Inject constructor(
     private fun ensureChannels() {
         val manager = context.getSystemService(NotificationManager::class.java)
         manager.createNotificationChannel(
-            NotificationChannel(CHANNEL_DIRECTIVE, context.getString(R.string.directive_channel_name), NotificationManager.IMPORTANCE_DEFAULT)
-                .apply { description = context.getString(R.string.directive_channel_description) },
+            NotificationChannel(CHANNEL_DIRECTIVE, words.resources(context).getString(R.string.directive_channel_name), NotificationManager.IMPORTANCE_DEFAULT)
+                .apply { description = words.resources(context).getString(R.string.directive_channel_description) },
         )
         manager.createNotificationChannel(
-            NotificationChannel(CHANNEL_LAST_CALL, context.getString(R.string.last_call_channel_name), NotificationManager.IMPORTANCE_DEFAULT)
-                .apply { description = context.getString(R.string.last_call_channel_description) },
+            NotificationChannel(CHANNEL_LAST_CALL, words.resources(context).getString(R.string.last_call_channel_name), NotificationManager.IMPORTANCE_DEFAULT)
+                .apply { description = words.resources(context).getString(R.string.last_call_channel_description) },
         )
     }
 

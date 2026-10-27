@@ -1,5 +1,7 @@
 package com.assismohanty.awaken.feature.today
 
+import com.assismohanty.awaken.core.designsystem.lexicon.lexString
+import com.assismohanty.awaken.core.designsystem.lexicon.lexPlural
 import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -22,8 +24,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.res.pluralStringResource
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
@@ -152,14 +152,14 @@ fun DayPlanContent(state: DayPlanUiState, plan: DayPlan, onEvent: (DayPlanEvent)
     val type = AwakenTheme.type
     val locale = LocalConfiguration.current.locales[0]
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-        Text(stringResource(R.string.day_plan_title), style = type.windowTitle, color = colors.accent, modifier = Modifier.semantics { heading() })
+        Text(lexString(R.string.day_plan_title), style = type.windowTitle, color = colors.accent, modifier = Modifier.semantics { heading() })
 
-        Text(stringResource(R.string.rest_day_label), style = type.label, color = colors.textPrimary, modifier = Modifier.semantics { heading() })
-        Text(stringResource(R.string.rest_day_body), style = type.caption, color = colors.textSecondary)
+        Text(lexString(R.string.rest_day_label), style = type.label, color = colors.textPrimary, modifier = Modifier.semantics { heading() })
+        Text(lexString(R.string.rest_day_body), style = type.caption, color = colors.textSecondary)
         FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.xs), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
             plan.upcoming.forEach { date ->
                 ChoiceChip(
-                    text = stringResource(R.string.rest_day_chip, date.dayOfWeek.getDisplayName(TextStyle.SHORT, locale), date.dayOfMonth),
+                    text = lexString(R.string.rest_day_chip, date.dayOfWeek.getDisplayName(TextStyle.SHORT, locale), date.dayOfMonth),
                     selected = date in plan.restDays,
                     onClick = { onEvent(DayPlanEvent.ToggleRest(date)) },
                     multiSelect = true,
@@ -182,10 +182,10 @@ fun DayPlanContent(state: DayPlanUiState, plan: DayPlan, onEvent: (DayPlanEvent)
             horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
         ) {
             Column(modifier = Modifier.weight(1f)) {
-                Text(stringResource(R.string.recovery_label), style = type.label, color = colors.textPrimary)
-                Text(stringResource(R.string.recovery_body), style = type.caption, color = colors.textSecondary)
+                Text(lexString(R.string.recovery_label), style = type.label, color = colors.textPrimary)
+                Text(lexString(R.string.recovery_body), style = type.caption, color = colors.textSecondary)
                 Text(
-                    text = pluralStringResource(
+                    text = lexPlural(
                         R.plurals.recovery_remaining, plan.recoveryRemaining, plan.recoveryRemaining, StreakRules.RECOVERY_DAYS_PER_MONTH,
                     ),
                     style = type.caption,
@@ -201,7 +201,7 @@ fun DayPlanContent(state: DayPlanUiState, plan: DayPlan, onEvent: (DayPlanEvent)
             )
         }
 
-        state.error?.let { Text(stringResource(it), style = type.label, color = colors.critical) }
+        state.error?.let { Text(lexString(it), style = type.label, color = colors.critical) }
     }
 }
 

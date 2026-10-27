@@ -1,5 +1,6 @@
 package com.assismohanty.awaken.core.designsystem.components
 
+import com.assismohanty.awaken.core.designsystem.lexicon.lexString
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,7 +15,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.window.Dialog
@@ -48,14 +48,14 @@ fun ChapterReveal(number: Int, title: String, body: String, onDismiss: () -> Uni
                 verticalArrangement = Arrangement.spacedBy(Spacing.md),
             ) {
                 TypeOnText(
-                    text = stringResource(R.string.status_chapter_number, number),
+                    text = lexString(R.string.status_chapter_number, number),
                     style = type.windowTitle,
                     color = colors.mist,
                 )
                 Text(title, style = type.metricL, color = colors.bone, modifier = Modifier.semantics { heading() })
                 Text(body, style = type.body, color = colors.bone)
                 PrimaryButton(
-                    text = stringResource(R.string.action_continue),
+                    text = lexString(R.string.action_continue),
                     onClick = onDismiss,
                     modifier = Modifier
                         .fillMaxWidth()

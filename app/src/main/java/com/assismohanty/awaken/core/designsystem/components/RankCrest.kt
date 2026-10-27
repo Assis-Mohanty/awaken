@@ -1,5 +1,6 @@
 package com.assismohanty.awaken.core.designsystem.components
 
+import com.assismohanty.awaken.core.designsystem.lexicon.lexString
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -12,7 +13,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
@@ -29,7 +29,7 @@ import kotlin.math.sin
 @Composable
 fun RankCrest(rank: Rank, size: Dp, modifier: Modifier = Modifier) {
     val color = AwakenTheme.palette.rank(rank)
-    val description = stringResource(R.string.cd_rank_crest, rank.name)
+    val description = lexString(R.string.cd_rank_crest, rank.name)
     val edge = AwakenTheme.dimens.edgeWidth
     Box(
         modifier = modifier

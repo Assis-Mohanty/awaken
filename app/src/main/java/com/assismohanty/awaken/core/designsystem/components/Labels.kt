@@ -1,12 +1,12 @@
 package com.assismohanty.awaken.core.designsystem.components
 
+import com.assismohanty.awaken.core.designsystem.lexicon.lexString
+import com.assismohanty.awaken.core.designsystem.lexicon.lexPlural
 import androidx.annotation.PluralsRes
 import androidx.annotation.StringRes
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.res.pluralStringResource
-import androidx.compose.ui.res.stringResource
 import com.assismohanty.awaken.R
 import com.assismohanty.awaken.engine.model.Difficulty
 import com.assismohanty.awaken.engine.model.Stat
@@ -62,7 +62,7 @@ fun unitPluralRes(unit: String): Int? = when (unit) {
 
 /** "1 item" / "3 items": template units agree with the count; custom habit units are shown as typed. */
 @Composable
-fun unitLabel(unit: String, count: Int): String = unitPluralRes(unit)?.let { pluralStringResource(it, count) } ?: unit
+fun unitLabel(unit: String, count: Int): String = unitPluralRes(unit)?.let { lexPlural(it, count) } ?: unit
 
 /** Display text for an engine title id (GD §10); null for an id this build doesn't know. */
 @StringRes
@@ -171,11 +171,11 @@ fun achievementNameRes(achievementId: String): Int? = when (achievementId) {
 
 @Composable
 @ReadOnlyComposable
-fun Stat.label(): String = stringResource(nameRes())
+fun Stat.label(): String = lexString(nameRes())
 
 @Composable
 @ReadOnlyComposable
-fun Difficulty.label(): String = stringResource(nameRes())
+fun Difficulty.label(): String = lexString(nameRes())
 
 @Composable
 @ReadOnlyComposable

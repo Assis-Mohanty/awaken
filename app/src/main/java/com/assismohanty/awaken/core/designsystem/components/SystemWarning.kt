@@ -1,5 +1,6 @@
 package com.assismohanty.awaken.core.designsystem.components
 
+import com.assismohanty.awaken.core.designsystem.lexicon.lexString
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -16,7 +17,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.assismohanty.awaken.R
@@ -47,7 +47,7 @@ fun SystemWarning(body: String, detail: String, actionLabel: String, onDismiss: 
         contentAlignment = Alignment.Center,
     ) {
         SystemWindow(
-            title = stringResource(R.string.system_title_system_warning),
+            title = lexString(R.string.system_title_system_warning),
             accent = colors.ember,
             modifier = Modifier
                 .widthIn(max = Spacing.contentMaxWidth)

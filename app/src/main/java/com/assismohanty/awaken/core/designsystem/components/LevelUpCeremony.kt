@@ -1,5 +1,6 @@
 package com.assismohanty.awaken.core.designsystem.components
 
+import com.assismohanty.awaken.core.designsystem.lexicon.lexString
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
@@ -29,7 +30,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
@@ -60,7 +60,7 @@ fun LevelUpCeremony(
     statGains: Map<Stat, Int>,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
-    title: String = stringResource(R.string.system_title_level_up),
+    title: String = lexString(R.string.system_title_level_up),
     accent: Color = AwakenTheme.palette.crit,
     crest: (@Composable () -> Unit)? = null,
 ) {
@@ -143,7 +143,7 @@ fun LevelUpCeremony(
         ) {
             crest?.invoke()
             Text(
-                text = stringResource(R.string.level_short, number.value.toInt()),
+                text = lexString(R.string.level_short, number.value.toInt()),
                 style = type.metricXL,
                 color = colors.bone,
             )
@@ -155,13 +155,13 @@ fun LevelUpCeremony(
                     statGains.forEach { (stat, gain) ->
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
                             Icon(AwakenGlyphs.stat(stat), contentDescription = null, tint = colors.stat(stat), modifier = Modifier.size(AwakenTheme.dimens.iconSmall))
-                            Text(stringResource(R.string.stat_gain, stat.label(), formatCount(gain)), style = type.label, color = colors.bone)
+                            Text(lexString(R.string.stat_gain, stat.label(), formatCount(gain)), style = type.label, color = colors.bone)
                         }
                     }
                 }
             }
             if (finished) {
-                Text(stringResource(R.string.level_up_continue), style = type.caption, color = colors.mist)
+                Text(lexString(R.string.level_up_continue), style = type.caption, color = colors.mist)
             }
         }
     }
@@ -196,7 +196,7 @@ fun LevelUpDialog(
     newLevel: Int,
     statGains: Map<Stat, Int>,
     onDismiss: () -> Unit,
-    title: String = stringResource(R.string.system_title_level_up),
+    title: String = lexString(R.string.system_title_level_up),
     accent: Color = AwakenTheme.palette.crit,
     crest: (@Composable () -> Unit)? = null,
 ) {

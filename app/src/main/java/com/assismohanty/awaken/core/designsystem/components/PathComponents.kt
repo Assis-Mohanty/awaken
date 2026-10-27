@@ -1,5 +1,6 @@
 package com.assismohanty.awaken.core.designsystem.components
 
+import com.assismohanty.awaken.core.designsystem.lexicon.lexString
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -34,7 +35,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
@@ -66,17 +66,17 @@ fun OracleStatus(
     val colors = AwakenTheme.palette
     val type = AwakenTheme.type
     val (text, color) = when (state) {
-        OracleUiState.CHARTING -> stringResource(R.string.oracle_charting) to colors.system
-        OracleUiState.CHARTED -> stringResource(R.string.oracle_charted) to colors.mist
-        OracleUiState.OFFLINE -> stringResource(R.string.oracle_offline) to colors.mist
-        OracleUiState.FAILED -> stringResource(R.string.oracle_failed) to colors.ember
-        OracleUiState.CONSENT_OFF -> stringResource(R.string.oracle_consent_needed) to colors.mist
+        OracleUiState.CHARTING -> lexString(R.string.oracle_charting) to colors.system
+        OracleUiState.CHARTED -> lexString(R.string.oracle_charted) to colors.mist
+        OracleUiState.OFFLINE -> lexString(R.string.oracle_offline) to colors.mist
+        OracleUiState.FAILED -> lexString(R.string.oracle_failed) to colors.ember
+        OracleUiState.CONSENT_OFF -> lexString(R.string.oracle_consent_needed) to colors.mist
     }
     Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(Spacing.xxs)) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
             Text(text, style = type.label, color = color, modifier = Modifier.weight(1f, fill = false))
             if (state == OracleUiState.FAILED && onRetry != null) {
-                QuietButton(text = stringResource(R.string.oracle_retry), onClick = onRetry)
+                QuietButton(text = lexString(R.string.oracle_retry), onClick = onRetry)
             }
         }
         if (state == OracleUiState.CHARTING) Shimmer(color)
@@ -139,7 +139,7 @@ fun PathLadder(
                 index == currentIndex -> LadderState.CURRENT
                 else -> LadderState.FUTURE
             }
-            val description = stringResource(
+            val description = lexString(
                 when (state) {
                     LadderState.CLEARED -> R.string.cd_ladder_cleared
                     LadderState.CURRENT -> R.string.cd_ladder_current
@@ -176,7 +176,7 @@ fun PathLadder(
                     }
                     if (opened == index) {
                         Text(node.summary, style = type.body, color = colors.bone)
-                        Text(stringResource(R.string.path_exit_criterion, node.exitCriterion), style = type.caption, color = colors.mist)
+                        Text(lexString(R.string.path_exit_criterion, node.exitCriterion), style = type.caption, color = colors.mist)
                     }
                 }
             }
@@ -221,7 +221,7 @@ private const val NONE_OPEN = -1
 @Composable
 fun PathQuestBadge(name: String, modifier: Modifier = Modifier, gate: String? = null) {
     val colors = AwakenTheme.palette
-    val description = stringResource(R.string.cd_path_badge, name)
+    val description = lexString(R.string.cd_path_badge, name)
     FlowRow(modifier = modifier, horizontalArrangement = Arrangement.spacedBy(Spacing.xxs)) {
         Pill(text = "◇ $name", color = colors.mist, description = description)
         if (gate != null) Pill(text = gate, color = colors.verified, icon = AwakenGlyphs.Hourglass)
@@ -234,11 +234,11 @@ fun PathQuestBadge(name: String, modifier: Modifier = Modifier, gate: String? = 
 @Composable
 fun FeedbackChips(selected: Feedback?, onSelect: (Feedback?) -> Unit, modifier: Modifier = Modifier) {
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
-        Text(stringResource(R.string.feedback_label), style = AwakenTheme.type.caption, color = AwakenTheme.palette.mist)
+        Text(lexString(R.string.feedback_label), style = AwakenTheme.type.caption, color = AwakenTheme.palette.mist)
         Row(horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
             Feedback.entries.forEach { feedback ->
                 ChoiceChip(
-                    text = stringResource(
+                    text = lexString(
                         when (feedback) {
                             Feedback.TOO_EASY -> R.string.feedback_too_easy
                             Feedback.RIGHT -> R.string.feedback_right

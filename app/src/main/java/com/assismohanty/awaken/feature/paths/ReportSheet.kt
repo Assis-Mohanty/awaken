@@ -1,5 +1,6 @@
 package com.assismohanty.awaken.feature.paths
 
+import com.assismohanty.awaken.core.designsystem.lexicon.lexString
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -11,7 +12,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import com.assismohanty.awaken.R
@@ -45,16 +45,16 @@ fun ReportSheetContent(onReport: (ReportReason) -> Unit, onCancel: () -> Unit, m
         verticalArrangement = Arrangement.spacedBy(Spacing.xs),
     ) {
         Text(
-            stringResource(R.string.report_title),
+            lexString(R.string.report_title),
             style = type.windowTitle,
             color = colors.critical,
             modifier = Modifier.semantics { heading() },
         )
-        Text(stringResource(R.string.report_prompt), style = type.body, color = colors.textPrimary)
+        Text(lexString(R.string.report_prompt), style = type.body, color = colors.textPrimary)
         ReportReason.entries.forEach { reason ->
-            SecondaryButton(text = stringResource(reason.labelRes()), onClick = { onReport(reason) }, modifier = Modifier.fillMaxWidth())
+            SecondaryButton(text = lexString(reason.labelRes()), onClick = { onReport(reason) }, modifier = Modifier.fillMaxWidth())
         }
-        QuietButton(text = stringResource(R.string.action_cancel), onClick = onCancel, modifier = Modifier.fillMaxWidth())
+        QuietButton(text = lexString(R.string.action_cancel), onClick = onCancel, modifier = Modifier.fillMaxWidth())
     }
 }
 

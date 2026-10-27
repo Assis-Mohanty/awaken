@@ -1,5 +1,7 @@
 package com.assismohanty.awaken.feature.status
 
+import com.assismohanty.awaken.core.designsystem.lexicon.lexString
+import com.assismohanty.awaken.core.designsystem.lexicon.lexPlural
 import com.assismohanty.awaken.core.designsystem.charts.Chart
 import com.assismohanty.awaken.core.designsystem.charts.ChartSpec
 import com.assismohanty.awaken.core.designsystem.components.ShareCapture
@@ -37,8 +39,6 @@ import androidx.compose.ui.graphics.rememberGraphicsLayer
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.res.pluralStringResource
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.unit.Density
@@ -90,7 +90,7 @@ import kotlin.coroutines.cancellation.CancellationException
 fun StatusRoute(onOpenSettings: () -> Unit, modifier: Modifier = Modifier, viewModel: StatusViewModel = hiltViewModel()) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
-    val chooserTitle = stringResource(R.string.share_report_chooser)
+    val chooserTitle = lexString(R.string.share_report_chooser)
     LaunchedEffect(state.shareUri) {
         val uri = state.shareUri ?: return@LaunchedEffect
         val send = Intent(Intent.ACTION_SEND)
@@ -127,12 +127,12 @@ fun StatusScreen(
                 .padding(horizontal = Spacing.gutter, vertical = Spacing.lg),
             verticalArrangement = Arrangement.spacedBy(Spacing.lg),
         ) {
-            val title = state.equippedTitleId?.let(::titleNameRes)?.let { stringResource(it) }
+            val title = state.equippedTitleId?.let(::titleNameRes)?.let { lexString(it) }
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
                 IconButton(onClick = onOpenSettings) {
                     Icon(
                         imageVector = AwakenGlyphs.Settings,
-                        contentDescription = stringResource(R.string.cd_open_settings),
+                        contentDescription = lexString(R.string.cd_open_settings),
                         tint = AwakenTheme.colors.textSecondary,
                     )
                 }
@@ -166,11 +166,11 @@ fun StatusScreen(
 @Composable
 private fun RadarWindow(state: StatusUiState) {
     val colors = AwakenTheme.colors
-    SystemWindow(title = stringResource(R.string.status_window_radar), accent = AwakenTheme.rankAccent(state.rank), reveal = false) {
+    SystemWindow(title = lexString(R.string.status_window_radar), accent = AwakenTheme.rankAccent(state.rank), reveal = false) {
         Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
             Chart(ChartSpec.Radar(values = state.radarNow, maxValue = state.radarMax, previous = state.radarLastWeek))
         }
-        Text(stringResource(R.string.status_radar_legend), style = AwakenTheme.type.caption, color = colors.textSecondary)
+        Text(lexString(R.string.status_radar_legend), style = AwakenTheme.type.caption, color = colors.textSecondary)
     }
 }
 
@@ -178,13 +178,13 @@ private fun RadarWindow(state: StatusUiState) {
 private fun StatsWindow(rank: Rank, stats: List<StatProgress>) {
     val colors = AwakenTheme.colors
     val type = AwakenTheme.type
-    SystemWindow(title = stringResource(R.string.status_window_stats), accent = AwakenTheme.rankAccent(rank), reveal = false) {
+    SystemWindow(title = lexString(R.string.status_window_stats), accent = AwakenTheme.rankAccent(rank), reveal = false) {
         Column(verticalArrangement = Arrangement.spacedBy(Spacing.md)) {
             stats.forEach { stat ->
                 Column(verticalArrangement = Arrangement.spacedBy(Spacing.xxs)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(stat.stat.label(), style = type.label, color = colors.stat(stat.stat), modifier = Modifier.weight(1f))
-                        Text(stringResource(R.string.level_short, stat.level), style = type.numericSmall, color = colors.textPrimary)
+                        Text(lexString(R.string.level_short, stat.level), style = type.numericSmall, color = colors.textPrimary)
                     }
                     XpBar(level = stat.level, xpIntoLevel = stat.xpIntoLevel, xpForLevel = stat.xpForLevel)
                 }
@@ -197,13 +197,13 @@ private fun StatsWindow(rank: Rank, stats: List<StatProgress>) {
 private fun ActivityWindow(state: StatusUiState, onEvent: (StatusEvent) -> Unit) {
     val colors = AwakenTheme.colors
     val type = AwakenTheme.type
-    SystemWindow(title = stringResource(R.string.status_window_activity), accent = AwakenTheme.rankAccent(state.rank), reveal = false) {
+    SystemWindow(title = lexString(R.string.status_window_activity), accent = AwakenTheme.rankAccent(state.rank), reveal = false) {
         Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
             Chart(ChartSpec.Heatmap(days = state.heatmap, onDayClick = { onEvent(StatusEvent.SelectDay(it.date)) }))
         }
         val selected = state.selectedDay
         Text(
-            text = if (selected == null) stringResource(R.string.status_heatmap_hint) else daySummary(selected),
+            text = if (selected == null) lexString(R.string.status_heatmap_hint) else daySummary(selected),
             style = type.caption,
             color = if (selected == null) colors.textSecondary else colors.textPrimary,
         )
@@ -214,9 +214,9 @@ private fun ActivityWindow(state: StatusUiState, onEvent: (StatusEvent) -> Unit)
 private fun daySummary(day: HeatmapEntry): String {
     val date = formatDate(day.date)
     return if (day.restDay && day.completions == 0) {
-        stringResource(R.string.status_heatmap_rest, date)
+        lexString(R.string.status_heatmap_rest, date)
     } else {
-        pluralStringResource(R.plurals.status_heatmap_day, day.completions, date, day.completions)
+        lexPlural(R.plurals.status_heatmap_day, day.completions, date, day.completions)
     }
 }
 
@@ -229,12 +229,12 @@ private fun AchievementsWindow(
 ) {
     val colors = AwakenTheme.colors
     SystemWindow(
-        title = stringResource(R.string.status_window_achievements),
+        title = lexString(R.string.status_window_achievements),
         accent = AwakenTheme.rankAccent(rank),
         reveal = false,
         headerTrailing = {
             Text(
-                stringResource(R.string.status_achievements_count, achievements.count { it.unlocked }, achievements.size),
+                lexString(R.string.status_achievements_count, achievements.count { it.unlocked }, achievements.size),
                 style = AwakenTheme.type.caption,
                 color = colors.textSecondary,
             )
@@ -257,10 +257,10 @@ private fun AchievementsWindow(
 private fun AchievementCell(entry: AchievementEntry, equipped: Boolean, onEvent: (StatusEvent) -> Unit, modifier: Modifier) {
     val colors = AwakenTheme.colors
     val type = AwakenTheme.type
-    val name = achievementNameRes(entry.id)?.let { stringResource(it) } ?: entry.id
-    val titleName = entry.titleId?.let(::titleNameRes)?.let { stringResource(it) }
+    val name = achievementNameRes(entry.id)?.let { lexString(it) } ?: entry.id
+    val titleName = entry.titleId?.let(::titleNameRes)?.let { lexString(it) }
     val canEquip = entry.unlocked && entry.titleId != null
-    val actionLabel = stringResource(if (equipped) R.string.action_unequip_title else R.string.action_equip_title)
+    val actionLabel = lexString(if (equipped) R.string.action_unequip_title else R.string.action_equip_title)
     Column(
         modifier = modifier
             .heightIn(min = AwakenTheme.dimens.touchTarget)
@@ -279,11 +279,11 @@ private fun AchievementCell(entry: AchievementEntry, equipped: Boolean, onEvent:
         // Locked entries are silhouetted: dimmed text plus an explicit "Locked" label (never colour alone).
         Text(name, style = type.label, color = if (entry.unlocked) colors.textPrimary else colors.textMuted)
         if (entry.unlocked) {
-            titleName?.let { Text(stringResource(R.string.status_title_reward, it), style = type.caption, color = colors.textSecondary) }
-            if (equipped) Pill(text = stringResource(R.string.status_title_equipped), color = colors.accent)
+            titleName?.let { Text(lexString(R.string.status_title_reward, it), style = type.caption, color = colors.textSecondary) }
+            if (equipped) Pill(text = lexString(R.string.status_title_equipped), color = colors.accent)
         } else {
-            Text(stringResource(R.string.status_achievement_locked), style = type.caption, color = colors.textMuted)
-            achievementConditionRes(entry.id)?.let { Text(stringResource(it), style = type.caption, color = colors.textSecondary) }
+            Text(lexString(R.string.status_achievement_locked), style = type.caption, color = colors.textMuted)
+            achievementConditionRes(entry.id)?.let { Text(lexString(it), style = type.caption, color = colors.textSecondary) }
         }
     }
 }
@@ -292,10 +292,10 @@ private fun AchievementCell(entry: AchievementEntry, equipped: Boolean, onEvent:
 private fun ChaptersWindow(rank: Rank, chapters: List<ChapterEntry>, onEvent: (StatusEvent) -> Unit) {
     val colors = AwakenTheme.colors
     val type = AwakenTheme.type
-    SystemWindow(title = stringResource(R.string.status_window_chapters), accent = AwakenTheme.rankAccent(rank), reveal = false) {
+    SystemWindow(title = lexString(R.string.status_window_chapters), accent = AwakenTheme.rankAccent(rank), reveal = false) {
         chapters.forEachIndexed { index, entry ->
-            val number = stringResource(R.string.status_chapter_number, index + 1)
-            val readLabel = stringResource(R.string.action_read_chapter)
+            val number = lexString(R.string.status_chapter_number, index + 1)
+            val readLabel = lexString(R.string.action_read_chapter)
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -317,7 +317,7 @@ private fun ChaptersWindow(rank: Rank, chapters: List<ChapterEntry>, onEvent: (S
                     Text(entry.chapter.title, style = type.label, color = colors.textPrimary, modifier = Modifier.weight(1f))
                 } else {
                     Text(
-                        stringResource(R.string.status_chapter_locked, entry.chapter.unlockLevel),
+                        lexString(R.string.status_chapter_locked, entry.chapter.unlockLevel),
                         style = type.label,
                         color = colors.textMuted,
                         modifier = Modifier.weight(1f),
@@ -333,39 +333,39 @@ private fun WeeklyWindow(state: StatusUiState, onEvent: (StatusEvent) -> Unit) {
     val colors = AwakenTheme.colors
     val type = AwakenTheme.type
     val report = state.weeklyReport ?: return
-    SystemWindow(title = stringResource(R.string.status_window_weekly), accent = AwakenTheme.rankAccent(state.rank), reveal = false) {
+    SystemWindow(title = lexString(R.string.status_window_weekly), accent = AwakenTheme.rankAccent(state.rank), reveal = false) {
         Text(
-            stringResource(R.string.status_weekly_range, formatDate(report.week.monday), formatDate(report.week.sunday)),
+            lexString(R.string.status_weekly_range, formatDate(report.week.monday), formatDate(report.week.sunday)),
             style = type.caption,
             color = colors.textSecondary,
         )
         if (!state.weeklyOpen) {
-            Text(stringResource(R.string.status_weekly_available), style = type.body, color = colors.textSecondary)
+            Text(lexString(R.string.status_weekly_available), style = type.body, color = colors.textSecondary)
         } else {
-            val none = stringResource(R.string.status_weekly_none)
-            ReportLine(stringResource(R.string.status_weekly_xp), formatCount(report.totalXp))
-            ReportLine(stringResource(R.string.status_weekly_quests), formatCount(report.questsCompleted))
+            val none = lexString(R.string.status_weekly_none)
+            ReportLine(lexString(R.string.status_weekly_xp), formatCount(report.totalXp))
+            ReportLine(lexString(R.string.status_weekly_quests), formatCount(report.questsCompleted))
             Stat.entries.forEach { stat -> ReportLine(stat.label(), "+${formatCount(report.statXpGained.getValue(stat))}") }
-            ReportLine(stringResource(R.string.status_weekly_best_day), report.bestDay?.let { formatDate(it) } ?: none)
-            ReportLine(stringResource(R.string.status_weekly_neglected), report.mostNeglected.label())
-            Text(stringResource(R.string.status_weekly_recal_title), style = type.label, color = colors.textPrimary)
+            ReportLine(lexString(R.string.status_weekly_best_day), report.bestDay?.let { formatDate(it) } ?: none)
+            ReportLine(lexString(R.string.status_weekly_neglected), report.mostNeglected.label())
+            Text(lexString(R.string.status_weekly_recal_title), style = type.label, color = colors.textPrimary)
             if (state.projectedRecalibration.isEmpty()) {
-                Text(stringResource(R.string.status_weekly_recal_none), style = type.caption, color = colors.textSecondary)
+                Text(lexString(R.string.status_weekly_recal_none), style = type.caption, color = colors.textSecondary)
             } else {
                 state.projectedRecalibration.forEach { (stat, change) ->
                     val res = if (change == DifficultyAdapter.Change.UP) R.string.status_weekly_recal_harder else R.string.status_weekly_recal_easier
-                    Text(stringResource(res, stat.label()), style = type.caption, color = colors.textSecondary)
+                    Text(lexString(res, stat.label()), style = type.caption, color = colors.textSecondary)
                 }
             }
             SecondaryButton(
-                text = stringResource(R.string.action_share_report),
+                text = lexString(R.string.action_share_report),
                 onClick = { onEvent(StatusEvent.Share) },
                 enabled = !state.capturing,
                 modifier = Modifier.fillMaxWidth(),
             )
         }
         if (DebugEntry.ENABLED) {
-            QuietButton(text = stringResource(R.string.debug_show_weekly), onClick = { onEvent(StatusEvent.ToggleDebugWeekly) })
+            QuietButton(text = lexString(R.string.debug_show_weekly), onClick = { onEvent(StatusEvent.ToggleDebugWeekly) })
         }
     }
 }
@@ -389,9 +389,9 @@ private fun shareCardModel(state: StatusUiState): ShareCardModel {
         statLevels = state.radarNow,
         radarMax = state.radarMax,
         weekStats = listOf(
-            stringResource(R.string.status_weekly_xp) to formatCount(report?.totalXp ?: 0L),
-            stringResource(R.string.status_weekly_quests) to formatCount(report?.questsCompleted ?: 0),
-            stringResource(R.string.share_streak) to formatCount(state.streak),
+            lexString(R.string.status_weekly_xp) to formatCount(report?.totalXp ?: 0L),
+            lexString(R.string.status_weekly_quests) to formatCount(report?.questsCompleted ?: 0),
+            lexString(R.string.share_streak) to formatCount(state.streak),
         ),
     )
 }

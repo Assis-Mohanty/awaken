@@ -1,5 +1,6 @@
 package com.assismohanty.awaken.core.designsystem.components
 
+import com.assismohanty.awaken.core.designsystem.lexicon.lexString
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -12,7 +13,6 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import com.assismohanty.awaken.R
 import com.assismohanty.awaken.core.designsystem.theme.AwakenPalette
@@ -60,7 +60,7 @@ private fun ShareCardContent(model: ShareCardModel, modifier: Modifier) {
                 RankCrest(model.rank, dimens.crestSmall)
                 Column {
                     Text(model.name, style = type.title, color = colors.bone)
-                    Text(stringResource(R.string.level_short, model.level), style = type.numeric, color = colors.system)
+                    Text(lexString(R.string.level_short, model.level), style = type.numeric, color = colors.system)
                 }
             }
             RadarChart(values = model.statLevels, maxValue = model.radarMax, modifier = Modifier.size(dimens.radarSize * SHARE_RADAR_SCALE))
@@ -72,7 +72,7 @@ private fun ShareCardContent(model: ShareCardModel, modifier: Modifier) {
                     }
                 }
             }
-            Text(stringResource(R.string.app_name), style = type.windowTitle, color = colors.system)
+            Text(lexString(R.string.app_name), style = type.windowTitle, color = colors.system)
         }
     }
 }

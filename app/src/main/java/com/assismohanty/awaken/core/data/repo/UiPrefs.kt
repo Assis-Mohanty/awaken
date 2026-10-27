@@ -6,6 +6,7 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import com.assismohanty.awaken.core.data.di.UiPrefsStore
+import com.assismohanty.awaken.core.designsystem.lexicon.PresentationMode
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.flow.Flow
@@ -21,6 +22,8 @@ data class UiPrefs(
     /** The reminders pre-prompt was answered (either way); we never ask twice (ARCH §3.5). */
     val notificationsPrompted: Boolean = false,
     val themeMode: ThemeMode = ThemeMode.SYSTEM,
+    /** Clean or System words (GD §14.9). SYSTEM until the F34 default and invite land. */
+    val presentationMode: PresentationMode = PresentationMode.SYSTEM,
 )
 
 @Singleton
@@ -32,6 +35,8 @@ class UiPrefsRepository @Inject constructor(@UiPrefsStore private val store: Dat
             reduceMotion = it[REDUCE_MOTION] ?: false,
             notificationsPrompted = it[NOTIFICATIONS_PROMPTED] ?: false,
             themeMode = it[THEME_MODE]?.let { name -> ThemeMode.entries.firstOrNull { mode -> mode.name == name } } ?: ThemeMode.SYSTEM,
+            presentationMode = it[PRESENTATION_MODE]?.let { name -> PresentationMode.entries.firstOrNull { mode -> mode.name == name } }
+                ?: PresentationMode.SYSTEM,
         )
     }
 
@@ -51,10 +56,15 @@ class UiPrefsRepository @Inject constructor(@UiPrefsStore private val store: Dat
         store.edit { it[THEME_MODE] = mode.name }
     }
 
+    suspend fun setPresentationMode(mode: PresentationMode) {
+        store.edit { it[PRESENTATION_MODE] = mode.name }
+    }
+
     private companion object {
         val HAPTICS = booleanPreferencesKey("haptics_enabled")
         val REDUCE_MOTION = booleanPreferencesKey("reduce_motion")
         val NOTIFICATIONS_PROMPTED = booleanPreferencesKey("notifications_prompted")
         val THEME_MODE = stringPreferencesKey("theme_mode")
+        val PRESENTATION_MODE = stringPreferencesKey("presentation_mode")
     }
 }

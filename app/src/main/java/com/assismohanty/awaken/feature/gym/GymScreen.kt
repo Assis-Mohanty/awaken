@@ -1,5 +1,6 @@
 package com.assismohanty.awaken.feature.gym
 
+import com.assismohanty.awaken.core.designsystem.lexicon.lexString
 import com.assismohanty.awaken.core.designsystem.components.heatAlpha
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -32,8 +33,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.pluralStringResource
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
@@ -100,7 +99,7 @@ fun GymScreen(state: GymUiState, onEvent: (GymEvent) -> Unit, modifier: Modifier
             verticalArrangement = Arrangement.spacedBy(Spacing.lg),
         ) {
             Text(
-                stringResource(R.string.gym_title),
+                lexString(R.string.gym_title),
                 style = AwakenTheme.type.metricL,
                 color = colors.textPrimary,
                 modifier = Modifier.semantics { heading() },
@@ -112,13 +111,13 @@ fun GymScreen(state: GymUiState, onEvent: (GymEvent) -> Unit, modifier: Modifier
             } else {
                 state.notice?.let { NoticeLine(it, onEvent) }
                 PrimaryButton(
-                    text = stringResource(R.string.gym_start_empty),
+                    text = lexString(R.string.gym_start_empty),
                     onClick = { onEvent(GymEvent.StartEmpty) },
                     modifier = Modifier.fillMaxWidth(),
                 )
                 state.overview?.let { GymHome(it, onEvent) }
             }
-            Text(stringResource(R.string.gym_tracker_note), style = AwakenTheme.type.caption, color = colors.textMuted)
+            Text(lexString(R.string.gym_tracker_note), style = AwakenTheme.type.caption, color = colors.textMuted)
         }
     }
     state.picker?.let { ExercisePickerSheet(it, onEvent) }
@@ -135,9 +134,9 @@ private fun NoticeLine(notice: GymNotice, onEvent: (GymEvent) -> Unit) {
         GymNotice.ROUTINE_SAVED -> R.string.gym_notice_routine_saved
     }
     Row(verticalAlignment = Alignment.CenterVertically) {
-        Text(stringResource(text), style = AwakenTheme.type.body, color = AwakenTheme.colors.accent, modifier = Modifier.weight(1f))
+        Text(lexString(text), style = AwakenTheme.type.body, color = AwakenTheme.colors.accent, modifier = Modifier.weight(1f))
         IconButton(onClick = { onEvent(GymEvent.DismissNotice) }) {
-            Icon(AwakenGlyphs.Close, contentDescription = stringResource(R.string.action_dismiss), tint = AwakenTheme.colors.textSecondary)
+            Icon(AwakenGlyphs.Close, contentDescription = lexString(R.string.action_dismiss), tint = AwakenTheme.colors.textSecondary)
         }
     }
 }
@@ -155,23 +154,23 @@ private fun GymHome(overview: GymOverview, onEvent: (GymEvent) -> Unit) {
 @Composable
 private fun WeekWindow(overview: GymOverview, modifier: Modifier = Modifier) {
     val colors = AwakenTheme.colors
-    SystemWindow(title = stringResource(R.string.gym_window_week), accent = colors.accent, modifier = modifier) {
+    SystemWindow(title = lexString(R.string.gym_window_week), accent = colors.accent, modifier = modifier) {
         Row(modifier = Modifier.fillMaxWidth()) {
-            Stat(stringResource(R.string.gym_week_workouts), formatCount(overview.weekWorkouts), Modifier.weight(1f))
-            Stat(stringResource(R.string.gym_week_sets), formatCount(overview.weekSets), Modifier.weight(1f))
-            Stat(stringResource(R.string.gym_week_volume), stringResource(R.string.gym_kg_value, formatCount(overview.weekVolumeKg.roundToLong())), Modifier.weight(1f))
+            Stat(lexString(R.string.gym_week_workouts), formatCount(overview.weekWorkouts), Modifier.weight(1f))
+            Stat(lexString(R.string.gym_week_sets), formatCount(overview.weekSets), Modifier.weight(1f))
+            Stat(lexString(R.string.gym_week_volume), lexString(R.string.gym_kg_value, formatCount(overview.weekVolumeKg.roundToLong())), Modifier.weight(1f))
         }
         val trained = overview.weekMuscleLoad.filterValues { it > 0.0 }.keys.sortedBy { it.ordinal }
-        val names = trained.map { stringResource(it.nameRes()) }
+        val names = trained.map { lexString(it.nameRes()) }
         BodyMap(
             intensity = loadIntensity(overview.weekMuscleLoad),
             description = if (names.isEmpty()) {
-                stringResource(R.string.cd_gym_week_map_empty)
+                lexString(R.string.cd_gym_week_map_empty)
             } else {
-                stringResource(R.string.cd_gym_week_map, names.joinToString())
+                lexString(R.string.cd_gym_week_map, names.joinToString())
             },
         )
-        Text(stringResource(R.string.gym_week_map_caption), style = AwakenTheme.type.caption, color = colors.textSecondary)
+        Text(lexString(R.string.gym_week_map_caption), style = AwakenTheme.type.caption, color = colors.textSecondary)
     }
 }
 
@@ -192,9 +191,9 @@ private fun Stat(label: String, value: String, modifier: Modifier = Modifier) {
 @Composable
 private fun RoutinesWindow(routines: List<RoutineSummary>, onEvent: (GymEvent) -> Unit, modifier: Modifier = Modifier) {
     val colors = AwakenTheme.colors
-    SystemWindow(title = stringResource(R.string.gym_window_routines), accent = colors.accent, modifier = modifier, reveal = false) {
+    SystemWindow(title = lexString(R.string.gym_window_routines), accent = colors.accent, modifier = modifier, reveal = false) {
         if (routines.isEmpty()) {
-            Text(stringResource(R.string.gym_routines_empty), style = AwakenTheme.type.body, color = colors.textSecondary)
+            Text(lexString(R.string.gym_routines_empty), style = AwakenTheme.type.body, color = colors.textSecondary)
         }
         routines.forEachIndexed { i, routine ->
             if (i > 0) HorizontalDivider(color = colors.divider, thickness = AwakenTheme.dimens.hairline)
@@ -202,15 +201,15 @@ private fun RoutinesWindow(routines: List<RoutineSummary>, onEvent: (GymEvent) -
                 Column(modifier = Modifier.weight(1f)) {
                     Text(routine.name, style = AwakenTheme.type.title, color = colors.textPrimary)
                     Text(
-                        stringResource(R.string.gym_routine_meta, routine.exerciseNames.size, routine.sets),
+                        lexString(R.string.gym_routine_meta, routine.exerciseNames.size, routine.sets),
                         style = AwakenTheme.type.caption,
                         color = colors.textSecondary,
                     )
                     Text(routine.exerciseNames.joinToString(), style = AwakenTheme.type.caption, color = colors.textMuted, maxLines = 2)
                 }
-                QuietButton(stringResource(R.string.gym_routine_start), onClick = { onEvent(GymEvent.StartRoutine(routine.routineId, routine.name)) })
+                QuietButton(lexString(R.string.gym_routine_start), onClick = { onEvent(GymEvent.StartRoutine(routine.routineId, routine.name)) })
                 IconButton(onClick = { onEvent(GymEvent.DeleteRoutine(routine.routineId)) }) {
-                    Icon(AwakenGlyphs.Close, contentDescription = stringResource(R.string.gym_routine_delete, routine.name), tint = colors.textSecondary)
+                    Icon(AwakenGlyphs.Close, contentDescription = lexString(R.string.gym_routine_delete, routine.name), tint = colors.textSecondary)
                 }
             }
         }
@@ -220,13 +219,13 @@ private fun RoutinesWindow(routines: List<RoutineSummary>, onEvent: (GymEvent) -
 @Composable
 private fun RecordsWindow(records: List<PersonalRecord>, modifier: Modifier = Modifier) {
     val colors = AwakenTheme.colors
-    SystemWindow(title = stringResource(R.string.gym_window_records), accent = colors.reward, modifier = modifier, reveal = false) {
-        if (records.isEmpty()) Text(stringResource(R.string.gym_records_empty), style = AwakenTheme.type.body, color = colors.textSecondary)
+    SystemWindow(title = lexString(R.string.gym_window_records), accent = colors.reward, modifier = modifier, reveal = false) {
+        if (records.isEmpty()) Text(lexString(R.string.gym_records_empty), style = AwakenTheme.type.body, color = colors.textSecondary)
         records.take(MAX_RECORDS).forEach { record ->
             Column {
                 Text(record.name, style = AwakenTheme.type.label, color = colors.textPrimary)
                 Text(
-                    stringResource(R.string.gym_record_line, formatNumber(record.weightKg), record.reps, formatNumber(record.estimatedMaxKg.roundTo1())),
+                    lexString(R.string.gym_record_line, formatNumber(record.weightKg), record.reps, formatNumber(record.estimatedMaxKg.roundTo1())),
                     style = AwakenTheme.type.caption,
                     color = colors.textSecondary,
                 )
@@ -238,16 +237,16 @@ private fun RecordsWindow(records: List<PersonalRecord>, modifier: Modifier = Mo
 @Composable
 private fun HistoryWindow(history: List<WorkoutSummary>, onEvent: (GymEvent) -> Unit, modifier: Modifier = Modifier) {
     val colors = AwakenTheme.colors
-    SystemWindow(title = stringResource(R.string.gym_window_history), accent = colors.accent, modifier = modifier, reveal = false) {
-        if (history.isEmpty()) Text(stringResource(R.string.gym_history_empty), style = AwakenTheme.type.body, color = colors.textSecondary)
+    SystemWindow(title = lexString(R.string.gym_window_history), accent = colors.accent, modifier = modifier, reveal = false) {
+        if (history.isEmpty()) Text(lexString(R.string.gym_history_empty), style = AwakenTheme.type.body, color = colors.textSecondary)
         history.take(MAX_HISTORY).forEachIndexed { i, workout ->
             if (i > 0) HorizontalDivider(color = colors.divider, thickness = AwakenTheme.dimens.hairline)
             val date = formatDate(workout.gameDate)
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(workout.name.ifBlank { stringResource(R.string.gym_workout_default_name) }, style = AwakenTheme.type.title, color = colors.textPrimary)
+                    Text(workout.name.ifBlank { lexString(R.string.gym_workout_default_name) }, style = AwakenTheme.type.title, color = colors.textPrimary)
                     Text(
-                        stringResource(
+                        lexString(
                             R.string.gym_history_meta,
                             date,
                             workout.duration.toMinutes().toInt(),
@@ -260,7 +259,7 @@ private fun HistoryWindow(history: List<WorkoutSummary>, onEvent: (GymEvent) -> 
                     Text(workout.exerciseNames.joinToString(), style = AwakenTheme.type.caption, color = colors.textMuted, maxLines = 2)
                 }
                 IconButton(onClick = { onEvent(GymEvent.DeleteWorkout(workout.workoutId)) }) {
-                    Icon(AwakenGlyphs.Close, contentDescription = stringResource(R.string.gym_history_delete, date), tint = colors.textSecondary)
+                    Icon(AwakenGlyphs.Close, contentDescription = lexString(R.string.gym_history_delete, date), tint = colors.textSecondary)
                 }
             }
         }
@@ -278,30 +277,30 @@ private fun ActiveSession(
 ) {
     val colors = AwakenTheme.colors
     SystemWindow(
-        title = active.workout.name.ifBlank { stringResource(R.string.gym_workout_default_name) },
+        title = active.workout.name.ifBlank { lexString(R.string.gym_workout_default_name) },
         accent = colors.accent,
         reveal = false,
         headerTrailing = {
             Text(
-                stringResource(R.string.gym_session_timer, formatElapsed(elapsedSince(active.workout.startedAt, now))),
+                lexString(R.string.gym_session_timer, formatElapsed(elapsedSince(active.workout.startedAt, now))),
                 style = AwakenTheme.type.numericSmall,
                 color = colors.accent,
             )
         },
     ) {
         Text(
-            stringResource(R.string.gym_session_summary, active.doneSets, formatCount(active.volumeKg.roundToLong())),
+            lexString(R.string.gym_session_summary, active.doneSets, formatCount(active.volumeKg.roundToLong())),
             style = AwakenTheme.type.label,
             color = colors.textSecondary,
         )
-        if (active.exercises.isEmpty()) Text(stringResource(R.string.gym_session_empty), style = AwakenTheme.type.body, color = colors.textSecondary)
+        if (active.exercises.isEmpty()) Text(lexString(R.string.gym_session_empty), style = AwakenTheme.type.body, color = colors.textSecondary)
     }
     active.exercises.forEach { exercise -> ExerciseCard(exercise, previous[exercise.exerciseId].orEmpty(), onEvent) }
-    SecondaryButton(text = stringResource(R.string.gym_add_exercise), onClick = { onEvent(GymEvent.OpenPicker) }, modifier = Modifier.fillMaxWidth())
-    PrimaryButton(text = stringResource(R.string.gym_finish), onClick = { onEvent(GymEvent.Finish) }, modifier = Modifier.fillMaxWidth())
+    SecondaryButton(text = lexString(R.string.gym_add_exercise), onClick = { onEvent(GymEvent.OpenPicker) }, modifier = Modifier.fillMaxWidth())
+    PrimaryButton(text = lexString(R.string.gym_finish), onClick = { onEvent(GymEvent.Finish) }, modifier = Modifier.fillMaxWidth())
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-        QuietButton(text = stringResource(R.string.gym_save_routine), onClick = { onEvent(GymEvent.AskSaveRoutine) }, enabled = active.exercises.isNotEmpty())
-        QuietButton(text = stringResource(R.string.gym_discard), onClick = { onEvent(GymEvent.AskDiscard) })
+        QuietButton(text = lexString(R.string.gym_save_routine), onClick = { onEvent(GymEvent.AskSaveRoutine) }, enabled = active.exercises.isNotEmpty())
+        QuietButton(text = lexString(R.string.gym_discard), onClick = { onEvent(GymEvent.AskDiscard) })
     }
 }
 
@@ -314,22 +313,22 @@ private fun ExerciseCard(exercise: WorkoutExercise, previous: List<WorkoutSetEnt
         reveal = false,
         headerTrailing = {
             IconButton(onClick = { onEvent(GymEvent.RemoveExercise(exercise.position)) }) {
-                Icon(AwakenGlyphs.Close, contentDescription = stringResource(R.string.gym_remove_exercise, exercise.name), tint = colors.textSecondary)
+                Icon(AwakenGlyphs.Close, contentDescription = lexString(R.string.gym_remove_exercise, exercise.name), tint = colors.textSecondary)
             }
         },
     ) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
-            HeaderCell(stringResource(R.string.gym_col_set), Modifier.width(Spacing.lg))
-            HeaderCell(stringResource(R.string.gym_col_previous), Modifier.weight(1f))
-            HeaderCell(stringResource(R.string.gym_col_kg), Modifier.width(AwakenTheme.dimens.numberField))
-            HeaderCell(stringResource(R.string.gym_col_reps), Modifier.width(AwakenTheme.dimens.numberField))
+            HeaderCell(lexString(R.string.gym_col_set), Modifier.width(Spacing.lg))
+            HeaderCell(lexString(R.string.gym_col_previous), Modifier.weight(1f))
+            HeaderCell(lexString(R.string.gym_col_kg), Modifier.width(AwakenTheme.dimens.numberField))
+            HeaderCell(lexString(R.string.gym_col_reps), Modifier.width(AwakenTheme.dimens.numberField))
             Spacer(Modifier.width(AwakenTheme.dimens.touchTarget))
         }
         exercise.sets.forEachIndexed { i, set -> SetRow(i + 1, set, previous.getOrNull(i), onEvent) }
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            QuietButton(text = stringResource(R.string.gym_add_set), onClick = { onEvent(GymEvent.AddSet(exercise.position)) })
+            QuietButton(text = lexString(R.string.gym_add_set), onClick = { onEvent(GymEvent.AddSet(exercise.position)) })
             exercise.sets.lastOrNull()?.takeIf { exercise.sets.size > 1 }?.let { last ->
-                QuietButton(text = stringResource(R.string.gym_remove_set), onClick = { onEvent(GymEvent.RemoveSet(last.id)) })
+                QuietButton(text = lexString(R.string.gym_remove_set), onClick = { onEvent(GymEvent.RemoveSet(last.id)) })
             }
         }
     }
@@ -348,8 +347,8 @@ private fun SetRow(number: Int, set: WorkoutSetEntity, previous: WorkoutSetEntit
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
         Text(number.toString(), style = AwakenTheme.type.label, color = if (set.done) colors.accent else colors.textPrimary, modifier = Modifier.width(Spacing.lg))
         Text(
-            previous?.let { stringResource(R.string.gym_previous_value, formatNumber(it.weightKg).ifEmpty { "0" }, it.reps) }
-                ?: stringResource(R.string.gym_previous_none),
+            previous?.let { lexString(R.string.gym_previous_value, formatNumber(it.weightKg).ifEmpty { "0" }, it.reps) }
+                ?: lexString(R.string.gym_previous_none),
             style = AwakenTheme.type.caption,
             color = colors.textSecondary,
             modifier = Modifier.weight(1f),
@@ -360,7 +359,7 @@ private fun SetRow(number: Int, set: WorkoutSetEntity, previous: WorkoutSetEntit
                 weight = it
                 onEvent(GymEvent.UpdateSet(set, weight, reps, set.done))
             },
-            description = stringResource(R.string.cd_gym_set_weight, number),
+            description = lexString(R.string.cd_gym_set_weight, number),
             key = set.id,
         )
         NumberField(
@@ -369,11 +368,11 @@ private fun SetRow(number: Int, set: WorkoutSetEntity, previous: WorkoutSetEntit
                 reps = it.toInt()
                 onEvent(GymEvent.UpdateSet(set, weight, reps, set.done))
             },
-            description = stringResource(R.string.cd_gym_set_reps, number),
+            description = lexString(R.string.cd_gym_set_reps, number),
             key = set.id,
             decimals = false,
         )
-        val doneLabel = stringResource(R.string.cd_gym_set_done, number)
+        val doneLabel = lexString(R.string.cd_gym_set_done, number)
         Checkbox(
             checked = set.done,
             onCheckedChange = { onEvent(GymEvent.UpdateSet(set, weight, reps, it)) },
@@ -392,10 +391,10 @@ private fun DiscardDialog(onEvent: (GymEvent) -> Unit) {
     AlertDialog(
         onDismissRequest = { onEvent(GymEvent.DismissDiscard) },
         containerColor = colors.surfaceOverlay,
-        title = { Text(stringResource(R.string.gym_discard_title), style = AwakenTheme.type.title, color = colors.textPrimary) },
-        text = { Text(stringResource(R.string.gym_discard_body), style = AwakenTheme.type.body, color = colors.textSecondary) },
-        confirmButton = { QuietButton(text = stringResource(R.string.gym_discard), onClick = { onEvent(GymEvent.ConfirmDiscard) }) },
-        dismissButton = { QuietButton(text = stringResource(R.string.action_cancel), onClick = { onEvent(GymEvent.DismissDiscard) }) },
+        title = { Text(lexString(R.string.gym_discard_title), style = AwakenTheme.type.title, color = colors.textPrimary) },
+        text = { Text(lexString(R.string.gym_discard_body), style = AwakenTheme.type.body, color = colors.textSecondary) },
+        confirmButton = { QuietButton(text = lexString(R.string.gym_discard), onClick = { onEvent(GymEvent.ConfirmDiscard) }) },
+        dismissButton = { QuietButton(text = lexString(R.string.action_cancel), onClick = { onEvent(GymEvent.DismissDiscard) }) },
     )
 }
 
@@ -406,19 +405,19 @@ private fun RoutineNameDialog(onEvent: (GymEvent) -> Unit) {
     AlertDialog(
         onDismissRequest = { onEvent(GymEvent.DismissSaveRoutine) },
         containerColor = colors.surfaceOverlay,
-        title = { Text(stringResource(R.string.gym_routine_name_title), style = AwakenTheme.type.title, color = colors.textPrimary) },
+        title = { Text(lexString(R.string.gym_routine_name_title), style = AwakenTheme.type.title, color = colors.textPrimary) },
         text = {
             OutlinedTextField(
                 value = name,
                 onValueChange = { name = it.take(MAX_NAME) },
-                label = { Text(stringResource(R.string.gym_routine_name_label)) },
+                label = { Text(lexString(R.string.gym_routine_name_label)) },
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words),
                 colors = awakenTextFieldColors(),
             )
         },
-        confirmButton = { QuietButton(text = stringResource(R.string.action_save), onClick = { onEvent(GymEvent.SaveRoutine(name)) }, enabled = name.isNotBlank()) },
-        dismissButton = { QuietButton(text = stringResource(R.string.action_cancel), onClick = { onEvent(GymEvent.DismissSaveRoutine) }) },
+        confirmButton = { QuietButton(text = lexString(R.string.action_save), onClick = { onEvent(GymEvent.SaveRoutine(name)) }, enabled = name.isNotBlank()) },
+        dismissButton = { QuietButton(text = lexString(R.string.action_cancel), onClick = { onEvent(GymEvent.DismissSaveRoutine) }) },
     )
 }
 

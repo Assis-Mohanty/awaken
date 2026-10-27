@@ -1,5 +1,7 @@
 package com.assismohanty.awaken.feature.trial
 
+import com.assismohanty.awaken.core.designsystem.lexicon.lexString
+import com.assismohanty.awaken.core.designsystem.lexicon.lexPlural
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -22,8 +24,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.res.pluralStringResource
-import androidx.compose.ui.res.stringResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.assismohanty.awaken.R
@@ -74,7 +74,7 @@ fun TrialDetailScreen(
     ) {
         Box(modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.xxs)) {
             IconButton(onClick = onBack) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.action_back), tint = colors.textPrimary)
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = lexString(R.string.action_back), tint = colors.textPrimary)
             }
         }
         Column(
@@ -85,7 +85,7 @@ fun TrialDetailScreen(
         ) {
             when {
                 state.loading -> Unit
-                state.none -> EmptyState(line = stringResource(R.string.trial_none), actionLabel = stringResource(R.string.action_back), onAction = onBack)
+                state.none -> EmptyState(line = lexString(R.string.trial_none), actionLabel = lexString(R.string.action_back), onAction = onBack)
                 else -> TrialContent(state, onEvent, onOpenQuest)
             }
         }
@@ -98,17 +98,17 @@ private fun TrialContent(state: TrialDetailUiState, onEvent: (TrialDetailEvent) 
     val type = AwakenTheme.type
     val formatter = DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).withLocale(LocalConfiguration.current.locales[0])
     SystemWindow(
-        title = stringResource(R.string.trial_available, state.rank.name),
+        title = lexString(R.string.trial_available, state.rank.name),
         accent = AwakenTheme.rankAccent(state.rank),
         headerTrailing = { RankCrest(rank = state.rank, size = AwakenTheme.dimens.crestSmall) },
     ) {
         val start = state.start
         val expires = state.expires
         if (start != null && expires != null) {
-            Text(stringResource(R.string.trial_window, formatter.format(start), formatter.format(expires)), style = type.label, color = colors.textPrimary)
+            Text(lexString(R.string.trial_window, formatter.format(start), formatter.format(expires)), style = type.label, color = colors.textPrimary)
         }
-        Text(pluralStringResource(R.plurals.trial_days_left, state.daysLeft, state.daysLeft), style = type.label, color = colors.textSecondary)
-        Text(stringResource(R.string.trial_rule), style = type.caption, color = colors.textSecondary)
+        Text(lexPlural(R.plurals.trial_days_left, state.daysLeft, state.daysLeft), style = type.label, color = colors.textSecondary)
+        Text(lexString(R.string.trial_rule), style = type.caption, color = colors.textSecondary)
 
         state.stages.forEachIndexed { index, stage ->
             if (index > 0) HorizontalDivider(thickness = AwakenTheme.dimens.hairline, color = colors.divider)
@@ -119,8 +119,8 @@ private fun TrialContent(state: TrialDetailUiState, onEvent: (TrialDetailEvent) 
                     onOpen = { onOpenQuest(stage.quest.id) },
                     showDivider = false,
                 )
-                is StageState.Cleared -> StageLine(stage.stat, stringResource(R.string.trial_stage_cleared), colors.positive)
-                is StageState.Tomorrow -> StageLine(stage.stat, stringResource(R.string.trial_stage_tomorrow), colors.textSecondary)
+                is StageState.Cleared -> StageLine(stage.stat, lexString(R.string.trial_stage_cleared), colors.positive)
+                is StageState.Tomorrow -> StageLine(stage.stat, lexString(R.string.trial_stage_tomorrow), colors.textSecondary)
             }
         }
     }

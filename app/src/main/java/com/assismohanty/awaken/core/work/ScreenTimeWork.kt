@@ -25,6 +25,7 @@ import androidx.work.WorkerParameters
 import androidx.work.await
 import com.assismohanty.awaken.MainActivity
 import com.assismohanty.awaken.R
+import com.assismohanty.awaken.core.data.repo.LexiconSource
 import com.assismohanty.awaken.core.data.db.dao.HunterDao
 import com.assismohanty.awaken.core.data.di.ApplicationScope
 import com.assismohanty.awaken.core.data.di.ScreenTimeAlertPrefs
@@ -73,26 +74,27 @@ class ScreenTimeAlertStore @Inject constructor(@ScreenTimeAlertPrefs private val
 class ScreenTimeNotifications @Inject constructor(
     @ApplicationContext private val context: Context,
     private val access: NotificationAccess,
+    private val words: LexiconSource = LexiconSource.Fixed,
 ) {
     @SuppressLint("MissingPermission") // guarded by NotificationAccess.isGranted()
     fun warn(appLabel: String, remainingMinutes: Int, xpAtStake: Int, id: Int) = post(
         id = id,
-        title = context.getString(R.string.screentime_warning_title, appLabel),
-        text = context.resources.getQuantityString(R.plurals.screentime_warning_text, remainingMinutes, remainingMinutes, xpAtStake),
+        title = words.resources(context).getString(R.string.screentime_warning_title, appLabel),
+        text = words.resources(context).getQuantityString(R.plurals.screentime_warning_text, remainingMinutes, remainingMinutes, xpAtStake),
     )
 
     fun forfeited(appLabel: String) = post(
         id = FORFEIT_ID,
-        title = context.getString(R.string.screentime_forfeit_title),
-        text = context.getString(R.string.screentime_forfeit_text, appLabel),
+        title = words.resources(context).getString(R.string.screentime_forfeit_title),
+        text = words.resources(context).getString(R.string.screentime_forfeit_text, appLabel),
     )
 
     @SuppressLint("MissingPermission") // guarded by NotificationAccess.isGranted() on the first line
     private fun post(id: Int, title: String, text: String): Boolean {
         if (!access.isGranted()) return false
         context.getSystemService(NotificationManager::class.java).createNotificationChannel(
-            NotificationChannel(CHANNEL, context.getString(R.string.screentime_channel_name), NotificationManager.IMPORTANCE_DEFAULT)
-                .apply { description = context.getString(R.string.screentime_channel_description) },
+            NotificationChannel(CHANNEL, words.resources(context).getString(R.string.screentime_channel_name), NotificationManager.IMPORTANCE_DEFAULT)
+                .apply { description = words.resources(context).getString(R.string.screentime_channel_description) },
         )
         val open = PendingIntent.getActivity(
             context,

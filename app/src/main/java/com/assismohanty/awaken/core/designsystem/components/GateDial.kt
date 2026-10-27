@@ -1,5 +1,6 @@
 package com.assismohanty.awaken.core.designsystem.components
 
+import com.assismohanty.awaken.core.designsystem.lexicon.lexString
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -15,7 +16,6 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.lerp
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import com.assismohanty.awaken.R
@@ -45,7 +45,7 @@ fun GateDial(
     val remainingFraction = if (total.isZero) 0f else (remaining.toMillis().toFloat() / total.toMillis()).coerceIn(0f, 1f)
     val breachFraction = (breachUsed.toMillis().toFloat() / breachBudget.toMillis()).coerceIn(0f, 1f)
     val remainingText = formatClock(remaining)
-    val description = stringResource(R.string.cd_gate_dial, remainingText, formatClock(breachUsed), formatClock(breachBudget))
+    val description = lexString(R.string.cd_gate_dial, remainingText, formatClock(breachUsed), formatClock(breachBudget))
 
     Box(
         modifier = modifier

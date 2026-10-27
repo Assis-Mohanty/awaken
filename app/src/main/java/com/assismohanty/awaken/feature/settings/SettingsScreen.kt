@@ -1,5 +1,7 @@
 package com.assismohanty.awaken.feature.settings
 
+import com.assismohanty.awaken.core.designsystem.lexicon.lexString
+import com.assismohanty.awaken.core.designsystem.lexicon.lexPlural
 import android.content.Intent
 import android.provider.Settings
 import android.text.format.DateFormat
@@ -32,8 +34,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.pluralStringResource
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
@@ -141,14 +141,14 @@ fun SettingsScreen(
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
-                        stringResource(R.string.settings_title),
+                        lexString(R.string.settings_title),
                         style = AwakenTheme.type.metricL,
                         color = AwakenTheme.colors.textPrimary,
                         modifier = Modifier
                             .weight(1f)
                             .semantics { heading() },
                     )
-                    QuietButton(text = stringResource(R.string.action_back), onClick = onBack)
+                    QuietButton(text = lexString(R.string.action_back), onClick = onBack)
                 }
                 if (!state.loading) {
                     ProfileWindow(state, onEvent)
@@ -182,14 +182,14 @@ private fun accent() = AwakenTheme.colors.accent
 private fun ProfileWindow(state: SettingsUiState, onEvent: (SettingsEvent) -> Unit) {
     val colors = AwakenTheme.colors
     val type = AwakenTheme.type
-    SystemWindow(title = stringResource(R.string.settings_window_profile), accent = accent(), reveal = false) {
+    SystemWindow(title = lexString(R.string.settings_window_profile), accent = accent(), reveal = false) {
         OutlinedTextField(
             value = state.nameDraft,
             onValueChange = { onEvent(SettingsEvent.NameChanged(it)) },
-            label = { Text(stringResource(R.string.settings_name_label)) },
+            label = { Text(lexString(R.string.settings_name_label)) },
             isError = state.showNameError,
             supportingText = if (state.showNameError) {
-                { Text(stringResource(R.string.settings_name_error)) }
+                { Text(lexString(R.string.settings_name_error)) }
             } else {
                 null
             },
@@ -199,12 +199,12 @@ private fun ProfileWindow(state: SettingsUiState, onEvent: (SettingsEvent) -> Un
             modifier = Modifier.fillMaxWidth(),
         )
         SecondaryButton(
-            text = stringResource(R.string.action_save_name),
+            text = lexString(R.string.action_save_name),
             onClick = { onEvent(SettingsEvent.SaveName) },
             enabled = state.canSaveName,
             modifier = Modifier.fillMaxWidth(),
         )
-        Text(stringResource(R.string.settings_focus_title), style = type.label, color = colors.textPrimary)
+        Text(lexString(R.string.settings_focus_title), style = type.label, color = colors.textPrimary)
         FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.xs), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
             Stat.entries.forEach { stat ->
                 ChoiceChip(
@@ -216,9 +216,9 @@ private fun ProfileWindow(state: SettingsUiState, onEvent: (SettingsEvent) -> Un
                 )
             }
         }
-        Text(stringResource(R.string.settings_focus_note), style = type.caption, color = colors.textSecondary)
+        Text(lexString(R.string.settings_focus_note), style = type.caption, color = colors.textSecondary)
         SecondaryButton(
-            text = stringResource(R.string.action_save_focus),
+            text = lexString(R.string.action_save_focus),
             onClick = { onEvent(SettingsEvent.SaveFocus) },
             enabled = state.canSaveFocus,
             modifier = Modifier.fillMaxWidth(),
@@ -230,35 +230,35 @@ private fun ProfileWindow(state: SettingsUiState, onEvent: (SettingsEvent) -> Un
 private fun DayWindow(state: SettingsUiState, onEvent: (SettingsEvent) -> Unit, onOpenNotificationSettings: () -> Unit) {
     val colors = AwakenTheme.colors
     val type = AwakenTheme.type
-    SystemWindow(title = stringResource(R.string.settings_window_day), accent = accent(), reveal = false) {
-        Text(stringResource(R.string.settings_day_start_title), style = type.label, color = colors.textPrimary)
+    SystemWindow(title = lexString(R.string.settings_window_day), accent = accent(), reveal = false) {
+        Text(lexString(R.string.settings_day_start_title), style = type.label, color = colors.textPrimary)
         FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.xs), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
             state.dayStartOptions.forEach { hour ->
                 ChoiceChip(
-                    text = stringResource(R.string.settings_hour_format, hour),
+                    text = lexString(R.string.settings_hour_format, hour),
                     selected = hour == state.dayStartHour,
                     onClick = { onEvent(SettingsEvent.SetDayStart(hour)) },
                 )
             }
         }
-        Text(stringResource(R.string.settings_day_start_note), style = type.caption, color = colors.textSecondary)
-        Text(stringResource(R.string.settings_reminder_title), style = type.label, color = colors.textPrimary)
+        Text(lexString(R.string.settings_day_start_note), style = type.caption, color = colors.textSecondary)
+        Text(lexString(R.string.settings_reminder_title), style = type.label, color = colors.textPrimary)
         Text(
-            text = state.reminder?.let { formatTime(it) } ?: stringResource(R.string.settings_reminder_off),
+            text = state.reminder?.let { formatTime(it) } ?: lexString(R.string.settings_reminder_off),
             style = type.numericSmall,
             color = colors.textPrimary,
         )
         Row(horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
-            SecondaryButton(text = stringResource(R.string.action_change_reminder), onClick = { onEvent(SettingsEvent.OpenReminderPicker) })
+            SecondaryButton(text = lexString(R.string.action_change_reminder), onClick = { onEvent(SettingsEvent.OpenReminderPicker) })
             if (state.reminder != null) {
-                QuietButton(text = stringResource(R.string.action_reminder_off), onClick = { onEvent(SettingsEvent.SetReminder(null)) })
+                QuietButton(text = lexString(R.string.action_reminder_off), onClick = { onEvent(SettingsEvent.SetReminder(null)) })
             }
         }
-        Text(stringResource(R.string.settings_reminder_note), style = type.caption, color = colors.textSecondary)
+        Text(lexString(R.string.settings_reminder_note), style = type.caption, color = colors.textSecondary)
         if (state.notificationsBlocked) {
-            Text(stringResource(R.string.settings_notifications_blocked), style = type.caption, color = colors.critical)
+            Text(lexString(R.string.settings_notifications_blocked), style = type.caption, color = colors.critical)
             SecondaryButton(
-                text = stringResource(R.string.action_open_notification_settings),
+                text = lexString(R.string.action_open_notification_settings),
                 onClick = onOpenNotificationSettings,
                 modifier = Modifier.fillMaxWidth(),
             )
@@ -270,26 +270,26 @@ private fun DayWindow(state: SettingsUiState, onEvent: (SettingsEvent) -> Unit, 
 private fun TrainingWindow(state: SettingsUiState, onEvent: (SettingsEvent) -> Unit, onOpenHealth: () -> Unit, onOpenScreenTime: () -> Unit) {
     val colors = AwakenTheme.colors
     val type = AwakenTheme.type
-    SystemWindow(title = stringResource(R.string.settings_window_training), accent = accent(), reveal = false) {
+    SystemWindow(title = lexString(R.string.settings_window_training), accent = accent(), reveal = false) {
         HealthRow(state, onEvent, onOpenHealth)
-        Text(stringResource(R.string.settings_screen_time_title), style = type.label, color = colors.textPrimary)
-        Text(stringResource(R.string.settings_screen_time_note), style = type.caption, color = colors.textSecondary)
-        SecondaryButton(text = stringResource(R.string.action_open_screen_time), onClick = onOpenScreenTime, modifier = Modifier.fillMaxWidth())
-        Text(stringResource(R.string.settings_equipment_title), style = type.label, color = colors.textPrimary)
+        Text(lexString(R.string.settings_screen_time_title), style = type.label, color = colors.textPrimary)
+        Text(lexString(R.string.settings_screen_time_note), style = type.caption, color = colors.textSecondary)
+        SecondaryButton(text = lexString(R.string.action_open_screen_time), onClick = onOpenScreenTime, modifier = Modifier.fillMaxWidth())
+        Text(lexString(R.string.settings_equipment_title), style = type.label, color = colors.textPrimary)
         FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.xs), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
             state.equipmentOptions.forEach { id ->
                 ChoiceChip(
-                    text = equipmentNameRes(id)?.let { stringResource(it) } ?: id,
+                    text = equipmentNameRes(id)?.let { lexString(it) } ?: id,
                     selected = id in state.equipment,
                     onClick = { onEvent(SettingsEvent.ToggleEquipment(id)) },
                     multiSelect = true,
                 )
             }
         }
-        Text(stringResource(R.string.settings_equipment_note), style = type.caption, color = colors.textSecondary)
+        Text(lexString(R.string.settings_equipment_note), style = type.caption, color = colors.textSecondary)
         SwitchRow(
-            title = stringResource(R.string.settings_injury_title),
-            note = stringResource(R.string.settings_injury_note),
+            title = lexString(R.string.settings_injury_title),
+            note = lexString(R.string.settings_injury_note),
             checked = state.injuryMode,
             onChange = { onEvent(SettingsEvent.SetInjuryMode(it)) },
         )
@@ -297,7 +297,7 @@ private fun TrainingWindow(state: SettingsUiState, onEvent: (SettingsEvent) -> U
             FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.xs), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
                 state.injuryOptions.forEach { tag ->
                     ChoiceChip(
-                        text = injuryTagNameRes(tag)?.let { stringResource(it) } ?: tag,
+                        text = injuryTagNameRes(tag)?.let { lexString(it) } ?: tag,
                         selected = tag in state.injuryTags,
                         onClick = { onEvent(SettingsEvent.ToggleInjuryTag(tag)) },
                         color = colors.critical,
@@ -314,29 +314,29 @@ private fun TrainingWindow(state: SettingsUiState, onEvent: (SettingsEvent) -> U
 private fun HealthRow(state: SettingsUiState, onEvent: (SettingsEvent) -> Unit, onOpenHealth: () -> Unit) {
     val colors = AwakenTheme.colors
     val type = AwakenTheme.type
-    Text(stringResource(R.string.settings_health_title), style = type.label, color = colors.textPrimary)
+    Text(lexString(R.string.settings_health_title), style = type.label, color = colors.textPrimary)
     val status = when {
         state.healthConnected -> R.string.settings_health_on
         state.healthStatus == null -> R.string.settings_health_checking
         state.healthStatus != HealthStatus.AVAILABLE -> R.string.health_not_installed
         else -> R.string.settings_health_off
     }
-    Text(stringResource(status), style = type.caption, color = if (state.healthConnected) colors.positive else colors.textSecondary)
+    Text(lexString(status), style = type.caption, color = if (state.healthConnected) colors.positive else colors.textSecondary)
     if (state.healthConnected) {
         PrimaryButton(
-            text = stringResource(R.string.settings_health_view),
+            text = lexString(R.string.settings_health_view),
             onClick = onOpenHealth,
             color = colors.positive,
             modifier = Modifier.fillMaxWidth(),
         )
         SecondaryButton(
-            text = stringResource(R.string.action_disconnect),
+            text = lexString(R.string.action_disconnect),
             onClick = { onEvent(SettingsEvent.DisconnectHealth) },
             modifier = Modifier.fillMaxWidth(),
         )
     } else {
         PrimaryButton(
-            text = stringResource(R.string.action_connect),
+            text = lexString(R.string.action_connect),
             onClick = { onEvent(SettingsEvent.ConnectHealth) },
             color = colors.positive,
             modifier = Modifier.fillMaxWidth(),
@@ -346,10 +346,10 @@ private fun HealthRow(state: SettingsUiState, onEvent: (SettingsEvent) -> Unit, 
 /** Settings → AI Paths (DESIGN_SYSTEM §4.7): on/off, "what we send", and what turning it off does. */
 @Composable
 private fun AiPathsWindow(state: SettingsUiState, onEvent: (SettingsEvent) -> Unit) {
-    SystemWindow(title = stringResource(R.string.settings_window_ai), accent = accent(), reveal = false) {
+    SystemWindow(title = lexString(R.string.settings_window_ai), accent = accent(), reveal = false) {
         SwitchRow(
-            title = stringResource(R.string.settings_ai_paths),
-            note = stringResource(if (state.aiPathsEnabled) R.string.settings_ai_on_note else R.string.settings_ai_off_note),
+            title = lexString(R.string.settings_ai_paths),
+            note = lexString(if (state.aiPathsEnabled) R.string.settings_ai_on_note else R.string.settings_ai_off_note),
             checked = state.aiPathsEnabled,
             onChange = { onEvent(SettingsEvent.SetAiPaths(it)) },
         )
@@ -359,25 +359,25 @@ private fun AiPathsWindow(state: SettingsUiState, onEvent: (SettingsEvent) -> Un
 
 @Composable
 private fun ComfortWindow(state: SettingsUiState, onEvent: (SettingsEvent) -> Unit) {
-    SystemWindow(title = stringResource(R.string.settings_window_comfort), accent = accent(), reveal = false) {
-        Text(stringResource(R.string.settings_appearance_title), style = AwakenTheme.type.label, color = AwakenTheme.colors.textPrimary)
+    SystemWindow(title = lexString(R.string.settings_window_comfort), accent = accent(), reveal = false) {
+        Text(lexString(R.string.settings_appearance_title), style = AwakenTheme.type.label, color = AwakenTheme.colors.textPrimary)
         FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.xs), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
             ThemeMode.entries.forEach { mode ->
                 ChoiceChip(
-                    text = stringResource(mode.labelRes()),
+                    text = lexString(mode.labelRes()),
                     selected = mode == state.themeMode,
                     onClick = { onEvent(SettingsEvent.SetThemeMode(mode)) },
                 )
             }
         }
         SwitchRow(
-            title = stringResource(R.string.settings_haptics),
+            title = lexString(R.string.settings_haptics),
             note = null,
             checked = state.hapticsEnabled,
             onChange = { onEvent(SettingsEvent.SetHaptics(it)) },
         )
         SwitchRow(
-            title = stringResource(R.string.settings_reduce_motion),
+            title = lexString(R.string.settings_reduce_motion),
             note = null,
             checked = state.reduceMotion,
             onChange = { onEvent(SettingsEvent.SetReduceMotion(it)) },
@@ -388,16 +388,16 @@ private fun ComfortWindow(state: SettingsUiState, onEvent: (SettingsEvent) -> Un
 @Composable
 private fun DataWindow(state: SettingsUiState, onExport: () -> Unit, onImport: () -> Unit, onOpenPrivacy: () -> Unit) {
     val colors = AwakenTheme.colors
-    SystemWindow(title = stringResource(R.string.settings_window_data), accent = accent(), reveal = false) {
-        Text(stringResource(R.string.settings_data_note), style = AwakenTheme.type.caption, color = colors.textSecondary)
+    SystemWindow(title = lexString(R.string.settings_window_data), accent = accent(), reveal = false) {
+        Text(lexString(R.string.settings_data_note), style = AwakenTheme.type.caption, color = colors.textSecondary)
         PrimaryButton(
-            text = stringResource(R.string.action_export_data),
+            text = lexString(R.string.action_export_data),
             onClick = onExport,
             enabled = !state.busy,
             modifier = Modifier.fillMaxWidth(),
         )
         SecondaryButton(
-            text = stringResource(R.string.action_import_data),
+            text = lexString(R.string.action_import_data),
             onClick = onImport,
             enabled = !state.busy,
             modifier = Modifier.fillMaxWidth(),
@@ -405,8 +405,8 @@ private fun DataWindow(state: SettingsUiState, onExport: () -> Unit, onImport: (
         val version = LocalContext.current.let { context ->
             runCatching { context.packageManager.getPackageInfo(context.packageName, 0).versionName }.getOrNull().orEmpty()
         }
-        QuietButton(text = stringResource(R.string.action_privacy_policy), onClick = onOpenPrivacy, modifier = Modifier.fillMaxWidth())
-        Text(stringResource(R.string.settings_about, version), style = AwakenTheme.type.caption, color = colors.textMuted)
+        QuietButton(text = lexString(R.string.action_privacy_policy), onClick = onOpenPrivacy, modifier = Modifier.fillMaxWidth())
+        Text(lexString(R.string.settings_about, version), style = AwakenTheme.type.caption, color = colors.textMuted)
     }
 }
 
@@ -450,13 +450,13 @@ private fun ReminderDialog(current: LocalTime?, onEvent: (SettingsEvent) -> Unit
         is24Hour = DateFormat.is24HourFormat(LocalContext.current),
     )
     Dialog(onDismissRequest = { onEvent(SettingsEvent.DismissReminderPicker) }) {
-        SystemWindow(title = stringResource(R.string.settings_reminder_title).uppercase(), accent = accent()) {
+        SystemWindow(title = lexString(R.string.settings_reminder_title).uppercase(), accent = accent()) {
             // TimeInput (not the dial) so the dialog fits small phones.
             TimeInput(state = timeState, modifier = Modifier.align(Alignment.CenterHorizontally))
             Row(horizontalArrangement = Arrangement.spacedBy(Spacing.xs), modifier = Modifier.fillMaxWidth()) {
-                QuietButton(text = stringResource(R.string.action_cancel), onClick = { onEvent(SettingsEvent.DismissReminderPicker) })
+                QuietButton(text = lexString(R.string.action_cancel), onClick = { onEvent(SettingsEvent.DismissReminderPicker) })
                 PrimaryButton(
-                    text = stringResource(R.string.action_done),
+                    text = lexString(R.string.action_done),
                     onClick = { onEvent(SettingsEvent.SetReminder(LocalTime.of(timeState.hour, timeState.minute))) },
                     modifier = Modifier.weight(1f),
                 )
@@ -469,15 +469,15 @@ private fun ReminderDialog(current: LocalTime?, onEvent: (SettingsEvent) -> Unit
 private fun ImportConfirmDialog(onEvent: (SettingsEvent) -> Unit) {
     val colors = AwakenTheme.colors
     Dialog(onDismissRequest = { onEvent(SettingsEvent.CancelImport) }) {
-        SystemWindow(title = stringResource(R.string.import_confirm_title), accent = colors.critical) {
-            Text(stringResource(R.string.import_confirm_body), style = AwakenTheme.type.body, color = colors.textPrimary)
+        SystemWindow(title = lexString(R.string.import_confirm_title), accent = colors.critical) {
+            Text(lexString(R.string.import_confirm_body), style = AwakenTheme.type.body, color = colors.textPrimary)
             PrimaryButton(
-                text = stringResource(R.string.action_import_replace),
+                text = lexString(R.string.action_import_replace),
                 onClick = { onEvent(SettingsEvent.ConfirmImport) },
                 color = colors.critical,
                 modifier = Modifier.fillMaxWidth(),
             )
-            QuietButton(text = stringResource(R.string.action_cancel), onClick = { onEvent(SettingsEvent.CancelImport) }, modifier = Modifier.fillMaxWidth())
+            QuietButton(text = lexString(R.string.action_cancel), onClick = { onEvent(SettingsEvent.CancelImport) }, modifier = Modifier.fillMaxWidth())
         }
     }
 }
@@ -486,21 +486,21 @@ private fun ImportConfirmDialog(onEvent: (SettingsEvent) -> Unit) {
 private fun ImportDoneDialog(summary: com.assismohanty.awaken.core.data.export.ImportSummary, onDismiss: () -> Unit) {
     val colors = AwakenTheme.colors
     Dialog(onDismissRequest = onDismiss) {
-        SystemWindow(title = stringResource(R.string.import_done_title), accent = colors.positive) {
+        SystemWindow(title = lexString(R.string.import_done_title), accent = colors.positive) {
             Text(
-                stringResource(R.string.import_done_body, summary.hunterName, summary.level),
+                lexString(R.string.import_done_body, summary.hunterName, summary.level),
                 style = AwakenTheme.type.body,
                 color = colors.textPrimary,
             )
             Text(
-                pluralStringResource(R.plurals.import_done_rows, summary.ledgerRows, summary.ledgerRows),
+                lexPlural(R.plurals.import_done_rows, summary.ledgerRows, summary.ledgerRows),
                 style = AwakenTheme.type.caption,
                 color = colors.textSecondary,
             )
             if (summary.firstDate != null && summary.lastDate != null) {
-                Text(stringResource(R.string.import_done_range, summary.firstDate, summary.lastDate), style = AwakenTheme.type.caption, color = colors.textSecondary)
+                Text(lexString(R.string.import_done_range, summary.firstDate, summary.lastDate), style = AwakenTheme.type.caption, color = colors.textSecondary)
             }
-            PrimaryButton(text = stringResource(R.string.action_done), onClick = onDismiss, modifier = Modifier.fillMaxWidth())
+            PrimaryButton(text = lexString(R.string.action_done), onClick = onDismiss, modifier = Modifier.fillMaxWidth())
         }
     }
 }

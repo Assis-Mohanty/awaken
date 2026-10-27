@@ -1,5 +1,6 @@
 package com.assismohanty.awaken.core.designsystem.components
 
+import com.assismohanty.awaken.core.designsystem.lexicon.lexString
 import androidx.compose.animation.core.animate
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -35,7 +36,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.onSizeChanged
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.customActions
@@ -110,8 +110,8 @@ fun QuestRow(
             crossed = false
         }
     }
-    val completeLabel = stringResource(R.string.action_complete_quest)
-    val openLabel = stringResource(R.string.action_open_quest)
+    val completeLabel = lexString(R.string.action_complete_quest)
+    val openLabel = lexString(R.string.action_open_quest)
 
     Column(modifier = modifier.fillMaxWidth()) {
         if (showDivider) HorizontalDivider(thickness = dimens.hairline, color = colors.edge)
@@ -172,7 +172,7 @@ fun QuestRow(
                     )
                     Text(
                         text = if (model.progress != null) {
-                            stringResource(
+                            lexString(
                                 R.string.quest_target_progress_line,
                                 formatCount(model.progress),
                                 formatCount(model.target),
@@ -180,7 +180,7 @@ fun QuestRow(
                                 model.difficulty.label(),
                             )
                         } else {
-                            stringResource(R.string.quest_target_line, formatCount(model.target), unitLabel(model.unit, model.target), model.difficulty.label())
+                            lexString(R.string.quest_target_line, formatCount(model.target), unitLabel(model.unit, model.target), model.difficulty.label())
                         },
                         style = type.label,
                         color = if (dimmed) colors.fog else colors.mist,
@@ -188,11 +188,11 @@ fun QuestRow(
                     )
                     if (model.isMain || model.verification != VerificationSource.SELF || model.pathBadge != null) {
                         FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.xxs)) {
-                            if (model.isMain) Pill(stringResource(R.string.chip_main), colors.system)
+                            if (model.isMain) Pill(lexString(R.string.chip_main), colors.system)
                             model.pathBadge?.let { badge ->
                                 PathQuestBadge(
                                     name = badge.name,
-                                    gate = badge.gateRank?.let { rank -> stringResource(R.string.path_badge_gate, rank.name, badge.gateMinutes ?: rank.durationMinutes) },
+                                    gate = badge.gateRank?.let { rank -> lexString(R.string.path_badge_gate, rank.name, badge.gateMinutes ?: rank.durationMinutes) },
                                 )
                             }
                             VerifiedBadge(model.verification)
@@ -212,12 +212,12 @@ private fun CheckControl(model: QuestRowModel, canComplete: Boolean, onComplete:
     when {
         model.state == QuestRowState.DONE -> Icon(
             AwakenGlyphs.Check,
-            contentDescription = stringResource(R.string.cd_quest_done, model.title),
+            contentDescription = lexString(R.string.cd_quest_done, model.title),
             tint = colors.system,
             modifier = Modifier.padding(Spacing.sm).size(dimens.icon),
         )
         canComplete -> {
-            val description = stringResource(R.string.cd_complete_quest, model.title)
+            val description = lexString(R.string.cd_complete_quest, model.title)
             IconButton(
                 onClick = onComplete,
                 modifier = Modifier

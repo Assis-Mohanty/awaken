@@ -1,5 +1,6 @@
 package com.assismohanty.awaken.feature.settings
 
+import com.assismohanty.awaken.core.designsystem.lexicon.lexString
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
@@ -13,7 +14,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.window.Dialog
 import androidx.health.connect.client.PermissionController
 import com.assismohanty.awaken.R
@@ -66,11 +66,11 @@ fun HealthActionEffect(
 fun HealthRationaleDialog(onContinue: () -> Unit, onDismiss: () -> Unit) {
     val colors = AwakenTheme.colors
     Dialog(onDismissRequest = onDismiss) {
-        SystemWindow(title = stringResource(R.string.onboarding_health_title), accent = colors.positive) {
-            Text(stringResource(R.string.onboarding_health_body), style = AwakenTheme.type.body, color = colors.textPrimary)
-            Text(stringResource(R.string.health_rationale_scope), style = AwakenTheme.type.caption, color = colors.textSecondary)
-            PrimaryButton(text = stringResource(R.string.action_connect), onClick = onContinue, modifier = Modifier.fillMaxWidth())
-            QuietButton(text = stringResource(R.string.action_not_now), onClick = onDismiss, modifier = Modifier.fillMaxWidth())
+        SystemWindow(title = lexString(R.string.onboarding_health_title), accent = colors.positive) {
+            Text(lexString(R.string.onboarding_health_body), style = AwakenTheme.type.body, color = colors.textPrimary)
+            Text(lexString(R.string.health_rationale_scope), style = AwakenTheme.type.caption, color = colors.textSecondary)
+            PrimaryButton(text = lexString(R.string.action_connect), onClick = onContinue, modifier = Modifier.fillMaxWidth())
+            QuietButton(text = lexString(R.string.action_not_now), onClick = onDismiss, modifier = Modifier.fillMaxWidth())
         }
     }
 }

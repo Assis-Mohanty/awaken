@@ -1,6 +1,6 @@
 package com.assismohanty.awaken.feature.quest
 
-import android.content.res.Resources
+import com.assismohanty.awaken.core.designsystem.lexicon.LexResources
 import android.text.format.DateUtils
 import com.assismohanty.awaken.R
 import com.assismohanty.awaken.core.data.export.ImportProblem
@@ -13,7 +13,7 @@ import java.text.NumberFormat
 import java.time.Duration
 
 /** Why a Focus Gate collapsed, e.g. "Background time 1:42 exceeded the 1:30 limit." (DESIGN_SYSTEM §4.4). */
-fun collapseDetail(reason: GateCollapseReason, backgroundMs: Long, resources: Resources): String = when (reason) {
+fun collapseDetail(reason: GateCollapseReason, backgroundMs: Long, resources: LexResources): String = when (reason) {
     GateCollapseReason.BREACH -> resources.getString(
         R.string.gate_collapsed_breach,
         shortClock(backgroundMs),
@@ -31,11 +31,11 @@ fun shortClock(ms: Long): String {
 
 private const val SECONDS_PER_MINUTE = 60L
 
-private fun shopItemName(itemId: String, resources: Resources): String =
-    shopItemNameRes(itemId)?.let(resources::getString) ?: itemId
+private fun shopItemName(itemId: String, resources: LexResources): String =
+    shopItemNameRes(itemId)?.let { resources.getString(it) } ?: itemId
 
 /** System-voice text for a domain message (DESIGN_SYSTEM §5): what happened, and what to do. */
-fun UserMessage.text(resources: Resources): String = when (this) {
+fun UserMessage.text(resources: LexResources): String = when (this) {
     is UserMessage.TooSoon -> resources.getString(R.string.msg_too_soon, DateUtils.formatElapsedTime(remainingSeconds))
     UserMessage.VerificationRequired -> resources.getString(R.string.msg_verification_required)
     UserMessage.WrongDay -> resources.getString(R.string.msg_wrong_day)
