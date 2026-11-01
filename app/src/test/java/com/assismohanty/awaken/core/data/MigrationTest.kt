@@ -351,6 +351,29 @@ class MigrationTest {
     }
 
     @Test
+    fun v15To16AddsRestColumnsAndKeepsWorkouts() = runTest {
+        val path = createFromSchema(15)
+        SQLiteDatabase.openDatabase(path, null, SQLiteDatabase.OPEN_READWRITE).use { db ->
+            db.execSQL("INSERT INTO workout (id, name, game_date, started_at) VALUES ('w1', 'Push', '2026-10-01', 0)")
+            db.execSQL("INSERT INTO routine (id, name, updated_at) VALUES ('r1', 'Push day', 0)")
+            db.execSQL("INSERT INTO routine_exercise (routine_id, position, exercise_id, set_count) VALUES ('r1', 0, 'bench', 3)")
+        }
+        val db = Room.databaseBuilder(context, AwakenDatabase::class.java, path)
+            .addMigrations(*ALL_MIGRATIONS)
+            .allowMainThreadQueries()
+            .build()
+        try {
+            val workout = db.gymDao().workout("w1")
+            assertThat(workout?.name).isEqualTo("Push")
+            assertThat(workout?.restEndsAt).isNull()
+            assertThat(db.gymDao().routineExercises("r1").single().restSec).isNull()
+            assertThat(db.openHelper.readableDatabase.version).isEqualTo(AwakenDatabase.SCHEMA_VERSION)
+        } finally {
+            db.close()
+        }
+    }
+
+    @Test
     fun v4To5AddsThePathTablesAndKeepsExistingQuests() = runTest {
         val path = createFromSchema(4)
         SQLiteDatabase.openDatabase(path, null, SQLiteDatabase.OPEN_READWRITE).use { db ->

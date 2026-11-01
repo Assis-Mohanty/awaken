@@ -60,6 +60,18 @@ class GateNotifications @Inject constructor(
         notify(RUNNING_ID, builder)
     }
 
+    /** The gym rest timer ran out while the app was away. */
+    fun showRestOver() {
+        notify(
+            REST_ID,
+            base()
+                .setContentTitle(words.resources(context).getString(R.string.gym_rest_over_title))
+                .setContentText(words.resources(context).getString(R.string.gym_rest_over_body))
+                .setAutoCancel(true)
+                .setCategory(NotificationCompat.CATEGORY_REMINDER),
+        )
+    }
+
     fun showEnded(gateName: String) {
         cancelRunning()
         notify(
@@ -111,5 +123,6 @@ class GateNotifications @Inject constructor(
         const val CHANNEL_ID = "focus_gates"
         const val RUNNING_ID = 801
         const val ENDED_ID = 802
+        const val REST_ID = 803
     }
 }

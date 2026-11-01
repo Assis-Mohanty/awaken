@@ -100,6 +100,10 @@ interface GymDao {
     @Upsert
     suspend fun upsertSets(sets: List<WorkoutSetEntity>)
 
+    /** Sets an exercise's rest on every one of its set rows. */
+    @Query("UPDATE workout_set SET rest_sec = :restSec WHERE workout_id = :workoutId AND position = :position")
+    suspend fun setExerciseRest(workoutId: String, position: Int, restSec: Int?)
+
     @Query("DELETE FROM workout_set WHERE id = :id")
     suspend fun deleteSet(id: String)
 

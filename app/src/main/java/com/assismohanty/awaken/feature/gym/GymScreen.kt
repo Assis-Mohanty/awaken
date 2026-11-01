@@ -73,6 +73,7 @@ import com.assismohanty.awaken.core.domain.WorkoutExercise
 import com.assismohanty.awaken.core.domain.WorkoutSummary
 import com.assismohanty.awaken.core.domain.elapsedSince
 import com.assismohanty.awaken.engine.body.Muscle
+import com.assismohanty.awaken.engine.body.RestRules
 import com.assismohanty.awaken.engine.body.TrainingMath
 import java.time.Duration
 import java.time.Instant
@@ -100,6 +101,7 @@ fun GymScreen(state: GymUiState, onEvent: (GymEvent) -> Unit, modifier: Modifier
         if (active != null) {
             ActiveSession(active, state.now, state.previous, onEvent)
         } else {
+            state.summaryId?.let { id -> state.overview?.history?.firstOrNull { it.workoutId == id }?.let { SessionSummary(it, onEvent) } }
             state.notice?.let { NoticeLine(it, onEvent) }
             PrimaryButton(
                 text = lexString(R.string.gym_start_empty),
@@ -312,6 +314,18 @@ private fun ActiveSession(
             color = colors.textSecondary,
         )
         if (active.exercises.isEmpty()) Text(lexString(R.string.gym_session_empty), style = AwakenTheme.type.body, color = colors.textSecondary)
+        active.workout.restEndsAt?.let { endsAt ->
+            val left = RestRules.remaining(endsAt, now)
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+                Text(
+                    lexString(R.string.gym_rest_running, formatElapsed(left)),
+                    style = AwakenTheme.type.numericSmall,
+                    color = colors.accent,
+                    modifier = Modifier.weight(1f),
+                )
+                QuietButton(text = lexString(R.string.gym_rest_skip), onClick = { onEvent(GymEvent.SkipRest) })
+            }
+        }
     }
     active.exercises.forEach { exercise -> ExerciseCard(exercise, previous[exercise.exerciseId].orEmpty(), onEvent) }
     SecondaryButton(text = lexString(R.string.gym_add_exercise), onClick = { onEvent(GymEvent.OpenPicker) }, modifier = Modifier.fillMaxWidth())
@@ -343,12 +357,60 @@ private fun ExerciseCard(exercise: WorkoutExercise, previous: List<WorkoutSetEnt
             Spacer(Modifier.width(AwakenTheme.dimens.touchTarget))
         }
         exercise.sets.forEachIndexed { i, set -> SetRow(i + 1, set, previous.getOrNull(i), onEvent) }
+        RestStepper(exercise, onEvent)
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             QuietButton(text = lexString(R.string.gym_add_set), onClick = { onEvent(GymEvent.AddSet(exercise.position)) })
             exercise.sets.lastOrNull()?.takeIf { exercise.sets.size > 1 }?.let { last ->
                 QuietButton(text = lexString(R.string.gym_remove_set), onClick = { onEvent(GymEvent.RemoveSet(last.id)) })
             }
         }
+    }
+}
+
+/** Rest between this exercise's sets: − / + in 15 s steps; stepping down from the lowest turns it off. */
+@Composable
+private fun RestStepper(exercise: WorkoutExercise, onEvent: (GymEvent) -> Unit) {
+    val colors = AwakenTheme.colors
+    val rest = exercise.restSec
+    val restText = rest?.let { formatElapsed(Duration.ofSeconds(it.toLong())) } ?: lexString(R.string.gym_rest_off)
+    val restDescription = lexString(R.string.cd_gym_rest, restText)
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Text(lexString(R.string.gym_rest_label), style = AwakenTheme.type.label, color = colors.textSecondary, modifier = Modifier.weight(1f))
+        QuietButton(
+            text = lexString(R.string.gym_rest_minus),
+            onClick = { onEvent(GymEvent.StepRest(exercise.position, rest, up = false)) },
+            enabled = rest != null,
+        )
+        Text(
+            restText,
+            style = AwakenTheme.type.numericSmall,
+            color = colors.textPrimary,
+            modifier = Modifier.semantics { contentDescription = restDescription },
+        )
+        QuietButton(
+            text = lexString(R.string.gym_rest_plus),
+            onClick = { onEvent(GymEvent.StepRest(exercise.position, rest, up = true)) },
+            enabled = (rest ?: 0) < RestRules.MAX_SEC,
+        )
+    }
+}
+
+/** The finished session: time, sets, volume and the exercises, until dismissed. */
+@Composable
+private fun SessionSummary(summary: WorkoutSummary, onEvent: (GymEvent) -> Unit) {
+    val colors = AwakenTheme.colors
+    SystemWindow(title = lexString(R.string.gym_summary_title), accent = colors.accent, reveal = false) {
+        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.lg), modifier = Modifier.fillMaxWidth()) {
+            Stat(lexString(R.string.gym_summary_time), formatElapsed(summary.duration), Modifier.weight(1f))
+            Stat(lexString(R.string.gym_summary_sets), summary.sets.toString(), Modifier.weight(1f))
+            Stat(lexString(R.string.gym_summary_volume), formatCount(summary.volumeKg.roundToLong()), Modifier.weight(1f))
+        }
+        Text(summary.exerciseNames.joinToString(" · "), style = AwakenTheme.type.body, color = colors.textSecondary)
+        SecondaryButton(text = lexString(R.string.gym_summary_done), onClick = { onEvent(GymEvent.DismissSummary) }, modifier = Modifier.fillMaxWidth())
     }
 }
 
@@ -467,13 +529,14 @@ internal fun previewGymState(active: Boolean = false): GymUiState {
     fun set(i: Int, kg: Double, reps: Int, done: Boolean, pos: Int = 0, name: String = "Barbell Bench Press") = WorkoutSetEntity(
         id = "s$pos$i", workoutId = "w1", exerciseId = "e$pos", exerciseName = name, primaryMuscles = setOf("chest"),
         secondaryMuscles = setOf("triceps"), position = pos, setIndex = i, weightKg = kg, reps = reps, done = done,
+        restSec = if (pos == 0) 90 else null,
     )
     return GymUiState(
         loading = false,
         now = start.plusSeconds(1_745),
         active = if (active) {
             ActiveWorkout(
-                workout,
+                workout.copy(restEndsAt = start.plusSeconds(1_745 + 52), restTotalSec = 90),
                 listOf(
                     WorkoutExercise(0, "e0", "Barbell Bench Press", listOf(set(0, 60.0, 10, true), set(1, 70.0, 8, true), set(2, 70.0, 8, false))),
                     WorkoutExercise(1, "e1", "Dips - Triceps Version", listOf(set(0, 0.0, 12, false, pos = 1, name = "Dips - Triceps Version"))),
@@ -506,4 +569,10 @@ private fun GymHomePreview() {
 @Composable
 private fun GymSessionPreview() {
     AwakenTheme(reduceMotion = true) { GymScreen(previewGymState(active = true), onEvent = {}) }
+}
+
+@PhonePreviews
+@Composable
+private fun GymSummaryPreview() {
+    AwakenTheme(reduceMotion = true) { GymScreen(previewGymState().copy(summaryId = "w0"), onEvent = {}) }
 }

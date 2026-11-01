@@ -41,7 +41,7 @@ class GymScreenTest {
 
     @Test
     fun aLoggedSetIsSavedWithTheWorkout() {
-        val viewModel = GymViewModel(graph.gym, graph.clock)
+        val viewModel = GymViewModel(graph.gym, graph.clock, NoRestScheduler, SilentChimePlayer, graph.uiPrefs)
         val benchId = runBlocking { graph.gym.searchExercises("barbell bench press medium grip", setOf(Equipment.BARBELL), Muscle.CHEST).first().id }
         composeRule.setContent {
             AwakenTheme(reduceMotion = true, presentation = PresentationMode.SYSTEM) {
@@ -66,9 +66,17 @@ class GymScreenTest {
         composeRule.onNodeWithContentDescription("Set 1 done").assertIsOn()
         composeRule.onNodeWithText("Finish").performScrollTo().performClick()
 
-        waitForText("Workout saved.")
+        waitForText("Session complete")
         val history = runBlocking { graph.gym.observeOverview().first().history }
         assertThat(history.single().sets).isEqualTo(1)
         assertThat(history.single().volumeKg).isEqualTo(600.0)
     }
+}
+
+private object NoRestScheduler : com.assismohanty.awaken.core.work.RestScheduler {
+    override fun sync(workout: com.assismohanty.awaken.core.data.db.entity.WorkoutEntity?) = Unit
+}
+
+private object SilentChimePlayer : com.assismohanty.awaken.core.audio.ChimePlayer {
+    override fun play(choice: com.assismohanty.awaken.core.audio.ChimeChoice) = Unit
 }

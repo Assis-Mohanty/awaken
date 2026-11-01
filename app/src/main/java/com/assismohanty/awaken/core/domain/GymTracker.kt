@@ -18,6 +18,7 @@ import com.assismohanty.awaken.engine.body.Equipment
 import com.assismohanty.awaken.engine.body.LoggedSet
 import com.assismohanty.awaken.engine.body.Muscle
 import com.assismohanty.awaken.engine.body.MuscleTargets
+import com.assismohanty.awaken.engine.body.RestRules
 import com.assismohanty.awaken.engine.body.TrainingMath
 import java.time.Duration
 import java.time.Instant
@@ -38,7 +39,10 @@ data class WorkoutExercise(
     val exerciseId: String,
     val name: String,
     val sets: List<WorkoutSetEntity>,
-)
+) {
+    /** Rest between sets in seconds; null = no rest timer. */
+    val restSec: Int? get() = sets.firstOrNull()?.restSec
+}
 
 data class ActiveWorkout(val workout: WorkoutEntity, val exercises: List<WorkoutExercise>) {
     val doneSets: Int get() = exercises.sumOf { e -> e.sets.count { it.done } }
@@ -73,6 +77,9 @@ data class GymOverview(
     val records: List<PersonalRecord>,
     val routines: List<RoutineSummary>,
 )
+
+/** A rest timer that ran out; [chime] is false when it ended long ago (the phone was away). */
+data class RestEnd(val chime: Boolean)
 
 sealed interface FinishResult {
     data class Finished(val workoutId: String) : FinishResult
@@ -155,7 +162,7 @@ class GymTracker @Inject constructor(
         if (routineId != null) {
             val byId = exercises().associateBy { it.id }
             gymDao.routineExercises(routineId).forEach { row ->
-                byId[row.exerciseId]?.let { addExerciseRows(workout.id, it, row.position, row.setCount) }
+                byId[row.exerciseId]?.let { addExerciseRows(workout.id, it, row.position, row.setCount, row.restSec) }
             }
         }
         workout.id
@@ -168,7 +175,7 @@ class GymTracker @Inject constructor(
     }
 
     /** Set rows prefilled from the last session with this exercise; [setCount] null = as many as last time (at least 1). */
-    private suspend fun addExerciseRows(workoutId: String, exercise: Exercise, position: Int, setCount: Int?) {
+    private suspend fun addExerciseRows(workoutId: String, exercise: Exercise, position: Int, setCount: Int?, restSec: Int? = null) {
         val previous = gymDao.previousSets(exercise.id)
         val count = (setCount ?: previous.size).coerceIn(1, MAX_SETS_PER_EXERCISE)
         val rows = (0 until count).map { i ->
@@ -185,6 +192,7 @@ class GymTracker @Inject constructor(
                 weightKg = template?.weightKg ?: 0.0,
                 reps = template?.reps ?: 0,
                 done = false,
+                restSec = RestRules.clamp(restSec ?: previous.lastOrNull()?.restSec),
             )
         }
         gymDao.upsertSets(rows)
@@ -200,16 +208,49 @@ class GymTracker @Inject constructor(
         gymDao.upsertSets(listOf(last.copy(id = UUID.randomUUID().toString(), setIndex = last.setIndex + 1, done = false)))
     }
 
-    suspend fun updateSet(set: WorkoutSetEntity, weightKg: Double, reps: Int, done: Boolean) {
+    /** Sets how long to rest between this exercise's sets; null turns the timer off for it. */
+    suspend fun setRest(workoutId: String, position: Int, restSec: Int?) {
+        gymDao.setExerciseRest(workoutId, position, RestRules.clamp(restSec))
+    }
+
+    /** Ticking a set done starts that exercise's rest; unticking one leaves a running rest alone. */
+    suspend fun updateSet(set: WorkoutSetEntity, weightKg: Double, reps: Int, done: Boolean) = transactions.run {
+        val nowDone = done && reps > 0
+        if (nowDone && !set.done) startRest(set.workoutId, gymDao.sets(set.workoutId).firstOrNull { it.id == set.id }?.restSec ?: set.restSec)
         gymDao.upsertSets(
             listOf(
                 set.copy(
                     weightKg = weightKg.coerceIn(0.0, TrainingMath.MAX_WEIGHT_KG),
                     reps = reps.coerceIn(0, TrainingMath.MAX_REPS),
-                    done = done && reps > 0,
+                    done = nowDone,
                 ),
             ),
         )
+    }
+
+    private suspend fun startRest(workoutId: String, restSec: Int?) {
+        val rest = RestRules.clamp(restSec) ?: return
+        val workout = gymDao.workout(workoutId) ?: return
+        gymDao.upsertWorkout(workout.copy(restEndsAt = clock.now().plusSeconds(rest.toLong()), restTotalSec = rest))
+    }
+
+    /** Cancels the running rest (the hunter skipped it, or the session ended). */
+    suspend fun skipRest(workoutId: String) {
+        val workout = gymDao.workout(workoutId) ?: return
+        if (workout.restEndsAt != null) gymDao.upsertWorkout(workout.copy(restEndsAt = null, restTotalSec = null))
+    }
+
+    /**
+     * Clears a rest whose time is up and says whether it should sound. Called by the open screen and by the end-of-rest
+     * job, in a transaction, so whichever runs first handles it and the other finds nothing to do.
+     */
+    suspend fun finishRestIfDue(workoutId: String): RestEnd? = transactions.run {
+        val workout = gymDao.workout(workoutId) ?: return@run null
+        val endsAt = workout.restEndsAt ?: return@run null
+        val now = clock.now()
+        if (now.isBefore(endsAt)) return@run null
+        gymDao.upsertWorkout(workout.copy(restEndsAt = null, restTotalSec = null))
+        RestEnd(chime = RestRules.shouldChime(endsAt, now))
     }
 
     suspend fun removeSet(setId: String) = gymDao.deleteSet(setId)
@@ -225,7 +266,7 @@ class GymTracker @Inject constructor(
             return@run FinishResult.DiscardedEmpty
         }
         sets.filterNot { it.done }.forEach { gymDao.deleteSet(it.id) }
-        gymDao.upsertWorkout(workout.copy(endedAt = clock.now()))
+        gymDao.upsertWorkout(workout.copy(endedAt = clock.now(), restEndsAt = null, restTotalSec = null))
         FinishResult.Finished(workoutId)
     }
 
@@ -247,7 +288,7 @@ class GymTracker @Inject constructor(
         val routine = RoutineEntity(id = UUID.randomUUID().toString(), name = name.trim().take(MAX_NAME), updatedAt = clock.now())
         gymDao.upsertRoutine(routine)
         gymDao.insertRoutineExercises(
-            exercises.mapIndexed { i, e -> RoutineExerciseEntity(routine.id, i, e.exerciseId, e.sets.size.coerceAtLeast(1)) },
+            exercises.mapIndexed { i, e -> RoutineExerciseEntity(routine.id, i, e.exerciseId, e.sets.size.coerceAtLeast(1), e.restSec) },
         )
         routine.id
     }

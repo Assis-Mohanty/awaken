@@ -114,4 +114,72 @@ class GymTrackerTest {
         assertThat(results.first().secondary).containsExactly(Muscle.CHEST)
         assertThat(results.all { Muscle.SHOULDERS in it.primary || Muscle.SHOULDERS in it.secondary }).isTrue()
     }
+
+    @Test
+    fun tickingASetDoneStartsTheExercisesRestAndItSurvivesAReload() = runTest {
+        val workoutId = gym.start("Push")
+        gym.addExercise(workoutId, benchId())
+        gym.setRest(workoutId, position = 0, restSec = 90)
+        val set = checkNotNull(gym.observeActive().first()).exercises.single().sets.single()
+        assertThat(set.restSec).isEqualTo(90)
+
+        gym.updateSet(set, weightKg = 60.0, reps = 10, done = true)
+
+        // Read back from Room, as a fresh process would: the end is stored, not held in memory.
+        val workout = graph.db.gymDao().workout(workoutId)
+        assertThat(workout?.restEndsAt).isEqualTo(graph.clock.now().plusSeconds(90))
+        assertThat(workout?.restTotalSec).isEqualTo(90)
+    }
+
+    @Test
+    fun aRestIsClearedOnceItsTimeIsUpAndOnlyOnce() = runTest {
+        val workoutId = gym.start("Push")
+        gym.addExercise(workoutId, benchId())
+        gym.setRest(workoutId, position = 0, restSec = 60)
+        gym.updateSet(checkNotNull(gym.observeActive().first()).exercises.single().sets.single(), 60.0, 10, done = true)
+
+        assertThat(gym.finishRestIfDue(workoutId)).isNull() // still resting
+        graph.clock.advance(Duration.ofSeconds(61))
+        assertThat(gym.finishRestIfDue(workoutId)).isEqualTo(RestEnd(chime = true))
+        assertThat(gym.finishRestIfDue(workoutId)).isNull() // the other caller finds nothing to do
+        assertThat(graph.db.gymDao().workout(workoutId)?.restEndsAt).isNull()
+    }
+
+    @Test
+    fun aRestThatEndedLongAgoClearsWithoutChiming() = runTest {
+        val workoutId = gym.start("Push")
+        gym.addExercise(workoutId, benchId())
+        gym.setRest(workoutId, position = 0, restSec = 30)
+        gym.updateSet(checkNotNull(gym.observeActive().first()).exercises.single().sets.single(), 60.0, 10, done = true)
+
+        graph.clock.advance(Duration.ofMinutes(10))
+
+        assertThat(gym.finishRestIfDue(workoutId)).isEqualTo(RestEnd(chime = false))
+    }
+
+    @Test
+    fun anExerciseWithNoRestStartsNoTimer() = runTest {
+        val workoutId = gym.start("Push")
+        gym.addExercise(workoutId, benchId())
+        gym.updateSet(checkNotNull(gym.observeActive().first()).exercises.single().sets.single(), 60.0, 10, done = true)
+
+        assertThat(graph.db.gymDao().workout(workoutId)?.restEndsAt).isNull()
+    }
+
+    @Test
+    fun restTravelsThroughARoutineAndSkipClearsIt() = runTest {
+        val workoutId = gym.start("Push")
+        gym.addExercise(workoutId, benchId())
+        gym.setRest(workoutId, position = 0, restSec = 120)
+        gym.updateSet(checkNotNull(gym.observeActive().first()).exercises.single().sets.single(), 60.0, 10, done = true)
+        gym.skipRest(workoutId)
+        assertThat(graph.db.gymDao().workout(workoutId)?.restEndsAt).isNull()
+
+        val routineId = checkNotNull(gym.saveAsRoutine(workoutId, "Push day"))
+        gym.finish(workoutId)
+        val next = gym.start("Push", routineId)
+
+        assertThat(checkNotNull(gym.observeActive().first()).workout.id).isEqualTo(next)
+        assertThat(checkNotNull(gym.observeActive().first()).exercises.single().restSec).isEqualTo(120)
+    }
 }

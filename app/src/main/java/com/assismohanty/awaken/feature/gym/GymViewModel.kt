@@ -2,15 +2,19 @@ package com.assismohanty.awaken.feature.gym
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.assismohanty.awaken.core.audio.ChimePlayer
 import com.assismohanty.awaken.core.data.catalog.Exercise
 import com.assismohanty.awaken.core.data.clock.Clock
 import com.assismohanty.awaken.core.data.db.entity.WorkoutSetEntity
+import com.assismohanty.awaken.core.data.repo.UiPrefsRepository
 import com.assismohanty.awaken.core.domain.ActiveWorkout
 import com.assismohanty.awaken.core.domain.FinishResult
 import com.assismohanty.awaken.core.domain.GymOverview
 import com.assismohanty.awaken.core.domain.GymTracker
 import com.assismohanty.awaken.engine.body.Equipment
+import com.assismohanty.awaken.core.work.RestScheduler
 import com.assismohanty.awaken.engine.body.Muscle
+import com.assismohanty.awaken.engine.body.RestRules
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.Instant
 import javax.inject.Inject
@@ -19,7 +23,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -40,6 +46,8 @@ data class GymFlow(
     val confirmDiscard: Boolean = false,
     val routinePrompt: Boolean = false,
     val notice: GymNotice? = null,
+    /** The session just finished, shown as a summary until dismissed. */
+    val summaryId: String? = null,
     /** Last session's sets per exercise id, for the "previous" column. */
     val previous: Map<String, List<WorkoutSetEntity>> = emptyMap(),
 )
@@ -56,6 +64,7 @@ data class GymUiState(
     val confirmDiscard: Boolean = false,
     val routinePrompt: Boolean = false,
     val notice: GymNotice? = null,
+    val summaryId: String? = null,
     val previous: Map<String, List<WorkoutSetEntity>> = emptyMap(),
 )
 
@@ -90,12 +99,18 @@ sealed interface GymEvent {
     data object DismissSaveRoutine : GymEvent
     data class SaveRoutine(val name: String) : GymEvent
     data object DismissNotice : GymEvent
+    data class StepRest(val position: Int, val current: Int?, val up: Boolean) : GymEvent
+    data object SkipRest : GymEvent
+    data object DismissSummary : GymEvent
 }
 
 @HiltViewModel
 class GymViewModel @Inject constructor(
     private val gym: GymTracker,
     private val clock: Clock,
+    private val restScheduler: RestScheduler,
+    private val chimePlayer: ChimePlayer,
+    private val uiPrefs: UiPrefsRepository,
 ) : ViewModel() {
 
     private val flow = MutableStateFlow(GymFlow())
@@ -124,8 +139,13 @@ class GymViewModel @Inject constructor(
             confirmDiscard = f.confirmDiscard,
             routinePrompt = f.routinePrompt,
             notice = f.notice,
+            summaryId = f.summaryId,
             previous = f.previous,
         )
+    }.onEach { state ->
+        val workout = state.active?.workout
+        val endsAt = workout?.restEndsAt
+        if (workout != null && endsAt != null && !state.now.isBefore(endsAt)) handleRestDue(workout.id)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), GymUiState())
 
     private var lastLoadedPrevious: Set<String> = emptySet()
@@ -134,6 +154,7 @@ class GymViewModel @Inject constructor(
         // Keep the "previous" column in step with the exercises in the running session.
         viewModelScope.launch {
             gym.observeActive().collect { active ->
+                restScheduler.sync(active?.workout)
                 val ids = active?.exercises?.map { it.exerciseId }?.toSet().orEmpty()
                 if (ids == lastLoadedPrevious) return@collect
                 lastLoadedPrevious = ids
@@ -183,11 +204,10 @@ class GymViewModel @Inject constructor(
             is GymEvent.RemoveExercise -> withActive { gym.removeExercise(it, event.position) }
 
             GymEvent.Finish -> withActive { workoutId ->
-                val notice = when (gym.finish(workoutId)) {
-                    is FinishResult.Finished -> GymNotice.FINISHED
-                    FinishResult.DiscardedEmpty -> GymNotice.DISCARDED_EMPTY
+                when (gym.finish(workoutId)) {
+                    is FinishResult.Finished -> flow.update { it.copy(summaryId = workoutId, notice = null) }
+                    FinishResult.DiscardedEmpty -> flow.update { it.copy(notice = GymNotice.DISCARDED_EMPTY) }
                 }
-                flow.update { it.copy(notice = notice) }
             }
             GymEvent.AskDiscard -> flow.update { it.copy(confirmDiscard = true) }
             GymEvent.DismissDiscard -> flow.update { it.copy(confirmDiscard = false) }
@@ -203,7 +223,17 @@ class GymViewModel @Inject constructor(
                 flow.update { it.copy(routinePrompt = false, notice = if (saved) GymNotice.ROUTINE_SAVED else it.notice) }
             }
             GymEvent.DismissNotice -> flow.update { it.copy(notice = null) }
+            is GymEvent.StepRest -> withActive { workoutId ->
+                gym.setRest(workoutId, event.position, if (event.up) RestRules.stepUp(event.current) else RestRules.stepDown(event.current))
+            }
+            GymEvent.SkipRest -> withActive { gym.skipRest(it) }
+            GymEvent.DismissSummary -> flow.update { it.copy(summaryId = null) }
         }
+    }
+
+    private fun handleRestDue(workoutId: String) = launch {
+        val end = gym.finishRestIfDue(workoutId) ?: return@launch
+        if (end.chime) chimePlayer.play(uiPrefs.prefs.first().chime)
     }
 
     private fun launch(block: suspend () -> Unit) {

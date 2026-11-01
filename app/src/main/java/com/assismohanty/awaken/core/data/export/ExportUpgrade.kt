@@ -83,6 +83,10 @@ object ExportUpgrade {
                 tables = current.tables + (SUBJECT_TABLE to current.tables[SUBJECT_TABLE].orEmpty()),
             )
         }
+        // v15 → v16 (gym rest): the new columns are nullable (= no rest timer), so old rows import as they are.
+        if (current.app == ExportDocument.APP_ID && current.schemaVersion == 15) {
+            current = current.copy(schemaVersion = 16)
+        }
         return current
     }
 }

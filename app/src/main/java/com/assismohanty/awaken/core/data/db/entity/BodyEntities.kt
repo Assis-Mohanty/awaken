@@ -38,6 +38,8 @@ data class RoutineExerciseEntity(
     val position: Int,
     @ColumnInfo(name = "exercise_id") val exerciseId: String,
     @ColumnInfo(name = "set_count") val setCount: Int,
+    /** Rest between this exercise's sets in seconds; null = no rest timer (GD §13.2). */
+    @ColumnInfo(name = "rest_sec") val restSec: Int? = null,
 )
 
 /** One session. [endedAt] null = still in progress (at most one at a time). */
@@ -48,6 +50,9 @@ data class WorkoutEntity(
     @ColumnInfo(name = "game_date") val gameDate: LocalDate,
     @ColumnInfo(name = "started_at") val startedAt: Instant,
     @ColumnInfo(name = "ended_at") val endedAt: Instant? = null,
+    /** The running rest timer: when it ends, and how long it was. Stored so it survives the app being killed. */
+    @ColumnInfo(name = "rest_ends_at") val restEndsAt: Instant? = null,
+    @ColumnInfo(name = "rest_total_sec") val restTotalSec: Int? = null,
 )
 
 /**
@@ -67,6 +72,8 @@ data class WorkoutSetEntity(
     @ColumnInfo(name = "weight_kg") val weightKg: Double,
     val reps: Int,
     val done: Boolean,
+    /** The exercise's rest, repeated on each of its sets so history keeps what was used. */
+    @ColumnInfo(name = "rest_sec") val restSec: Int? = null,
 )
 
 /** A food the hunter added. [nutrientsJson] is `{"kcal":250,…}` per 100 g; [portionsJson] is `[["1 bowl",180],…]`. */

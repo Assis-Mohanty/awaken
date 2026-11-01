@@ -611,6 +611,7 @@ Approved 2026-10-27. Gym and Diet are trackers: they mint **no XP, gold, stat XP
 - **Estimated 1RM**: the weight for a single; Epley `w × (1 + reps/30)` for 2–12 reps; no estimate above 12 reps or for unweighted sets. An exercise's PR is its best estimate.
 - **Muscle load** per week (Monday → Sunday): each done set adds 1 to its exercise's primary muscles and 0.5 to secondary ones (a muscle listed in both counts as primary).
 - **Body-map bands:** 0 sets · ≤ 5 · ≤ 10 · ≤ 15 · more (bands 0–4).
+- **Rest between sets (tracker only, no reward).** Each exercise carries an optional rest, stepped in 15 s from 15 s to 600 s; the first step up from "Off" is 60 s, and stepping down from 15 s turns it off. The value is remembered from the last session and saved with a routine. Ticking a set done starts the exercise's rest; the end time is stored on the workout, so it survives the app being killed. A rest that ended more than 10 s ago is cleared without a sound. These are input bounds for a tracker (like the weight and reps caps), not game numbers: they feed no XP, gold or cap.
 
 | # | Input | Expected |
 |---|---|---|

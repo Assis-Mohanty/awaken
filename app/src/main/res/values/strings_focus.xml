@@ -40,4 +40,18 @@
     <string name="settings_chime_bell">Soft bell</string>
     <string name="settings_chime_wood">Wood block</string>
     <string name="settings_chime_digital">Digital</string>
+    <string name="gym_rest_label">Rest between sets</string>
+    <string name="gym_rest_off">Off</string>
+    <string name="gym_rest_minus">−</string>
+    <string name="gym_rest_plus">+</string>
+    <string name="cd_gym_rest">Rest between sets: %1$s</string>
+    <string name="gym_rest_running">Rest %1$s</string>
+    <string name="gym_rest_skip">Skip</string>
+    <string name="gym_rest_over_title">Rest over</string>
+    <string name="gym_rest_over_body">Ready for your next set.</string>
+    <string name="gym_summary_title">Session complete</string>
+    <string name="gym_summary_time">Time</string>
+    <string name="gym_summary_sets">Sets</string>
+    <string name="gym_summary_volume">Volume (kg)</string>
+    <string name="gym_summary_done">Done</string>
 </resources>
