@@ -60,4 +60,7 @@
     <string name="focus_widget_running_stopwatch">Stopwatch running since %1$s</string>
     <string name="focus_widget_running">Session running since %1$s</string>
     <string name="focus_widget_cd" tools:ignore="PluralsCandidate">%1$d minutes of focus today. %2$s</string>
+    <string name="action_pause_tap">Pause</string>
+    <string name="focus_tap_pause">Tap the clock to pause</string>
+    <string name="focus_tap_continue">Paused. Tap the clock to continue</string>
 </resources>

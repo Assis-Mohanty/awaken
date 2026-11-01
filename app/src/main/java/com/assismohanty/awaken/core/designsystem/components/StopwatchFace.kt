@@ -16,6 +16,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -58,6 +59,7 @@ private const val TILE_PADDING_EM = 0.45f
 private const val MILLIS_FACTOR = 0.34f
 private const val TILE_HEIGHT_PER_EM = 1.25f
 private const val MILLIS_LINE_HEIGHT = 1.2f
+private const val PAUSED_ALPHA = 0.45f
 private val TILE_CORNER = 28.dp
 private val HAIRLINE = 2.dp
 
@@ -67,7 +69,7 @@ private val HAIRLINE = 2.dp
  * screens and stacked on tall ones. One TalkBack node reads the whole time.
  */
 @Composable
-fun StopwatchFace(elapsed: Duration, modifier: Modifier = Modifier) {
+fun StopwatchFace(elapsed: Duration, modifier: Modifier = Modifier, paused: Boolean = false) {
     val reading = elapsed.toStopwatchReading()
     val colors = AwakenTheme.colors
     val groups = buildList {
@@ -103,7 +105,7 @@ fun StopwatchFace(elapsed: Duration, modifier: Modifier = Modifier) {
             fontFeatureSettings = "tnum",
         )
         Column(
-            modifier = Modifier.fillMaxSize().clearAndSetSemantics { },
+            modifier = Modifier.fillMaxSize().alpha(if (paused) PAUSED_ALPHA else 1f).clearAndSetSemantics { },
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(gap, Alignment.CenterVertically),
         ) {

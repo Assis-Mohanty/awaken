@@ -7,6 +7,7 @@ import android.content.pm.PackageManager
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -345,11 +346,18 @@ private fun StopwatchScreen(active: ActiveGate, confirmAbandon: Boolean, onEvent
     GateBackground(tint = colors.surface, modifier = modifier) {
         BoxWithConstraints(modifier = Modifier.fillMaxSize().systemBarsPadding().padding(horizontal = Spacing.gutter, vertical = Spacing.md)) {
             val landscape = maxWidth > maxHeight
+            // Tap the face to pause; tap again to carry on. The run still has the one pause the rules allow (GD §8).
+            val tapLabel = lexString(if (active.paused) R.string.action_resume else R.string.action_pause_tap)
+            val tapToPause = if (active.paused || active.canPause) {
+                Modifier.clickable(onClickLabel = tapLabel) { onEvent(if (active.paused) GatesEvent.Resume else GatesEvent.Pause) }
+            } else {
+                Modifier
+            }
             val controls: @Composable ColumnScope.() -> Unit = { StopwatchControls(active, confirmAbandon, onEvent) }
             if (landscape) {
                 // Wide: the face takes everything it can; the controls sit in a column on the right, like a stopwatch app.
                 Row(horizontalArrangement = Arrangement.spacedBy(Spacing.lg), verticalAlignment = Alignment.CenterVertically) {
-                    StopwatchFace(elapsed = active.elapsed, modifier = Modifier.weight(1f).fillMaxHeight())
+                    StopwatchFace(elapsed = active.elapsed, paused = active.paused, modifier = Modifier.weight(1f).fillMaxHeight().then(tapToPause))
                     Column(
                         modifier = Modifier.width(AwakenTheme.dimens.sideControls).verticalScroll(rememberScrollState()),
                         verticalArrangement = Arrangement.spacedBy(Spacing.sm),
@@ -358,7 +366,7 @@ private fun StopwatchScreen(active: ActiveGate, confirmAbandon: Boolean, onEvent
                 }
             } else {
                 Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(Spacing.md)) {
-                    StopwatchFace(elapsed = active.elapsed, modifier = Modifier.weight(1f).fillMaxWidth())
+                    StopwatchFace(elapsed = active.elapsed, paused = active.paused, modifier = Modifier.weight(1f).fillMaxWidth().then(tapToPause))
                     Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm), content = controls)
                 }
             }
@@ -384,6 +392,14 @@ private fun ColumnScope.StopwatchControls(active: ActiveGate, confirmAbandon: Bo
         color = if (active.breachUsed.isZero) colors.textSecondary else colors.critical,
         modifier = Modifier.align(Alignment.CenterHorizontally),
     )
+    if (active.paused || active.canPause) {
+        Text(
+            lexString(if (active.paused) R.string.focus_tap_continue else R.string.focus_tap_pause),
+            style = AwakenTheme.type.caption,
+            color = colors.textSecondary,
+            modifier = Modifier.align(Alignment.CenterHorizontally),
+        )
+    }
     when {
         active.paused -> PrimaryButton(lexString(R.string.action_resume), onClick = { onEvent(GatesEvent.Resume) }, modifier = Modifier.fillMaxWidth())
         active.canPause -> SecondaryButton(
