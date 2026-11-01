@@ -1,0 +1,75 @@
+package com.assismohanty.awaken.feature.focuslock
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.assismohanty.awaken.core.data.repo.UiPrefsRepository
+import com.assismohanty.awaken.core.data.usage.UsageGateway
+import com.assismohanty.awaken.core.domain.FocusLockStatus
+import com.assismohanty.awaken.core.lock.FocusLockSystemAccess
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
+
+/** What the Settings Focus window shows (GD 8.2). */
+data class FocusLockSettingsUiState(
+    val enabled: Boolean = false,
+    val accessibilityEnabled: Boolean = false,
+    val serviceRunning: Boolean = false,
+    val batteryUnrestricted: Boolean = false,
+    val usageAccess: Boolean = false,
+    val allowedCount: Int = 0,
+)
+
+sealed interface FocusLockSettingsEvent {
+    /** Off switches Focus Lock off; on needs the disclosure first, which the Route handles by opening the setup. */
+    data class SetEnabled(val enabled: Boolean) : FocusLockSettingsEvent
+
+    /** Back from an Android settings page: read the switches again. */
+    data object Resumed : FocusLockSettingsEvent
+}
+
+@HiltViewModel
+class FocusLockSettingsViewModel @Inject constructor(
+    private val prefs: UiPrefsRepository,
+    private val access: FocusLockSystemAccess,
+    private val usage: UsageGateway,
+    status: FocusLockStatus,
+) : ViewModel() {
+    private val system = MutableStateFlow(SystemChecks())
+
+    val uiState: StateFlow<FocusLockSettingsUiState> =
+        combine(prefs.prefs, status.serviceConnected, system) { p, running, checks ->
+            FocusLockSettingsUiState(
+                enabled = p.focusLock,
+                accessibilityEnabled = checks.accessibility,
+                serviceRunning = running,
+                batteryUnrestricted = checks.battery,
+                usageAccess = checks.usage,
+                allowedCount = p.allowedApps.size,
+            )
+        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), FocusLockSettingsUiState())
+
+    /** True when turning Focus Lock on can skip the setup: Android already has the service switched on. */
+    fun canEnableDirectly(): Boolean = system.value.accessibility
+
+    fun onEvent(event: FocusLockSettingsEvent) {
+        when (event) {
+            is FocusLockSettingsEvent.SetEnabled -> viewModelScope.launch { prefs.setFocusLock(event.enabled) }
+            FocusLockSettingsEvent.Resumed -> system.update {
+                SystemChecks(access.accessibilityEnabled(), access.batteryUnrestricted(), usage.hasAccess())
+            }
+        }
+    }
+
+    private data class SystemChecks(val accessibility: Boolean = false, val battery: Boolean = false, val usage: Boolean = false)
+
+    private companion object {
+        const val STOP_TIMEOUT_MS = 5_000L
+    }
+}

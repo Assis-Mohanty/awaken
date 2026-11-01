@@ -245,6 +245,7 @@
     <string name="settings_window_profile_clean">Profile</string>
     <string name="settings_window_day_clean">Day</string>
     <string name="settings_window_training_clean">Training</string>
+    <string name="settings_window_focus_clean">Focus</string>
     <string name="settings_window_comfort_clean">Comfort</string>
     <string name="settings_window_data_clean">Your data</string>
     <string name="settings_name_label_clean">Your name</string>

@@ -10,6 +10,7 @@ import androidx.work.WorkerParameters
 import com.assismohanty.awaken.core.data.clock.Clock
 import com.assismohanty.awaken.core.data.clock.DeviceUptime
 import com.assismohanty.awaken.core.data.db.dao.GateRunDao
+import com.assismohanty.awaken.core.domain.FocusLockStatus
 import com.assismohanty.awaken.engine.BackgroundDelta
 import com.assismohanty.awaken.engine.GatePhase
 import com.assismohanty.awaken.engine.GateRules
@@ -31,6 +32,7 @@ class GateEndWorker @AssistedInject constructor(
     private val notifications: GateNotifications,
     private val uptime: DeviceUptime,
     private val clock: Clock,
+    private val focusLock: FocusLockStatus,
 ) : CoroutineWorker(context, params) {
 
     override suspend fun doWork(): Result {
@@ -43,7 +45,9 @@ class GateEndWorker @AssistedInject constructor(
             val nowElapsed = uptime.elapsedRealtimeMs()
             val sameBoot = uptime.bootCount() == run.bootCount && nowElapsed >= stopElapsed
             val delta = GateRunMath.backgroundOnResume(run.timing, stopAt, stopElapsed, nowElapsed, sameBoot)
-            val cleared = delta is BackgroundDelta.Counted && !GateRules.isCollapsed(run.backgroundMs + delta.addedMs)
+            // Focus Lock covering the stretch means the time away is not a breach (GD 8.2).
+            val added = if (run.lockAtStop && focusLock.isActive()) 0L else (delta as? BackgroundDelta.Counted)?.addedMs
+            val cleared = delta is BackgroundDelta.Counted && added != null && !GateRules.isCollapsed(run.backgroundMs + added)
             if (cleared) notifications.showEnded(run.gateRank.name) else notifications.cancelRunning()
         } else {
             schedule(WorkManager.getInstance(applicationContext), Duration.between(now, GateRunMath.endAt(run.timing, now)))

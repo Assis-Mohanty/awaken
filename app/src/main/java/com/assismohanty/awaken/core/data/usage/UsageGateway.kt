@@ -21,6 +21,16 @@ sealed interface UsageRead {
     data class Tracked(val millis: Map<String, Long>) : UsageRead
 }
 
+/**
+ * Which apps came to the foreground in a window (Focus Lock's fallback, GD 8.2). Like [UsageRead], only [Opened] is
+ * real data; a missing permission or an unreadable log is never "nothing opened".
+ */
+sealed interface OpenedRead {
+    data object NoAccess : OpenedRead
+    data object Unavailable : OpenedRead
+    data class Opened(val packages: Set<String>) : OpenedRead
+}
+
 /** Foreground time per package when the read is real data, else null. */
 val UsageRead.trackedMillis: Map<String, Long>? get() = (this as? UsageRead.Tracked)?.millis
 
@@ -34,6 +44,9 @@ interface UsageGateway {
 
     /** Foreground time per package over `[start, end)`, from the system's activity events. */
     suspend fun read(start: Instant, end: Instant): UsageRead
+
+    /** The packages that came to the foreground during `[start, end)`. Package names only; nothing is stored. */
+    suspend fun opened(start: Instant, end: Instant): OpenedRead
 
     /** Launcher apps other than AWAKEN itself, sorted by label. */
     suspend fun launcherApps(): List<InstalledApp>

@@ -2,6 +2,7 @@ package com.assismohanty.awaken.debug
 
 import com.assismohanty.awaken.core.data.usage.AndroidUsageGateway
 import com.assismohanty.awaken.core.data.usage.InstalledApp
+import com.assismohanty.awaken.core.data.usage.OpenedRead
 import com.assismohanty.awaken.core.data.usage.UsageGateway
 import com.assismohanty.awaken.core.data.usage.UsageRead
 import com.assismohanty.awaken.core.data.usage.trackedMillis
@@ -33,6 +34,12 @@ class DebugUsageGateway @Inject constructor(
         if (simulated <= 0) return read
         val recorded = read.trackedMillis.orEmpty()
         return UsageRead.Tracked(recorded + (SIM_PACKAGE to (recorded[SIM_PACKAGE] ?: 0L) + simulated * MILLIS_PER_MINUTE))
+    }
+
+    override suspend fun opened(start: Instant, end: Instant): OpenedRead {
+        val read = real.opened(start, end)
+        if (simulated <= 0 || read !is OpenedRead.Opened) return read
+        return OpenedRead.Opened(read.packages + SIM_PACKAGE)
     }
 
     override suspend fun launcherApps(): List<InstalledApp> {

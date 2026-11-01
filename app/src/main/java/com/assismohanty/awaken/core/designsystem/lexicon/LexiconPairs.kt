@@ -185,6 +185,7 @@ internal object LexiconPairs {
         R.string.settings_window_profile to R.string.settings_window_profile_clean,
         R.string.settings_window_day to R.string.settings_window_day_clean,
         R.string.settings_window_training to R.string.settings_window_training_clean,
+        R.string.settings_window_focus to R.string.settings_window_focus_clean,
         R.string.settings_window_comfort to R.string.settings_window_comfort_clean,
         R.string.settings_window_data to R.string.settings_window_data_clean,
         R.string.settings_name_label to R.string.settings_name_label_clean,

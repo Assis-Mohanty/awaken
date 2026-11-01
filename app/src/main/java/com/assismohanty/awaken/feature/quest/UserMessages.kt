@@ -22,6 +22,8 @@ fun collapseDetail(reason: GateCollapseReason, backgroundMs: Long, resources: Le
     )
     GateCollapseReason.DEVICE_RESTARTED -> resources.getString(R.string.gate_collapsed_restarted)
     GateCollapseReason.DAY_RESET -> resources.getString(R.string.gate_collapsed_day_reset)
+    GateCollapseReason.ENDED_EARLY -> resources.getString(R.string.focus_ended_early)
+    GateCollapseReason.DISTRACTING_APP -> resources.getString(R.string.focus_distracting_app)
 }
 
 /** "m:ss" with no leading zero on the minutes: 1:42, 0:30. */

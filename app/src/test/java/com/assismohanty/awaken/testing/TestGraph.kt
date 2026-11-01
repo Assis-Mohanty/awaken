@@ -18,6 +18,7 @@ import com.assismohanty.awaken.core.data.repo.NoticeStore
 import com.assismohanty.awaken.core.data.repo.IdentityRepository
 import com.assismohanty.awaken.core.data.repo.TemplateRepository
 import com.assismohanty.awaken.core.data.repo.TransactionRunner
+import com.assismohanty.awaken.core.domain.DistractingApps
 import com.assismohanty.awaken.core.domain.AcceptPlanUseCase
 import com.assismohanty.awaken.core.domain.AcceptWeekPlanUseCase
 import com.assismohanty.awaken.core.domain.AchievementUnlocker
@@ -235,7 +236,11 @@ class TestGraph(
     val setRestDay = SetRestDayUseCase(db.hunterDao(), db.dayRecordDao(), transactions, clock)
     val setRecoveryMode = SetRecoveryModeUseCase(db.hunterDao(), db.dayRecordDao(), transactions, clock)
     val startGate = StartGateUseCase(db.hunterDao(), db.questDao(), db.gateRunDao(), transactions, uptime, clock)
-    val gateRuns = GateRunController(db.questDao(), db.gateRunDao(), db.focusDao(), completeQuest, transactions, uptime, clock)
+    val focusLock = FakeFocusLockStatus()
+    val distractingApps = DistractingApps(db.screenTimeDao(), db.hunterDao(), clock)
+    val gateRuns = GateRunController(
+        db.questDao(), db.gateRunDao(), db.focusDao(), completeQuest, transactions, uptime, clock, focusLock, usage, distractingApps,
+    )
     val purchaseItem = PurchaseItemUseCase(db.hunterDao(), db.ownedCosmeticDao(), db.trialDao(), ledger, transactions, clock)
     val openRelicCache = OpenRelicCacheUseCase(db.hunterDao(), db.ownedCosmeticDao(), ledger, transactions, clock)
     val equipCosmetic = EquipCosmeticUseCase(db.hunterDao(), db.ownedCosmeticDao())

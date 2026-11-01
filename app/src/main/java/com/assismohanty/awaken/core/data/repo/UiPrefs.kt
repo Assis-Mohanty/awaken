@@ -6,6 +6,7 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.core.stringSetPreferencesKey
 import com.assismohanty.awaken.core.audio.ChimeChoice
 import com.assismohanty.awaken.core.data.di.UiPrefsStore
 import com.assismohanty.awaken.core.designsystem.lexicon.PresentationMode
@@ -27,6 +28,10 @@ data class UiPrefs(
     val themeMode: ThemeMode = ThemeMode.SYSTEM,
     /** What a finished timer sounds like (phone feedback Part 4). */
     val chime: ChimeChoice = ChimeChoice.SOFT_BELL,
+    /** Focus Lock (GD 8.2): the hunter read the disclosure and agreed. The Accessibility Service itself is switched on in Android settings. */
+    val focusLock: Boolean = false,
+    /** Packages the hunter chose to leave uncovered by Focus Lock (GD 8.2). */
+    val allowedApps: Set<String> = emptySet(),
     /**
      * Clean or System (GD §14.9); null until first resolved. New installs resolve to CLEAN, installs upgrading from v1.0
      * to SYSTEM ([com.assismohanty.awaken.navigation.AppearanceViewModel]).
@@ -48,6 +53,8 @@ class UiPrefsRepository @Inject constructor(@UiPrefsStore private val store: Dat
             reduceMotion = it[REDUCE_MOTION] ?: false,
             notificationsPrompted = it[NOTIFICATIONS_PROMPTED] ?: false,
             themeMode = it[THEME_MODE]?.let { name -> ThemeMode.entries.firstOrNull { mode -> mode.name == name } } ?: ThemeMode.SYSTEM,
+            focusLock = it[FOCUS_LOCK] ?: false,
+            allowedApps = it[ALLOWED_APPS] ?: emptySet(),
             chime = it[CHIME]?.let { name -> ChimeChoice.entries.firstOrNull { choice -> choice.name == name } } ?: ChimeChoice.SOFT_BELL,
             presentationMode = it[PRESENTATION_MODE]?.let { name -> PresentationMode.entries.firstOrNull { mode -> mode.name == name } },
             morningEndHour = it[MORNING_END] ?: TimeBlocks.DEFAULT_MORNING_END,
@@ -69,6 +76,14 @@ class UiPrefsRepository @Inject constructor(@UiPrefsStore private val store: Dat
 
     suspend fun setThemeMode(mode: ThemeMode) {
         store.edit { it[THEME_MODE] = mode.name }
+    }
+
+    suspend fun setFocusLock(enabled: Boolean) {
+        store.edit { it[FOCUS_LOCK] = enabled }
+    }
+
+    suspend fun setAllowedApps(packages: Set<String>) {
+        store.edit { it[ALLOWED_APPS] = packages }
     }
 
     suspend fun setChime(choice: ChimeChoice) {
@@ -101,6 +116,8 @@ class UiPrefsRepository @Inject constructor(@UiPrefsStore private val store: Dat
         val THEME_MODE = stringPreferencesKey("theme_mode")
         val PRESENTATION_MODE = stringPreferencesKey("presentation_mode")
         val CHIME = stringPreferencesKey("timer_chime")
+        val FOCUS_LOCK = booleanPreferencesKey("focus_lock")
+        val ALLOWED_APPS = stringSetPreferencesKey("focus_lock_allowed_apps")
         val MORNING_END = intPreferencesKey("morning_end_hour")
         val DAY_END = intPreferencesKey("day_end_hour")
     }

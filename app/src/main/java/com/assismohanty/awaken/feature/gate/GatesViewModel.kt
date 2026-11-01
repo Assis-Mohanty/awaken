@@ -10,6 +10,8 @@ import com.assismohanty.awaken.core.data.db.dao.HunterDao
 import com.assismohanty.awaken.core.data.db.entity.FocusSubjectEntity
 import com.assismohanty.awaken.core.data.db.entity.GateRunEntity
 import com.assismohanty.awaken.core.domain.CompletionCenter
+import com.assismohanty.awaken.core.domain.FocusLockStatus
+import com.assismohanty.awaken.core.data.repo.UiPrefsRepository
 import com.assismohanty.awaken.core.domain.GATE_LABEL_MAX
 import com.assismohanty.awaken.core.domain.GATE_STATS
 import com.assismohanty.awaken.core.domain.UserMessage
@@ -56,6 +58,8 @@ data class ActiveGate(
     val paused: Boolean,
     val pauseLeft: Duration,
     val canPause: Boolean,
+    /** Focus Lock is switched on but its service is not running (GD 8.2): apps are not being covered. */
+    val lockWarning: Boolean = false,
 )
 
 /** Picking a gate: the chosen rank, stat and optional label (GD §8). */
@@ -102,6 +106,7 @@ sealed interface GatesEvent {
     data object Abandon : GatesEvent
     data object ConfirmAbandon : GatesEvent
     data object CancelAbandon : GatesEvent
+    data object FixFocusLock : GatesEvent
 }
 
 private data class FormState(
@@ -119,9 +124,13 @@ class GatesViewModel @Inject constructor(
     private val coordinator: GateCoordinator,
     private val completionCenter: CompletionCenter,
     private val clock: Clock,
+    uiPrefs: UiPrefsRepository,
+    focusLockStatus: FocusLockStatus,
 ) : ViewModel() {
 
     private val form = MutableStateFlow(FormState())
+
+    private val lockMissing = combine(uiPrefs.prefs, focusLockStatus.serviceConnected) { prefs, connected -> prefs.focusLock && !connected }
     private val stopwatchRunning = MutableStateFlow(false)
 
     // Collected only while the screen is visible; it drives the dial and the claim at the planned end.
@@ -134,7 +143,8 @@ class GatesViewModel @Inject constructor(
     }
 
     val uiState: StateFlow<GatesUiState> =
-        combine(hunterDao.observeProfile(), gateRunDao.observeRunning(), form, focusDao.observeAll(), ticks) { profile, run, form, allSubjects, now ->
+        combine(hunterDao.observeProfile(), gateRunDao.observeRunning(), combine(form, lockMissing) { f, l -> f to l }, focusDao.observeAll(), ticks) { profile, run, formAndLock, allSubjects, now ->
+            val (form, lockWarning) = formAndLock
             val subjects = allSubjects.filterNot { it.archived }
             val dayStartHour = profile?.dayStartHour ?: GameDay.DEFAULT_DAY_START_HOUR
             val nextDayStart = GameDay.endOf(clock.gameDate(dayStartHour), clock.zone(), dayStartHour)
@@ -142,7 +152,7 @@ class GatesViewModel @Inject constructor(
                 loading = false,
                 tiles = GateRank.entries.map { GateTile(it, it.durationMinutes, GateRunMath.canStart(it, now, nextDayStart)) },
                 setup = form.setup.takeIf { run == null },
-                active = run?.toActive(now, allSubjects.firstOrNull { it.id == run.subjectId }?.name),
+                active = run?.toActive(now, allSubjects.firstOrNull { it.id == run.subjectId }?.name)?.copy(lockWarning = lockWarning),
                 confirmAbandon = form.confirmAbandon && run != null,
                 subjects = subjects.map { SubjectUi(it.id, it.name) },
                 addingSubject = form.addingSubject,
@@ -191,6 +201,7 @@ class GatesViewModel @Inject constructor(
             GatesEvent.Resume -> viewModelScope.launch { safely("Resuming a gate") { coordinator.resume() } }
             GatesEvent.Abandon -> form.update { it.copy(confirmAbandon = true) }
             GatesEvent.CancelAbandon -> form.update { it.copy(confirmAbandon = false) }
+            GatesEvent.FixFocusLock -> Unit // handled by the Route, which opens the setup
             GatesEvent.ConfirmAbandon -> {
                 form.update { it.copy(confirmAbandon = false) }
                 viewModelScope.launch { safely("Abandoning a gate") { coordinator.abandon() } }

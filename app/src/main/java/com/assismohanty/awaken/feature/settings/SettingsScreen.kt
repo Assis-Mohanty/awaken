@@ -72,6 +72,9 @@ import com.assismohanty.awaken.core.designsystem.theme.AwakenTheme
 import com.assismohanty.awaken.core.designsystem.theme.Spacing
 import com.assismohanty.awaken.engine.model.Rank
 import com.assismohanty.awaken.engine.model.Stat
+import com.assismohanty.awaken.feature.focuslock.FocusLockWindow
+import com.assismohanty.awaken.feature.focuslock.FocusLockSettingsUiState
+import com.assismohanty.awaken.feature.focuslock.FocusLockWindowContent
 import com.assismohanty.awaken.feature.paths.AiConsentSheet
 import com.assismohanty.awaken.feature.paths.WhatIsSent
 import java.time.LocalTime
@@ -84,6 +87,8 @@ fun SettingsRoute(
     onOpenHealth: () -> Unit,
     modifier: Modifier = Modifier,
     onOpenScreenTime: () -> Unit = {},
+    onOpenFocusSetup: () -> Unit = {},
+    onOpenAllowedApps: () -> Unit = {},
     onOpenDebug: () -> Unit = {},
     viewModel: SettingsViewModel = hiltViewModel(),
     archivedViewModel: ArchivedHabitsViewModel = hiltViewModel(),
@@ -117,6 +122,7 @@ fun SettingsRoute(
         onOpenPrivacy = { context.startActivity(Intent(context, PrivacyPolicyActivity::class.java)) },
         onOpenHealth = onOpenHealth,
         onOpenScreenTime = onOpenScreenTime,
+        focusWindow = { FocusLockWindow(onOpenSetup = onOpenFocusSetup, onOpenAllowedApps = onOpenAllowedApps, onOpenScreenTime = onOpenScreenTime) },
         onOpenDebug = onOpenDebug,
         archivedHabits = archived,
         onRestoreHabit = archivedViewModel::restore,
@@ -143,6 +149,7 @@ fun SettingsScreen(
     onOpenHealth: () -> Unit = {},
     onOpenScreenTime: () -> Unit = {},
     onOpenDebug: () -> Unit = {},
+    focusWindow: @Composable () -> Unit = {},
     archivedHabits: List<ArchivedHabit> = emptyList(),
     onRestoreHabit: (habitId: String) -> Unit = {},
 ) {
@@ -152,6 +159,7 @@ fun SettingsScreen(
                 ProfileWindow(state, onEvent)
                 DayWindow(state, onEvent, onOpenNotificationSettings)
                 TrainingWindow(state, onEvent, onOpenHealth, onOpenScreenTime)
+                focusWindow()
                 ArchivedHabitsWindow(archivedHabits, onRestoreHabit)
                 AiPathsWindow(state, onEvent)
                 ComfortWindow(state, onEvent)
@@ -653,5 +661,25 @@ private fun ArchivedHabitsPreview() {
             )
             ArchivedHabitsWindow(habits = emptyList(), onRestore = {})
         }
+    }
+}
+
+@PhonePreviews
+@Composable
+private fun SettingsScreenWithFocusPreview() {
+    AwakenTheme(reduceMotion = true) {
+        SettingsScreen(
+            state = previewSettingsState(),
+            onEvent = {},
+            onBack = {},
+            onExport = {},
+            onImport = {},
+            focusWindow = {
+                FocusLockWindowContent(
+                    state = FocusLockSettingsUiState(enabled = true, accessibilityEnabled = true, serviceRunning = true, allowedCount = 2),
+                    onToggle = {}, onFixAccessibility = {}, onFixBattery = {}, onFixUsage = {}, onOpenAllowedApps = {}, onOpenScreenTime = {},
+                )
+            },
+        )
     }
 }

@@ -98,6 +98,11 @@ class GateCoordinator @Inject constructor(
         report(controller.stopStopwatch())
     }
 
+    /** Ends the running session early from the Focus Lock cover: it collapses and pays nothing. */
+    suspend fun endEarly() {
+        report(controller.endEarly())
+    }
+
     suspend fun pause() {
         controller.pause()
         afterTimingChange()

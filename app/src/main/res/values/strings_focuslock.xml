@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Focus Lock (GAME_DESIGN §8.2). Neutral wording: no System terms, so no Clean twins (except the Settings window title). -->
+
+    <!-- Accessibility service as Android lists it -->
+    <string name="focus_lock_service_label">AWAKEN Focus Lock</string>
+    <string name="focus_lock_service_description">Covers other apps while an AWAKEN focus session is running. It only notices which app opens. It reads no screen content, typing or messages, and nothing leaves your phone.</string>
+
+    <!-- Cover -->
+    <string name="focus_lock_overlay_left">Focus in progress · %1$s left</string>
+    <string name="focus_lock_overlay_counted">Focus in progress · %1$s counted</string>
+    <string name="focus_lock_overlay_question">End the session to use %1$s?</string>
+    <string name="focus_lock_overlay_note">Ending a session early pays no reward.</string>
+    <string name="focus_lock_back_to_focus">Back to focus</string>
+    <string name="focus_lock_end_and_open">End session and open</string>
+
+    <!-- Session result messages -->
+    <string name="focus_ended_early">You ended the session early. No reward.</string>
+    <string name="focus_distracting_app">A distracting app was opened during the session.</string>
+
+    <!-- Setup -->
+    <string name="focus_lock_title">Focus Lock</string>
+    <string name="focus_lock_step_count">Step %1$d of %2$d</string>
+    <string name="focus_lock_explain_title">Before you turn it on</string>
+    <string name="focus_lock_explain_intro">Focus Lock covers other apps while a focus session is running, so the session stays a session.</string>
+    <string name="focus_lock_explain_how">To do this, AWAKEN uses an Android accessibility service. It detects which app comes to the foreground during a running focus session, so it can cover that app.</string>
+    <string name="focus_lock_explain_listens">It listens only for a new window opening, and reads only the name of the app.</string>
+    <string name="focus_lock_explain_reads_nothing">It reads no screen content, typing, passwords, messages or notifications.</string>
+    <string name="focus_lock_explain_idle">It does nothing when no session is running or the session is paused.</string>
+    <string name="focus_lock_explain_never">It never covers phone, messages, emergency, Android settings, the keyboard, your launcher or AWAKEN.</string>
+    <string name="focus_lock_explain_stores">It stores nothing about the apps you open. Nothing leaves your phone.</string>
+    <string name="focus_lock_explain_off">You can turn it off at any time.</string>
+    <string name="focus_lock_continue">Continue</string>
+    <string name="focus_lock_not_now">Not now</string>
+
+    <string name="focus_lock_enable_title">Turn it on in Android</string>
+    <string name="focus_lock_enable_body">Open Android accessibility settings, find AWAKEN in the list of apps and switch it on. Then come back here.</string>
+    <string name="focus_lock_open_accessibility">Open accessibility settings</string>
+    <string name="focus_lock_enabled_yes">Focus Lock is switched on in Android.</string>
+    <string name="focus_lock_enabled_no">Not switched on yet.</string>
+    <string name="focus_lock_restricted_note">If the switch is greyed out: open AWAKEN app info, tap the three-dot menu, choose Allow restricted settings, then try again. Android 13 and newer do this for apps installed outside Google Play.</string>
+    <string name="focus_lock_open_app_info">Open AWAKEN app info</string>
+    <string name="focus_lock_next">Next</string>
+
+    <string name="focus_lock_battery_title">Keep it running</string>
+    <string name="focus_lock_battery_body">Some phones stop background apps to save battery. If they stop Focus Lock, apps are not covered. These steps help.</string>
+    <string name="focus_lock_battery_xiaomi">1. Open Autostart and switch AWAKEN on.\n2. In Battery saver for AWAKEN, choose No restrictions.\n3. In recent apps, press and hold AWAKEN and lock it.</string>
+    <string name="focus_lock_battery_samsung">1. Open Battery, then Background usage limits.\n2. Remove AWAKEN from Sleeping apps and Deep sleeping apps.\n3. Set battery use for AWAKEN to Unrestricted.</string>
+    <string name="focus_lock_battery_oppo">1. Allow Auto-launch for AWAKEN.\n2. In battery settings for AWAKEN, choose Allow background activity.\n3. In recent apps, lock AWAKEN.</string>
+    <string name="focus_lock_battery_oneplus">1. In Battery optimisation, set AWAKEN to Not optimised.\n2. Allow Auto-launch for AWAKEN.\n3. In recent apps, lock AWAKEN.</string>
+    <string name="focus_lock_battery_vivo">1. Allow Autostart for AWAKEN.\n2. In Background power consumption, choose Allow high background power consumption.\n3. In recent apps, lock AWAKEN.</string>
+    <string name="focus_lock_battery_huawei">1. Open App launch and set AWAKEN to Manage manually.\n2. Switch on Auto-launch, Secondary launch and Run in background.\n3. In recent apps, lock AWAKEN.</string>
+    <string name="focus_lock_battery_generic">1. Set battery use for AWAKEN to Unrestricted.\n2. Allow AWAKEN to run in the background.\n3. Keep AWAKEN in recent apps; do not swipe it away.</string>
+    <string name="focus_lock_battery_optimisation">Battery optimisation</string>
+    <string name="focus_lock_autostart">Autostart and background</string>
+    <string name="focus_lock_battery_yes">Battery use is unrestricted.</string>
+    <string name="focus_lock_battery_no">Battery use is still optimised.</string>
+    <string name="focus_lock_finish">Finish</string>
+
+    <string name="focus_lock_done_title">Focus Lock is ready</string>
+    <string name="focus_lock_done_body">It starts covering apps the next time a focus session runs. Choose apps to leave uncovered in Settings, under Allowed apps.</string>
+    <string name="focus_lock_close">Close</string>
+
+    <!-- Settings -->
+    <string name="settings_window_focus">FOCUS</string>
+    <string name="focus_lock_setting_title">Focus Lock</string>
+    <string name="focus_lock_setting_note">Cover other apps while a focus session runs.</string>
+    <string name="focus_lock_status_accessibility">Switched on in Android accessibility settings</string>
+    <string name="focus_lock_status_running">Running now</string>
+    <string name="focus_lock_status_battery">Battery use unrestricted</string>
+    <string name="focus_lock_status_usage">Usage access</string>
+    <string name="focus_lock_status_ok">Done</string>
+    <string name="focus_lock_status_missing">Needs attention</string>
+    <string name="focus_lock_fix">Fix</string>
+    <string name="focus_lock_allowed_apps">Allowed apps (%1$d)</string>
+    <string name="focus_lock_allowed_apps_note">Apps Focus Lock leaves uncovered during a session.</string>
+    <string name="focus_lock_open_allowed">Choose allowed apps</string>
+    <string name="focus_lock_distracting_title">Distracting apps</string>
+    <string name="focus_lock_distracting_note">Used when Focus Lock is off: if a Distracting app is opened during a session, the session ends with no reward.</string>
+
+    <!-- Allowed apps -->
+    <string name="focus_lock_allowed_title">Allowed apps</string>
+    <string name="focus_lock_allowed_intro">Ticked apps stay usable during a focus session. Everything else is covered.</string>
+    <string name="focus_lock_allowed_search">Search apps</string>
+    <string name="focus_lock_allowed_always">Always allowed</string>
+    <string name="focus_lock_allowed_empty">No apps match.</string>
+    <string name="focus_lock_allowed_toggle">Allow %1$s during focus sessions</string>
+
+    <!-- Session screen warning -->
+    <string name="focus_lock_warning">Focus Lock is on but not running, so apps are not covered. Time away from AWAKEN still counts against the session.</string>
+    <string name="focus_lock_warning_fix">Fix Focus Lock</string>
+</resources>
