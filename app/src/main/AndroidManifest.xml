@@ -91,6 +91,19 @@
                 android:resource="@xml/today_widget_info" />
         </receiver>
 
+        <!-- Focus widget: today's focus time and a running session. -->
+        <receiver
+            android:name=".core.widget.FocusWidgetReceiver"
+            android:exported="true"
+            android:label="@string/focus_widget_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/focus_widget_info" />
+        </receiver>
+
         <!-- WorkManager is configured by AwakenApp (Hilt worker factory), so its default initializer is removed. -->
         <provider
             android:name="androidx.startup.InitializationProvider"

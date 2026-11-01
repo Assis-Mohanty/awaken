@@ -122,12 +122,14 @@ class GatesViewModel @Inject constructor(
 ) : ViewModel() {
 
     private val form = MutableStateFlow(FormState())
+    private val stopwatchRunning = MutableStateFlow(false)
 
     // Collected only while the screen is visible; it drives the dial and the claim at the planned end.
     private val ticks = flow {
         while (true) {
             emit(clock.now())
-            delay(TICK_MS)
+            // A running stopwatch shows milliseconds, so it redraws about 30 times a second; everything else once a second.
+            delay(if (stopwatchRunning.value) STOPWATCH_TICK_MS else TICK_MS)
         }
     }
 
@@ -148,6 +150,7 @@ class GatesViewModel @Inject constructor(
                 canAddSubject = FocusRules.canAddSubject(subjects.size),
             )
         }.onEach { state ->
+            stopwatchRunning.value = state.active?.mode == GateMode.STOPWATCH && !state.active.paused
             if (state.active != null && state.active.mode != GateMode.STOPWATCH && state.active.remaining.isZero) safely("Claiming a gate") { coordinator.tick() }
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), GatesUiState())
 
@@ -242,5 +245,6 @@ class GatesViewModel @Inject constructor(
     private companion object {
         const val STOP_TIMEOUT_MS = 5_000L
         const val TICK_MS = 1_000L
+        const val STOPWATCH_TICK_MS = 33L
     }
 }

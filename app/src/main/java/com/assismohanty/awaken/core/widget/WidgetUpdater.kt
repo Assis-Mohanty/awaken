@@ -25,9 +25,22 @@ class WidgetUpdater @Inject constructor(
     @ApplicationContext private val context: Context,
     private val observeToday: ObserveTodayUseCase,
     private val dayRefresher: DayRefresher,
+    private val gateRunDao: com.assismohanty.awaken.core.data.db.dao.GateRunDao,
     @ApplicationScope private val scope: CoroutineScope,
 ) {
     fun start() {
+        // The Focus widget changes when a session starts, ends or is cleared; the latest run row covers all three.
+        scope.launch {
+            gateRunDao.observeLatest().map { it?.id to it?.status }.distinctUntilChanged().collect {
+                try {
+                    FocusWidget().updateAll(context)
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    Timber.e(e, "Updating the focus widget failed")
+                }
+            }
+        }
         scope.launch {
             observeToday(dayRefresher.ticks)
                 .map { it.toWidgetSnapshot() }

@@ -54,6 +54,10 @@ import kotlinx.coroutines.flow.flowOf
 interface WidgetEntryPoint {
     fun observeToday(): ObserveTodayUseCase
     fun dayRefresher(): DayRefresher
+    fun hunterDao(): com.assismohanty.awaken.core.data.db.dao.HunterDao
+    fun focusDao(): com.assismohanty.awaken.core.data.db.dao.FocusDao
+    fun gateRunDao(): com.assismohanty.awaken.core.data.db.dao.GateRunDao
+    fun clock(): com.assismohanty.awaken.core.data.clock.Clock
 }
 
 /**

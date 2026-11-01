@@ -8,6 +8,10 @@ import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.systemBarsPadding
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -41,7 +45,9 @@ import com.assismohanty.awaken.core.designsystem.components.DifficultyChip
 import com.assismohanty.awaken.core.designsystem.components.IconCircle
 import com.assismohanty.awaken.core.designsystem.components.LargeTitleScaffold
 import com.assismohanty.awaken.core.designsystem.components.SkeletonCard
+import com.assismohanty.awaken.core.designsystem.components.GateBackground
 import com.assismohanty.awaken.core.designsystem.components.GateDial
+import com.assismohanty.awaken.core.designsystem.components.StopwatchFace
 import com.assismohanty.awaken.core.designsystem.components.PrimaryButton
 import com.assismohanty.awaken.core.designsystem.components.QuietButton
 import com.assismohanty.awaken.core.designsystem.components.SecondaryButton
@@ -88,6 +94,10 @@ fun GatesEntry(onBack: () -> Unit, modifier: Modifier = Modifier, viewModel: Gat
 @Composable
 fun GatesScreen(state: GatesUiState, onEvent: (GatesEvent) -> Unit, onBack: () -> Unit, modifier: Modifier = Modifier) {
     val active = state.active
+    if (active != null && active.mode == GateMode.STOPWATCH) {
+        StopwatchScreen(active, state.confirmAbandon, onEvent, modifier)
+        return
+    }
     LargeTitleScaffold(
         title = when {
             active == null -> lexString(R.string.gates_title)
@@ -313,6 +323,63 @@ private fun GateSetupWindow(setup: GateSetup, onEvent: (GatesEvent) -> Unit) {
             modifier = Modifier.fillMaxWidth(),
         )
         QuietButton(text = lexString(R.string.action_back), onClick = { onEvent(GatesEvent.CloseSetup) }, modifier = Modifier.fillMaxWidth())
+    }
+}
+
+/**
+ * The running stopwatch owns the whole screen: a flip-clock face as large as the screen allows, milliseconds included,
+ * and the controls underneath. The screen stays awake while it runs.
+ */
+@Composable
+private fun StopwatchScreen(active: ActiveGate, confirmAbandon: Boolean, onEvent: (GatesEvent) -> Unit, modifier: Modifier = Modifier) {
+    val colors = AwakenTheme.colors
+    val view = LocalView.current
+    DisposableEffect(view) {
+        view.keepScreenOn = true
+        onDispose { view.keepScreenOn = false }
+    }
+    GateBackground(tint = colors.surface, modifier = modifier) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .systemBarsPadding()
+                .padding(horizontal = Spacing.gutter, vertical = Spacing.md),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(Spacing.md),
+        ) {
+            Row(horizontalArrangement = Arrangement.spacedBy(Spacing.xs), verticalAlignment = Alignment.CenterVertically) {
+                StatChip(active.stat)
+                (active.subject ?: active.label)?.let { Text(it, style = AwakenTheme.type.label, color = colors.textPrimary) }
+            }
+            Box(modifier = Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
+                StopwatchFace(elapsed = active.elapsed, modifier = Modifier.fillMaxSize())
+            }
+            Text(
+                lexString(R.string.gate_breach_line, shortClock(active.breachUsed.toMillis()), shortClock(GateRules.BREACH_BUDGET_MS)),
+                style = AwakenTheme.type.label,
+                color = if (active.breachUsed.isZero) colors.textSecondary else colors.critical,
+            )
+            Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm), modifier = Modifier.fillMaxWidth()) {
+                when {
+                    active.paused -> PrimaryButton(lexString(R.string.action_resume), onClick = { onEvent(GatesEvent.Resume) }, modifier = Modifier.weight(1f))
+                    active.canPause -> SecondaryButton(
+                        lexString(R.string.action_pause, shortClock(GateRules.MAX_PAUSE.toMillis())),
+                        onClick = { onEvent(GatesEvent.Pause) },
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+                PrimaryButton(lexString(R.string.action_stop_stopwatch), onClick = { onEvent(GatesEvent.Stop) }, modifier = Modifier.weight(1f))
+            }
+            if (confirmAbandon) {
+                SystemWindow(title = null, accent = colors.critical, reveal = false) {
+                    Text(lexString(R.string.gate_abandon_confirm), style = AwakenTheme.type.body, color = colors.textPrimary)
+                    PrimaryButton(lexString(R.string.action_abandon_gate), onClick = { onEvent(GatesEvent.ConfirmAbandon) }, color = colors.critical, modifier = Modifier.fillMaxWidth())
+                    QuietButton(lexString(R.string.action_keep_going), onClick = { onEvent(GatesEvent.CancelAbandon) }, modifier = Modifier.fillMaxWidth())
+                }
+            } else {
+                QuietButton(lexString(R.string.action_abandon_gate), onClick = { onEvent(GatesEvent.Abandon) }, modifier = Modifier.fillMaxWidth())
+            }
+        }
     }
 }
 

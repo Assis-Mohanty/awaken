@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
     <!-- Custom and stopwatch focus sessions, subjects, weekly focus report (GAME_DESIGN §8.1). Neutral wording: no System terms, so no Clean twins. -->
     <string name="gate_notif_title_stopwatch">Stopwatch running</string>
     <string name="msg_focus_short_run">Recorded, but under %1$d minutes. No reward.</string>
@@ -54,4 +54,10 @@
     <string name="gym_summary_sets">Sets</string>
     <string name="gym_summary_volume">Volume (kg)</string>
     <string name="gym_summary_done">Done</string>
+    <string name="focus_widget_name">Focus time</string>
+    <string name="focus_widget_description">Focus time today and any running session. Tap to open.</string>
+    <string name="focus_widget_today">Focus today</string>
+    <string name="focus_widget_running_stopwatch">Stopwatch running since %1$s</string>
+    <string name="focus_widget_running">Session running since %1$s</string>
+    <string name="focus_widget_cd" tools:ignore="PluralsCandidate">%1$d minutes of focus today. %2$s</string>
 </resources>
