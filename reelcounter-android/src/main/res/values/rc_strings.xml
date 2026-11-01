@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="rc_reel_counter_name">Reel Counter</string>
+    <string name="rc_service_label">Reel Counter</string>
+    <string name="rc_service_description">Counts the short videos you watch on Instagram, YouTube, TikTok, Facebook and Snapchat. It only looks at on-screen element IDs, never at text, and nothing leaves your phone.</string>
+
+
+</resources>

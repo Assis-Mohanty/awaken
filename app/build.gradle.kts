@@ -140,6 +140,7 @@ roborazzi {
 
 dependencies {
     implementation(project(":engine"))
+    implementation(project(":reelcounter-android"))
 
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.activity.compose)
