@@ -3,10 +3,14 @@
 Build "Reel Counter" as a self-contained Gradle project INSIDE this repo, in its own folder.
 Another Claude Code session is working on the main app at the same time — do not conflict with it.
 
-HOW TO WORK: this is split into 7 phases. Do ONE phase at a time. After each phase: run its gate,
-commit, give me a short summary, then STOP and wait for me to say "next". Never start the next
-phase on your own. At the start of each phase, tell me which model I should be on (Opus or Sonnet)
-as listed below, so I can switch with /model.
+TWO-MODEL WORKFLOW
+- PART A (planning) runs on Opus. It writes a plan detailed enough that a different model can
+  implement it without making design decisions. Then it STOPS.
+- I will then switch to Sonnet with /model and say "go".
+- PART B (implementation) runs on Sonnet. It follows PLAN.md exactly, one phase at a time, and
+  STOPS after each phase until I say "next".
+- If you are in PART B and something in PLAN.md is ambiguous or wrong, do NOT redesign it:
+  write the question in /reelcounter/PLAN_QUESTIONS.md, STOP, and tell me.
 
 ISOLATION (strict)
 - Create a git worktree on a new branch first:  git worktree add ../awaken-reelcounter -b feature/reel-counter
@@ -70,41 +74,65 @@ DESIGN (original, premium, AWAKEN direction)
   cards with a small counter badge, geometric, max 2 colours, readable at 48px. Wordmark for setup
   screen. 512×512 PNG into /reelcounter/branding/.
 
-PHASES
+═══════════════════════════════════════════════
+PART A — PLAN  (Opus, plan mode, NO code)
+═══════════════════════════════════════════════
+1. Create the worktree/branch. Save this whole prompt verbatim to /reelcounter/SPEC.md.
+2. Write /reelcounter/PLAN.md containing ALL of the following, concrete enough that the implementer
+   makes no design decisions:
+   a. Module + package layout and every file to create, with a one-line purpose each.
+   b. :core public API as actual Kotlin signatures (sealed event classes, state data classes,
+      reducer/engine functions, outputs/effects, Clock interface injected, debounce rule with exact ms).
+   c. Counting state machine: states, transitions table, and how "same video" vs "new video" is decided.
+   d. EVERY edge case as a named test with input event sequence → expected count/time/outputs
+      (rapid duplicates, scroll back, leave/return, return to same video, app switch mid-video,
+      screen off, rollover mid-session, limit reached, snooze cap, limit changed mid-day, service restart).
+   e. detectors.json schema + one example entry per supported app (ids marked UNVERIFIED) and how the
+      adapter maps raw AccessibilityEvents → :core events.
+   f. Room entities, DAOs, queries for each stats view; DataStore keys; JSON export format.
+   g. Every screen and component with its states (for previews), and the token list with light/dark values.
+   h. Icon/wordmark construction spec (shapes, grid, colours).
+   i. Implementation phases 1–5 below, each with a file checklist, acceptance criteria, and its gate command.
+   j. Risks + what can only be verified on a real phone.
+3. Show me a short summary of PLAN.md and STOP. Tell me: "Switch to Sonnet and say go".
 
-Phase 0 — Plan  [Opus, plan mode]
-  Create the worktree/branch. Save this whole prompt to /reelcounter/SPEC.md. Write
-  /reelcounter/PLAN.md: files per module, :core public API, detectors.json schema + example,
-  Room schema, full list of counting edge cases each with a test name. No code. STOP.
+═══════════════════════════════════════════════
+PART B — IMPLEMENT  (Sonnet, one phase per "next")
+═══════════════════════════════════════════════
+Rules: read SPEC.md + PLAN.md at the start of every phase. Follow PLAN.md signatures and file list
+exactly. Tick off the phase checklist in PLAN.md as you go. Each phase: run gate, commit, summarise, STOP.
 
-Phase 1 — Core engine  [Opus]
-  Gradle skeleton (all 3 modules compile). :core complete. Tests FIRST for every PLAN.md edge case
-  (rapid duplicates, scroll back, leave/return, rollover mid-session, limit, snooze cap), then implement.
-  Gate: ./gradlew :core:test. Commit "feat(reelcounter): core counting engine". STOP.
+Phase 1 — Core engine
+  Gradle skeleton (all 3 modules compile). Write ALL PLAN.md tests first, then implement :core.
+  Gate: cd reelcounter && ./gradlew :core:test
+  Commit "feat(reelcounter): core counting engine".
 
-Phase 2 — Detection + inspector  [Sonnet]
-  AccessibilityService, event→core adapter, debounce, detectors.json with placeholder ids marked
-  UNVERIFIED, Detector Inspector, Room + repository, :demo installable.
-  Gate: :android:testDebugUnitTest :demo:assembleDebug. Commit. Then give me step-by-step
-  instructions to run the inspector in each supported app. STOP.
-  → I will paste inspector dumps back; update detectors.json from them and retest until I confirm
-    counting is correct on my phone. Only then wait for "next".
+Phase 2 — Detection + inspector
+  AccessibilityService, event→core adapter, debounce, detectors.json (UNVERIFIED ids), Detector
+  Inspector, Room + repository, :demo installable.
+  Gate: ./gradlew :android:testDebugUnitTest :demo:assembleDebug
+  Commit. Then give me step-by-step instructions to run the inspector in each supported app.
+  → I will paste inspector dumps back; update detectors.json and retest until I confirm counting is
+    correct on my phone. Only then wait for "next".
 
-Phase 3 — Design system, icon, bubble  [Sonnet]
-  Tokens (light+dark), typography, icon/wordmark/PNG, full bubble behaviour. Compose previews for
-  every state. Gate + commit. STOP.
+Phase 3 — Design system, icon, bubble
+  Tokens (light+dark), typography, icon/wordmark/PNG, full bubble behaviour. Previews for every state.
+  Gate + commit.
 
-Phase 4 — Setup + status  [Sonnet]
-  Features 9 and 10, previews per state. Gate + commit. STOP.
+Phase 4 — Setup + status
+  Features 9 and 10, previews per state. Gate + commit.
 
-Phase 5 — Limits, stats, widget, export  [Sonnet]
-  Features 4–8. Gate + commit. STOP.
+Phase 5 — Limits, stats, widget, export
+  Features 4–8. Full gate:
+  cd reelcounter && ./gradlew :core:test :android:testDebugUnitTest :demo:assembleDebug lint
+  Commit. Write /reelcounter/README.md (build, install, inspector, updating detectors.json).
+  Give me a phone test checklist. Do NOT merge. Then tell me: "Optional: switch to Opus and say review".
 
-Phase 6 — Review + integration  [Opus]
-  Review whole diff vs SPEC.md: node text read/logged? any network? files outside /reelcounter
-  touched? :core Android-free? every edge case tested? battery cost per event, overlay stuck states,
-  crash on permission revoke, service leaks. Fix issues. Write /reelcounter/README.md and
-  INTEGRATION.md (include as modules in AWAKEN, swap tokens, merge its AccessibilityService with
-  Focus Lock into ONE service, feed daily_total into screen-time tiles/quests).
-  Full gate: cd reelcounter && ./gradlew :core:test :android:testDebugUnitTest :demo:assembleDebug lint
-  Give me a phone test checklist. Do NOT merge.
+═══════════════════════════════════════════════
+PART C — REVIEW  (optional, Opus, when I say "review")
+═══════════════════════════════════════════════
+Review the whole diff vs SPEC.md + PLAN.md: node text read/logged? any network? files outside
+/reelcounter touched? :core Android-free? every PLAN.md edge case tested? battery cost per event,
+overlay stuck states, crash on permission revoke, service leaks. Fix issues. Write INTEGRATION.md
+(include as modules in AWAKEN, swap tokens, merge its AccessibilityService with Focus Lock into ONE
+service, feed daily_total into screen-time tiles/quests). Full gate. Do NOT merge.
