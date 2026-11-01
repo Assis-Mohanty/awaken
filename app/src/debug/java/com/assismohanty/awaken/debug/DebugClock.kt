@@ -23,10 +23,14 @@ import java.time.ZoneId
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 
 private val Context.debugDataStore: DataStore<Preferences> by preferencesDataStore(name = "debug_settings")
 
@@ -38,6 +42,12 @@ class DebugSettings @Inject constructor(
 ) {
     private val store = context.debugDataStore
 
+    init {
+        // Builds before 2026-11-01 saved the simulations, so a tap weeks ago kept faking data. They are memory-only now;
+        // drop what an older build left behind.
+        scope.launch { store.edit { it.remove(SIMULATE_STEPS); it.remove(SIMULATED_USAGE_MINUTES) } }
+    }
+
     /** Starts at 0 until DataStore loads; a too-early "today" only looks like the clock moved back, which is safe. */
     val offsetDays: StateFlow<Long> = store.data
         .map { it[OFFSET_DAYS] ?: 0L }
@@ -47,13 +57,16 @@ class DebugSettings @Inject constructor(
         store.edit { it[OFFSET_DAYS] = (it[OFFSET_DAYS] ?: 0L) + days }
     }
 
-    /** Debug-only: pretend Health Connect is connected and reports 9,000 steps today ([DebugHealthGateway]) (Phase 11). */
-    val simulateSteps: StateFlow<Boolean> = store.data
-        .map { it[SIMULATE_STEPS] ?: false }
-        .stateIn(scope, SharingStarted.Eagerly, false)
+    private val simulateStepsState = MutableStateFlow(false)
 
-    suspend fun setSimulateSteps(enabled: Boolean) {
-        store.edit { it[SIMULATE_STEPS] = enabled }
+    /**
+     * Debug-only: pretend Health Connect is connected and reports 9,000 steps ([DebugHealthGateway]) (Phase 11). Memory
+     * only, so it is off again after every app restart and real data can never stay hidden behind it.
+     */
+    val simulateSteps: StateFlow<Boolean> = simulateStepsState.asStateFlow()
+
+    fun setSimulateSteps(enabled: Boolean) {
+        simulateStepsState.value = enabled
     }
 
     /**
@@ -79,22 +92,28 @@ class DebugSettings @Inject constructor(
 
     /**
      * Debug-only: pretend usage access is granted and add this many minutes of Instagram to today ([DebugUsageGateway]),
-     * so Screen Discipline warnings and forfeits can be tested on an emulator. 0 = off.
+     * so Screen Discipline warnings and forfeits can be tested on an emulator. 0 = off. Memory only, like [simulateSteps].
      */
-    val simulatedUsageMinutes: StateFlow<Int> = store.data
-        .map { it[SIMULATED_USAGE_MINUTES] ?: 0 }
-        .stateIn(scope, SharingStarted.Eagerly, 0)
+    private val simulatedUsageState = MutableStateFlow(0)
+    val simulatedUsageMinutes: StateFlow<Int> = simulatedUsageState.asStateFlow()
 
-    suspend fun addSimulatedUsage(minutes: Int) {
-        store.edit { it[SIMULATED_USAGE_MINUTES] = ((it[SIMULATED_USAGE_MINUTES] ?: 0) + minutes).coerceAtLeast(0) }
+    fun addSimulatedUsage(minutes: Int) {
+        simulatedUsageState.update { (it + minutes).coerceAtLeast(0) }
     }
 
-    suspend fun clearSimulatedUsage() {
-        store.edit { it.remove(SIMULATED_USAGE_MINUTES) }
+    fun clearSimulatedUsage() {
+        simulatedUsageState.value = 0
     }
 
     suspend fun reset() {
         store.edit { it.remove(OFFSET_DAYS) }
+    }
+
+    /** Back to real data everywhere: no simulated steps or usage, and the real date. */
+    suspend fun resetOverrides() {
+        setSimulateSteps(false)
+        clearSimulatedUsage()
+        reset()
     }
 
     private companion object {

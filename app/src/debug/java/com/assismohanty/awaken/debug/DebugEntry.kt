@@ -9,7 +9,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import com.assismohanty.awaken.core.designsystem.components.DebugBanner
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import com.assismohanty.awaken.R
@@ -24,6 +28,30 @@ object DebugEntry {
         TextButton(onClick = onClick, modifier = modifier.semantics { contentDescription = description }) {
             Text(stringResource(R.string.debug_open))
         }
+    }
+
+    /**
+     * A strip across the top of every screen while a debug override fakes data (simulated steps or usage, time travel),
+     * with one tap back to real data. Nothing shows when everything is real.
+     */
+    @Composable
+    fun OverrideBanner(modifier: Modifier = Modifier) {
+        val viewModel: DebugBannerViewModel = hiltViewModel()
+        val overrides by viewModel.overrides.collectAsStateWithLifecycle()
+        if (overrides.isEmpty()) return
+        val parts = overrides.map { override ->
+            when (override) {
+                is DebugOverride.ClockOffset -> pluralStringResource(R.plurals.debug_banner_clock, override.days.toInt(), override.days)
+                DebugOverride.SimulatedSteps -> stringResource(R.string.debug_banner_steps)
+                DebugOverride.SimulatedUsage -> stringResource(R.string.debug_banner_usage)
+            }
+        }
+        DebugBanner(
+            text = stringResource(R.string.debug_banner, parts.joinToString(" · ")),
+            action = stringResource(R.string.debug_banner_reset),
+            onReset = viewModel::reset,
+            modifier = modifier,
+        )
     }
 
     @Composable

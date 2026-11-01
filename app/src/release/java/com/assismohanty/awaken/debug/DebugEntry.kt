@@ -13,5 +13,9 @@ object DebugEntry {
 
     @Suppress("UNUSED_PARAMETER")
     @Composable
+    fun OverrideBanner(modifier: Modifier = Modifier) = Unit
+
+    @Suppress("UNUSED_PARAMETER")
+    @Composable
     fun Screen(onBack: () -> Unit) = Unit
 }

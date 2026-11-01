@@ -5,6 +5,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarHost
@@ -111,6 +112,8 @@ private fun MainScaffold(
         Scaffold(
             modifier = Modifier.fillMaxSize(),
             containerColor = Color.Transparent,
+            // Debug builds only: says when steps, usage or the date are faked, with a reset (no-op in release).
+            topBar = { DebugEntry.OverrideBanner(Modifier.statusBarsPadding()) },
             snackbarHost = {
                 SnackbarHost(snackbarHostState) { data ->
                     Snackbar(

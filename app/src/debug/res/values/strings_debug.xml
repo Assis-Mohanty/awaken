@@ -20,6 +20,14 @@
     <string name="debug_grant_gold">+2,000 gold</string>
     <string name="debug_grant_fragments">+10 fragments</string>
     <string name="debug_simulate_steps_on">Simulate 9,000 steps</string>
+    <string name="debug_banner">Debug: %1$s</string>
+    <string name="debug_banner_steps">fake steps</string>
+    <string name="debug_banner_usage">fake screen time</string>
+    <plurals name="debug_banner_clock">
+        <item quantity="one">clock +%1$d day</item>
+        <item quantity="other">clock +%1$d days</item>
+    </plurals>
+    <string name="debug_banner_reset">Use real data</string>
     <string name="debug_add_usage">+10 min Instagram</string>
     <string name="debug_clear_usage">Clear simulated usage</string>
     <string name="debug_simulate_steps_off">Stop simulating steps</string>
