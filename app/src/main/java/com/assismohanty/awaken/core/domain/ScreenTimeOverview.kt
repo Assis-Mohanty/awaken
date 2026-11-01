@@ -65,6 +65,46 @@ data class ScreenTimeOverview(
     val trend: List<ScreenTimeDay>,
 )
 
+/** Today's screen time for the Today tile: real minutes per category, or why there are none. */
+sealed interface ScreenTimeSummary {
+    data object NoAccess : ScreenTimeSummary
+    data object NotTracked : ScreenTimeSummary
+    data class Tracked(val minutesByCategory: Map<AppCategory, Int>) : ScreenTimeSummary
+}
+
+/**
+ * The Today tile's read: today's usage of launcher apps by category, counted exactly like the Screen Time screen (whole
+ * minutes per app, then summed; today's rule or the app's default category). Read-only; nothing is seeded or forfeited.
+ */
+class LoadScreenTimeSummaryUseCase @Inject constructor(
+    private val hunterDao: HunterDao,
+    private val reader: ScreenTimeReader,
+    private val usage: UsageGateway,
+    private val clock: Clock,
+) {
+    /** Null when there is no hunter. */
+    suspend operator fun invoke(): ScreenTimeSummary? {
+        val profile = hunterDao.getProfile() ?: return null
+        if (!usage.hasAccess()) return ScreenTimeSummary.NoAccess
+        val today = clock.gameDate(profile.dayStartHour)
+        val used = when (val read = reader.usageOn(profile, today)) {
+            UsageRead.NoAccess -> return ScreenTimeSummary.NoAccess
+            UsageRead.Unavailable -> return ScreenTimeSummary.NotTracked
+            is UsageRead.Tracked -> read.millis
+        }
+        val rules = reader.rulesInForce(today)
+        val minutes = usage.launcherApps().map { app ->
+            val category = rules[app.packageName]?.category ?: ScreenTimeRules.defaultCategory(app.packageName, app.kind)
+            category to ((used[app.packageName] ?: 0L) / MILLIS_PER_MINUTE).toInt()
+        }
+        return ScreenTimeSummary.Tracked(AppCategory.entries.associateWith { cat -> minutes.filter { it.first == cat }.sumOf { it.second } })
+    }
+
+    private companion object {
+        const val MILLIS_PER_MINUTE = 60_000L
+    }
+}
+
 /**
  * Everything the Screen Time screen shows (DESIGN_SYSTEM §4.9). Read-only: forfeits happen only in
  * [DisciplineSyncUseCase], so opening the screen never changes game state. Apps without a rule yet show their default

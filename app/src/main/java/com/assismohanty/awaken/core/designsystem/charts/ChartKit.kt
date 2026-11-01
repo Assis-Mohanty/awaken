@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.Dp
 import com.assismohanty.awaken.core.designsystem.components.Heatmap
 import com.assismohanty.awaken.core.designsystem.components.HeatmapDay
 import com.assismohanty.awaken.core.designsystem.components.ProgressRing
+import com.assismohanty.awaken.core.designsystem.components.SegmentedRing
 import com.assismohanty.awaken.core.designsystem.components.RadarChart
 import com.assismohanty.awaken.core.designsystem.components.radarDescription
 import com.assismohanty.awaken.core.designsystem.theme.AwakenTheme
@@ -52,6 +53,14 @@ sealed interface ChartSpec {
         val progress: Float,
         val description: String,
         val color: Color? = null,
+        val size: Dp? = null,
+        val stroke: Dp? = null,
+    ) : ChartSpec
+
+    /** A full ring split into weighted coloured arcs (e.g. today's screen time by category), `content` in the middle. One TalkBack node. */
+    data class SegmentedRing(
+        val segments: List<Segment>,
+        val description: String,
         val size: Dp? = null,
         val stroke: Dp? = null,
     ) : ChartSpec
@@ -133,6 +142,14 @@ fun Chart(spec: ChartSpec, modifier: Modifier = Modifier, content: @Composable (
             description = spec.description,
             modifier = modifier,
             color = spec.color ?: AwakenTheme.palette.system,
+            size = spec.size ?: AwakenTheme.dimens.calorieRing,
+            stroke = spec.stroke ?: AwakenTheme.dimens.calorieRingStroke,
+            content = content,
+        )
+        is ChartSpec.SegmentedRing -> SegmentedRing(
+            segments = spec.segments,
+            description = spec.description,
+            modifier = modifier,
             size = spec.size ?: AwakenTheme.dimens.calorieRing,
             stroke = spec.stroke ?: AwakenTheme.dimens.calorieRingStroke,
             content = content,
@@ -242,11 +259,12 @@ private fun StackedColumnsChart(spec: ChartSpec.StackedColumns, modifier: Modifi
                 verticalArrangement = Arrangement.Bottom,
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
+                // Empty space on top, so every bar rises from the baseline with the highlighted part at its foot.
+                Spacer(modifier = Modifier.weight((1f - column.total).coerceAtLeast(MIN_WEIGHT)))
                 Box(modifier = Modifier.fillMaxWidth().weight((column.total - column.highlight).coerceAtLeast(MIN_WEIGHT), fill = true).background(base))
                 if (column.highlight > 0f) {
                     Box(modifier = Modifier.fillMaxWidth().weight(column.highlight, fill = true).background(highlight))
                 }
-                Spacer(modifier = Modifier.weight((1f - column.total).coerceAtLeast(MIN_WEIGHT)))
             }
         }
     }

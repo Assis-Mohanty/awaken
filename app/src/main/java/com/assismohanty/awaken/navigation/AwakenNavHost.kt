@@ -159,6 +159,8 @@ private fun MainScaffold(
                         onOpenCampaign = { navController.navigate(CampaignRoute) },
                         onOpenReview = { navController.navigate(ReviewRoute) { launchSingleTop = true } },
                         snackbarHostState = snackbarHostState,
+                        onOpenHealth = { navController.navigate(HealthRoute) },
+                        onOpenSettings = { navController.navigate(SettingsRoute) { launchSingleTop = true } },
                         onOpenTrial = { navController.navigate(TrialRoute) },
                         onOpenGates = { navController.navigate(GatesRoute) { launchSingleTop = true } },
                         onOpenVault = { navController.navigate(VaultRoute) { launchSingleTop = true } },

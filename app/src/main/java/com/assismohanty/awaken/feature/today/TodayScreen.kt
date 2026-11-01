@@ -10,6 +10,14 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.compose.LifecycleResumeEffect
+import com.assismohanty.awaken.core.designsystem.components.HealthTile
+import com.assismohanty.awaken.core.designsystem.components.HealthTileModel
+import com.assismohanty.awaken.core.designsystem.components.ScreenTimeTile
+import com.assismohanty.awaken.core.designsystem.components.ScreenTimeTileModel
+import com.assismohanty.awaken.feature.health.openHealthConnectSettings
+import com.assismohanty.awaken.feature.screentime.openUsageAccessSettings
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
@@ -70,12 +78,22 @@ fun TodayRoute(
     onOpenGates: () -> Unit = {},
     onOpenVault: () -> Unit = {},
     onOpenReview: () -> Unit = {},
+    onOpenHealth: () -> Unit = {},
+    onOpenSettings: () -> Unit = {},
     snackbarHostState: SnackbarHostState? = null,
     viewModel: TodayViewModel = hiltViewModel(),
     habitsViewModel: HabitsViewModel = hiltViewModel(),
     dayPlanViewModel: DayPlanViewModel = hiltViewModel(),
+    summaryViewModel: TodaySummaryViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val summary by summaryViewModel.uiState.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+    // Usage and Health Connect change outside the app (and after granting access in Settings): re-read on every return.
+    LifecycleResumeEffect(summaryViewModel) {
+        summaryViewModel.refresh()
+        onPauseOrDispose { }
+    }
     val habits by habitsViewModel.uiState.collectAsStateWithLifecycle()
     val dayPlan by dayPlanViewModel.uiState.collectAsStateWithLifecycle()
     TodayScreen(
@@ -91,6 +109,10 @@ fun TodayRoute(
         onOpenReview = onOpenReview,
         onOpenGates = onOpenGates,
         onOpenVault = onOpenVault,
+        summary = summary,
+        onOpenHealth = onOpenHealth,
+        onGrantUsageAccess = { openUsageAccessSettings(context) },
+        onSetUpHealth = { if (summary.healthNeedsConnect) onOpenSettings() else openHealthConnectSettings(context) },
     )
     HabitSheets(state = habits, onEvent = habitsViewModel::onEvent)
     DayPlanSheet(state = dayPlan, onEvent = dayPlanViewModel::onEvent)
@@ -132,6 +154,10 @@ fun TodayScreen(
     onOpenGates: () -> Unit = {},
     onOpenVault: () -> Unit = {},
     onOpenReview: () -> Unit = {},
+    summary: TodaySummaryUiState = TodaySummaryUiState(),
+    onOpenHealth: () -> Unit = {},
+    onGrantUsageAccess: () -> Unit = {},
+    onSetUpHealth: () -> Unit = {},
 ) {
     val colors = AwakenTheme.colors
     val header = state.header
@@ -192,6 +218,25 @@ fun TodayScreen(
                 onOpenTrial = onOpenTrial,
                 onComplete = { onEvent(TodayEvent.Complete(it)) },
                 onOpenQuest = onOpenQuest,
+            )
+        }
+
+        // Phone feedback Part 2: today's screen time and body numbers, above the quests; each opens its detail screen.
+        Row(
+            modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min),
+            horizontalArrangement = Arrangement.spacedBy(Spacing.cardGap),
+        ) {
+            ScreenTimeTile(
+                model = summary.screenTime,
+                onClick = onOpenScreenTime,
+                onGrantAccess = onGrantUsageAccess,
+                modifier = Modifier.weight(1f).fillMaxHeight(),
+            )
+            HealthTile(
+                model = summary.health,
+                onClick = onOpenHealth,
+                onSetUp = onSetUpHealth,
+                modifier = Modifier.weight(1f).fillMaxHeight(),
             )
         }
 
@@ -434,10 +479,34 @@ internal val previewTodayState = TodayUiState(
     consistency = ConsistencyScore(cleared = 22, eligible = 28),
 )
 
+internal val previewSummary = TodaySummaryUiState(
+    screenTime = ScreenTimeTileModel.Tracked(distracting = 54, productive = 92, neutral = 31),
+    health = HealthTileModel.Ready(steps = 8_412, distanceKm = 6.2, activeKcal = 412, sleepMinutes = 452),
+)
+
 @PhonePreviews
 @Composable
 private fun TodayScreenPreview() {
-    AwakenTheme { TodayScreen(previewTodayState, onEvent = {}, onOpenQuest = {}, onOpenTrial = {}, onHabitsEvent = {}, onDayPlanEvent = {}) }
+    AwakenTheme {
+        TodayScreen(previewTodayState, onEvent = {}, onOpenQuest = {}, onOpenTrial = {}, onHabitsEvent = {}, onDayPlanEvent = {}, summary = previewSummary)
+    }
+}
+
+/** No usage access and no health source: each tile offers its fix, never a 0. */
+@PhonePreviews
+@Composable
+private fun TodayScreenNoAccessPreview() {
+    AwakenTheme {
+        TodayScreen(
+            previewTodayState,
+            onEvent = {},
+            onOpenQuest = {},
+            onOpenTrial = {},
+            onHabitsEvent = {},
+            onDayPlanEvent = {},
+            summary = TodaySummaryUiState(screenTime = ScreenTimeTileModel.NoAccess, health = HealthTileModel.NoData),
+        )
+    }
 }
 
 @PhonePreviews
@@ -457,6 +526,7 @@ private fun TodayScreenClearedPreview() {
             onOpenTrial = {},
             onHabitsEvent = {},
             onDayPlanEvent = {},
+            summary = previewSummary,
         )
     }
 }
@@ -472,6 +542,7 @@ private fun TodayMissedYesterdayPreview() {
             onOpenTrial = {},
             onHabitsEvent = {},
             onDayPlanEvent = {},
+            summary = previewSummary,
         )
     }
 }

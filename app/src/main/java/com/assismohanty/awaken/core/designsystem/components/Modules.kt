@@ -240,7 +240,7 @@ private fun SparkChart(spark: Spark, color: Color) {
 
 /** Icon + label, the top-left of every card. */
 @Composable
-private fun CardLabel(label: String, icon: ImageVector?, tint: Color, modifier: Modifier = Modifier) {
+internal fun CardLabel(label: String, icon: ImageVector?, tint: Color, modifier: Modifier = Modifier) {
     Row(modifier = modifier, verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
         icon?.let { Icon(it, contentDescription = null, tint = tint, modifier = Modifier.size(AwakenTheme.dimens.iconSmall + Spacing.xxs)) }
         Text(label, style = AwakenTheme.type.windowTitle, color = AwakenTheme.colors.textPrimary)

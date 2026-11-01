@@ -143,6 +143,7 @@ Off by default (toggle ready, assets later). Never ship a sound you didn't licen
 | `RewardSheet` | Ring closing around a check, "Quest complete", **+94 XP** counting up, gains as list rows, the formula as label / value rows (Base, difficulty, Streak ×1.20, Verified ×1.30 … Total 94 XP), Done. |
 | `LevelUpCeremony` | §2.5. |
 | `BodyMap` | §4.11. |
+| `ScreenTimeTile`, `HealthTile` | Today's half-width summary cards above the quests (equal height in one row). Screen time: `ChartSpec.SegmentedRing` (calorie-ring style, `tileRing`) by category + a minutes-first legend; Health: steps / distance / active / last night as a 2×2 `FlowRow` that drops to one column under `tileFigureMinWidth`. Empty states offer their fix ("Grant access", "Set up a source"); unknown is "—", never 0. |
 | `ConfirmDialog` | Yes/no before a regrettable action: title, one plain sentence, the action (critical red when destructive) and Cancel; on the card colour. Used by habit Archive/Delete (an Undo snackbar follows). |
 | `QuestRow(onLongPress)` | Optional long-press action that replaces long-press-to-open, also offered to TalkBack (habits: "Habit options"). |
 | `SystemToast`, `SystemWarning`, `ChapterReveal`, `GateDial`, `PathLadder`, `PathQuestBadge`, `FeedbackChips`, `OracleStatus`, `ShareCard` | Wear the tokens; restyled with their screens (step 3). |

@@ -48,6 +48,7 @@ import com.assismohanty.awaken.core.designsystem.components.SystemWindow
 import com.assismohanty.awaken.core.designsystem.preview.PhonePreviews
 import com.assismohanty.awaken.core.designsystem.theme.AwakenTheme
 import com.assismohanty.awaken.core.designsystem.theme.Spacing
+import com.assismohanty.awaken.core.domain.DailyAverage
 import com.assismohanty.awaken.core.domain.HealthOverview
 import com.assismohanty.awaken.core.domain.HealthTrendDay
 import com.assismohanty.awaken.core.domain.StepSource
@@ -97,7 +98,7 @@ fun HealthRoute(onBack: () -> Unit, modifier: Modifier = Modifier, viewModel: He
 }
 
 /** Health Connect's own settings, where the hunter connects an app that records steps. */
-private fun openHealthConnectSettings(context: Context) {
+internal fun openHealthConnectSettings(context: Context) {
     try {
         // Kotlin name of the JVM getHealthConnectSettingsAction(): the platform page on Android 14+, the app before.
         val intent = Intent(HealthConnectClient.ACTION_HEALTH_CONNECT_SETTINGS)
@@ -374,12 +375,15 @@ private fun stageName(stage: SleepStageType): String = lexString(
 private fun TrendWindow(overview: HealthOverview) {
     val colors = AwakenTheme.colors
     SystemWindow(title = lexString(R.string.health_window_trend), accent = colors.positive, reveal = false) {
+        val numbers = NumberFormat.getIntegerInstance()
+        val oneDecimal = remember { NumberFormat.getNumberInstance().apply { maximumFractionDigits = 1; minimumFractionDigits = 1 } }
         if (overview.stepSource != StepSource.NONE) {
             TrendChart(
                 title = lexString(R.string.health_metric_steps),
                 days = overview.trend,
                 value = { it.steps.toDouble() },
                 color = colors.chartSeries4,
+                average = { numbers.format(it.toLong()) },
             )
         }
         if (overview.canDistance) {
@@ -388,6 +392,7 @@ private fun TrendWindow(overview: HealthOverview) {
                 days = overview.trend,
                 value = { it.distanceMeters / METERS_PER_KM },
                 color = colors.chartSeries2,
+                average = { lexString(R.string.health_value_distance, oneDecimal.format(it)) },
             )
         }
         if (overview.canCalories) {
@@ -396,13 +401,29 @@ private fun TrendWindow(overview: HealthOverview) {
                 days = overview.trend,
                 value = { it.activeKcal },
                 color = colors.chartSeries1,
+                average = { lexString(R.string.health_value_kcal, numbers.format(it.toLong())) },
+            )
+        }
+        if (overview.trend.any { it.sleepMinutes != null }) {
+            TrendChart(
+                title = lexString(R.string.tile_sleep_week),
+                days = overview.trend,
+                value = { (it.sleepMinutes ?: 0).toDouble() },
+                color = colors.chartSeries3,
+                average = { formatDuration(Duration.ofMinutes(it.toLong())) },
             )
         }
     }
 }
 
 @Composable
-private fun TrendChart(title: String, days: List<HealthTrendDay>, value: (HealthTrendDay) -> Double, color: Color) {
+private fun TrendChart(
+    title: String,
+    days: List<HealthTrendDay>,
+    value: (HealthTrendDay) -> Double,
+    color: Color,
+    average: @Composable (Double) -> String,
+) {
     val colors = AwakenTheme.colors
     val values = days.map(value)
     val max = (values.maxOrNull() ?: 0.0).coerceAtLeast(1.0)
@@ -417,6 +438,10 @@ private fun TrendChart(title: String, days: List<HealthTrendDay>, value: (Health
             description = description,
         ),
     )
+    // Week view (phone feedback Part 2): the mean over days that recorded something.
+    DailyAverage.of(values)?.let { mean ->
+        Text(lexString(R.string.trend_daily_average, average(mean)), style = AwakenTheme.type.caption, color = colors.textSecondary)
+    }
 }
 
 @Composable
@@ -493,7 +518,13 @@ private fun previewOverview(allowed: Boolean = true, stepSource: StepSource = St
     return HealthOverview(
         today = day,
         trend = (6 downTo 0).map { back ->
-            HealthTrendDay(date.minusDays(back.toLong()), 4_000L + back * 900L, if (allowed) 3_000.0 + back * 400 else 0.0, if (allowed) 250.0 + back * 30 else 0.0)
+            HealthTrendDay(
+                date.minusDays(back.toLong()),
+                4_000L + back * 900L,
+                if (allowed) 3_000.0 + back * 400 else 0.0,
+                if (allowed) 250.0 + back * 30 else 0.0,
+                sleepMinutes = 390 + back * 12,
+            )
         },
         updatedAt = Instant.parse("2026-10-18T10:00:00Z"),
         canDistance = allowed,
@@ -559,3 +590,12 @@ private fun HealthScreenDisabledPreview() {
 }
 
 // endregion
+
+/** The Week view on its own (it sits below the fold in the screen previews): 7-day bars plus daily averages. */
+@PhonePreviews
+@Composable
+private fun HealthWeekPreview() {
+    AwakenTheme(reduceMotion = true) {
+        Column(modifier = Modifier.padding(Spacing.gutter)) { TrendWindow(previewOverview()) }
+    }
+}

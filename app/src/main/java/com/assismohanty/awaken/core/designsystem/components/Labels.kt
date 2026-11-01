@@ -199,6 +199,20 @@ fun formatCount(value: Long): String = NumberFormat.getIntegerInstance(currentLo
 @ReadOnlyComposable
 fun formatCount(value: Int): String = formatCount(value.toLong())
 
+/** "45 min", "2 h", "2 h 15 min": screen-time durations (Screen time screen, Today tile). */
+@Composable
+fun formatMinutes(minutes: Int): String {
+    val hours = minutes / MINUTES_PER_HOUR
+    val rest = minutes % MINUTES_PER_HOUR
+    return when {
+        hours == 0 -> lexString(R.string.screentime_duration_minutes, formatCount(rest))
+        rest == 0 -> lexString(R.string.screentime_duration_hours, formatCount(hours))
+        else -> lexString(R.string.screentime_duration_hours_minutes, formatCount(hours), formatCount(rest))
+    }
+}
+
+private const val MINUTES_PER_HOUR = 60
+
 /** "2.4": one decimal in the user's locale (insight means, recap averages). */
 @Composable
 @ReadOnlyComposable

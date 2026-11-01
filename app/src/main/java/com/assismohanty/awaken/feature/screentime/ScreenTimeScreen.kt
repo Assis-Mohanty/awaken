@@ -1,6 +1,7 @@
 package com.assismohanty.awaken.feature.screentime
 
 import com.assismohanty.awaken.core.designsystem.lexicon.lexString
+import com.assismohanty.awaken.core.designsystem.components.formatMinutes
 import com.assismohanty.awaken.core.designsystem.lexicon.lexPlural
 import com.assismohanty.awaken.core.designsystem.charts.Chart
 import com.assismohanty.awaken.core.designsystem.charts.ChartSpec
@@ -67,6 +68,7 @@ import com.assismohanty.awaken.core.designsystem.preview.PhonePreviews
 import com.assismohanty.awaken.core.designsystem.theme.AwakenTheme
 import com.assismohanty.awaken.core.designsystem.theme.Spacing
 import com.assismohanty.awaken.core.domain.AppUsageRow
+import com.assismohanty.awaken.core.domain.DailyAverage
 import com.assismohanty.awaken.core.domain.DisciplineStatus
 import com.assismohanty.awaken.core.domain.ScreenTimeDay
 import com.assismohanty.awaken.core.domain.ScreenTimeOverview
@@ -102,7 +104,7 @@ fun ScreenTimeRoute(onBack: () -> Unit, modifier: Modifier = Modifier, viewModel
  * AWAKEN's own "Permit usage access" switch (a package URI deep-links to it on most phones), else the full usage-access
  * list, else AWAKEN's app-info page. Never a crash when an OEM removed the page.
  */
-private fun openUsageAccessSettings(context: Context) {
+internal fun openUsageAccessSettings(context: Context) {
     val packageUri = Uri.fromParts("package", context.packageName, null)
     val candidates = listOf(
         Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS, packageUri),
@@ -399,6 +401,9 @@ private fun TrendWindow(trend: List<ScreenTimeDay>, modifier: Modifier = Modifie
                 Text(dayName(day.gameDate), style = AwakenTheme.type.caption, color = colors.textSecondary, modifier = Modifier.weight(1f))
             }
         }
+        DailyAverage.ofWhole(trend.map { it.totalMinutes.toLong() })?.let { average ->
+            Text(lexString(R.string.trend_daily_average, formatMinutes(average.toInt())), style = AwakenTheme.type.label, color = colors.textPrimary)
+        }
     }
 }
 
@@ -489,20 +494,8 @@ private val AppCategory.shortRes: Int
         AppCategory.NEUTRAL -> R.string.screentime_short_neutral
     }
 
-@Composable
-internal fun formatMinutes(minutes: Int): String {
-    val hours = minutes / MINUTES_PER_HOUR
-    val rest = minutes % MINUTES_PER_HOUR
-    return when {
-        hours == 0 -> lexString(R.string.screentime_duration_minutes, formatCount(rest))
-        rest == 0 -> lexString(R.string.screentime_duration_hours, formatCount(hours))
-        else -> lexString(R.string.screentime_duration_hours_minutes, formatCount(hours), formatCount(rest))
-    }
-}
-
 private fun dayName(date: LocalDate): String = date.dayOfWeek.getDisplayName(TextStyle.NARROW, Locale.getDefault())
 
-private const val MINUTES_PER_HOUR = 60
 private const val LIMIT_PREVIEW_COUNT = 4
 private const val WARN_FRACTION = 0.84f
 
@@ -594,5 +587,14 @@ private fun ScreenTimeUnreadablePreview() {
             onBack = {},
             onOpenUsageAccess = {},
         )
+    }
+}
+
+/** The Week view on its own (below the fold in the screen preview): 7-day bars plus the daily average. */
+@PhonePreviews
+@Composable
+private fun ScreenTimeWeekPreview() {
+    AwakenTheme(reduceMotion = true) {
+        Column(modifier = Modifier.padding(Spacing.gutter)) { TrendWindow(checkNotNull(previewScreenTimeState().overview).trend) }
     }
 }

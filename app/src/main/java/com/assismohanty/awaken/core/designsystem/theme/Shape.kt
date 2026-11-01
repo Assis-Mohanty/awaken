@@ -95,6 +95,11 @@ data class AwakenDimens(
     /** Diet calorie ring and its stroke. */
     val calorieRing: Dp = 148.dp,
     val calorieRingStroke: Dp = 10.dp,
+    /** The ring inside a half-width Today summary tile (screen time) and its stroke. */
+    val tileRing: Dp = 104.dp,
+    val tileRingStroke: Dp = 9.dp,
+    /** A health-tile figure's minimum width: two side by side only when both get this much. */
+    val tileFigureMinWidth: Dp = 64.dp,
     /** Number fields in set rows and nutrient forms. */
     val numberField: Dp = 64.dp,
 )

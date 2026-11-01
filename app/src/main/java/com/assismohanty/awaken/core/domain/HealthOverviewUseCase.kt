@@ -17,7 +17,14 @@ import javax.inject.Inject
 import timber.log.Timber
 
 /** One bar in the 7-day trend: the totals for that game-day, after the trust rules. */
-data class HealthTrendDay(val date: LocalDate, val steps: Long, val distanceMeters: Double, val activeKcal: Double)
+data class HealthTrendDay(
+    val date: LocalDate,
+    val steps: Long,
+    val distanceMeters: Double,
+    val activeKcal: Double,
+    /** Longest trusted sleep that ended in the day (last night's for today); null = none recorded. */
+    val sleepMinutes: Int? = null,
+)
 
 /** Where the step numbers on the Health screen came from. */
 enum class StepSource {
@@ -60,14 +67,17 @@ sealed interface HealthOverviewResult {
     data object ReadFailed : HealthOverviewResult
 }
 
-/** Reads the last [TREND_DAYS] game-days for the Health screen (display only: no quest, ledger or setting changes). */
+/**
+ * Reads the last [TREND_DAYS] game-days for the Health screen, or only today for the Today tile (display only: no quest,
+ * ledger or setting changes). The step source is always judged over the full week, so a quiet morning isn't "no source".
+ */
 class LoadHealthOverviewUseCase @Inject constructor(
     private val hunterDao: HunterDao,
     private val gateway: HealthGateway,
     private val phoneSteps: PhoneStepsGateway,
     private val clock: Clock,
 ) {
-    suspend operator fun invoke(): HealthOverviewResult {
+    suspend operator fun invoke(days: Int = TREND_DAYS): HealthOverviewResult {
         val profile = hunterDao.getProfile()
         if (profile == null || !profile.healthEnabled) return HealthOverviewResult.Disabled
         val granted = gateway.grantedPermissions()
@@ -78,18 +88,21 @@ class LoadHealthOverviewUseCase @Inject constructor(
         val now = clock.now()
         val today = clock.gameDate(profile.dayStartHour)
         return try {
-            val windows = (TREND_DAYS - 1 downTo 0).map { back ->
+            val windows = (days.coerceIn(1, TREND_DAYS) - 1 downTo 0).map { back ->
                 val date = today.minusDays(back.toLong())
                 val end = if (back == 0) now else GameDay.endOf(date, zone, profile.dayStartHour)
                 date to HealthWindow(GameDay.startOf(date, zone, profile.dayStartHour), end)
             }
             val read = windows.map { (date, window) -> date to HealthRules.trusted(gateway.readDay(window)) }
-            val (source, steps) = steps(read.map { it.second.steps }, windows.map { it.second })
-            val trend = read.mapIndexed { i, (date, day) -> date to HealthRules.trusted(day.copy(steps = steps[i])) }
+            val week = HealthWindow(GameDay.startOf(today.minusDays(TREND_DAYS - 1L), zone, profile.dayStartHour), now)
+            val (source, steps) = steps(read.map { it.second.steps }, windows.map { it.second }, week)
+            val trend = read.mapIndexed { i, (date, day) -> Triple(date, HealthRules.trusted(day.copy(steps = steps[i])), windows[i].second) }
             HealthOverviewResult.Ready(
                 HealthOverview(
                     today = trend.last().second,
-                    trend = trend.map { (date, day) -> HealthTrendDay(date, day.steps, day.distanceMeters, day.activeKcal) },
+                    trend = trend.map { (date, day, window) ->
+                        HealthTrendDay(date, day.steps, day.distanceMeters, day.activeKcal, HealthRules.longestSleepMinutes(day, window))
+                    },
                     updatedAt = now,
                     canDistance = gateway.distancePermission in granted,
                     canCalories = gateway.caloriesPermission in granted,
@@ -108,9 +121,9 @@ class LoadHealthOverviewUseCase @Inject constructor(
      * Health Connect steps when any app writes them; else the phone's counter if the hunter allowed it; else nothing (all
      * zero, shown as "no step data", never a made-up number).
      */
-    private suspend fun steps(fromHealthConnect: List<Long>, windows: List<HealthWindow>): Pair<StepSource, List<Long>> {
+    private suspend fun steps(fromHealthConnect: List<Long>, windows: List<HealthWindow>, week: HealthWindow): Pair<StepSource, List<Long>> {
         if (gateway.isSimulated) return StepSource.SIMULATED to fromHealthConnect
-        if (gateway.hasStepData(HealthWindow(windows.first().start, windows.last().end))) return StepSource.HEALTH_CONNECT to fromHealthConnect
+        if (gateway.hasStepData(week)) return StepSource.HEALTH_CONNECT to fromHealthConnect
         val none = StepSource.NONE to windows.map { 0L }
         if (!phoneSteps.isSupported() || !phoneSteps.isPermissionGranted()) return none
         phoneSteps.subscribe()
