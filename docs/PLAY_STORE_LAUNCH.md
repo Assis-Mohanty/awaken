@@ -170,7 +170,7 @@ uploaded (including to AI Paths), and is not used for advertising. You can revok
 Use of information received from Health Connect adheres to the Health Connect Permissions policy, including the
 Limited Use requirements.
 
-Phone step counter (optional): if no app shares steps with Health Connect and you tap "Count steps on this phone", the app asks for the Physical activity permission and uses Google's Recording API, part of Google Play services, to count steps with your phone's own sensors. The step totals stay on your device (Google Play services keeps up to 10 days of them), are shown only on the Health screen, are never uploaded by the app (including to AI Paths), do not need a Google account, and are not used for advertising. You can turn it off anytime by removing the Physical activity permission in your phone's settings.
+Phone step counter (optional): if no app shares steps with Health Connect and you tap "Count steps on this phone", the app asks for the Physical activity permission and uses Google's Recording API, part of Google Play services, to count steps with your phone's own sensors. The step totals stay on your device (Google Play services keeps up to 10 days of them), are shown on the Health screen and used to complete step quests when no other app shares steps, are never uploaded by the app (including to AI Paths), do not need a Google account, and are not used for advertising. You can turn it off anytime by removing the Physical activity permission in your phone's settings.
 
 Insights and recaps: the app also uses this data, on your device only, to show you personal patterns
 (for example, how many quests you complete on days after 7+ hours of sleep or with 7,000+ steps) and monthly and

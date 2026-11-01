@@ -154,6 +154,7 @@ class TestGraph(
     val templates = TemplateRepository(context, Dispatchers.Unconfined)
     val identities = IdentityRepository(context, Dispatchers.Unconfined)
     val health = FakeHealthGateway()
+    val phoneSteps = FakePhoneStepsGateway()
     val reader = GameStateReader(
         db.hunterDao(), db.questDao(), db.completionDao(), db.ledgerDao(), db.dayRecordDao(),
         db.gateRunDao(), db.trialDao(), db.achievementDao(), clock, health, db.campaignDao(), db.weeklyReviewDao(),
@@ -238,7 +239,7 @@ class TestGraph(
     val porter = GameDataPorter(db, ledger, transactions, clock, Dispatchers.Unconfined)
     val updateSettings = UpdateSettingsUseCase(db.hunterDao(), templates, identities, clock)
     val observeSettings = ObserveSettingsUseCase(db.hunterDao(), templates, identities)
-    val healthSync = HealthSyncUseCase(db.hunterDao(), db.questDao(), health, completeQuest, completionCenter, clock)
+    val healthSync = HealthSyncUseCase(db.hunterDao(), db.questDao(), health, phoneSteps, completeQuest, completionCenter, clock)
     val loadInsights = LoadInsightsUseCase(db.insightDao(), clock)
     val refreshHealthCache = RefreshHealthCacheUseCase(db.hunterDao(), db.insightDao(), health, clock)
     val submitReview = SubmitWeeklyReviewUseCase(db.hunterDao(), db.weeklyReviewDao(), achievements, transactions, clock)

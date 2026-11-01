@@ -33,8 +33,8 @@ import timber.log.Timber
 
 /**
  * The phone's own step counter, for when no app writes steps to Health Connect (ARCH §3.4). Backed by Google's Recording
- * API on mobile: on-device, no Google account, about 10 days kept by Play services. Display only: it never verifies a
- * quest (ENGINE_DECISIONS #110). Granting [permission] is the hunter's opt-in.
+ * API on mobile: on-device, no Google account, about 10 days kept by Play services. Its steps show on the Health screen
+ * and verify step quests like Health Connect steps (ENGINE_DECISIONS #110). Granting [permission] is the hunter's opt-in.
  */
 interface PhoneStepsGateway {
     /** The runtime permission that turns step recording on. */

@@ -7,6 +7,9 @@ import com.assismohanty.awaken.core.data.db.dao.QuestDao
 import com.assismohanty.awaken.core.data.health.HealthGateway
 import com.assismohanty.awaken.core.data.health.HealthReadException
 import com.assismohanty.awaken.core.data.health.HealthStatus
+import com.assismohanty.awaken.core.data.health.PhoneStepsGateway
+import com.assismohanty.awaken.engine.HealthDay
+import com.assismohanty.awaken.engine.HealthWindow
 import com.assismohanty.awaken.engine.HealthRules
 import com.assismohanty.awaken.engine.model.VerificationSource
 import javax.inject.Inject
@@ -29,13 +32,15 @@ sealed interface HealthSyncResult {
  * Reads today's Health Connect data and completes the HEALTH quests it satisfies (ARCH §3.4). Foreground only
  * (ENGINE_DECISIONS #51). Matching is [HealthRules]; rewards go through [CompleteQuestUseCase.completeVerified], so the
  * ledger rows are keyed by completionId like any other completion (GD §9.3). A quest already completed is skipped by
- * its status, so syncing again is a no-op.
+ * its status, so syncing again is a no-op. When no app writes steps to Health Connect today, the phone's own counter
+ * (Recording API, if the hunter allowed it) supplies the steps, verified like Health Connect steps (ENGINE_DECISIONS #110).
  */
 @Singleton
 class HealthSyncUseCase @Inject constructor(
     private val hunterDao: HunterDao,
     private val questDao: QuestDao,
     private val gateway: HealthGateway,
+    private val phoneSteps: PhoneStepsGateway,
     private val completeQuest: CompleteQuestUseCase,
     private val completionCenter: CompletionCenter,
     private val clock: Clock,
@@ -55,7 +60,7 @@ class HealthSyncUseCase @Inject constructor(
 
         val window = HealthRules.window(today, clock.zone(), profile.dayStartHour, clock.now())
         val day = try {
-            gateway.readDay(window)
+            withPhoneSteps(gateway.readDay(window), window)
         } catch (e: HealthReadException) {
             Timber.w(e, "Health Connect read failed")
             return@withLock HealthSyncResult.ReadFailed
@@ -67,6 +72,15 @@ class HealthSyncUseCase @Inject constructor(
             }
         completed.forEach(completionCenter::completed)
         HealthSyncResult.Synced(completed)
+    }
+
+    /** Health Connect steps when any app writes them today; else the phone's counter; else the day as read (0 steps). */
+    private suspend fun withPhoneSteps(day: HealthDay, window: HealthWindow): HealthDay {
+        if (gateway.isSimulated || gateway.hasStepData(window)) return day
+        if (!phoneSteps.isSupported() || !phoneSteps.isPermissionGranted()) return day
+        phoneSteps.subscribe()
+        val steps = phoneSteps.dailySteps(listOf(window))?.singleOrNull() ?: return day
+        return day.copy(steps = steps)
     }
 }
 

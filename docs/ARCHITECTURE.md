@@ -258,7 +258,7 @@ This avoids foreground-service-type policy declarations entirely. The process ma
 - If HC unavailable/not installed/denied: HEALTH templates are excluded from generation; no nagging.
 - Never write to Health Connect in v1.
 
-- **Step source (ENGINE_DECISIONS #110):** `HealthGateway.hasStepData` tells "no app writes steps" apart from "0 steps". With none, the Health screen uses `PhoneStepsGateway` (`RecordingApiStepsGateway`, Recording API on mobile, `core/data/health`, Play services IPC, no network of its own) if the hunter granted `ACTIVITY_RECOGNITION`, else shows "No step data yet" with a link to Health Connect settings. Display only. The debug "Simulate 9,000 steps" gateway reports `isSimulated`, and debug builds print the source.
+- **Step source (ENGINE_DECISIONS #110):** `HealthGateway.hasStepData` tells "no app writes steps" apart from "0 steps". With none, the Health screen uses `PhoneStepsGateway` (`RecordingApiStepsGateway`, Recording API on mobile, `core/data/health`, Play services IPC, no network of its own) if the hunter granted `ACTIVITY_RECOGNITION`, else shows "No step data yet" with a link to Health Connect settings. `HealthSyncUseCase` uses the same fallback for today's window, so phone steps verify step quests. The debug "Simulate 9,000 steps" gateway reports `isSimulated`, and debug builds print the source.
 
 ### 3.5 Notifications (respectful by default)
 - Channel `directive` (default importance): 1× daily at `reminder_time` — "Your directive is ready: 4 quests."

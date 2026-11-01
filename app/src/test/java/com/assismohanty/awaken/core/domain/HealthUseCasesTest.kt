@@ -54,6 +54,72 @@ class HealthUseCasesTest {
     }
 
     @Test
+    fun phoneStepsVerifyAStepsQuestWhenHealthConnectHasNone() = runTest {
+        connected()
+        val quest = graph.fixtureQuest("walk", verification = Verification.HEALTH_STEPS, target = 7_000)
+        graph.health.stepData = false
+        graph.phoneSteps.granted = true
+        graph.phoneSteps.stepsPerDay = 7_500
+
+        val result = graph.healthSync() as HealthSyncResult.Synced
+
+        assertThat(result.completed).hasSize(1)
+        // Same source, so the same HEALTH multiplier as Health Connect steps (ENGINE_DECISIONS #110).
+        assertThat(result.completed.single().verification).isEqualTo(VerificationSource.HEALTH)
+        assertThat(status(quest.id)).isEqualTo(QuestStatus.COMPLETED)
+    }
+
+    @Test
+    fun healthConnectStepsWinOverThePhone() = runTest {
+        connected()
+        val quest = graph.fixtureQuest("walk", verification = Verification.HEALTH_STEPS, target = 7_000)
+        graph.health.day = HealthDay(steps = 3_000)
+        graph.phoneSteps.granted = true
+        graph.phoneSteps.stepsPerDay = 9_000
+
+        assertThat(graph.healthSync()).isEqualTo(HealthSyncResult.Synced(emptyList()))
+        assertThat(status(quest.id)).isEqualTo(QuestStatus.ACTIVE)
+        assertThat(graph.phoneSteps.reads).isEqualTo(0)
+    }
+
+    @Test
+    fun phoneStepsCountOnlyOnceTheHunterAllowedThem() = runTest {
+        connected()
+        val quest = graph.fixtureQuest("walk", verification = Verification.HEALTH_STEPS, target = 7_000)
+        graph.health.stepData = false
+        graph.phoneSteps.stepsPerDay = 9_000
+
+        assertThat(graph.healthSync()).isEqualTo(HealthSyncResult.Synced(emptyList()))
+        assertThat(status(quest.id)).isEqualTo(QuestStatus.ACTIVE)
+    }
+
+    @Test
+    fun impossiblePhoneStepsDoNotCount() = runTest {
+        connected()
+        val quest = graph.fixtureQuest("walk", verification = Verification.HEALTH_STEPS, target = 7_000)
+        graph.health.stepData = false
+        graph.phoneSteps.granted = true
+        graph.phoneSteps.stepsPerDay = 80_000
+
+        assertThat(graph.healthSync()).isEqualTo(HealthSyncResult.Synced(emptyList()))
+        assertThat(status(quest.id)).isEqualTo(QuestStatus.ACTIVE)
+    }
+
+    @Test
+    fun aFailedPhoneReadCompletesNothing() = runTest {
+        connected()
+        val quest = graph.fixtureQuest("walk", verification = Verification.HEALTH_STEPS, target = 7_000)
+        graph.health.stepData = false
+        graph.phoneSteps.granted = true
+        graph.phoneSteps.stepsPerDay = 9_000
+        graph.phoneSteps.failReads = true
+
+        graph.healthSync()
+
+        assertThat(status(quest.id)).isEqualTo(QuestStatus.ACTIVE)
+    }
+
+    @Test
     fun belowTheTargetNothingHappens() = runTest {
         connected()
         val quest = graph.fixtureQuest("walk", verification = Verification.HEALTH_STEPS, target = 7_000)

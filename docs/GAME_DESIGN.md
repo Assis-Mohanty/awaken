@@ -193,6 +193,8 @@ Target ladders (Easy / Normal / Hard / Extreme): `HEALTH_DISTANCE` **2 / 4 / 7 /
 - **Heart rate is display-only.** It is shown on workout summaries and used by the sanity limit above; it never changes XP, gold, crits or caps.
 - Permissions: Steps, Exercise and Sleep are the core set; Distance, Active calories and Heart rate are optional and each enables only its own feature.
 
+- **Phone step counter (approved 2026-11-01):** when no app writes steps to Health Connect for the day, steps counted by the phone itself (Recording API, opt-in) verify HEALTH_STEPS quests as HEALTH, with the same multiplier and step cap. No new number (ENGINE_DECISIONS #110).
+
 ### 6.3 Generation algorithm
 
 ```
