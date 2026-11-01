@@ -13,6 +13,8 @@ Snapshot after Phase 17 (commit `67b1754`). Gates green: `:engine:test`, `:app:t
 |---|---|
 | INTERNET | App (Path Oracle only; cleartext disabled) |
 | POST_NOTIFICATIONS | App (reminders) |
+| ACTIVITY_RECOGNITION | App (phone step counter via the Recording API; asked only from "Count steps on this phone", ENGINE_DECISIONS #110). Play Data safety: Physical activity, collected, not shared, on-device |
+| PACKAGE_USAGE_STATS | App (Screen Discipline, special access the hunter grants in settings) |
 | health.READ_STEPS / READ_EXERCISE / READ_SLEEP (core), READ_DISTANCE / READ_ACTIVE_CALORIES_BURNED / READ_HEART_RATE (optional) | App (Health Connect, on-device only) |
 | WAKE_LOCK, ACCESS_NETWORK_STATE, RECEIVE_BOOT_COMPLETED, FOREGROUND_SERVICE | WorkManager |
 | `<package>.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION` | AndroidX (internal) |
@@ -31,7 +33,7 @@ Release `BuildConfig`: `DEBUG=false`, `ORACLE_DEBUG_KEY=""`.
 9. Proxy: eval set (`npm run eval`) drop rate against staging has not been recorded here.
 
 ## Dependency scan (releaseRuntimeClasspath)
-Only Ktor 3.6.0 + OkHttp 5.5.0 (our Path Oracle client) and Play Integrity 1.6.0 with play-services basement/tasks. No Firebase, analytics, crash, ads or other networking SDKs.
+Only Ktor 3.6.0 + OkHttp 5.5.0 (our Path Oracle client), Play Integrity 1.6.0 and play-services-fitness 21.3.0 (Recording API on mobile only, added 2026-11-01) with play-services base/basement/tasks. No Firebase, analytics, crash, ads or other networking SDKs.
 
 ## Not verified in this report
 Process-death on every screen, timezone/clock-back behaviour on a device. Phase 16 asked for these; the commit log shows lint/accessibility/icon/signing work but I did not re-audit them.

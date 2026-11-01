@@ -16,6 +16,9 @@
     <uses-permission android:name="android.permission.health.READ_ACTIVE_CALORIES_BURNED" />
     <uses-permission android:name="android.permission.health.READ_HEART_RATE" />
 
+    <!-- Phone step counter (Recording API on mobile), asked for only when the hunter taps "Count steps on this phone". -->
+    <uses-permission android:name="android.permission.ACTIVITY_RECOGNITION" />
+
     <!-- Screen Discipline (ARCH §3.11): read-only usage access the hunter grants in system settings. Never blocks apps. -->
     <uses-permission
         android:name="android.permission.PACKAGE_USAGE_STATS"

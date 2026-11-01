@@ -177,6 +177,7 @@ dependencies {
     implementation(libs.ktor.client.core)
     implementation(libs.ktor.client.okhttp)
     implementation(libs.play.integrity)
+    implementation(libs.play.services.fitness)
     testImplementation(libs.ktor.client.mock)
 
     testImplementation(libs.junit4)

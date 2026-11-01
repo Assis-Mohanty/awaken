@@ -125,6 +125,11 @@ class HealthConnectGateway @Inject constructor(
         }
     }
 
+    override suspend fun hasStepData(window: HealthWindow): Boolean = withContext(ioDispatcher) {
+        if (status() != HealthStatus.AVAILABLE) return@withContext false
+        guarded { trustedOrigins(client(), StepsRecord::class, TimeRangeFilter.between(window.start, window.end)).isNotEmpty() } ?: false
+    }
+
     /** One workout with its own distance, active calories and average heart rate, read from the app that wrote it. */
     private suspend fun exerciseSession(
         client: HealthConnectClient,

@@ -258,6 +258,8 @@ This avoids foreground-service-type policy declarations entirely. The process ma
 - If HC unavailable/not installed/denied: HEALTH templates are excluded from generation; no nagging.
 - Never write to Health Connect in v1.
 
+- **Step source (ENGINE_DECISIONS #110):** `HealthGateway.hasStepData` tells "no app writes steps" apart from "0 steps". With none, the Health screen uses `PhoneStepsGateway` (`RecordingApiStepsGateway`, Recording API on mobile, `core/data/health`, Play services IPC, no network of its own) if the hunter granted `ACTIVITY_RECOGNITION`, else shows "No step data yet" with a link to Health Connect settings. Display only. The debug "Simulate 9,000 steps" gateway reports `isSimulated`, and debug builds print the source.
+
 ### 3.5 Notifications (respectful by default)
 - Channel `directive` (default importance): 1× daily at `reminder_time` — "Your directive is ready: 4 quests."
 - Channel `last_call` (default): 1× at 21:00 local *only if* the day isn't cleared — "2 quests from clearing the day."
@@ -353,6 +355,8 @@ Request pipeline, in order (cheap checks first, the model last):
 - **Permission.** `PACKAGE_USAGE_STATS` is a special app access: the Screen Time screen explains it, then opens `Settings.ACTION_USAGE_ACCESS_SETTINGS`. App names and icons come from a launcher-intent `<queries>` block; no `QUERY_ALL_PACKAGES`. Read-only: nothing blocks, overlays or interrupts another app, and no usage data leaves the device (invariant 8 untouched).
 - **Gateway.** `UsageGateway` (real: `AndroidUsageGateway`, which sums foreground time from activity resume/pause events over the game-day window; debug: `DebugUsageGateway` with "simulate Instagram minutes"; tests: `FakeUsageGateway`).
 - **Flow.** Turning it on (`SetScreenTimeEnabledUseCase`) seeds default rules for launcher apps and sets `screen_time_from = tomorrow`. `GenerateDirective` adds the day's DISCIPLINE quest when it runs (`DisciplineQuestPlanner`). `DisciplineSyncUseCase` runs on app foreground and from `ScreenTimeWorker` (periodic, 15 min): the first crossing expires the quest in one transaction, and warnings due are returned for the caller to notify once per app per day. At rollover, `SettleDisciplineUseCase` completes a held day through `CompleteQuestUseCase.completeVerified(id, USAGE)` before `finalizeDay` (ENGINE_DECISIONS #91).
+
+- **Fail closed (ENGINE_DECISIONS #111):** `UsageGateway.read` returns `UsageRead.NoAccess | Unavailable | Tracked`; nothing pays, forfeits or warns on anything but `Tracked`.
 
 ### 3.12 The 45-day Campaign
 - `PreviewCampaignUseCase` turns scan answers into scores, archetype and up to 5 planned habits (engine `CampaignPlanner`) without writing. `StartCampaignUseCase` (the sealed oath) writes the campaign and its habits in one transaction and regenerates today's directive so the habits join it.

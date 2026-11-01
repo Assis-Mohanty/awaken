@@ -5,6 +5,11 @@ import com.assismohanty.awaken.core.designsystem.charts.Chart
 import com.assismohanty.awaken.core.designsystem.charts.ChartSpec
 import com.assismohanty.awaken.core.designsystem.charts.Segment
 import com.assismohanty.awaken.core.designsystem.components.MetricTile
+import android.content.ActivityNotFoundException
+import android.content.Context
+import android.content.Intent
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
@@ -18,16 +23,20 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.intl.Locale
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.health.connect.client.HealthConnectClient
+import com.assismohanty.awaken.BuildConfig
 import com.assismohanty.awaken.R
 import com.assismohanty.awaken.core.designsystem.components.LargeTitleScaffold
 import com.assismohanty.awaken.core.designsystem.components.GateBackground
@@ -41,6 +50,7 @@ import com.assismohanty.awaken.core.designsystem.theme.AwakenTheme
 import com.assismohanty.awaken.core.designsystem.theme.Spacing
 import com.assismohanty.awaken.core.domain.HealthOverview
 import com.assismohanty.awaken.core.domain.HealthTrendDay
+import com.assismohanty.awaken.core.domain.StepSource
 import com.assismohanty.awaken.engine.HealthDay
 import com.assismohanty.awaken.engine.HealthSession
 import com.assismohanty.awaken.engine.SleepStage
@@ -55,6 +65,7 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import java.time.format.TextStyle
+import timber.log.Timber
 
 
 @Composable
@@ -66,7 +77,35 @@ fun HealthRoute(onBack: () -> Unit, modifier: Modifier = Modifier, viewModel: He
         onPermissionsResult = { viewModel.onEvent(HealthEvent.PermissionsResult) },
         onHandled = { viewModel.onEvent(HealthEvent.ActionHandled) },
     )
-    HealthScreen(state = state, onEvent = viewModel::onEvent, onBack = onBack, modifier = modifier)
+    val context = LocalContext.current
+    val phoneStepsLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        viewModel.onEvent(HealthEvent.PhoneStepsResult(granted))
+    }
+    LaunchedEffect(state.requestPhoneSteps) {
+        if (state.requestPhoneSteps) {
+            phoneStepsLauncher.launch(state.phoneStepsPermission)
+            viewModel.onEvent(HealthEvent.PhoneStepsRequested)
+        }
+    }
+    HealthScreen(
+        state = state,
+        onEvent = viewModel::onEvent,
+        onBack = onBack,
+        onOpenHealthConnect = { openHealthConnectSettings(context) },
+        modifier = modifier,
+    )
+}
+
+/** Health Connect's own settings, where the hunter connects an app that records steps. */
+private fun openHealthConnectSettings(context: Context) {
+    try {
+        // Kotlin name of the JVM getHealthConnectSettingsAction(): the platform page on Android 14+, the app before.
+        val intent = Intent(HealthConnectClient.ACTION_HEALTH_CONNECT_SETTINGS)
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        context.startActivity(intent)
+    } catch (e: ActivityNotFoundException) {
+        Timber.w(e, "No Health Connect settings screen")
+    }
 }
 
 /** Health (steps, distance, calories, heart rate, workouts, sleep, 7-day trend, sources). Display only: no rewards here. */
@@ -76,7 +115,9 @@ fun HealthScreen(
     onEvent: (HealthEvent) -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
+    onOpenHealthConnect: () -> Unit = {},
     zone: ZoneId = ZoneId.systemDefault(),
+    showSource: Boolean = BuildConfig.DEBUG,
 ) {
     val colors = AwakenTheme.colors
     GateBackground(rank = Rank.E, modifier = modifier) {
@@ -84,7 +125,7 @@ fun HealthScreen(
             val overview = state.overview
             when {
                 overview != null -> {
-                    OverviewContent(overview, state, onEvent, zone)
+                    OverviewContent(overview, state, onEvent, onOpenHealthConnect, zone, showSource)
                 }
                 else -> MessageWindow(state.status, onEvent)
             }
@@ -115,9 +156,17 @@ private fun MessageWindow(status: HealthScreenStatus, onEvent: (HealthEvent) -> 
 }
 
 @Composable
-private fun OverviewContent(overview: HealthOverview, state: HealthUiState, onEvent: (HealthEvent) -> Unit, zone: ZoneId) {
+private fun OverviewContent(
+    overview: HealthOverview,
+    state: HealthUiState,
+    onEvent: (HealthEvent) -> Unit,
+    onOpenHealthConnect: () -> Unit,
+    zone: ZoneId,
+    showSource: Boolean,
+) {
     val colors = AwakenTheme.colors
-    TodayWindow(overview, state, onEvent, zone)
+    if (overview.stepSource == StepSource.NONE) NoStepDataWindow(overview.canUsePhoneSteps, onEvent, onOpenHealthConnect)
+    TodayWindow(overview, state, onEvent, zone, showSource)
     WorkoutsWindow(overview.today.exercise, zone)
     SleepWindow(overview.today.sleep.lastOrNull(), zone)
     TrendWindow(overview)
@@ -136,7 +185,24 @@ private fun OverviewContent(overview: HealthOverview, state: HealthUiState, onEv
 }
 
 @Composable
-private fun TodayWindow(overview: HealthOverview, state: HealthUiState, onEvent: (HealthEvent) -> Unit, zone: ZoneId) {
+private fun NoStepDataWindow(canUsePhoneSteps: Boolean, onEvent: (HealthEvent) -> Unit, onOpenHealthConnect: () -> Unit) {
+    val colors = AwakenTheme.colors
+    SystemWindow(title = lexString(R.string.health_no_steps_title), accent = colors.accent, reveal = false) {
+        Text(lexString(R.string.health_no_steps_body), style = AwakenTheme.type.body, color = colors.textPrimary)
+        PrimaryButton(text = lexString(R.string.health_open_health_connect), onClick = onOpenHealthConnect, modifier = Modifier.fillMaxWidth())
+        if (canUsePhoneSteps) {
+            SecondaryButton(
+                text = lexString(R.string.health_use_phone_steps),
+                onClick = { onEvent(HealthEvent.UsePhoneSteps) },
+                modifier = Modifier.fillMaxWidth(),
+            )
+            Text(lexString(R.string.health_use_phone_steps_note), style = AwakenTheme.type.caption, color = colors.textSecondary)
+        }
+    }
+}
+
+@Composable
+private fun TodayWindow(overview: HealthOverview, state: HealthUiState, onEvent: (HealthEvent) -> Unit, zone: ZoneId, showSource: Boolean) {
     val colors = AwakenTheme.colors
     val today = overview.today
     val heartRate = today.avgHeartRate
@@ -159,9 +225,20 @@ private fun TodayWindow(overview: HealthOverview, state: HealthUiState, onEvent:
             style = AwakenTheme.type.caption,
             color = colors.textSecondary,
         )
+        if (showSource) {
+            Text(lexString(R.string.health_debug_source, lexString(overview.stepSource.labelRes)), style = AwakenTheme.type.caption, color = colors.textSecondary)
+        } else if (overview.stepSource == StepSource.PHONE) {
+            Text(lexString(R.string.health_steps_from_phone), style = AwakenTheme.type.caption, color = colors.textSecondary)
+        }
         val notAllowed = lexString(R.string.health_not_allowed)
         Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm), modifier = Modifier.fillMaxWidth()) {
-            MetricTile(lexString(R.string.health_metric_steps), numbers.format(today.steps), Modifier.weight(1f))
+            val noSteps = overview.stepSource == StepSource.NONE
+            MetricTile(
+                label = lexString(R.string.health_metric_steps),
+                value = if (noSteps) lexString(R.string.health_no_data) else numbers.format(today.steps),
+                modifier = Modifier.weight(1f),
+                dim = noSteps,
+            )
             MetricTile(
                 label = lexString(R.string.health_metric_distance),
                 value = if (overview.canDistance) lexString(R.string.health_value_distance, oneDecimal.format(today.distanceMeters / METERS_PER_KM)) else notAllowed,
@@ -297,12 +374,14 @@ private fun stageName(stage: SleepStageType): String = lexString(
 private fun TrendWindow(overview: HealthOverview) {
     val colors = AwakenTheme.colors
     SystemWindow(title = lexString(R.string.health_window_trend), accent = colors.positive, reveal = false) {
-        TrendChart(
-            title = lexString(R.string.health_metric_steps),
-            days = overview.trend,
-            value = { it.steps.toDouble() },
-            color = colors.chartSeries4,
-        )
+        if (overview.stepSource != StepSource.NONE) {
+            TrendChart(
+                title = lexString(R.string.health_metric_steps),
+                days = overview.trend,
+                value = { it.steps.toDouble() },
+                color = colors.chartSeries4,
+            )
+        }
         if (overview.canDistance) {
             TrendChart(
                 title = lexString(R.string.health_metric_distance),
@@ -356,6 +435,14 @@ private fun SourcesWindow(today: HealthDay) {
     }
 }
 
+private val StepSource.labelRes: Int
+    get() = when (this) {
+        StepSource.HEALTH_CONNECT -> R.string.health_source_health_connect
+        StepSource.PHONE -> R.string.health_source_phone
+        StepSource.SIMULATED -> R.string.health_source_fake
+        StepSource.NONE -> R.string.health_source_none
+    }
+
 private fun formatTime(instant: Instant, zone: ZoneId): String =
     DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT).withZone(zone).format(instant)
 
@@ -376,7 +463,7 @@ private const val MIN_BAR_FRACTION = 0.04f
 
 // region previews
 
-private fun previewOverview(allowed: Boolean = true): HealthOverview {
+private fun previewOverview(allowed: Boolean = true, stepSource: StepSource = StepSource.HEALTH_CONNECT): HealthOverview {
     val start = Instant.parse("2026-10-18T05:30:00Z")
     val sleepStart = Instant.parse("2026-10-17T22:30:00Z")
     fun stage(minutesFrom: Long, minutes: Long, type: SleepStageType) =
@@ -412,6 +499,8 @@ private fun previewOverview(allowed: Boolean = true): HealthOverview {
         canDistance = allowed,
         canCalories = allowed,
         canHeartRate = allowed,
+        stepSource = stepSource,
+        canUsePhoneSteps = stepSource == StepSource.NONE,
     )
 }
 
@@ -421,7 +510,7 @@ private fun HealthScreenPreview() {
     AwakenTheme(reduceMotion = true) {
         HealthScreen(
             state = HealthUiState(status = HealthScreenStatus.READY, overview = previewOverview()),
-            onEvent = {}, onBack = {}, zone = ZoneId.of("UTC"),
+            onEvent = {}, onBack = {}, zone = ZoneId.of("UTC"), showSource = false,
         )
     }
 }
@@ -432,7 +521,31 @@ private fun HealthScreenCoreOnlyPreview() {
     AwakenTheme(reduceMotion = true) {
         HealthScreen(
             state = HealthUiState(status = HealthScreenStatus.READY, overview = previewOverview(allowed = false)),
-            onEvent = {}, onBack = {}, zone = ZoneId.of("UTC"),
+            onEvent = {}, onBack = {}, zone = ZoneId.of("UTC"), showSource = false,
+        )
+    }
+}
+
+/** No app writes steps and the phone counter is off: no step number, a way to connect one. */
+@PhonePreviews
+@Composable
+private fun HealthScreenNoStepDataPreview() {
+    AwakenTheme(reduceMotion = true) {
+        HealthScreen(
+            state = HealthUiState(status = HealthScreenStatus.READY, overview = previewOverview(stepSource = StepSource.NONE)),
+            onEvent = {}, onBack = {}, zone = ZoneId.of("UTC"), showSource = false,
+        )
+    }
+}
+
+/** Debug build with "Simulate 9,000 steps" on: the data is labelled Fake. */
+@PhonePreviews
+@Composable
+private fun HealthScreenSimulatedPreview() {
+    AwakenTheme(reduceMotion = true) {
+        HealthScreen(
+            state = HealthUiState(status = HealthScreenStatus.READY, overview = previewOverview(stepSource = StepSource.SIMULATED)),
+            onEvent = {}, onBack = {}, zone = ZoneId.of("UTC"), showSource = true,
         )
     }
 }

@@ -47,6 +47,12 @@ interface HealthGateway {
     @Throws(HealthReadException::class)
     suspend fun readDay(window: HealthWindow): HealthDay
 
+    /** True only for debug fixture data ("Simulate 9,000 steps"); real Health Connect is never labelled fake. */
+    val isSimulated: Boolean get() = false
+
+    /** At least one app wrote non-manual steps in [window]. False means "no step source", never "0 steps". */
+    suspend fun hasStepData(window: HealthWindow): Boolean
+
     companion object {
         const val PROVIDER_PACKAGE = "com.google.android.apps.healthdata"
         const val PLAY_STORE_URI = "market://details?id=$PROVIDER_PACKAGE&url=healthconnect%3A%2F%2Fonboarding"

@@ -14,7 +14,8 @@ import javax.inject.Singleton
 
 /**
  * Debug builds: the real gateway, unless "Simulate 9,000 steps" is on. Then Health Connect looks installed and fully
- * granted and reports 9,000 steps for today, so verified quests can be tested on emulators without Health Connect.
+ * granted and reports 9,000 steps for every day asked about, so verified quests can be tested on emulators without Health
+ * Connect. The switch is off on a fresh install and the Health screen labels its data "Fake" while it is on.
  */
 @Singleton
 class DebugHealthGateway @Inject constructor(
@@ -22,6 +23,10 @@ class DebugHealthGateway @Inject constructor(
     private val settings: DebugSettings,
 ) : HealthGateway {
     private val simulating: Boolean get() = settings.simulateSteps.value
+
+    override val isSimulated: Boolean get() = simulating
+
+    override suspend fun hasStepData(window: HealthWindow): Boolean = simulating || real.hasStepData(window)
 
     override val requiredPermissions: Set<String> get() = real.requiredPermissions
 

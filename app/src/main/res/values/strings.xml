@@ -219,4 +219,16 @@
     <string name="recap_achievements">achievements earned</string>
     <string name="recap_missing">This recap is no longer available.</string>
     <string name="recap_open_cd">Open the recap for %1$s</string>
+    <!-- Step sources (Health screen) -->
+    <string name="health_no_steps_title">No step data yet</string>
+    <string name="health_no_steps_body">Connect a step source: an app or watch that records steps (for example Samsung Health or Fitbit) and shares them with Health Connect.</string>
+    <string name="health_open_health_connect">Open Health Connect</string>
+    <string name="health_use_phone_steps">Count steps on this phone</string>
+    <string name="health_use_phone_steps_note">Uses this phone\'s motion sensor through Google Play services, on this phone only. Shown here for your own view; it doesn\'t verify quests.</string>
+    <string name="health_steps_from_phone">Steps from this phone\'s sensor</string>
+    <string name="health_debug_source">Source: %1$s</string>
+    <string name="health_source_health_connect">Health Connect</string>
+    <string name="health_source_phone">Phone (Recording API)</string>
+    <string name="health_source_fake">Fake</string>
+    <string name="health_source_none">None</string>
 </resources>

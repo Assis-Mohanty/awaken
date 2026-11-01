@@ -3,6 +3,7 @@ package com.assismohanty.awaken.feature.health
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.assismohanty.awaken.core.data.health.HealthGateway
+import com.assismohanty.awaken.core.data.health.PhoneStepsGateway
 import com.assismohanty.awaken.core.domain.HealthOverview
 import com.assismohanty.awaken.core.domain.HealthOverviewResult
 import com.assismohanty.awaken.core.domain.LoadHealthOverviewUseCase
@@ -26,6 +27,9 @@ data class HealthUiState(
     val refreshing: Boolean = false,
     val action: HealthAction? = null,
     val permissions: Set<String> = emptySet(),
+    /** Ask for the phone step counter's runtime permission ([phoneStepsPermission]) now. */
+    val requestPhoneSteps: Boolean = false,
+    val phoneStepsPermission: String = "",
 )
 
 sealed interface HealthEvent {
@@ -35,12 +39,18 @@ sealed interface HealthEvent {
     data object AllowMoreMetrics : HealthEvent
     data object ActionHandled : HealthEvent
     data object PermissionsResult : HealthEvent
+
+    /** "Count steps on this phone": ask for activity recognition, then start the Recording API. */
+    data object UsePhoneSteps : HealthEvent
+    data object PhoneStepsRequested : HealthEvent
+    data class PhoneStepsResult(val granted: Boolean) : HealthEvent
 }
 
 @HiltViewModel
 class HealthViewModel @Inject constructor(
     private val loadOverview: LoadHealthOverviewUseCase,
     private val gateway: HealthGateway,
+    private val phoneSteps: PhoneStepsGateway,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(HealthUiState())
@@ -56,6 +66,14 @@ class HealthViewModel @Inject constructor(
             HealthEvent.AllowMoreMetrics ->
                 _uiState.update { it.copy(action = HealthAction.REQUEST_PERMISSIONS, permissions = gateway.allPermissions) }
             HealthEvent.ActionHandled -> _uiState.update { it.copy(action = null) }
+            HealthEvent.UsePhoneSteps -> _uiState.update { it.copy(requestPhoneSteps = true, phoneStepsPermission = phoneSteps.permission) }
+            HealthEvent.PhoneStepsRequested -> _uiState.update { it.copy(requestPhoneSteps = false) }
+            is HealthEvent.PhoneStepsResult -> if (event.granted) {
+                viewModelScope.launch {
+                    phoneSteps.subscribe()
+                    refresh()
+                }
+            }
         }
     }
 

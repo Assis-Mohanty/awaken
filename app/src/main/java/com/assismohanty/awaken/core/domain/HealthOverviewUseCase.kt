@@ -6,6 +6,7 @@ import com.assismohanty.awaken.core.data.db.dao.HunterDao
 import com.assismohanty.awaken.core.data.health.HealthGateway
 import com.assismohanty.awaken.core.data.health.HealthReadException
 import com.assismohanty.awaken.core.data.health.HealthStatus
+import com.assismohanty.awaken.core.data.health.PhoneStepsGateway
 import com.assismohanty.awaken.engine.GameDay
 import com.assismohanty.awaken.engine.HealthDay
 import com.assismohanty.awaken.engine.HealthRules
@@ -18,6 +19,21 @@ import timber.log.Timber
 /** One bar in the 7-day trend: the totals for that game-day, after the trust rules. */
 data class HealthTrendDay(val date: LocalDate, val steps: Long, val distanceMeters: Double, val activeKcal: Double)
 
+/** Where the step numbers on the Health screen came from. */
+enum class StepSource {
+    /** An app writes steps to Health Connect. */
+    HEALTH_CONNECT,
+
+    /** No app does, so the phone's own counter (Recording API) fills in. Display only. */
+    PHONE,
+
+    /** Debug fixture data ("Simulate 9,000 steps"). */
+    SIMULATED,
+
+    /** Nothing records steps: the screen says so and shows no number. */
+    NONE,
+}
+
 /** What the Health screen shows. [today] has already been through [HealthRules.trusted]. */
 data class HealthOverview(
     val today: HealthDay,
@@ -27,6 +43,9 @@ data class HealthOverview(
     val canDistance: Boolean,
     val canCalories: Boolean,
     val canHeartRate: Boolean,
+    val stepSource: StepSource = StepSource.HEALTH_CONNECT,
+    /** No step source yet, and the phone's own counter could be switched on (Recording API supported, not yet allowed). */
+    val canUsePhoneSteps: Boolean = false,
 )
 
 sealed interface HealthOverviewResult {
@@ -45,6 +64,7 @@ sealed interface HealthOverviewResult {
 class LoadHealthOverviewUseCase @Inject constructor(
     private val hunterDao: HunterDao,
     private val gateway: HealthGateway,
+    private val phoneSteps: PhoneStepsGateway,
     private val clock: Clock,
 ) {
     suspend operator fun invoke(): HealthOverviewResult {
@@ -58,27 +78,44 @@ class LoadHealthOverviewUseCase @Inject constructor(
         val now = clock.now()
         val today = clock.gameDate(profile.dayStartHour)
         return try {
-            val trend = (TREND_DAYS - 1 downTo 0).map { back ->
+            val windows = (TREND_DAYS - 1 downTo 0).map { back ->
                 val date = today.minusDays(back.toLong())
                 val end = if (back == 0) now else GameDay.endOf(date, zone, profile.dayStartHour)
-                val day = HealthRules.trusted(gateway.readDay(HealthWindow(GameDay.startOf(date, zone, profile.dayStartHour), end)))
-                date to day
+                date to HealthWindow(GameDay.startOf(date, zone, profile.dayStartHour), end)
             }
-            val todayDay = trend.last().second
+            val read = windows.map { (date, window) -> date to HealthRules.trusted(gateway.readDay(window)) }
+            val (source, steps) = steps(read.map { it.second.steps }, windows.map { it.second })
+            val trend = read.mapIndexed { i, (date, day) -> date to HealthRules.trusted(day.copy(steps = steps[i])) }
             HealthOverviewResult.Ready(
                 HealthOverview(
-                    today = todayDay,
+                    today = trend.last().second,
                     trend = trend.map { (date, day) -> HealthTrendDay(date, day.steps, day.distanceMeters, day.activeKcal) },
                     updatedAt = now,
                     canDistance = gateway.distancePermission in granted,
                     canCalories = gateway.caloriesPermission in granted,
                     canHeartRate = gateway.heartRatePermission in granted,
+                    stepSource = source,
+                    canUsePhoneSteps = source == StepSource.NONE && phoneSteps.isSupported() && !phoneSteps.isPermissionGranted(),
                 ),
             )
         } catch (e: HealthReadException) {
             Timber.w(e, "Health overview read failed")
             HealthOverviewResult.ReadFailed
         }
+    }
+
+    /**
+     * Health Connect steps when any app writes them; else the phone's counter if the hunter allowed it; else nothing (all
+     * zero, shown as "no step data", never a made-up number).
+     */
+    private suspend fun steps(fromHealthConnect: List<Long>, windows: List<HealthWindow>): Pair<StepSource, List<Long>> {
+        if (gateway.isSimulated) return StepSource.SIMULATED to fromHealthConnect
+        if (gateway.hasStepData(HealthWindow(windows.first().start, windows.last().end))) return StepSource.HEALTH_CONNECT to fromHealthConnect
+        val none = StepSource.NONE to windows.map { 0L }
+        if (!phoneSteps.isSupported() || !phoneSteps.isPermissionGranted()) return none
+        phoneSteps.subscribe()
+        val phone = phoneSteps.dailySteps(windows) ?: return none
+        return StepSource.PHONE to phone
     }
 
     companion object {

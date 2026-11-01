@@ -4,6 +4,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.assismohanty.awaken.core.data.health.HealthStatus
 import com.assismohanty.awaken.engine.HealthDay
 import com.assismohanty.awaken.engine.HealthSession
+import com.assismohanty.awaken.testing.FakePhoneStepsGateway
 import com.assismohanty.awaken.testing.TestGraph
 import com.google.common.truth.Truth.assertThat
 import java.time.Instant
@@ -16,7 +17,8 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class HealthOverviewTest {
     private val graph = TestGraph() // clock: 2026-10-18 10:00 UTC, day start 04:00
-    private val load = LoadHealthOverviewUseCase(graph.db.hunterDao(), graph.health, graph.clock)
+    private val phone = FakePhoneStepsGateway()
+    private val load = LoadHealthOverviewUseCase(graph.db.hunterDao(), graph.health, phone, graph.clock)
 
     @After
     fun tearDown() = graph.close()
@@ -87,6 +89,63 @@ class HealthOverviewTest {
 
         assertThat(overview.today.steps).isEqualTo(0)
         assertThat(overview.today.exercise.map { it.origin }).containsExactly("com.strava")
+    }
+
+    @Test
+    fun stepsFromHealthConnectAreLabelledAsSuch() = runTest {
+        connected()
+        graph.health.day = HealthDay(steps = 6_200)
+
+        val overview = ready()
+
+        assertThat(overview.stepSource).isEqualTo(StepSource.HEALTH_CONNECT)
+        assertThat(overview.today.steps).isEqualTo(6_200)
+        assertThat(phone.reads).isEqualTo(0)
+    }
+
+    @Test
+    fun simulatedDataIsLabelledFakeNeverHealthConnect() = runTest {
+        connected()
+        graph.health.simulated = true
+        graph.health.day = HealthDay(steps = 9_000)
+
+        assertThat(ready().stepSource).isEqualTo(StepSource.SIMULATED)
+    }
+
+    @Test
+    fun noStepSourceMeansNoStepDataNeverAFakeNumber() = runTest {
+        connected()
+        graph.health.stepData = false
+
+        val overview = ready()
+
+        assertThat(overview.stepSource).isEqualTo(StepSource.NONE)
+        assertThat(overview.trend.map { it.steps }.toSet()).containsExactly(0L)
+    }
+
+    @Test
+    fun withoutHealthConnectStepsThePhoneSensorIsUsed() = runTest {
+        connected()
+        graph.health.stepData = false
+        phone.granted = true
+        phone.stepsPerDay = 4_321
+
+        val overview = ready()
+
+        assertThat(overview.stepSource).isEqualTo(StepSource.PHONE)
+        assertThat(overview.today.steps).isEqualTo(4_321)
+        assertThat(overview.trend.map { it.steps }.toSet()).containsExactly(4_321L)
+        assertThat(phone.subscribed).isTrue()
+    }
+
+    @Test
+    fun thePhoneSensorIsOfferedOnlyWhenSupportedAndNotYetAllowed() = runTest {
+        connected()
+        graph.health.stepData = false
+
+        assertThat(ready().canUsePhoneSteps).isTrue()
+        phone.supported = false
+        assertThat(ready().canUsePhoneSteps).isFalse()
     }
 
     @Test
