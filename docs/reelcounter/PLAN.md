@@ -1,5 +1,9 @@
 # Reel Counter — PLAN (v2)
 
+> **Status: historical.** Reel Counter now lives inside the AWAKEN app. Module names, file layout and the UI sections
+> below (§2, §7, §11 phases 3–5) are superseded by `INTEGRATION.md`; the counting engine, detection, data and test
+> sections (§3–§6, §10) still describe the code.
+
 Branch `feature/reel-counter`, worktree `../awaken-reelcounter` (branched from AWAKEN `132a0d3`).
 Everything lives under `/reelcounter/`. **Nothing outside `/reelcounter/` is ever edited.** Clean room: built
 from SPEC.md and public Android docs only.

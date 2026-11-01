@@ -1,5 +1,9 @@
 package com.assismohanty.awaken.feature.screentime
 
+import com.assismohanty.awaken.core.reelcounter.ReelWidgetData
+import com.assismohanty.awaken.feature.reelcounter.ReelAppRowUi
+import com.assismohanty.awaken.reelcounter.core.ShortVideoApp
+import com.assismohanty.awaken.reelcounter.core.stats.StatsCalculator
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.assismohanty.awaken.core.domain.AppUsageRow
@@ -38,6 +42,8 @@ data class ScreenTimeUiState(
     val showUnused: Boolean = false,
     val editor: AppRuleEditor? = null,
     val failed: Boolean = false,
+    /** Reel counter's totals for today (every app, even at zero); null while that feature is switched off. */
+    val reels: List<ReelAppRowUi>? = null,
 ) {
     val visibleApps: List<AppUsageRow>
         get() = overview?.apps.orEmpty()
@@ -65,10 +71,28 @@ class ScreenTimeViewModel @Inject constructor(
     private val loadOverview: LoadScreenTimeOverviewUseCase,
     private val setEnabled: SetScreenTimeEnabledUseCase,
     private val setAppRule: SetAppRuleUseCase,
+    reelData: ReelWidgetData,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ScreenTimeUiState())
     val uiState: StateFlow<ScreenTimeUiState> = _uiState.asStateFlow()
+
+    init {
+        viewModelScope.launch {
+            reelData.observeRows().collect { rows ->
+                _uiState.update { state ->
+                    state.copy(
+                        reels = rows?.let { totals ->
+                            ShortVideoApp.entries.map { app ->
+                                val row = totals.firstOrNull { it.app == app }
+                                ReelAppRowUi(app, row?.count ?: 0, StatsCalculator.minutes(row?.seconds ?: 0))
+                            }
+                        },
+                    )
+                }
+            }
+        }
+    }
 
     fun onEvent(event: ScreenTimeEvent) {
         when (event) {

@@ -14,6 +14,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import com.assismohanty.awaken.core.designsystem.components.HealthTile
 import com.assismohanty.awaken.core.designsystem.components.HealthTileModel
+import com.assismohanty.awaken.core.designsystem.components.ReelsTile
 import com.assismohanty.awaken.core.designsystem.components.ScreenTimeTile
 import com.assismohanty.awaken.core.designsystem.components.ScreenTimeTileModel
 import com.assismohanty.awaken.feature.health.openHealthConnectSettings
@@ -77,6 +78,7 @@ fun TodayRoute(
     onOpenTrial: () -> Unit,
     modifier: Modifier = Modifier,
     onOpenScreenTime: () -> Unit = {},
+    onOpenReelStats: () -> Unit = {},
     onOpenCampaign: () -> Unit = {},
     onOpenGates: () -> Unit = {},
     onOpenFocusReport: () -> Unit = {},
@@ -111,6 +113,7 @@ fun TodayRoute(
         onDayPlanEvent = dayPlanViewModel::onEvent,
         modifier = modifier,
         onOpenScreenTime = onOpenScreenTime,
+        onOpenReelStats = onOpenReelStats,
         onOpenCampaign = onOpenCampaign,
         onOpenReview = onOpenReview,
         onOpenGates = onOpenGates,
@@ -158,6 +161,7 @@ fun TodayScreen(
     onDayPlanEvent: (DayPlanEvent) -> Unit,
     modifier: Modifier = Modifier,
     onOpenScreenTime: () -> Unit = {},
+    onOpenReelStats: () -> Unit = {},
     onOpenCampaign: () -> Unit = {},
     onOpenGates: () -> Unit = {},
     onOpenFocusReport: () -> Unit = {},
@@ -249,6 +253,8 @@ fun TodayScreen(
                 modifier = Modifier.weight(1f).fillMaxHeight(),
             )
         }
+
+        summary.reelsToday?.let { ReelsTile(total = it, onClick = onOpenReelStats, modifier = Modifier.fillMaxWidth()) }
 
         FocusCard(state = focus, onStart = onOpenGates, onOpenReport = onOpenFocusReport)
 

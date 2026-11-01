@@ -1,5 +1,8 @@
 package com.assismohanty.awaken.feature.screentime
 
+import com.assismohanty.awaken.core.designsystem.components.ValueRow
+import com.assismohanty.awaken.feature.reelcounter.labelRes
+import com.assismohanty.awaken.feature.reelcounter.ReelAppRowUi
 import com.assismohanty.awaken.core.designsystem.lexicon.lexString
 import com.assismohanty.awaken.core.designsystem.components.formatMinutes
 import com.assismohanty.awaken.core.designsystem.lexicon.lexPlural
@@ -83,7 +86,12 @@ import kotlinx.coroutines.withContext
 import timber.log.Timber
 
 @Composable
-fun ScreenTimeRoute(onBack: () -> Unit, modifier: Modifier = Modifier, viewModel: ScreenTimeViewModel = hiltViewModel()) {
+fun ScreenTimeRoute(
+    onBack: () -> Unit,
+    modifier: Modifier = Modifier,
+    onOpenReelStats: () -> Unit = {},
+    viewModel: ScreenTimeViewModel = hiltViewModel(),
+) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
     // Coming back from the usage-access settings page (or any other app) re-reads usage.
@@ -96,6 +104,7 @@ fun ScreenTimeRoute(onBack: () -> Unit, modifier: Modifier = Modifier, viewModel
         onEvent = viewModel::onEvent,
         onBack = onBack,
         onOpenUsageAccess = { openUsageAccessSettings(context) },
+        onOpenReelStats = onOpenReelStats,
         modifier = modifier,
     )
 }
@@ -129,10 +138,12 @@ fun ScreenTimeScreen(
     onBack: () -> Unit,
     onOpenUsageAccess: () -> Unit,
     modifier: Modifier = Modifier,
+    onOpenReelStats: () -> Unit = {},
 ) {
     val colors = AwakenTheme.colors
     GateBackground(rank = Rank.E, modifier = modifier) {
         LargeTitleScaffold(title = lexString(R.string.screentime_title), onBack = onBack) {
+            state.reels?.let { ReelsWindow(it, onOpenReelStats) }
             val overview = state.overview
             when {
                 overview == null && state.failed -> MessageWindow(lexString(R.string.screentime_failed))
@@ -152,6 +163,17 @@ fun ScreenTimeScreen(
         }
     }
     state.editor?.let { RuleEditorSheet(it, onEvent) }
+}
+
+/** Short video watched today, counted by Reel counter. Only shown while that feature is switched on. */
+@Composable
+private fun ReelsWindow(rows: List<ReelAppRowUi>, onOpenReelStats: () -> Unit, modifier: Modifier = Modifier) {
+    val colors = AwakenTheme.colors
+    SystemWindow(title = lexString(R.string.reel_screentime_title), accent = colors.accent, modifier = modifier, reveal = false) {
+        Text(lexString(R.string.reel_screentime_note), style = AwakenTheme.type.caption, color = colors.textSecondary)
+        rows.forEach { ValueRow(label = lexString(it.app.labelRes()), value = lexString(R.string.reel_stats_row, it.count, it.minutes)) }
+        SecondaryButton(lexString(R.string.reel_open_stats), onOpenReelStats, Modifier.fillMaxWidth())
+    }
 }
 
 @Composable

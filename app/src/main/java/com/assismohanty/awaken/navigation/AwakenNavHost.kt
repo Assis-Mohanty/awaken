@@ -172,6 +172,7 @@ private fun MainScaffold(
                         onOpenQuest = { navController.navigate(QuestDetailRoute(it)) },
                         onOpenScreenTime = { navController.navigate(ScreenTimeRoute) },
                         onOpenFocusReport = { navController.navigate(FocusReportRoute) },
+                        onOpenReelStats = { navController.navigate(ReelStatsRoute) { launchSingleTop = true } },
                         onOpenCampaign = { navController.navigate(CampaignRoute) },
                         onOpenReview = { navController.navigate(ReviewRoute) { launchSingleTop = true } },
                         snackbarHostState = snackbarHostState,
@@ -238,7 +239,12 @@ private fun MainScaffold(
                 composable<FocusAccessRoute> { FocusAccessEntry(onBack = { navController.popBackStack() }) }
                 composable<ReelInspectorRoute> { ReelInspectorEntry(onBack = { navController.popBackStack() }) }
                 composable<FocusReportRoute> { FocusReportEntry(onBack = { navController.popBackStack() }) }
-                composable<ScreenTimeRoute> { ScreenTimeEntry(onBack = { navController.popBackStack() }) }
+                composable<ScreenTimeRoute> {
+                    ScreenTimeEntry(
+                        onBack = { navController.popBackStack() },
+                        onOpenReelStats = { navController.navigate(ReelStatsRoute) { launchSingleTop = true } },
+                    )
+                }
                 composable<ReviewRoute> { ReviewEntry(onClose = { navController.popBackStack() }) }
                 composable<RecapRoute> { RecapEntry(onBack = { navController.popBackStack() }) }
                 composable<CampaignRoute> { CampaignEntry(onBack = { navController.popBackStack() }) }

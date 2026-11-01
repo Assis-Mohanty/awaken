@@ -1,5 +1,6 @@
 package com.assismohanty.awaken.core.designsystem.components
 
+import com.assismohanty.awaken.core.designsystem.preview.ComponentPreview
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -207,4 +208,21 @@ private fun SummaryTilesPreview() {
             Spacer(Modifier.height(Spacing.md))
         }
     }
+}
+
+/** Reel Counter's tile on Today: reels watched so far today. Only shown while the feature is switched on. */
+@Composable
+fun ReelsTile(total: Int, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    val colors = AwakenTheme.colors
+    AwakenCard(modifier = modifier, reveal = false, onClick = onClick) {
+        CardLabel(lexString(R.string.tile_reels), AwakenGlyphs.Phone, colors.textPrimary)
+        Text(total.toString(), style = AwakenTheme.type.numeric, color = colors.textPrimary)
+        TileNote(lexString(R.string.tile_reels_note))
+    }
+}
+
+@ComponentPreview
+@Composable
+private fun ReelsTilePreview() {
+    AwakenTheme { ReelsTile(total = 38, onClick = {}, modifier = Modifier.fillMaxWidth()) }
 }
