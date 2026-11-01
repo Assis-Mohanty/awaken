@@ -1183,7 +1183,7 @@ Bounding box x 34..74, y 26..82: visually centred at (54, 54), inside the safe z
 
 **CoreIsAndroidFreeTest**: `noAndroidImportsInCoreMain`.
 
-### 10.2 `:android` tests (JUnit4, Robolectric `@Config(sdk = [36])`)
+### 10.2 `:android` tests (JUnit4, Robolectric on SDK 35 via `src/test/resources/robolectric.properties`; Robolectric 4.17 fails on SDK 36 under JDK 25, same as the main app)
 | Test | Asserts |
 |---|---|
 | `NoNodeTextAccessTest` | scans `android/src/main/java` and `android/src/debug/java` sources for the regex `\.(text|contentDescription|hintText|stateDescription|tooltipText|paneTitle|beforeText)\b|get(Text|ContentDescription|HintText|StateDescription|TooltipText|PaneTitle|BeforeText)\(` inside files under `service/`, `inspector/` and `overlay/` → none |
@@ -1226,15 +1226,15 @@ Gate: `./gradlew :core:test :demo:assembleDebug`
 
 ### Phase 2 — Detection + inspector + Room
 Commit: `feat(reelcounter): accessibility detection, inspector and storage`
-- [ ] Catalog additions (§2.1). `android/build.gradle.kts`:
+- [x] Catalog additions (§2.1). `android/build.gradle.kts`:
   - Plugins: `kotlin-serialization`, `ksp`, `hilt`, `room`.
   - `resourcePrefix = "rc_"`. Room schema dir.
   - Deps: core-ktx, lifecycle-runtime-ktx/compose/viewmodel-compose, activity-compose, compose bom/ui/material3/tooling-preview (debugImplementation tooling), navigation-compose, room runtime/ktx (+ksp compiler), datastore-preferences, work-runtime-ktx, glance-appwidget + glance-material3, hilt-android (+ksp hilt-compiler), hilt-lifecycle-viewmodel-compose, kotlinx-serialization-json, coroutines-android.
   - Tests: junit4, truth, turbine, robolectric, androidx-test-junit, androidx-test-core, coroutines-test, room-testing, work-testing.
-- [ ] `:demo`: hilt + ksp, `DemoApp`, manifest `android:name`, `MainActivity` `@AndroidEntryPoint`.
-- [ ] Files: `AndroidManifest.xml` (service only), `rc_accessibility_service.xml`, `rc_strings.xml` (service + Phase 2 strings), `di/*`, `time/SystemReelClock.kt`, `service/*` (all), `overlay/OverlayWindowHost.kt`, `overlay/OverlayController.kt` (debug chip only this phase; bubble/nudge are no-ops), `data/db/*`, `data/ReelRepository.kt`, `data/SettingsStore.kt`, `data/DetectorRepository.kt`, `inspector/InspectorHooks.kt`, debug + release inspector files, `ui/ReelRoutes.kt`, `ui/ReelCounterNavGraph.kt` (Today debug + Inspector only), `ui/today/TodayDebugScreen.kt` (plain text: each app count + seconds today, from `observeDay`), `ReelCounterEntry.kt`. Delete `ReelCounterRoot.kt` and update `MainActivity`.
-- [ ] Tests: `NoNodeTextAccessTest`, `NoNetworkTest`, `ServiceConfigTest`, `DetectorAssetTest`, `EventAdapterTest`, `AccessibilityNodeSourceMappingTest`, `ReelDaoTest`, `ReelRepositoryTest`, `CounterRunnerTest`, `EffectApplierTest`, `SettingsStoreTest`, `DetectorRepositoryTest`.
-- [ ] Inspector dump format (`NodeTreeDumper`), one line per node, 2 spaces of indent per depth:
+- [x] `:demo`: hilt + ksp, `DemoApp`, manifest `android:name`, `MainActivity` `@AndroidEntryPoint`.
+- [x] Files: `AndroidManifest.xml` (service only), `rc_accessibility_service.xml`, `rc_strings.xml` (service + Phase 2 strings), `di/*`, `time/SystemReelClock.kt`, `service/*` (all), `overlay/OverlayWindowHost.kt`, `overlay/OverlayController.kt` (debug chip only this phase; bubble/nudge are no-ops), `data/db/*`, `data/ReelRepository.kt`, `data/SettingsStore.kt`, `data/DetectorRepository.kt`, `inspector/InspectorHooks.kt`, debug + release inspector files, `ui/ReelRoutes.kt`, `ui/ReelCounterNavGraph.kt` (Today debug + Inspector only), `ui/today/TodayDebugScreen.kt` (plain text: each app count + seconds today, from `observeDay`), `ReelCounterEntry.kt`. Delete `ReelCounterRoot.kt` and update `MainActivity`.
+- [x] Tests: `NoNodeTextAccessTest`, `NoNetworkTest`, `ServiceConfigTest`, `DetectorAssetTest`, `EventAdapterTest`, `AccessibilityNodeSourceMappingTest`, `ReelDaoTest`, `ReelRepositoryTest`, `CounterRunnerTest`, `EffectApplierTest`, `SettingsStoreTest`, `DetectorRepositoryTest`.
+- [x] Inspector dump format (`NodeTreeDumper`), one line per node, 2 spaces of indent per depth:
   ```
   # pkg=com.instagram.android at=2026-11-01T12:00:00Z screen=1080x2400 detection=ShortVideo(INSTAGRAM, viaFallback=true, signal=SCROLL_INDEX)
   FrameLayout id=- bounds=0,0,1080,2400 scroll=false vis=true children=2
