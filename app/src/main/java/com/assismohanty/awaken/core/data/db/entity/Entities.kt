@@ -235,6 +235,8 @@ data class GateRunEntity(
     @ColumnInfo(name = "subject_id") val subjectId: String? = null,
     /** Paused time folded in by earlier resumes: a stopwatch can be paused as often as the hunter likes (GD §8.1 P9). */
     @ColumnInfo(name = "paused_before_ms", defaultValue = "0") val pausedBeforeMs: Long = 0,
+    /** True when the app went to the background while Focus Lock was active: that stretch away is not a breach (GD 8.2). */
+    @ColumnInfo(name = "lock_at_stop", defaultValue = "0") val lockAtStop: Boolean = false,
 ) {
     val timing: GateTiming
         get() = GateTiming(

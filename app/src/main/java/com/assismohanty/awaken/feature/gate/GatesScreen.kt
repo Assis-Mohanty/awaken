@@ -72,7 +72,7 @@ import com.assismohanty.awaken.feature.quest.shortClock
 import java.time.Duration
 
 @Composable
-fun GatesEntry(onBack: () -> Unit, modifier: Modifier = Modifier, viewModel: GatesViewModel = hiltViewModel()) {
+fun GatesEntry(onBack: () -> Unit, modifier: Modifier = Modifier, onFixFocusLock: () -> Unit = {}, viewModel: GatesViewModel = hiltViewModel()) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
     // The gate runs either way; the permission only adds the countdown outside the app (ARCH §3.3).
@@ -85,7 +85,7 @@ fun GatesEntry(onBack: () -> Unit, modifier: Modifier = Modifier, viewModel: Gat
             ) {
                 notificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
             }
-            viewModel.onEvent(event)
+            if (event == GatesEvent.FixFocusLock) onFixFocusLock() else viewModel.onEvent(event)
         },
         onBack = onBack,
         modifier = modifier,
@@ -377,6 +377,7 @@ private fun StopwatchScreen(active: ActiveGate, confirmAbandon: Boolean, onEvent
 /** Subject, breach budget, pause / stop and end-session: shared by the tall and the wide stopwatch layouts. */
 @Composable
 private fun ColumnScope.StopwatchControls(active: ActiveGate, confirmAbandon: Boolean, onEvent: (GatesEvent) -> Unit) {
+    if (active.lockWarning) LockWarning(onEvent)
     val colors = AwakenTheme.colors
     Row(
         horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
@@ -422,6 +423,7 @@ private fun ColumnScope.StopwatchControls(active: ActiveGate, confirmAbandon: Bo
 
 @Composable
 private fun GateRun(active: ActiveGate, confirmAbandon: Boolean, onEvent: (GatesEvent) -> Unit) {
+    if (active.lockWarning) LockWarning(onEvent)
     val colors = AwakenTheme.colors
     Column(
         modifier = Modifier.fillMaxWidth(),
@@ -586,4 +588,11 @@ private fun GateStopwatchLandscapePreview() {
             onBack = {},
         )
     }
+}
+
+/** Focus Lock is on but not running: say so, with a way to fix it (GD 8.2). */
+@Composable
+private fun LockWarning(onEvent: (GatesEvent) -> Unit) {
+    Text(lexString(R.string.focus_lock_warning), style = AwakenTheme.type.caption, color = AwakenTheme.colors.critical)
+    SecondaryButton(lexString(R.string.focus_lock_warning_fix), onClick = { onEvent(GatesEvent.FixFocusLock) }, modifier = Modifier.fillMaxWidth())
 }

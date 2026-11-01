@@ -66,6 +66,22 @@ class AndroidUsageGateway @Inject constructor(
         if (seen == 0) UsageRead.Unavailable else UsageRead.Tracked(tally.finish(end.toEpochMilli()))
     }
 
+    override suspend fun opened(start: Instant, end: Instant): OpenedRead = withContext(ioDispatcher) {
+        if (!hasAccess()) return@withContext OpenedRead.NoAccess
+        if (!end.isAfter(start)) return@withContext OpenedRead.Unavailable
+        val manager = context.getSystemService(UsageStatsManager::class.java) ?: return@withContext OpenedRead.Unavailable
+        val events = manager.queryEvents(start.toEpochMilli(), end.toEpochMilli()) ?: return@withContext OpenedRead.Unavailable
+        val event = UsageEvents.Event()
+        val opened = HashSet<String>()
+        var seen = 0
+        while (events.hasNextEvent()) {
+            events.getNextEvent(event)
+            seen++
+            if (event.eventType == EVENT_RESUMED) opened += event.packageName
+        }
+        if (seen == 0) OpenedRead.Unavailable else OpenedRead.Opened(opened)
+    }
+
     override suspend fun launcherApps(): List<InstalledApp> = withContext(ioDispatcher) {
         val pm = context.packageManager
         val intent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)

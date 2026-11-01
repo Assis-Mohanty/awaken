@@ -91,6 +91,10 @@ object ExportUpgrade {
         if (current.app == ExportDocument.APP_ID && current.schemaVersion == 16) {
             current = current.copy(schemaVersion = 17)
         }
+        // v17 → v18 (Focus Lock): the new gate_run column defaults to 0 and there are no new tables, so old rows import as they are.
+        if (current.app == ExportDocument.APP_ID && current.schemaVersion == 17) {
+            current = current.copy(schemaVersion = 18)
+        }
         return current
     }
 }

@@ -1,6 +1,7 @@
 package com.assismohanty.awaken.testing
 
 import com.assismohanty.awaken.core.data.usage.InstalledApp
+import com.assismohanty.awaken.core.data.usage.OpenedRead
 import com.assismohanty.awaken.core.data.usage.UsageGateway
 import com.assismohanty.awaken.core.data.usage.UsageRead
 import com.assismohanty.awaken.engine.AppKind
@@ -20,12 +21,21 @@ class FakeUsageGateway(
     /** False = access is granted but the system returned no usage events at all (OEM restriction, empty log). */
     var readable: Boolean = true
 
+    /** Packages that "came to the foreground" in any window asked about. */
+    val opened: MutableSet<String> = mutableSetOf()
+
     override fun hasAccess(): Boolean = access
 
     override suspend fun read(start: Instant, end: Instant): UsageRead = when {
         !access -> UsageRead.NoAccess
         !readable -> UsageRead.Unavailable
         else -> UsageRead.Tracked(minutes.filterValues { it > 0 }.mapValues { it.value * 60_000L })
+    }
+
+    override suspend fun opened(start: Instant, end: Instant): OpenedRead = when {
+        !access -> OpenedRead.NoAccess
+        !readable -> OpenedRead.Unavailable
+        else -> OpenedRead.Opened(opened.toSet())
     }
 
     override suspend fun launcherApps(): List<InstalledApp> = apps

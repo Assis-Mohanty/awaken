@@ -11,6 +11,10 @@ import com.assismohanty.awaken.core.data.db.entity.GateRunStatus
 import com.assismohanty.awaken.core.data.db.entity.QuestInstanceEntity
 import com.assismohanty.awaken.core.data.repo.TransactionRunner
 import com.assismohanty.awaken.core.data.db.dao.FocusDao
+import com.assismohanty.awaken.core.data.usage.OpenedRead
+import com.assismohanty.awaken.core.data.usage.UsageGateway
+import com.assismohanty.awaken.engine.FocusLockRules
+import kotlinx.coroutines.flow.first
 import com.assismohanty.awaken.engine.BackgroundDelta
 import com.assismohanty.awaken.engine.FocusRules
 import com.assismohanty.awaken.engine.FocusRunOutcome
@@ -19,6 +23,8 @@ import com.assismohanty.awaken.engine.GameDay
 import com.assismohanty.awaken.engine.GateCollapseReason
 import com.assismohanty.awaken.engine.GatePhase
 import com.assismohanty.awaken.engine.GateRules
+import com.assismohanty.awaken.engine.GateTiming
+import java.time.Instant
 import com.assismohanty.awaken.engine.GateRunMath
 import com.assismohanty.awaken.engine.model.GateRank
 import com.assismohanty.awaken.engine.model.QuestStatus
@@ -141,6 +147,9 @@ class GateRunController @Inject constructor(
     private val transactions: TransactionRunner,
     private val uptime: DeviceUptime,
     private val clock: Clock,
+    private val focusLock: FocusLockStatus,
+    private val usage: UsageGateway,
+    private val distractingApps: DistractingApps,
 ) {
     private val mutex = Mutex()
 
@@ -180,12 +189,20 @@ class GateRunController @Inject constructor(
         }
     }
 
+    /** Focus Lock: the hunter ended the running session from the cover. It collapses, with no reward (GD 8.2). */
+    suspend fun endEarly(): GateCheck = mutex.withLock {
+        transactions.run {
+            val run = gateRunDao.running() ?: return@run GateCheck.NoRun
+            close(run, GateRunStatus.COLLAPSED, GateCollapseReason.ENDED_EARLY)
+        }
+    }
+
     /** The app left the foreground: remember when, in wall and elapsed time (survives process death). */
     suspend fun onAppStopped(): GateRunEntity? = mutex.withLock {
         transactions.run {
             val run = gateRunDao.running() ?: return@run null
             if (run.lastStopAt != null) return@run run
-            val stopped = run.copy(lastStopAt = clock.now(), lastStopElapsedMs = uptime.elapsedRealtimeMs())
+            val stopped = run.copy(lastStopAt = clock.now(), lastStopElapsedMs = uptime.elapsedRealtimeMs(), lockAtStop = focusLock.isActive())
             gateRunDao.upsert(stopped)
             stopped
         }
@@ -208,8 +225,15 @@ class GateRunController @Inject constructor(
                 when (val delta = GateRunMath.backgroundOnResume(run.timing, stopAt, stopElapsed, nowElapsed, sameBoot)) {
                     BackgroundDelta.Unknowable -> return@run close(run, GateRunStatus.COLLAPSED, GateCollapseReason.DEVICE_RESTARTED)
                     is BackgroundDelta.Counted -> {
-                        run = run.copy(backgroundMs = run.backgroundMs + delta.addedMs, lastStopAt = null, lastStopElapsedMs = null)
+                        // Focus Lock covered the whole stretch (it was on at the stop and still is): time away is not a breach (GD 8.2).
+                        val covered = run.lockAtStop && focusLock.isActive()
+                        val added = if (covered) 0L else delta.addedMs
+                        val timing = run.timing
+                        run = run.copy(backgroundMs = run.backgroundMs + added, lastStopAt = null, lastStopElapsedMs = null, lockAtStop = false)
                         gateRunDao.upsert(run)
+                        if (!covered && !GateRules.isCollapsed(run.backgroundMs) && openedDistraction(timing, stopAt, now)) {
+                            return@run close(run, GateRunStatus.COLLAPSED, GateCollapseReason.DISTRACTING_APP)
+                        }
                     }
                 }
             }
@@ -222,6 +246,22 @@ class GateRunController @Inject constructor(
             if (GateRunMath.phase(run.timing, now) != GatePhase.Finished) return@run GateCheck.Running(run)
             claim(run)
         }
+    }
+
+    /**
+     * The fallback when Focus Lock did not cover a stretch away (GD 8.2): true if a Distracting app came to the front
+     * during it. Fails closed: only a successful usage read can collapse a gate. The part of the stretch inside the
+     * pause, and after a timed gate's planned end, is not looked at.
+     */
+    private suspend fun openedDistraction(timing: GateTiming, stopAt: Instant, now: Instant): Boolean {
+        var from = stopAt
+        val pausedAt = timing.pausedAt
+        val pauseEnd = GateRunMath.pauseEndsAt(timing)
+        if (pausedAt != null && pauseEnd != null && !stopAt.isBefore(pausedAt) && stopAt.isBefore(pauseEnd)) from = pauseEnd
+        val to = if (timing.pauseCap == null) now else minOf(now, GateRunMath.endAt(timing, now))
+        if (!to.isAfter(from)) return false
+        val read = usage.opened(from, to) as? OpenedRead.Opened ?: return false
+        return FocusLockRules.distractedDuring(read.packages, distractingApps.current(), focusLock.alwaysAllowed())
     }
 
     /** The hunter stops the stopwatch: it is priced by the time it counted (GD §8.1 P2–P3). */

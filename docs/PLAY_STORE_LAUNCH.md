@@ -126,6 +126,12 @@ Request nothing else. The privacy policy link shown inside Health Connect must b
 - App names come from a launcher-intent `<queries>` element; the app does **not** request `QUERY_ALL_PACKAGES`.
 - If Play asks for a demo video: Settings → Screen time → Allow usage access → system toggle → back in the app → Turn on Screen Discipline → a limit warning notification.
 
+## 5c. Accessibility Service (Focus Lock) — declaration text (adapt)
+- **Core feature:** "Focus Lock covers other apps with a full-screen reminder while the user own focus session is running, so the session is not broken by distracting apps." Opt-in; the user switches it on in Android Accessibility settings after an in-app explanation, and can switch it off any time.
+- **What it does:** listens to window-change events only, reads only the package name of the app that came to the front, retrieves no screen content, typing, passwords or notifications, performs no gestures, stores nothing and sends nothing (the app has no network use apart from the optional AI Paths).
+- **Data safety:** no data collected or shared by this service.
+- **Demo video (about 30 s):** Settings → Focus Lock → explanation → Continue → Android Accessibility settings → switch on → start a 25-min Focus Gate → open another app → the cover shows → Back to focus.
+
 ## 6. Graphics
 - App icon 512×512 (original portal/gate glyph — no series artwork).
 - Feature graphic 1024×500: dark void, chamfered System Window with "LEVEL UP — 24", tagline "Level up in real life."

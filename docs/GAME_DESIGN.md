@@ -449,8 +449,24 @@ The in-app-verified quest type. Turns study/deep-work into a dungeon run.
 
 Test vectors (add to §12 on approval): custom 30 min → D, 1 fragment; stopwatch 14 min → no XP; stopwatch 120 min → B (not higher); 5th custom run in a game-day → 0 XP.
 
-- Do NOT use AccessibilityService or block apps in v1 (Play policy review risk + permission friction). The breach budget is enough. (Screen Discipline, §6.7, only *reads* usage stats; it never blocks or interrupts an app.)
+- Blocking other apps is the opt-in Focus Lock, §8.2 (an Accessibility Service the hunter switches on). Without it the breach budget alone applies. Screen Discipline, §6.7, only reads usage stats; it never blocks or interrupts an app.
 
+
+### 8.2 Focus Lock
+
+> **Decided by the user 2026-11-01.** No new reward numbers; this only changes what counts as leaving.
+
+While a Focus Gate is RUNNING (preset, custom or stopwatch) and Focus Lock is on, any app that is not allowed is covered by a full-screen cover showing the time left (stopwatch: time counted), with [Back to focus] and [End session and open].
+
+| # | Rule |
+|---|---|
+| L1 | Cover decision: no cover if the gate is not running, is paused, or a timed gate is past its planned end; no cover for AWAKEN, launchers, the keyboard, the default dialer and messages app, system UI, Android settings, package installers, emergency and telecom apps (never-block list, in `:engine`); no cover for apps the hunter ticked in Allowed apps. Anything else is covered. |
+| L2 | **Lock replaces the breach budget.** Time away from AWAKEN while Focus Lock was on at the moment the app left, and its service is still connected on return, adds **0** to the 90 s breach budget (§8). Service down at either end: the 90 s rule applies as before. |
+| L3 | **Fallback.** When a stretch away was not covered (lock off or service down), usage data on return that shows any Distracting app (Screen Time category, §6.7) came to the front during it collapses the run with reason DISTRACTING_APP and no reward. Fails closed: no usage access or an unreadable log leaves only the 90 s rule. Time inside the pause, and after a timed gate planned end, is not looked at. |
+| L4 | [End session and open] collapses the run (reason ENDED_EARLY): no XP, gold or fragment, nothing deducted. |
+| L5 | Privacy: the service listens to window-change events only, reads only the package name, retrieves no screen content, stores nothing, and uses no overlay permission (accessibility overlay window). |
+
+Test vectors: lock on, 120 s away → still running; lock off, 91 s away → BREACH; lock off, 20 s away with a Distracting app opened → DISTRACTING_APP; same with no usage access → running; End session and open → ENDED_EARLY, ledger unchanged.
 ---
 
 ## 9. Economy (gold) — v1
@@ -828,3 +844,8 @@ All within the §10 range (10–200). Unlocks are permanent (§6.5). The set bec
 | 77 | Previous month had 6 finalized game-days | **no** monthly recap |
 | 78 | Monthly recap `M:2026-10` generated twice | one row, same payload |
 | 79 | First open on game-day Jan 15; last year had 200 finalized days | yearly recap **not auto-offered**; reopenable from Status only if already generated |
+| 80 | Focus Lock on, covered at stop and on return, 120 s away | gate still RUNNING, breach 0 s (GD 8.2 L2) |
+| 81 | Focus Lock off, 91 s away | COLLAPSED, reason BREACH |
+| 82 | Lock not covering, 20 s away, a Distracting app came to the front | COLLAPSED, reason DISTRACTING_APP, no ledger rows |
+| 83 | Same as 82 with no usage access | still RUNNING (only the 90 s rule) |
+| 84 | End session and open | COLLAPSED, reason ENDED_EARLY, ledger unchanged |

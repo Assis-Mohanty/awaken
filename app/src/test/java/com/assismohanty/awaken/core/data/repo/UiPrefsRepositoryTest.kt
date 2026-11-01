@@ -34,4 +34,17 @@ class UiPrefsRepositoryTest {
         repo.setChime(ChimeChoice.WOOD_BLOCK)
         assertThat(repo.prefs.first().chime).isEqualTo(ChimeChoice.WOOD_BLOCK)
     }
+
+    @Test
+    fun focusLockIsOffWithNoAllowedAppsAndRoundTrips() = runTest {
+        val dir = Files.createTempDirectory("ui-prefs").toFile()
+        val repo = UiPrefsRepository(PreferenceDataStoreFactory.create(scope = backgroundScope) { File(dir, "ui.preferences_pb") })
+
+        assertThat(repo.prefs.first().focusLock).isFalse()
+        assertThat(repo.prefs.first().allowedApps).isEmpty()
+        repo.setFocusLock(true)
+        repo.setAllowedApps(setOf("com.maps", "com.notes"))
+        assertThat(repo.prefs.first().focusLock).isTrue()
+        assertThat(repo.prefs.first().allowedApps).containsExactly("com.maps", "com.notes")
+    }
 }

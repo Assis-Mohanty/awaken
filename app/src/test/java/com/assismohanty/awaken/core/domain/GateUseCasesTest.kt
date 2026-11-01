@@ -1,7 +1,9 @@
 package com.assismohanty.awaken.core.domain
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.assismohanty.awaken.core.data.db.entity.AppRuleEntity
 import com.assismohanty.awaken.core.data.db.entity.GateRunStatus
+import com.assismohanty.awaken.engine.AppCategory
 import com.assismohanty.awaken.engine.GateCollapseReason
 import com.assismohanty.awaken.engine.GateMode
 import com.assismohanty.awaken.engine.model.GateRank
@@ -300,5 +302,75 @@ class GateUseCasesTest {
         assertThat(graph.gateRuns.pause()).isTrue()
         assertThat(graph.gateRuns.resume()).isTrue()
         assertThat(graph.gateRuns.pause()).isFalse()
+    }
+
+    /** Marks [pkg] as a Distracting app from the start of the fixed test day. */
+    private suspend fun markDistracting(pkg: String) {
+        graph.db.screenTimeDao().upsertRules(
+            listOf(AppRuleEntity(pkg, java.time.LocalDate.of(2000, 1, 1), AppCategory.DISTRACTING, null)),
+        )
+    }
+
+    @Test
+    fun endingEarlyCollapsesTheRunWithNoReward() = runTest {
+        graph.seedHunter()
+        val run = open()
+        val before = graph.ledger.balances()
+
+        graph.gateRuns.endEarly()
+
+        assertThat(gateRunDao.get(run.id)?.collapseReason).isEqualTo(GateCollapseReason.ENDED_EARLY)
+        assertThat(gateRunDao.get(run.id)?.status).isEqualTo(GateRunStatus.COLLAPSED)
+        assertThat(graph.ledger.balances()).isEqualTo(before)
+        assertThat(graph.gateRuns.check()).isEqualTo(GateCheck.NoRun)
+    }
+
+    @Test
+    fun timeAwayCoveredByFocusLockIsNotABreach() = runTest {
+        graph.seedHunter()
+        graph.focusLock.active = true
+        open()
+
+        away(Duration.ofSeconds(120))
+
+        assertThat(graph.gateRuns.check()).isInstanceOf(GateCheck.Running::class.java)
+    }
+
+    @Test
+    fun withoutFocusLockNinetyOneSecondsAwayStillCollapses() = runTest {
+        graph.seedHunter()
+        val run = open()
+
+        away(Duration.ofSeconds(91))
+        graph.gateRuns.check()
+
+        assertThat(gateRunDao.get(run.id)?.collapseReason).isEqualTo(GateCollapseReason.BREACH)
+    }
+
+    @Test
+    fun aDistractingAppOpenedWhileAwayCollapsesTheRun() = runTest {
+        graph.seedHunter()
+        markDistracting(com.assismohanty.awaken.testing.FakeUsageGateway.INSTAGRAM)
+        graph.usage.opened += com.assismohanty.awaken.testing.FakeUsageGateway.INSTAGRAM
+        val run = open()
+
+        away(Duration.ofSeconds(20))
+        graph.gateRuns.check()
+
+        assertThat(gateRunDao.get(run.id)?.collapseReason).isEqualTo(GateCollapseReason.DISTRACTING_APP)
+        assertThat(graph.db.ledgerDao().all().filter { it.sourceType == SourceType.GATE }).isEmpty()
+    }
+
+    @Test
+    fun noUsageAccessLeavesOnlyTheNinetySecondRule() = runTest {
+        graph.seedHunter()
+        markDistracting(com.assismohanty.awaken.testing.FakeUsageGateway.INSTAGRAM)
+        graph.usage.opened += com.assismohanty.awaken.testing.FakeUsageGateway.INSTAGRAM
+        graph.usage.access = false
+        open()
+
+        away(Duration.ofSeconds(20))
+
+        assertThat(graph.gateRuns.check()).isInstanceOf(GateCheck.Running::class.java)
     }
 }

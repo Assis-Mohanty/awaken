@@ -23,6 +23,9 @@ import javax.inject.Singleton
 /** Intent action every notification and the widget use to land on Today (ARCH §3.5, §3.6). */
 const val ACTION_OPEN_TODAY = "com.assismohanty.awaken.OPEN_TODAY"
 
+/** Focus Lock cover: Back to focus lands on the Focus Gates screen (GD 8.2). */
+const val ACTION_OPEN_GATES = "com.assismohanty.awaken.OPEN_GATES"
+
 /** The Sunday directive notification's review action (GD §14.4). */
 const val ACTION_OPEN_REVIEW = "com.assismohanty.awaken.OPEN_REVIEW"
 

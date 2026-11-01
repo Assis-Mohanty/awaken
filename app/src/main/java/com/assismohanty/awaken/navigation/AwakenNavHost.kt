@@ -44,6 +44,8 @@ import com.assismohanty.awaken.feature.quest.RewardHost
 import com.assismohanty.awaken.feature.health.HealthRoute as HealthEntry
 import com.assismohanty.awaken.feature.campaign.CampaignRoute as CampaignEntry
 import com.assismohanty.awaken.feature.focus.FocusReportRoute as FocusReportEntry
+import com.assismohanty.awaken.feature.focuslock.AllowedAppsRoute as AllowedAppsEntry
+import com.assismohanty.awaken.feature.focuslock.FocusLockSetupRoute as FocusLockSetupEntry
 import com.assismohanty.awaken.feature.screentime.ScreenTimeRoute as ScreenTimeEntry
 import com.assismohanty.awaken.feature.settings.SettingsRoute as SettingsEntry
 import com.assismohanty.awaken.feature.status.StatusRoute as StatusEntry
@@ -61,6 +63,7 @@ fun AwakenNavHost(
     modifier: Modifier = Modifier,
     openTodayRequests: Int = 0,
     openReviewRequests: Int = 0,
+    openGatesRequests: Int = 0,
     appViewModel: AppViewModel = hiltViewModel(),
 ) {
     val launch by appViewModel.state.collectAsStateWithLifecycle()
@@ -76,6 +79,7 @@ fun AwakenNavHost(
             rank = state.rank,
             openTodayRequests = openTodayRequests,
             openReviewRequests = openReviewRequests,
+            openGatesRequests = openGatesRequests,
             modifier = modifier,
         )
     }
@@ -86,6 +90,7 @@ private fun MainScaffold(
     openTodayRequests: Int,
     rank: Rank,
     openReviewRequests: Int,
+    openGatesRequests: Int,
     modifier: Modifier = Modifier,
     navController: NavHostController = rememberNavController(),
 ) {
@@ -104,6 +109,10 @@ private fun MainScaffold(
     // The Sunday notification's review action (GD §14.4) opens the review on top of Today.
     LaunchedEffect(openReviewRequests) {
         if (openReviewRequests > 0) navController.navigate(ReviewRoute) { launchSingleTop = true }
+    }
+    // Focus Lock: Back to focus returns to the running session.
+    LaunchedEffect(openGatesRequests) {
+        if (openGatesRequests > 0) navController.navigate(GatesRoute) { launchSingleTop = true }
     }
     val showBottomBar = TopLevelDestination.entries.any { destination ->
         currentDestination?.hierarchy?.any { it.hasRoute(destination.route::class) } == true
@@ -184,7 +193,12 @@ private fun MainScaffold(
                     PathsEntry(onOpenPath = { navController.navigate(PathDetailRoute(it)) }, onBack = { navController.popBackStack() })
                 }
                 composable<PathDetailRoute> { PathDetailEntry(onBack = { navController.popBackStack() }) }
-                composable<GatesRoute> { GatesEntry(onBack = { navController.popBackStack() }) }
+                composable<GatesRoute> {
+                    GatesEntry(
+                        onBack = { navController.popBackStack() },
+                        onFixFocusLock = { navController.navigate(FocusLockSetupRoute) { launchSingleTop = true } },
+                    )
+                }
                 composable<GymRoute> { GymEntry() }
                 composable<DietRoute> { DietEntry() }
                 composable<StatusRoute> {
@@ -201,9 +215,13 @@ private fun MainScaffold(
                         onOpenHealth = { navController.navigate(HealthRoute) },
                         onOpenScreenTime = { navController.navigate(ScreenTimeRoute) },
                         onOpenDebug = { navController.navigate(DebugRoute) },
+                        onOpenFocusSetup = { navController.navigate(FocusLockSetupRoute) { launchSingleTop = true } },
+                        onOpenAllowedApps = { navController.navigate(AllowedAppsRoute) { launchSingleTop = true } },
                     )
                 }
                 composable<HealthRoute> { HealthEntry(onBack = { navController.popBackStack() }) }
+                composable<FocusLockSetupRoute> { FocusLockSetupEntry(onBack = { navController.popBackStack() }) }
+                composable<AllowedAppsRoute> { AllowedAppsEntry(onBack = { navController.popBackStack() }) }
                 composable<FocusReportRoute> { FocusReportEntry(onBack = { navController.popBackStack() }) }
                 composable<ScreenTimeRoute> { ScreenTimeEntry(onBack = { navController.popBackStack() }) }
                 composable<ReviewRoute> { ReviewEntry(onClose = { navController.popBackStack() }) }

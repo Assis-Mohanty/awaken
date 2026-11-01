@@ -68,3 +68,11 @@ data object DietRoute
 /** Weekly focus report (GD §8.1 P8), opened from the Focus card on Today. */
 @Serializable
 data object FocusReportRoute
+
+/** Focus Lock setup: what it does, the Android switch, battery steps (GD 8.2). */
+@Serializable
+data object FocusLockSetupRoute
+
+/** Apps Focus Lock leaves uncovered during a session. */
+@Serializable
+data object AllowedAppsRoute
