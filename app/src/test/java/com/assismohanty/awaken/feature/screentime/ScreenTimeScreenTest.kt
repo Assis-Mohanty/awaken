@@ -52,7 +52,7 @@ class ScreenTimeScreenTest {
             state = state.copy(overview = state.overview?.copy(hasAccess = false, status = DisciplineStatus.OFF, apps = emptyList())),
             onOpenUsageAccess = { opened++ },
         )
-        composeRule.onNodeWithText("Allow usage access").performClick()
+        composeRule.onNodeWithText("Grant usage access").performClick()
         assertThat(opened).isEqualTo(1)
         composeRule.onNodeWithText("APPS").assertDoesNotExist()
     }

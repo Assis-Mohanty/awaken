@@ -270,7 +270,7 @@
     <!-- strings_screentime.xml -->
     <string name="quest_kind_discipline_clean">Screen limits</string>
     <string name="screentime_failed_clean">Couldn\'t read your usage. Try again in a moment.</string>
-    <string name="screentime_window_access_clean">Usage access</string>
+    <string name="screentime_window_access_clean">Grant usage access</string>
     <string name="screentime_window_today_clean">Today</string>
     <string name="screentime_window_apps_clean">Apps</string>
     <string name="screentime_window_trend_clean">Last 7 days</string>

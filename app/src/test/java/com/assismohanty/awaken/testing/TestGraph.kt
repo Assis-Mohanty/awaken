@@ -185,7 +185,7 @@ class TestGraph(
     )
     val pathWork = RecordingPathWorkScheduler()
     val pathWeeks = PathWeekRequester(pathDao, aiPrefs, pathWork, transactions, clock)
-    val settleDiscipline = SettleDisciplineUseCase(db.hunterDao(), db.questDao(), screenTimeReader, usage, completeQuest)
+    val settleDiscipline = SettleDisciplineUseCase(db.hunterDao(), db.questDao(), screenTimeReader, completeQuest)
     val advanceCampaign = AdvanceCampaignUseCase(
         db.hunterDao(), db.campaignDao(), db.dayRecordDao(), db.habitDao(), reader, templates, achievements, transactions, clock,
     )
@@ -201,7 +201,7 @@ class TestGraph(
     val seedAppRules = SeedAppRulesUseCase(db.hunterDao(), db.screenTimeDao(), usage, clock)
     val setScreenTimeEnabled = SetScreenTimeEnabledUseCase(db.hunterDao(), db.questDao(), seedAppRules, screenTimeReader, transactions, clock)
     val setAppRule = SetAppRuleUseCase(db.hunterDao(), db.screenTimeDao(), clock)
-    val disciplineSync = DisciplineSyncUseCase(db.hunterDao(), db.questDao(), screenTimeReader, reader, usage, transactions, clock)
+    val disciplineSync = DisciplineSyncUseCase(db.hunterDao(), db.questDao(), screenTimeReader, reader, transactions, clock)
     val loadScreenTime = LoadScreenTimeOverviewUseCase(db.hunterDao(), screenTimeReader, seedAppRules, reader, usage, clock)
     val startTrial = StartTrialUseCase(db.hunterDao(), db.questDao(), db.trialDao(), ledger, reader, templates, transactions, clock)
 

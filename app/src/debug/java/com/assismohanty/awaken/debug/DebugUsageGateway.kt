@@ -3,6 +3,8 @@ package com.assismohanty.awaken.debug
 import com.assismohanty.awaken.core.data.usage.AndroidUsageGateway
 import com.assismohanty.awaken.core.data.usage.InstalledApp
 import com.assismohanty.awaken.core.data.usage.UsageGateway
+import com.assismohanty.awaken.core.data.usage.UsageRead
+import com.assismohanty.awaken.core.data.usage.trackedMillis
 import com.assismohanty.awaken.engine.AppKind
 import dagger.Binds
 import dagger.Module
@@ -26,10 +28,11 @@ class DebugUsageGateway @Inject constructor(
 
     override fun hasAccess(): Boolean = simulated > 0 || real.hasAccess()
 
-    override suspend fun foregroundMillis(start: Instant, end: Instant): Map<String, Long> {
-        val recorded = real.foregroundMillis(start, end)
-        if (simulated <= 0) return recorded
-        return recorded + (SIM_PACKAGE to (recorded[SIM_PACKAGE] ?: 0L) + simulated * MILLIS_PER_MINUTE)
+    override suspend fun read(start: Instant, end: Instant): UsageRead {
+        val read = real.read(start, end)
+        if (simulated <= 0) return read
+        val recorded = read.trackedMillis.orEmpty()
+        return UsageRead.Tracked(recorded + (SIM_PACKAGE to (recorded[SIM_PACKAGE] ?: 0L) + simulated * MILLIS_PER_MINUTE))
     }
 
     override suspend fun launcherApps(): List<InstalledApp> {

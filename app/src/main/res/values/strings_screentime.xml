@@ -9,10 +9,15 @@
     <string name="screentime_title">Screen time</string>
     <string name="screentime_loading">Reading today\'s usage…</string>
     <string name="screentime_failed">The System couldn\'t read your usage. Try again in a moment.</string>
-    <string name="screentime_window_access">USAGE ACCESS</string>
+    <string name="screentime_window_access">GRANT USAGE ACCESS</string>
     <string name="screentime_access_body">To show how long you spend in each app, AWAKEN needs usage access. It reads app times on this phone only. Nothing is sent anywhere, and no app is ever blocked.</string>
     <string name="screentime_access_steps">On the next screen, find AWAKEN and turn on \"Permit usage access\".</string>
-    <string name="screentime_access_action">Allow usage access</string>
+    <string name="screentime_access_action">Grant usage access</string>
+    <string name="screentime_not_tracked">Not tracked</string>
+    <string name="screentime_not_tracked_body">Usage access is on, but this phone reported no app usage for today. Limits aren\'t checked and no XP is paid until it does.</string>
+    <string name="screentime_limit_not_tracked">Not tracked</string>
+    <string name="screentime_discipline_not_tracked">Limits are not tracked right now, so nothing is at stake and no XP is paid today. Grant usage access to track them.</string>
+    <string name="screentime_discipline_unreadable">Limits are not tracked right now: this phone isn\'t reporting app usage, so nothing is at stake and no XP is paid until it does.</string>
     <string name="screentime_window_today">TODAY</string>
     <string name="screentime_window_apps">APPS</string>
     <string name="screentime_window_trend">LAST 7 DAYS</string>

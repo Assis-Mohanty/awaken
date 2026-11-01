@@ -140,6 +140,67 @@ class ScreenTimeUseCasesTest {
     }
 
     @Test
+    fun withoutUsageAccessADayEarnsNoXp() = runTest {
+        enabledThenNextDay()
+        graph.usage.access = false
+
+        graph.clock.advance(Duration.ofDays(1))
+        graph.rollover()
+
+        assertThat(discipline(day2)?.status).isNotEqualTo(QuestStatus.COMPLETED)
+        assertThat(graph.db.ledgerDao().all().none { it.xpSource == "USAGE" }).isTrue()
+    }
+
+    @Test
+    fun unreadableUsageEarnsNoXpEvenWithAccess() = runTest {
+        enabledThenNextDay()
+        // 12 hours on Instagram that the system never reported: no events is "unknown", not "0 minutes".
+        graph.usage.minutes[INSTAGRAM] = 720
+        graph.usage.readable = false
+
+        graph.clock.advance(Duration.ofDays(1))
+        graph.rollover()
+
+        assertThat(discipline(day2)?.status).isNotEqualTo(QuestStatus.COMPLETED)
+        assertThat(graph.db.ledgerDao().all().none { it.xpSource == "USAGE" }).isTrue()
+    }
+
+    @Test
+    fun realUsageOverTheLimitEarnsNoXp() = runTest {
+        enabledThenNextDay()
+        graph.usage.minutes[INSTAGRAM] = 720
+
+        graph.clock.advance(Duration.ofDays(1))
+        graph.rollover()
+
+        assertThat(discipline(day2)?.status).isEqualTo(QuestStatus.EXPIRED)
+        assertThat(graph.db.ledgerDao().all().none { it.xpSource == "USAGE" }).isTrue()
+    }
+
+    @Test
+    fun theOverviewWithUnreadableUsageOffersNoXp() = runTest {
+        enabledThenNextDay()
+        graph.usage.readable = false
+
+        val overview = checkNotNull(graph.loadScreenTime())
+
+        assertThat(overview.status).isNotEqualTo(DisciplineStatus.ON_TRACK)
+        assertThat(overview.status).isNotEqualTo(DisciplineStatus.NO_LIMITS)
+    }
+
+    @Test
+    fun theOverviewWithoutAccessOffersNoXp() = runTest {
+        enabledThenNextDay()
+        graph.usage.access = false
+
+        val overview = checkNotNull(graph.loadScreenTime())
+
+        assertThat(overview.hasAccess).isFalse()
+        assertThat(overview.status).isNotEqualTo(DisciplineStatus.ON_TRACK)
+        assertThat(overview.status).isNotEqualTo(DisciplineStatus.NO_LIMITS)
+    }
+
+    @Test
     fun aManualCompletionIsRefused() = runTest {
         enabledThenNextDay()
         val quest = checkNotNull(discipline(day2))

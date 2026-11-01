@@ -10,7 +10,9 @@ import com.assismohanty.awaken.core.designsystem.charts.StackedColumn
 import com.assismohanty.awaken.core.designsystem.components.LegendSwatch
 import com.assismohanty.awaken.core.designsystem.components.IconPlaceholder
 import android.content.ActivityNotFoundException
+import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import android.provider.Settings
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
@@ -91,15 +93,30 @@ fun ScreenTimeRoute(onBack: () -> Unit, modifier: Modifier = Modifier, viewModel
         state = state,
         onEvent = viewModel::onEvent,
         onBack = onBack,
-        onOpenUsageAccess = {
-            try {
-                context.startActivity(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
-            } catch (e: ActivityNotFoundException) {
-                Timber.w(e, "No usage access settings screen")
-            }
-        },
+        onOpenUsageAccess = { openUsageAccessSettings(context) },
         modifier = modifier,
     )
+}
+
+/**
+ * AWAKEN's own "Permit usage access" switch (a package URI deep-links to it on most phones), else the full usage-access
+ * list, else AWAKEN's app-info page. Never a crash when an OEM removed the page.
+ */
+private fun openUsageAccessSettings(context: Context) {
+    val packageUri = Uri.fromParts("package", context.packageName, null)
+    val candidates = listOf(
+        Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS, packageUri),
+        Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS),
+        Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, packageUri),
+    )
+    for (intent in candidates) {
+        try {
+            context.startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+            return
+        } catch (e: ActivityNotFoundException) {
+            Timber.w(e, "No settings screen for %s", intent.action)
+        }
+    }
 }
 
 /** Screen Time (DESIGN_SYSTEM §4.9): today's usage by app and category, the discipline stake and per-app rules. */
@@ -157,6 +174,11 @@ private fun UsageTodayWindow(overview: ScreenTimeOverview, modifier: Modifier = 
     val colors = AwakenTheme.colors
     val type = AwakenTheme.type
     SystemWindow(title = lexString(R.string.screentime_window_today), accent = colors.accent, modifier = modifier, reveal = false) {
+        if (!overview.tracked) {
+            Text(lexString(R.string.screentime_not_tracked), style = type.metricL, color = colors.textPrimary)
+            Text(lexString(R.string.screentime_not_tracked_body), style = type.body, color = colors.textSecondary)
+            return@SystemWindow
+        }
         Text(formatMinutes(overview.totalMinutes), style = type.metricXL, color = colors.textPrimary)
         SplitBar(overview.minutesByCategory, overview.totalMinutes)
         AppCategory.entries.forEach { category ->
@@ -198,7 +220,7 @@ private fun DisciplineWindow(overview: ScreenTimeOverview, onEvent: (ScreenTimeE
         modifier = modifier,
         reveal = false,
         headerTrailing = {
-            if (overview.status != DisciplineStatus.OFF) {
+            if (overview.status != DisciplineStatus.OFF && overview.status != DisciplineStatus.NOT_TRACKED) {
                 Text(lexString(R.string.screentime_xp_at_stake, overview.xpAtStake), style = type.numericSmall, color = colors.reward)
             }
         },
@@ -206,6 +228,8 @@ private fun DisciplineWindow(overview: ScreenTimeOverview, onEvent: (ScreenTimeE
         val line = when (overview.status) {
             DisciplineStatus.OFF -> lexString(R.string.screentime_discipline_off, overview.xpAtStake)
             DisciplineStatus.STARTS_LATER -> lexString(R.string.screentime_discipline_starts)
+            DisciplineStatus.NOT_TRACKED ->
+                lexString(if (overview.hasAccess) R.string.screentime_discipline_unreadable else R.string.screentime_discipline_not_tracked)
             DisciplineStatus.NO_LIMITS -> lexString(R.string.screentime_discipline_no_limits)
             DisciplineStatus.ON_TRACK -> lexString(R.string.screentime_discipline_on_track, overview.xpAtStake)
             DisciplineStatus.FORFEITED -> lexString(R.string.screentime_discipline_forfeited)
@@ -281,7 +305,7 @@ private fun AppsWindow(state: ScreenTimeUiState, onEvent: (ScreenTimeEvent) -> U
         }
         apps.forEachIndexed { index, row ->
             if (index > 0) HorizontalDivider(thickness = AwakenTheme.dimens.hairline, color = colors.divider)
-            AppRow(row, onClick = { onEvent(ScreenTimeEvent.OpenApp(row.packageName)) })
+            AppRow(row, tracked = state.overview?.tracked == true, onClick = { onEvent(ScreenTimeEvent.OpenApp(row.packageName)) })
         }
         if (state.hiddenCount > 0 || state.showUnused) {
             QuietButton(
@@ -297,7 +321,7 @@ private fun AppsWindow(state: ScreenTimeUiState, onEvent: (ScreenTimeEvent) -> U
 }
 
 @Composable
-private fun AppRow(row: AppUsageRow, onClick: () -> Unit) {
+private fun AppRow(row: AppUsageRow, tracked: Boolean, onClick: () -> Unit) {
     val colors = AwakenTheme.colors
     val type = AwakenTheme.type
     val editLabel = lexString(R.string.screentime_edit_app, row.label)
@@ -326,7 +350,11 @@ private fun AppRow(row: AppUsageRow, onClick: () -> Unit) {
             }
         }
         Column(horizontalAlignment = Alignment.End) {
-            Text(formatMinutes(row.usedMinutes), style = type.numericSmall, color = if (row.breached) colors.critical else colors.textPrimary)
+            if (tracked) {
+                Text(formatMinutes(row.usedMinutes), style = type.numericSmall, color = if (row.breached) colors.critical else colors.textPrimary)
+            } else {
+                Text(lexString(R.string.screentime_limit_not_tracked), style = type.label, color = colors.textSecondary)
+            }
             Pill(lexString(row.category.shortRes), categoryColor(row.category))
         }
     }
@@ -492,6 +520,7 @@ internal fun previewScreenTimeState(): ScreenTimeUiState {
         overview = ScreenTimeOverview(
             gameDate = today,
             hasAccess = true,
+            tracked = true,
             status = DisciplineStatus.ON_TRACK,
             startsOn = today.minusDays(3),
             xpAtStake = 78,
@@ -520,6 +549,47 @@ private fun ScreenTimeNoAccessPreview() {
     AwakenTheme(reduceMotion = true) {
         ScreenTimeScreen(
             state = state.copy(overview = state.overview?.copy(hasAccess = false, status = DisciplineStatus.OFF, apps = emptyList())),
+            onEvent = {},
+            onBack = {},
+            onOpenUsageAccess = {},
+        )
+    }
+}
+
+/** Discipline is on but access was never granted (or was revoked): no stake is offered, the limit is "not tracked". */
+@PhonePreviews
+@Composable
+private fun ScreenTimeNoAccessDisciplineOnPreview() {
+    val state = previewScreenTimeState()
+    AwakenTheme(reduceMotion = true) {
+        ScreenTimeScreen(
+            state = state.copy(
+                overview = state.overview?.copy(hasAccess = false, tracked = false, status = DisciplineStatus.NOT_TRACKED, apps = emptyList()),
+            ),
+            onEvent = {},
+            onBack = {},
+            onOpenUsageAccess = {},
+        )
+    }
+}
+
+/** Access is granted but the phone reports no usage events: every limit reads "not tracked", nothing is at stake. */
+@PhonePreviews
+@Composable
+private fun ScreenTimeUnreadablePreview() {
+    val state = previewScreenTimeState()
+    AwakenTheme(reduceMotion = true) {
+        ScreenTimeScreen(
+            state = state.copy(
+                overview = state.overview?.copy(
+                    tracked = false,
+                    status = DisciplineStatus.NOT_TRACKED,
+                    totalMinutes = 0,
+                    minutesByCategory = emptyMap(),
+                    apps = state.overview.apps.map { it.copy(usedMinutes = 0) },
+                ),
+                showUnused = true,
+            ),
             onEvent = {},
             onBack = {},
             onOpenUsageAccess = {},

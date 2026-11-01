@@ -2,6 +2,7 @@ package com.assismohanty.awaken.testing
 
 import com.assismohanty.awaken.core.data.usage.InstalledApp
 import com.assismohanty.awaken.core.data.usage.UsageGateway
+import com.assismohanty.awaken.core.data.usage.UsageRead
 import com.assismohanty.awaken.engine.AppKind
 import java.time.Instant
 
@@ -16,10 +17,16 @@ class FakeUsageGateway(
 ) : UsageGateway {
     val minutes: MutableMap<String, Int> = mutableMapOf()
 
+    /** False = access is granted but the system returned no usage events at all (OEM restriction, empty log). */
+    var readable: Boolean = true
+
     override fun hasAccess(): Boolean = access
 
-    override suspend fun foregroundMillis(start: Instant, end: Instant): Map<String, Long> =
-        if (access) minutes.mapValues { it.value * 60_000L } else emptyMap()
+    override suspend fun read(start: Instant, end: Instant): UsageRead = when {
+        !access -> UsageRead.NoAccess
+        !readable -> UsageRead.Unavailable
+        else -> UsageRead.Tracked(minutes.filterValues { it > 0 }.mapValues { it.value * 60_000L })
+    }
 
     override suspend fun launcherApps(): List<InstalledApp> = apps
 

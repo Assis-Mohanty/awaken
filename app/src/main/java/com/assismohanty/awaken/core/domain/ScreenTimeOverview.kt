@@ -7,6 +7,8 @@ import com.assismohanty.awaken.core.data.db.entity.HunterProfileEntity
 import com.assismohanty.awaken.core.data.repo.GameStateReader
 import com.assismohanty.awaken.core.data.usage.InstalledApp
 import com.assismohanty.awaken.core.data.usage.UsageGateway
+import com.assismohanty.awaken.core.data.usage.UsageRead
+import com.assismohanty.awaken.core.data.usage.trackedMillis
 import com.assismohanty.awaken.engine.AppCategory
 import com.assismohanty.awaken.engine.AppRule
 import com.assismohanty.awaken.engine.ScreenTimeRules
@@ -37,6 +39,9 @@ enum class DisciplineStatus {
     /** On, but it starts on a later game-day. */
     STARTS_LATER,
 
+    /** On today, but usage can't be read (no access, or the system reports nothing): no limit is checked, nothing is paid. */
+    NOT_TRACKED,
+
     /** On today, but nothing to defend: no distracting app has a limit. */
     NO_LIMITS,
     ON_TRACK,
@@ -48,6 +53,8 @@ data class ScreenTimeDay(val gameDate: LocalDate, val totalMinutes: Int, val dis
 data class ScreenTimeOverview(
     val gameDate: LocalDate,
     val hasAccess: Boolean,
+    /** Today's usage was really read. False shows "not tracked" instead of minutes. */
+    val tracked: Boolean,
     val status: DisciplineStatus,
     val startsOn: LocalDate?,
     val xpAtStake: Int,
@@ -78,13 +85,15 @@ class LoadScreenTimeOverviewUseCase @Inject constructor(
         val streak = gameState.hunterContext(profile, today).streak
         val xp = XpCalculator.questXp(ScreenTimeRules.DISCIPLINE_DIFFICULTY, streak, VerificationSource.USAGE, crit = false)
         if (!usage.hasAccess()) {
-            return ScreenTimeOverview(today, false, statusWithoutUsage(profile.screenTimeFrom, today), profile.screenTimeFrom, xp, 0, emptyMap(), emptyList(), emptyList())
+            return ScreenTimeOverview(today, false, false, statusWithoutUsage(profile.screenTimeFrom, today), profile.screenTimeFrom, xp, 0, emptyMap(), emptyList(), emptyList())
         }
         seedRules()
         val installed = usage.launcherApps()
         val todayRules = reader.rulesInForce(today)
         val tomorrowRules = reader.rulesInForce(today.plusDays(1))
-        val used = reader.usageOn(profile, today)
+        val read = reader.usageOn(profile, today)
+        val tracked = read is UsageRead.Tracked
+        val used = read.trackedMillis.orEmpty()
         val rows = installed.map { app ->
             val rule = todayRules[app.packageName]
             val category = rule?.category ?: ScreenTimeRules.defaultCategory(app.packageName, app.kind)
@@ -108,13 +117,16 @@ class LoadScreenTimeOverviewUseCase @Inject constructor(
         val status = when {
             profile.screenTimeFrom == null -> DisciplineStatus.OFF
             today.isBefore(profile.screenTimeFrom) -> DisciplineStatus.STARTS_LATER
-            quest?.status == QuestStatus.EXPIRED || state.breached -> DisciplineStatus.FORFEITED
+            quest?.status == QuestStatus.EXPIRED -> DisciplineStatus.FORFEITED
+            !tracked -> DisciplineStatus.NOT_TRACKED
+            state.breached -> DisciplineStatus.FORFEITED
             !state.hasStake -> DisciplineStatus.NO_LIMITS
             else -> DisciplineStatus.ON_TRACK
         }
         return ScreenTimeOverview(
             gameDate = today,
             hasAccess = true,
+            tracked = tracked,
             status = status,
             startsOn = profile.screenTimeFrom,
             xpAtStake = xp,
@@ -128,7 +140,7 @@ class LoadScreenTimeOverviewUseCase @Inject constructor(
     private fun statusWithoutUsage(from: LocalDate?, today: LocalDate): DisciplineStatus = when {
         from == null -> DisciplineStatus.OFF
         today.isBefore(from) -> DisciplineStatus.STARTS_LATER
-        else -> DisciplineStatus.NO_LIMITS
+        else -> DisciplineStatus.NOT_TRACKED
     }
 
     private suspend fun trend(
@@ -139,7 +151,7 @@ class LoadScreenTimeOverviewUseCase @Inject constructor(
     ): List<ScreenTimeDay> = (TREND_DAYS - 1 downTo 0).map { back ->
         val date = today.minusDays(back.toLong())
         val dayRules = reader.rulesInForce(date)
-        val used = reader.usageOn(profile, date).filterKeys { it in installed }
+        val used = reader.usageOn(profile, date).trackedMillis.orEmpty().filterKeys { it in installed }
         val distracting = used.filterKeys { pkg ->
             val category = dayRules[pkg]?.category ?: todayRules[pkg]?.category
                 ?: installed[pkg]?.let { ScreenTimeRules.defaultCategory(it.packageName, it.kind) }

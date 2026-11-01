@@ -13,6 +13,8 @@ import com.assismohanty.awaken.core.data.db.entity.QuestInstanceEntity
 import com.assismohanty.awaken.core.data.repo.GameStateReader
 import com.assismohanty.awaken.core.data.repo.TransactionRunner
 import com.assismohanty.awaken.core.data.usage.UsageGateway
+import com.assismohanty.awaken.core.data.usage.UsageRead
+import com.assismohanty.awaken.core.data.usage.trackedMillis
 import com.assismohanty.awaken.engine.AppCategory
 import com.assismohanty.awaken.engine.AppLimitState
 import com.assismohanty.awaken.engine.AppRule
@@ -56,11 +58,11 @@ class ScreenTimeReader @Inject constructor(
     suspend fun disciplineQuest(gameDate: LocalDate): QuestInstanceEntity? =
         questDao.getForDate(gameDate).firstOrNull { it.type == QuestType.DISCIPLINE }
 
-    /** Foreground time per package over [gameDate] so far (or the whole day once it has ended). */
-    suspend fun usageOn(profile: HunterProfileEntity, gameDate: LocalDate): Map<String, Long> {
+    /** Usage over [gameDate] so far (or the whole day once it has ended). Only [UsageRead.Tracked] is real data. */
+    suspend fun usageOn(profile: HunterProfileEntity, gameDate: LocalDate): UsageRead {
         val start = GameDay.startOf(gameDate, clock.zone(), profile.dayStartHour)
         val end = minOf(GameDay.endOf(gameDate, clock.zone(), profile.dayStartHour), clock.now())
-        return usage.foregroundMillis(start, end)
+        return usage.read(start, end)
     }
 }
 
@@ -137,6 +139,8 @@ data class DisciplineCheck(
     val gameDate: LocalDate,
     val state: DisciplineState,
     val usageMillis: Map<String, Long>,
+    /** False when usage couldn't be read: nothing is forfeited, warned about or paid on a guess. */
+    val tracked: Boolean,
     val xpAtStake: Int,
     val quest: QuestInstanceEntity?,
     /** Limits with ≤ 5 min left that haven't been crossed: the caller warns once per app per day. */
@@ -147,14 +151,14 @@ data class DisciplineCheck(
 
 /**
  * The live check (worker every 15 min + app foreground): reads today's usage, and on the first crossing forfeits the
- * DISCIPLINE quest in one transaction (GD §6.7). Losing usage access also expires it. Never writes the ledger.
+ * DISCIPLINE quest in one transaction (GD §6.7). Losing usage access also expires it; usage that can't be read is
+ * neither forfeited nor warned about (settlement then pays nothing). Never writes the ledger.
  */
 class DisciplineSyncUseCase @Inject constructor(
     private val hunterDao: HunterDao,
     private val questDao: QuestDao,
     private val reader: ScreenTimeReader,
     private val gameState: GameStateReader,
-    private val usage: UsageGateway,
     private val transactions: TransactionRunner,
     private val clock: Clock,
 ) {
@@ -163,41 +167,43 @@ class DisciplineSyncUseCase @Inject constructor(
         val profile = hunterDao.getProfile() ?: return null
         if (profile.screenTimeFrom == null) return null
         val today = clock.gameDate(profile.dayStartHour)
-        val usageMillis = reader.usageOn(profile, today)
+        val read = reader.usageOn(profile, today)
+        val usageMillis = read.trackedMillis.orEmpty()
+        val tracked = read is UsageRead.Tracked
         val state = ScreenTimeRules.evaluate(usageMillis, reader.rulesInForce(today))
         val streak = gameState.hunterContext(profile, today).streak
         val xp = XpCalculator.questXp(ScreenTimeRules.DISCIPLINE_DIFFICULTY, streak, VerificationSource.USAGE, crit = false)
         var forfeited = false
         val quest = transactions.run {
             val open = reader.disciplineQuest(today)
-            if (open != null && open.isOpen && (state.breached || !usage.hasAccess())) {
+            val crossed = tracked && state.breached
+            if (open != null && open.isOpen && (crossed || read == UsageRead.NoAccess)) {
                 questDao.setStatus(open.id, QuestStatus.EXPIRED, completedAt = null)
-                forfeited = state.breached
+                forfeited = crossed
             }
             reader.disciplineQuest(today)
         }
-        val warnings = if (quest?.isOpen == true) ScreenTimeRules.warningsDue(state) else emptyList()
-        return DisciplineCheck(today, state, usageMillis, xp, quest, warnings, forfeited)
+        val warnings = if (tracked && quest?.isOpen == true) ScreenTimeRules.warningsDue(state) else emptyList()
+        return DisciplineCheck(today, state, usageMillis, tracked, xp, quest, warnings, forfeited)
     }
 }
 
 /**
  * Settles a finished day's DISCIPLINE quest before the day is finalized (GD §6.7): held → completed through the normal
- * pipeline (priced on its own day, ENGINE_DECISIONS #91); crossed → expired. Without usage access the quest is left
- * open, and finalization expires it unpaid.
+ * pipeline (priced on its own day, ENGINE_DECISIONS #91); crossed → expired. Fail closed: without usage access, or
+ * when the day's usage can't be read, the quest is left open and finalization expires it unpaid.
  */
 class SettleDisciplineUseCase @Inject constructor(
     private val hunterDao: HunterDao,
     private val questDao: QuestDao,
     private val reader: ScreenTimeReader,
-    private val usage: UsageGateway,
     private val completeQuest: CompleteQuestUseCase,
 ) {
     suspend operator fun invoke(gameDate: LocalDate): CompleteQuestResult? {
         val profile = hunterDao.getProfile() ?: return null
         val quest = reader.disciplineQuest(gameDate)?.takeIf { it.isOpen } ?: return null
-        if (!usage.hasAccess()) return null
-        val state = ScreenTimeRules.evaluate(reader.usageOn(profile, gameDate), reader.rulesInForce(gameDate))
+        val usageMillis = reader.usageOn(profile, gameDate).trackedMillis ?: return null
+        val state = ScreenTimeRules.evaluate(usageMillis, reader.rulesInForce(gameDate))
         if (state.breached) {
             questDao.setStatus(quest.id, QuestStatus.EXPIRED, completedAt = null)
             return null
