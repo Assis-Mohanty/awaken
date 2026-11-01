@@ -1213,13 +1213,13 @@ All gate commands run from `reelcounter/` with `./gradlew` (Git Bash on Windows)
 
 ### Phase 1 — Core engine
 Commit: `feat(reelcounter): core counting engine`
-- [ ] Step 0: trim `reelcounter/local.properties` to only the `sdk.dir` line (not committed).
-- [ ] Edit `MachineHarness.kt` (§6.0).
-- [ ] Write every test file in §2.2 with every test in §10.1 (C1–C16 exist).
-- [ ] Create `NodeFixtures.kt`.
-- [ ] Implement every `:core` main file in §2.2 with the exact signatures in §3 and the algorithms in §4–§5.
-- [ ] Create `android/src/main/assets/rc_detectors.json` exactly as §5.2 (needed by J1; this file is inside `/reelcounter`).
-- [ ] `:android` and `:demo` still compile (`./gradlew :demo:assembleDebug` must also succeed; the skeleton is untouched otherwise).
+- [x] Step 0: trim `reelcounter/local.properties` to only the `sdk.dir` line (not committed).
+- [x] Edit `MachineHarness.kt` (§6.0).
+- [x] Write every test file in §2.2 with every test in §10.1 (C1–C16 exist).
+- [x] Create `NodeFixtures.kt`.
+- [x] Implement every `:core` main file in §2.2 with the exact signatures in §3 and the algorithms in §4–§5.
+- [x] Create `android/src/main/assets/rc_detectors.json` exactly as §5.2 (needed by J1; this file is inside `/reelcounter`).
+- [x] `:android` and `:demo` still compile (`./gradlew :demo:assembleDebug` must also succeed; the skeleton is untouched otherwise).
 
 Acceptance: all §10.1 tests exist with the listed names and pass. `CoreIsAndroidFreeTest` passes. No TODOs in `:core` main.
 Gate: `./gradlew :core:test :demo:assembleDebug`

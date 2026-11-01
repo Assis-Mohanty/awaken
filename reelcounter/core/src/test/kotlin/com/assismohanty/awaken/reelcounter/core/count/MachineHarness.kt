@@ -18,9 +18,10 @@ class MachineHarness(
     limits: Map<ShortVideoApp, Int> = emptyMap(),
     todayCounts: Map<ShortVideoApp, Int> = emptyMap(),
     todaySnoozes: Map<ShortVideoApp, Int> = emptyMap(),
+    restored: Map<ShortVideoApp, RestoredSession> = emptyMap(),
 ) {
     private val machine = CounterMachine(config)
-    var state: CounterState = CounterState.initial(day, todayCounts, todaySnoozes, limits)
+    var state: CounterState = CounterState.initial(day, todayCounts, todaySnoozes, limits, restored)
         private set
     val effects = mutableListOf<CounterEffect>()
     var t: Long = 0
@@ -105,4 +106,7 @@ class MachineHarness(
         effects.filterIsInstance<CounterEffect.TimeAdded>().filter { it.app == app && it.day == day }.sumOf { it.seconds }
 
     fun bubbles(): List<CounterEffect.BubbleChanged> = effects.filterIsInstance<CounterEffect.BubbleChanged>()
+
+    fun snoozeEffects(): List<CounterEffect> =
+        effects.filter { it is CounterEffect.SnoozeAccepted || it is CounterEffect.SnoozeRejected }
 }
