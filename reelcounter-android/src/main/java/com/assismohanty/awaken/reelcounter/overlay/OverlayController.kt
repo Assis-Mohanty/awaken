@@ -2,6 +2,8 @@ package com.assismohanty.awaken.reelcounter.overlay
 
 import android.accessibilityservice.AccessibilityService
 import android.graphics.PixelFormat
+import android.os.Handler
+import android.os.Looper
 import android.view.Gravity
 import android.view.WindowManager
 import androidx.compose.foundation.background
@@ -9,13 +11,13 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.assismohanty.awaken.reelcounter.core.ShortVideoApp
@@ -24,24 +26,28 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * Owns every overlay window the service draws. All windows are `TYPE_ACCESSIBILITY_OVERLAY`, so no
- * SYSTEM_ALERT_WINDOW permission is needed. Phase 2 only draws the debug chip; the bubble, panel and
- * nudge arrive in Phases 3 and 5. Main thread only.
+ * Routes the counter's overlay calls to the host app's [ReelOverlayUi] and owns the debug-only inspector chip.
+ * Every window is `TYPE_ACCESSIBILITY_OVERLAY`, so no SYSTEM_ALERT_WINDOW permission is needed. Main thread only.
  */
 @Singleton
-class OverlayController @Inject constructor() : OverlaySink {
+class OverlayController @Inject constructor(private val ui: ReelOverlayUi) : OverlaySink {
     private var service: AccessibilityService? = null
     private var chipHost: OverlayWindowHost? = null
+    private val main = Handler(Looper.getMainLooper())
     private var chipLabel by mutableStateOf("")
     private var chipClick: () -> Unit = {}
 
-    fun attach(service: AccessibilityService) {
+    fun attach(service: AccessibilityService, actions: ReelOverlayActions) {
         this.service = service
         chipHost = OverlayWindowHost(service)
+        ui.attach(service, actions)
     }
 
+    /** Called on the main thread by the service: hides everything now, not later, before the windows' owner is gone. */
     fun detach() {
-        hideAll()
+        hideDebugChip()
+        ui.hideAll()
+        ui.detach()
         chipHost = null
         service = null
     }
@@ -81,13 +87,25 @@ class OverlayController @Inject constructor() : OverlaySink {
         chipHost?.hide()
     }
 
-    override fun showBubble(app: ShortVideoApp) = Unit
-
-    override fun hideAll() {
-        hideDebugChip()
+    /** The counter reports from its own thread; windows can only be touched on the main thread. */
+    private fun onMain(block: () -> Unit) {
+        if (Looper.myLooper() == Looper.getMainLooper()) block() else main.post(block)
     }
 
-    override fun showNudge(app: ShortVideoApp, countToday: Int, snoozesLeft: Int) = Unit
+    override fun showBubble(app: ShortVideoApp, sessionId: Long, count: Int, allowance: Int?) = onMain {
+        ui.showBubble(app, sessionId, count, allowance)
+    }
 
-    override fun hideNudge() = Unit
+    override fun updateBubble(app: ShortVideoApp, count: Int, allowance: Int?) = onMain { ui.updateBubble(app, count, allowance) }
+
+    override fun hideAll() = onMain {
+        hideDebugChip()
+        ui.hideAll()
+    }
+
+    override fun showNudge(app: ShortVideoApp, countToday: Int, allowance: Int?, snoozesLeft: Int) = onMain {
+        ui.showNudge(app, countToday, allowance, snoozesLeft)
+    }
+
+    override fun hideNudge() = onMain { ui.hideNudge() }
 }

@@ -115,7 +115,7 @@ fun FocusLockSetupScreen(
     }
 }
 
-private fun batteryGuide(family: OemFamily): Int = when (family) {
+internal fun batteryGuide(family: OemFamily): Int = when (family) {
     OemFamily.XIAOMI -> R.string.focus_lock_battery_xiaomi
     OemFamily.SAMSUNG -> R.string.focus_lock_battery_samsung
     OemFamily.OPPO -> R.string.focus_lock_battery_oppo

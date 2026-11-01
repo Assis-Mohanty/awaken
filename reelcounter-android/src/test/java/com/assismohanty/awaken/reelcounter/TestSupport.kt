@@ -12,7 +12,6 @@ import com.assismohanty.awaken.reelcounter.core.model.NodeSource
 import com.assismohanty.awaken.reelcounter.core.model.TreeNodeSource
 import com.assismohanty.awaken.reelcounter.data.db.ReelDatabase
 import com.assismohanty.awaken.reelcounter.service.OverlaySink
-import com.assismohanty.awaken.reelcounter.service.WidgetSink
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
@@ -39,16 +38,13 @@ fun newDataStore(dispatcher: CoroutineDispatcher, file: File): DataStore<Prefere
 
 class FakeOverlay : OverlaySink {
     val calls = mutableListOf<String>()
-    override fun showBubble(app: ShortVideoApp) { calls += "bubble:$app" }
+    override fun showBubble(app: ShortVideoApp, sessionId: Long, count: Int, allowance: Int?) { calls += "bubble:$app:$count:$allowance" }
+    override fun updateBubble(app: ShortVideoApp, count: Int, allowance: Int?) { calls += "update:$app:$count:$allowance" }
     override fun hideAll() { calls += "hideAll" }
-    override fun showNudge(app: ShortVideoApp, countToday: Int, snoozesLeft: Int) { calls += "nudge:$app:$countToday:$snoozesLeft" }
+    override fun showNudge(app: ShortVideoApp, countToday: Int, allowance: Int?, snoozesLeft: Int) { calls += "nudge:$app:$countToday:$allowance:$snoozesLeft" }
     override fun hideNudge() { calls += "hideNudge" }
 }
 
-class FakeWidget : WidgetSink {
-    var requests = 0
-    override fun request() { requests++ }
-}
 
 /** An Instagram-like screen: a full-screen scrollable pager with one full-screen child. */
 fun pagerScreen(pkg: String = IG_PKG): NodeSource = TreeNodeSource(
@@ -71,3 +67,8 @@ fun plainScreen(pkg: String = IG_PKG): NodeSource = TreeNodeSource(
     packageName = pkg,
     screen = SCREEN,
 )
+
+/** The game day starts at 04:00, AWAKEN's default. */
+object FixedDayStart : com.assismohanty.awaken.reelcounter.data.ReelDayStart {
+    override val dayStartHour = kotlinx.coroutines.flow.flowOf(4)
+}

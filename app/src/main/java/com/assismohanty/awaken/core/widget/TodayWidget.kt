@@ -58,6 +58,7 @@ interface WidgetEntryPoint {
     fun focusDao(): com.assismohanty.awaken.core.data.db.dao.FocusDao
     fun gateRunDao(): com.assismohanty.awaken.core.data.db.dao.GateRunDao
     fun clock(): com.assismohanty.awaken.core.data.clock.Clock
+    fun reelWidgetData(): com.assismohanty.awaken.core.reelcounter.ReelWidgetData
 }
 
 /**
@@ -68,7 +69,7 @@ class TodayWidget : GlanceAppWidget() {
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         val entry = EntryPointAccessors.fromApplication(context, WidgetEntryPoint::class.java)
-        val snapshot = entry.observeToday()(flowOf(Unit)).first().toWidgetSnapshot()
+        val snapshot = entry.observeToday()(flowOf(Unit)).first().toWidgetSnapshot().copy(reelsToday = entry.reelWidgetData().current())
         provideContent { WidgetContent(context, snapshot) }
     }
 }
@@ -144,6 +145,10 @@ private fun Filled(context: Context, snapshot: WidgetSnapshot) {
                 style = text(tone { it.mist }, 13),
                 maxLines = 2,
             )
+            snapshot.reelsToday?.let {
+                Spacer(GlanceModifier.size(4.dp))
+                Text(context.getString(R.string.widget_reels, it), style = text(tone { p -> p.mist }, 13))
+            }
         }
     }
 }
@@ -152,7 +157,7 @@ private fun summaryText(context: Context, snapshot: WidgetSnapshot): String =
     if (!snapshot.hasHunter) {
         context.getString(R.string.widget_empty)
     } else {
-        context.getString(
+        val base = context.getString(
             R.string.widget_cd,
             snapshot.rank.name,
             snapshot.level,
@@ -161,6 +166,7 @@ private fun summaryText(context: Context, snapshot: WidgetSnapshot): String =
             snapshot.total,
             snapshot.nextQuest ?: context.getString(R.string.widget_all_done),
         )
+        snapshot.reelsToday?.let { "$base ${context.getString(R.string.widget_reels, it)}." } ?: base
     }
 
 private val WIDGET_RADIUS = 24.dp

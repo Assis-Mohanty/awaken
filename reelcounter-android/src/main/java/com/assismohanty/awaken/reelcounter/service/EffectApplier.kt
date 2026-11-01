@@ -1,6 +1,7 @@
 package com.assismohanty.awaken.reelcounter.service
 
 import com.assismohanty.awaken.reelcounter.core.ShortVideoApp
+import com.assismohanty.awaken.reelcounter.core.count.CounterConfig
 import com.assismohanty.awaken.reelcounter.core.count.CounterEffect
 import com.assismohanty.awaken.reelcounter.core.count.CounterState
 import com.assismohanty.awaken.reelcounter.data.ReelRepository
@@ -8,53 +9,55 @@ import java.time.LocalDate
 import javax.inject.Inject
 import javax.inject.Singleton
 
-/** What the counter needs from the overlay windows. Implemented by `OverlayController`. */
+/**
+ * What the counter needs from the overlay windows. [allowance] is the limit plus any snoozes, or null when the app
+ * has no limit. Implemented by `OverlayController`, which hands it to the host app's `ReelOverlayUi`.
+ */
 interface OverlaySink {
-    fun showBubble(app: ShortVideoApp)
+    fun showBubble(app: ShortVideoApp, sessionId: Long, count: Int, allowance: Int?)
+    fun updateBubble(app: ShortVideoApp, count: Int, allowance: Int?)
     fun hideAll()
-    fun showNudge(app: ShortVideoApp, countToday: Int, snoozesLeft: Int)
+    fun showNudge(app: ShortVideoApp, countToday: Int, allowance: Int?, snoozesLeft: Int)
     fun hideNudge()
 }
 
-/** Asks for a widget refresh. Implemented by the widget in Phase 5. */
-fun interface WidgetSink {
-    fun request()
-}
 
 /** Turns [CounterEffect]s into storage writes and overlay calls. */
 @Singleton
 class EffectApplier @Inject constructor(
     private val repository: ReelRepository,
     private val overlay: OverlaySink,
-    private val widget: WidgetSink,
 ) {
     private data class TimeKey(val day: LocalDate, val app: ShortVideoApp)
 
     private val buffered = mutableMapOf<TimeKey, Long>()
+    private val snoozeSize = CounterConfig().snoozeSize
 
     suspend fun apply(effects: List<CounterEffect>, state: CounterState) {
         for (effect in effects) {
             when (effect) {
                 is CounterEffect.Counted -> {
                     repository.recordReel(effect)
-                    widget.request()
+                    overlay.updateBubble(effect.app, effect.countToday, state.allowance(effect.app, snoozeSize))
                 }
                 is CounterEffect.TimeAdded -> addTime(effect)
-                is CounterEffect.NudgeRequested -> overlay.showNudge(effect.app, effect.countToday, effect.snoozesLeft)
+                is CounterEffect.NudgeRequested ->
+                    overlay.showNudge(effect.app, effect.countToday, state.allowance(effect.app, snoozeSize), effect.snoozesLeft)
                 is CounterEffect.SnoozeAccepted -> {
                     repository.setSnoozes(effect.day, effect.app, effect.snoozesUsed)
                     overlay.hideNudge()
+                    overlay.updateBubble(effect.app, state.countToday(effect.app), state.allowance(effect.app, snoozeSize))
                 }
-                is CounterEffect.SnoozeRejected -> overlay.showNudge(effect.app, state.countToday(effect.app), 0)
+                is CounterEffect.SnoozeRejected ->
+                    overlay.showNudge(effect.app, state.countToday(effect.app), state.allowance(effect.app, snoozeSize), 0)
                 is CounterEffect.BubbleChanged -> {
                     val app = effect.app
                     if (app != null) {
-                        overlay.showBubble(app)
+                        overlay.showBubble(app, state.sessions[app]?.id ?: 0L, state.countToday(app), state.allowance(app, snoozeSize))
                     } else {
                         flushTime()
                         overlay.hideAll()
                     }
-                    widget.request()
                 }
             }
         }

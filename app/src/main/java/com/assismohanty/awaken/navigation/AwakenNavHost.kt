@@ -46,6 +46,11 @@ import com.assismohanty.awaken.feature.campaign.CampaignRoute as CampaignEntry
 import com.assismohanty.awaken.feature.focus.FocusReportRoute as FocusReportEntry
 import com.assismohanty.awaken.feature.focuslock.AllowedAppsRoute as AllowedAppsEntry
 import com.assismohanty.awaken.feature.focuslock.FocusLockSetupRoute as FocusLockSetupEntry
+import com.assismohanty.awaken.feature.focuslock.FocusAccessRoute as FocusAccessEntry
+import com.assismohanty.awaken.feature.reelcounter.ReelCounterSetupRoute as ReelCounterSetupEntry
+import com.assismohanty.awaken.feature.reelcounter.ReelInspectorEntry
+import com.assismohanty.awaken.feature.reelcounter.ReelLimitsRoute as ReelLimitsEntry
+import com.assismohanty.awaken.feature.reelcounter.ReelStatsRoute as ReelStatsEntry
 import com.assismohanty.awaken.feature.screentime.ScreenTimeRoute as ScreenTimeEntry
 import com.assismohanty.awaken.feature.settings.SettingsRoute as SettingsEntry
 import com.assismohanty.awaken.feature.status.StatusRoute as StatusEntry
@@ -217,11 +222,21 @@ private fun MainScaffold(
                         onOpenDebug = { navController.navigate(DebugRoute) },
                         onOpenFocusSetup = { navController.navigate(FocusLockSetupRoute) { launchSingleTop = true } },
                         onOpenAllowedApps = { navController.navigate(AllowedAppsRoute) { launchSingleTop = true } },
+                        onOpenReelSetup = { navController.navigate(ReelCounterSetupRoute) { launchSingleTop = true } },
+                        onOpenReelLimits = { navController.navigate(ReelLimitsRoute) { launchSingleTop = true } },
+                        onOpenReelStats = { navController.navigate(ReelStatsRoute) { launchSingleTop = true } },
+                        onOpenFocusAccess = { navController.navigate(FocusAccessRoute) { launchSingleTop = true } },
+                        onOpenReelInspector = { navController.navigate(ReelInspectorRoute) { launchSingleTop = true } },
                     )
                 }
                 composable<HealthRoute> { HealthEntry(onBack = { navController.popBackStack() }) }
                 composable<FocusLockSetupRoute> { FocusLockSetupEntry(onBack = { navController.popBackStack() }) }
                 composable<AllowedAppsRoute> { AllowedAppsEntry(onBack = { navController.popBackStack() }) }
+                composable<ReelCounterSetupRoute> { ReelCounterSetupEntry(onBack = { navController.popBackStack() }) }
+                composable<ReelLimitsRoute> { ReelLimitsEntry(onBack = { navController.popBackStack() }) }
+                composable<ReelStatsRoute> { ReelStatsEntry(onBack = { navController.popBackStack() }) }
+                composable<FocusAccessRoute> { FocusAccessEntry(onBack = { navController.popBackStack() }) }
+                composable<ReelInspectorRoute> { ReelInspectorEntry(onBack = { navController.popBackStack() }) }
                 composable<FocusReportRoute> { FocusReportEntry(onBack = { navController.popBackStack() }) }
                 composable<ScreenTimeRoute> { ScreenTimeEntry(onBack = { navController.popBackStack() }) }
                 composable<ReviewRoute> { ReviewEntry(onClose = { navController.popBackStack() }) }

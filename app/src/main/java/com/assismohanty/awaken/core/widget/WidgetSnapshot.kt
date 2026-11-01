@@ -22,6 +22,8 @@ data class WidgetSnapshot(
     val total: Int = 0,
     val nextQuest: String? = null,
     val cleared: Boolean = false,
+    /** Reels watched today (Reel counter); null while that feature is switched off. */
+    val reelsToday: Int? = null,
 )
 
 private val NEXT_ORDER = listOf(QuestType.PENALTY, QuestType.MAIN, QuestType.SIDE, QuestType.HABIT, QuestType.TRIAL)

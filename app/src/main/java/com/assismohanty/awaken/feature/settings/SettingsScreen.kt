@@ -73,6 +73,7 @@ import com.assismohanty.awaken.core.designsystem.theme.Spacing
 import com.assismohanty.awaken.engine.model.Rank
 import com.assismohanty.awaken.engine.model.Stat
 import com.assismohanty.awaken.feature.focuslock.FocusLockWindow
+import com.assismohanty.awaken.feature.reelcounter.ReelCounterWindow
 import com.assismohanty.awaken.feature.focuslock.FocusLockSettingsUiState
 import com.assismohanty.awaken.feature.focuslock.FocusLockWindowContent
 import com.assismohanty.awaken.feature.paths.AiConsentSheet
@@ -89,6 +90,11 @@ fun SettingsRoute(
     onOpenScreenTime: () -> Unit = {},
     onOpenFocusSetup: () -> Unit = {},
     onOpenAllowedApps: () -> Unit = {},
+    onOpenReelSetup: () -> Unit = {},
+    onOpenReelLimits: () -> Unit = {},
+    onOpenReelStats: () -> Unit = {},
+    onOpenFocusAccess: () -> Unit = {},
+    onOpenReelInspector: () -> Unit = {},
     onOpenDebug: () -> Unit = {},
     viewModel: SettingsViewModel = hiltViewModel(),
     archivedViewModel: ArchivedHabitsViewModel = hiltViewModel(),
@@ -122,7 +128,16 @@ fun SettingsRoute(
         onOpenPrivacy = { context.startActivity(Intent(context, PrivacyPolicyActivity::class.java)) },
         onOpenHealth = onOpenHealth,
         onOpenScreenTime = onOpenScreenTime,
-        focusWindow = { FocusLockWindow(onOpenSetup = onOpenFocusSetup, onOpenAllowedApps = onOpenAllowedApps, onOpenScreenTime = onOpenScreenTime) },
+        focusWindow = {
+            FocusLockWindow(onOpenSetup = onOpenFocusSetup, onOpenAllowedApps = onOpenAllowedApps, onOpenScreenTime = onOpenScreenTime)
+            ReelCounterWindow(
+                onOpenSetup = onOpenReelSetup,
+                onOpenLimits = onOpenReelLimits,
+                onOpenStats = onOpenReelStats,
+                onOpenPermissions = onOpenFocusAccess,
+                onOpenInspector = onOpenReelInspector,
+            )
+        },
         onOpenDebug = onOpenDebug,
         archivedHabits = archived,
         onRestoreHabit = archivedViewModel::restore,

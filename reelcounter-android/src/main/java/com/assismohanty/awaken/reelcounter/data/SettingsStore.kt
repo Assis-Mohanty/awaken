@@ -10,6 +10,7 @@ import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import com.assismohanty.awaken.reelcounter.core.ShortVideoApp
+import com.assismohanty.awaken.reelcounter.di.ReelPrefs
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -21,13 +22,12 @@ import javax.inject.Singleton
 enum class BubbleEdge { START, END }
 
 @Singleton
-class SettingsStore @Inject constructor(private val store: DataStore<Preferences>) {
+class SettingsStore @Inject constructor(@ReelPrefs private val store: DataStore<Preferences>) {
 
     private val data: Flow<Preferences> = store.data.catch { e ->
         if (e is IOException) emit(emptyPreferences()) else throw e
     }
 
-    val dayStartMinutes: Flow<Int> = data.map { it[DAY_START_MINUTES] ?: DEFAULT_DAY_START_MINUTES }.distinctUntilChanged()
 
     val limits: Flow<Map<ShortVideoApp, Int>> = data.map { prefs ->
         ShortVideoApp.entries.mapNotNull { app -> prefs[limitKey(app)]?.let { app to it } }.toMap()
@@ -41,13 +41,13 @@ class SettingsStore @Inject constructor(private val store: DataStore<Preferences
 
     val bubbleYFraction: Flow<Float> = data.map { it[BUBBLE_Y_FRACTION] ?: DEFAULT_BUBBLE_Y }.distinctUntilChanged()
 
-    val setupCompleted: Flow<Boolean> = data.map { it[SETUP_COMPLETED] ?: false }.distinctUntilChanged()
+    /** The hunter read the disclosure and switched Reel Counter on in AWAKEN. Off by default. */
+    val enabled: Flow<Boolean> = data.map { it[ENABLED] ?: false }.distinctUntilChanged()
 
     val lastHeartbeatMillis: Flow<Long?> = data.map { it[LAST_HEARTBEAT] }.distinctUntilChanged()
 
     val inspectorEnabled: Flow<Boolean> = data.map { it[INSPECTOR_ENABLED] ?: false }.distinctUntilChanged()
 
-    suspend fun setDayStartMinutes(minutes: Int) = store.edit { it[DAY_START_MINUTES] = minutes.coerceIn(0, 1439) }
 
     /** Null removes the limit (off). */
     suspend fun setLimit(app: ShortVideoApp, limit: Int?) = store.edit {
@@ -61,21 +61,19 @@ class SettingsStore @Inject constructor(private val store: DataStore<Preferences
         it[BUBBLE_Y_FRACTION] = yFraction.coerceIn(0f, 1f)
     }
 
-    suspend fun setSetupCompleted(done: Boolean) = store.edit { it[SETUP_COMPLETED] = done }
+    suspend fun setEnabled(on: Boolean) = store.edit { it[ENABLED] = on }
 
     suspend fun setLastHeartbeat(millis: Long) = store.edit { it[LAST_HEARTBEAT] = millis }
 
     suspend fun setInspectorEnabled(enabled: Boolean) = store.edit { it[INSPECTOR_ENABLED] = enabled }
 
     companion object {
-        const val DEFAULT_DAY_START_MINUTES = 240
         const val DEFAULT_BUBBLE_Y = 0.35f
 
-        private val DAY_START_MINUTES = intPreferencesKey("day_start_minutes")
         private val BUBBLE_ENABLED = booleanPreferencesKey("bubble_enabled")
         private val BUBBLE_EDGE = stringPreferencesKey("bubble_edge")
         private val BUBBLE_Y_FRACTION = floatPreferencesKey("bubble_y_fraction")
-        private val SETUP_COMPLETED = booleanPreferencesKey("setup_completed")
+        private val ENABLED = booleanPreferencesKey("reel_enabled")
         private val LAST_HEARTBEAT = longPreferencesKey("last_heartbeat_ms")
         private val INSPECTOR_ENABLED = booleanPreferencesKey("inspector_enabled")
 

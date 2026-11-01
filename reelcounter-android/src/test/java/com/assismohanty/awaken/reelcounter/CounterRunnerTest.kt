@@ -35,7 +35,6 @@ class CounterRunnerTest {
     private lateinit var context: Context
     private lateinit var db: ReelDatabase
     private val overlay = FakeOverlay()
-    private val widget = FakeWidget()
     private val clock = FixedReelClock(T0)
     private val day1 = LocalDate.of(2026, 11, 1)
     private val day2 = LocalDate.of(2026, 11, 2)
@@ -54,7 +53,7 @@ class CounterRunnerTest {
         val dispatcher = StandardTestDispatcher(testScheduler)
         val repo = ReelRepository(db, dispatcher)
         val settings = SettingsStore(newDataStore(dispatcher, java.io.File(folder.root, "s${stores++}.preferences_pb")))
-        return CounterRunner(repo, settings, DetectorRepository(context), EffectApplier(repo, overlay, widget), clock, dispatcher)
+        return CounterRunner(repo, settings, DetectorRepository(context), EffectApplier(repo, overlay), clock, FixedDayStart, dispatcher)
     }
 
     private fun at(ms: Long): Instant = T0.plusMillis(ms)
@@ -70,7 +69,7 @@ class CounterRunnerTest {
         runCurrent()
         r.submitSignal(RawSignal.WindowStateChanged(IG_PKG, pagerScreen(), at(0)))
         runCurrent()
-        assertThat(overlay.calls).contains("bubble:INSTAGRAM")
+        assertThat(overlay.calls.any { it.startsWith("bubble:INSTAGRAM") }).isTrue()
         r.submitSignal(RawSignal.Probe(IG_PKG, pagerScreen(), at(400)))
         runCurrent()
         assertThat(r.state.value?.countToday(IG)).isEqualTo(1)

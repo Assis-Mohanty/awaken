@@ -11,6 +11,7 @@ import com.assismohanty.awaken.reelcounter.core.detect.ScreenTracker
 import com.assismohanty.awaken.reelcounter.core.time.GameDay
 import com.assismohanty.awaken.reelcounter.core.time.ReelClock
 import com.assismohanty.awaken.reelcounter.data.DetectorRepository
+import com.assismohanty.awaken.reelcounter.data.ReelDayStart
 import com.assismohanty.awaken.reelcounter.data.ReelRepository
 import com.assismohanty.awaken.reelcounter.data.SettingsStore
 import com.assismohanty.awaken.reelcounter.di.CounterDispatcher
@@ -45,6 +46,7 @@ class CounterRunner @Inject constructor(
     private val detectors: DetectorRepository,
     private val applier: EffectApplier,
     private val clock: ReelClock,
+    private val dayStart: ReelDayStart,
     @CounterDispatcher private val dispatcher: CoroutineDispatcher,
 ) {
     private val machine = CounterMachine()
@@ -67,8 +69,8 @@ class CounterRunner @Inject constructor(
         scope = s
         probeFactory = probe
         ready = s.launch {
-            val minutes = settings.dayStartMinutes.first()
-            gameDay = GameDay(clock.zone(), LocalTime.of(minutes / 60, minutes % 60))
+            val hour = dayStart.dayStartHour.first()
+            gameDay = GameDay(clock.zone(), LocalTime.of(hour.coerceIn(0, 23), 0))
             val day = gameDay.dayOf(clock.now())
             val restore = repository.loadRestore(day)
             val limits = settings.limits.first()
@@ -79,7 +81,7 @@ class CounterRunner @Inject constructor(
         s.launch {
             ready?.join()
             settings.limits.onEach { handleEvent(CounterEvent.LimitsChanged(it, clock.now())) }.launchIn(this)
-            settings.dayStartMinutes.onEach { gameDay = GameDay(clock.zone(), LocalTime.of(it / 60, it % 60)) }
+            dayStart.dayStartHour.onEach { gameDay = GameDay(clock.zone(), LocalTime.of(it.coerceIn(0, 23), 0)) }
                 .launchIn(this)
             detectors.config.onEach { tracker?.replaceDetector(ScreenDetector(it.config)) }.launchIn(this)
             while (isActive) {

@@ -19,7 +19,7 @@ import androidx.savedstate.setViewTreeSavedStateRegistryOwner
  * lifecycle or saved-state owner, so this host supplies both. Must be used from the main thread.
  * Every window-manager call is wrapped: the service may already be gone.
  */
-internal class OverlayWindowHost(private val context: Context) {
+class OverlayWindowHost(private val context: Context) {
     private val windowManager = context.getSystemService(WindowManager::class.java)
     private var view: ComposeView? = null
     private var owner: HostOwner? = null

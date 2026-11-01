@@ -23,12 +23,11 @@ class SettingsStoreTest {
     @Test
     fun defaults() = runTest {
         val s = store()
-        assertThat(s.dayStartMinutes.first()).isEqualTo(240)
         assertThat(s.limits.first()).isEmpty()
         assertThat(s.bubbleEnabled.first()).isTrue()
         assertThat(s.bubbleEdge.first()).isEqualTo(BubbleEdge.END)
         assertThat(s.bubbleYFraction.first()).isEqualTo(0.35f)
-        assertThat(s.setupCompleted.first()).isFalse()
+        assertThat(s.enabled.first()).isFalse()
         assertThat(s.lastHeartbeatMillis.first()).isNull()
         assertThat(s.inspectorEnabled.first()).isFalse()
     }
@@ -54,14 +53,12 @@ class SettingsStoreTest {
     @Test
     fun otherValuesRoundTrip() = runTest {
         val s = store()
-        s.setDayStartMinutes(0)
         s.setBubbleEnabled(false)
-        s.setSetupCompleted(true)
+        s.setEnabled(true)
         s.setLastHeartbeat(1234L)
         s.setInspectorEnabled(true)
-        assertThat(s.dayStartMinutes.first()).isEqualTo(0)
         assertThat(s.bubbleEnabled.first()).isFalse()
-        assertThat(s.setupCompleted.first()).isTrue()
+        assertThat(s.enabled.first()).isTrue()
         assertThat(s.lastHeartbeatMillis.first()).isEqualTo(1234L)
         assertThat(s.inspectorEnabled.first()).isTrue()
     }

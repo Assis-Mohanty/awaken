@@ -104,7 +104,7 @@ fun FocusLockWindowContent(
 }
 
 @Composable
-private fun StatusRow(label: Int, ok: Boolean, onFix: () -> Unit) {
+internal fun StatusRow(label: Int, ok: Boolean, onFix: () -> Unit) {
     val colors = AwakenTheme.colors
     Row(
         modifier = Modifier.fillMaxWidth().heightIn(min = AwakenTheme.dimens.touchTarget),

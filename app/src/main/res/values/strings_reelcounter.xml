@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Reel Counter (docs/reelcounter): counts the short videos watched in Instagram, YouTube, TikTok, Facebook and Snapchat.
+    Written in a neutral voice, so no strings here need a Clean twin.
+-->
+<resources>
+    <string name="reel_title">Reel counter</string>
+    <string name="reel_app_instagram">Instagram</string>
+    <string name="reel_app_youtube">YouTube</string>
+    <string name="reel_app_tiktok">TikTok</string>
+    <string name="reel_app_facebook">Facebook</string>
+    <string name="reel_app_snapchat">Snapchat</string>
+
+    <!-- Settings → Focus window -->
+    <string name="reel_setting_title">Count short videos</string>
+    <string name="reel_setting_note">Counts the reels and shorts you watch, shows a small counter on those screens and reminds you at your daily limit. Off by default.</string>
+    <string name="reel_status_accessibility">Accessibility service</string>
+    <string name="reel_status_running">Counting</string>
+    <string name="reel_status_battery">Battery</string>
+    <string name="reel_open_limits">Daily limits</string>
+    <string name="reel_open_stats">Reel stats</string>
+    <string name="reel_open_permissions">Permissions and battery</string>
+    <string name="reel_bubble_setting">Show the counter bubble</string>
+    <string name="reel_open_inspector">Detector inspector (debug)</string>
+
+    <!-- Setup: disclosure first, then the Android switch, then the battery steps -->
+    <string name="reel_explain_title">Before you turn this on</string>
+    <string name="reel_explain_1">Reel counter reads only the on-screen element IDs of Instagram, YouTube, TikTok, Facebook and Snapchat, to tell when a short-video screen is open.</string>
+    <string name="reel_explain_2">It never reads text, messages or captions.</string>
+    <string name="reel_explain_3">Nothing leaves your phone. You can turn it off at any time.</string>
+    <string name="reel_continue">Continue</string>
+    <string name="reel_not_now">Not now</string>
+    <string name="reel_enable_title">Switch on the accessibility service</string>
+    <string name="reel_enable_body">Open Android\'s accessibility settings, find Reel counter in the list and switch it on.</string>
+    <string name="reel_enabled_yes">Reel counter is switched on in Android.</string>
+    <string name="reel_enabled_no">Not switched on yet.</string>
+    <string name="reel_battery_title">Keep it running</string>
+    <string name="reel_battery_body">Some phones stop background apps to save battery. If they stop Reel counter, nothing is counted. These steps help.</string>
+    <string name="reel_done_title">Reel counter is on</string>
+    <string name="reel_done_body">A small counter appears on short-video screens. Set daily limits and see your totals under Settings, Focus.</string>
+
+    <!-- Permissions and battery (covers Focus Lock and Reel counter) -->
+    <string name="access_title">Permissions and battery</string>
+    <string name="access_note">Focus Lock and Reel counter are separate accessibility services. Each needs its own switch in Android; the battery steps are shared.</string>
+    <string name="access_focus_lock">Focus Lock</string>
+    <string name="access_reel_counter">Reel counter</string>
+
+    <!-- Overlay windows -->
+    <string name="reel_cd_bubble">%1$s: %2$d reels today</string>
+    <string name="reel_hidden_toast">Hidden until your next session</string>
+    <string name="reel_panel_title">Today</string>
+    <string name="reel_panel_row">%1$d reels, %2$d min</string>
+    <string name="reel_panel_empty">Nothing yet today</string>
+    <string name="reel_panel_hint">Long-press the bubble to hide it</string>
+    <plurals name="reel_nudge_count">
+        <item quantity="one">%1$d reel today</item>
+        <item quantity="other">%1$d reels today</item>
+    </plurals>
+    <string name="reel_nudge_detail">on %1$s, your limit is %2$d</string>
+    <string name="reel_nudge_close">Close app</string>
+    <string name="reel_nudge_snooze">%1$d more</string>
+    <string name="reel_nudge_snoozes_left">%1$d left today</string>
+    <string name="reel_nudge_no_snoozes">No more extra reels today</string>
+
+    <!-- Limits -->
+    <string name="reel_limits_title">Daily limits</string>
+    <string name="reel_limits_note">When you reach a limit you get a reminder, with 5 more reels up to twice a day. Limits are off until you set one.</string>
+    <string name="reel_limit_off">No limit</string>
+    <string name="reel_limit_value">%1$d a day</string>
+    <string name="reel_limit_lower">Lower the limit</string>
+    <string name="reel_limit_raise">Raise the limit</string>
+    <string name="reel_limit_toggle">Limit for %1$s</string>
+
+    <!-- Stats -->
+    <string name="reel_stats_title">Reel stats</string>
+    <plurals name="reel_stats_today">
+        <item quantity="one">reel today</item>
+        <item quantity="other">reels today</item>
+    </plurals>
+    <string name="reel_stats_minutes">About %1$d min of short video</string>
+    <string name="reel_stats_by_app">By app</string>
+    <string name="reel_stats_range_7">7 days</string>
+    <string name="reel_stats_range_30">30 days</string>
+    <string name="reel_stats_average">Average %1$d a day</string>
+    <plurals name="reel_stats_streak">
+        <item quantity="one">%1$d day within your limits</item>
+        <item quantity="other">%1$d days within your limits</item>
+    </plurals>
+    <string name="reel_stats_streak_none">Set a daily limit to start a streak</string>
+    <string name="reel_stats_empty">No reels counted yet</string>
+    <string name="reel_stats_row">%1$d reels, %2$d min</string>
+    <string name="reel_cd_day">%1$s: %2$d reels</string>
+
+    <!-- Today tile and Screen time card -->
+    <string name="tile_reels">Reels today</string>
+    <string name="tile_reels_note">Tap for details</string>
+    <string name="widget_reels">Reels today: %1$d</string>
+    <string name="reel_screentime_title">Short video</string>
+    <string name="reel_screentime_note">Reels and shorts counted by Reel counter</string>
+</resources>

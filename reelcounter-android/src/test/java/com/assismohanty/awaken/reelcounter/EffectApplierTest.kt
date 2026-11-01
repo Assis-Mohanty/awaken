@@ -22,7 +22,6 @@ import java.time.LocalDate
 class EffectApplierTest {
     private lateinit var db: ReelDatabase
     private val overlay = FakeOverlay()
-    private val widget = FakeWidget()
     private val day = LocalDate.of(2026, 11, 1)
     private val state = CounterState.initial(day, mapOf(IG to 3), emptyMap(), emptyMap())
 
@@ -34,41 +33,40 @@ class EffectApplierTest {
     @After
     fun tearDown() = db.close()
 
-    private fun TestScope.applier() = EffectApplier(ReelRepository(db, StandardTestDispatcher(testScheduler)), overlay, widget)
+    private fun TestScope.applier() = EffectApplier(ReelRepository(db, StandardTestDispatcher(testScheduler)), overlay)
 
     private suspend fun dbRow() = db.dao().day(day.toString()).singleOrNull()
 
     @Test
-    fun countedIsRecordedAndRefreshesTheWidget() = runTest {
+    fun countedIsRecordedAndUpdatesTheBubble() = runTest {
         applier().apply(listOf(CounterEffect.Counted(IG, day, 1, 0, T0, 1)), state)
         assertThat(dbRow()?.count).isEqualTo(1)
-        assertThat(widget.requests).isEqualTo(1)
+        assertThat(overlay.calls).containsExactly("update:INSTAGRAM:1:null")
     }
 
     @Test
     fun nudgeShowsTheOverlay() = runTest {
         applier().apply(listOf(CounterEffect.NudgeRequested(IG, 50, 2)), state)
-        assertThat(overlay.calls).containsExactly("nudge:INSTAGRAM:50:2")
+        assertThat(overlay.calls).containsExactly("nudge:INSTAGRAM:50:null:2")
     }
 
     @Test
     fun acceptedSnoozeIsStoredAndHidesTheNudge() = runTest {
         applier().apply(listOf(CounterEffect.SnoozeAccepted(IG, day, 1)), state)
         assertThat(dbRow()?.snoozes).isEqualTo(1)
-        assertThat(overlay.calls).containsExactly("hideNudge")
+        assertThat(overlay.calls).containsExactly("hideNudge", "update:INSTAGRAM:3:null").inOrder()
     }
 
     @Test
     fun rejectedSnoozeShowsTheNudgeWithNoSnoozesLeft() = runTest {
         applier().apply(listOf(CounterEffect.SnoozeRejected(IG)), state)
-        assertThat(overlay.calls).containsExactly("nudge:INSTAGRAM:3:0")
+        assertThat(overlay.calls).containsExactly("nudge:INSTAGRAM:3:null:0")
     }
 
     @Test
     fun bubbleShownForAnApp() = runTest {
         applier().apply(listOf(CounterEffect.BubbleChanged(IG)), state)
-        assertThat(overlay.calls).containsExactly("bubble:INSTAGRAM")
-        assertThat(widget.requests).isEqualTo(1)
+        assertThat(overlay.calls).containsExactly("bubble:INSTAGRAM:3:null")
     }
 
     @Test

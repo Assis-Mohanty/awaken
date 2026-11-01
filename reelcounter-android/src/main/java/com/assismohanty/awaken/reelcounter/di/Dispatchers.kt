@@ -10,3 +10,8 @@ annotation class IoDispatcher
 @Qualifier
 @Retention(AnnotationRetention.BINARY)
 annotation class CounterDispatcher
+
+/** The DataStore that holds Reel Counter's own settings (enabled, limits, bubble position). */
+@Qualifier
+@Retention(AnnotationRetention.BINARY)
+annotation class ReelPrefs
