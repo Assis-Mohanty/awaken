@@ -102,6 +102,8 @@ data class AwakenDimens(
     val tileFigureMinWidth: Dp = 64.dp,
     /** Number fields in set rows and nutrient forms. */
     val numberField: Dp = 64.dp,
+    /** Width of the control column beside the stopwatch face in landscape. */
+    val sideControls: Dp = 220.dp,
 )
 
 val LocalAwakenShapes = staticCompositionLocalOf { AwakenShapes() }

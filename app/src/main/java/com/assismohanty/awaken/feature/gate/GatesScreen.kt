@@ -9,6 +9,9 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.ui.platform.LocalView
@@ -19,6 +22,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
@@ -339,47 +343,64 @@ private fun StopwatchScreen(active: ActiveGate, confirmAbandon: Boolean, onEvent
         onDispose { view.keepScreenOn = false }
     }
     GateBackground(tint = colors.surface, modifier = modifier) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .systemBarsPadding()
-                .padding(horizontal = Spacing.gutter, vertical = Spacing.md),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(Spacing.md),
-        ) {
-            Row(horizontalArrangement = Arrangement.spacedBy(Spacing.xs), verticalAlignment = Alignment.CenterVertically) {
-                StatChip(active.stat)
-                (active.subject ?: active.label)?.let { Text(it, style = AwakenTheme.type.label, color = colors.textPrimary) }
-            }
-            Box(modifier = Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
-                StopwatchFace(elapsed = active.elapsed, modifier = Modifier.fillMaxSize())
-            }
-            Text(
-                lexString(R.string.gate_breach_line, shortClock(active.breachUsed.toMillis()), shortClock(GateRules.BREACH_BUDGET_MS)),
-                style = AwakenTheme.type.label,
-                color = if (active.breachUsed.isZero) colors.textSecondary else colors.critical,
-            )
-            Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm), modifier = Modifier.fillMaxWidth()) {
-                when {
-                    active.paused -> PrimaryButton(lexString(R.string.action_resume), onClick = { onEvent(GatesEvent.Resume) }, modifier = Modifier.weight(1f))
-                    active.canPause -> SecondaryButton(
-                        lexString(R.string.action_pause, shortClock(GateRules.MAX_PAUSE.toMillis())),
-                        onClick = { onEvent(GatesEvent.Pause) },
-                        modifier = Modifier.weight(1f),
+        BoxWithConstraints(modifier = Modifier.fillMaxSize().systemBarsPadding().padding(horizontal = Spacing.gutter, vertical = Spacing.md)) {
+            val landscape = maxWidth > maxHeight
+            val controls: @Composable ColumnScope.() -> Unit = { StopwatchControls(active, confirmAbandon, onEvent) }
+            if (landscape) {
+                // Wide: the face takes everything it can; the controls sit in a column on the right, like a stopwatch app.
+                Row(horizontalArrangement = Arrangement.spacedBy(Spacing.lg), verticalAlignment = Alignment.CenterVertically) {
+                    StopwatchFace(elapsed = active.elapsed, modifier = Modifier.weight(1f).fillMaxHeight())
+                    Column(
+                        modifier = Modifier.width(AwakenTheme.dimens.sideControls).verticalScroll(rememberScrollState()),
+                        verticalArrangement = Arrangement.spacedBy(Spacing.sm),
+                        content = controls,
                     )
                 }
-                PrimaryButton(lexString(R.string.action_stop_stopwatch), onClick = { onEvent(GatesEvent.Stop) }, modifier = Modifier.weight(1f))
-            }
-            if (confirmAbandon) {
-                SystemWindow(title = null, accent = colors.critical, reveal = false) {
-                    Text(lexString(R.string.gate_abandon_confirm), style = AwakenTheme.type.body, color = colors.textPrimary)
-                    PrimaryButton(lexString(R.string.action_abandon_gate), onClick = { onEvent(GatesEvent.ConfirmAbandon) }, color = colors.critical, modifier = Modifier.fillMaxWidth())
-                    QuietButton(lexString(R.string.action_keep_going), onClick = { onEvent(GatesEvent.CancelAbandon) }, modifier = Modifier.fillMaxWidth())
-                }
             } else {
-                QuietButton(lexString(R.string.action_abandon_gate), onClick = { onEvent(GatesEvent.Abandon) }, modifier = Modifier.fillMaxWidth())
+                Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(Spacing.md)) {
+                    StopwatchFace(elapsed = active.elapsed, modifier = Modifier.weight(1f).fillMaxWidth())
+                    Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm), content = controls)
+                }
             }
         }
+    }
+}
+
+/** Subject, breach budget, pause / stop and end-session: shared by the tall and the wide stopwatch layouts. */
+@Composable
+private fun ColumnScope.StopwatchControls(active: ActiveGate, confirmAbandon: Boolean, onEvent: (GatesEvent) -> Unit) {
+    val colors = AwakenTheme.colors
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.align(Alignment.CenterHorizontally),
+    ) {
+        StatChip(active.stat)
+        (active.subject ?: active.label)?.let { Text(it, style = AwakenTheme.type.label, color = colors.textPrimary) }
+    }
+    Text(
+        lexString(R.string.gate_breach_line, shortClock(active.breachUsed.toMillis()), shortClock(GateRules.BREACH_BUDGET_MS)),
+        style = AwakenTheme.type.label,
+        color = if (active.breachUsed.isZero) colors.textSecondary else colors.critical,
+        modifier = Modifier.align(Alignment.CenterHorizontally),
+    )
+    when {
+        active.paused -> PrimaryButton(lexString(R.string.action_resume), onClick = { onEvent(GatesEvent.Resume) }, modifier = Modifier.fillMaxWidth())
+        active.canPause -> SecondaryButton(
+            lexString(R.string.action_pause, shortClock(GateRules.MAX_PAUSE.toMillis())),
+            onClick = { onEvent(GatesEvent.Pause) },
+            modifier = Modifier.fillMaxWidth(),
+        )
+    }
+    PrimaryButton(lexString(R.string.action_stop_stopwatch), onClick = { onEvent(GatesEvent.Stop) }, modifier = Modifier.fillMaxWidth())
+    if (confirmAbandon) {
+        SystemWindow(title = null, accent = colors.critical, reveal = false) {
+            Text(lexString(R.string.gate_abandon_confirm), style = AwakenTheme.type.body, color = colors.textPrimary)
+            PrimaryButton(lexString(R.string.action_abandon_gate), onClick = { onEvent(GatesEvent.ConfirmAbandon) }, color = colors.critical, modifier = Modifier.fillMaxWidth())
+            QuietButton(lexString(R.string.action_keep_going), onClick = { onEvent(GatesEvent.CancelAbandon) }, modifier = Modifier.fillMaxWidth())
+        }
+    } else {
+        QuietButton(lexString(R.string.action_abandon_gate), onClick = { onEvent(GatesEvent.Abandon) }, modifier = Modifier.fillMaxWidth())
     }
 }
 
@@ -509,6 +530,39 @@ private fun GateStopwatchPreview() {
                 active = ActiveGate(
                     rank = GateRank.E, mode = GateMode.STOPWATCH, elapsed = Duration.ofMinutes(37).plusSeconds(5), subject = "DSA",
                     stat = Stat.INT, label = null, remaining = Duration.ofDays(1), total = Duration.ofDays(1),
+                    breachUsed = Duration.ofSeconds(10), paused = false, pauseLeft = Duration.ZERO, canPause = true,
+                ),
+            ),
+            onEvent = {},
+            onBack = {},
+        )
+    }
+}
+
+@androidx.compose.ui.tooling.preview.Preview(
+    name = "Landscape",
+    device = "spec:width=891dp,height=411dp",
+    showBackground = true,
+    backgroundColor = 0xFF0F0F0F,
+    uiMode = android.content.res.Configuration.UI_MODE_NIGHT_YES,
+)
+@androidx.compose.ui.tooling.preview.Preview(
+    name = "Landscape · small",
+    device = "spec:width=640dp,height=360dp",
+    showBackground = true,
+    backgroundColor = 0xFF0F0F0F,
+    uiMode = android.content.res.Configuration.UI_MODE_NIGHT_YES,
+)
+@Composable
+private fun GateStopwatchLandscapePreview() {
+    AwakenTheme {
+        GatesScreen(
+            GatesUiState(
+                loading = false,
+                tiles = previewTiles,
+                active = ActiveGate(
+                    rank = GateRank.E, mode = GateMode.STOPWATCH, elapsed = Duration.ofMinutes(37).plusSeconds(5).plusMillis(482),
+                    subject = "DSA", stat = Stat.INT, label = null, remaining = Duration.ofDays(1), total = Duration.ofDays(1),
                     breachUsed = Duration.ofSeconds(10), paused = false, pauseLeft = Duration.ZERO, canPause = true,
                 ),
             ),

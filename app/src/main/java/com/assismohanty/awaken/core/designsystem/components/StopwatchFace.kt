@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
@@ -56,8 +57,7 @@ private const val GLYPH_WIDTH_PER_EM = 0.62f
 private const val TILE_PADDING_EM = 0.45f
 private const val MILLIS_FACTOR = 0.34f
 private const val TILE_HEIGHT_PER_EM = 1.25f
-private const val MILLIS_LINE_ALLOWANCE = 1.6f
-private const val MAX_TILE_SHARE_OF_HEIGHT = 0.42f
+private const val MILLIS_LINE_HEIGHT = 1.2f
 private val TILE_CORNER = 28.dp
 private val HAIRLINE = 2.dp
 
@@ -80,15 +80,17 @@ fun StopwatchFace(elapsed: Duration, modifier: Modifier = Modifier) {
         val gap = Spacing.sm
         // The em that makes TILE_GLYPHS digits (plus padding) exactly fill a tile.
         val glyphsPerTile = TILE_GLYPHS * GLYPH_WIDTH_PER_EM + TILE_PADDING_EM
-        val tileWidth: Dp = if (wide) (maxWidth - gap * (groups.size - 1)) / groups.size else maxWidth
-        // Wide: never taller than a share of the height. Tall: the stacked tiles and the milliseconds line must fit.
-        val heightLimit = if (wide) {
-            maxHeight * MAX_TILE_SHARE_OF_HEIGHT * groups.size
+        // The largest em that fits both ways: the tiles across the width, and the tiles plus the milliseconds line down the height.
+        val millisLine = MILLIS_FACTOR * glyphsPerTile * MILLIS_LINE_HEIGHT
+        val n = groups.size
+        val emByWidth = if (wide) (maxWidth - gap * (n - 1)) / n / glyphsPerTile else maxWidth / glyphsPerTile
+        val emByHeight = if (wide) {
+            (maxHeight - gap) / (TILE_HEIGHT_PER_EM + millisLine)
         } else {
-            maxHeight / (groups.size * TILE_HEIGHT_PER_EM / glyphsPerTile + MILLIS_FACTOR * MILLIS_LINE_ALLOWANCE)
+            (maxHeight - gap * n) / (n * TILE_HEIGHT_PER_EM + millisLine)
         }
-        val tileWidthLimited = minOf(tileWidth, heightLimit)
-        val emDp = tileWidthLimited / glyphsPerTile
+        val emDp = minOf(emByWidth, emByHeight)
+        val tileWidthLimited: Dp = emDp * glyphsPerTile
         val tileHeight = emDp * TILE_HEIGHT_PER_EM
         val density = LocalDensity.current
         val digitSize = with(density) { emDp.toSp() }
@@ -101,9 +103,9 @@ fun StopwatchFace(elapsed: Duration, modifier: Modifier = Modifier) {
             fontFeatureSettings = "tnum",
         )
         Column(
-            modifier = Modifier.fillMaxWidth().clearAndSetSemantics { },
+            modifier = Modifier.fillMaxSize().clearAndSetSemantics { },
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(gap),
+            verticalArrangement = Arrangement.spacedBy(gap, Alignment.CenterVertically),
         ) {
             if (wide) {
                 Row(horizontalArrangement = Arrangement.spacedBy(gap)) {
