@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Custom and stopwatch focus sessions, subjects, weekly focus report (GAME_DESIGN §8.1). Neutral wording: no System terms, so no Clean twins. -->
+    <string name="gate_notif_title_stopwatch">Stopwatch running</string>
+    <string name="msg_focus_short_run">Recorded, but under %1$d minutes. No reward.</string>
+    <string name="msg_focus_over_cap">Recorded. Only %1$d custom and stopwatch sessions pay each day.</string>
+    <string name="focus_mode_preset">Presets</string>
+    <string name="focus_mode_custom">Custom</string>
+    <string name="focus_mode_stopwatch">Stopwatch</string>
+    <string name="focus_custom_title">Custom session</string>
+    <string name="focus_stopwatch_title">Stopwatch</string>
+    <string name="focus_custom_minutes">%1$d min</string>
+    <string name="focus_minus">−5</string>
+    <string name="focus_plus">+5</string>
+    <string name="focus_custom_rule">Pays by the length you finish, from 15 minutes. Shorter sessions are only recorded.</string>
+    <string name="focus_stopwatch_rule">Counts up until you stop. Pays by the time counted, from 15 minutes. No extra reward beyond 90 minutes.</string>
+    <string name="focus_subject_label">Subject</string>
+    <string name="focus_subject_none">None</string>
+    <string name="focus_subject_add">+ New</string>
+    <string name="focus_subject_hint">Subject name</string>
+    <string name="focus_subject_save">Add subject</string>
+    <string name="focus_subject_limit">Up to 12 subjects. Archive one to add another.</string>
+    <string name="action_stop_stopwatch">Stop and count</string>
+    <string name="focus_elapsed_caption">Time counted</string>
+    <string name="focus_card_title">Focus</string>
+    <string name="focus_card_today">Today</string>
+    <string name="focus_card_week">7 days</string>
+    <string name="focus_card_note">Timer, custom or stopwatch. Tap for the weekly report.</string>
+    <string name="focus_card_start">Start focus</string>
+    <string name="focus_report_title">Focus report</string>
+    <string name="focus_report_days">Minutes per day</string>
+    <string name="focus_report_subjects">By subject</string>
+    <string name="focus_report_total">%1$s over the last 7 days</string>
+    <string name="focus_report_day_cd">%1$s: %2$s of focus</string>
+    <string name="focus_report_subjects_cd">Focus time per subject over the last 7 days</string>
+    <string name="focus_report_no_subject">No subject</string>
+    <string name="focus_report_empty">No completed focus sessions in the last 7 days.</string>
+</resources>

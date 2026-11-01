@@ -4,15 +4,19 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.assismohanty.awaken.core.data.clock.Clock
 import com.assismohanty.awaken.core.data.clock.gameDate
+import com.assismohanty.awaken.core.data.db.dao.FocusDao
 import com.assismohanty.awaken.core.data.db.dao.GateRunDao
 import com.assismohanty.awaken.core.data.db.dao.HunterDao
+import com.assismohanty.awaken.core.data.db.entity.FocusSubjectEntity
 import com.assismohanty.awaken.core.data.db.entity.GateRunEntity
 import com.assismohanty.awaken.core.domain.CompletionCenter
 import com.assismohanty.awaken.core.domain.GATE_LABEL_MAX
 import com.assismohanty.awaken.core.domain.GATE_STATS
 import com.assismohanty.awaken.core.domain.UserMessage
 import com.assismohanty.awaken.core.work.GateCoordinator
+import com.assismohanty.awaken.engine.FocusRules
 import com.assismohanty.awaken.engine.GameDay
+import com.assismohanty.awaken.engine.GateMode
 import com.assismohanty.awaken.engine.GatePhase
 import com.assismohanty.awaken.engine.GateRunMath
 import com.assismohanty.awaken.engine.model.GateRank
@@ -20,6 +24,7 @@ import com.assismohanty.awaken.engine.model.Stat
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.Duration
 import java.time.Instant
+import java.util.UUID
 import javax.inject.Inject
 import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.delay
@@ -39,6 +44,10 @@ data class GateTile(val rank: GateRank, val minutes: Int, val available: Boolean
 /** The running gate as the dial shows it. */
 data class ActiveGate(
     val rank: GateRank,
+    val mode: GateMode = GateMode.PRESET,
+    /** Focus time so far; what a stopwatch shows (counts up). */
+    val elapsed: Duration = Duration.ZERO,
+    val subject: String? = null,
     val stat: Stat,
     val label: String?,
     val remaining: Duration,
@@ -50,7 +59,16 @@ data class ActiveGate(
 )
 
 /** Picking a gate: the chosen rank, stat and optional label (GD §8). */
-data class GateSetup(val rank: GateRank, val stat: Stat = Stat.INT, val label: String = "")
+data class GateSetup(
+    val rank: GateRank,
+    val stat: Stat = Stat.INT,
+    val label: String = "",
+    val mode: GateMode = GateMode.PRESET,
+    val minutes: Int = FocusRules.CUSTOM_DEFAULT_MINUTES,
+    val subjectId: String? = null,
+)
+
+data class SubjectUi(val id: String, val name: String)
 
 data class GatesUiState(
     val loading: Boolean = true,
@@ -58,10 +76,23 @@ data class GatesUiState(
     val setup: GateSetup? = null,
     val active: ActiveGate? = null,
     val confirmAbandon: Boolean = false,
+    val subjects: List<SubjectUi> = emptyList(),
+    val addingSubject: Boolean = false,
+    val subjectDraft: String = "",
+    val canAddSubject: Boolean = true,
 )
 
 sealed interface GatesEvent {
     data class Pick(val rank: GateRank) : GatesEvent
+    data class PickMode(val mode: GateMode) : GatesEvent
+    data class MinutesChanged(val minutes: Int) : GatesEvent
+    data class SubjectPicked(val subjectId: String?) : GatesEvent
+    data object StartAddSubject : GatesEvent
+    data class SubjectDraftChanged(val text: String) : GatesEvent
+    data object SaveSubject : GatesEvent
+    data object CancelAddSubject : GatesEvent
+    data class ArchiveSubject(val subjectId: String) : GatesEvent
+    data object Stop : GatesEvent
     data object CloseSetup : GatesEvent
     data class StatChanged(val stat: Stat) : GatesEvent
     data class LabelChanged(val label: String) : GatesEvent
@@ -73,12 +104,18 @@ sealed interface GatesEvent {
     data object CancelAbandon : GatesEvent
 }
 
-private data class FormState(val setup: GateSetup? = null, val confirmAbandon: Boolean = false)
+private data class FormState(
+    val setup: GateSetup? = null,
+    val confirmAbandon: Boolean = false,
+    val addingSubject: Boolean = false,
+    val subjectDraft: String = "",
+)
 
 @HiltViewModel
 class GatesViewModel @Inject constructor(
     hunterDao: HunterDao,
     gateRunDao: GateRunDao,
+    private val focusDao: FocusDao,
     private val coordinator: GateCoordinator,
     private val completionCenter: CompletionCenter,
     private val clock: Clock,
@@ -95,23 +132,42 @@ class GatesViewModel @Inject constructor(
     }
 
     val uiState: StateFlow<GatesUiState> =
-        combine(hunterDao.observeProfile(), gateRunDao.observeRunning(), form, ticks) { profile, run, form, now ->
+        combine(hunterDao.observeProfile(), gateRunDao.observeRunning(), form, focusDao.observeAll(), ticks) { profile, run, form, allSubjects, now ->
+            val subjects = allSubjects.filterNot { it.archived }
             val dayStartHour = profile?.dayStartHour ?: GameDay.DEFAULT_DAY_START_HOUR
             val nextDayStart = GameDay.endOf(clock.gameDate(dayStartHour), clock.zone(), dayStartHour)
             GatesUiState(
                 loading = false,
                 tiles = GateRank.entries.map { GateTile(it, it.durationMinutes, GateRunMath.canStart(it, now, nextDayStart)) },
                 setup = form.setup.takeIf { run == null },
-                active = run?.toActive(now),
+                active = run?.toActive(now, allSubjects.firstOrNull { it.id == run.subjectId }?.name),
                 confirmAbandon = form.confirmAbandon && run != null,
+                subjects = subjects.map { SubjectUi(it.id, it.name) },
+                addingSubject = form.addingSubject,
+                subjectDraft = form.subjectDraft,
+                canAddSubject = FocusRules.canAddSubject(subjects.size),
             )
         }.onEach { state ->
-            if (state.active?.remaining?.isZero == true) safely("Claiming a gate") { coordinator.tick() }
+            if (state.active != null && state.active.mode != GateMode.STOPWATCH && state.active.remaining.isZero) safely("Claiming a gate") { coordinator.tick() }
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), GatesUiState())
 
     fun onEvent(event: GatesEvent) {
         when (event) {
             is GatesEvent.Pick -> form.update { it.copy(setup = GateSetup(event.rank)) }
+            is GatesEvent.PickMode -> form.update { it.copy(setup = GateSetup(GateRank.E, mode = event.mode)) }
+            is GatesEvent.MinutesChanged -> updateSetup { it.copy(minutes = FocusRules.clampCustomMinutes(event.minutes)) }
+            is GatesEvent.SubjectPicked -> updateSetup { it.copy(subjectId = event.subjectId) }
+            GatesEvent.StartAddSubject -> form.update { it.copy(addingSubject = true, subjectDraft = "") }
+            is GatesEvent.SubjectDraftChanged -> form.update { it.copy(subjectDraft = event.text.take(FocusRules.SUBJECT_NAME_MAX)) }
+            GatesEvent.CancelAddSubject -> form.update { it.copy(addingSubject = false, subjectDraft = "") }
+            GatesEvent.SaveSubject -> viewModelScope.launch { safely("Adding a subject") { saveSubject() } }
+            is GatesEvent.ArchiveSubject -> viewModelScope.launch {
+                safely("Archiving a subject") {
+                    focusDao.setArchived(event.subjectId, true)
+                    updateSetup { if (it.subjectId == event.subjectId) it.copy(subjectId = null) else it }
+                }
+            }
+            GatesEvent.Stop -> viewModelScope.launch { safely("Stopping the stopwatch") { coordinator.stopStopwatch() } }
             GatesEvent.CloseSetup -> form.update { it.copy(setup = null) }
             is GatesEvent.StatChanged -> updateSetup { it.copy(stat = event.stat.takeIf(GATE_STATS::contains) ?: it.stat) }
             is GatesEvent.LabelChanged -> updateSetup { it.copy(label = event.label.take(GATE_LABEL_MAX)) }
@@ -119,7 +175,11 @@ class GatesViewModel @Inject constructor(
                 val setup = form.value.setup ?: return
                 viewModelScope.launch {
                     safely("Opening a gate") {
-                        coordinator.start(setup.rank, setup.stat, setup.label)
+                        if (setup.mode == GateMode.PRESET) {
+                            coordinator.start(setup.rank, setup.stat, setup.label)
+                        } else {
+                            coordinator.startFocus(setup.mode, setup.minutes, setup.stat, setup.label, setup.subjectId)
+                        }
                         form.update { it.copy(setup = null) }
                     }
                 }
@@ -135,13 +195,28 @@ class GatesViewModel @Inject constructor(
         }
     }
 
+    private suspend fun saveSubject() {
+        val name = FocusRules.cleanSubjectName(form.value.subjectDraft) ?: return
+        if (!FocusRules.canAddSubject(focusDao.activeCount())) return
+        val existing = focusDao.byName(name)
+        val id = when {
+            existing == null -> UUID.randomUUID().toString().also { focusDao.insertSubject(FocusSubjectEntity(it, name, createdAt = clock.now())) }
+            else -> existing.id.also { focusDao.setArchived(it, false) }
+        }
+        form.update { it.copy(addingSubject = false, subjectDraft = "") }
+        updateSetup { it.copy(subjectId = id) }
+    }
+
     private fun updateSetup(change: (GateSetup) -> GateSetup) = form.update { state -> state.copy(setup = state.setup?.let(change)) }
 
-    private fun GateRunEntity.toActive(now: Instant): ActiveGate {
+    private fun GateRunEntity.toActive(now: Instant, subject: String?): ActiveGate {
         val phase = GateRunMath.phase(timing, now)
         val paused = phase is GatePhase.Paused
         return ActiveGate(
             rank = gateRank,
+            mode = mode,
+            elapsed = GateRunMath.elapsed(timing, now),
+            subject = subject,
             stat = stat,
             label = label,
             remaining = GateRunMath.remaining(timing, now),

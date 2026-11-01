@@ -42,6 +42,10 @@ sealed interface UserMessage {
     data object UndoGate : UserMessage
     data object UndoHealth : UserMessage
     data object GateTooLate : UserMessage
+    /** A stopwatch or custom run ended under the minimum: recorded, no reward (GD §8.1 P3). */
+    data object FocusShortRun : UserMessage
+    /** The 4 paid custom and stopwatch runs of the game-day are used (GD §8.1 P5). */
+    data object FocusOverCap : UserMessage
     data object GateAlreadyRunning : UserMessage
     /** A Path quest was reported and removed (PRD F21). */
     data object QuestReported : UserMessage

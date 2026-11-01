@@ -17,6 +17,8 @@ data class CompletableQuest(
     val secondaryStat: Stat?,
     val difficulty: Difficulty,
     val verification: VerificationSource,
+    /** Whether a cleared Focus Gate drops its Loot Fragment; custom and stopwatch runs under 25 min do not (GD §8.1 P4). */
+    val gateFragment: Boolean = true,
 )
 
 /** Quest XP, stat split, gold and fragments (GD §3, §4.1–4.3, §8, §9.1). */
@@ -51,7 +53,7 @@ object XpCalculator {
             val secondary = quest.secondaryStat
             if (secondary != null && secondary != quest.stat) put(secondary, roundHalfUp(xp * SECONDARY_SHARE))
         }
-        val fragments = (if (crit) 1 else 0) + (if (quest.type == QuestType.GATE) 1 else 0)
+        val fragments = (if (crit) 1 else 0) + (if (quest.type == QuestType.GATE && quest.gateFragment) 1 else 0)
 
         val breakdown = buildList {
             add(BreakdownItem(Kind.BASE, BASE.toDouble()))

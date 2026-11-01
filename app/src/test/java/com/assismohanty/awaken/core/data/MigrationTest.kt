@@ -327,6 +327,30 @@ class MigrationTest {
     }
 
     @Test
+    fun v14To15AddsGateModeAndFocusSubjects() = runTest {
+        val path = createFromSchema(14)
+        SQLiteDatabase.openDatabase(path, null, SQLiteDatabase.OPEN_READWRITE).use { db ->
+            db.execSQL(
+                "INSERT INTO gate_run (id, quest_instance_id, gate_rank, stat, label, planned_sec, started_at, background_ms, boot_count, status) " +
+                    "VALUES ('g1', 'q1', 'D', 'INT', NULL, 1500, 0, 0, 1, 'CLEARED')",
+            )
+        }
+        val db = Room.databaseBuilder(context, AwakenDatabase::class.java, path)
+            .addMigrations(*ALL_MIGRATIONS)
+            .allowMainThreadQueries()
+            .build()
+        try {
+            val run = db.gateRunDao().get("g1")
+            assertThat(run?.mode).isEqualTo(com.assismohanty.awaken.engine.GateMode.PRESET)
+            assertThat(run?.subjectId).isNull()
+            assertThat(db.focusDao().activeCount()).isEqualTo(0)
+            assertThat(db.openHelper.readableDatabase.version).isEqualTo(AwakenDatabase.SCHEMA_VERSION)
+        } finally {
+            db.close()
+        }
+    }
+
+    @Test
     fun v4To5AddsThePathTablesAndKeepsExistingQuests() = runTest {
         val path = createFromSchema(4)
         SQLiteDatabase.openDatabase(path, null, SQLiteDatabase.OPEN_READWRITE).use { db ->

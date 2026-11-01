@@ -43,6 +43,16 @@ object GateRunMath {
     fun canStart(rank: GateRank, now: Instant, nextDayStart: Instant): Boolean =
         !now.plus(planned(rank)).plus(GateRules.MAX_PAUSE).isAfter(nextDayStart)
 
+    /** The same start check for a custom length, or a stopwatch's minimum (GD §8.1). */
+    fun canStart(planned: Duration, now: Instant, nextDayStart: Instant): Boolean =
+        !now.plus(planned).plus(GateRules.MAX_PAUSE).isAfter(nextDayStart)
+
+    /** Focus time so far: wall time since the start minus the pause. Used by the stopwatch and to price a stopped run. */
+    fun elapsed(timing: GateTiming, now: Instant): Duration {
+        val total = Duration.between(timing.startedAt, now).minus(pausedDuration(timing, now))
+        return if (total.isNegative) Duration.ZERO else total
+    }
+
     /** When the pause ends: on resume, or automatically after [GateRules.MAX_PAUSE]. Null if never paused. */
     fun pauseEndsAt(timing: GateTiming): Instant? {
         val pausedAt = timing.pausedAt ?: return null

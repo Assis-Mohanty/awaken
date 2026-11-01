@@ -64,3 +64,7 @@ data object GymRoute
 /** Diet: food diary, calorie budget and nutrient targets (bottom tab). */
 @Serializable
 data object DietRoute
+
+/** Weekly focus report (GD §8.1 P8), opened from the Focus card on Today. */
+@Serializable
+data object FocusReportRoute

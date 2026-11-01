@@ -235,7 +235,7 @@ class TestGraph(
     val setRestDay = SetRestDayUseCase(db.hunterDao(), db.dayRecordDao(), transactions, clock)
     val setRecoveryMode = SetRecoveryModeUseCase(db.hunterDao(), db.dayRecordDao(), transactions, clock)
     val startGate = StartGateUseCase(db.hunterDao(), db.questDao(), db.gateRunDao(), transactions, uptime, clock)
-    val gateRuns = GateRunController(db.questDao(), db.gateRunDao(), completeQuest, transactions, uptime, clock)
+    val gateRuns = GateRunController(db.questDao(), db.gateRunDao(), db.focusDao(), completeQuest, transactions, uptime, clock)
     val purchaseItem = PurchaseItemUseCase(db.hunterDao(), db.ownedCosmeticDao(), db.trialDao(), ledger, transactions, clock)
     val openRelicCache = OpenRelicCacheUseCase(db.hunterDao(), db.ownedCosmeticDao(), ledger, transactions, clock)
     val equipCosmetic = EquipCosmeticUseCase(db.hunterDao(), db.ownedCosmeticDao())

@@ -12,6 +12,7 @@ object ExportUpgrade {
     private const val CAMPAIGN_TABLE = "campaign"
     private const val REVIEW_TABLE = "weekly_review"
     private const val RECAP_TABLE = "recap"
+    private const val SUBJECT_TABLE = "focus_subject"
     private val BODY_TABLES = listOf(
         "custom_exercise", "routine", "routine_exercise", "workout", "workout_set", "custom_food", "food_log", "nutrition_profile",
     )
@@ -73,6 +74,13 @@ object ExportUpgrade {
             current = current.copy(
                 schemaVersion = 14,
                 tables = current.tables + (RECAP_TABLE to current.tables[RECAP_TABLE].orEmpty()),
+            )
+        }
+        // v14 → v15 (custom and stopwatch gates): no subjects existed, and the new gate_run columns default to PRESET / none.
+        if (current.app == ExportDocument.APP_ID && current.schemaVersion == 14) {
+            current = current.copy(
+                schemaVersion = 15,
+                tables = current.tables + (SUBJECT_TABLE to current.tables[SUBJECT_TABLE].orEmpty()),
             )
         }
         return current

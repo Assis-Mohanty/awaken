@@ -14,6 +14,8 @@ import com.assismohanty.awaken.core.domain.GateRunController
 import com.assismohanty.awaken.core.domain.StartGateResult
 import com.assismohanty.awaken.core.domain.StartGateUseCase
 import com.assismohanty.awaken.core.domain.UserMessage
+import com.assismohanty.awaken.engine.FocusRunOutcome
+import com.assismohanty.awaken.engine.GateMode
 import com.assismohanty.awaken.engine.GateRunMath
 import com.assismohanty.awaken.engine.model.GateRank
 import com.assismohanty.awaken.engine.model.Stat
@@ -75,6 +77,22 @@ class GateCoordinator @Inject constructor(
         return result
     }
 
+    /** A custom-length or stopwatch gate (GD §8.1). */
+    suspend fun startFocus(mode: GateMode, minutes: Int, stat: Stat, label: String?, subjectId: String?): StartGateResult {
+        val result = startGate.startFocus(mode, minutes, stat, label, subjectId)
+        when (result) {
+            is StartGateResult.Started -> scheduleEnd(result.run)
+            StartGateResult.TooLate -> completionCenter.message(UserMessage.GateTooLate)
+            StartGateResult.AlreadyRunning, StartGateResult.NoHunter -> Unit
+        }
+        return result
+    }
+
+    /** Stops the running stopwatch and pays or logs it. */
+    suspend fun stopStopwatch() {
+        report(controller.stopStopwatch())
+    }
+
     suspend fun pause() {
         controller.pause()
         afterTimingChange()
@@ -118,8 +136,9 @@ class GateCoordinator @Inject constructor(
         val run = controller.onAppStopped() ?: return
         val now = clock.now()
         notifications.showRunning(
-            gateName = run.gateRank.name,
-            endAt = GateRunMath.endAt(run.timing, now),
+            gateName = if (run.mode == GateMode.STOPWATCH) null else run.gateRank.name,
+            endAt = if (run.mode == GateMode.STOPWATCH) run.startedAt else GateRunMath.endAt(run.timing, now),
+            countUp = run.mode == GateMode.STOPWATCH,
             breachLeft = GateRunMath.breachLeft(run.backgroundMs),
             paused = GateRunMath.isPaused(run.timing, now),
             pauseEndsAt = GateRunMath.pauseEndsAt(run.timing),
@@ -142,6 +161,13 @@ class GateCoordinator @Inject constructor(
                     completionCenter.gateCollapsed(reason, check.run.backgroundMs)
                 }
             }
+            is GateCheck.Logged -> {
+                GateEndWorker.cancel(workManager)
+                notifications.cancelAll()
+                completionCenter.message(
+                    if (check.outcome == FocusRunOutcome.OverCap) UserMessage.FocusOverCap else UserMessage.FocusShortRun,
+                )
+            }
             GateCheck.NoRun -> Unit
         }
     }
@@ -153,6 +179,7 @@ class GateCoordinator @Inject constructor(
     }
 
     private fun scheduleEnd(run: GateRunEntity) {
+        if (run.mode == GateMode.STOPWATCH) return // no planned end
         val now = clock.now()
         GateEndWorker.schedule(workManager, Duration.between(now, GateRunMath.endAt(run.timing, now)))
     }

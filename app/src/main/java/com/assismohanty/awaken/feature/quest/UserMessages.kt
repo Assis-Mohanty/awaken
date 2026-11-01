@@ -7,6 +7,7 @@ import com.assismohanty.awaken.core.data.export.ImportProblem
 import com.assismohanty.awaken.core.designsystem.components.shopItemNameRes
 import com.assismohanty.awaken.core.domain.UserMessage
 import com.assismohanty.awaken.engine.BuyCheck
+import com.assismohanty.awaken.engine.FocusRules
 import com.assismohanty.awaken.engine.GateCollapseReason
 import com.assismohanty.awaken.engine.GateRules
 import java.text.NumberFormat
@@ -48,6 +49,8 @@ fun UserMessage.text(resources: LexResources): String = when (this) {
     UserMessage.UndoGate -> resources.getString(R.string.msg_undo_gate)
     UserMessage.UndoHealth -> resources.getString(R.string.msg_undo_health)
     UserMessage.GateTooLate -> resources.getString(R.string.msg_gate_too_late)
+    UserMessage.FocusShortRun -> resources.getString(R.string.msg_focus_short_run, FocusRules.STOPWATCH_MIN_MINUTES)
+    UserMessage.FocusOverCap -> resources.getString(R.string.msg_focus_over_cap, FocusRules.DAILY_CAP)
     UserMessage.GateAlreadyRunning -> resources.getString(R.string.msg_gate_running)
     UserMessage.QuestReported -> resources.getString(R.string.report_done)
     UserMessage.TrialStarted -> resources.getString(R.string.msg_trial_started)

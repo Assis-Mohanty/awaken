@@ -10,6 +10,7 @@ import com.assismohanty.awaken.engine.campaign.Archetype
 import com.assismohanty.awaken.engine.campaign.CampaignAct
 import com.assismohanty.awaken.engine.campaign.CampaignStatus
 import com.assismohanty.awaken.engine.GateCollapseReason
+import com.assismohanty.awaken.engine.GateMode
 import com.assismohanty.awaken.engine.GateTiming
 import com.assismohanty.awaken.engine.RankRules
 import com.assismohanty.awaken.engine.model.Difficulty
@@ -193,7 +194,17 @@ data class DayRecordEntity(
     @ColumnInfo(name = "finalized_at") val finalizedAt: Instant? = null,
 )
 
-enum class GateRunStatus { RUNNING, CLEARED, COLLAPSED, ABANDONED }
+/** [LOGGED]: a stopwatch or custom run that ended under the minimum or over the daily cap. Recorded, never paid (GD §8.1). */
+enum class GateRunStatus { RUNNING, CLEARED, COLLAPSED, ABANDONED, LOGGED }
+
+/** A Focus subject (GD §8.1 P7): a label for what a gate was spent on. Archived, never deleted, so old runs keep their name. */
+@Entity(tableName = "focus_subject", indices = [Index("name", unique = true)])
+data class FocusSubjectEntity(
+    @PrimaryKey val id: String,
+    val name: String,
+    val archived: Boolean = false,
+    @ColumnInfo(name = "created_at") val createdAt: Instant,
+)
 
 /**
  * One Focus Gate run (ARCH §3.3). Nothing ticks it: progress derives from these timestamps via `GateRunMath`. The single
@@ -218,6 +229,9 @@ data class GateRunEntity(
     @ColumnInfo(name = "boot_count") val bootCount: Int,
     val status: GateRunStatus,
     @ColumnInfo(name = "collapse_reason") val collapseReason: GateCollapseReason? = null,
+    /** PRESET, CUSTOM or STOPWATCH (GD §8.1). A stopwatch run has no planned end: [plannedSec] becomes the counted time when it is cleared. */
+    @ColumnInfo(name = "mode", defaultValue = "PRESET") val mode: GateMode = GateMode.PRESET,
+    @ColumnInfo(name = "subject_id") val subjectId: String? = null,
 ) {
     val timing: GateTiming get() = GateTiming(startedAt, plannedSec, pausedAt, resumedAt, backgroundMs)
 }

@@ -43,6 +43,7 @@ import com.assismohanty.awaken.feature.quest.QuestDetailRoute as QuestDetailEntr
 import com.assismohanty.awaken.feature.quest.RewardHost
 import com.assismohanty.awaken.feature.health.HealthRoute as HealthEntry
 import com.assismohanty.awaken.feature.campaign.CampaignRoute as CampaignEntry
+import com.assismohanty.awaken.feature.focus.FocusReportRoute as FocusReportEntry
 import com.assismohanty.awaken.feature.screentime.ScreenTimeRoute as ScreenTimeEntry
 import com.assismohanty.awaken.feature.settings.SettingsRoute as SettingsEntry
 import com.assismohanty.awaken.feature.status.StatusRoute as StatusEntry
@@ -156,6 +157,7 @@ private fun MainScaffold(
                     TodayEntry(
                         onOpenQuest = { navController.navigate(QuestDetailRoute(it)) },
                         onOpenScreenTime = { navController.navigate(ScreenTimeRoute) },
+                        onOpenFocusReport = { navController.navigate(FocusReportRoute) },
                         onOpenCampaign = { navController.navigate(CampaignRoute) },
                         onOpenReview = { navController.navigate(ReviewRoute) { launchSingleTop = true } },
                         snackbarHostState = snackbarHostState,
@@ -202,6 +204,7 @@ private fun MainScaffold(
                     )
                 }
                 composable<HealthRoute> { HealthEntry(onBack = { navController.popBackStack() }) }
+                composable<FocusReportRoute> { FocusReportEntry(onBack = { navController.popBackStack() }) }
                 composable<ScreenTimeRoute> { ScreenTimeEntry(onBack = { navController.popBackStack() }) }
                 composable<ReviewRoute> { ReviewEntry(onClose = { navController.popBackStack() }) }
                 composable<RecapRoute> { RecapEntry(onBack = { navController.popBackStack() }) }

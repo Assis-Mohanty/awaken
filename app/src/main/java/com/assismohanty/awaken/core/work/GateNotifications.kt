@@ -32,15 +32,20 @@ class GateNotifications @Inject constructor(
 ) {
 
     /** Shown when the app leaves the foreground mid-run: the countdown and how much breach budget is left. */
-    fun showRunning(gateName: String, endAt: Instant, breachLeft: Duration, paused: Boolean, pauseEndsAt: Instant?) {
+    /** [countUp] shows a stopwatch: [endAt] is then the start and the clock counts up. [gateName] is null for the stopwatch. */
+    fun showRunning(gateName: String?, endAt: Instant, countUp: Boolean, breachLeft: Duration, paused: Boolean, pauseEndsAt: Instant?) {
         val text = if (paused) {
             words.resources(context).getString(R.string.gate_notif_paused)
         } else {
             words.resources(context).getString(R.string.gate_notif_running, shortClock(breachLeft.toMillis()))
         }
         val countdownTo = if (paused && pauseEndsAt != null) pauseEndsAt else endAt
+        val title = words.resources(context).getString(
+            if (gateName == null) R.string.gate_notif_title_stopwatch else R.string.gate_notif_title,
+            *listOfNotNull(gateName).toTypedArray(),
+        )
         val builder = base()
-            .setContentTitle(words.resources(context).getString(R.string.gate_notif_title, gateName))
+            .setContentTitle(title)
             .setContentText(text)
             .setOngoing(true)
             .setOnlyAlertOnce(true)
@@ -48,7 +53,7 @@ class GateNotifications @Inject constructor(
             .setWhen(countdownTo.toEpochMilli())
             .setShowWhen(true)
             .setUsesChronometer(true)
-            .setChronometerCountDown(true)
+            .setChronometerCountDown(!countUp || paused)
             .setCategory(NotificationCompat.CATEGORY_PROGRESS)
         // Once the budget is spent the run has collapsed; don't leave a countdown that no longer means anything.
         if (!paused) builder.setTimeoutAfter(breachLeft.toMillis())

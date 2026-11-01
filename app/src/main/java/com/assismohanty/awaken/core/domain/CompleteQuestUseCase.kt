@@ -88,10 +88,10 @@ class CompleteQuestUseCase @Inject constructor(
     suspend operator fun invoke(questInstanceId: String): CompleteQuestResult = complete(questInstanceId, verifiedBy = null)
 
     /** Verified entry point for Focus Gates (TIMER, Phase 8), Health Connect sync (HEALTH, Phase 11) and Screen Discipline (USAGE). */
-    suspend fun completeVerified(questInstanceId: String, verifiedBy: VerificationSource): CompleteQuestResult =
-        complete(questInstanceId, verifiedBy)
+    suspend fun completeVerified(questInstanceId: String, verifiedBy: VerificationSource, gateFragment: Boolean = true): CompleteQuestResult =
+        complete(questInstanceId, verifiedBy, gateFragment)
 
-    private suspend fun complete(questInstanceId: String, verifiedBy: VerificationSource?): CompleteQuestResult =
+    private suspend fun complete(questInstanceId: String, verifiedBy: VerificationSource?, gateFragment: Boolean = true): CompleteQuestResult =
         transactions.run {
             val profile = hunterDao.getProfile() ?: return@run CompleteQuestResult.NoHunter
             val quest = questDao.get(questInstanceId) ?: return@run CompleteQuestResult.NotFound
@@ -123,7 +123,7 @@ class CompleteQuestUseCase @Inject constructor(
             val attempt = completionDao.countFor(quest.id) + 1
             val completionId = LedgerMath.completionId(quest.id, attempt)
             val context = reader.hunterContext(profile, today)
-            val reward = XpCalculator.forCompletion(quest.toCompletable(source), context)
+            val reward = XpCalculator.forCompletion(quest.toCompletable(source, gateFragment), context)
 
             questDao.setStatus(quest.id, QuestStatus.COMPLETED, completedAt = now)
             quest.pathSlotId?.let { pathDao.setOutcome(it, SlotOutcome.COMPLETED) }
@@ -185,13 +185,14 @@ class CompleteQuestUseCase @Inject constructor(
     private suspend fun trialAvailable(level: Int, passedTrials: Set<Rank>, now: Instant): Rank? =
         RankRules.trialAvailable(level, passedTrials, trialDao.activeCount() > 0, trialDao.lastFailedAt(), now)
 
-    private fun QuestInstanceEntity.toCompletable(source: VerificationSource) = CompletableQuest(
+    private fun QuestInstanceEntity.toCompletable(source: VerificationSource, gateFragment: Boolean) = CompletableQuest(
         questInstanceId = id,
         type = type,
         stat = stat,
         secondaryStat = secondaryStat,
         difficulty = difficulty,
         verification = source,
+        gateFragment = gateFragment,
     )
 
     private fun QuestReward.toLedgerRows(

@@ -431,6 +431,23 @@ The in-app-verified quest type. Turns study/deep-work into a dungeon run.
 - **Breach rule**: if the app is in background for > 90 seconds cumulative *(phone calls excluded via call state where available; otherwise just the 90 s budget)*, the gate collapses → no XP, a "Gate collapsed" record. Up to 1 pause of ≤ 5 min allowed per run.
 - Clear → `V = TIMER (1.15)`, quest XP via §4.1, + 1 Loot Fragment.
 - **Gates launched from a GATE-mode Path quest** (§6.6.4) have their rank fixed by the quest and the stat fixed to the quest's stat. On clear, the reward is paid **once**, as the Path quest (`sourceType = QUEST`, `sourceId = questInstanceId`), never additionally as a standalone gate. A collapsed run leaves the Path quest open; the hunter may start the gate again the same day.
+### 8.1 Custom and stopwatch gates, subjects
+
+> **Approved 2026-11-01** (user: "complete all continuously") — numbers P1–P8 as proposed.
+
+| # | Rule | Proposed value |
+|---|---|---|
+| P1 | Custom gate length | 10–180 min in 5-min steps (default 30) |
+| P2 | Reward tier of a cleared custom/stopwatch run | by **counted minutes**: <15 → no reward (logged only); 15–24 → E; 25–49 → D; 50–89 → C; ≥90 → B. Beyond 90 min no extra tier. Same §4.1 formula, `V = TIMER (1.15)` |
+| P3 | Stopwatch minimum to count | 15 min; stopping earlier records a "short run" with no XP and no collapse |
+| P4 | Loot Fragment | 1 per cleared run of ≥ 25 min (D tier or higher); 0 for E |
+| P5 | Daily cap | at most **4** custom + stopwatch runs per game-day pay XP (preset gates are unaffected); extras are logged |
+| P6 | Breach rule | unchanged from §8 (90 s cumulative background, 1 pause ≤ 5 min); applies to stopwatch too |
+| P7 | Subjects | max **12** active, name ≤ 24 chars; label only, no effect on rewards; archive instead of delete |
+| P8 | Weekly focus report | no new numbers: totals per subject over the game-week from cleared runs |
+
+Test vectors (add to §12 on approval): custom 30 min → D, 1 fragment; stopwatch 14 min → no XP; stopwatch 120 min → B (not higher); 5th custom run in a game-day → 0 XP.
+
 - Do NOT use AccessibilityService or block apps in v1 (Play policy review risk + permission friction). The breach budget is enough. (Screen Discipline, §6.7, only *reads* usage stats; it never blocks or interrupts an app.)
 
 ---

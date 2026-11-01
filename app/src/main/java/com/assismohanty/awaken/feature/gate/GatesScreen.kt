@@ -52,6 +52,8 @@ import com.assismohanty.awaken.core.designsystem.preview.PhonePreviews
 import com.assismohanty.awaken.core.designsystem.theme.AwakenTheme
 import com.assismohanty.awaken.core.designsystem.theme.Spacing
 import com.assismohanty.awaken.core.domain.GATE_STATS
+import com.assismohanty.awaken.engine.FocusRules
+import com.assismohanty.awaken.engine.GateMode
 import com.assismohanty.awaken.engine.GateRules
 import com.assismohanty.awaken.engine.model.GateRank
 import com.assismohanty.awaken.engine.model.Stat
@@ -87,7 +89,11 @@ fun GatesEntry(onBack: () -> Unit, modifier: Modifier = Modifier, viewModel: Gat
 fun GatesScreen(state: GatesUiState, onEvent: (GatesEvent) -> Unit, onBack: () -> Unit, modifier: Modifier = Modifier) {
     val active = state.active
     LargeTitleScaffold(
-        title = if (active != null) lexString(R.string.gate_name, active.rank.name) else lexString(R.string.gates_title),
+        title = when {
+            active == null -> lexString(R.string.gates_title)
+            active.mode == GateMode.STOPWATCH -> lexString(R.string.focus_stopwatch_title)
+            else -> lexString(R.string.gate_name, active.rank.name)
+        },
         onBack = if (active == null) onBack else null,
         modifier = modifier,
     ) {
@@ -107,6 +113,12 @@ private fun GatePicker(state: GatesUiState, onEvent: (GatesEvent) -> Unit) {
         style = AwakenTheme.type.body,
         color = colors.textSecondary,
     )
+    FocusModeChips(state.setup?.mode ?: GateMode.PRESET, onEvent)
+    val setup = state.setup
+    if (setup != null && setup.mode != GateMode.PRESET) {
+        FocusSetupWindow(setup, state, onEvent)
+        return
+    }
     state.tiles.chunked(2).forEach { row ->
         Row(horizontalArrangement = Arrangement.spacedBy(Spacing.cardGap)) {
             row.forEach { tile ->
@@ -120,6 +132,118 @@ private fun GatePicker(state: GatesUiState, onEvent: (GatesEvent) -> Unit) {
         }
     }
     state.setup?.let { GateSetupWindow(it, onEvent) }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun FocusModeChips(selected: GateMode, onEvent: (GatesEvent) -> Unit) {
+    val colors = AwakenTheme.colors
+    FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.xs), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+        listOf(
+            GateMode.PRESET to R.string.focus_mode_preset,
+            GateMode.CUSTOM to R.string.focus_mode_custom,
+            GateMode.STOPWATCH to R.string.focus_mode_stopwatch,
+        ).forEach { (mode, label) ->
+            ChoiceChip(
+                text = lexString(label),
+                selected = selected == mode,
+                onClick = { onEvent(if (mode == GateMode.PRESET) GatesEvent.CloseSetup else GatesEvent.PickMode(mode)) },
+                color = colors.accent,
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun FocusSetupWindow(setup: GateSetup, state: GatesUiState, onEvent: (GatesEvent) -> Unit) {
+    val colors = AwakenTheme.colors
+    val custom = setup.mode == GateMode.CUSTOM
+    SystemWindow(title = lexString(if (custom) R.string.focus_custom_title else R.string.focus_stopwatch_title), accent = colors.accent) {
+        if (custom) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(Spacing.md),
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                SecondaryButton(
+                    text = lexString(R.string.focus_minus),
+                    onClick = { onEvent(GatesEvent.MinutesChanged(setup.minutes - FocusRules.CUSTOM_STEP_MINUTES)) },
+                    enabled = setup.minutes > FocusRules.CUSTOM_MIN_MINUTES,
+                )
+                Text(
+                    lexString(R.string.focus_custom_minutes, setup.minutes),
+                    style = AwakenTheme.type.metricL,
+                    color = colors.textPrimary,
+                    modifier = Modifier.weight(1f),
+                )
+                SecondaryButton(
+                    text = lexString(R.string.focus_plus),
+                    onClick = { onEvent(GatesEvent.MinutesChanged(setup.minutes + FocusRules.CUSTOM_STEP_MINUTES)) },
+                    enabled = setup.minutes < FocusRules.CUSTOM_MAX_MINUTES,
+                )
+            }
+        }
+        Text(
+            lexString(if (custom) R.string.focus_custom_rule else R.string.focus_stopwatch_rule),
+            style = AwakenTheme.type.caption,
+            color = colors.textSecondary,
+        )
+        Text(lexString(R.string.gate_stat_label), style = AwakenTheme.type.label, color = colors.textSecondary)
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.xs), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+            GATE_STATS.forEach { stat ->
+                ChoiceChip(
+                    text = stat.label(),
+                    selected = setup.stat == stat,
+                    onClick = { onEvent(GatesEvent.StatChanged(stat)) },
+                    color = colors.stat(stat),
+                )
+            }
+        }
+        Text(lexString(R.string.focus_subject_label), style = AwakenTheme.type.label, color = colors.textSecondary)
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.xs), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+            ChoiceChip(
+                text = lexString(R.string.focus_subject_none),
+                selected = setup.subjectId == null,
+                onClick = { onEvent(GatesEvent.SubjectPicked(null)) },
+                color = colors.accent,
+            )
+            state.subjects.forEach { subject ->
+                ChoiceChip(
+                    text = subject.name,
+                    selected = setup.subjectId == subject.id,
+                    onClick = { onEvent(GatesEvent.SubjectPicked(subject.id)) },
+                    color = colors.accent,
+                )
+            }
+            if (state.canAddSubject && !state.addingSubject) {
+                ChoiceChip(text = lexString(R.string.focus_subject_add), selected = false, onClick = { onEvent(GatesEvent.StartAddSubject) }, color = colors.accent)
+            }
+        }
+        if (!state.canAddSubject) {
+            Text(lexString(R.string.focus_subject_limit), style = AwakenTheme.type.caption, color = colors.textSecondary)
+        }
+        if (state.addingSubject) {
+            OutlinedTextField(
+                value = state.subjectDraft,
+                onValueChange = { onEvent(GatesEvent.SubjectDraftChanged(it)) },
+                label = { Text(lexString(R.string.focus_subject_hint)) },
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences, imeAction = ImeAction.Done),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = colors.accent,
+                    unfocusedBorderColor = colors.divider,
+                    focusedLabelColor = colors.accent,
+                    cursorColor = colors.accent,
+                ),
+                modifier = Modifier.fillMaxWidth(),
+            )
+            SecondaryButton(text = lexString(R.string.focus_subject_save), onClick = { onEvent(GatesEvent.SaveSubject) }, enabled = state.subjectDraft.isNotBlank(), modifier = Modifier.fillMaxWidth())
+            QuietButton(text = lexString(R.string.action_back), onClick = { onEvent(GatesEvent.CancelAddSubject) }, modifier = Modifier.fillMaxWidth())
+        }
+        Text(lexString(R.string.gate_rule, shortClock(GateRules.BREACH_BUDGET_MS)), style = AwakenTheme.type.caption, color = colors.textSecondary)
+        PrimaryButton(text = lexString(R.string.action_enter_gate), onClick = { onEvent(GatesEvent.Enter) }, modifier = Modifier.fillMaxWidth())
+    }
 }
 
 @Composable
@@ -204,7 +328,14 @@ private fun GateRun(active: ActiveGate, confirmAbandon: Boolean, onEvent: (Gates
             StatChip(active.stat)
             active.label?.let { Text(it, style = AwakenTheme.type.label, color = colors.textPrimary) }
         }
-        GateDial(gate = active.rank, remaining = active.remaining, total = active.total, breachUsed = active.breachUsed)
+        if (active.mode == GateMode.STOPWATCH) {
+            Text(lexString(R.string.focus_elapsed_caption), style = AwakenTheme.type.label, color = colors.textSecondary)
+            Text(shortClock(active.elapsed.toMillis()), style = AwakenTheme.type.metricL, color = colors.textPrimary)
+            PrimaryButton(lexString(R.string.action_stop_stopwatch), onClick = { onEvent(GatesEvent.Stop) }, modifier = Modifier.fillMaxWidth())
+        } else {
+            GateDial(gate = active.rank, remaining = active.remaining, total = active.total, breachUsed = active.breachUsed)
+        }
+        active.subject?.let { Text(it, style = AwakenTheme.type.caption, color = colors.textSecondary) }
         Text(
             lexString(R.string.gate_breach_line, shortClock(active.breachUsed.toMillis()), shortClock(GateRules.BREACH_BUDGET_MS)),
             style = AwakenTheme.type.label,
@@ -276,6 +407,43 @@ private fun GatePausedPreview() {
                     breachUsed = Duration.ZERO, paused = true, pauseLeft = Duration.ofMinutes(3).plusSeconds(40), canPause = false,
                 ),
                 confirmAbandon = true,
+            ),
+            onEvent = {},
+            onBack = {},
+        )
+    }
+}
+
+@PhonePreviews
+@Composable
+private fun GatesCustomPreview() {
+    AwakenTheme {
+        GatesScreen(
+            GatesUiState(
+                loading = false,
+                tiles = previewTiles,
+                setup = GateSetup(GateRank.D, Stat.INT, "", GateMode.CUSTOM, minutes = 45, subjectId = "s1"),
+                subjects = listOf(SubjectUi("s1", "DSA"), SubjectUi("s2", "Reading")),
+            ),
+            onEvent = {},
+            onBack = {},
+        )
+    }
+}
+
+@PhonePreviews
+@Composable
+private fun GateStopwatchPreview() {
+    AwakenTheme {
+        GatesScreen(
+            GatesUiState(
+                loading = false,
+                tiles = previewTiles,
+                active = ActiveGate(
+                    rank = GateRank.E, mode = GateMode.STOPWATCH, elapsed = Duration.ofMinutes(37).plusSeconds(5), subject = "DSA",
+                    stat = Stat.INT, label = null, remaining = Duration.ofDays(1), total = Duration.ofDays(1),
+                    breachUsed = Duration.ofSeconds(10), paused = false, pauseLeft = Duration.ZERO, canPause = true,
+                ),
             ),
             onEvent = {},
             onBack = {},

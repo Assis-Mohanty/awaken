@@ -3,6 +3,7 @@ package com.assismohanty.awaken.core.domain
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.assismohanty.awaken.core.data.db.entity.GateRunStatus
 import com.assismohanty.awaken.engine.GateCollapseReason
+import com.assismohanty.awaken.engine.GateMode
 import com.assismohanty.awaken.engine.model.GateRank
 import com.assismohanty.awaken.engine.model.QuestStatus
 import com.assismohanty.awaken.engine.model.SourceType
@@ -175,5 +176,99 @@ class GateUseCasesTest {
         graph.gateRuns.check()
 
         assertThat(graph.undoCompletion(run.questInstanceId)).isEqualTo(UndoResult.GateClear)
+    }
+
+    private suspend fun openFocus(mode: GateMode, minutes: Int = 30) =
+        (graph.startGate.startFocus(mode, minutes, Stat.INT, null, subjectId = null) as StartGateResult.Started).run
+
+    @Test
+    fun aCustomThirtyMinuteRunClearsAsADTierWithAFragment() = runTest {
+        graph.seedHunter()
+        val run = openFocus(GateMode.CUSTOM, 30)
+        assertThat(run.gateRank).isEqualTo(GateRank.D)
+        graph.clock.advance(Duration.ofMinutes(30))
+
+        val check = graph.gateRuns.check() as GateCheck.Cleared
+
+        assertThat(check.outcome.reward.fragments).isEqualTo(1 + if (check.outcome.reward.crit) 1 else 0) // the gate fragment, plus a crit fragment
+        assertThat(gateRunDao.get(run.id)?.status).isEqualTo(GateRunStatus.CLEARED)
+    }
+
+    @Test
+    fun aCustomRunUnderTwentyFiveMinutesPaysNoFragment() = runTest {
+        graph.seedHunter()
+        openFocus(GateMode.CUSTOM, 20)
+        graph.clock.advance(Duration.ofMinutes(20))
+
+        val check = graph.gateRuns.check() as GateCheck.Cleared
+
+        assertThat(check.outcome.difficulty).isEqualTo(GateRank.E.difficulty)
+        assertThat(check.outcome.reward.fragments).isEqualTo(if (check.outcome.reward.crit) 1 else 0) // only a crit drops one
+    }
+
+    @Test
+    fun aCustomRunUnderFifteenMinutesIsLoggedNotPaid() = runTest {
+        graph.seedHunter()
+        val run = openFocus(GateMode.CUSTOM, 10)
+        val before = graph.ledger.balances()
+        graph.clock.advance(Duration.ofMinutes(10))
+
+        val check = graph.gateRuns.check()
+
+        assertThat(check).isInstanceOf(GateCheck.Logged::class.java)
+        assertThat(gateRunDao.get(run.id)?.status).isEqualTo(GateRunStatus.LOGGED)
+        assertThat(graph.ledger.balances()).isEqualTo(before)
+    }
+
+    @Test
+    fun aStopwatchIsPricedByTheTimeItCounted() = runTest {
+        graph.seedHunter()
+        val run = openFocus(GateMode.STOPWATCH)
+        graph.clock.advance(Duration.ofMinutes(55))
+        assertThat(graph.gateRuns.check()).isInstanceOf(GateCheck.Running::class.java)
+
+        val check = graph.gateRuns.stopStopwatch() as GateCheck.Cleared
+
+        assertThat(check.outcome.difficulty).isEqualTo(GateRank.C.difficulty)
+        val stored = gateRunDao.get(run.id)
+        assertThat(stored?.gateRank).isEqualTo(GateRank.C)
+        assertThat(stored?.plannedSec).isEqualTo(55 * 60)
+    }
+
+    @Test
+    fun aStopwatchStoppedUnderFifteenMinutesIsLogged() = runTest {
+        graph.seedHunter()
+        val run = openFocus(GateMode.STOPWATCH)
+        graph.clock.advance(Duration.ofMinutes(14))
+
+        assertThat(graph.gateRuns.stopStopwatch()).isInstanceOf(GateCheck.Logged::class.java)
+        assertThat(gateRunDao.get(run.id)?.status).isEqualTo(GateRunStatus.LOGGED)
+        assertThat(questDao.get(run.questInstanceId)?.status).isEqualTo(QuestStatus.EXPIRED)
+    }
+
+    @Test
+    fun theFifthPaidCustomOrStopwatchRunOfADayIsOverTheCap() = runTest {
+        graph.seedHunter()
+        repeat(4) {
+            openFocus(GateMode.CUSTOM, 15)
+            graph.clock.advance(Duration.ofMinutes(15))
+            assertThat(graph.gateRuns.check()).isInstanceOf(GateCheck.Cleared::class.java)
+        }
+        openFocus(GateMode.CUSTOM, 15)
+        graph.clock.advance(Duration.ofMinutes(15))
+
+        val check = graph.gateRuns.check() as GateCheck.Logged
+
+        assertThat(check.outcome).isEqualTo(com.assismohanty.awaken.engine.FocusRunOutcome.OverCap)
+    }
+
+    @Test
+    fun aStopwatchStillCollapsesOnABreach() = runTest {
+        graph.seedHunter()
+        val run = openFocus(GateMode.STOPWATCH)
+        away(Duration.ofSeconds(91))
+
+        assertThat(graph.gateRuns.check()).isInstanceOf(GateCheck.Collapsed::class.java)
+        assertThat(gateRunDao.get(run.id)?.collapseReason).isEqualTo(GateCollapseReason.BREACH)
     }
 }

@@ -55,6 +55,9 @@ import com.assismohanty.awaken.core.designsystem.lexicon.lexString
 import com.assismohanty.awaken.core.designsystem.preview.PhonePreviews
 import com.assismohanty.awaken.core.designsystem.theme.AwakenTheme
 import com.assismohanty.awaken.core.designsystem.theme.Spacing
+import com.assismohanty.awaken.feature.focus.FocusCard
+import com.assismohanty.awaken.feature.focus.FocusCardState
+import com.assismohanty.awaken.feature.focus.FocusCardViewModel
 import com.assismohanty.awaken.engine.ConsistencyScore
 import com.assismohanty.awaken.engine.MissLine
 import com.assismohanty.awaken.engine.TimeBlocks
@@ -76,6 +79,7 @@ fun TodayRoute(
     onOpenScreenTime: () -> Unit = {},
     onOpenCampaign: () -> Unit = {},
     onOpenGates: () -> Unit = {},
+    onOpenFocusReport: () -> Unit = {},
     onOpenVault: () -> Unit = {},
     onOpenReview: () -> Unit = {},
     onOpenHealth: () -> Unit = {},
@@ -85,7 +89,9 @@ fun TodayRoute(
     habitsViewModel: HabitsViewModel = hiltViewModel(),
     dayPlanViewModel: DayPlanViewModel = hiltViewModel(),
     summaryViewModel: TodaySummaryViewModel = hiltViewModel(),
+    focusViewModel: FocusCardViewModel = hiltViewModel(),
 ) {
+    val focus by focusViewModel.uiState.collectAsStateWithLifecycle()
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val summary by summaryViewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
@@ -108,8 +114,10 @@ fun TodayRoute(
         onOpenCampaign = onOpenCampaign,
         onOpenReview = onOpenReview,
         onOpenGates = onOpenGates,
+        onOpenFocusReport = onOpenFocusReport,
         onOpenVault = onOpenVault,
         summary = summary,
+        focus = focus,
         onOpenHealth = onOpenHealth,
         onGrantUsageAccess = { openUsageAccessSettings(context) },
         onSetUpHealth = { if (summary.healthNeedsConnect) onOpenSettings() else openHealthConnectSettings(context) },
@@ -152,6 +160,8 @@ fun TodayScreen(
     onOpenScreenTime: () -> Unit = {},
     onOpenCampaign: () -> Unit = {},
     onOpenGates: () -> Unit = {},
+    onOpenFocusReport: () -> Unit = {},
+    focus: FocusCardState = FocusCardState(),
     onOpenVault: () -> Unit = {},
     onOpenReview: () -> Unit = {},
     summary: TodaySummaryUiState = TodaySummaryUiState(),
@@ -239,6 +249,8 @@ fun TodayScreen(
                 modifier = Modifier.weight(1f).fillMaxHeight(),
             )
         }
+
+        FocusCard(state = focus, onStart = onOpenGates, onOpenReport = onOpenFocusReport)
 
         Timeline(state, onEvent, onOpenQuest, onHabitsEvent)
 

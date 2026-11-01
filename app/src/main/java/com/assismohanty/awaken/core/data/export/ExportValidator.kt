@@ -5,6 +5,7 @@ import com.assismohanty.awaken.core.data.db.entity.GateRunStatus
 import com.assismohanty.awaken.core.data.db.entity.HunterProfileEntity
 import com.assismohanty.awaken.engine.DayOutcome
 import com.assismohanty.awaken.engine.GateCollapseReason
+import com.assismohanty.awaken.engine.GateMode
 import com.assismohanty.awaken.engine.RankRules
 import com.assismohanty.awaken.engine.model.Difficulty
 import com.assismohanty.awaken.engine.model.GateRank
@@ -64,6 +65,7 @@ object ExportValidator {
             "gate_rank" to names(GateRank.entries.toTypedArray()),
             "stat" to stats,
             "status" to names(GateRunStatus.entries.toTypedArray()),
+            "mode" to names(GateMode.entries.toTypedArray()),
             "collapse_reason" to names(GateCollapseReason.entries.toTypedArray()),
         ),
         "trial" to mapOf(
