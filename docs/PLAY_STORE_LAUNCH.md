@@ -170,7 +170,7 @@ uploaded (including to AI Paths), and is not used for advertising. You can revok
 Use of information received from Health Connect adheres to the Health Connect Permissions policy, including the
 Limited Use requirements.
 
-[v1.1] Insights and recaps: the app also uses this data, on your device only, to show you personal patterns
+Insights and recaps: the app also uses this data, on your device only, to show you personal patterns
 (for example, how many quests you complete on days after 7+ hours of sleep or with 7,000+ steps) and monthly and
 yearly summaries of your own activity. To cover past months it keeps daily totals (steps, sleep time, distance) in
 the app's local database. These patterns describe correlations in your own data; they are not medical advice. Nothing

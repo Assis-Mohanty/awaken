@@ -54,6 +54,7 @@ fun PrivacyPolicyScreen(onClose: () -> Unit, modifier: Modifier = Modifier) {
         R.string.privacy_ai,
         R.string.privacy_reports,
         R.string.privacy_health,
+        R.string.privacy_insights,
         R.string.privacy_screen_time,
         R.string.privacy_backups,
         R.string.privacy_children,
