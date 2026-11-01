@@ -374,6 +374,27 @@ class MigrationTest {
     }
 
     @Test
+    fun v16To17AddsFoldedPauseTimeDefaultingToZero() = runTest {
+        val path = createFromSchema(16)
+        SQLiteDatabase.openDatabase(path, null, SQLiteDatabase.OPEN_READWRITE).use { db ->
+            db.execSQL(
+                "INSERT INTO gate_run (id, quest_instance_id, gate_rank, stat, label, planned_sec, started_at, background_ms, boot_count, status, mode) " +
+                    "VALUES ('g1', 'q1', 'D', 'INT', NULL, 1500, 0, 0, 1, 'CLEARED', 'PRESET')",
+            )
+        }
+        val db = Room.databaseBuilder(context, AwakenDatabase::class.java, path)
+            .addMigrations(*ALL_MIGRATIONS)
+            .allowMainThreadQueries()
+            .build()
+        try {
+            assertThat(db.gateRunDao().get("g1")?.pausedBeforeMs).isEqualTo(0L)
+            assertThat(db.openHelper.readableDatabase.version).isEqualTo(AwakenDatabase.SCHEMA_VERSION)
+        } finally {
+            db.close()
+        }
+    }
+
+    @Test
     fun v4To5AddsThePathTablesAndKeepsExistingQuests() = runTest {
         val path = createFromSchema(4)
         SQLiteDatabase.openDatabase(path, null, SQLiteDatabase.OPEN_READWRITE).use { db ->

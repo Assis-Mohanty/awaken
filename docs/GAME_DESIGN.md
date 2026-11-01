@@ -445,6 +445,7 @@ The in-app-verified quest type. Turns study/deep-work into a dungeon run.
 | P6 | Breach rule | unchanged from §8 (90 s cumulative background, 1 pause ≤ 5 min); applies to stopwatch too |
 | P7 | Subjects | max **12** active, name ≤ 24 chars; label only, no effect on rewards; archive instead of delete |
 | P8 | Weekly focus report | no new numbers: totals per subject over the game-week from cleared runs |
+| P9 | Stopwatch pauses (user request 2026-11-01) | unlimited, no 5-minute cap: tap to pause, tap to continue. Paused time is never counted. Presets and custom runs keep one pause of ≤ 5 min (§8). The breach budget is unchanged (time away while running counts, time away while paused does not) |
 
 Test vectors (add to §12 on approval): custom 30 min → D, 1 fragment; stopwatch 14 min → no XP; stopwatch 120 min → B (not higher); 5th custom run in a game-day → 0 XP.
 

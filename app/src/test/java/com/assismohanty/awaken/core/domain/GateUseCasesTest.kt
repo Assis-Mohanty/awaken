@@ -271,4 +271,34 @@ class GateUseCasesTest {
         assertThat(graph.gateRuns.check()).isInstanceOf(GateCheck.Collapsed::class.java)
         assertThat(gateRunDao.get(run.id)?.collapseReason).isEqualTo(GateCollapseReason.BREACH)
     }
+
+    @Test
+    fun aStopwatchCanBePausedAndResumedAsOftenAsTheHunterLikes() = runTest {
+        graph.seedHunter()
+        val run = openFocus(GateMode.STOPWATCH)
+
+        graph.clock.advance(Duration.ofMinutes(10))
+        repeat(3) {
+            assertThat(graph.gateRuns.pause()).isTrue()
+            graph.clock.advance(Duration.ofMinutes(8)) // longer than the 5-minute cap that presets have
+            assertThat(graph.gateRuns.check()).isInstanceOf(GateCheck.Running::class.java)
+            assertThat(graph.gateRuns.resume()).isTrue()
+            graph.clock.advance(Duration.ofMinutes(10))
+        }
+
+        // 40 minutes running, 24 minutes paused.
+        val stored = checkNotNull(gateRunDao.get(run.id))
+        assertThat(com.assismohanty.awaken.engine.GateRunMath.elapsed(stored.timing, graph.clock.now())).isEqualTo(Duration.ofMinutes(40))
+        val check = graph.gateRuns.stopStopwatch() as GateCheck.Cleared
+        assertThat(check.outcome.difficulty).isEqualTo(GateRank.D.difficulty) // 40 min counted, not 64
+    }
+
+    @Test
+    fun aPresetGateStillHasOnePause() = runTest {
+        graph.seedHunter()
+        open()
+        assertThat(graph.gateRuns.pause()).isTrue()
+        assertThat(graph.gateRuns.resume()).isTrue()
+        assertThat(graph.gateRuns.pause()).isFalse()
+    }
 }

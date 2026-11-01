@@ -11,6 +11,7 @@ import com.assismohanty.awaken.engine.campaign.CampaignAct
 import com.assismohanty.awaken.engine.campaign.CampaignStatus
 import com.assismohanty.awaken.engine.GateCollapseReason
 import com.assismohanty.awaken.engine.GateMode
+import com.assismohanty.awaken.engine.GateRules
 import com.assismohanty.awaken.engine.GateTiming
 import com.assismohanty.awaken.engine.RankRules
 import com.assismohanty.awaken.engine.model.Difficulty
@@ -232,8 +233,14 @@ data class GateRunEntity(
     /** PRESET, CUSTOM or STOPWATCH (GD §8.1). A stopwatch run has no planned end: [plannedSec] becomes the counted time when it is cleared. */
     @ColumnInfo(name = "mode", defaultValue = "PRESET") val mode: GateMode = GateMode.PRESET,
     @ColumnInfo(name = "subject_id") val subjectId: String? = null,
+    /** Paused time folded in by earlier resumes: a stopwatch can be paused as often as the hunter likes (GD §8.1 P9). */
+    @ColumnInfo(name = "paused_before_ms", defaultValue = "0") val pausedBeforeMs: Long = 0,
 ) {
-    val timing: GateTiming get() = GateTiming(startedAt, plannedSec, pausedAt, resumedAt, backgroundMs)
+    val timing: GateTiming
+        get() = GateTiming(
+            startedAt, plannedSec, pausedAt, resumedAt, backgroundMs, pausedBeforeMs,
+            pauseCap = if (mode == GateMode.STOPWATCH) null else GateRules.MAX_PAUSE,
+        )
 }
 
 @Entity(tableName = "trial")

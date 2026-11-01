@@ -17,6 +17,10 @@ data class GateTiming(
     val pausedAt: Instant? = null,
     val resumedAt: Instant? = null,
     val backgroundMs: Long = 0,
+    /** Pause time already folded in by earlier resumes (a stopwatch may pause many times; GD §8.1 P9). */
+    val pausedBeforeMs: Long = 0,
+    /** How long one pause may last before it ends by itself; null = until resumed (the stopwatch). */
+    val pauseCap: Duration? = GateRules.MAX_PAUSE,
 )
 
 /** Where a run stands at a moment. */
@@ -56,21 +60,23 @@ object GateRunMath {
     /** When the pause ends: on resume, or automatically after [GateRules.MAX_PAUSE]. Null if never paused. */
     fun pauseEndsAt(timing: GateTiming): Instant? {
         val pausedAt = timing.pausedAt ?: return null
-        val cap = pausedAt.plus(GateRules.MAX_PAUSE)
+        val cap = timing.pauseCap?.let { pausedAt.plus(it) }
         val resumed = timing.resumedAt ?: return cap
-        return if (resumed.isBefore(cap)) resumed else cap
+        return if (cap == null || resumed.isBefore(cap)) resumed else cap
     }
 
     /** Pause time elapsed by [now]; the countdown does not run during it. */
     fun pausedDuration(timing: GateTiming, now: Instant): Duration {
-        val pausedAt = timing.pausedAt ?: return Duration.ZERO
+        val before = Duration.ofMillis(timing.pausedBeforeMs)
+        val pausedAt = timing.pausedAt ?: return before
         val end = minOf(pauseEndsAt(timing) ?: now, now)
-        return if (end.isAfter(pausedAt)) Duration.between(pausedAt, end) else Duration.ZERO
+        return if (end.isAfter(pausedAt)) before.plus(Duration.between(pausedAt, end)) else before
     }
 
     fun isPaused(timing: GateTiming, now: Instant): Boolean {
         val pausedAt = timing.pausedAt ?: return false
-        val end = pauseEndsAt(timing) ?: return false
+        val end = pauseEndsAt(timing)
+        if (end == null) return !now.isBefore(pausedAt) && timing.resumedAt == null // an uncapped pause lasts until resumed
         return !now.isBefore(pausedAt) && now.isBefore(end)
     }
 
@@ -89,7 +95,7 @@ object GateRunMath {
             remaining.isZero -> GatePhase.Finished
             isPaused(timing, now) -> GatePhase.Paused(
                 remaining = remaining,
-                pauseLeft = Duration.between(now, requireNotNull(pauseEndsAt(timing))),
+                pauseLeft = pauseEndsAt(timing)?.let { Duration.between(now, it) } ?: Duration.ZERO,
             )
             else -> GatePhase.Running(remaining)
         }
@@ -119,8 +125,8 @@ object GateRunMath {
         if (!countedEnd.isAfter(stopAt)) return BackgroundDelta.Counted(0)
         var counted = Duration.between(stopAt, countedEnd).toMillis()
         val pausedAt = timing.pausedAt
-        val pauseEnd = pauseEndsAt(timing)
-        if (pausedAt != null && pauseEnd != null) {
+        val pauseEnd = pauseEndsAt(timing) ?: countedEnd
+        if (pausedAt != null) {
             val overlapStart = maxOf(stopAt, pausedAt)
             val overlapEnd = minOf(countedEnd, pauseEnd)
             if (overlapEnd.isAfter(overlapStart)) counted -= Duration.between(overlapStart, overlapEnd).toMillis()

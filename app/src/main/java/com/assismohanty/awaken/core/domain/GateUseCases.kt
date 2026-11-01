@@ -149,7 +149,8 @@ class GateRunController @Inject constructor(
         transactions.run {
             val run = gateRunDao.running() ?: return@run false
             val now = clock.now()
-            val pausesUsed = if (run.pausedAt == null) 0 else 1
+            // A stopwatch has no pause limit: each resume folds its pause into the total, so the next tap can pause again.
+            val pausesUsed = if (run.pausedAt == null || run.mode == GateMode.STOPWATCH) 0 else 1
             val canPause = GateRules.canPause(pausesUsed) && GateRunMath.phase(run.timing, now) is GatePhase.Running
             if (canPause) gateRunDao.upsert(run.copy(pausedAt = now))
             canPause
@@ -161,7 +162,12 @@ class GateRunController @Inject constructor(
             val run = gateRunDao.running() ?: return@run false
             val now = clock.now()
             val paused = GateRunMath.isPaused(run.timing, now)
-            if (paused) gateRunDao.upsert(run.copy(resumedAt = now))
+            if (paused && run.mode == GateMode.STOPWATCH) {
+                val folded = run.timing.pausedBeforeMs + Duration.between(run.pausedAt, now).toMillis().coerceAtLeast(0)
+                gateRunDao.upsert(run.copy(pausedAt = null, resumedAt = null, pausedBeforeMs = folded))
+            } else if (paused) {
+                gateRunDao.upsert(run.copy(resumedAt = now))
+            }
             paused
         }
     }

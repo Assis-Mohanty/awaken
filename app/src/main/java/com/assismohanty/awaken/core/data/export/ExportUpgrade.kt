@@ -87,6 +87,10 @@ object ExportUpgrade {
         if (current.app == ExportDocument.APP_ID && current.schemaVersion == 15) {
             current = current.copy(schemaVersion = 16)
         }
+        // v16 → v17 (stopwatch pauses): the new gate_run column defaults to 0, so old rows import as they are.
+        if (current.app == ExportDocument.APP_ID && current.schemaVersion == 16) {
+            current = current.copy(schemaVersion = 17)
+        }
         return current
     }
 }
