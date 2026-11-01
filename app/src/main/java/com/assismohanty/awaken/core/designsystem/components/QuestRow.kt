@@ -81,7 +81,8 @@ data class QuestRowModel(
  * Quest row inside a card (DESIGN_SYSTEM §3, the list-row pattern): the stat's glyph in a 36dp tinted circle, title, a
  * target line and small chips, and a hollow check circle. Rows are split by an inset hairline. Swipe right past the
  * threshold completes (haptic tick at the threshold); tap or long-press opens details. Only SELF quests show a check:
- * HEALTH/TIMER quests complete through their verifier (GAME_DESIGN §6.5).
+ * HEALTH/TIMER quests complete through their verifier (GAME_DESIGN §6.5). [onLongPress] (habits: Archive / Delete)
+ * replaces the long-press-to-open and is also offered to TalkBack as [longPressLabel].
  */
 @Composable
 fun QuestRow(
@@ -90,6 +91,8 @@ fun QuestRow(
     onOpen: () -> Unit,
     modifier: Modifier = Modifier,
     showDivider: Boolean = true,
+    onLongPress: (() -> Unit)? = null,
+    longPressLabel: String? = null,
 ) {
     val dimens = AwakenTheme.dimens
     Column(modifier = modifier.fillMaxWidth()) {
@@ -100,7 +103,7 @@ fun QuestRow(
                 modifier = Modifier.padding(start = dimens.iconWell + Spacing.sm),
             )
         }
-        SwipeToComplete(model, onComplete, onOpen) {
+        SwipeToComplete(model, onComplete, onOpen, onLongPress, longPressLabel) {
             Row(
                 modifier = Modifier.padding(vertical = dimens.questRowPadding),
                 verticalAlignment = Alignment.CenterVertically,
@@ -121,6 +124,8 @@ private fun SwipeToComplete(
     model: QuestRowModel,
     onComplete: () -> Unit,
     onOpen: () -> Unit,
+    onLongPress: (() -> Unit)?,
+    longPressLabel: String?,
     content: @Composable () -> Unit,
 ) {
     val colors = AwakenTheme.colors
@@ -176,9 +181,17 @@ private fun SwipeToComplete(
                         animate(offset, 0f, animationSpec = tween(motion.duration(motion.quickMs))) { value, _ -> offset = value }
                     },
                 )
-                .combinedClickable(onClickLabel = openLabel, onClick = onOpen, onLongClick = onOpen)
+                .combinedClickable(
+                    onClickLabel = openLabel,
+                    onClick = onOpen,
+                    onLongClickLabel = longPressLabel,
+                    onLongClick = onLongPress ?: onOpen,
+                )
                 .semantics {
-                    if (canComplete) customActions = listOf(CustomAccessibilityAction(completeLabel) { onComplete(); true })
+                    customActions = buildList {
+                        if (canComplete) add(CustomAccessibilityAction(completeLabel) { onComplete(); true })
+                        if (onLongPress != null && longPressLabel != null) add(CustomAccessibilityAction(longPressLabel) { onLongPress(); true })
+                    }
                 },
         ) {
             content()

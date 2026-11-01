@@ -6,7 +6,8 @@ import com.assismohanty.awaken.engine.model.TimeOfDay
 import com.assismohanty.awaken.core.designsystem.lexicon.lexString
 import com.assismohanty.awaken.core.designsystem.lexicon.lexPlural
 import androidx.annotation.StringRes
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -43,6 +44,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import com.assismohanty.awaken.R
 import com.assismohanty.awaken.core.designsystem.components.AwakenGlyphs
 import com.assismohanty.awaken.core.designsystem.components.ChoiceChip
+import com.assismohanty.awaken.core.designsystem.components.ConfirmDialog
 import com.assismohanty.awaken.core.designsystem.components.PrimaryButton
 import com.assismohanty.awaken.core.designsystem.components.QuietButton
 import com.assismohanty.awaken.core.designsystem.components.SecondaryButton
@@ -60,12 +62,20 @@ import java.util.Locale
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HabitSheets(state: HabitsUiState, onEvent: (HabitsEvent) -> Unit) {
-    if (state.sheet == HabitSheet.None) return
+    when (val sheet = state.sheet) {
+        HabitSheet.None -> return
+        is HabitSheet.Confirm -> {
+            HabitConfirmDialog(sheet, onEvent)
+            return
+        }
+        else -> Unit
+    }
     ModalBottomSheet(
         onDismissRequest = { onEvent(HabitsEvent.Dismiss) },
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-        containerColor = AwakenTheme.colors.surfaceOverlay,
-        shape = AwakenTheme.shapes.window,
+        // The card colour, like every sheet (DESIGN_SYSTEM §3); surfaceOverlay is the unselected-chip fill.
+        containerColor = AwakenTheme.colors.surfaceElevated,
+        shape = AwakenTheme.shapes.sheet,
     ) {
         val content = Modifier
             .fillMaxWidth()
@@ -76,7 +86,8 @@ fun HabitSheets(state: HabitsUiState, onEvent: (HabitsEvent) -> Unit) {
         when (val sheet = state.sheet) {
             HabitSheet.Overview -> HabitOverview(state, onEvent, content)
             is HabitSheet.Editor -> HabitEditor(sheet.editor, onEvent, content)
-            HabitSheet.None -> Unit
+            is HabitSheet.Options -> HabitOptions(sheet.habit, onEvent, content)
+            HabitSheet.None, is HabitSheet.Confirm -> Unit
         }
     }
 }
@@ -100,7 +111,13 @@ fun HabitOverview(state: HabitsUiState, onEvent: (HabitsEvent) -> Unit, modifier
                 modifier = Modifier
                     .fillMaxWidth()
                     .defaultMinSize(minHeight = AwakenTheme.dimens.touchTarget)
-                    .clickable(role = Role.Button, onClickLabel = lexString(R.string.action_edit_habit)) { onEvent(HabitsEvent.Edit(habit.id)) }
+                    .combinedClickable(
+                        role = Role.Button,
+                        onClickLabel = lexString(R.string.action_edit_habit),
+                        onLongClickLabel = lexString(R.string.action_habit_options),
+                        onLongClick = { onEvent(HabitsEvent.Options(habit.id, fromList = true)) },
+                        onClick = { onEvent(HabitsEvent.Edit(habit.id)) },
+                    )
                     .padding(vertical = Spacing.xs),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
@@ -249,9 +266,56 @@ fun HabitEditor(editor: HabitEditorState, onEvent: (HabitsEvent) -> Unit, modifi
                 enabled = !editor.saving,
                 modifier = Modifier.fillMaxWidth(),
             )
+            QuietButton(
+                text = lexString(R.string.action_delete_habit),
+                onClick = { onEvent(HabitsEvent.Delete) },
+                enabled = !editor.saving,
+                modifier = Modifier.fillMaxWidth(),
+            )
         }
         QuietButton(text = lexString(R.string.action_back), onClick = { onEvent(HabitsEvent.OpenList) })
     }
+}
+
+/** Long-press options: Archive (restorable in Settings) or Delete; campaign habits only explain why they can't. */
+@Composable
+fun HabitOptions(habit: HabitItem, onEvent: (HabitsEvent) -> Unit, modifier: Modifier = Modifier) {
+    val colors = AwakenTheme.colors
+    val type = AwakenTheme.type
+    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+        Text(habit.title, style = type.windowTitle, color = colors.textPrimary, modifier = Modifier.semantics { heading() })
+        if (habit.campaign) {
+            Text(lexString(R.string.habit_campaign_locked), style = type.body, color = colors.textSecondary)
+        } else {
+            Text(lexString(R.string.habit_options_body), style = type.body, color = colors.textSecondary)
+            SecondaryButton(
+                text = lexString(R.string.action_archive_habit),
+                onClick = { onEvent(HabitsEvent.RequestRemove(HabitRemoveAction.ARCHIVE)) },
+                modifier = Modifier.fillMaxWidth(),
+            )
+            PrimaryButton(
+                text = lexString(R.string.action_delete_habit),
+                onClick = { onEvent(HabitsEvent.RequestRemove(HabitRemoveAction.DELETE)) },
+                color = colors.critical,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
+        QuietButton(text = lexString(R.string.action_cancel), onClick = { onEvent(HabitsEvent.Dismiss) })
+    }
+}
+
+@Composable
+private fun HabitConfirmDialog(confirm: HabitSheet.Confirm, onEvent: (HabitsEvent) -> Unit) {
+    val delete = confirm.action == HabitRemoveAction.DELETE
+    ConfirmDialog(
+        title = lexString(if (delete) R.string.habit_delete_title else R.string.habit_archive_title, confirm.habit.title),
+        body = lexString(if (delete) R.string.habit_delete_body else R.string.habit_archive_body),
+        confirm = lexString(if (delete) R.string.action_delete_habit else R.string.action_archive_habit),
+        dismiss = lexString(R.string.action_cancel),
+        onConfirm = { onEvent(HabitsEvent.ConfirmRemove) },
+        onDismiss = { onEvent(HabitsEvent.Dismiss) },
+        destructive = delete,
+    )
 }
 
 @Composable
@@ -285,6 +349,20 @@ private fun HabitOverviewPreview() {
             ),
             onEvent = {},
         )
+    }
+}
+
+@PhonePreviews
+@Composable
+private fun HabitOptionsPreview() {
+    AwakenTheme { HabitOptions(HabitItem("2", "Read", Stat.INT, Difficulty.NORMAL, DayOfWeek.entries.toSet(), 20, "pages"), onEvent = {}) }
+}
+
+@PhonePreviews
+@Composable
+private fun HabitOptionsCampaignPreview() {
+    AwakenTheme {
+        HabitOptions(HabitItem("3", "Walk 6,000 steps", Stat.VIT, Difficulty.EASY, DayOfWeek.entries.toSet(), 6_000, "steps", campaign = true), onEvent = {})
     }
 }
 

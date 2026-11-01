@@ -71,6 +71,8 @@ fun UserMessage.text(resources: LexResources): String = when (this) {
     UserMessage.VaultPoolEmpty -> resources.getString(R.string.msg_vault_pool_empty)
     UserMessage.DayStartBlocked -> resources.getString(R.string.msg_day_start_blocked)
     UserMessage.ExportDone -> resources.getString(R.string.msg_export_done)
+    is UserMessage.HabitRestored -> resources.getString(R.string.habit_restored, title)
+    UserMessage.HabitLimit -> resources.getString(R.string.habit_limit)
     UserMessage.ExportFailed -> resources.getString(R.string.msg_export_failed)
     UserMessage.ImportUnreadable -> resources.getString(R.string.msg_import_unreadable)
     is UserMessage.ImportRejected -> resources.getString(problem.messageRes())

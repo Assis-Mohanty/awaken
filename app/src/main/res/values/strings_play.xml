@@ -15,6 +15,20 @@
     <string name="action_add_habit">Add habit</string>
     <string name="action_edit_habit">Edit habit</string>
     <string name="action_archive_habit">Archive habit</string>
+    <string name="action_delete_habit">Delete habit</string>
+    <string name="action_habit_options">Habit options</string>
+    <string name="action_restore_habit">Restore</string>
+    <string name="habit_options_body">Archive hides it and keeps it for later; Delete removes it for good. Either way your XP, stats and history stay.</string>
+    <string name="habit_archive_title">Archive \"%1$s\"?</string>
+    <string name="habit_archive_body">It leaves Today from now on. You can bring it back from Settings → Archived habits. Your XP, stats and history stay.</string>
+    <string name="habit_delete_title">Delete \"%1$s\"?</string>
+    <string name="habit_delete_body">It leaves Today and won\'t come back. Your XP, stats and history stay.</string>
+    <string name="habit_archived_snack">Archived \"%1$s\"</string>
+    <string name="habit_deleted_snack">Deleted \"%1$s\"</string>
+    <string name="settings_archived_habits">Archived habits</string>
+    <string name="settings_archived_habits_empty">Nothing archived. Long-press a habit on Today to archive it.</string>
+    <string name="settings_restore_habit_label">Restore %1$s</string>
+    <string name="habit_restored">Restored \"%1$s\". It\'s back on its days, starting today if scheduled.</string>
 
     <!-- Awakening (onboarding, DESIGN_SYSTEM §4.1) -->
     <string name="onboarding_step">Step %1$d of %2$d</string>

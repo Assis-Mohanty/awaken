@@ -115,6 +115,13 @@ interface QuestDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertAll(quests: List<QuestInstanceEntity>): List<Long>
 
+    /** A habit's instances from [from] on that were never started or finished: what archiving or deleting removes. */
+    @Query("SELECT * FROM quest_instance WHERE habit_id = :habitId AND game_date >= :from AND status = 'ACTIVE'")
+    suspend fun openHabitInstancesFrom(habitId: String, from: LocalDate): List<QuestInstanceEntity>
+
+    @Query("DELETE FROM quest_instance WHERE id IN (:ids)")
+    suspend fun deleteAll(ids: List<String>)
+
     @Query("SELECT * FROM quest_instance WHERE id = :id")
     suspend fun get(id: String): QuestInstanceEntity?
 
@@ -253,6 +260,14 @@ interface HabitDao {
 
     @Upsert
     suspend fun upsert(habit: HabitEntity)
+
+    /** Archived by the hunter (campaign habits end with their campaign and never show here). */
+    @Query("SELECT * FROM habit WHERE active = 0 AND campaign_id IS NULL ORDER BY created_at")
+    fun observeArchived(): Flow<List<HabitEntity>>
+
+    /** The habit row only: its past quest instances, completions and ledger rows stay (invariant 1). */
+    @Query("DELETE FROM habit WHERE id = :id")
+    suspend fun delete(id: String)
 }
 
 @Dao

@@ -73,6 +73,8 @@ import com.assismohanty.awaken.core.domain.DisableHealthUseCase
 import com.assismohanty.awaken.core.domain.EnableHealthUseCase
 import com.assismohanty.awaken.core.domain.GenerateRecapsUseCase
 import com.assismohanty.awaken.core.domain.HealthSyncUseCase
+import com.assismohanty.awaken.core.domain.RemoveHabitUseCase
+import com.assismohanty.awaken.core.domain.RestoreHabitUseCase
 import com.assismohanty.awaken.core.domain.LoadInsightsUseCase
 import com.assismohanty.awaken.core.domain.RefreshHealthCacheUseCase
 import com.assismohanty.awaken.core.domain.SubmitWeeklyReviewUseCase
@@ -199,6 +201,8 @@ class TestGraph(
     val abandonCampaign = AbandonCampaignUseCase(db.campaignDao(), db.habitDao(), transactions, clock)
     val observeCampaign = ObserveCampaignUseCase(db.hunterDao(), db.campaignDao(), db.dayRecordDao(), clock)
     val saveHabit = SaveHabitUseCase(db.hunterDao(), db.habitDao(), db.questDao(), generateDirective, transactions, clock)
+    val removeHabit = RemoveHabitUseCase(db.hunterDao(), db.habitDao(), db.questDao(), transactions, clock)
+    val restoreHabit = RestoreHabitUseCase(db.hunterDao(), db.habitDao(), db.questDao(), generateDirective, transactions, clock)
     val seedAppRules = SeedAppRulesUseCase(db.hunterDao(), db.screenTimeDao(), usage, clock)
     val setScreenTimeEnabled = SetScreenTimeEnabledUseCase(db.hunterDao(), db.questDao(), seedAppRules, screenTimeReader, transactions, clock)
     val setAppRule = SetAppRuleUseCase(db.hunterDao(), db.screenTimeDao(), clock)

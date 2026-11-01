@@ -6,9 +6,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.assismohanty.awaken.R
 import com.assismohanty.awaken.core.data.db.entity.HabitEntity
-import com.assismohanty.awaken.core.domain.ArchiveHabitUseCase
 import com.assismohanty.awaken.core.domain.HabitDraft
+import com.assismohanty.awaken.core.domain.HabitRemoval
 import com.assismohanty.awaken.core.domain.ObserveHabitsUseCase
+import com.assismohanty.awaken.core.domain.RemoveHabitResult
+import com.assismohanty.awaken.core.domain.RemoveHabitUseCase
+import com.assismohanty.awaken.core.domain.RestoreHabitUseCase
 import com.assismohanty.awaken.core.domain.SaveHabitResult
 import com.assismohanty.awaken.core.domain.SaveHabitUseCase
 import com.assismohanty.awaken.core.domain.toDays
@@ -38,7 +41,15 @@ data class HabitItem(
     val target: Int,
     val unit: String,
     val timeOfDay: TimeOfDay? = null,
+    /** Planned by a campaign: read-only, ends with the campaign (GD §6.8). */
+    val campaign: Boolean = false,
 )
+
+/** What the hunter can do to a habit from its options sheet. */
+enum class HabitRemoveAction { ARCHIVE, DELETE }
+
+/** A just-finished archive or delete the snackbar offers to undo; [token] tells snackbars apart. */
+data class HabitUndo(val token: Long, val title: String, val action: HabitRemoveAction)
 
 data class HabitEditorState(
     /** null = new habit. */
@@ -64,11 +75,17 @@ sealed interface HabitSheet {
     data object None : HabitSheet
     data object Overview : HabitSheet
     data class Editor(val editor: HabitEditorState) : HabitSheet
+
+    /** Long-press on Today or in the list: Archive or Delete. [fromList] returns to the list afterwards. */
+    data class Options(val habit: HabitItem, val fromList: Boolean) : HabitSheet
+
+    data class Confirm(val habit: HabitItem, val action: HabitRemoveAction, val fromList: Boolean) : HabitSheet
 }
 
 data class HabitsUiState(
     val habits: List<HabitItem> = emptyList(),
     val sheet: HabitSheet = HabitSheet.None,
+    val undo: HabitUndo? = null,
 ) {
     val max: Int get() = QuestRules.MAX_ACTIVE_CUSTOM
     val canAdd: Boolean get() = QuestRules.canAddCustom(habits.size)
@@ -87,21 +104,37 @@ sealed interface HabitsEvent {
     data class UnitChanged(val unit: String) : HabitsEvent
     data class BlockChanged(val timeOfDay: TimeOfDay?) : HabitsEvent
     data object Save : HabitsEvent
+
+    /** The editor's Archive / Delete buttons: confirm first. */
     data object Archive : HabitsEvent
+    data object Delete : HabitsEvent
+
+    /** Long-press a habit (on Today by its habit id, or in the list). */
+    data class Options(val habitId: String, val fromList: Boolean = false) : HabitsEvent
+    data class RequestRemove(val action: HabitRemoveAction) : HabitsEvent
+    data object ConfirmRemove : HabitsEvent
+    data class Undo(val token: Long) : HabitsEvent
+    data class UndoHandled(val token: Long) : HabitsEvent
 }
 
-/** Custom habits (PRD F4, GD §6.1): add, edit, archive; max 8 active. */
+/** Custom habits (PRD F4, GD §6.1): add, edit, archive or delete with undo; max 8 active. */
 @HiltViewModel
 class HabitsViewModel @Inject constructor(
     observeHabits: ObserveHabitsUseCase,
     private val saveHabit: SaveHabitUseCase,
-    private val archiveHabit: ArchiveHabitUseCase,
+    private val removeHabit: RemoveHabitUseCase,
+    private val restoreHabit: RestoreHabitUseCase,
 ) : ViewModel() {
 
     private val sheet = MutableStateFlow<HabitSheet>(HabitSheet.None)
+    private val undo = MutableStateFlow<HabitUndo?>(null)
 
-    val uiState: StateFlow<HabitsUiState> = combine(observeHabits(), sheet) { habits, sheet ->
-        HabitsUiState(habits = habits.map { it.toItem() }, sheet = sheet)
+    /** What each offered undo would put back; kept here, never in UI state. */
+    private val removals = mutableMapOf<Long, HabitRemoval>()
+    private var nextToken = 0L
+
+    val uiState: StateFlow<HabitsUiState> = combine(observeHabits(), sheet, undo) { habits, sheet, undo ->
+        HabitsUiState(habits = habits.map { it.toItem() }, sheet = sheet, undo = undo)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), HabitsUiState())
 
     fun onEvent(event: HabitsEvent) {
@@ -118,7 +151,63 @@ class HabitsViewModel @Inject constructor(
             is HabitsEvent.UnitChanged -> edit { it.copy(unit = event.unit.take(UNIT_MAX_LENGTH)) }
             is HabitsEvent.BlockChanged -> edit { it.copy(timeOfDay = event.timeOfDay) }
             HabitsEvent.Save -> save()
-            HabitsEvent.Archive -> archive()
+            HabitsEvent.Archive -> confirmFromEditor(HabitRemoveAction.ARCHIVE)
+            HabitsEvent.Delete -> confirmFromEditor(HabitRemoveAction.DELETE)
+            is HabitsEvent.Options -> uiState.value.habits.firstOrNull { it.id == event.habitId }?.let {
+                sheet.value = HabitSheet.Options(it, event.fromList)
+            }
+            is HabitsEvent.RequestRemove -> sheet.update { current ->
+                if (current is HabitSheet.Options) HabitSheet.Confirm(current.habit, event.action, current.fromList) else current
+            }
+            HabitsEvent.ConfirmRemove -> remove()
+            is HabitsEvent.Undo -> undo(event.token)
+            is HabitsEvent.UndoHandled -> {
+                removals.remove(event.token)
+                undo.update { if (it?.token == event.token) null else it }
+            }
+        }
+    }
+
+    private fun confirmFromEditor(action: HabitRemoveAction) {
+        val habitId = (sheet.value as? HabitSheet.Editor)?.editor?.habitId ?: return
+        val habit = uiState.value.habits.firstOrNull { it.id == habitId } ?: return
+        sheet.value = HabitSheet.Confirm(habit, action, fromList = true)
+    }
+
+    private fun remove() {
+        val confirm = sheet.value as? HabitSheet.Confirm ?: return
+        viewModelScope.launch {
+            val result = try {
+                when (confirm.action) {
+                    HabitRemoveAction.ARCHIVE -> removeHabit.archive(confirm.habit.id)
+                    HabitRemoveAction.DELETE -> removeHabit.delete(confirm.habit.id)
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Timber.e(e, "Removing habit failed")
+                null
+            }
+            sheet.value = if (confirm.fromList) HabitSheet.Overview else HabitSheet.None
+            if (result is RemoveHabitResult.Removed) {
+                val token = ++nextToken
+                removals[token] = result.removal
+                undo.value = HabitUndo(token, confirm.habit.title, confirm.action)
+            }
+        }
+    }
+
+    private fun undo(token: Long) {
+        val removal = removals.remove(token) ?: return
+        undo.update { if (it?.token == token) null else it }
+        viewModelScope.launch {
+            try {
+                restoreHabit.undo(removal)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Timber.e(e, "Undoing habit removal failed")
+            }
         }
     }
 
@@ -164,21 +253,6 @@ class HabitsViewModel @Inject constructor(
         }
     }
 
-    private fun archive() {
-        val habitId = (sheet.value as? HabitSheet.Editor)?.editor?.habitId ?: return
-        viewModelScope.launch {
-            try {
-                archiveHabit(habitId)
-                sheet.value = HabitSheet.Overview
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                Timber.e(e, "Archiving habit failed")
-                edit { it.copy(error = R.string.msg_error) }
-            }
-        }
-    }
-
     private companion object {
         const val STOP_TIMEOUT_MS = 5_000L
         const val TARGET_MAX_DIGITS = 5
@@ -186,7 +260,7 @@ class HabitsViewModel @Inject constructor(
     }
 }
 
-private fun HabitEntity.toItem() = HabitItem(id, title, stat, difficulty, daysOfWeekMask.toDays(), target, unit, timeOfDay)
+internal fun HabitEntity.toItem() = HabitItem(id, title, stat, difficulty, daysOfWeekMask.toDays(), target, unit, timeOfDay, campaign = campaignId != null)
 
 private fun HabitItem.toEditor() = HabitEditorState(
     habitId = id,

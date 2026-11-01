@@ -54,6 +54,8 @@ data class TodayUiState(
     /** Today's Path quests that were not promoted to Main (GD §6.6.6). */
     val paths: List<QuestRowModel> = emptyList(),
     val habits: List<QuestRowModel> = emptyList(),
+    /** Habit quest instance → its habit, for the long-press Archive / Delete (campaign habits included; refused there). */
+    val habitIdByQuest: Map<String, String> = emptyMap(),
     val completed: Int = 0,
     val total: Int = 0,
     /** The day meets the clear rule (GD §7.1): title becomes "DIRECTIVE CLEARED". */
@@ -175,6 +177,7 @@ internal fun TodayModel.toUiState(): TodayUiState {
         sides = directive.filter { it.type == QuestType.SIDE }.map { it.toRowModel() },
         paths = pathQuests.map { it.toRowModel(pathBadges[it.id]) },
         habits = habits.map { it.toRowModel() },
+        habitIdByQuest = habits.mapNotNull { quest -> quest.habitId?.let { quest.id to it } }.toMap(),
         completed = counted.count { it.status == QuestStatus.COMPLETED },
         total = counted.size,
         cleared = hunter.todayCleared,

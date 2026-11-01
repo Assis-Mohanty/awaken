@@ -10,6 +10,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -66,6 +70,7 @@ fun TodayRoute(
     onOpenGates: () -> Unit = {},
     onOpenVault: () -> Unit = {},
     onOpenReview: () -> Unit = {},
+    snackbarHostState: SnackbarHostState? = null,
     viewModel: TodayViewModel = hiltViewModel(),
     habitsViewModel: HabitsViewModel = hiltViewModel(),
     dayPlanViewModel: DayPlanViewModel = hiltViewModel(),
@@ -89,6 +94,22 @@ fun TodayRoute(
     )
     HabitSheets(state = habits, onEvent = habitsViewModel::onEvent)
     DayPlanSheet(state = dayPlan, onEvent = dayPlanViewModel::onEvent)
+    HabitUndoSnackbar(habits.undo, snackbarHostState, habitsViewModel::onEvent)
+}
+
+/** "Habit deleted · Undo" after an archive or delete, through the app-wide snackbar host. */
+@Composable
+private fun HabitUndoSnackbar(undo: HabitUndo?, host: SnackbarHostState?, onEvent: (HabitsEvent) -> Unit) {
+    if (undo == null || host == null) return
+    val message = lexString(
+        if (undo.action == HabitRemoveAction.DELETE) R.string.habit_deleted_snack else R.string.habit_archived_snack,
+        undo.title,
+    )
+    val action = lexString(R.string.action_undo)
+    LaunchedEffect(undo.token) {
+        val result = host.showSnackbar(message = message, actionLabel = action, duration = SnackbarDuration.Long)
+        onEvent(if (result == SnackbarResult.ActionPerformed) HabitsEvent.Undo(undo.token) else HabitsEvent.UndoHandled(undo.token))
+    }
 }
 
 /**
@@ -174,7 +195,7 @@ fun TodayScreen(
             )
         }
 
-        Timeline(state, onEvent, onOpenQuest)
+        Timeline(state, onEvent, onOpenQuest, onHabitsEvent)
 
         if (state.reviewOpen) ReviewRow(onOpenReview)
         PlanCard(state, onHabitsEvent, onDayPlanEvent)
@@ -189,7 +210,12 @@ fun TodayScreen(
  * completable. An open penalty quest leads the current block.
  */
 @Composable
-private fun Timeline(state: TodayUiState, onEvent: (TodayEvent) -> Unit, onOpenQuest: (String) -> Unit) {
+private fun Timeline(
+    state: TodayUiState,
+    onEvent: (TodayEvent) -> Unit,
+    onOpenQuest: (String) -> Unit,
+    onHabitsEvent: (HabitsEvent) -> Unit,
+) {
     val comeback = state.penalty?.copy(timeOfDay = state.currentBlock, comeback = true)
     val quests = listOfNotNull(comeback, state.main) + state.paths + state.sides + state.habits
     val byBlock = quests.groupBy { it.timeOfDay }.toSortedMap(compareBy(TimeBlocks::order))
@@ -211,11 +237,14 @@ private fun Timeline(state: TodayUiState, onEvent: (TodayEvent) -> Unit, onOpenQ
                 AwakenCard(reveal = false, contentPadding = Spacing.listCard, spacing = Spacing.zero) {
                     Column {
                         rows.forEachIndexed { index, row ->
+                            val habitId = state.habitIdByQuest[row.id]
                             QuestRow(
                                 model = row,
                                 onComplete = { onEvent(TodayEvent.Complete(row.id)) },
                                 onOpen = { onOpenQuest(row.id) },
                                 showDivider = index > 0,
+                                onLongPress = habitId?.let { { onHabitsEvent(HabitsEvent.Options(it)) } },
+                                longPressLabel = habitId?.let { lexString(R.string.action_habit_options) },
                             )
                         }
                     }

@@ -38,6 +38,7 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
@@ -84,8 +85,10 @@ fun SettingsRoute(
     onOpenScreenTime: () -> Unit = {},
     onOpenDebug: () -> Unit = {},
     viewModel: SettingsViewModel = hiltViewModel(),
+    archivedViewModel: ArchivedHabitsViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val archived by archivedViewModel.archived.collectAsStateWithLifecycle()
     val exportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument(BACKUP_MIME)) { uri ->
         uri?.let { viewModel.onEvent(SettingsEvent.ExportTo(it)) }
     }
@@ -114,6 +117,8 @@ fun SettingsRoute(
         onOpenHealth = onOpenHealth,
         onOpenScreenTime = onOpenScreenTime,
         onOpenDebug = onOpenDebug,
+        archivedHabits = archived,
+        onRestoreHabit = archivedViewModel::restore,
         onOpenNotificationSettings = {
             context.startActivity(
                 Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName),
@@ -137,6 +142,8 @@ fun SettingsScreen(
     onOpenHealth: () -> Unit = {},
     onOpenScreenTime: () -> Unit = {},
     onOpenDebug: () -> Unit = {},
+    archivedHabits: List<ArchivedHabit> = emptyList(),
+    onRestoreHabit: (habitId: String) -> Unit = {},
 ) {
     GateBackground(rank = Rank.E, modifier = modifier) {
         LargeTitleScaffold(title = lexString(R.string.settings_title), onBack = onBack) {
@@ -144,6 +151,7 @@ fun SettingsScreen(
                 ProfileWindow(state, onEvent)
                 DayWindow(state, onEvent, onOpenNotificationSettings)
                 TrainingWindow(state, onEvent, onOpenHealth, onOpenScreenTime)
+                ArchivedHabitsWindow(archivedHabits, onRestoreHabit)
                 AiPathsWindow(state, onEvent)
                 ComfortWindow(state, onEvent)
                 DataWindow(state, onExport, onImport, onOpenPrivacy)
@@ -287,6 +295,33 @@ private fun DayWindow(state: SettingsUiState, onEvent: (SettingsEvent) -> Unit, 
                 onClick = onOpenNotificationSettings,
                 modifier = Modifier.fillMaxWidth(),
             )
+        }
+    }
+}
+
+/** Habits the hunter archived (long-press on Today): each comes back with Restore, max 8 active (GD §6.1). */
+@Composable
+private fun ArchivedHabitsWindow(habits: List<ArchivedHabit>, onRestore: (String) -> Unit) {
+    val colors = AwakenTheme.colors
+    val type = AwakenTheme.type
+    SystemWindow(title = lexString(R.string.settings_archived_habits), accent = accent(), reveal = false) {
+        if (habits.isEmpty()) {
+            Text(lexString(R.string.settings_archived_habits_empty), style = type.caption, color = colors.textSecondary)
+        }
+        habits.forEach { habit ->
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+            ) {
+                Text(habit.title, style = type.body, color = colors.textPrimary, modifier = Modifier.weight(1f))
+                val label = lexString(R.string.settings_restore_habit_label, habit.title)
+                QuietButton(
+                    text = lexString(R.string.action_restore_habit),
+                    onClick = { onRestore(habit.id) },
+                    modifier = Modifier.semantics { contentDescription = label },
+                )
+            }
         }
     }
 }
@@ -586,5 +621,19 @@ private fun SettingsScreenEditingPreview() {
             onExport = {},
             onImport = {},
         )
+    }
+}
+
+@PhonePreviews
+@Composable
+private fun ArchivedHabitsPreview() {
+    AwakenTheme(reduceMotion = true) {
+        Column(modifier = Modifier.padding(Spacing.gutter), verticalArrangement = Arrangement.spacedBy(Spacing.md)) {
+            ArchivedHabitsWindow(
+                habits = listOf(ArchivedHabit("1", "Read 10 pages", Stat.INT), ArchivedHabit("2", "Cold shower", Stat.WIL)),
+                onRestore = {},
+            )
+            ArchivedHabitsWindow(habits = emptyList(), onRestore = {})
+        }
     }
 }

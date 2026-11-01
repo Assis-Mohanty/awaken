@@ -7,6 +7,7 @@ import com.assismohanty.awaken.core.data.db.dao.HabitDao
 import com.assismohanty.awaken.core.data.db.dao.HunterDao
 import com.assismohanty.awaken.core.data.db.dao.QuestDao
 import com.assismohanty.awaken.core.data.db.entity.HabitEntity
+import com.assismohanty.awaken.core.data.db.entity.QuestInstanceEntity
 import com.assismohanty.awaken.core.data.repo.TransactionRunner
 import com.assismohanty.awaken.engine.QuestRules
 import com.assismohanty.awaken.engine.model.Difficulty
@@ -99,15 +100,89 @@ class SaveHabitUseCase @Inject constructor(
     }
 }
 
-/** Archiving stops future instances; today's instance, if any, stays so the day's record is unchanged. */
-class ArchiveHabitUseCase @Inject constructor(private val habitDao: HabitDao) {
-    suspend operator fun invoke(habitId: String) {
-        habitDao.get(habitId)?.let { habitDao.upsert(it.copy(active = false)) }
+/** What an archive or delete took away, so Undo can put back exactly that. */
+data class HabitRemoval(val habit: HabitEntity, val removedInstances: List<QuestInstanceEntity>, val deleted: Boolean)
+
+sealed interface RemoveHabitResult {
+    data class Removed(val removal: HabitRemoval) : RemoveHabitResult
+    data object NotFound : RemoveHabitResult
+
+    /** Campaign habits end with their campaign (GD §6.8). */
+    data object CampaignHabit : RemoveHabitResult
+}
+
+/**
+ * Archive or delete a custom habit, in one transaction. Both remove its instances from today on that were never started
+ * or finished (so it leaves Today now; a day is cleared by completions, so this can't help clear one, GD §7.1). Archive
+ * keeps the row inactive and restorable from Settings; delete removes the row. Past instances, completions and every
+ * ledger row stay, so XP, stats and history don't change (invariant 1).
+ */
+class RemoveHabitUseCase @Inject constructor(
+    private val hunterDao: HunterDao,
+    private val habitDao: HabitDao,
+    private val questDao: QuestDao,
+    private val transactions: TransactionRunner,
+    private val clock: Clock,
+) {
+    suspend fun archive(habitId: String): RemoveHabitResult = remove(habitId, delete = false)
+
+    suspend fun delete(habitId: String): RemoveHabitResult = remove(habitId, delete = true)
+
+    private suspend fun remove(habitId: String, delete: Boolean): RemoveHabitResult {
+        val profile = hunterDao.getProfile() ?: return RemoveHabitResult.NotFound
+        val today = clock.gameDate(profile.dayStartHour)
+        return transactions.run {
+            val habit = habitDao.get(habitId) ?: return@run RemoveHabitResult.NotFound
+            if (habit.campaignId != null) return@run RemoveHabitResult.CampaignHabit
+            val open = questDao.openHabitInstancesFrom(habitId, today)
+            questDao.deleteAll(open.map { it.id })
+            if (delete) habitDao.delete(habitId) else habitDao.upsert(habit.copy(active = false))
+            RemoveHabitResult.Removed(HabitRemoval(habit, open, delete))
+        }
+    }
+}
+
+sealed interface RestoreHabitResult {
+    data object Restored : RestoreHabitResult
+    data object LimitReached : RestoreHabitResult
+    data object NotFound : RestoreHabitResult
+}
+
+/** Undo of an archive or delete, and restoring an archived habit from Settings. */
+class RestoreHabitUseCase @Inject constructor(
+    private val hunterDao: HunterDao,
+    private val habitDao: HabitDao,
+    private val questDao: QuestDao,
+    private val generateDirective: GenerateDirectiveUseCase,
+    private val transactions: TransactionRunner,
+    private val clock: Clock,
+) {
+    /** Puts back the habit row and the instances [removal] took, as they were (seconds ago, so within the limit). */
+    suspend fun undo(removal: HabitRemoval) {
+        transactions.run {
+            habitDao.upsert(removal.habit)
+            questDao.insertAll(removal.removedInstances)
+        }
+    }
+
+    /** An archived habit becomes active again (max 8, GD §6.1) and joins today's directive if scheduled today. */
+    suspend operator fun invoke(habitId: String): RestoreHabitResult {
+        val result = transactions.run {
+            val habit = habitDao.get(habitId) ?: return@run RestoreHabitResult.NotFound
+            if (habit.active) return@run RestoreHabitResult.Restored
+            if (!QuestRules.canAddCustom(habitDao.countActive())) return@run RestoreHabitResult.LimitReached
+            habitDao.upsert(habit.copy(active = true))
+            RestoreHabitResult.Restored
+        }
+        if (result == RestoreHabitResult.Restored) hunterDao.getProfile()?.let { generateDirective(clock.gameDate(it.dayStartHour)) }
+        return result
     }
 }
 
 class ObserveHabitsUseCase @Inject constructor(private val habitDao: HabitDao) {
     operator fun invoke(): Flow<List<HabitEntity>> = habitDao.observeActive()
+
+    fun archived(): Flow<List<HabitEntity>> = habitDao.observeArchived()
 }
 
 class GetHabitUseCase @Inject constructor(private val habitDao: HabitDao) {

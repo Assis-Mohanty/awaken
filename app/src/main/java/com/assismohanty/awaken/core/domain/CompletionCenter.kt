@@ -60,6 +60,10 @@ sealed interface UserMessage {
     data object VaultPoolEmpty : UserMessage
     data object DayStartBlocked : UserMessage
     data object ExportDone : UserMessage
+    /** An archived habit is active again (Settings). */
+    data class HabitRestored(val title: String) : UserMessage
+    /** Restoring would pass the 8 active habits (GD §6.1). */
+    data object HabitLimit : UserMessage
     data object ExportFailed : UserMessage
     data object ImportUnreadable : UserMessage
     data class ImportRejected(val problem: ImportProblem) : UserMessage
