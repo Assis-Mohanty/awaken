@@ -3,10 +3,12 @@ package com.assismohanty.awaken.core.designsystem.components
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material3.Icon
@@ -91,6 +93,9 @@ fun ChoiceChip(
     }
     Row(
         modifier = modifier
+            // Sized to the label so the weighted Text below still gets its width in unbounded rows (LazyRow); bounded
+            // rows clamp this to the space available and the label ellipsizes.
+            .width(IntrinsicSize.Max)
             .defaultMinSize(minHeight = dimens.touchTarget - Spacing.xxs)
             .clip(AwakenTheme.shapes.pill)
             .background(if (selected) colors.accent else colors.surfaceOverlay)

@@ -57,8 +57,9 @@ fun ExercisePickerSheet(picker: ExercisePicker, onEvent: (GymEvent) -> Unit) {
     ModalBottomSheet(
         onDismissRequest = { onEvent(GymEvent.ClosePicker) },
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-        containerColor = AwakenTheme.colors.surfaceOverlay,
-        shape = AwakenTheme.shapes.window,
+        // The card colour, like every sheet (DESIGN_SYSTEM §3); surfaceOverlay is the unselected-chip fill and hid the chips.
+        containerColor = AwakenTheme.colors.surfaceElevated,
+        shape = AwakenTheme.shapes.sheet,
     ) {
         ExercisePickerContent(picker, onEvent, Modifier.navigationBarsPadding())
     }
@@ -156,8 +157,9 @@ fun ExerciseDetailSheet(exercise: Exercise, canAdd: Boolean, onEvent: (GymEvent)
     ModalBottomSheet(
         onDismissRequest = { onEvent(GymEvent.CloseExercise) },
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-        containerColor = AwakenTheme.colors.surfaceOverlay,
-        shape = AwakenTheme.shapes.window,
+        // The card colour, like every sheet (DESIGN_SYSTEM §3); surfaceOverlay is the unselected-chip fill and hid the chips.
+        containerColor = AwakenTheme.colors.surfaceElevated,
+        shape = AwakenTheme.shapes.sheet,
     ) {
         ExerciseDetailContent(exercise, canAdd, onEvent, Modifier.navigationBarsPadding())
     }
