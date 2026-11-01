@@ -4,7 +4,9 @@ import android.content.Context
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.work.WorkManager
+import com.assismohanty.awaken.core.audio.ChimePlayer
 import com.assismohanty.awaken.core.data.clock.Clock
+import com.assismohanty.awaken.core.data.repo.UiPrefsRepository
 import com.assismohanty.awaken.core.data.db.entity.GateRunEntity
 import com.assismohanty.awaken.core.data.db.entity.GateRunStatus
 import com.assismohanty.awaken.core.data.di.ApplicationScope
@@ -26,6 +28,7 @@ import javax.inject.Singleton
 import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import timber.log.Timber
 
@@ -42,6 +45,8 @@ class GateCoordinator @Inject constructor(
     private val completionCenter: CompletionCenter,
     private val notifications: GateNotifications,
     private val clock: Clock,
+    private val chimePlayer: ChimePlayer,
+    private val uiPrefs: UiPrefsRepository,
     @ApplicationScope private val appScope: CoroutineScope,
 ) : DefaultLifecycleObserver {
 
@@ -152,6 +157,7 @@ class GateCoordinator @Inject constructor(
                 GateEndWorker.cancel(workManager)
                 notifications.cancelAll()
                 completionCenter.completed(check.outcome)
+                appScope.launch { chimePlayer.play(uiPrefs.prefs.first().chime) }
             }
             is GateCheck.Collapsed -> {
                 GateEndWorker.cancel(workManager)

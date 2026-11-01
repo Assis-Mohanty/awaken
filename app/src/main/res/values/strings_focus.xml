@@ -35,4 +35,9 @@
     <string name="focus_report_subjects_cd">Focus time per subject over the last 7 days</string>
     <string name="focus_report_no_subject">No subject</string>
     <string name="focus_report_empty">No completed focus sessions in the last 7 days.</string>
+    <string name="settings_chime_title">Timer sound</string>
+    <string name="settings_chime_off">Off</string>
+    <string name="settings_chime_bell">Soft bell</string>
+    <string name="settings_chime_wood">Wood block</string>
+    <string name="settings_chime_digital">Digital</string>
 </resources>

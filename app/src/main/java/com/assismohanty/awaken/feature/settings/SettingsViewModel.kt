@@ -9,6 +9,8 @@ import com.assismohanty.awaken.core.data.export.BackupFiles
 import com.assismohanty.awaken.core.data.export.GameDataPorter
 import com.assismohanty.awaken.core.data.export.ImportResult
 import com.assismohanty.awaken.core.data.export.ImportSummary
+import com.assismohanty.awaken.core.audio.ChimeChoice
+import com.assismohanty.awaken.core.audio.ChimePlayer
 import com.assismohanty.awaken.core.data.repo.ThemeMode
 import com.assismohanty.awaken.core.data.repo.UiPrefs
 import com.assismohanty.awaken.core.data.repo.UiPrefsRepository
@@ -72,6 +74,7 @@ data class SettingsUiState(
     val hapticsEnabled: Boolean = true,
     val reduceMotion: Boolean = false,
     val themeMode: ThemeMode = ThemeMode.SYSTEM,
+    val chime: ChimeChoice = ChimeChoice.SOFT_BELL,
     /** Time-of-day block boundaries (GD §14.5). */
     val morningEnd: Int = TimeBlocks.DEFAULT_MORNING_END,
     val dayEnd: Int = TimeBlocks.DEFAULT_DAY_END,
@@ -111,6 +114,8 @@ sealed interface SettingsEvent {
     data class SetHaptics(val enabled: Boolean) : SettingsEvent
     data class SetReduceMotion(val enabled: Boolean) : SettingsEvent
     data class SetThemeMode(val mode: ThemeMode) : SettingsEvent
+    /** Picks the timer sound and plays it once as a preview. */
+    data class SetChime(val choice: ChimeChoice) : SettingsEvent
     data class SetMorningEnd(val hour: Int) : SettingsEvent
     data class SetDayEnd(val hour: Int) : SettingsEvent
     data class ExportTo(val uri: Uri) : SettingsEvent
@@ -164,6 +169,7 @@ class SettingsViewModel @Inject constructor(
     aiPrefs: AiPrefsRepository,
     private val grantAiConsent: GrantAiConsentUseCase,
     private val revokeAiConsent: RevokeAiConsentUseCase,
+    private val chimePlayer: ChimePlayer,
 ) : ViewModel() {
 
     private val drafts = MutableStateFlow(Drafts())
@@ -225,6 +231,10 @@ class SettingsViewModel @Inject constructor(
             is SettingsEvent.SetHaptics -> viewModelScope.launch { uiPrefs.setHaptics(event.enabled) }
             is SettingsEvent.SetReduceMotion -> viewModelScope.launch { uiPrefs.setReduceMotion(event.enabled) }
             is SettingsEvent.SetThemeMode -> viewModelScope.launch { uiPrefs.setThemeMode(event.mode) }
+            is SettingsEvent.SetChime -> viewModelScope.launch {
+                uiPrefs.setChime(event.choice)
+                chimePlayer.play(event.choice)
+            }
             is SettingsEvent.SetMorningEnd -> viewModelScope.launch { uiPrefs.setMorningEnd(event.hour) }
             is SettingsEvent.SetDayEnd -> viewModelScope.launch { uiPrefs.setDayEnd(event.hour) }
             is SettingsEvent.ExportTo -> export(event.uri)
@@ -414,6 +424,7 @@ private fun SettingsModel.toUiState(prefs: UiPrefs, drafts: Drafts, aiConsent: B
     hapticsEnabled = prefs.hapticsEnabled,
     reduceMotion = prefs.reduceMotion,
     themeMode = prefs.themeMode,
+    chime = prefs.chime,
     morningEnd = prefs.blockBounds.morningEnd,
     dayEnd = prefs.blockBounds.dayEnd,
     importPending = drafts.pendingImport != null,

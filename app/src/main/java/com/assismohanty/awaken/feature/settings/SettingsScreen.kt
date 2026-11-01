@@ -52,6 +52,7 @@ import androidx.compose.runtime.setValue
 import com.assismohanty.awaken.R
 import com.assismohanty.awaken.debug.DebugEntry
 import com.assismohanty.awaken.core.data.health.HealthStatus
+import com.assismohanty.awaken.core.audio.ChimeChoice
 import com.assismohanty.awaken.core.data.repo.ThemeMode
 import com.assismohanty.awaken.core.designsystem.components.ChoiceChip
 import com.assismohanty.awaken.core.designsystem.components.GateBackground
@@ -430,6 +431,16 @@ private fun ComfortWindow(state: SettingsUiState, onEvent: (SettingsEvent) -> Un
                 )
             }
         }
+        Text(lexString(R.string.settings_chime_title), style = AwakenTheme.type.label, color = AwakenTheme.colors.textPrimary)
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.xs), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+            ChimeChoice.entries.forEach { choice ->
+                ChoiceChip(
+                    text = lexString(choice.labelRes()),
+                    selected = choice == state.chime,
+                    onClick = { onEvent(SettingsEvent.SetChime(choice)) },
+                )
+            }
+        }
         SwitchRow(
             title = lexString(R.string.settings_haptics),
             note = null,
@@ -471,6 +482,13 @@ private fun DataWindow(state: SettingsUiState, onExport: () -> Unit, onImport: (
         if (licences) LicencesSheet(onDismiss = { licences = false })
         Text(lexString(R.string.settings_about, version), style = AwakenTheme.type.caption, color = colors.textMuted)
     }
+}
+
+private fun ChimeChoice.labelRes(): Int = when (this) {
+    ChimeChoice.OFF -> R.string.settings_chime_off
+    ChimeChoice.SOFT_BELL -> R.string.settings_chime_bell
+    ChimeChoice.WOOD_BLOCK -> R.string.settings_chime_wood
+    ChimeChoice.DIGITAL -> R.string.settings_chime_digital
 }
 
 private fun ThemeMode.labelRes(): Int = when (this) {
