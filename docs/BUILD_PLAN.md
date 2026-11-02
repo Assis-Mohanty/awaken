@@ -165,6 +165,8 @@ Q1 keep H1 dropped (Batch 6 builds nothing for H1) · Q2 separate allowance, max
 
 ## Batch 6 — Consistency + presentation: G3, H1
 
+✅ built in BATCH6_COMMIT (verification only, no code). **G3:** vectors #50–#58 (`GrowthVectorsTest`, 15 tests) and `ConsistencyUseCasesTest` pass after Batches 1–5; the new SKIPPED status and the BEDTIME/quit additions change no day outcome (a skipped habit is neither done nor owed; BEDTIME is a card like Discipline); the Today missed-yesterday golden is unchanged. **H1:** Q1 was resolved as "keep dropped" (ENGINE_DECISIONS #109), so nothing was built.
+
 - [ ] **G3:** already built (PRD F28, GD §14.2): verify the Today/Status meter and "Don't miss twice" line still render after Batches 1–5 (new SKIPPED/EXPIRED statuses don't change day outcomes). No new code expected.
 - [ ] **H1:** only if Q1 = "bring it back": `presentationMode` pref (`UiPrefs.kt` already has the field), Settings toggle, System lexicon strings, gate glow in System mode, GD §14.9 minus whatever you exclude; previews of key screens in both modes. If Q1 = "keep dropped": nothing to build; mark this batch done.
 
