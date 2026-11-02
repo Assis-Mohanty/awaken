@@ -207,6 +207,53 @@ Ledger sourceIds: QUEST/GATE → completionId; UNDO → the undone row's sourceI
 
 Migrations: `exportSchema = true`, schemas committed under `app/schemas/`. Every schema change bumps the version and adds a `Migration` (`core/data/db/Migrations.kt`, listed in `ALL_MIGRATIONS`) plus a case in `MigrationTest`, which builds the old database from its exported JSON (the schemas are debug-only assets) and opens it with the current Room, so Room validates the result. (`MigrationTestHelper` is not used: its `createDatabase` rejects Robolectric database paths on Windows.) Current version: 18 (v1→v2 rebuilt the then-empty `gate_run` for Focus Gates; v2→v3 added `hunter_profile.equipped_frame_id` and `equipped_sigil_id` for the Vault; v3→v4 added `injury_tags` for Settings; v4→v5 added the five AI Paths tables and `quest_instance.path_slot_id`; v5→v6 added `quest_instance.set_reps` for the set counter; v6→v7 added `app_rule` and `hunter_profile.screen_time_from` for Screen Discipline; v7→v8 added `campaign` and `habit.campaign_id`/`template_id` for the 45-day Campaign; v8→v9 added the eight Gym and Diet tables; v9→v10 added `time_of_day` to `quest_instance` and `habit`; v10→v11 added `hunter_profile.identities`; v11→v12 added the rebuildable `health_day_cache`; v12→v13 added `weekly_review`; v13→v14 added `recap` and `health_day_cache.distance_meters`; v14→v15 added `gate_run.mode`/`subject_id` and `focus_subject`, GD §8.1; v15→v16 added `routine_exercise.rest_sec`, `workout_set.rest_sec` and `workout.rest_ends_at`/`rest_total_sec` for the gym rest timer, GD §13.2; v16→v17 added `gate_run.paused_before_ms` for unlimited stopwatch pauses, GD §8.1 P9; v17→v18 added `gate_run.lock_at_stop` for Focus Lock, GD §8.2). **No destructive fallback, ever: hunters never lose data.**
 
+### 2.1 v1.2 additions (PROPOSED with GD §16; one schema version per batch of `docs/BUILD_PLAN.md`)
+
+```sql
+-- v19 (Batch 1, habits A1/A2)
+habit + type TEXT NOT NULL DEFAULT 'CHECK',            -- CHECK|QUANTITY|TIMED|NEGATIVE
+      + frequency TEXT NOT NULL DEFAULT 'DAYS_OF_WEEK', -- DAYS_OF_WEEK|TIMES_PER_WEEK
+      + times_per_week INT NULL,                       -- 1..6 when TIMES_PER_WEEK
+      + reminder_time INT NULL                         -- minutes after local midnight; ≤ 2 habits non-null (GD §16.2)
+quest_instance + progress INT NOT NULL DEFAULT 0        -- QUANTITY count (GD §16.1)
+quest_instance.status gains SKIPPED (TEXT column, no schema change); habit_skip is derived: SKIPPED instances per ISO week
+gate_run + habit_quest_id NULL                          -- a TIMED habit's run: paid once as that quest (GD §16.1)
+
+-- v20 (Batch 2, focus B1/B2)
+pomodoro_session(id PK, focus_min, short_break_min, long_break_min, rounds, stat, subject_id NULL,
+                 started_at, phase TEXT,                -- FOCUS|SHORT_BREAK|LONG_BREAK|DONE
+                 current_round INT, phase_ends_at NULL,  -- break end (focus rounds live in gate_run)
+                 status TEXT, ended_at NULL)             -- RUNNING|FINISHED|ENDED|COLLAPSED
+gate_run + pomodoro_id NULL, + pomodoro_round INT NULL
+focus_goal(effective_from TEXT PK, minutes INT)          -- versioned; the row ≤ d wins (GD §16.4)
+
+-- v21 (Batch 3, gym C1/C2/C3/C7)
+exercise_pref(exercise_id PK, rep_min INT NULL, rep_max INT NULL, increment_kg REAL NULL)   -- per-exercise overrides
+gym_settings(id PK = 1, bar_kg REAL, plates_kg TEXT, bar_lb REAL, plates_lb TEXT, unit TEXT, rep_min INT, rep_max INT)
+-- PR events are derived from workout_set history (never stored); pr achievements count them by replay
+
+-- v22 (Batch 4, screen & health D1/D2/D3)
+hunter_profile + step_goal INT NOT NULL DEFAULT 8000
+bedtime_rule(effective_from TEXT PK, enabled BOOL, bed_min INT, wake_min INT)  -- versioned, applies from the next night
+-- BEDTIME quests are quest_instance rows (type BEDTIME, verification DEVICE_USAGE); D1 stores nothing
+
+-- v23 (Batch 5, quit counters D4)
+quit_counter(id PK, kind TEXT, name, start_at, created_at, cost_per_day_minor INT NULL, currency TEXT NULL,
+             minutes_per_day INT NULL, auto_limit_min INT NULL, archived_at NULL)
+relapse(id PK, counter_id, at, game_date NULL, trigger TEXT NULL, note TEXT NULL, auto BOOL,
+        UNIQUE(counter_id, game_date))                  -- auto (doomscrolling) relapses are one per game-day
+
+-- v24 (Batch 8, dungeons F3, programs F6)
+dungeon(id PK, length_days INT, stat, fee INT, entered_game_date, first_stage_date, status, ended_at NULL)  -- ACTIVE|CLEARED|FAILED
+-- stage quests: quest_instance(type DUNGEON) + dungeon_id NULL + dungeon_stage INT NULL
+program(id PK, program_key, run_start_date, status, started_at, ended_at NULL)        -- ACTIVE|COMPLETED|FINISHED|ABANDONED
+program_mark(program_id, game_date, choice TEXT,                                       -- RESTART|CONTINUE
+             PRIMARY KEY(program_id, game_date))
+habit + program_id NULL                                                                 -- program rule habits (read-only)
+```
+
+New ledger `sourceType` **DUNGEON** (`<dungeonId>:entry` fee, `<dungeonId>:clear` reward + fragment), QuestType **BEDTIME** and **DUNGEON**, QuestStatus **SKIPPED**. Every new table is added to `ExportDocument.TABLES` (none is a cache) and to `ExportUpgrade` for older files. Each version adds a `Migration` in `Migrations.kt` and a `MigrationTest` case from the previous exported schema.
+
 ## 3. Core flows
 
 ### 3.1 Complete quest (the economy pipeline — the only one that mints XP)
@@ -376,6 +423,20 @@ Request pipeline, in order (cheap checks first, the model last):
 - **Health.** Health Connect stays foreground-only: `RefreshHealthCacheUseCase` fills missing finalized days when Status opens; insights and recaps read only the cache.
 - **Flow.** Today derives consistency, the miss line and "review open" from `day_record` and `weekly_review`. `RunRolloverUseCase` also runs `GenerateRecapsUseCase` and records `Notice.RecapReady` for the first new recap, which `RewardHost` opens once. The rollover unlocks achievements after a cleared day so `never_twice` can unlock there.
 - **Navigation.** `ReviewRoute` (from the Today row, the Progress weekly card and the Sunday notification action `ACTION_OPEN_REVIEW`) and `RecapRoute(periodKey)` (auto-open, and Progress → Recaps).
+
+### 3.15 v1.2 feature batch (PROPOSED with GD §16)
+- **Engine (all pure, all tested from GD §16.17):** `HabitRules` (types, flexible weeks, skips, timed difficulty), `PomodoroRules` (phase machine), `FocusGoalRules` (minutes, met, focus streak), `CrystalRules` (stage), `body/ProgressionRules`, `body/RecordRules` (PR events), `body/PlateMath`, `body/ExerciseHistory` (series, weekly best), `PickupRules` (events → pickups, first, last, longest stretch), `BedtimeRules` (window, allowed apps, grace verdict), `QuitRules` (runs, best run, in-app run, doomscrolling days), `DungeonRules` (fee, stages, verdict, reward), `ProgramRules` (catalog, day k, kept/rest/broken, end status). Achievements extend `AchievementEvaluator`.
+- **Habits.** `SaveHabitUseCase` validates through `HabitRules`; `GenerateDirectiveUseCase` asks `HabitRules.instancesFor(day)` (flexible weeks); `QuantityProgressUseCase` (+1/−1, completes at target through `CompleteQuestUseCase`); `SkipHabitUseCase` / `UndoSkipUseCase`; NEGATIVE confirm/slip use cases; TIMED start goes through `GateUseCases` with `habit_quest_id`, and `GateRunController` pays the quest exactly like `PathGateUseCase`.
+- **Habit reminders.** `HabitReminderScheduler` (WorkManager unique one-shot per habit, re-armed by `ReminderCoordinator` and at rollover) posts on the new `habit_reminder` channel only when the instance is still open. Separate from the 2-a-day cap (§3.5) pending Q2.
+- **Pomodoro.** `PomodoroController` (in `core/domain`) starts each round as a CUSTOM gate with `pomodoro_id`; `BreakEndWorker` (like `GateEndWorker`) posts the break-over notification on the `gate` channel and plays nothing in the background (the chime plays in the app or via the notification sound).
+- **Quick Settings tile (A4).** `core/widget/FocusTileService` (beside the widgets: both are surfaces outside the app; `TileService`, `BIND_QUICK_SETTINGS_TILE`), reads `LastFocusStore` (DataStore: last mode, minutes/rank, stat, subject; written whenever a session starts) and the running `gate_run`; tap → `startActivityAndCollapse(PendingIntent)` into `MainActivity` with `ACTION_START_FOCUS` (or `ACTION_OPEN_GATE` while running). No foreground service; the gate still runs on timestamps (§3.3).
+- **Start focus widget (A5).** `core/widget/StartFocusWidget` (Glance 2×1) + receiver, same `ACTION_START_FOCUS` intent; refreshed by `WidgetUpdater` when a gate starts/ends and when `LastFocusStore` changes.
+- **Gym.** `GymTracker` gains `hint(exerciseId)`, `recordsBefore(workoutId)`, `history(exerciseId, range)`; plate math is a pure call from the sheet's ViewModel; settings in `gym_settings`. PR achievements: `AchievementUnlocker` after `finish(workoutId)`, counted by replaying finished sessions (no stored counter).
+- **Screen & health.** `UsageGateway` gains `events(start, end): EventsRead` (keyguard, screen and foreground events; `NoAccess`/`Unavailable`/`Tracked` like #111) for D1 and D3. `BedtimePlanner` adds the BEDTIME quest in `GenerateDirective` when the rule is on and usage access is present; `SettleBedtimeUseCase` runs from app foreground and `ScreenTimeWorker` after wake time and completes via `completeVerified(id, USAGE)` or expires. Step goal on `hunter_profile`, read by the Health tile.
+- **Quit counters.** `QuitCounterRepository`; doomscrolling auto-relapses are written in `RunRolloverUseCase` per finalized day from the same usage read as Screen Discipline (`INSERT … IGNORE` on `(counter_id, game_date)`); quit achievements in the same rollover transaction.
+- **Dungeons.** `EnterDungeonUseCase` (one transaction: dungeon row + fee ledger row + balance cache), stage quests from `GenerateDirective`, verdict in `RunRolloverUseCase` (FAILED, or CLEARED with reward rows, `IGNORE` on the UNIQUE key).
+- **Programs.** `StartProgramUseCase` (program row + rule habits, one transaction, regenerates today), `ProgramRollover` in `RunRolloverUseCase` (day verdict, end status, archive habits, achievement), `ChooseProgramBreakUseCase` (writes `program_mark`), default CONTINUE at the next rollover.
+- **Export.** All new tables in `ExportDocument.TABLES`; `LastFocusStore` and the Pomodoro defaults are UI prefs (DataStore, not exported, ENGINE_DECISIONS #48); gym settings, goals and rules live in the tables above and are exported.
 
 ## 4. State & DI
 - Hilt modules: `DatabaseModule`, `DispatchersModule` (`@IoDispatcher`, `@DefaultDispatcher`), `ClockModule` (`Clock` interface; `SystemClock` in prod, `FakeClock` in tests), `EngineModule` (provides engine objects + loaded template library), `AiModule` (Ktor `HttpClient`, `PathOracleClient` bound to the real or fake implementation, `IntegrityTokenProvider`; base URL from `BuildConfig` per build type).

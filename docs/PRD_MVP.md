@@ -75,6 +75,30 @@ Habit/RPG apps are a crowded but low-quality niche on Play: Habitica (aging, pun
 | F33 | **Identity framing**: "Who are you becoming?" (1–3 of 12) in onboarding, pre-selects focus stats, shown on Status, used in the review; no rewards | GD §14.7; DS §8.2 |
 | F34 | **Superseded (2026-10-27).** The v2 redesign dropped System mode, so the app always uses Clean words; no ModeSwitch, invite or clean voice-line file was built. Original spec — **Clean / System presentation**: Clean by default for new installs, one-time invite after the first level-up; a Lexicon swaps game terms and voice; numbers identical | GD §14.9; DS §8.3 |
 
+**v1.2 feature batch (PROPOSED 2026-11-02, awaiting approval)** (source: `docs/NEW_IDEAS_TO_IMPLEMENT.md`; build order: `docs/BUILD_PLAN.md`). On-device only, no AI, no network, no new money flows, no new Accessibility Service. Idea IDs in brackets. G3 is F28 (built); H1 is F34 (superseded; open question).
+
+| # | Feature | Spec |
+|---|---|---|
+| F35 | **Habit types** [A1]: Check, Count (+1 to a target), Timed (a focus session of the target length, TIMER-verified), Avoid (holding all day, confirmed in the evening), and "times per week" frequency | GD §16.1; DS §9.3 |
+| F36 | **Habit reminders + skip today** [A2]: one optional reminder time per habit (max 2 habits), one skip per habit per week that is not a miss | GD §16.2; DS §9.3 |
+| F37 | **Quick Settings tile** [A4]: "Start focus" starts the last-used session; shows time left while running | DS §9.3; ARCH §3.15 |
+| F38 | **Start focus widget** [A5, only this widget]: 2×1, one tap starts the last-used session | DS §9.3; ARCH §3.15 |
+| F39 | **Pomodoro** [B1]: focus rounds as ordinary custom sessions, short/long breaks without breach, next round on tap | GD §16.3; DS §9.3 |
+| F40 | **Daily focus goal + focus streak** [B2]: ring on the Gates screen, separate focus streak, achievements only | GD §16.4; DS §9.1 |
+| F41 | **Gate crystal + gallery** [B3]: a vector crystal grows during a session; finished runs fill a gallery (cracked when collapsed); no rewards | GD §16.5; DS §9.1 |
+| F42 | **Progression hints** [C1]: double progression on set 1, per-exercise rep range and increment | GD §16.6; DS §9.3 |
+| F43 | **Personal records** [C2]: heaviest, best e1RM, most reps at a weight, best session volume; in-session "New record"; achievements | GD §16.7; DS §9.3 |
+| F44 | **Plate calculator** [C3]: plates per side, owned plates, kg/lb in the calculator | GD §16.8; DS §9.3 |
+| F45 | **Exercise history + charts** [C7]: sessions and trend lines for top weight, e1RM, volume | GD §16.9; DS §9.3 |
+| F46 | **Pickups, first and last use** [D1]: on Screen time, from usage events, display only | GD §16.10; DS §9.3 |
+| F47 | **Daily step goal ring** [D2]: on the Health tile, display only | GD §16.11; DS §9.3 |
+| F48 | **Phone-down nights** [D3]: a verified BEDTIME quest from usage data, fails closed; optional wind-down breathing | GD §16.12; DS §9.3 |
+| F49 | **Quit counters** [D4]: days clean, best run kept forever, money/time, restart log, milestones, auto doomscrolling (fails closed); no XP, achievements only | GD §16.13; DS §9.2–9.3 |
+| F50 | **Dungeons** [F3]: 3/5/7-day Hard stage challenges with a gold entry fee and a clear reward | GD §16.14; DS §9.3 |
+| F51 | **Programs** [F6]: Steady 30, Groundwork 66, Ironclad 75; restart or continue after a broken day | GD §16.15; DS §9.3 |
+
+Note: §5 below lists "multi-day dungeons" as out of scope for v1.0; F50 brings them in for v1.2 once approved.
+
 ## 5. Explicitly OUT of scope for v1.0 (put in `BACKLOG.md`)
 Accounts/sync · global/friends leaderboards · guilds · PvP duels & wagers · premium currency / IAP / ads · AI mentor chat (free-form conversation) · AI deciding any reward · on-device LLM · photo/video proof · multi-day dungeons · hardcore/permadeath · prestige · territory wars · iOS · web · Wear OS · localisation beyond English (strings are externalised though; Path goals may be typed in any language).
 

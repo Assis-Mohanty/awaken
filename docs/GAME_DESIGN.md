@@ -870,3 +870,269 @@ Lumi is the Reel Counter's mascot. It only **shows** today's reel count; it gran
 | L4 | 30 reels; limit 100 → 50 → 30 → none | stage 2 → 4 → 6 → 3 |
 | L5 | 180 reels with limit 50, then a new game-day (0 reels) | stage 6 → stage 1, progress 0 |
 | L6 | Per-app limits Instagram 30, YouTube 20 | Lumi's limit 50 |
+
+## 16. v1.2 feature batch (PROPOSED, awaiting approval)
+
+> **Status: PROPOSED (written 2026-11-02, Batch 0 of `docs/BUILD_PLAN.md`).** Every number tagged **`N<k>`** below is a proposal; the full list is in §16.18. No code may use any of them until the user approves this section. Source: `docs/NEW_IDEAS_TO_IMPLEMENT.md` (feature IDs A1, A2, A4, A5, B1, B2, B3, C1, C2, C3, C7, D1, D2, D3, D4, F3, F6).
+>
+> Ground rules for the whole section: on-device only, no AI, no network, no new money flows, no Accessibility Service (Focus Lock §8.2 is unchanged and stays the only one). §4.1 (BASE, D, S, V, crits), §4.3 caps, §7 streak, §9 prices and §9.3 ledger rules are **unchanged**. Nothing pays XP for opening the app, reflecting or self-reported abstinence; the only new gold comes from one-time achievements (§16.16) and the dungeon clear reward (§16.14). Anything rewarded for *not* doing something fails closed (§16.12, §16.13).
+>
+> **Already built, skipped here:** G3 consistency score = §14.2 (PRD F28, built). H1 Clean/System mode = §14.9 (PRD F34) was **superseded** by the user on 2026-10-27 (ENGINE_DECISIONS #109); it is not re-specified here until the user decides (open question Q1, §16.18).
+
+### 16.1 Habit types (A1)
+
+A habit has a **type** and a **frequency**. Existing habits migrate to `CHECK` + `DAYS_OF_WEEK` with their current mask, so nothing changes for them. Max **8** active habits is unchanged (§4.3, `N1` confirms it stays 8). Campaign and program habits (§6.8, §16.15) are always `CHECK` + `DAYS_OF_WEEK`.
+
+| Type | What the hunter does | Completes when | Verification · difficulty |
+|---|---|---|---|
+| `CHECK` | taps the row (today's behaviour) | the tap | SELF · Easy/Normal (§4.3) |
+| `QUANTITY` | taps +1 / −1 through the day ("8 glasses") | progress reaches the target, automatically, through `CompleteQuest` | SELF · Easy/Normal |
+| `TIMED` | taps Start: a CUSTOM-mode focus session of the target length runs | the session clears | TIMER · **derived from the length**, not chosen |
+| `NEGATIVE` | nothing while holding; taps **I slipped** on a slip; taps **Kept it today** in the evening | the "Kept it today" tap | SELF · Easy/Normal |
+
+**QUANTITY.** Target **2–100** (`N2`; 1 would be a CHECK habit). Progress is stored on the day's quest instance (`quest_instance.progress`), clamped to 0…target. Partial progress pays nothing. Reaching the target completes the quest at once (SELF, V 1.00, SELF cap §4.3); −1 on a completed quantity habit is an ordinary Undo (§6.5: 10-minute window, same game-day) and puts progress back to target − 1. Unfinished at rollover → MISSED, like any habit.
+
+**TIMED.** Target **15–180 minutes in 5-minute steps** (`N3`: §8.1 P1's range with the minimum raised to 15, because a run under 15 minutes pays nothing under P2). Difficulty is the §8.1 P2 tier of the target: 15–24 → Easy, 25–49 → Normal, 50–89 → Hard, ≥ 90 → Extreme (TIMER habits may exceed Normal, §4.3). Start runs a CUSTOM gate of exactly the target length with the habit's stat, linked to the habit's quest instance, and the §8 breach rule, §8.1 pause rule and §8.2 Focus Lock apply. **Paid once, as the habit quest** (`sourceType = QUEST`, V = TIMER), exactly like a GATE-mode Path quest (§8); the run is never also paid as a standalone gate and **does not use one of the four §8.1 P5 paid custom runs**. The TIMER daily cap (900 XP, §4.3) still applies. A collapsed run leaves the habit open; it may be started again the same game-day. A TIMED habit has no manual Complete.
+
+**NEGATIVE.** Frequency must be `DAYS_OF_WEEK`. The row reads "Holding" all day. **I slipped** → the instance becomes MISSED at once (undoable until the game-day ends, which puts it back to ACTIVE). **Kept it today** is enabled only from the start of the Evening block (§14.5 "Day ends", default 17:00) until the game-day ends, and completes the quest (SELF, SELF cap). **Fail closed:** an instance nobody confirmed by the end of the game-day is MISSED and pays nothing (no XP for an unseen day; open question Q4 offers the alternative).
+
+**Frequency `TIMES_PER_WEEK n`**, `n` = **1–6** (`N4`; 7 is "every day" and uses `DAYS_OF_WEEK`). Works with CHECK, QUANTITY and TIMED. Week = ISO week of game-days (Mon–Sun). While completions this week are below `n`, the habit gets one instance **every** game-day; once `n` is reached it gets none for the rest of the week. At most one completion per game-day. An unfinished flexible instance becomes **EXPIRED (not MISSED)** at rollover: a flexible habit never records a miss. Each completion counts as one directive item for clearing the day (§7.1).
+
+### 16.2 Habit reminders and "skip today" (A2)
+
+- **Reminder:** optional `reminder_time` per habit (whole minutes, local time). At most **2 habits may have a reminder** (`N5`); the editor refuses a third with "Two habits can have a reminder." A reminder fires only on a game-day the habit has an instance that is still ACTIVE or STARTED (not completed, skipped or missed), on its own `habit_reminder` channel. Delivery is inexact (WorkManager one-shot, like the directive reminder, ARCH §3.5) and may be a few minutes late. **Budget (open question Q2):** proposed as a separate allowance of at most 2 habit reminders per day, outside the existing 2-a-day directive/last-call cap, because the hunter chose each one.
+- **Skip today:** **1 skip per habit per ISO week** (`N6`). A skipped instance gets the new status `SKIPPED`: it is not a miss, not an item for §7.1, never paid and hidden from the miss counts in §14 insights. Undo skip is allowed until the game-day ends and gives the skip back. A completed instance cannot be skipped. Flexible habits have no skip (every day is already optional). Negative habits may be skipped.
+
+### 16.3 Pomodoro cycles (B1)
+
+| Setting | Default | Range | |
+|---|---|---|---|
+| Focus round | 25 min | 10–60, 5-min steps | `N7` |
+| Short break | 5 min | 1–15, 1-min steps | `N8` |
+| Long break | 15 min | 5–30, 5-min steps | `N9` |
+| Rounds per cycle | 4 | 2–6 | `N10` |
+
+- A **Pomodoro session** = R focus rounds with a short break after each round except the last, then the long break, then the session ends (finish screen: "Another cycle?" starts a new session).
+- **Each focus round is an ordinary CUSTOM gate run** of the focus length with the session's stat and subject: §8.1 P2 tier by minutes (25 → D, Normal), P4 fragment rule, **P5 cap counts every round** (four paid custom/stopwatch runs per game-day), §8 breach and pause rules, §8.2 Focus Lock. No new reward number.
+- **Breaks** are not gates: no breach budget, the app may be left, Focus Lock does not cover. A break can be skipped. At the end of a break the soft chime plays (if sound is on) and a notification on the existing `gate` channel says the break is over.
+- **Next round starts on a tap** (in the app, or the notification action that opens it), never by itself, because a round that started while the hunter was away would spend their breach budget (open question Q3).
+- A collapsed round ends the session (`COLLAPSED`); rounds already cleared keep their rewards. Ending the session early from a break stores `ENDED`.
+
+### 16.4 Daily focus goal ring and focus streak (B2)
+
+```
+focusMinutes(d) = Σ counted minutes of gate runs that started on game-day d and ended CLEARED or LOGGED
+                  (preset/custom/Pomodoro/TIMED-habit/Path GATE: planned minutes; stopwatch: counted time floored to whole minutes)
+goal(d)         = the focus goal in effect on d (versioned; an edit applies from today, earlier days keep theirs)
+met(d)          = focusMinutes(d) ≥ goal(d)
+```
+
+- Goal default **120 min** (`N11`), range **15–600 in 15-minute steps** (`N12`). Collapsed and abandoned runs never count. LOGGED runs (§8.1 short or over-cap runs) count, because this is time focused, not a reward.
+- **Focus streak** = consecutive game-days with `met`, counting back from today if today is met, else from yesterday. A finalized REST or RECOVERY day (§7.2) is skipped over: it neither extends nor breaks the focus streak. Any other day that is not met ends it. Derived, never stored (invariant 7).
+- **No XP.** Achievements `focus_streak7 / 30 / 100` (§16.16).
+
+### 16.5 Gate crystal and gallery (B3)
+
+Presentation only, no economy.
+- **Growth:** the crystal has **6 stages** (0–5) at **0 / 20 / 40 / 60 / 80 / 100 %** of planned time (`N13`). A stopwatch run grows toward **90 min** (§8.1 P2's top tier) and stays at stage 5 beyond it. Paused time never grows it.
+- **Gallery:** one crystal per finished run, newest first: CLEARED → whole crystal sized by the run's tier (E/D/C/B, four sizes; P2 tier for custom/stopwatch), COLLAPSED → the stage reached, drawn cracked, LOGGED → a small "shard". Colour = the subject's colour (`chartSeries1…6` picked by `fnv1a64(subjectId) mod 6`), or the stat colour when there is no subject. Filters: subject, month. Nothing is stored beyond `gate_run`.
+
+### 16.6 Progression hints, double progression (C1)
+
+`ProgressionRules.suggest(lastSession, range, increment)` in `:engine` `body/`, over the exercise's **last finished session**. A hint on set 1, never forced, no reward.
+
+```
+working sets = done sets at the session's heaviest weight w (weight > 0)
+if every working set has reps ≥ range.max      → suggest weight w + increment, reps = range.min
+else                                            → suggest weight w, reps per set = min(previous reps + 1, range.max)
+unweighted exercise (all done sets weight 0):
+   every set ≥ range.max → hint "Add weight or a harder variation" (no number) ; else reps = min(previous + 1, range.max)
+no finished session of this exercise            → no hint
+```
+
+- Default rep range **8–12** (`N14`); per-exercise override 1–30 reps, min ≤ max.
+- Increment **+2.5 kg** upper body, **+5 kg** lower body (`N15`); per-exercise override 0.5–20 kg in 0.5 steps. Lower body = any primary muscle in {QUADRICEPS, HAMSTRINGS, GLUTES, CALVES, ADDUCTORS, ABDUCTORS} (`Muscle.isLowerBody`).
+
+### 16.7 Personal records (C2)
+
+Per exercise, compared with every **earlier** finished session of it (§13.2 data):
+
+| Record | Rule |
+|---|---|
+| Heaviest weight | max weight of a done set (reps ≥ 1) |
+| Best e1RM | §13.2 (weight for a single; Epley for 2–12 reps; nothing above 12 or unweighted) |
+| Most reps at a weight | for each exact weight, max reps of a done set |
+| Best session volume | max §13.2 volume of the exercise in one session |
+
+- A set is a PR when it beats the record held **before this session** (ties are not PRs). An exercise's first session sets records but flags no PR. Ticking a set done that is a PR shows a small celebration (haptic + "New record" chip, reduce-motion respected); the finished-workout summary lists the session's PRs (one line per record type per exercise).
+- **Rewards:** no XP. Achievements `pr1 / pr25 / pr100` (§16.16) counted over PR events (one per record type per exercise per session; weights are self-logged, so gold is limited to these one-time unlocks; open question Q6).
+
+### 16.8 Plate calculator (C3)
+
+- Per side = `(target − bar) / 2`, greedy over owned plate sizes from heaviest to lightest, each size usable as many times as needed (`N16`: unlimited count of each owned size). If the exact load can't be built, show the heaviest buildable load below the target and the shortfall. Target below the bar → "Below the bar's 20 kg".
+- Defaults (`N17`): **kg** bar 20, plates 25, 20, 15, 10, 5, 2.5, 1.25. **lb** bar 45, plates 45, 35, 25, 10, 5, 2.5. The kg/lb switch belongs to the calculator only; workouts stay in kg (open question Q7). Bar and owned plates are editable in Gym settings.
+
+### 16.9 Exercise history and charts (C7)
+
+- Per exercise: every finished session (date, sets "80 kg × 5, 5, 4"), newest first, and three series: **top weight** (heaviest done set), **best e1RM** (§13.2) and **volume** (§13.2), one point per session.
+- Ranges **Month / 3 months / Year / All** (`N18`; the ideas file said Week/Month/Year, but a week holds 1–3 sessions, too few for a line). Year and All plot the best value per ISO week. Empty state below 2 sessions. ChartKit `TrendLine` with a content description of first, last and best values.
+
+### 16.10 Pickups, first and last use (D1)
+
+From usage events (`UsageStatsManager.queryEvents`, existing usage access), shown on the Screen time screen. No reward; display only.
+- **Pickups today** = `KEYGUARD_HIDDEN` events in the game-day so far. If the window has no keyguard event of any kind but has `SCREEN_INTERACTIVE` events (a phone without a lock screen), count those and label the number "Screen-ons".
+- **First pickup** = the first such event in today's game-day.
+- **Last use (yesterday)** = the last foreground app event of the previous game-day (today is not over).
+- **Longest stretch without the phone** = the longest gap today between a screen-off (`SCREEN_NON_INTERACTIVE`) and the next pickup, counting only from the first pickup to now (the night is not counted).
+- `NoAccess` / `Unavailable` (ENGINE_DECISIONS #111) → the section shows the usage-access prompt or "No data yet", never zeros.
+
+### 16.11 Daily step goal ring (D2)
+
+- Goal default **8,000** (`N19`), range **1,000–30,000 in 500 steps** (`N20`). Stored on `hunter_profile` (exported). Steps = the trusted steps already shown (§6.2 trust; phone step counter fallback, ENGINE_DECISIONS #110). Ring = `min(steps / goal, 1)`; at or over the goal the label reads "Goal reached". **No reward**; HEALTH_STEPS quests are unchanged.
+
+### 16.12 Verified phone-down bedtime (D3)
+
+Opt-in "Phone-down nights". Needs usage access.
+- **Window:** bedtime **23:00** → wake **06:30** by default (`N21`); bedtime 20:00–02:00 and wake 04:00–11:00 in 15-minute steps; the window is 5–12 hours long; wake must be later than `dayStartHour`, so the window ends inside one game-day (the **wake day**).
+- **The BEDTIME quest** belongs to the wake day: stat **VIT**, **Normal**, verification `DEVICE_USAGE` (source USAGE, V 1.30, uncapped, like DISCIPLINE §6.7): **78 XP** at streak 0. It can crit, can't be rerolled, isn't "generated" (§6.4) and counts as one directive item. Shown as a card (evening: "Phone down tonight 23:00–06:30"; morning: the result), never as a quest row.
+- **Kept** if the total foreground time of non-allowed apps inside the window is **≤ 5 minutes** (`N22`, grace for an alarm, a call or a glance). **Allowed apps:** AWAKEN, the default dialer and telecom apps, and the clock/alarm app(s) (handlers of `AlarmClock.ACTION_SHOW_ALARMS`). Everything else, including the launcher, counts.
+- **Settled** after wake time (app foreground or the 15-minute `ScreenTimeWorker`): kept → completed through `CompleteQuestUseCase.completeVerified(id, USAGE)`; over the grace → EXPIRED ("Phone used at night"), nothing deducted.
+- **Fail closed:** usage `NoAccess` or `Unavailable` at settlement → EXPIRED unpaid. No usage access when the directive is generated → no BEDTIME quest that day.
+- **Edits apply from the next night** (versioned like `app_rule`, §6.7), so tonight's window can't be moved at 23:59.
+- **Wind-down (optional):** a [Wind down] button on the evening card from 30 minutes before bedtime opens a 2-minute breathing guide: inhale 4 s, exhale 6 s, 12 cycles (`N23`). No reward, no notification.
+
+### 16.13 Quit counters (D4)
+
+"Days clean" for something the hunter wants to stop. Presets: Smoking, Porn, Junk food, Doomscrolling, Alcohol, Custom (name ≤ 24 chars). Max **6** active counters (`N24`). Wording is supportive, never shaming; no medical or health-recovery claims (copy rules in DESIGN_SYSTEM §9.2).
+
+- **Time-based counters** (every preset but Doomscrolling): `start` (may be in the past, "I stopped on …") and relapses (`at`, optional trigger chip, optional note ≤ 140 chars). Current run = now − (last relapse, else start). Best run = the longest run between consecutive events (start, relapses, now), **kept forever**: a relapse never deletes history. Shown as days (whole 24-hour periods) and hours under one day.
+- **Money saved** = cost per day × whole days of the current run; **time reclaimed** = minutes per day × whole days. Both optional, entered by the hunter, display only (no real money is involved).
+- **Milestones** shown: 1, 3, 7, 14, 30, 90, 180, 365 days (`N25`).
+- **Doomscrolling (auto, fails closed):** day-based. A finalized game-day is **clean** when Screen Time reads `Tracked` and total Distracting-app minutes ≤ **60** (`N26`); **over** → a relapse is logged automatically for that day ("74 min on distracting apps"); `NoAccess`/`Unavailable` → the day is **paused** (neither counts nor breaks). Run = consecutive clean days.
+- **Rewards:** **no XP** for any counter, ever. Achievements `quit_7 / 30 / 90 / 365` (§16.16) unlock once each, over all counters, on the **in-app run**: time counted from `max(start, created_at)`, so a back-dated start never unlocks anything; for Doomscrolling, clean days.
+- **Privacy:** counters and relapse notes never leave the phone except in the hunter's own export. App lock is open question Q5.
+
+### 16.14 Dungeons (F3)
+
+A multi-day challenge built from Hard template quests, with a gold entry fee.
+- **Unlock:** level **10** (rank D band, `N27`), so new hunters don't burn their first gold.
+- **Entry:** pick a length and a stat. Lengths and fees (`N28`): **3 days · 100 gold**, **5 days · 200**, **7 days · 300**. Needs gold ≥ fee. The fee is a ledger row `GOLD −fee`, `sourceType = DUNGEON`, `sourceId = <dungeonId>:entry`. Stage 1 is the **next** game-day; one active dungeon at a time (a Rank Trial may run alongside).
+- **Stages:** one stage quest per game-day, type `DUNGEON`, **Hard**, in the chosen stat, from templates that offer HARD (equipment and Injury Mode filters apply), deterministic by `fnv1a64(hunterId|dungeonId|stage)`. Priced by §4.1 (SELF cap applies to SELF stages), can crit, can't be rerolled, counts as one directive item.
+- **Clear:** all stages completed → reward `GOLD +1.5 × fee` (`N29`: 150 / 300 / 450) and `FRAGMENT +1`, `sourceId = <dungeonId>:clear`, paid once.
+- **Fail:** a stage still open when its game-day ends → dungeon FAILED at that rollover; the fee is gone, **nothing else is deducted**, no penalty quest. Abandon = FAILED.
+
+### 16.15 Programs: 30 / 66 / 75 days (F6)
+
+Long, fixed daily rule sets with a day counter. Original names only.
+
+| Program | Days | Daily rules (each becomes a read-only program habit) |
+|---|---|---|
+| **Steady 30** | 30 | Walk 7,000 steps (HEALTH_STEPS; SELF "Walk for 30 minutes" when Health is off) · Read 10 pages (SELF, INT) · 15-minute focus session (TIMED, INT) |
+| **Groundwork 66** | 66 | the three rules of Steady 30 · Plan tomorrow in 2 minutes (SELF, WIL) |
+| **Ironclad 75** | 75 | 45-minute workout (HEALTH_EXERCISE 45 min; SELF "Train for 45 minutes" when Health is off) · Read 10 pages (SELF, INT) · 10,000 steps (HEALTH_STEPS) · 25-minute focus session (TIMED, INT) · Phone-down night (§16.12, only if Phone-down nights is on) |
+
+(`N30`: the three programs, their lengths, rules and targets.) Rules are priced like habits (§4.1, SELF cap); there is no diet, weight, fasting or substance rule.
+- **Slots:** each rule is a habit counting toward the 8 active habits; a program can't start without enough free slots. **One long arc at a time:** a program and a 45-day Campaign can't run together (open question Q8).
+- **Day k** = game-days since the (re)start + 1. A day is **kept** when every program rule instance of that game-day was completed; a finalized REST/RECOVERY day is **rest** (not broken). Otherwise it is **broken**.
+- **After a broken day**, the next app open asks: **Restart** (a new run, day 1 = today) or **Continue** (the day stays marked broken, the counter goes on). No answer by the next rollover = Continue. Nothing is ever deducted.
+- **End:** after the last day is finalized: no broken day in the run → **COMPLETED** and the program's achievement (§16.16); otherwise **FINISHED** (shown with its marks, no achievement). Program habits are archived either way. Abandon anytime: habits archived, nothing deducted.
+
+### 16.16 New achievements (gold via §10)
+
+| ID | Name | Condition | Gold | Title? |
+|---|---|---|---|---|
+| focus_streak7 / 30 / 100 | Deep Work | focus streak (§16.4) of 7 / 30 / 100 days | 30 / 100 / 200 | 100 "Deep Worker" |
+| pr1 / pr25 / pr100 | New Record | 1 / 25 / 100 PR events (§16.7) | 10 / 50 / 150 | 100 "Record Breaker" |
+| quit_7 / 30 / 90 / 365 | Clean Run | in-app run of 7 / 30 / 90 / 365 days on any counter (§16.13) | 30 / 100 / 150 / 200 | 365 "Unshaken" |
+| dungeon_first / dungeon_7 | Delver | clear any dungeon / clear a 7-day dungeon | 20 / 100 | 7 "Delver" |
+| program_steady_30 / program_groundwork_66 / program_ironclad_75 | Programs | complete the program with no broken day | 150 / 200 / 200 | "Steady" / "Grounded" / "Ironclad" |
+
+(`N31`: every name, condition, gold amount and title in this table.) All within §10's 10–200 range. Unlocks are permanent (§6.5). The set grows from 37 to 52.
+
+### 16.17 Test vectors (continuing §12 / §14.10 numbering)
+
+**Habits (§16.1–16.2)**
+
+| # | Input | Expected |
+|---|---|---|
+| 85 | QUANTITY target 8, Normal, streak 0, no crit; progress 7 → +1 | at 7: ACTIVE, 0 XP; at 8: COMPLETED, **60 XP, 30 gold** (SELF) |
+| 86 | QUANTITY target 101 / 1 | rejected / rejected (2–100) |
+| 87 | TIMED 30 min, streak 0, no crit, run cleared | difficulty **Normal**; `round(40×1.5×1.0×1.15)` = **69 XP**, one QUEST reward, no GATE reward, P5 count unchanged |
+| 88 | TIMED 14 min / 95 min | rejected / difficulty **Extreme**, `40×3.0×1.15` = **138 XP** at streak 0 |
+| 89 | TIMED habit run collapses | habit instance still ACTIVE, no ledger rows; a new run may start the same game-day |
+| 90 | NEGATIVE, "Day ends" 17:00: Kept it at 16:59 / at 21:00 / never | refused / COMPLETED 60 XP / MISSED at rollover, 0 XP |
+| 91 | NEGATIVE: I slipped at 14:00, undo at 15:00 | MISSED → back to ACTIVE |
+| 92 | 3×/week CHECK: Mon done, Tue done, Wed nothing, Thu done | Wed **EXPIRED** (not MISSED); Fri–Sun **no instance**; next Monday an instance again |
+| 93 | 2 habits have reminders; set a 3rd | refused ("Two habits can have a reminder.") |
+| 94 | Habit with a reminder completed before the reminder time | no notification |
+| 95 | Skip Tue (1 per week) then skip Thu; undo Tue's skip on Tue | Tue SKIPPED, not missed, not an item; Thu refused; after undo Tue ACTIVE and Thu's skip allowed |
+
+**Focus (§16.3–16.5)**
+
+| # | Input | Expected |
+|---|---|---|
+| 96 | Pomodoro defaults, 4 rounds cleared, streak 0, no crits | each round D tier: **69 XP**, 1 fragment; a 5th custom run that day → LOGGED (P5) |
+| 97 | Round 2 of 4 collapses | session COLLAPSED; round 1's reward kept; no round 3 |
+| 98 | Cleared D preset (25), custom 40, stopwatch 47 min 30 s, collapsed C | focusMinutes **112**; goal 120 → not met; a cleared E (15) later → **127**, met |
+| 99 | Goal met Mon, Tue; Wed finalized REST, no focus; Thu met | focus streak **3** |
+| 100 | Thu: goal changed 120 → 60 at 15:00 with 70 min done | Thu **met**; Wed keeps goal 120 |
+| 101 | 7th consecutive met day | `focus_streak7` once, **+30 gold**; no XP row |
+| 102 | Run planned 50 min, 20 min elapsed | crystal stage **2** (40 % reached at 20 min) |
+
+**Gym (§16.6–16.9)**
+
+| # | Input | Expected |
+|---|---|---|
+| 103 | Bench (upper), range 8–12, last 50 kg × 12, 12, 12 | **52.5 kg × 8** |
+| 104 | Bench, last 50 kg × 12, 12, 10 | **50 kg**, reps **12, 12, 11** |
+| 105 | Squat (lower), last 100 kg × 12, 12, 12 | **105 kg × 8** |
+| 106 | Pull-up, unweighted, last 12, 12, 12 | hint "Add weight or a harder variation", no number |
+| 107 | Exercise never finished before | no hint; no PR flags in this session |
+| 108 | History 100 × 3 (e1RM 110), 80 × 8; today 102.5 × 1 and 80 × 9 | heaviest-weight PR (102.5); e1RM **not** a PR (102.5 < 110); reps-at-80 PR (9) |
+| 109 | Ties: today 100 × 3 again | **no** PR |
+| 110 | First PR event ever | `pr1` once, **+10 gold** |
+| 111 | Plates kg, bar 20: 100 / 62.5 / 61 / 15 | 25 + 15 per side / 20 + 1.25 / **20** per side (60 kg, 1 kg short) / "Below the bar's 20 kg" |
+| 112 | Plates lb, bar 45: 225 / 135 | 45 + 45 per side / 45 |
+
+**Screen and health (§16.10–16.12)**
+
+| # | Input | Expected |
+|---|---|---|
+| 113 | Today: unlocks 07:10, 08:00, 12:30; screen off 08:05; yesterday's last app event 23:48; now 13:00 | pickups **3**, first **07:10**, last use **23:48**, longest stretch **4 h 25 min** |
+| 114 | No keyguard events, 5 `SCREEN_INTERACTIVE` | **5**, labelled "Screen-ons" |
+| 115 | Usage `NoAccess` | no numbers; usage-access prompt |
+| 116 | Step goal 8,000; steps 6,200 / 9,100 | ring 0.775, "6,200 / 8,000" / full ring, "Goal reached"; no ledger rows |
+| 117 | Window 23:00–06:30, Instagram 3 min at 01:00, streak 0, no crit | kept → BEDTIME completed on the wake day, **78 XP** |
+| 118 | Same with Instagram 6 min | EXPIRED, 0 XP, nothing deducted |
+| 119 | Clock app 12 min at 06:00, nothing else | kept |
+| 120 | Usage `Unavailable` at settlement | EXPIRED unpaid |
+| 121 | At 22:00 the bedtime is changed to 00:00 | tonight 23:00; from tomorrow night 00:00 |
+
+**Quit counters (§16.13)**
+
+| # | Input | Expected |
+|---|---|---|
+| 122 | Start 2026-11-01 08:00; relapse 2026-11-05 20:00; now 2026-11-08 09:00 | current run **2 days** (2 d 13 h); best run **4 days** (4 d 12 h) |
+| 123 | Start 2026-10-01 00:00, created 2026-11-01 12:00; now 2026-11-08 12:00 | shows **38 days**; achievement run **7 days** → `quit_7` |
+| 124 | Cost 150 per day, current run 2 d 13 h | money saved **300** |
+| 125 | Doomscrolling, limit 60: Mon 40, Tue NoAccess, Wed 55, Thu 75 | run Mon–Wed = **2** clean days (Tue paused); Thu auto-relapse, run 0, best 2 |
+| 126 | Two counters both reach 30 in-app days | `quit_30` unlocks **once** |
+
+**Dungeons and programs (§16.14–16.15)**
+
+| # | Input | Expected |
+|---|---|---|
+| 127 | Level 9 / level 10 with 80 gold / with 500 gold, 3-day on Mon | locked / refused / entered: ledger **GOLD −100** (`DUNGEON`, `<id>:entry`), stages Tue, Wed, Thu |
+| 128 | All 3 stages done | **+150 gold, +1 fragment** (`<id>:clear`); applying the clear twice → one row each |
+| 129 | Stage 2 open at the end of its game-day | dungeon FAILED; no further rows; no stage 3; no penalty quest |
+| 130 | Stage quest HARD, SELF, streak 0, no crit | **90 XP, 45 gold**; counts toward the SELF cap |
+| 131 | Steady 30 from Mon; day 5 broken; next open Restart / Continue | day 1 = that day / day 6 next, day 5 marked broken |
+| 132 | Last day finalized with 0 broken days / with 1 continued break | COMPLETED + achievement once / FINISHED, no achievement |
+| 133 | Break question unanswered by the next rollover | Continue recorded |
+| 134 | A REST day inside a program | rest (not broken); the counter advances |
+
+### 16.18 Proposed numbers and open questions
+
+**Proposed numbers (all need approval):** `N1` max 8 habits (unchanged) · `N2` quantity target 2–100 · `N3` timed habit 15–180 min, 5-min steps · `N4` flexible 1–6 per week · `N5` max 2 habits with a reminder · `N6` 1 skip per habit per ISO week · `N7`–`N10` Pomodoro 25 (10–60) / 5 (1–15) / 15 (5–30) / 4 rounds (2–6) · `N11` focus goal 120 min · `N12` focus goal 15–600 in 15s · `N13` crystal stages 0/20/40/60/80/100 %, stopwatch full at 90 min · `N14` rep range 8–12 (override 1–30) · `N15` increments +2.5 / +5 kg (override 0.5–20) · `N16` unlimited plates of each owned size · `N17` bars 20 kg / 45 lb and plate sets · `N18` history ranges Month / 3 months / Year / All · `N19` step goal 8,000 · `N20` step goal 1,000–30,000 in 500s · `N21` bedtime 23:00 → 06:30, ranges, 5–12 h window · `N22` night grace 5 min · `N23` breathing 4 s / 6 s × 12 · `N24` max 6 quit counters · `N25` milestones 1, 3, 7, 14, 30, 90, 180, 365 · `N26` doomscrolling clean ≤ 60 min · `N27` dungeons unlock at level 10 · `N28` dungeon 3/5/7 days for 100/200/300 gold · `N29` clear reward 1.5 × fee + 1 fragment · `N30` program content · `N31` the 15 achievements.
+
+**Open questions:** Q1 H1 System mode back? · Q2 habit reminders outside the 2/day cap? · Q3 Pomodoro next round on tap (vs automatic)? · Q4 negative habits need the evening "Kept it" tap (vs auto-complete)? · Q5 D4 without app lock (H3 not in scope)? · Q6 PR achievements pay gold? · Q7 lb only in the plate calculator? · Q8 program and campaign mutually exclusive? · Q9 a FINISHED program earns nothing? · Q10 dungeon reward 1.5 × fee? Details and recommendations in `docs/BUILD_PLAN.md` §0.
