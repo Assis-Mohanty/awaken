@@ -97,7 +97,7 @@ Q1 keep H1 dropped (Batch 6 builds nothing for H1) · Q2 separate allowance, max
 
 ## Batch 3 — Gym: C1 hints, C2 PRs, C3 plates, C7 history
 
-✅ built in BATCH3_COMMIT. Differences from the checklist: Exercise history, the plate calculator and Gym settings are sheets on the Gym screen (no new route); the calculator and History buttons are on the exercise card; `ChartSpec.TrendLine` already existed in ChartKit, so none was added; use cases live in `GymTracker` + `GymRecords.kt` (`PersonalRecordCounter`). Decisions: ENGINE_DECISIONS #126–#130. Vectors #103–#112 pass.
+✅ built in 6451b94. Differences from the checklist: Exercise history, the plate calculator and Gym settings are sheets on the Gym screen (no new route); the calculator and History buttons are on the exercise card; `ChartSpec.TrendLine` already existed in ChartKit, so none was added; use cases live in `GymTracker` + `GymRecords.kt` (`PersonalRecordCounter`). Decisions: ENGINE_DECISIONS #126–#130. Vectors #103–#112 pass.
 
 **Engine** (`engine/…/body/`)
 - [ ] `ProgressionRules.kt` (`N14`, `N15`, `Muscle.isLowerBody`).
