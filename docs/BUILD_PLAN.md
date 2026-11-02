@@ -2,7 +2,7 @@
 
 Specs: GAME_DESIGN §16 (rules, numbers `N1`–`N31`, vectors #85–#134), DESIGN_SYSTEM §9 (components, screens, states), ARCHITECTURE §2.1 + §3.15 (tables, migrations, flows), PRD F35–F51.
 
-**Status: Batch 0 done (spec only). Nothing below may be built until the user approves GD §16 and answers §0.**
+**Status: Batch 0 done (spec only) in e9b2329. GD §16 approved 2026-11-02; every question in §0 resolved with its recommendation. Next: Batch 1.**
 
 ## How every batch works
 
@@ -12,7 +12,9 @@ Specs: GAME_DESIGN §16 (rules, numbers `N1`–`N31`, vectors #85–#134), DESIG
 4. Gate: `./gradlew :engine:test :app:testDebugUnitTest :app:assembleDebug lint` and `./gradlew :app:verifyRoborazziDebug`. Re-record goldens (`recordRoborazziDebug`) only for the screens this batch changes, and name them in the commit and the summary.
 5. Add an ENGINE_DECISIONS row (#115 onward) for every decision made while building. Mark each item here with `✅ built in <commit>` under its heading. Commit `feat(<area>): …`, write a short summary, **stop until the user says "next"**.
 
-## 0. Open questions (answer before Batch 1)
+## 0. Open questions — resolved 2026-11-02: the user chose every recommendation
+
+Q1 keep H1 dropped (Batch 6 builds nothing for H1) · Q2 separate allowance, max 2 habit reminders · Q3 on a tap · Q4 evening tap · Q5 ship D4 without a lock; H3 added to `BACKLOG.md` · Q6 yes, one-time gold · Q7 calculator only · Q8 mutually exclusive · Q9 no · Q10 1.5 × fee.
 
 | # | Question | Recommendation |
 |---|---|---|
