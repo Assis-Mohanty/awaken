@@ -1,0 +1,65 @@
+{
+  "version": 1,
+  "apps": [
+    {
+      "app": "INSTAGRAM",
+      "verified": false,
+      "note": "UNVERIFIED placeholder ids",
+      "screens": [
+        {
+          "containerIds": ["com.instagram.android:id/clips_viewer_view_pager"],
+          "signal": "PAGER_PAGE",
+          "signalSourceIds": ["com.instagram.android:id/clips_viewer_view_pager"]
+        }
+      ]
+    },
+    {
+      "app": "YOUTUBE",
+      "verified": false,
+      "note": "UNVERIFIED placeholder ids",
+      "screens": [
+        {
+          "containerIds": ["com.google.android.youtube:id/reel_recycler"],
+          "signal": "SCROLL_INDEX",
+          "signalSourceIds": ["com.google.android.youtube:id/reel_recycler"]
+        }
+      ]
+    },
+    {
+      "app": "TIKTOK",
+      "verified": false,
+      "note": "UNVERIFIED placeholder ids; both packages share this entry",
+      "screens": [
+        {
+          "containerIds": [
+            "com.zhiliaoapp.musically:id/feed_pager",
+            "com.ss.android.ugc.trill:id/feed_pager"
+          ],
+          "signal": "PAGER_PAGE"
+        }
+      ]
+    },
+    {
+      "app": "FACEBOOK",
+      "verified": false,
+      "note": "UNVERIFIED placeholder ids",
+      "screens": [
+        {
+          "containerIds": ["com.facebook.katana:id/reels_viewer_pager"],
+          "signal": "SCROLL_INDEX"
+        }
+      ]
+    },
+    {
+      "app": "SNAPCHAT",
+      "verified": false,
+      "note": "UNVERIFIED placeholder ids",
+      "screens": [
+        {
+          "containerIds": ["com.snapchat.android:id/spotlight_container"],
+          "signal": "CHILD_SWAP"
+        }
+      ]
+    }
+  ]
+}

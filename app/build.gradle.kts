@@ -124,6 +124,11 @@ room {
     schemaDirectory("$projectDir/schemas")
 }
 
+// The ~1000 Robolectric and preview-screenshot tests share one JVM; the 512 MB default runs out near the end.
+tasks.withType<Test>().configureEach {
+    maxHeapSize = "1536m"
+}
+
 // Golden screenshots of every @Preview (phone, small phone, light, font 200 %), committed under src/test/screenshots.
 // record: ./gradlew recordRoborazziDebug   verify: ./gradlew verifyRoborazziDebug
 roborazzi {
@@ -140,6 +145,7 @@ roborazzi {
 
 dependencies {
     implementation(project(":engine"))
+    implementation(project(":reelcounter-android"))
 
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.activity.compose)

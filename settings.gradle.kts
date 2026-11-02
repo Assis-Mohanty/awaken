@@ -25,3 +25,5 @@ dependencyResolutionManagement {
 rootProject.name = "AWAKEN"
 include(":app")
 include(":engine")
+include(":reelcounter-core")
+include(":reelcounter-android")

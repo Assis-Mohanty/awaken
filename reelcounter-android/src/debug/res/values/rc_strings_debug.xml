@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="rc_chip_match">Dump · ✓ %1$s</string>
+    <string name="rc_chip_nomatch">Dump · no match</string>
+    <string name="rc_dump_saved">Saved %1$s</string>
+
+    <string name="rc_inspector_title">Detector inspector</string>
+    <string name="rc_inspector_back">Back</string>
+    <string name="rc_inspector_toggle">Show the dump chip on supported apps</string>
+    <string name="rc_inspector_files">Dumps (newest first)</string>
+    <string name="rc_inspector_refresh">Refresh</string>
+    <string name="rc_inspector_no_files">No dumps yet.</string>
+    <string name="rc_inspector_copy">Copy</string>
+    <string name="rc_inspector_delete">Delete</string>
+    <string name="rc_inspector_close">Close</string>
+    <string name="rc_inspector_rules_title">Custom detector rules</string>
+    <string name="rc_inspector_rules_source">Active rules: %1$s</string>
+    <string name="rc_inspector_save_rules">Validate and save</string>
+    <string name="rc_inspector_reset_rules">Reset to built-in</string>
+</resources>

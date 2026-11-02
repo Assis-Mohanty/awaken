@@ -849,3 +849,24 @@ All within the §10 range (10–200). Unlocks are permanent (§6.5). The set bec
 | 82 | Lock not covering, 20 s away, a Distracting app came to the front | COLLAPSED, reason DISTRACTING_APP, no ledger rows |
 | 83 | Same as 82 with no usage access | still RUNNING (only the 90 s rule) |
 | 84 | End session and open | COLLAPSED, reason ENDED_EARLY, ledger unchanged |
+
+## 15. Reel Counter mascot: Lumi (PROPOSED, awaiting approval before release)
+
+Lumi is the Reel Counter's mascot. It only **shows** today's reel count; it grants no XP, gold or anything else. Code: `lumiStage` in `:reelcounter-core` (`core/lumi/Lumi.kt`); every number below lives in `LumiRules`.
+
+- **Input:** today's reels summed over every app (the existing game-day reset applies, so a new day starts at stage 1), and the daily limit, if any.
+- **Daily limit:** limits are set per app, so the limit Lumi follows is the **sum of the limits that are set** (`lumiDailyLimit`); no app with a limit means no limit.
+- **Stages:** 1 (radiant, "Fully charged") to 6 (dimmed, "Switched off"). `progressInStage` is how far the count is through the current stage, 0 ≤ p < 1, and 0 at stage 6.
+- **With a limit L:** stages 1–5 split 0…L into five equal parts, stage index = ⌊5 · reels / L⌋ + 1; stage 6 at reels ≥ L. Integer arithmetic, so a boundary is never early or late.
+- **Without a limit — PROPOSED thresholds:** stage 1 from 0, stage 2 from **10**, stage 3 from **25**, stage 4 from **50**, stage 5 from **80**, stage 6 from **120** reels.
+- **A limit changed mid-day** re-evaluates the same count; nothing is stored.
+- **Within a stage** the picture dims by up to 10% with `progressInStage` (presentation only).
+
+| # | Input | Expected |
+|---|---|---|
+| L1 | No limit; 0, 9, 10, 24, 25, 49, 50, 79, 80, 119, 120 reels | stage 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6 |
+| L2 | Limit 50; 0, 9, 10, 20, 30, 40, 49, 50, 80 reels | stage 1, 1, 2, 3, 4, 5, 5, 6, 6 |
+| L3 | Limit 12; 2, 3, 5, 8, 10, 12 reels | stage 1, 2, 3, 4, 5, 6 |
+| L4 | 30 reels; limit 100 → 50 → 30 → none | stage 2 → 4 → 6 → 3 |
+| L5 | 180 reels with limit 50, then a new game-day (0 reels) | stage 6 → stage 1, progress 0 |
+| L6 | Per-app limits Instagram 30, YouTube 20 | Lumi's limit 50 |

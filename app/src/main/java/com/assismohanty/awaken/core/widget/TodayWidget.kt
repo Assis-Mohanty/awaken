@@ -37,6 +37,8 @@ import androidx.glance.text.TextStyle
 import androidx.glance.unit.ColorProvider
 import com.assismohanty.awaken.MainActivity
 import com.assismohanty.awaken.R
+import com.assismohanty.awaken.core.designsystem.components.lumiDrawable
+import com.assismohanty.awaken.core.designsystem.components.lumiStatusRes
 import com.assismohanty.awaken.core.designsystem.theme.AwakenPalette
 import com.assismohanty.awaken.core.domain.DayRefresher
 import com.assismohanty.awaken.core.domain.ObserveTodayUseCase
@@ -58,6 +60,7 @@ interface WidgetEntryPoint {
     fun focusDao(): com.assismohanty.awaken.core.data.db.dao.FocusDao
     fun gateRunDao(): com.assismohanty.awaken.core.data.db.dao.GateRunDao
     fun clock(): com.assismohanty.awaken.core.data.clock.Clock
+    fun reelWidgetData(): com.assismohanty.awaken.core.reelcounter.ReelWidgetData
 }
 
 /**
@@ -68,7 +71,9 @@ class TodayWidget : GlanceAppWidget() {
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         val entry = EntryPointAccessors.fromApplication(context, WidgetEntryPoint::class.java)
+        val lumi = entry.reelWidgetData().currentLumi()
         val snapshot = entry.observeToday()(flowOf(Unit)).first().toWidgetSnapshot()
+            .copy(reelsToday = lumi?.total, reelsLumiStage = lumi?.state?.stage ?: 1)
         provideContent { WidgetContent(context, snapshot) }
     }
 }
@@ -144,6 +149,20 @@ private fun Filled(context: Context, snapshot: WidgetSnapshot) {
                 style = text(tone { it.mist }, 13),
                 maxLines = 2,
             )
+            snapshot.reelsToday?.let {
+                Spacer(GlanceModifier.size(4.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Image(
+                        provider = ImageProvider(lumiDrawable(snapshot.reelsLumiStage)),
+                        contentDescription = context.resources.getQuantityString(
+                            R.plurals.reel_lumi_cd, it, context.getString(lumiStatusRes(snapshot.reelsLumiStage)), it,
+                        ),
+                        modifier = GlanceModifier.size(LUMI_SIZE),
+                    )
+                    Spacer(GlanceModifier.width(6.dp))
+                    Text(context.getString(R.string.widget_reels, it), style = text(tone { p -> p.mist }, 13))
+                }
+            }
         }
     }
 }
@@ -152,7 +171,7 @@ private fun summaryText(context: Context, snapshot: WidgetSnapshot): String =
     if (!snapshot.hasHunter) {
         context.getString(R.string.widget_empty)
     } else {
-        context.getString(
+        val base = context.getString(
             R.string.widget_cd,
             snapshot.rank.name,
             snapshot.level,
@@ -161,6 +180,10 @@ private fun summaryText(context: Context, snapshot: WidgetSnapshot): String =
             snapshot.total,
             snapshot.nextQuest ?: context.getString(R.string.widget_all_done),
         )
+        snapshot.reelsToday?.let { "$base ${context.getString(R.string.widget_reels, it)}." } ?: base
     }
 
 private val WIDGET_RADIUS = 24.dp
+
+/** Lumi next to the reel total: small enough to sit in the 4x2 layout's last line. */
+private val LUMI_SIZE = 24.dp

@@ -10,6 +10,7 @@ import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
@@ -26,6 +27,7 @@ class WidgetUpdater @Inject constructor(
     private val observeToday: ObserveTodayUseCase,
     private val dayRefresher: DayRefresher,
     private val gateRunDao: com.assismohanty.awaken.core.data.db.dao.GateRunDao,
+    private val reelData: com.assismohanty.awaken.core.reelcounter.ReelWidgetData,
     @ApplicationScope private val scope: CoroutineScope,
 ) {
     fun start() {
@@ -42,8 +44,10 @@ class WidgetUpdater @Inject constructor(
             }
         }
         scope.launch {
-            observeToday(dayRefresher.ticks)
-                .map { it.toWidgetSnapshot() }
+            // The reel total rides on the same widget: a new reel (or switching the feature on or off) re-renders it.
+            combine(observeToday(dayRefresher.ticks).map { it.toWidgetSnapshot() }, reelData.observeLumi()) { snapshot, lumi ->
+                snapshot.copy(reelsToday = lumi?.total, reelsLumiStage = lumi?.state?.stage ?: 1)
+            }
                 .distinctUntilChanged()
                 .collect {
                     try {

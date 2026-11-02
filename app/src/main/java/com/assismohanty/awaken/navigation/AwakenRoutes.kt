@@ -76,3 +76,23 @@ data object FocusLockSetupRoute
 /** Apps Focus Lock leaves uncovered during a session. */
 @Serializable
 data object AllowedAppsRoute
+
+/** Reel counter setup: the disclosure, the Android switch, battery steps. */
+@Serializable
+data object ReelCounterSetupRoute
+
+/** Daily reel limits per app. */
+@Serializable
+data object ReelLimitsRoute
+
+/** Reel counter totals, per-app breakdown, 7 and 30 day charts. */
+@Serializable
+data object ReelStatsRoute
+
+/** What Android must allow for Focus Lock and Reel counter: accessibility switches, battery, autostart. */
+@Serializable
+data object FocusAccessRoute
+
+/** The Reel counter detector inspector (debug builds only). */
+@Serializable
+data object ReelInspectorRoute
