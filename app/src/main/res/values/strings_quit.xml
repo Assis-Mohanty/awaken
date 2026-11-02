@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Quit counters (GAME_DESIGN §16.13, DESIGN_SYSTEM §9.2). Supportive and factual: no shaming, no streak-loss alarms and
+    no medical or health-recovery claims. Neutral voice, so no strings here need a Clean twin.
+-->
+<resources>
+    <string name="quit_title">Quit counters</string>
+    <string name="quit_row_title">Quit counters</string>
+    <string name="quit_row_note">Count your days clean. Every day counts.</string>
+    <string name="quit_empty">Add something you want to stop. Every day counts, and your best run is always yours.</string>
+    <string name="quit_add">Add a counter</string>
+    <string name="quit_footer">Need support? Talk to someone you trust or a local helpline.</string>
+    <string name="quit_privacy">Counters and notes stay on this phone. They leave only in your own backup.</string>
+
+    <!-- Kinds -->
+    <string name="quit_kind_smoking">Smoking</string>
+    <string name="quit_kind_porn">Porn</string>
+    <string name="quit_kind_junk_food">Junk food</string>
+    <string name="quit_kind_doomscrolling">Doomscrolling</string>
+    <string name="quit_kind_alcohol">Alcohol</string>
+    <string name="quit_kind_custom">Custom</string>
+
+    <!-- Runs -->
+    <plurals name="quit_days">
+        <item quantity="one">%1$d day</item>
+        <item quantity="other">%1$d days</item>
+    </plurals>
+    <string name="quit_hours">%1$d h</string>
+    <string name="quit_just_started">Just started</string>
+    <string name="quit_best">Best run: %1$s. It\'s still yours.</string>
+    <string name="quit_best_none">Best run: none yet</string>
+    <string name="quit_next">Next: %1$s</string>
+    <string name="quit_all_milestones">Every milestone reached</string>
+    <string name="quit_saved_only">%1$s saved</string>
+    <string name="quit_time_only">%1$s back</string>
+    <string name="quit_saved_and_time">%1$s saved · %2$s back</string>
+    <string name="quit_time_h">%1$d h</string>
+    <string name="quit_time_min">%1$d min</string>
+    <string name="quit_card_cd">%1$s: %2$s, best run %3$s</string>
+    <string name="quit_milestone_reached_cd">%1$s days, reached</string>
+    <string name="quit_milestone_ahead_cd">%1$s days, ahead</string>
+    <string name="quit_paused">Waiting for usage data. The count is paused, not reset.</string>
+    <string name="quit_needs_access">Allow usage access so this counter can count your days.</string>
+    <string name="quit_allow_access">Allow usage access</string>
+    <string name="quit_doom_how">Counts itself from Screen time: a day is clean at 60 minutes or less on distracting apps. Days it cannot read are skipped.</string>
+
+    <!-- Add -->
+    <string name="quit_add_title">New counter</string>
+    <string name="quit_name_label">Name</string>
+    <string name="quit_start_today">Starting today</string>
+    <string name="quit_start_earlier">I stopped earlier</string>
+    <string name="quit_start_days_ago">%1$d days ago</string>
+    <string name="quit_days_less">One day less</string>
+    <string name="quit_days_more">One day more</string>
+    <string name="quit_cost_label">Cost per day (optional)</string>
+    <string name="quit_minutes_label">Minutes per day (optional)</string>
+    <string name="quit_estimates_note">Your own estimates, shown back to you. No real money moves.</string>
+    <string name="quit_add_action">Add</string>
+    <string name="quit_limit">You have 6 counters. Archive one to add another.</string>
+    <string name="quit_exists">You already have a Doomscrolling counter.</string>
+    <string name="quit_back_dated_note">The days before today show on the counter. Achievements count from today.</string>
+
+    <!-- Detail -->
+    <string name="quit_restarts_title">Restarts</string>
+    <string name="quit_restarts_empty">No restarts. That is fine either way.</string>
+    <string name="quit_restart_action">Log a restart</string>
+    <string name="quit_restart_title">Restart the count?</string>
+    <string name="quit_restart_body">Your best run stays. Every day counts again from here.</string>
+    <string name="quit_restart_confirm">Restart</string>
+    <string name="quit_trigger_label">What set it off? (optional)</string>
+    <string name="quit_trigger_stress">Stress</string>
+    <string name="quit_trigger_boredom">Boredom</string>
+    <string name="quit_trigger_social">Social</string>
+    <string name="quit_trigger_tired">Tired</string>
+    <string name="quit_trigger_other">Other</string>
+    <string name="quit_note_label">Note (optional)</string>
+    <string name="quit_restart_auto">%1$d min on distracting apps</string>
+    <string name="quit_restart_line">%1$s</string>
+    <string name="quit_archive">Archive</string>
+    <string name="quit_archive_title">Archive this counter?</string>
+    <string name="quit_archive_body">It leaves your list and frees a slot. Your history is kept.</string>
+    <string name="quit_back">Back</string>
+
+    <!-- Achievements -->
+    <string name="achievement_quit_7">First Week Clean</string>
+    <string name="achievement_quit_30">A Month Clean</string>
+    <string name="achievement_quit_90">Ninety Days Clean</string>
+    <string name="achievement_quit_365">A Year Clean</string>
+    <string name="title_unshaken">Unshaken</string>
+    <string name="condition_quit_7">Keep a quit counter going for 7 days after you add it.</string>
+    <string name="condition_quit_30">Keep a quit counter going for 30 days after you add it.</string>
+    <string name="condition_quit_90">Keep a quit counter going for 90 days after you add it.</string>
+    <string name="condition_quit_365">Keep a quit counter going for 365 days after you add it.</string>
+</resources>

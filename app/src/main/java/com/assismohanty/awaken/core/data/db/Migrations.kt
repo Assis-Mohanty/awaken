@@ -323,9 +323,29 @@ val MIGRATION_21_22 = object : Migration(21, 22) {
     }
 }
 
+/** v22 → v23 (quit counters): three new tables; nothing existing changes. */
+val MIGRATION_22_23 = object : Migration(22, 23) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS `quit_counter` (`id` TEXT NOT NULL, `kind` TEXT NOT NULL, `name` TEXT NOT NULL, `start_at` INTEGER NOT NULL, " +
+                "`created_at` INTEGER NOT NULL, `cost_per_day_minor` INTEGER, `currency` TEXT, `minutes_per_day` INTEGER, `auto_limit_min` INTEGER, " +
+                "`archived_at` INTEGER, PRIMARY KEY(`id`))",
+        )
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS `relapse` (`id` TEXT NOT NULL, `counter_id` TEXT NOT NULL, `at` INTEGER NOT NULL, `game_date` TEXT, " +
+                "`trigger` TEXT, `note` TEXT, `auto` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        )
+        db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS `index_relapse_counter_id_game_date` ON `relapse` (`counter_id`, `game_date`)")
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS `quit_day` (`counter_id` TEXT NOT NULL, `game_date` TEXT NOT NULL, `verdict` TEXT NOT NULL, " +
+                "`minutes` INTEGER, PRIMARY KEY(`counter_id`, `game_date`))",
+        )
+    }
+}
+
 /** Every migration, in order. The database builder and the migration test both use this list. */
 val ALL_MIGRATIONS: Array<Migration> = arrayOf(
     MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9,
     MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17,
-    MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21, MIGRATION_21_22,
+    MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21, MIGRATION_21_22, MIGRATION_22_23,
 )

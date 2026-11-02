@@ -161,6 +161,22 @@ class GameDataPorterTest {
     }
 
     @Test
+    fun quitCountersRestartsAndDayVerdictsSurviveARoundTrip() = runTest {
+        source.seedHunter()
+        val id = (source.addQuitCounter(com.assismohanty.awaken.engine.QuitKind.SMOKING, "Smoking", source.clock.now().minusSeconds(86_400L * 3), 15_000, "INR", 20) as com.assismohanty.awaken.core.domain.AddQuitResult.Added).id
+        source.logQuitRestart(id, trigger = "STRESS", note = "Long week")
+        source.addQuitCounter(com.assismohanty.awaken.engine.QuitKind.DOOMSCROLLING, "Doomscrolling", null)
+        source.recordQuitProgress(source.today().plusDays(1))
+
+        assertThat(target.porter.import(source.porter.export())).isInstanceOf(ImportResult.Imported::class.java)
+
+        assertThat(target.db.quitDao().counters()).isEqualTo(source.db.quitDao().counters())
+        assertThat(target.db.quitDao().relapses()).isEqualTo(source.db.quitDao().relapses())
+        assertThat(target.db.quitDao().days()).isEqualTo(source.db.quitDao().days())
+        assertThat(target.db.quitDao().counters()).hasSize(2)
+    }
+
+    @Test
     fun theSummaryDescribesWhatWasRestored() = runTest {
         playSomeGame()
         val summary = (target.porter.import(source.porter.export()) as ImportResult.Imported).summary

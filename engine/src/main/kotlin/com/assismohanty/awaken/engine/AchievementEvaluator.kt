@@ -35,6 +35,8 @@ data class AchievementSnapshot(
     val focusStreak: Int = 0,
     /** Personal-record events across all exercises (GD §16.7): one per record type per exercise per session. */
     val prEvents: Int = 0,
+    /** The longest in-app quit run, in days, over all counters (GD §16.13): back-dated starts earn nothing. */
+    val quitRunDays: Int = 0,
     val alreadyUnlocked: Set<String> = emptySet(),
 ) {
     fun statLevel(stat: Stat): Int = StatLevel.level(statXp[stat] ?: 0L)
@@ -109,6 +111,11 @@ object AchievementEvaluator {
         add(Achievement("pr1", 10) { it.prEvents >= 1 })
         add(Achievement("pr25", 50) { it.prEvents >= 25 })
         add(Achievement("pr100", 150, "record_breaker") { it.prEvents >= 100 })
+        // Clean Run (GD §16.13): the in-app run of any quit counter. Gold only; no counter ever pays XP.
+        add(Achievement("quit_7", 30) { it.quitRunDays >= 7 })
+        add(Achievement("quit_30", 100) { it.quitRunDays >= 30 })
+        add(Achievement("quit_90", 150) { it.quitRunDays >= 90 })
+        add(Achievement("quit_365", 200, "unshaken") { it.quitRunDays >= 365 })
     }
 
     val byId: Map<String, Achievement> = all.associateBy { it.id }

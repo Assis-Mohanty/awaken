@@ -243,6 +243,8 @@ quit_counter(id PK, kind TEXT, name, start_at, created_at, cost_per_day_minor IN
 relapse(id PK, counter_id, at, game_date NULL, trigger TEXT NULL, note TEXT NULL, auto BOOL,
         UNIQUE(counter_id, game_date))                  -- auto (doomscrolling) relapses are one per game-day
 
+quit_day(counter_id, game_date, verdict TEXT, minutes INT NULL, PK(counter_id, game_date))   -- doomscrolling day verdicts (ENGINE_DECISIONS #138)
+
 -- v24 (Batch 8, dungeons F3, programs F6)
 dungeon(id PK, length_days INT, stat, fee INT, entered_game_date, first_stage_date, status, ended_at NULL)  -- ACTIVE|CLEARED|FAILED
 -- stage quests: quest_instance(type DUNGEON) + dungeon_id NULL + dungeon_stage INT NULL

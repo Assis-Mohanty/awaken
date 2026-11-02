@@ -35,6 +35,8 @@ import com.assismohanty.awaken.engine.path.PathUnit
 import com.assismohanty.awaken.engine.path.ProgressionSignal
 import com.assismohanty.awaken.engine.path.SlotOutcome
 import com.assismohanty.awaken.engine.model.VerificationSource
+import com.assismohanty.awaken.engine.QuitDayVerdict
+import com.assismohanty.awaken.engine.QuitKind
 import java.time.Instant
 import java.time.LocalDate
 
@@ -501,4 +503,51 @@ data class BedtimeRuleEntity(
     val enabled: Boolean,
     @ColumnInfo(name = "bedtime_min") val bedtimeMin: Int,
     @ColumnInfo(name = "wake_min") val wakeMin: Int,
+)
+
+/**
+ * A quit counter (GD §16.13): days clean of something the hunter wants to stop. [startAt] may be in the past; [createdAt]
+ * is when it was made in the app, which is what the achievements count from. Archiving hides it and keeps everything.
+ * Cost and minutes per day are the hunter's own estimates and only ever shown. Not a ledger table; it mints nothing.
+ */
+@Entity(tableName = "quit_counter")
+data class QuitCounterEntity(
+    @PrimaryKey val id: String,
+    val kind: QuitKind,
+    val name: String,
+    @ColumnInfo(name = "start_at") val startAt: Instant,
+    @ColumnInfo(name = "created_at") val createdAt: Instant,
+    @ColumnInfo(name = "cost_per_day_minor") val costPerDayMinor: Long? = null,
+    val currency: String? = null,
+    @ColumnInfo(name = "minutes_per_day") val minutesPerDay: Int? = null,
+    @ColumnInfo(name = "auto_limit_min") val autoLimitMin: Int? = null,
+    @ColumnInfo(name = "archived_at") val archivedAt: Instant? = null,
+)
+
+/**
+ * A restart of a counter. Hand-logged ones have no [gameDate]; the automatic one of a Doomscrolling day has it, and the
+ * unique index makes writing it twice a no-op. Rows are never deleted: the history is the hunter's.
+ */
+@Entity(
+    tableName = "relapse",
+    indices = [Index(value = ["counter_id", "game_date"], unique = true)],
+)
+data class RelapseEntity(
+    @PrimaryKey val id: String,
+    @ColumnInfo(name = "counter_id") val counterId: String,
+    val at: Instant,
+    @ColumnInfo(name = "game_date") val gameDate: LocalDate? = null,
+    val trigger: String? = null,
+    val note: String? = null,
+    val auto: Boolean = false,
+)
+
+/** How one finalized game-day went for a Doomscrolling counter: clean, over, or paused because usage could not be read. */
+@Entity(tableName = "quit_day", primaryKeys = ["counter_id", "game_date"])
+data class QuitDayEntity(
+    @ColumnInfo(name = "counter_id") val counterId: String,
+    @ColumnInfo(name = "game_date") val gameDate: LocalDate,
+    val verdict: QuitDayVerdict,
+    /** Distracting-app minutes that day, when they were read. */
+    val minutes: Int? = null,
 )

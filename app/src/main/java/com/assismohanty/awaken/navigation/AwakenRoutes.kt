@@ -100,3 +100,7 @@ data object ReelInspectorRoute
 /** Optional two-minute breathing before a phone-down night (GD §16.12), opened from the evening card on Today. */
 @Serializable
 data object WindDownRoute
+
+/** Quit counters: days clean of something the hunter wants to stop (GD §16.13), opened from Status. */
+@Serializable
+data object QuitRoute

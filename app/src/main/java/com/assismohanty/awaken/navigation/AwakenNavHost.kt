@@ -52,6 +52,7 @@ import com.assismohanty.awaken.feature.reelcounter.ReelInspectorEntry
 import com.assismohanty.awaken.feature.reelcounter.ReelLimitsRoute as ReelLimitsEntry
 import com.assismohanty.awaken.feature.reelcounter.ReelStatsRoute as ReelStatsEntry
 import com.assismohanty.awaken.feature.screentime.ScreenTimeRoute as ScreenTimeEntry
+import com.assismohanty.awaken.feature.quit.QuitRoute as QuitEntry
 import com.assismohanty.awaken.feature.today.WindDownRoute as WindDownEntry
 import com.assismohanty.awaken.feature.settings.SettingsRoute as SettingsEntry
 import com.assismohanty.awaken.feature.status.StatusRoute as StatusEntry
@@ -211,6 +212,7 @@ private fun MainScaffold(
                 composable<DietRoute> { DietEntry() }
                 composable<StatusRoute> {
                     StatusEntry(
+                        onOpenQuit = { navController.navigate(QuitRoute) { launchSingleTop = true } },
                         onOpenSettings = { navController.navigate(SettingsRoute) },
                         onOpenPaths = { navController.navigate(PathsRoute) { launchSingleTop = true } },
                         onOpenReview = { navController.navigate(ReviewRoute) { launchSingleTop = true } },
@@ -248,6 +250,13 @@ private fun MainScaffold(
                     )
                 }
                 composable<WindDownRoute> { WindDownEntry(onBack = { navController.popBackStack() }) }
+                composable<QuitRoute> {
+                    val context = androidx.compose.ui.platform.LocalContext.current
+                    QuitEntry(
+                        onBack = { navController.popBackStack() },
+                        onOpenUsageAccess = { com.assismohanty.awaken.feature.screentime.openUsageAccessSettings(context) },
+                    )
+                }
                 composable<ReviewRoute> { ReviewEntry(onClose = { navController.popBackStack() }) }
                 composable<RecapRoute> { RecapEntry(onBack = { navController.popBackStack() }) }
                 composable<CampaignRoute> { CampaignEntry(onBack = { navController.popBackStack() }) }

@@ -179,7 +179,8 @@ class TestGraph(
     )
     val trialReader = TrialReader(db.questDao())
     val focusGoalReader = com.assismohanty.awaken.core.domain.FocusGoalReader(db.hunterDao(), db.focusDao(), db.dayRecordDao(), clock)
-    val achievements = AchievementUnlocker(db.questDao(), db.achievementDao(), ledger, reader, focusGoalReader, com.assismohanty.awaken.core.domain.PersonalRecordCounter(db.gymDao()))
+    val quitRunReader = com.assismohanty.awaken.core.domain.QuitRunReader(db.quitDao(), clock)
+    val achievements = AchievementUnlocker(db.questDao(), db.achievementDao(), ledger, reader, focusGoalReader, com.assismohanty.awaken.core.domain.PersonalRecordCounter(db.gymDao()), quitRunReader)
     val completeQuest = CompleteQuestUseCase(
         db.hunterDao(), db.questDao(), db.completionDao(), achievements, db.trialDao(), trialReader, pathDao, db.habitDao(),
         ledger, reader, transactions, clock,
@@ -196,6 +197,11 @@ class TestGraph(
     val pathWork = RecordingPathWorkScheduler()
     val pathWeeks = PathWeekRequester(pathDao, aiPrefs, pathWork, transactions, clock)
     val settleDiscipline = SettleDisciplineUseCase(db.hunterDao(), db.questDao(), screenTimeReader, completeQuest)
+    val distractingMinutes = com.assismohanty.awaken.core.domain.DistractingMinutesReader(screenTimeReader, usage)
+    val recordQuitProgress = com.assismohanty.awaken.core.domain.RecordQuitProgressUseCase(db.hunterDao(), db.quitDao(), distractingMinutes, achievements, transactions, clock)
+    val addQuitCounter = com.assismohanty.awaken.core.domain.AddQuitCounterUseCase(db.quitDao(), transactions, clock)
+    val logQuitRestart = com.assismohanty.awaken.core.domain.LogQuitRestartUseCase(db.quitDao(), transactions, clock)
+    val archiveQuitCounter = com.assismohanty.awaken.core.domain.ArchiveQuitCounterUseCase(db.quitDao(), clock)
     val settleBedtime = com.assismohanty.awaken.core.domain.SettleBedtimeUseCase(db.questDao(), bedtimeReader, completeQuest)
     val settleCurrentBedtime = com.assismohanty.awaken.core.domain.SettleCurrentBedtimeUseCase(db.hunterDao(), settleBedtime, clock)
     val setBedtime = com.assismohanty.awaken.core.domain.SetBedtimeUseCase(db.hunterDao(), db.screenTimeDao(), bedtimeReader, clock)
@@ -205,7 +211,7 @@ class TestGraph(
     )
     val rollover = DayRolloverUseCase(
         db.hunterDao(), db.questDao(), db.dayRecordDao(), ledger, reader, templates, generateDirective, advanceTrial, pathDao, pathWeeks,
-        settleDiscipline, settleBedtime, advanceCampaign, achievements, transactions, clock,
+        settleDiscipline, settleBedtime, recordQuitProgress, advanceCampaign, achievements, transactions, clock,
     )
     val previewCampaign = PreviewCampaignUseCase(db.hunterDao(), db.habitDao(), db.campaignDao(), reader, templates, clock)
     val startCampaign = StartCampaignUseCase(db.hunterDao(), db.habitDao(), db.campaignDao(), previewCampaign, generateDirective, transactions, clock)

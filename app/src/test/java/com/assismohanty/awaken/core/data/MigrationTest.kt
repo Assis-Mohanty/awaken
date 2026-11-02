@@ -522,6 +522,23 @@ class MigrationTest {
     }
 
     @Test
+    fun v22To23AddsTheQuitTablesEmpty() = runTest {
+        val path = createFromSchema(22)
+        val db = Room.databaseBuilder(context, AwakenDatabase::class.java, path)
+            .addMigrations(*ALL_MIGRATIONS)
+            .allowMainThreadQueries()
+            .build()
+        try {
+            assertThat(db.quitDao().counters()).isEmpty()
+            assertThat(db.quitDao().relapses()).isEmpty()
+            assertThat(db.quitDao().days()).isEmpty()
+            assertThat(db.openHelper.readableDatabase.version).isEqualTo(AwakenDatabase.SCHEMA_VERSION)
+        } finally {
+            db.close()
+        }
+    }
+
+    @Test
     fun v4To5AddsThePathTablesAndKeepsExistingQuests() = runTest {
         val path = createFromSchema(4)
         SQLiteDatabase.openDatabase(path, null, SQLiteDatabase.OPEN_READWRITE).use { db ->

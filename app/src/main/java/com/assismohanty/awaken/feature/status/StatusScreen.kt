@@ -39,6 +39,7 @@ import com.assismohanty.awaken.core.designsystem.components.LargeTitleScaffold
 import com.assismohanty.awaken.core.designsystem.components.identityLine
 import com.assismohanty.awaken.core.designsystem.components.identityPhraseRes
 import com.assismohanty.awaken.core.designsystem.components.LevelModule
+import com.assismohanty.awaken.core.designsystem.components.AwakenCard
 import com.assismohanty.awaken.core.designsystem.components.ListRow
 import com.assismohanty.awaken.core.designsystem.components.MetricCard
 import com.assismohanty.awaken.core.designsystem.components.SkeletonCard
@@ -99,6 +100,7 @@ fun StatusRoute(
     onOpenPaths: () -> Unit = {},
     onOpenReview: () -> Unit = {},
     onOpenRecap: (periodKey: String) -> Unit = {},
+    onOpenQuit: () -> Unit = {},
     viewModel: StatusViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -122,6 +124,7 @@ fun StatusRoute(
         onOpenPaths = onOpenPaths,
         onOpenReview = onOpenReview,
         onOpenRecap = onOpenRecap,
+        onOpenQuit = onOpenQuit,
         modifier = modifier,
     )
 }
@@ -136,6 +139,7 @@ fun StatusScreen(
     onOpenPaths: () -> Unit = {},
     onOpenReview: () -> Unit = {},
     onOpenRecap: (periodKey: String) -> Unit = {},
+    onOpenQuit: () -> Unit = {},
 ) {
     val header = state.header
     val title = state.equippedTitleId?.let(::titleNameRes)?.let { lexString(it) }
@@ -183,6 +187,7 @@ fun StatusScreen(
         ChaptersWindow(state.rank, state.chapters, onEvent)
         WeeklyWindow(state, onEvent, onOpenReview)
         if (state.recaps.isNotEmpty()) RecapsSection(state.recaps, onOpenRecap)
+        QuitRow(onOpenQuit)
     }
     state.openChapter?.let { entry ->
         ChapterRevealDialog(
@@ -525,4 +530,19 @@ private fun StatusScreenPreview() {
 @Composable
 private fun StatusScreenNewHunterPreview() {
     AwakenTheme(reduceMotion = true) { StatusScreen(state = previewStatusState(locked = true), onEvent = {}) }
+}
+
+/** The way into the quit counters (GD §16.13). */
+@Composable
+private fun QuitRow(onOpenQuit: () -> Unit) {
+    AwakenCard(reveal = false, contentPadding = Spacing.listCard, spacing = Spacing.zero, modifier = Modifier.fillMaxWidth()) {
+        ListRow(
+            title = lexString(R.string.quit_row_title),
+            secondary = lexString(R.string.quit_row_note),
+            onClick = onOpenQuit,
+            trailing = {
+                Icon(AwakenGlyphs.ChevronRight, contentDescription = null, tint = AwakenTheme.colors.textSecondary, modifier = Modifier.size(AwakenTheme.dimens.iconSmall))
+            },
+        )
+    }
 }
