@@ -66,7 +66,7 @@ Q1 keep H1 dropped (Batch 6 builds nothing for H1) · Q2 separate allowance, max
 
 ## Batch 2 — Focus: B1 Pomodoro, B2 goal ring + streak, A4 tile, A5 Start focus widget
 
-✅ built in BATCH2_COMMIT. Differences from the checklist: the Pomodoro setup, break and round screens live in `feature/gate/GatesScreen.kt` (no separate `FocusScreens.kt`); the use cases are `PomodoroSessions.kt` and `FocusGoalUseCases.kt`; the Daily focus goal stepper is in Settings → Focus. Decisions: ENGINE_DECISIONS #122–#125. Vectors #96–#101 pass.
+✅ built in d9b3472. Differences from the checklist: the Pomodoro setup, break and round screens live in `feature/gate/GatesScreen.kt` (no separate `FocusScreens.kt`); the use cases are `PomodoroSessions.kt` and `FocusGoalUseCases.kt`; the Daily focus goal stepper is in Settings → Focus. Decisions: ENGINE_DECISIONS #122–#125. Vectors #96–#101 pass.
 
 **Engine**
 - [ ] `PomodoroRules.kt` (phase machine: FOCUS → SHORT_BREAK … → LONG_BREAK → DONE; collapse → COLLAPSED; `N7`–`N10` bounds).
