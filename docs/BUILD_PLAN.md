@@ -184,7 +184,7 @@ Q1 keep H1 dropped (Batch 6 builds nothing for H1) · Q2 separate allowance, max
 
 ## Batch 8 — Long arcs: F3 dungeons, F6 programs
 
-✅ built in BATCH8_COMMIT. Differences from the checklist: the program catalog is a Kotlin catalog in `:engine` (`ProgramRules.CATALOG`), validated by `LongArcRulesTest`, not a JSON asset; dungeons settle in `SettleDungeonUseCase` and programs in `ProgramRolloverUseCase`, both called from `DayRolloverUseCase`; a small `ProgramAvailabilityUseCase` feeds the list; `feature/dungeon` and `feature/program` are added to CLAUDE.md. Decisions: ENGINE_DECISIONS #141–#146. Vectors #127–#134 pass.
+✅ built in 2184a3e. Differences from the checklist: the program catalog is a Kotlin catalog in `:engine` (`ProgramRules.CATALOG`), validated by `LongArcRulesTest`, not a JSON asset; dungeons settle in `SettleDungeonUseCase` and programs in `ProgramRolloverUseCase`, both called from `DayRolloverUseCase`; a small `ProgramAvailabilityUseCase` feeds the list; `feature/dungeon` and `feature/program` are added to CLAUDE.md. Decisions: ENGINE_DECISIONS #141–#146. Vectors #127–#134 pass.
 
 **Engine**
 - [ ] `model/Enums.kt`: `SourceType.DUNGEON`, `QuestType.DUNGEON`.
