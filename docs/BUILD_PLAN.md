@@ -205,6 +205,8 @@ Q1 keep H1 dropped (Batch 6 builds nothing for H1) · Q2 separate allowance, max
 
 ## Batch 9 — Review (on Opus)
 
+✅ done 2026-11-03 in 6a8d783 + 28587c2. No high or medium findings across Batches 1–8: no new host, no clock or `!!` leaks, ledger writes only in Dungeons (idempotent), vectors #85–#134 all tested, no PROPOSED left. Fixed: a catalog test keeps a Hard dungeon stage for every stat under the strictest filters; Ironclad leaves out a night nobody could read (#147, schema v25); a program's Health rule falls back to its plain form on a day without Health (#148); a flaky vector-130 test. Phone checklist: `docs/PHONE_TEST_v1_2.md`.
+
 - [ ] Run the review prompt in `docs/PROMPTS.md` ("Review prompt (after every phase)") over the whole range of Batches 1–8.
 - [ ] Extra checks: no new network call or host; no XP for reflection, opening the app or self-reported abstinence beyond the SELF cap; every fail-closed path (#90 negative, #115/#120 usage, #125 doomscrolling) has a test; no raw palette/hex/`dp` literals or drawing in `feature/**` (`FeatureBoundaryTest`); every game term through the Lexicon (`LexiconResourcesTest`); every `N` number approved in GD §16 (no "PROPOSED" left in code comments).
 - [ ] Fix, gate, commit, then a phone test checklist per feature (F35–F51).
