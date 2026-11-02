@@ -172,8 +172,10 @@ class TestGraph(
     val usage = FakeUsageGateway()
     val screenTimeReader = ScreenTimeReader(db.screenTimeDao(), db.questDao(), usage, clock)
     val disciplinePlanner = DisciplineQuestPlanner(screenTimeReader, DisciplineText(context))
+    val bedtimeReader = com.assismohanty.awaken.core.domain.BedtimeReader(db.screenTimeDao(), db.questDao(), usage, clock)
+    val bedtimePlanner = com.assismohanty.awaken.core.domain.BedtimePlanner(bedtimeReader, usage, com.assismohanty.awaken.core.domain.BedtimeText(context))
     val generateDirective = GenerateDirectiveUseCase(
-        db.hunterDao(), db.questDao(), db.habitDao(), reader, templates, pathPlanner, disciplinePlanner, transactions, clock,
+        db.hunterDao(), db.questDao(), db.habitDao(), reader, templates, pathPlanner, disciplinePlanner, bedtimePlanner, transactions, clock,
     )
     val trialReader = TrialReader(db.questDao())
     val focusGoalReader = com.assismohanty.awaken.core.domain.FocusGoalReader(db.hunterDao(), db.focusDao(), db.dayRecordDao(), clock)
@@ -194,12 +196,16 @@ class TestGraph(
     val pathWork = RecordingPathWorkScheduler()
     val pathWeeks = PathWeekRequester(pathDao, aiPrefs, pathWork, transactions, clock)
     val settleDiscipline = SettleDisciplineUseCase(db.hunterDao(), db.questDao(), screenTimeReader, completeQuest)
+    val settleBedtime = com.assismohanty.awaken.core.domain.SettleBedtimeUseCase(db.questDao(), bedtimeReader, completeQuest)
+    val settleCurrentBedtime = com.assismohanty.awaken.core.domain.SettleCurrentBedtimeUseCase(db.hunterDao(), settleBedtime, clock)
+    val setBedtime = com.assismohanty.awaken.core.domain.SetBedtimeUseCase(db.hunterDao(), db.screenTimeDao(), bedtimeReader, clock)
+    val loadBedtimeToday = com.assismohanty.awaken.core.domain.LoadBedtimeTodayUseCase(db.hunterDao(), db.completionDao(), bedtimeReader, usage, reader, clock)
     val advanceCampaign = AdvanceCampaignUseCase(
         db.hunterDao(), db.campaignDao(), db.dayRecordDao(), db.habitDao(), reader, templates, achievements, transactions, clock,
     )
     val rollover = DayRolloverUseCase(
         db.hunterDao(), db.questDao(), db.dayRecordDao(), ledger, reader, templates, generateDirective, advanceTrial, pathDao, pathWeeks,
-        settleDiscipline, advanceCampaign, achievements, transactions, clock,
+        settleDiscipline, settleBedtime, advanceCampaign, achievements, transactions, clock,
     )
     val previewCampaign = PreviewCampaignUseCase(db.hunterDao(), db.habitDao(), db.campaignDao(), reader, templates, clock)
     val startCampaign = StartCampaignUseCase(db.hunterDao(), db.habitDao(), db.campaignDao(), previewCampaign, generateDirective, transactions, clock)

@@ -30,6 +30,7 @@ class GenerateDirectiveUseCase @Inject constructor(
     private val templates: TemplateRepository,
     private val pathQuests: PathQuestPlanner,
     private val discipline: DisciplineQuestPlanner,
+    private val bedtime: BedtimePlanner,
     private val transactions: TransactionRunner,
     private val clock: Clock,
 ) {
@@ -52,6 +53,8 @@ class GenerateDirectiveUseCase @Inject constructor(
             }
             // Screen Discipline (GD §6.7): one quest per day it runs; the deterministic id makes this a no-op once inserted.
             discipline.draftFor(profile, gameDate)?.let { questDao.insertAll(listOf(it.toEntity(now))) }
+            // Phone-down night (GD §16.12): the quest belongs to the wake day and exists only while usage can be read.
+            bedtime.draftFor(profile, gameDate)?.let { questDao.insertAll(listOf(it.toEntity(now))) }
             questDao.insertAll(
                 habitDao.active()
                     .filter { it.isDueOn(gameDate) }

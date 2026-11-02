@@ -8,6 +8,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.assismohanty.awaken.core.domain.AppUsageRow
 import com.assismohanty.awaken.core.domain.LoadScreenTimeOverviewUseCase
+import com.assismohanty.awaken.core.domain.LoadPickupsUseCase
+import com.assismohanty.awaken.core.domain.PickupsState
 import com.assismohanty.awaken.core.domain.ScreenTimeOverview
 import com.assismohanty.awaken.core.domain.SetAppRuleResult
 import com.assismohanty.awaken.core.domain.SetAppRuleUseCase
@@ -44,6 +46,8 @@ data class ScreenTimeUiState(
     val failed: Boolean = false,
     /** Reel counter's totals for today (every app, even at zero); null while that feature is switched off. */
     val reels: List<ReelAppRowUi>? = null,
+    /** Pickups card (GD §16.10); null until read. */
+    val pickups: PickupsState? = null,
 ) {
     val visibleApps: List<AppUsageRow>
         get() = overview?.apps.orEmpty()
@@ -69,6 +73,7 @@ sealed interface ScreenTimeEvent {
 @HiltViewModel
 class ScreenTimeViewModel @Inject constructor(
     private val loadOverview: LoadScreenTimeOverviewUseCase,
+    private val loadPickups: LoadPickupsUseCase,
     private val setEnabled: SetScreenTimeEnabledUseCase,
     private val setAppRule: SetAppRuleUseCase,
     reelData: ReelWidgetData,
@@ -169,6 +174,17 @@ class ScreenTimeViewModel @Inject constructor(
     }
 
     private fun refresh() {
+        viewModelScope.launch {
+            val pickups = try {
+                loadPickups()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Timber.w(e, "Loading pickups failed")
+                PickupsState.Unavailable
+            }
+            _uiState.update { it.copy(pickups = pickups) }
+        }
         viewModelScope.launch {
             val overview = try {
                 loadOverview()

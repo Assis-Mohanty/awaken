@@ -10,8 +10,12 @@ import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Process
+import android.provider.AlarmClock
+import android.telecom.TelecomManager
 import com.assismohanty.awaken.core.data.di.IoDispatcher
 import com.assismohanty.awaken.engine.AppKind
+import com.assismohanty.awaken.engine.ScreenEvent
+import com.assismohanty.awaken.engine.ScreenEventType
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.time.Instant
 import javax.inject.Inject
@@ -82,6 +86,44 @@ class AndroidUsageGateway @Inject constructor(
         if (seen == 0) OpenedRead.Unavailable else OpenedRead.Opened(opened)
     }
 
+    override suspend fun events(start: Instant, end: Instant): EventsRead = withContext(ioDispatcher) {
+        if (!hasAccess()) return@withContext EventsRead.NoAccess
+        if (!end.isAfter(start)) return@withContext EventsRead.Unavailable
+        val manager = context.getSystemService(UsageStatsManager::class.java) ?: return@withContext EventsRead.Unavailable
+        val events = manager.queryEvents(start.toEpochMilli(), end.toEpochMilli()) ?: return@withContext EventsRead.Unavailable
+        val event = UsageEvents.Event()
+        val found = ArrayList<ScreenEvent>()
+        var seen = 0
+        while (events.hasNextEvent()) {
+            events.getNextEvent(event)
+            seen++
+            val type = when (event.eventType) {
+                EVENT_KEYGUARD_SHOWN -> ScreenEventType.KEYGUARD_SHOWN
+                EVENT_KEYGUARD_HIDDEN -> ScreenEventType.KEYGUARD_HIDDEN
+                EVENT_SCREEN_INTERACTIVE -> ScreenEventType.SCREEN_INTERACTIVE
+                EVENT_SCREEN_NON_INTERACTIVE -> ScreenEventType.SCREEN_NON_INTERACTIVE
+                EVENT_RESUMED, EVENT_PAUSED -> ScreenEventType.FOREGROUND
+                else -> null
+            }
+            if (type != null) found += ScreenEvent(type, Instant.ofEpochMilli(event.timeStamp))
+        }
+        if (seen == 0) EventsRead.Unavailable else EventsRead.Tracked(found)
+    }
+
+    override suspend fun nightAllowedPackages(): Set<String> = withContext(ioDispatcher) {
+        val pm = context.packageManager
+        val allowed = HashSet<String>()
+        allowed += context.packageName
+        context.getSystemService(TelecomManager::class.java)?.let { telecom ->
+            telecom.defaultDialerPackage?.let(allowed::add)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) telecom.systemDialerPackage?.let(allowed::add)
+        }
+        listOf(Intent(Intent.ACTION_DIAL), Intent(AlarmClock.ACTION_SHOW_ALARMS)).forEach { intent ->
+            pm.queryIntentActivities(intent, 0).mapTo(allowed) { it.activityInfo.packageName }
+        }
+        allowed
+    }
+
     override suspend fun launcherApps(): List<InstalledApp> = withContext(ioDispatcher) {
         val pm = context.packageManager
         val intent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
@@ -108,6 +150,10 @@ class AndroidUsageGateway @Inject constructor(
         const val EVENT_PAUSED = 2
         /** ACTIVITY_STOPPED (Q+): also ends a visit when no pause was reported. */
         const val EVENT_STOPPED = 23
+        const val EVENT_SCREEN_INTERACTIVE = 15
+        const val EVENT_SCREEN_NON_INTERACTIVE = 16
+        const val EVENT_KEYGUARD_SHOWN = 17
+        const val EVENT_KEYGUARD_HIDDEN = 18
     }
 }
 

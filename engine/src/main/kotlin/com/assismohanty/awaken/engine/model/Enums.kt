@@ -59,7 +59,10 @@ enum class QuestType {
     PATH,
 
     /** Screen Discipline (GD §6.7): paid at rollover if every limit held, forfeited on the first breach. */
-    DISCIPLINE;
+    DISCIPLINE,
+
+    /** Verified phone-down night (GD §16.12): belongs to the wake day, paid after the window if the phone stayed down. Not generated, no reroll. */
+    BEDTIME;
 
     /** Penalty quests and Rank Trial stages cannot crit (GD §4.2). */
     val canCrit: Boolean get() = this != PENALTY && this != TRIAL

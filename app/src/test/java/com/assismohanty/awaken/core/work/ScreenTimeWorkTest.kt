@@ -47,7 +47,7 @@ class ScreenTimeWorkTest {
         val alerts = ScreenTimeAlertStore(
             PreferenceDataStoreFactory.create(scope = storeScope) { File(context.filesDir, "alerts-${UUID.randomUUID()}.preferences_pb") },
         )
-        checker = ScreenTimeChecker(context, graph.disciplineSync, alerts, ScreenTimeNotifications(context, NotificationAccess(context)), graph.usage)
+        checker = ScreenTimeChecker(context, graph.disciplineSync, graph.settleCurrentBedtime, alerts, ScreenTimeNotifications(context, NotificationAccess(context)), graph.usage)
     }
 
     @After

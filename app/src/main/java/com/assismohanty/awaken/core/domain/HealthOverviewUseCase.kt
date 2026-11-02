@@ -53,6 +53,8 @@ data class HealthOverview(
     val stepSource: StepSource = StepSource.HEALTH_CONNECT,
     /** No step source yet, and the phone's own counter could be switched on (Recording API supported, not yet allowed). */
     val canUsePhoneSteps: Boolean = false,
+    /** The daily step goal for the Today ring (GD §16.11). */
+    val stepGoal: Int = com.assismohanty.awaken.engine.StepGoalRules.DEFAULT_GOAL,
 )
 
 sealed interface HealthOverviewResult {
@@ -109,6 +111,7 @@ class LoadHealthOverviewUseCase @Inject constructor(
                     canHeartRate = gateway.heartRatePermission in granted,
                     stepSource = source,
                     canUsePhoneSteps = source == StepSource.NONE && phoneSteps.isSupported() && !phoneSteps.isPermissionGranted(),
+                    stepGoal = profile.stepGoal,
                 ),
             )
         } catch (e: HealthReadException) {

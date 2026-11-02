@@ -79,6 +79,14 @@ import com.assismohanty.awaken.engine.AppCategory
 import com.assismohanty.awaken.engine.ScreenTimeRules
 import com.assismohanty.awaken.engine.model.Rank
 import java.time.LocalDate
+import java.time.Duration
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
+import com.assismohanty.awaken.core.domain.PickupsState
+import com.assismohanty.awaken.engine.PickupKind
+import com.assismohanty.awaken.engine.PickupSummary
 import java.time.format.TextStyle
 import java.util.Locale
 import kotlinx.coroutines.Dispatchers
@@ -154,6 +162,7 @@ fun ScreenTimeScreen(
                 }
                 else -> {
                     UsageTodayWindow(overview, Modifier.staggeredEntrance(0))
+                    state.pickups?.let { PickupsWindow(it, Modifier.staggeredEntrance(1)) }
                     DisciplineWindow(overview, onEvent, Modifier.staggeredEntrance(1))
                     AppsWindow(state, onEvent, Modifier.staggeredEntrance(2))
                     TrendWindow(overview.trend, Modifier.staggeredEntrance(3))
@@ -619,4 +628,79 @@ private fun ScreenTimeWeekPreview() {
     AwakenTheme(reduceMotion = true) {
         Column(modifier = Modifier.padding(Spacing.gutter)) { TrendWindow(checkNotNull(previewScreenTimeState().overview).trend) }
     }
+}
+
+/**
+ * Pickups today (GD §16.10): how often the phone was unlocked, the first pickup, the last use yesterday and the longest
+ * stretch without it. Display only. No access or an unreadable log shows words, never zeros.
+ */
+@Composable
+internal fun PickupsWindow(pickups: PickupsState, modifier: Modifier = Modifier) {
+    val colors = AwakenTheme.colors
+    val type = AwakenTheme.type
+    SystemWindow(title = lexString(R.string.pickups_title), accent = colors.accent, modifier = modifier, reveal = false) {
+        when (pickups) {
+            PickupsState.NoAccess -> Text(lexString(R.string.pickups_needs_access), style = type.body, color = colors.textSecondary)
+            PickupsState.Unavailable -> Text(lexString(R.string.pickups_no_data), style = type.body, color = colors.textSecondary)
+            is PickupsState.Data -> PickupsData(pickups.summary)
+        }
+    }
+}
+
+@Composable
+private fun PickupsData(summary: PickupSummary) {
+    val colors = AwakenTheme.colors
+    val type = AwakenTheme.type
+    val none = lexString(R.string.pickups_none_yet)
+    Text(
+        lexString(if (summary.kind == PickupKind.PICKUPS) R.string.pickups_label_pickups else R.string.pickups_label_screen_ons),
+        style = type.label,
+        color = colors.textSecondary,
+    )
+    Text(summary.count.toString(), style = type.metricXL, color = colors.textPrimary)
+    ValueRow(lexString(R.string.pickups_first), summary.firstPickup?.let(::clockTime) ?: none)
+    ValueRow(lexString(R.string.pickups_last_use), summary.lastUseYesterday?.let(::clockTime) ?: none)
+    ValueRow(lexString(R.string.pickups_stretch), summary.longestStretch?.let { durationText(it) } ?: none)
+    Text(lexString(R.string.pickups_note), style = type.caption, color = colors.textSecondary)
+}
+
+private fun clockTime(at: Instant): String =
+    DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT).withLocale(java.util.Locale.getDefault()).withZone(ZoneId.systemDefault()).format(at)
+
+@Composable
+private fun durationText(duration: Duration): String {
+    val hours = duration.toHours().toInt()
+    val minutes = (duration.toMinutes() % MINUTES_PER_HOUR).toInt()
+    return if (hours > 0) lexString(R.string.pickups_duration_hm, hours, minutes) else lexString(R.string.pickups_duration_m, minutes)
+}
+
+private const val MINUTES_PER_HOUR = 60
+
+private val previewPickups = PickupsState.Data(
+    PickupSummary(
+        kind = PickupKind.PICKUPS,
+        count = 3,
+        firstPickup = Instant.parse("2026-10-25T07:10:00Z"),
+        lastUseYesterday = Instant.parse("2026-10-24T23:48:00Z"),
+        longestStretch = Duration.ofHours(4).plusMinutes(25),
+    ),
+)
+
+@PhonePreviews
+@Composable
+private fun PickupsPreview() = AwakenTheme(reduceMotion = true) {
+    ScreenTimeScreen(state = previewScreenTimeState().copy(pickups = previewPickups), onEvent = {}, onBack = {}, onOpenUsageAccess = {})
+}
+
+@PhonePreviews
+@Composable
+private fun PickupsScreenOnsPreview() = AwakenTheme(reduceMotion = true) {
+    val summary = (previewPickups as PickupsState.Data).summary.copy(kind = PickupKind.SCREEN_ONS, count = 5, longestStretch = null, lastUseYesterday = null)
+    ScreenTimeScreen(state = previewScreenTimeState().copy(pickups = PickupsState.Data(summary)), onEvent = {}, onBack = {}, onOpenUsageAccess = {})
+}
+
+@PhonePreviews
+@Composable
+private fun PickupsNoDataPreview() = AwakenTheme(reduceMotion = true) {
+    ScreenTimeScreen(state = previewScreenTimeState().copy(pickups = PickupsState.Unavailable), onEvent = {}, onBack = {}, onOpenUsageAccess = {})
 }

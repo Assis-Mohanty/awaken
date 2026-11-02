@@ -121,6 +121,8 @@ Q1 keep H1 dropped (Batch 6 builds nothing for H1) · Q2 separate allowance, max
 
 ## Batch 4 — Screen & health: D1 pickups, D2 step goal, D3 phone-down nights
 
+✅ built in BATCH4_COMMIT. Differences from the checklist: pickups use `LoadPickupsUseCase` (not `ScreenTimeUseCases.kt`); the BEDTIME card, its ViewModel and the wind-down screen are in `feature/today` and the settings window in `feature/settings` (`BedtimeSettings.kt`); the nights live in `BedtimeUseCases.kt`; `StepGoalRing` and `BreathingGuide` are in `SleepAndStepRings.kt`. Decisions: ENGINE_DECISIONS #131–#135. Vectors #113–#121 pass.
+
 **Engine**
 - [ ] `PickupRules.kt` (pickups / screen-ons, first pickup, last use, longest stretch from first pickup).
 - [ ] `BedtimeRules.kt` (window validity `N21`, wake day, allowed packages, grace `N22`, verdict KEPT / BROKEN / NO_DATA).

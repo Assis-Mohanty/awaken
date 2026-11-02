@@ -99,6 +99,8 @@ data class SettingsUiState(
     val notificationsBlocked: Boolean = false,
     /** Daily focus goal in minutes (GD §16.4). */
     val focusGoal: Int = FocusGoalRules.DEFAULT_GOAL,
+    /** Daily step goal (GD §16.11). */
+    val stepGoal: Int = com.assismohanty.awaken.engine.StepGoalRules.DEFAULT_GOAL,
 ) {
     val canSaveName: Boolean get() = nameDraft.trim() != savedName && nameDraft.isNotBlank()
     val canSaveFocus: Boolean get() = focusDraft.size == 2 && focusDraft.toSet() != savedFocus.toSet()
@@ -112,6 +114,8 @@ sealed interface SettingsEvent {
     data class SetDayStart(val hour: Int) : SettingsEvent
     /** One 15-minute step up (+1) or down (-1) on the daily focus goal. */
     data class StepFocusGoal(val direction: Int) : SettingsEvent
+    /** One 500-step move up (+1) or down (-1) on the daily step goal. */
+    data class StepStepGoal(val direction: Int) : SettingsEvent
     data object OpenReminderPicker : SettingsEvent
     data object DismissReminderPicker : SettingsEvent
     data class SetReminder(val time: LocalTime?) : SettingsEvent
@@ -210,6 +214,10 @@ class SettingsViewModel @Inject constructor(
             }
             is SettingsEvent.SetDayStart -> save(afterSaved = { dayStartScheduler.reschedule(); dayRefresher.refresh() }) {
                 updateSettings.setDayStartHour(event.hour)
+            }
+            is SettingsEvent.StepStepGoal -> {
+                val goal = current?.stepGoal ?: return
+                save { updateSettings.setStepGoal(goal + event.direction * com.assismohanty.awaken.engine.StepGoalRules.GOAL_STEP) }
             }
             is SettingsEvent.StepFocusGoal -> {
                 val goal = current?.focusGoal ?: return
@@ -446,6 +454,7 @@ private fun SettingsModel.toUiState(prefs: UiPrefs, drafts: Drafts, aiConsent: B
     busy = drafts.busy,
     importSummary = drafts.summary,
     healthConnected = healthEnabled,
+    stepGoal = stepGoal,
     healthStatus = drafts.healthStatus,
     healthAction = drafts.healthAction,
     healthPermissions = drafts.healthPermissions,

@@ -312,9 +312,20 @@ val MIGRATION_20_21 = object : Migration(20, 21) {
     }
 }
 
+/** v21 → v22 (step goal, phone-down nights): the goal defaults to 8,000 and the rule table starts empty (= off). */
+val MIGRATION_21_22 = object : Migration(21, 22) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE `hunter_profile` ADD COLUMN `step_goal` INTEGER NOT NULL DEFAULT 8000")
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS `bedtime_rule` (`effective_from` TEXT NOT NULL, `enabled` INTEGER NOT NULL, `bedtime_min` INTEGER NOT NULL, " +
+                "`wake_min` INTEGER NOT NULL, PRIMARY KEY(`effective_from`))",
+        )
+    }
+}
+
 /** Every migration, in order. The database builder and the migration test both use this list. */
 val ALL_MIGRATIONS: Array<Migration> = arrayOf(
     MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9,
     MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17,
-    MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21,
+    MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21, MIGRATION_21_22,
 )

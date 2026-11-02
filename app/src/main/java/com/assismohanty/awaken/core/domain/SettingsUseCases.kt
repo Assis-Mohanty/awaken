@@ -31,6 +31,8 @@ data class SettingsModel(
     /** Identity ids in pick order (GD §14.7) and the launch list to pick from. */
     val identities: List<String> = emptyList(),
     val identityOptions: List<Identity> = emptyList(),
+    /** Daily step goal for the Today ring (GD §16.11). */
+    val stepGoal: Int = com.assismohanty.awaken.engine.StepGoalRules.DEFAULT_GOAL,
 )
 
 class ObserveSettingsUseCase @Inject constructor(
@@ -52,6 +54,7 @@ class ObserveSettingsUseCase @Inject constructor(
                 healthEnabled = it.healthEnabled,
                 identities = it.identityIds,
                 identityOptions = identityRepository.catalog().identities,
+                stepGoal = it.stepGoal,
             )
         }
     }
@@ -95,6 +98,10 @@ class UpdateSettingsUseCase @Inject constructor(
         hunterDao.setDayStartHour(hour)
         return SettingsResult.Saved
     }
+
+    /** Snaps to 1,000-30,000 in steps of 500 (GD §16.11, N19-N20). Display only, so it applies at once. */
+    suspend fun setStepGoal(goal: Int): SettingsResult =
+        withProfile { hunterDao.setStepGoal(com.assismohanty.awaken.engine.StepGoalRules.clampGoal(goal)) }
 
     /** Null clears the reminder. */
     suspend fun setReminder(time: LocalTime?): SettingsResult = withProfile { hunterDao.setReminderTime(time?.toString()) }

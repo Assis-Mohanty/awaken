@@ -86,6 +86,7 @@ fun TodayRoute(
     onOpenVault: () -> Unit = {},
     onOpenReview: () -> Unit = {},
     onOpenHealth: () -> Unit = {},
+    onOpenWindDown: () -> Unit = {},
     onOpenSettings: () -> Unit = {},
     snackbarHostState: SnackbarHostState? = null,
     viewModel: TodayViewModel = hiltViewModel(),
@@ -126,6 +127,13 @@ fun TodayRoute(
         focus = focus,
         onOpenHealth = onOpenHealth,
         onGrantUsageAccess = { openUsageAccessSettings(context) },
+        bedtimeCard = {
+            BedtimeCardRoute(
+                currentBlock = state.currentBlock,
+                onWindDown = onOpenWindDown,
+                onGrantAccess = { openUsageAccessSettings(context) },
+            )
+        },
         onSetUpHealth = { if (summary.healthNeedsConnect) onOpenSettings() else openHealthConnectSettings(context) },
     )
     HabitSheets(state = habits, onEvent = habitsViewModel::onEvent)
@@ -175,6 +183,7 @@ fun TodayScreen(
     onOpenHealth: () -> Unit = {},
     onGrantUsageAccess: () -> Unit = {},
     onSetUpHealth: () -> Unit = {},
+    bedtimeCard: @Composable () -> Unit = {},
 ) {
     val colors = AwakenTheme.colors
     val header = state.header
@@ -267,6 +276,7 @@ fun TodayScreen(
         PlanCard(state, onHabitsEvent, onDayPlanEvent)
         CampaignRow(state, onOpenCampaign)
         state.discipline?.let { card -> DisciplineRow(card, onOpenScreenTime) }
+        bedtimeCard()
     }
 }
 

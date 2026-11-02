@@ -1,5 +1,6 @@
 package com.assismohanty.awaken.testing
 
+import com.assismohanty.awaken.core.data.usage.EventsRead
 import com.assismohanty.awaken.core.data.usage.InstalledApp
 import com.assismohanty.awaken.core.data.usage.OpenedRead
 import com.assismohanty.awaken.core.data.usage.UsageGateway
@@ -24,11 +25,20 @@ class FakeUsageGateway(
     /** Packages that "came to the foreground" in any window asked about. */
     val opened: MutableSet<String> = mutableSetOf()
 
+    /** True = a night so idle that [read] finds no events at all, while the event log itself is alive. */
+    var idle: Boolean = false
+
+    /** Events returned for any window asked about. */
+    val screenEvents: MutableList<com.assismohanty.awaken.engine.ScreenEvent> = mutableListOf()
+
+    /** Packages that never break a night. */
+    val nightAllowed: MutableSet<String> = mutableSetOf("com.assismohanty.awaken")
+
     override fun hasAccess(): Boolean = access
 
     override suspend fun read(start: Instant, end: Instant): UsageRead = when {
         !access -> UsageRead.NoAccess
-        !readable -> UsageRead.Unavailable
+        !readable || idle -> UsageRead.Unavailable
         else -> UsageRead.Tracked(minutes.filterValues { it > 0 }.mapValues { it.value * 60_000L })
     }
 
@@ -37,6 +47,17 @@ class FakeUsageGateway(
         !readable -> OpenedRead.Unavailable
         else -> OpenedRead.Opened(opened.toSet())
     }
+
+    override suspend fun events(start: Instant, end: Instant): EventsRead = when {
+        !access -> EventsRead.NoAccess
+        !readable -> EventsRead.Unavailable
+        else -> screenEvents.filter { !it.at.isBefore(start) && it.at.isBefore(end) }.let { found ->
+            // Like the real log: a window with no events at all cannot be read.
+            if (found.isEmpty()) EventsRead.Unavailable else EventsRead.Tracked(found)
+        }
+    }
+
+    override suspend fun nightAllowedPackages(): Set<String> = nightAllowed.toSet()
 
     override suspend fun launcherApps(): List<InstalledApp> = apps
 

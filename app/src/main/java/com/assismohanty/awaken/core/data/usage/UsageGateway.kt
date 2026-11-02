@@ -1,6 +1,7 @@
 package com.assismohanty.awaken.core.data.usage
 
 import com.assismohanty.awaken.engine.AppKind
+import com.assismohanty.awaken.engine.ScreenEvent
 import java.time.Instant
 
 /** An app the hunter can open from the launcher: what the Screen Time list shows (GD §6.7). */
@@ -31,6 +32,16 @@ sealed interface OpenedRead {
     data class Opened(val packages: Set<String>) : OpenedRead
 }
 
+/**
+ * Device events for pickups and the night check (GD §16.10). Like [UsageRead], only [Tracked] is real data; a missing
+ * permission or an unreadable log is never "no pickups".
+ */
+sealed interface EventsRead {
+    data object NoAccess : EventsRead
+    data object Unavailable : EventsRead
+    data class Tracked(val events: List<ScreenEvent>) : EventsRead
+}
+
 /** Foreground time per package when the read is real data, else null. */
 val UsageRead.trackedMillis: Map<String, Long>? get() = (this as? UsageRead.Tracked)?.millis
 
@@ -47,6 +58,12 @@ interface UsageGateway {
 
     /** The packages that came to the foreground during `[start, end)`. Package names only; nothing is stored. */
     suspend fun opened(start: Instant, end: Instant): OpenedRead
+
+    /** Screen and keyguard events plus app visits over `[start, end)`. Times only; no package name leaves this read. */
+    suspend fun events(start: Instant, end: Instant): EventsRead
+
+    /** Packages that never break a phone-down night (GD §16.12): AWAKEN, the dialer and telecom apps, the clock/alarm apps. */
+    suspend fun nightAllowedPackages(): Set<String>
 
     /** Launcher apps other than AWAKEN itself, sorted by label. */
     suspend fun launcherApps(): List<InstalledApp>

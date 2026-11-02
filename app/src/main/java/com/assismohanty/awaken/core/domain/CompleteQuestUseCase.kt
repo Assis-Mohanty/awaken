@@ -118,7 +118,9 @@ class CompleteQuestUseCase @Inject constructor(
             // Screen Discipline is paid at rollover for the day that just ended, priced and dated on that day (ENGINE_DECISIONS #91).
             // Every other completion belongs to the current game-day only.
             val today = if (verifiedBy == VerificationSource.USAGE) quest.gameDate else currentDay
-            val dayOk = if (verifiedBy == VerificationSource.USAGE) quest.gameDate < currentDay else quest.gameDate == currentDay
+            // A phone-down night ends on its own wake day (GD §16.12), so it is paid that day; Screen Discipline waits for rollover.
+            val usageDayOk = if (quest.type == QuestType.BEDTIME) quest.gameDate <= currentDay else quest.gameDate < currentDay
+            val dayOk = if (verifiedBy == VerificationSource.USAGE) usageDayOk else quest.gameDate == currentDay
             if (!dayOk) return@run CompleteQuestResult.WrongDay
 
             if (!habitDriven && verifiedBy == null && quest.habitId?.let { habitDao.get(it)?.type }.let { it == HabitType.QUANTITY || it == HabitType.NEGATIVE }) {

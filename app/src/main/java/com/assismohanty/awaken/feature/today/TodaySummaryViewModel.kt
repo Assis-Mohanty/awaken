@@ -99,7 +99,7 @@ internal fun HealthOverviewResult.toTile(): HealthTileModel {
     val kcal = overview.today.activeKcal.takeIf { overview.canCalories && it > 0.0 }?.toLong()
     val sleep = today?.sleepMinutes
     if (steps == null && distance == null && kcal == null && sleep == null) return HealthTileModel.NoData
-    return HealthTileModel.Ready(steps, distance, kcal, sleep)
+    return HealthTileModel.Ready(steps, distance, kcal, sleep, overview.stepGoal)
 }
 
 private const val METERS_PER_KM = 1_000.0

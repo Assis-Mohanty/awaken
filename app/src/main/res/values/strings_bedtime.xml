@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Pickups, the daily step goal and verified phone-down nights (GAME_DESIGN §16.10-16.12).
+    Written in a neutral voice, so no strings here need a Clean twin.
+-->
+<resources>
+    <!-- The BEDTIME quest -->
+    <string name="quest_kind_bedtime">Phone-down night</string>
+    <string name="bedtime_quest_title">Phone-down night</string>
+    <string name="bedtime_quest_description">Keep your phone down through the night.</string>
+
+    <!-- Today card (D3) -->
+    <string name="bedtime_card_title">Phone-down night</string>
+    <string name="bedtime_card_tonight">Phone down tonight %1$s–%2$s · +%3$d XP if kept</string>
+    <string name="bedtime_card_in_progress">Phone down until %1$s</string>
+    <string name="bedtime_card_pending">Checking last night…</string>
+    <string name="bedtime_card_kept">Kept · +%1$d XP</string>
+    <string name="bedtime_card_broken">Phone used at night · no XP</string>
+    <string name="bedtime_card_no_data">No usage data · no XP</string>
+    <string name="bedtime_card_needs_access">Allow usage access to verify your nights.</string>
+    <string name="bedtime_wind_down">Wind down</string>
+    <string name="bedtime_grant_access">Allow usage access</string>
+
+    <!-- Settings (D3) -->
+    <string name="bedtime_settings_title">Phone-down nights</string>
+    <string name="bedtime_settings_explain">Keep your phone down between bedtime and wake time and earn XP the next morning. Up to 5 minutes of other use is forgiven. Needs usage access.</string>
+    <string name="bedtime_settings_allowed">These never count against you: AWAKEN, your phone and dialer app, and your clock or alarm app.</string>
+    <string name="bedtime_settings_on">Phone-down nights</string>
+    <string name="bedtime_settings_bedtime">Bedtime</string>
+    <string name="bedtime_settings_wake">Wake time</string>
+    <string name="bedtime_settings_window">%1$s to %2$s</string>
+    <string name="bedtime_settings_apply_start">Starts tonight.</string>
+    <string name="bedtime_settings_apply_edit">Changes apply from the night after tonight.</string>
+    <string name="bedtime_settings_invalid">Pick a window of 5 to 12 hours that ends after your day starts.</string>
+    <string name="bedtime_settings_needs_access">Usage access is off, so nights cannot be verified and no XP is paid.</string>
+    <string name="bedtime_settings_save">Save</string>
+    <string name="bedtime_bedtime_earlier">Earlier bedtime</string>
+    <string name="bedtime_bedtime_later">Later bedtime</string>
+    <string name="bedtime_wake_earlier">Earlier wake time</string>
+    <string name="bedtime_wake_later">Later wake time</string>
+
+    <!-- Wind-down (D3) -->
+    <string name="bedtime_wind_title">Wind down</string>
+    <string name="bedtime_wind_intro">Two minutes of slow breathing: in for 4 seconds, out for 6.</string>
+    <string name="bedtime_wind_start">Start</string>
+    <string name="bedtime_wind_done">Done</string>
+    <string name="bedtime_wind_finished">Well done. Sleep well.</string>
+    <string name="bedtime_breathe_in">Breathe in</string>
+    <string name="bedtime_breathe_out">Breathe out</string>
+    <string name="bedtime_wind_cd">Breathing guide: %1$s, %2$d seconds left</string>
+
+    <!-- Pickups on the Screen time screen (D1) -->
+    <string name="pickups_title">Pickups</string>
+    <string name="pickups_label_pickups">Pickups today</string>
+    <string name="pickups_label_screen_ons">Screen-ons today</string>
+    <string name="pickups_first">First pickup</string>
+    <string name="pickups_last_use">Last use yesterday</string>
+    <string name="pickups_stretch">Longest stretch without the phone</string>
+    <string name="pickups_none_yet">None yet</string>
+    <string name="pickups_no_data">No data yet.</string>
+    <string name="pickups_needs_access">Grant usage access to see your pickups.</string>
+    <string name="pickups_duration_hm">%1$d h %2$d min</string>
+    <string name="pickups_duration_m">%1$d min</string>
+    <string name="pickups_note">Counted on this phone only. Nothing here earns or costs XP.</string>
+
+    <!-- Daily step goal (D2) -->
+    <string name="step_goal_title">Daily step goal</string>
+    <string name="step_goal_value">%1$s steps a day</string>
+    <string name="step_goal_note">Shown as a ring on Today. It earns nothing and changes no quest.</string>
+    <string name="step_goal_less">Lower step goal</string>
+    <string name="step_goal_more">Higher step goal</string>
+    <string name="step_ring_of">%1$s / %2$s</string>
+    <string name="step_goal_reached">Goal reached</string>
+    <string name="step_ring_cd">%1$s of %2$s steps</string>
+    <string name="step_ring_cd_reached">%1$s steps, goal of %2$s reached</string>
+</resources>

@@ -32,6 +32,10 @@ import com.assismohanty.awaken.core.data.di.ScreenTimeAlertPrefs
 import com.assismohanty.awaken.core.data.usage.UsageGateway
 import com.assismohanty.awaken.core.domain.DisciplineCheck
 import com.assismohanty.awaken.core.domain.DisciplineSyncUseCase
+import com.assismohanty.awaken.core.domain.SettleCurrentBedtimeUseCase
+import com.assismohanty.awaken.core.domain.anyEnabled
+import com.assismohanty.awaken.core.data.db.dao.ScreenTimeDao
+import kotlinx.coroutines.flow.combine
 import com.assismohanty.awaken.engine.ScreenTimeRules
 import com.assismohanty.awaken.engine.model.QuestStatus
 import dagger.assisted.Assisted
@@ -134,11 +138,14 @@ class ScreenTimeNotifications @Inject constructor(
 class ScreenTimeChecker @Inject constructor(
     @ApplicationContext private val context: Context,
     private val sync: DisciplineSyncUseCase,
+    private val settleBedtime: SettleCurrentBedtimeUseCase,
     private val alerts: ScreenTimeAlertStore,
     private val notifications: ScreenTimeNotifications,
     private val usage: UsageGateway,
 ) {
     suspend fun run(): DisciplineCheck? {
+        // The phone-down night (GD §16.12) is settled whether or not Screen Discipline is on.
+        settleBedtime()
         val check = sync() ?: return null
         // App names are looked up only when an alert actually goes out.
         var names: Map<String, String>? = null
@@ -217,14 +224,14 @@ class ScreenTimeWorker @AssistedInject constructor(
 class ScreenTimeCoordinator @Inject constructor(
     @ApplicationContext private val context: Context,
     private val hunterDao: HunterDao,
+    private val screenTimeDao: ScreenTimeDao,
     private val checker: ScreenTimeChecker,
     @ApplicationScope private val scope: CoroutineScope,
 ) : DefaultLifecycleObserver {
 
     fun start() {
         scope.launch {
-            hunterDao.observeProfile()
-                .map { it?.screenTimeFrom != null }
+            combine(hunterDao.observeProfile().map { it?.screenTimeFrom != null }, screenTimeDao.observeBedtime().map { it.anyEnabled() }) { discipline, night -> discipline || night }
                 .distinctUntilChanged()
                 .collect { enabled ->
                     try {
@@ -251,7 +258,8 @@ class ScreenTimeCoordinator @Inject constructor(
     override fun onStart(owner: LifecycleOwner) {
         scope.launch {
             try {
-                if (hunterDao.observeProfile().first()?.screenTimeFrom != null) checker.run()
+                val disciplineOn = hunterDao.observeProfile().first()?.screenTimeFrom != null
+                if (disciplineOn || screenTimeDao.allBedtime().anyEnabled()) checker.run()
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {

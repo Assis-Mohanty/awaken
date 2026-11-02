@@ -66,6 +66,8 @@ data class HunterProfileEntity(
     @ColumnInfo(name = "screen_time_from") val screenTimeFrom: LocalDate? = null,
     /** Chosen identity ids in pick order, comma-separated (GD §14.7); empty = none. Order matters, so not a Set column. */
     @ColumnInfo(name = "identities", defaultValue = "") val identities: String = "",
+    /** Daily step goal for the Today ring (GD §16.11); display only. */
+    @ColumnInfo(name = "step_goal", defaultValue = "8000") val stepGoal: Int = 8000,
 ) {
     val focusStats: List<Stat> get() = listOf(focusStat1, focusStat2)
 
@@ -487,4 +489,16 @@ data class PomodoroSessionEntity(
 data class FocusGoalEntity(
     @PrimaryKey @ColumnInfo(name = "effective_from") val effectiveFrom: LocalDate,
     val minutes: Int,
+)
+
+/**
+ * One version of the phone-down night setting (GD §16.12): it governs every wake day from [effectiveFrom] on, so a change
+ * made tonight cannot move tonight's window. Times are minutes since midnight. Not a ledger table; it mints nothing.
+ */
+@Entity(tableName = "bedtime_rule")
+data class BedtimeRuleEntity(
+    @PrimaryKey @ColumnInfo(name = "effective_from") val effectiveFrom: LocalDate,
+    val enabled: Boolean,
+    @ColumnInfo(name = "bedtime_min") val bedtimeMin: Int,
+    @ColumnInfo(name = "wake_min") val wakeMin: Int,
 )

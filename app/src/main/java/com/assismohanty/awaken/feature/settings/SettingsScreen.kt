@@ -1,5 +1,6 @@
 package com.assismohanty.awaken.feature.settings
 
+import com.assismohanty.awaken.core.designsystem.components.formatCount
 import com.assismohanty.awaken.engine.Identity
 import com.assismohanty.awaken.engine.FocusGoalRules
 import com.assismohanty.awaken.engine.TimeBlocks
@@ -131,6 +132,7 @@ fun SettingsRoute(
         onOpenScreenTime = onOpenScreenTime,
         focusWindow = {
             FocusLockWindow(onOpenSetup = onOpenFocusSetup, onOpenAllowedApps = onOpenAllowedApps, onOpenScreenTime = onOpenScreenTime)
+            BedtimeSettingsRoute(onGrantAccess = { com.assismohanty.awaken.feature.screentime.openUsageAccessSettings(context) })
             ReelCounterWindow(
                 onOpenSetup = onOpenReelSetup,
                 onOpenLimits = onOpenReelLimits,
@@ -376,6 +378,7 @@ private fun TrainingWindow(state: SettingsUiState, onEvent: (SettingsEvent) -> U
     val type = AwakenTheme.type
     SystemWindow(title = lexString(R.string.settings_window_training), accent = accent(), reveal = false) {
         HealthRow(state, onEvent, onOpenHealth)
+        StepGoalRow(state, onEvent)
         Text(lexString(R.string.settings_screen_time_title), style = type.label, color = colors.textPrimary)
         Text(lexString(R.string.settings_screen_time_note), style = type.caption, color = colors.textSecondary)
         SecondaryButton(text = lexString(R.string.action_open_screen_time), onClick = onOpenScreenTime, modifier = Modifier.fillMaxWidth())
@@ -542,7 +545,7 @@ private fun ThemeMode.labelRes(): Int = when (this) {
 
 /** The whole row is the toggle target (48dp minimum); the switch only shows state. */
 @Composable
-private fun SwitchRow(title: String, note: String?, checked: Boolean, onChange: (Boolean) -> Unit) {
+internal fun SwitchRow(title: String, note: String?, checked: Boolean, onChange: (Boolean) -> Unit) {
     val colors = AwakenTheme.colors
     Row(
         modifier = Modifier
@@ -717,4 +720,30 @@ private fun SettingsScreenWithFocusPreview() {
             },
         )
     }
+}
+
+/** The daily step goal for the Today ring (GD §16.11): − and + in 500-step moves. */
+@Composable
+private fun StepGoalRow(state: SettingsUiState, onEvent: (SettingsEvent) -> Unit) {
+    val colors = AwakenTheme.colors
+    val type = AwakenTheme.type
+    val lessCd = lexString(R.string.step_goal_less)
+    val moreCd = lexString(R.string.step_goal_more)
+    Text(lexString(R.string.step_goal_title), style = type.label, color = colors.textPrimary)
+    Row(horizontalArrangement = Arrangement.spacedBy(Spacing.md), verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+        SecondaryButton(
+            text = lexString(R.string.pomodoro_minus),
+            onClick = { onEvent(SettingsEvent.StepStepGoal(-1)) },
+            enabled = state.stepGoal > com.assismohanty.awaken.engine.StepGoalRules.MIN_GOAL,
+            modifier = Modifier.semantics { contentDescription = lessCd },
+        )
+        Text(lexString(R.string.step_goal_value, formatCount(state.stepGoal)), style = type.metricL, color = colors.textPrimary, modifier = Modifier.weight(1f))
+        SecondaryButton(
+            text = lexString(R.string.pomodoro_plus),
+            onClick = { onEvent(SettingsEvent.StepStepGoal(1)) },
+            enabled = state.stepGoal < com.assismohanty.awaken.engine.StepGoalRules.MAX_GOAL,
+            modifier = Modifier.semantics { contentDescription = moreCd },
+        )
+    }
+    Text(lexString(R.string.step_goal_note), style = type.caption, color = colors.textSecondary)
 }

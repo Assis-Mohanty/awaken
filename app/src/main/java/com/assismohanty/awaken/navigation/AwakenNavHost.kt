@@ -52,6 +52,7 @@ import com.assismohanty.awaken.feature.reelcounter.ReelInspectorEntry
 import com.assismohanty.awaken.feature.reelcounter.ReelLimitsRoute as ReelLimitsEntry
 import com.assismohanty.awaken.feature.reelcounter.ReelStatsRoute as ReelStatsEntry
 import com.assismohanty.awaken.feature.screentime.ScreenTimeRoute as ScreenTimeEntry
+import com.assismohanty.awaken.feature.today.WindDownRoute as WindDownEntry
 import com.assismohanty.awaken.feature.settings.SettingsRoute as SettingsEntry
 import com.assismohanty.awaken.feature.status.StatusRoute as StatusEntry
 import com.assismohanty.awaken.feature.today.TodayRoute as TodayEntry
@@ -171,6 +172,7 @@ private fun MainScaffold(
                     TodayEntry(
                         onOpenQuest = { navController.navigate(QuestDetailRoute(it)) },
                         onOpenScreenTime = { navController.navigate(ScreenTimeRoute) },
+                        onOpenWindDown = { navController.navigate(WindDownRoute) { launchSingleTop = true } },
                         onOpenFocusReport = { navController.navigate(FocusReportRoute) },
                         onOpenReelStats = { navController.navigate(ReelStatsRoute) { launchSingleTop = true } },
                         onOpenCampaign = { navController.navigate(CampaignRoute) },
@@ -245,6 +247,7 @@ private fun MainScaffold(
                         onOpenReelStats = { navController.navigate(ReelStatsRoute) { launchSingleTop = true } },
                     )
                 }
+                composable<WindDownRoute> { WindDownEntry(onBack = { navController.popBackStack() }) }
                 composable<ReviewRoute> { ReviewEntry(onClose = { navController.popBackStack() }) }
                 composable<RecapRoute> { RecapEntry(onBack = { navController.popBackStack() }) }
                 composable<CampaignRoute> { CampaignEntry(onBack = { navController.popBackStack() }) }

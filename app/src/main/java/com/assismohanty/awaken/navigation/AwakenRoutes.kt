@@ -96,3 +96,7 @@ data object FocusAccessRoute
 /** The Reel counter detector inspector (debug builds only). */
 @Serializable
 data object ReelInspectorRoute
+
+/** Optional two-minute breathing before a phone-down night (GD §16.12), opened from the evening card on Today. */
+@Serializable
+data object WindDownRoute

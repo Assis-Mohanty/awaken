@@ -58,6 +58,7 @@ import com.assismohanty.awaken.core.data.db.dao.PomodoroDao
 import com.assismohanty.awaken.core.data.db.entity.WorkoutEntity
 import com.assismohanty.awaken.core.data.db.entity.WorkoutSetEntity
 import com.assismohanty.awaken.core.data.db.entity.ExercisePrefEntity
+import com.assismohanty.awaken.core.data.db.entity.BedtimeRuleEntity
 import com.assismohanty.awaken.core.data.db.entity.GymSettingsEntity
 
 @Database(
@@ -95,6 +96,7 @@ import com.assismohanty.awaken.core.data.db.entity.GymSettingsEntity
         WorkoutSetEntity::class,
         ExercisePrefEntity::class,
         GymSettingsEntity::class,
+        BedtimeRuleEntity::class,
         CustomFoodEntity::class,
         FoodLogEntity::class,
         NutritionProfileEntity::class,
@@ -129,6 +131,6 @@ abstract class AwakenDatabase : RoomDatabase() {
         const val NAME = "awaken.db"
 
         /** Also the export format version: an export is only importable into the schema it was written from. */
-        const val SCHEMA_VERSION = 21
+        const val SCHEMA_VERSION = 22
     }
 }

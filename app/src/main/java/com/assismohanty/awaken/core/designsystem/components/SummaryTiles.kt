@@ -55,7 +55,13 @@ sealed interface HealthTileModel {
     /** Health isn't connected, or nothing records any of the four metrics: "No data" and a way to set a source up. */
     data object NoData : HealthTileModel
 
-    data class Ready(val steps: Long?, val distanceKm: Double?, val activeKcal: Long?, val sleepMinutes: Int?) : HealthTileModel
+    data class Ready(
+        val steps: Long?,
+        val distanceKm: Double?,
+        val activeKcal: Long?,
+        val sleepMinutes: Int?,
+        val stepGoal: Int = com.assismohanty.awaken.engine.StepGoalRules.DEFAULT_GOAL,
+    ) : HealthTileModel
 }
 
 /**
@@ -140,12 +146,14 @@ fun HealthTile(model: HealthTileModel, onClick: () -> Unit, onSetUp: () -> Unit,
                 val oneDecimal = NumberFormat.getNumberInstance(currentLocale()).apply { maximumFractionDigits = 1; minimumFractionDigits = 1 }
                 val none = lexString(R.string.tile_value_none)
                 val sleep = model.sleepMinutes?.let { lexString(R.string.health_duration_hm, it / MINUTES_PER_HOUR, it % MINUTES_PER_HOUR) }
-                val figures = listOf(
-                    lexString(R.string.health_metric_steps) to (model.steps?.let(numbers::format) ?: none),
+                // Known steps become the goal ring (GD §16.11); unknown steps stay a dash in the grid.
+                val figures = listOfNotNull(
+                    if (model.steps == null) lexString(R.string.health_metric_steps) to none else null,
                     lexString(R.string.health_metric_distance) to (model.distanceKm?.let { lexString(R.string.health_value_distance, oneDecimal.format(it)) } ?: none),
                     lexString(R.string.tile_kcal_short) to (model.activeKcal?.let { lexString(R.string.health_value_kcal, numbers.format(it)) } ?: none),
                     lexString(R.string.tile_sleep) to (sleep ?: none),
                 )
+                model.steps?.let { StepGoalRing(steps = it, goal = model.stepGoal) }
                 // 2×2 where two figures fit side by side; one column on small phones so nothing truncates. (FlowRow, not
                 // BoxWithConstraints: Today sizes the tile row by intrinsics.)
                 FlowRow(

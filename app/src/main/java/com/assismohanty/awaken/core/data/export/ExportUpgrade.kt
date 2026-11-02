@@ -15,6 +15,7 @@ object ExportUpgrade {
     private const val SUBJECT_TABLE = "focus_subject"
     private val FOCUS_V20_TABLES = listOf("pomodoro_session", "focus_goal")
     private val GYM_V21_TABLES = listOf("exercise_pref", "gym_settings")
+    private const val BEDTIME_TABLE = "bedtime_rule"
     private val BODY_TABLES = listOf(
         "custom_exercise", "routine", "routine_exercise", "workout", "workout_set", "custom_food", "food_log", "nutrition_profile",
     )
@@ -113,6 +114,13 @@ object ExportUpgrade {
             current = current.copy(
                 schemaVersion = 21,
                 tables = current.tables + GYM_V21_TABLES.filter { it !in current.tables }.associateWith { emptyList() },
+            )
+        }
+        // v21 → v22 (step goal, phone-down nights): the new profile column defaults to 8,000 and no night was ever set.
+        if (current.app == ExportDocument.APP_ID && current.schemaVersion == 21) {
+            current = current.copy(
+                schemaVersion = 22,
+                tables = current.tables + (BEDTIME_TABLE to current.tables[BEDTIME_TABLE].orEmpty()),
             )
         }
         return current

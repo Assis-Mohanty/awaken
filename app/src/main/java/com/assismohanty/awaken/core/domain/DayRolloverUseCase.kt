@@ -60,6 +60,7 @@ class DayRolloverUseCase @Inject constructor(
     private val pathDao: PathDao,
     private val pathWeeks: PathWeekRequester,
     private val settleDiscipline: SettleDisciplineUseCase,
+    private val settleBedtime: SettleBedtimeUseCase,
     private val advanceCampaign: AdvanceCampaignUseCase,
     private val achievements: AchievementUnlocker,
     private val transactions: TransactionRunner,
@@ -82,6 +83,8 @@ class DayRolloverUseCase @Inject constructor(
             carryRecovery(date)
             // Pays or forfeits the day's Screen Discipline quest before the day outcome is computed (GD §6.7).
             settleDiscipline(date)
+            // And the night that ended that morning, if no foreground check or worker got to it first (GD §16.12).
+            settleBedtime(date)
             finalized += finalizeDay(date)
             date = date.plusDays(1)
         }

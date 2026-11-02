@@ -148,6 +148,19 @@ class GameDataPorterTest {
     }
 
     @Test
+    fun phoneDownNightsAndTheStepGoalSurviveARoundTrip() = runTest {
+        source.seedHunter()
+        source.setBedtime.enableOrEdit(22 * 60 + 30, 6 * 60)
+        source.updateSettings.setStepGoal(12_000)
+
+        assertThat(target.porter.import(source.porter.export())).isInstanceOf(ImportResult.Imported::class.java)
+
+        assertThat(target.db.screenTimeDao().allBedtime()).isEqualTo(source.db.screenTimeDao().allBedtime())
+        assertThat(target.db.screenTimeDao().allBedtime()).hasSize(1)
+        assertThat(checkNotNull(target.db.hunterDao().getProfile()).stepGoal).isEqualTo(12_000)
+    }
+
+    @Test
     fun theSummaryDescribesWhatWasRestored() = runTest {
         playSomeGame()
         val summary = (target.porter.import(source.porter.export()) as ImportResult.Imported).summary
