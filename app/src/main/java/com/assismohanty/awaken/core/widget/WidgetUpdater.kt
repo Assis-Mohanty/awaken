@@ -45,8 +45,8 @@ class WidgetUpdater @Inject constructor(
         }
         scope.launch {
             // The reel total rides on the same widget: a new reel (or switching the feature on or off) re-renders it.
-            combine(observeToday(dayRefresher.ticks).map { it.toWidgetSnapshot() }, reelData.observe()) { snapshot, reels ->
-                snapshot.copy(reelsToday = reels)
+            combine(observeToday(dayRefresher.ticks).map { it.toWidgetSnapshot() }, reelData.observeLumi()) { snapshot, lumi ->
+                snapshot.copy(reelsToday = lumi?.total, reelsLumiStage = lumi?.state?.stage ?: 1)
             }
                 .distinctUntilChanged()
                 .collect {

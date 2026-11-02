@@ -254,7 +254,7 @@ fun TodayScreen(
             )
         }
 
-        summary.reelsToday?.let { ReelsTile(total = it, onClick = onOpenReelStats, modifier = Modifier.fillMaxWidth()) }
+        summary.reelsToday?.let { ReelsTile(total = it, lumi = summary.reelsLumi, onClick = onOpenReelStats, modifier = Modifier.fillMaxWidth()) }
 
         FocusCard(state = focus, onStart = onOpenGates, onOpenReport = onOpenFocusReport)
 

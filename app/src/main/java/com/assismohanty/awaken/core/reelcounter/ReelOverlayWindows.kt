@@ -21,18 +21,17 @@ import com.assismohanty.awaken.core.data.repo.ThemeMode
 import com.assismohanty.awaken.core.data.repo.UiPrefs
 import com.assismohanty.awaken.core.data.repo.UiPrefsRepository
 import com.assismohanty.awaken.core.designsystem.components.ReelBubble
+import com.assismohanty.awaken.core.designsystem.components.ReelBubbleSize
 import com.assismohanty.awaken.core.designsystem.lexicon.LexResources
 import com.assismohanty.awaken.core.designsystem.lexicon.Lexicon
 import com.assismohanty.awaken.core.designsystem.lexicon.PresentationMode
-import com.assismohanty.awaken.core.designsystem.lexicon.lexString
-import com.assismohanty.awaken.core.designsystem.theme.AwakenDimens
 import com.assismohanty.awaken.core.designsystem.theme.AwakenTheme
 import com.assismohanty.awaken.feature.reelcounter.ReelNudgeContent
 import com.assismohanty.awaken.feature.reelcounter.ReelPanelContent
 import com.assismohanty.awaken.feature.reelcounter.ReelPanelRow
-import com.assismohanty.awaken.feature.reelcounter.labelRes
 import com.assismohanty.awaken.reelcounter.core.ShortVideoApp
 import com.assismohanty.awaken.reelcounter.core.count.CounterConfig
+import com.assismohanty.awaken.reelcounter.core.lumi.lumiStage
 import com.assismohanty.awaken.reelcounter.core.stats.StatsCalculator
 import com.assismohanty.awaken.reelcounter.core.time.GameDay
 import com.assismohanty.awaken.reelcounter.core.time.ReelClock
@@ -71,6 +70,7 @@ class ReelOverlayWindows @Inject constructor(
     private val repository: ReelRepository,
     private val clock: ReelClock,
     private val dayStart: ReelDayStart,
+    private val reelData: ReelWidgetData,
 ) : ReelOverlayUi {
 
     private data class Bubble(val app: ShortVideoApp, val sessionId: Long, val count: Int, val allowance: Int?)
@@ -87,6 +87,9 @@ class ReelOverlayWindows @Inject constructor(
     private var bubble by mutableStateOf<Bubble?>(null)
     private var nudge by mutableStateOf<Nudge?>(null)
     private var panelRows by mutableStateOf<List<ReelPanelRow>>(emptyList())
+
+    /** Today's total across every app and the combined limit: what Lumi follows (the bubble's own count may run ahead of it). */
+    private var lumiToday by mutableStateOf<ReelLumi?>(null)
     private var look by mutableStateOf(Look(dark = true, presentation = PresentationMode.CLEAN, reduceMotion = false))
 
     private var placement = BubblePlacement(BubbleEdge.END, SettingsStore.DEFAULT_BUBBLE_Y)
@@ -105,6 +108,7 @@ class ReelOverlayWindows @Inject constructor(
         val s = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
         scope = s
         prefsRepository.prefs.onEach { look = it.toLook(service) }.launchIn(s)
+        reelData.observeLumi().onEach { lumiToday = it }.launchIn(s)
         settings.bubbleEnabled.onEach {
             bubbleEnabled = it
             if (!it) closeBubbleAndPanel() else bubble?.let { _ -> ensureBubbleWindow() }
@@ -196,7 +200,9 @@ class ReelOverlayWindows @Inject constructor(
 
     private fun px(dp: Dp): Int = (dp.value * density()).toInt()
 
-    private fun bubbleSize(): Int = px(AwakenDimens().avatar)
+    private fun bubbleWidth(): Int = px(ReelBubbleSize.Width)
+
+    private fun bubbleHeight(): Int = px(ReelBubbleSize.Height)
 
     private fun screenWidth(): Int = service?.resources?.displayMetrics?.widthPixels ?: 0
 
@@ -207,7 +213,6 @@ class ReelOverlayWindows @Inject constructor(
     private fun ensureBubbleWindow() {
         val host = bubbleHost ?: return
         if (host.isShown) return
-        val size = bubbleSize()
         val margin = px(EDGE_MARGIN)
         val params = WindowManager.LayoutParams(
             WindowManager.LayoutParams.WRAP_CONTENT,
@@ -217,20 +222,20 @@ class ReelOverlayWindows @Inject constructor(
             PixelFormat.TRANSLUCENT,
         ).apply {
             gravity = Gravity.TOP or Gravity.START
-            x = BubbleGeometry.x(placement.edge, screenWidth(), size, margin)
-            y = BubbleGeometry.y(placement.yFraction, usableTop(), usableBottom(), size)
+            x = BubbleGeometry.x(placement.edge, screenWidth(), bubbleWidth(), margin)
+            y = BubbleGeometry.y(placement.yFraction, usableTop(), usableBottom(), bubbleHeight())
         }
         bubbleParams = params
         host.show(params) {
             val current = bubble
             if (current != null) {
                 Themed {
-                    val progress = current.allowance?.let { (current.count.toFloat() / it).coerceIn(0f, 1f) }
+                    // The service counts first and the database follows, so never show less than the app's own count.
+                    val total = maxOf(lumiToday?.total ?: 0, current.count)
                     ReelBubble(
-                        count = current.count,
-                        progress = progress,
+                        count = total,
+                        lumi = lumiStage(total, lumiToday?.limit),
                         over = current.allowance != null && current.count >= current.allowance,
-                        description = lexString(R.string.reel_cd_bubble, lexString(current.app.labelRes()), current.count),
                         modifier = Modifier.bubbleGestures(),
                     )
                 }
@@ -264,7 +269,7 @@ class ReelOverlayWindows @Inject constructor(
     private fun dropBubble() {
         dragging = false
         val params = bubbleParams ?: return
-        placement = BubbleGeometry.snap(params.x, params.y, screenWidth(), usableTop(), usableBottom(), bubbleSize())
+        placement = BubbleGeometry.snap(params.x, params.y, screenWidth(), usableTop(), usableBottom(), bubbleWidth(), bubbleHeight())
         moveBubbleToPlacement()
         val saved = placement
         scope?.launch { settings.setBubblePosition(saved.edge, saved.yFraction) }
@@ -272,9 +277,8 @@ class ReelOverlayWindows @Inject constructor(
 
     private fun moveBubbleToPlacement() {
         val params = bubbleParams ?: return
-        val size = bubbleSize()
-        params.x = BubbleGeometry.x(placement.edge, screenWidth(), size, px(EDGE_MARGIN))
-        params.y = BubbleGeometry.y(placement.yFraction, usableTop(), usableBottom(), size)
+        params.x = BubbleGeometry.x(placement.edge, screenWidth(), bubbleWidth(), px(EDGE_MARGIN))
+        params.y = BubbleGeometry.y(placement.yFraction, usableTop(), usableBottom(), bubbleHeight())
         bubbleHost?.update(params)
     }
 
@@ -303,7 +307,7 @@ class ReelOverlayWindows @Inject constructor(
         val host = panelHost ?: return
         val anchor = bubbleParams ?: return
         val width = px(PANEL_WIDTH)
-        val size = bubbleSize()
+        val size = bubbleWidth()
         val params = WindowManager.LayoutParams(
             width,
             WindowManager.LayoutParams.WRAP_CONTENT,

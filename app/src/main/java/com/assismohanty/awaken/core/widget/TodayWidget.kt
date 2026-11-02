@@ -37,6 +37,8 @@ import androidx.glance.text.TextStyle
 import androidx.glance.unit.ColorProvider
 import com.assismohanty.awaken.MainActivity
 import com.assismohanty.awaken.R
+import com.assismohanty.awaken.core.designsystem.components.lumiDrawable
+import com.assismohanty.awaken.core.designsystem.components.lumiStatusRes
 import com.assismohanty.awaken.core.designsystem.theme.AwakenPalette
 import com.assismohanty.awaken.core.domain.DayRefresher
 import com.assismohanty.awaken.core.domain.ObserveTodayUseCase
@@ -69,7 +71,9 @@ class TodayWidget : GlanceAppWidget() {
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         val entry = EntryPointAccessors.fromApplication(context, WidgetEntryPoint::class.java)
-        val snapshot = entry.observeToday()(flowOf(Unit)).first().toWidgetSnapshot().copy(reelsToday = entry.reelWidgetData().current())
+        val lumi = entry.reelWidgetData().currentLumi()
+        val snapshot = entry.observeToday()(flowOf(Unit)).first().toWidgetSnapshot()
+            .copy(reelsToday = lumi?.total, reelsLumiStage = lumi?.state?.stage ?: 1)
         provideContent { WidgetContent(context, snapshot) }
     }
 }
@@ -147,7 +151,17 @@ private fun Filled(context: Context, snapshot: WidgetSnapshot) {
             )
             snapshot.reelsToday?.let {
                 Spacer(GlanceModifier.size(4.dp))
-                Text(context.getString(R.string.widget_reels, it), style = text(tone { p -> p.mist }, 13))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Image(
+                        provider = ImageProvider(lumiDrawable(snapshot.reelsLumiStage)),
+                        contentDescription = context.resources.getQuantityString(
+                            R.plurals.reel_lumi_cd, it, context.getString(lumiStatusRes(snapshot.reelsLumiStage)), it,
+                        ),
+                        modifier = GlanceModifier.size(LUMI_SIZE),
+                    )
+                    Spacer(GlanceModifier.width(6.dp))
+                    Text(context.getString(R.string.widget_reels, it), style = text(tone { p -> p.mist }, 13))
+                }
             }
         }
     }
@@ -170,3 +184,6 @@ private fun summaryText(context: Context, snapshot: WidgetSnapshot): String =
     }
 
 private val WIDGET_RADIUS = 24.dp
+
+/** Lumi next to the reel total: small enough to sit in the 4x2 layout's last line. */
+private val LUMI_SIZE = 24.dp

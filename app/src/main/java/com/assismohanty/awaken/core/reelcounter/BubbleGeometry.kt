@@ -9,18 +9,23 @@ data class BubblePlacement(val edge: BubbleEdge, val yFraction: Float)
 /** Pure pixel maths for the draggable bubble, so it is unit-tested without a window. */
 object BubbleGeometry {
 
+    /** [size] is the bubble's width. */
     fun x(edge: BubbleEdge, screenWidth: Int, size: Int, margin: Int): Int =
         if (edge == BubbleEdge.START) margin else screenWidth - size - margin
 
+    /** [size] is the bubble's height. */
     fun y(yFraction: Float, usableTop: Int, usableBottom: Int, size: Int): Int {
         val room = (usableBottom - usableTop - size).coerceAtLeast(0)
         return usableTop + (room * yFraction.coerceIn(0f, 1f)).roundToInt()
     }
 
-    /** The nearest edge and a clamped height for a bubble whose top-left corner was dropped at ([left], [top]). */
-    fun snap(left: Int, top: Int, screenWidth: Int, usableTop: Int, usableBottom: Int, size: Int): BubblePlacement {
+    /**
+     * The nearest edge and a clamped height for a bubble whose top-left corner was dropped at ([left], [top]).
+     * [size] is its width; [height] defaults to a square bubble.
+     */
+    fun snap(left: Int, top: Int, screenWidth: Int, usableTop: Int, usableBottom: Int, size: Int, height: Int = size): BubblePlacement {
         val edge = if (left + size / 2 < screenWidth / 2) BubbleEdge.START else BubbleEdge.END
-        val room = (usableBottom - usableTop - size).coerceAtLeast(1)
+        val room = (usableBottom - usableTop - height).coerceAtLeast(1)
         val fraction = ((top - usableTop).toFloat() / room).coerceIn(0f, 1f)
         return BubblePlacement(edge, fraction)
     }

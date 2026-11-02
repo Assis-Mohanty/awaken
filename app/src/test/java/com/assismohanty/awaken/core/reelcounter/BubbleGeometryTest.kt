@@ -54,4 +54,19 @@ class BubbleGeometryTest {
         val y = BubbleGeometry.y(placed.yFraction, top, bottom, size)
         assertThat(kotlin.math.abs(y - 1_200)).isAtMost(1)
     }
+
+    @Test
+    fun aBubbleWiderThanTallSnapsByItsWidthAndClampsByItsHeight() {
+        val wide = 264
+        val high = 144
+        // Dropped with its centre left of the middle: START. Dropped low: the height fraction stops at 1.
+        val left = BubbleGeometry.snap(left = 300, top = bottom, screenWidth = width, usableTop = top, usableBottom = bottom, size = wide, height = high)
+        assertThat(left.edge).isEqualTo(BubbleEdge.START)
+        assertThat(left.yFraction).isEqualTo(1f)
+        val right = BubbleGeometry.snap(left = 600, top = top, screenWidth = width, usableTop = top, usableBottom = bottom, size = wide, height = high)
+        assertThat(right.edge).isEqualTo(BubbleEdge.END)
+        assertThat(right.yFraction).isEqualTo(0f)
+        // The fraction 1 puts the bubble's bottom exactly on the usable bottom.
+        assertThat(BubbleGeometry.y(1f, top, bottom, high)).isEqualTo(bottom - high)
+    }
 }
