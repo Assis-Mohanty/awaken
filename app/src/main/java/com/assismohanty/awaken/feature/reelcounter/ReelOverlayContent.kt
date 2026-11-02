@@ -42,7 +42,6 @@ fun ReelPanelContent(rows: List<ReelPanelRow>, onClose: () -> Unit, modifier: Mo
                 ValueRow(label = lexString(it.app.labelRes()), value = lexString(R.string.reel_panel_row, it.count, it.minutes))
             }
         }
-        Text(lexString(R.string.reel_panel_hint), style = type.caption, color = colors.textMuted)
     }
 }
 

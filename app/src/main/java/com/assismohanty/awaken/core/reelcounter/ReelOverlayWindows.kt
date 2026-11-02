@@ -5,7 +5,6 @@ import android.content.res.Configuration
 import android.graphics.PixelFormat
 import android.view.Gravity
 import android.view.WindowManager
-import android.widget.Toast
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.runtime.Composable
@@ -22,8 +21,6 @@ import com.assismohanty.awaken.core.data.repo.UiPrefs
 import com.assismohanty.awaken.core.data.repo.UiPrefsRepository
 import com.assismohanty.awaken.core.designsystem.components.ReelBubble
 import com.assismohanty.awaken.core.designsystem.components.ReelBubbleSize
-import com.assismohanty.awaken.core.designsystem.lexicon.LexResources
-import com.assismohanty.awaken.core.designsystem.lexicon.Lexicon
 import com.assismohanty.awaken.core.designsystem.lexicon.PresentationMode
 import com.assismohanty.awaken.core.designsystem.theme.AwakenTheme
 import com.assismohanty.awaken.feature.reelcounter.ReelNudgeContent
@@ -59,7 +56,7 @@ import javax.inject.Singleton
 
 /**
  * Reel Counter's overlay windows on AWAKEN's design system: the counter bubble (drag, snap to an edge, tap for a
- * panel, long-press to hide for this session), the panel and the limit nudge. Like Focus Lock's cover they are
+ * panel), the panel and the limit nudge. Like Focus Lock's cover they are
  * accessibility-overlay windows added by the service itself, so no "draw over other apps" permission is needed.
  * Every call arrives on the main thread (`OverlayController` marshals them).
  */
@@ -94,7 +91,6 @@ class ReelOverlayWindows @Inject constructor(
 
     private var placement = BubblePlacement(BubbleEdge.CENTER, SettingsStore.DEFAULT_BUBBLE_Y)
     private var bubbleEnabled = true
-    private val hiddenSessions = mutableSetOf<Long>()
     private var bubbleParams: WindowManager.LayoutParams? = null
     private var panelJob: Job? = null
     private var dragging = false
@@ -131,12 +127,11 @@ class ReelOverlayWindows @Inject constructor(
         nudgeHost = null
         service = null
         actions = null
-        hiddenSessions.clear()
     }
 
     override fun showBubble(app: ShortVideoApp, sessionId: Long, count: Int, allowance: Int?) {
         bubble = Bubble(app, sessionId, count, allowance)
-        if (sessionId in hiddenSessions || !bubbleEnabled) return
+        if (!bubbleEnabled) return
         ensureBubbleWindow()
     }
 
@@ -245,7 +240,7 @@ class ReelOverlayWindows @Inject constructor(
 
     private fun Modifier.bubbleGestures(): Modifier = this
         .pointerInput(Unit) {
-            detectTapGestures(onTap = { togglePanel() }, onLongPress = { hideForSession() })
+            detectTapGestures(onTap = { togglePanel() })
         }
         .pointerInput(Unit) {
             detectDragGestures(
@@ -280,14 +275,6 @@ class ReelOverlayWindows @Inject constructor(
         params.x = BubbleGeometry.x(placement.edge, screenWidth(), bubbleWidth(), px(EDGE_MARGIN))
         params.y = BubbleGeometry.y(placement.yFraction, usableTop(), usableBottom(), bubbleHeight())
         bubbleHost?.update(params)
-    }
-
-    private fun hideForSession() {
-        val current = bubble ?: return
-        hiddenSessions += current.sessionId
-        closeBubbleAndPanel()
-        val svc = service ?: return
-        Toast.makeText(svc, LexResources(svc.resources, Lexicon.of(look.presentation)).getString(R.string.reel_hidden_toast), Toast.LENGTH_SHORT).show()
     }
 
     private fun closeBubbleAndPanel() {

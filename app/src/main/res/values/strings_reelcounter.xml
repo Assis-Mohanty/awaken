@@ -46,11 +46,9 @@
     <string name="access_reel_counter">Reel counter</string>
 
     <!-- Overlay windows -->
-    <string name="reel_hidden_toast">Hidden until your next session</string>
     <string name="reel_panel_title">Today</string>
     <string name="reel_panel_row">%1$d reels, %2$d min</string>
     <string name="reel_panel_empty">Nothing yet today</string>
-    <string name="reel_panel_hint">Long-press the bubble to hide it</string>
     <plurals name="reel_nudge_count">
         <item quantity="one">%1$d reel today</item>
         <item quantity="other">%1$d reels today</item>
