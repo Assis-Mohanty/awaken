@@ -62,6 +62,16 @@ sealed interface GateCheck {
     data class Logged(val run: GateRunEntity, val outcome: FocusRunOutcome) : GateCheck
 }
 
+/** What starting the last-used focus session did (the Quick Settings tile, the Start focus widget). */
+sealed interface StartLastResult {
+    data object Started : StartLastResult
+
+    /** Nothing was ever started, or it can't be started again: open the Focus screen to choose. */
+    data object NothingToRepeat : StartLastResult
+    data object AlreadyRunning : StartLastResult
+    data object TooLate : StartLastResult
+}
+
 /** Starts the focus session of a Timed habit and arms its end (GD §16.1). Implemented by the gate coordinator; a seam so Today can be tested. */
 fun interface TimedHabitStarter {
     suspend fun startHabit(questInstanceId: String): StartGateResult
@@ -87,12 +97,20 @@ class StartGateUseCase @Inject constructor(
         open(rank, GateMode.PRESET, rank.durationMinutes, stat, label, subjectId = null)
 
     /** A custom length (GD §8.1 P1) or an open-ended stopwatch. [minutes] is ignored for the stopwatch. */
-    suspend fun startFocus(mode: GateMode, minutes: Int, stat: Stat, label: String?, subjectId: String?): StartGateResult {
+    suspend fun startFocus(
+        mode: GateMode,
+        minutes: Int,
+        stat: Stat,
+        label: String?,
+        subjectId: String?,
+        pomodoroId: String? = null,
+        pomodoroRound: Int? = null,
+    ): StartGateResult {
         require(mode != GateMode.PRESET) { "Presets start through invoke(rank, stat, label)" }
         val planned = if (mode == GateMode.CUSTOM) FocusRules.clampCustomMinutes(minutes) else FocusRules.STOPWATCH_MIN_MINUTES
         // The quest opens at the lowest tier; a stopwatch is repriced when it stops, a custom run keeps its tier.
         val rank = FocusRules.tierFor(planned) ?: GateRank.E
-        return open(rank, mode, planned, stat, label, subjectId)
+        return open(rank, mode, planned, stat, label, subjectId, pomodoroId, pomodoroRound)
     }
 
     /**
@@ -130,7 +148,16 @@ class StartGateUseCase @Inject constructor(
         StartGateResult.Started(run)
     }
 
-    private suspend fun open(rank: GateRank, mode: GateMode, minutes: Int, stat: Stat, label: String?, subjectId: String?): StartGateResult =
+    private suspend fun open(
+        rank: GateRank,
+        mode: GateMode,
+        minutes: Int,
+        stat: Stat,
+        label: String?,
+        subjectId: String?,
+        pomodoroId: String? = null,
+        pomodoroRound: Int? = null,
+    ): StartGateResult =
         transactions.run {
             val profile = hunterDao.getProfile() ?: return@run StartGateResult.NoHunter
             if (gateRunDao.running() != null) return@run StartGateResult.AlreadyRunning
@@ -173,6 +200,8 @@ class StartGateUseCase @Inject constructor(
                 status = GateRunStatus.RUNNING,
                 mode = mode,
                 subjectId = subjectId,
+                pomodoroId = pomodoroId,
+                pomodoroRound = pomodoroRound,
             )
             questDao.insertAll(listOf(quest))
             gateRunDao.upsert(run)
@@ -341,15 +370,16 @@ class GateRunController @Inject constructor(
         }
     }
 
-    private suspend fun claimPaid(run: GateRunEntity, fragment: Boolean): GateCheck =
-        when (val result = completeQuest.completeVerified(run.questInstanceId, VerificationSource.TIMER, gateFragment = fragment)) {
-            is CompleteQuestResult.Completed -> {
-                gateRunDao.upsert(run.copy(status = GateRunStatus.CLEARED, endedAt = clock.now()))
-                GateCheck.Cleared(result.outcome)
-            }
+    private suspend fun claimPaid(run: GateRunEntity, fragment: Boolean): GateCheck {
+        // The run counts as cleared before the reward is written, so the achievement check that follows it (a focus streak, hours
+        // cleared) already sees it. If the reward is refused, the run is closed as collapsed below, which replaces this row.
+        gateRunDao.upsert(run.copy(status = GateRunStatus.CLEARED, endedAt = clock.now()))
+        return when (val result = completeQuest.completeVerified(run.questInstanceId, VerificationSource.TIMER, gateFragment = fragment)) {
+            is CompleteQuestResult.Completed -> GateCheck.Cleared(result.outcome)
             // The quest's game-day closed before the claim (rollover expired it): no XP (ENGINE_DECISIONS #35).
             else -> close(run, GateRunStatus.COLLAPSED, GateCollapseReason.DAY_RESET)
         }
+    }
 
     private suspend fun close(run: GateRunEntity, status: GateRunStatus, reason: GateCollapseReason?): GateCheck {
         val closed = run.copy(status = status, endedAt = clock.now(), collapseReason = reason, lastStopAt = null, lastStopElapsedMs = null)

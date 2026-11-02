@@ -26,6 +26,9 @@ const val ACTION_OPEN_TODAY = "com.assismohanty.awaken.OPEN_TODAY"
 /** Focus Lock cover: Back to focus lands on the Focus Gates screen (GD 8.2). */
 const val ACTION_OPEN_GATES = "com.assismohanty.awaken.OPEN_GATES"
 
+/** The Quick Settings tile and the Start focus widget: start the last-used focus session, or open the one that runs (GD §16.3). */
+const val ACTION_START_FOCUS = "com.assismohanty.awaken.START_FOCUS"
+
 /** The Sunday directive notification's review action (GD §14.4). */
 const val ACTION_OPEN_REVIEW = "com.assismohanty.awaken.OPEN_REVIEW"
 

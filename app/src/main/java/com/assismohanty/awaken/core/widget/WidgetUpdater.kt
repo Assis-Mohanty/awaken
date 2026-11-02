@@ -28,6 +28,8 @@ class WidgetUpdater @Inject constructor(
     private val dayRefresher: DayRefresher,
     private val gateRunDao: com.assismohanty.awaken.core.data.db.dao.GateRunDao,
     private val reelData: com.assismohanty.awaken.core.reelcounter.ReelWidgetData,
+    private val pomodoroDao: com.assismohanty.awaken.core.data.db.dao.PomodoroDao,
+    private val lastFocusStore: com.assismohanty.awaken.core.data.repo.LastFocusStore,
     @ApplicationScope private val scope: CoroutineScope,
 ) {
     fun start() {
@@ -42,6 +44,25 @@ class WidgetUpdater @Inject constructor(
                     Timber.e(e, "Updating the focus widget failed")
                 }
             }
+        }
+        scope.launch {
+            // Start focus (widget and tile, GD §16.3) follows the latest run, the Pomodoro session and the last session started.
+            combine(
+                gateRunDao.observeLatest().map { it?.id to it?.status },
+                pomodoroDao.observeRunning().map { it?.id to it?.phase },
+                lastFocusStore.last,
+            ) { run, pomodoro, last -> Triple(run, pomodoro, last) }
+                .distinctUntilChanged()
+                .collect {
+                    try {
+                        StartFocusWidget().updateAll(context)
+                        FocusTileService.requestRefresh(context)
+                    } catch (e: CancellationException) {
+                        throw e
+                    } catch (e: Exception) {
+                        Timber.e(e, "Updating the start focus surfaces failed")
+                    }
+                }
         }
         scope.launch {
             // The reel total rides on the same widget: a new reel (or switching the feature on or off) re-renders it.

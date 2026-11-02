@@ -13,6 +13,7 @@ object ExportUpgrade {
     private const val REVIEW_TABLE = "weekly_review"
     private const val RECAP_TABLE = "recap"
     private const val SUBJECT_TABLE = "focus_subject"
+    private val FOCUS_V20_TABLES = listOf("pomodoro_session", "focus_goal")
     private val BODY_TABLES = listOf(
         "custom_exercise", "routine", "routine_exercise", "workout", "workout_set", "custom_food", "food_log", "nutrition_profile",
     )
@@ -98,6 +99,13 @@ object ExportUpgrade {
         // v18 → v19 (habit types): every new column defaults to the old behaviour (CHECK, fixed weekdays, no reminder), so old rows import as they are.
         if (current.app == ExportDocument.APP_ID && current.schemaVersion == 18) {
             current = current.copy(schemaVersion = 19)
+        }
+        // v19 → v20 (Pomodoro, focus goal): neither table existed, and the new gate_run columns are nullable (= not a Pomodoro round).
+        if (current.app == ExportDocument.APP_ID && current.schemaVersion == 19) {
+            current = current.copy(
+                schemaVersion = 20,
+                tables = current.tables + FOCUS_V20_TABLES.filter { it !in current.tables }.associateWith { emptyList() },
+            )
         }
         return current
     }

@@ -1,6 +1,7 @@
 package com.assismohanty.awaken.feature.settings
 
 import com.assismohanty.awaken.engine.Identity
+import com.assismohanty.awaken.engine.FocusGoalRules
 import com.assismohanty.awaken.engine.TimeBlocks
 import com.assismohanty.awaken.core.designsystem.lexicon.lexString
 import com.assismohanty.awaken.core.designsystem.lexicon.lexPlural
@@ -250,6 +251,25 @@ private fun ProfileWindow(state: SettingsUiState, onEvent: (SettingsEvent) -> Un
             enabled = state.canSaveFocus,
             modifier = Modifier.fillMaxWidth(),
         )
+        Text(lexString(R.string.focus_goal_title), style = type.label, color = colors.textPrimary)
+        val goalLessCd = lexString(R.string.focus_goal_less)
+        val goalMoreCd = lexString(R.string.focus_goal_more)
+        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.md), verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+            SecondaryButton(
+                text = lexString(R.string.pomodoro_minus),
+                onClick = { onEvent(SettingsEvent.StepFocusGoal(-1)) },
+                enabled = state.focusGoal > FocusGoalRules.MIN_GOAL,
+                modifier = Modifier.semantics { contentDescription = goalLessCd },
+            )
+            Text(lexString(R.string.focus_goal_value, state.focusGoal), style = type.metricL, color = colors.textPrimary, modifier = Modifier.weight(1f))
+            SecondaryButton(
+                text = lexString(R.string.pomodoro_plus),
+                onClick = { onEvent(SettingsEvent.StepFocusGoal(1)) },
+                enabled = state.focusGoal < FocusGoalRules.MAX_GOAL,
+                modifier = Modifier.semantics { contentDescription = goalMoreCd },
+            )
+        }
+        Text(lexString(R.string.focus_goal_settings_note), style = type.caption, color = colors.textSecondary)
         Text(lexString(R.string.identity_settings_title), style = type.label, color = colors.textPrimary)
         IdentityChips(
             options = state.identityOptions.mapNotNull { identity ->

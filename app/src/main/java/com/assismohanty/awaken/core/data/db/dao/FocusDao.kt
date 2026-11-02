@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import com.assismohanty.awaken.core.data.db.entity.FocusGoalEntity
 import com.assismohanty.awaken.core.data.db.entity.FocusSubjectEntity
 import java.time.LocalDate
 import kotlinx.coroutines.flow.Flow
@@ -13,6 +14,9 @@ data class SubjectSeconds(val subjectId: String?, val seconds: Long)
 
 /** Focus seconds on one game-day, for the weekly bars. */
 data class DayFocusSeconds(val gameDate: LocalDate, val seconds: Long)
+
+/** Whole focus minutes on one game-day (GD §16.4): the sum of each qualifying run's minutes, floored per run. */
+data class DayFocusMinutes(val gameDate: LocalDate, val minutes: Int)
 
 /** Focus subjects (GD §8.1 P7) and the focus-time aggregates behind the Focus card and weekly report. */
 @Dao
@@ -48,6 +52,34 @@ interface FocusDao {
             "WHERE g.status = 'CLEARED' AND q.game_date BETWEEN :from AND :to GROUP BY g.subject_id",
     )
     fun observeSecondsBySubject(from: LocalDate, to: LocalDate): Flow<List<SubjectSeconds>>
+
+    /**
+     * Focus minutes per game-day for the goal ring and streak (GD §16.4): runs that started that day and ended CLEARED or
+     * LOGGED. A stopwatch's planned length is its counted time once stopped. `/ 60` is integer division, so each run floors
+     * on its own.
+     */
+    @Query(
+        "SELECT q.game_date AS gameDate, SUM(g.planned_sec / 60) AS minutes FROM gate_run g " +
+            "JOIN quest_instance q ON q.id = g.quest_instance_id " +
+            "WHERE g.status IN ('CLEARED', 'LOGGED') AND q.game_date BETWEEN :from AND :to GROUP BY q.game_date",
+    )
+    fun observeFocusMinutesByDay(from: LocalDate, to: LocalDate): Flow<List<DayFocusMinutes>>
+
+    @Query(
+        "SELECT q.game_date AS gameDate, SUM(g.planned_sec / 60) AS minutes FROM gate_run g " +
+            "JOIN quest_instance q ON q.id = g.quest_instance_id " +
+            "WHERE g.status IN ('CLEARED', 'LOGGED') AND q.game_date BETWEEN :from AND :to GROUP BY q.game_date",
+    )
+    suspend fun focusMinutesByDay(from: LocalDate, to: LocalDate): List<DayFocusMinutes>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsertGoal(goal: FocusGoalEntity)
+
+    @Query("SELECT * FROM focus_goal ORDER BY effective_from")
+    fun observeGoals(): Flow<List<FocusGoalEntity>>
+
+    @Query("SELECT * FROM focus_goal ORDER BY effective_from")
+    suspend fun goals(): List<FocusGoalEntity>
 
     @Query(
         "SELECT q.game_date AS gameDate, SUM(g.planned_sec) AS seconds FROM gate_run g " +

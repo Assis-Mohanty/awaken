@@ -45,6 +45,12 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.assismohanty.awaken.R
 import com.assismohanty.awaken.core.designsystem.components.ChoiceChip
+import com.assismohanty.awaken.core.designsystem.components.FocusGoalRing
+import com.assismohanty.awaken.core.designsystem.components.PomodoroTrack
+import com.assismohanty.awaken.core.domain.FocusGoalState
+import com.assismohanty.awaken.engine.PomodoroPhase
+import com.assismohanty.awaken.engine.PomodoroRules
+import androidx.compose.ui.semantics.contentDescription
 import com.assismohanty.awaken.core.designsystem.components.AwakenGlyphs
 import com.assismohanty.awaken.core.designsystem.components.DifficultyChip
 import com.assismohanty.awaken.core.designsystem.components.IconCircle
@@ -105,6 +111,7 @@ fun GatesScreen(state: GatesUiState, onEvent: (GatesEvent) -> Unit, onBack: () -
     }
     LargeTitleScaffold(
         title = when {
+            active == null && state.pomodoro != null -> lexString(R.string.pomodoro_title)
             active == null -> lexString(R.string.gates_title)
             active.mode == GateMode.STOPWATCH -> lexString(R.string.focus_stopwatch_title)
             else -> lexString(R.string.gate_name, active.rank.name)
@@ -114,7 +121,8 @@ fun GatesScreen(state: GatesUiState, onEvent: (GatesEvent) -> Unit, onBack: () -
     ) {
         when {
             state.loading -> SkeletonCard()
-            active != null -> GateRun(active, state.confirmAbandon, onEvent)
+            active != null -> GateRun(active, state.confirmAbandon, onEvent, pomodoro = state.pomodoro)
+            state.pomodoro != null -> PomodoroBreakScreen(state.pomodoro, onEvent)
             else -> GatePicker(state, onEvent)
         }
     }
@@ -123,12 +131,17 @@ fun GatesScreen(state: GatesUiState, onEvent: (GatesEvent) -> Unit, onBack: () -
 @Composable
 private fun GatePicker(state: GatesUiState, onEvent: (GatesEvent) -> Unit) {
     val colors = AwakenTheme.colors
+    state.focusGoal?.let { FocusGoalRing(minutes = it.minutesToday, goal = it.goal, streak = it.streak, modifier = Modifier.fillMaxWidth()) }
     Text(
         lexString(R.string.gates_body, shortClock(GateRules.BREACH_BUDGET_MS)),
         style = AwakenTheme.type.body,
         color = colors.textSecondary,
     )
-    FocusModeChips(state.setup?.mode ?: GateMode.PRESET, onEvent)
+    FocusModeChips(state.setup?.mode ?: GateMode.PRESET, pomodoro = state.pomodoroSetup != null, onEvent = onEvent)
+    state.pomodoroSetup?.let {
+        PomodoroSetupWindow(it, state, onEvent)
+        return
+    }
     val setup = state.setup
     if (setup != null && setup.mode != GateMode.PRESET) {
         FocusSetupWindow(setup, state, onEvent)
@@ -151,7 +164,7 @@ private fun GatePicker(state: GatesUiState, onEvent: (GatesEvent) -> Unit) {
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun FocusModeChips(selected: GateMode, onEvent: (GatesEvent) -> Unit) {
+private fun FocusModeChips(selected: GateMode, pomodoro: Boolean, onEvent: (GatesEvent) -> Unit) {
     val colors = AwakenTheme.colors
     FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.xs), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
         listOf(
@@ -161,11 +174,17 @@ private fun FocusModeChips(selected: GateMode, onEvent: (GatesEvent) -> Unit) {
         ).forEach { (mode, label) ->
             ChoiceChip(
                 text = lexString(label),
-                selected = selected == mode,
+                selected = selected == mode && !pomodoro,
                 onClick = { onEvent(if (mode == GateMode.PRESET) GatesEvent.CloseSetup else GatesEvent.PickMode(mode)) },
                 color = colors.accent,
             )
         }
+        ChoiceChip(
+            text = lexString(R.string.focus_mode_pomodoro),
+            selected = pomodoro,
+            onClick = { onEvent(GatesEvent.OpenPomodoro) },
+            color = colors.accent,
+        )
     }
 }
 
@@ -204,61 +223,69 @@ private fun FocusSetupWindow(setup: GateSetup, state: GatesUiState, onEvent: (Ga
             style = AwakenTheme.type.caption,
             color = colors.textSecondary,
         )
-        Text(lexString(R.string.gate_stat_label), style = AwakenTheme.type.label, color = colors.textSecondary)
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.xs), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
-            GATE_STATS.forEach { stat ->
-                ChoiceChip(
-                    text = stat.label(),
-                    selected = setup.stat == stat,
-                    onClick = { onEvent(GatesEvent.StatChanged(stat)) },
-                    color = colors.stat(stat),
-                )
-            }
-        }
-        Text(lexString(R.string.focus_subject_label), style = AwakenTheme.type.label, color = colors.textSecondary)
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.xs), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
-            ChoiceChip(
-                text = lexString(R.string.focus_subject_none),
-                selected = setup.subjectId == null,
-                onClick = { onEvent(GatesEvent.SubjectPicked(null)) },
-                color = colors.accent,
-            )
-            state.subjects.forEach { subject ->
-                ChoiceChip(
-                    text = subject.name,
-                    selected = setup.subjectId == subject.id,
-                    onClick = { onEvent(GatesEvent.SubjectPicked(subject.id)) },
-                    color = colors.accent,
-                )
-            }
-            if (state.canAddSubject && !state.addingSubject) {
-                ChoiceChip(text = lexString(R.string.focus_subject_add), selected = false, onClick = { onEvent(GatesEvent.StartAddSubject) }, color = colors.accent)
-            }
-        }
-        if (!state.canAddSubject) {
-            Text(lexString(R.string.focus_subject_limit), style = AwakenTheme.type.caption, color = colors.textSecondary)
-        }
-        if (state.addingSubject) {
-            OutlinedTextField(
-                value = state.subjectDraft,
-                onValueChange = { onEvent(GatesEvent.SubjectDraftChanged(it)) },
-                label = { Text(lexString(R.string.focus_subject_hint)) },
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences, imeAction = ImeAction.Done),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = colors.accent,
-                    unfocusedBorderColor = colors.divider,
-                    focusedLabelColor = colors.accent,
-                    cursorColor = colors.accent,
-                ),
-                modifier = Modifier.fillMaxWidth(),
-            )
-            SecondaryButton(text = lexString(R.string.focus_subject_save), onClick = { onEvent(GatesEvent.SaveSubject) }, enabled = state.subjectDraft.isNotBlank(), modifier = Modifier.fillMaxWidth())
-            QuietButton(text = lexString(R.string.action_back), onClick = { onEvent(GatesEvent.CancelAddSubject) }, modifier = Modifier.fillMaxWidth())
-        }
+        StatAndSubjectPickers(setup.stat, setup.subjectId, state, onEvent)
         Text(lexString(R.string.gate_rule, shortClock(GateRules.BREACH_BUDGET_MS)), style = AwakenTheme.type.caption, color = colors.textSecondary)
         PrimaryButton(text = lexString(R.string.action_enter_gate), onClick = { onEvent(GatesEvent.Enter) }, modifier = Modifier.fillMaxWidth())
     }
+}
+
+/** What the session trains and what it is labelled: the stat chips and the subject chips with their add-a-subject field. */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun StatAndSubjectPickers(stat: Stat, subjectId: String?, state: GatesUiState, onEvent: (GatesEvent) -> Unit) {
+    val colors = AwakenTheme.colors
+    Text(lexString(R.string.gate_stat_label), style = AwakenTheme.type.label, color = colors.textSecondary)
+    FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.xs), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+        GATE_STATS.forEach { option ->
+            ChoiceChip(
+                text = option.label(),
+                selected = option == stat,
+                onClick = { onEvent(GatesEvent.StatChanged(option)) },
+                color = colors.stat(option),
+            )
+        }
+    }
+    Text(lexString(R.string.focus_subject_label), style = AwakenTheme.type.label, color = colors.textSecondary)
+    FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.xs), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+        ChoiceChip(
+            text = lexString(R.string.focus_subject_none),
+            selected = subjectId == null,
+            onClick = { onEvent(GatesEvent.SubjectPicked(null)) },
+            color = colors.accent,
+        )
+        state.subjects.forEach { subject ->
+            ChoiceChip(
+                text = subject.name,
+                selected = subjectId == subject.id,
+                onClick = { onEvent(GatesEvent.SubjectPicked(subject.id)) },
+                color = colors.accent,
+            )
+        }
+        if (state.canAddSubject && !state.addingSubject) {
+            ChoiceChip(text = lexString(R.string.focus_subject_add), selected = false, onClick = { onEvent(GatesEvent.StartAddSubject) }, color = colors.accent)
+        }
+    }
+    if (!state.canAddSubject) {
+        Text(lexString(R.string.focus_subject_limit), style = AwakenTheme.type.caption, color = colors.textSecondary)
+    }
+    if (state.addingSubject) {
+        OutlinedTextField(
+            value = state.subjectDraft,
+            onValueChange = { onEvent(GatesEvent.SubjectDraftChanged(it)) },
+            label = { Text(lexString(R.string.focus_subject_hint)) },
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences, imeAction = ImeAction.Done),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = colors.accent,
+                unfocusedBorderColor = colors.divider,
+                focusedLabelColor = colors.accent,
+                cursorColor = colors.accent,
+            ),
+            modifier = Modifier.fillMaxWidth(),
+        )
+        SecondaryButton(text = lexString(R.string.focus_subject_save), onClick = { onEvent(GatesEvent.SaveSubject) }, enabled = state.subjectDraft.isNotBlank(), modifier = Modifier.fillMaxWidth())
+        QuietButton(text = lexString(R.string.action_back), onClick = { onEvent(GatesEvent.CancelAddSubject) }, modifier = Modifier.fillMaxWidth())
+        }
 }
 
 @Composable
@@ -422,7 +449,7 @@ private fun ColumnScope.StopwatchControls(active: ActiveGate, confirmAbandon: Bo
 }
 
 @Composable
-private fun GateRun(active: ActiveGate, confirmAbandon: Boolean, onEvent: (GatesEvent) -> Unit) {
+private fun GateRun(active: ActiveGate, confirmAbandon: Boolean, onEvent: (GatesEvent) -> Unit, pomodoro: PomodoroUi? = null) {
     if (active.lockWarning) LockWarning(onEvent)
     val colors = AwakenTheme.colors
     Column(
@@ -430,6 +457,7 @@ private fun GateRun(active: ActiveGate, confirmAbandon: Boolean, onEvent: (Gates
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(Spacing.md),
     ) {
+        pomodoro?.let { PomodoroTrack(it.round, it.rounds, PomodoroPhase.FOCUS) }
         Row(horizontalArrangement = Arrangement.spacedBy(Spacing.xs), verticalAlignment = Alignment.CenterVertically) {
             StatChip(active.stat)
             active.label?.let { Text(it, style = AwakenTheme.type.label, color = colors.textPrimary) }
@@ -467,6 +495,93 @@ private fun GateRun(active: ActiveGate, confirmAbandon: Boolean, onEvent: (Gates
             }
         } else {
             QuietButton(lexString(R.string.action_abandon_gate), onClick = { onEvent(GatesEvent.Abandon) }, modifier = Modifier.fillMaxWidth())
+        }
+    }
+}
+
+/** The Pomodoro setup (GD §16.3): the four settings, what the rounds train, and an optional subject. */
+@Composable
+private fun PomodoroSetupWindow(setup: PomodoroSetupUi, state: GatesUiState, onEvent: (GatesEvent) -> Unit) {
+    val colors = AwakenTheme.colors
+    SystemWindow(title = lexString(R.string.pomodoro_title), accent = colors.accent) {
+        PomodoroStepper(R.string.pomodoro_focus_label, lexString(R.string.pomodoro_minutes_value, setup.focusMinutes), PomodoroField.FOCUS, setup.focusMinutes > PomodoroRules.FOCUS_RANGE.first, setup.focusMinutes < PomodoroRules.FOCUS_RANGE.last, onEvent)
+        PomodoroStepper(R.string.pomodoro_short_label, lexString(R.string.pomodoro_minutes_value, setup.shortBreakMinutes), PomodoroField.SHORT_BREAK, setup.shortBreakMinutes > PomodoroRules.SHORT_BREAK_RANGE.first, setup.shortBreakMinutes < PomodoroRules.SHORT_BREAK_RANGE.last, onEvent)
+        PomodoroStepper(R.string.pomodoro_long_label, lexString(R.string.pomodoro_minutes_value, setup.longBreakMinutes), PomodoroField.LONG_BREAK, setup.longBreakMinutes > PomodoroRules.LONG_BREAK_RANGE.first, setup.longBreakMinutes < PomodoroRules.LONG_BREAK_RANGE.last, onEvent)
+        PomodoroStepper(R.string.pomodoro_rounds_label, lexString(R.string.pomodoro_rounds_value, setup.rounds), PomodoroField.ROUNDS, setup.rounds > PomodoroRules.ROUNDS_RANGE.first, setup.rounds < PomodoroRules.ROUNDS_RANGE.last, onEvent)
+        Text(lexString(R.string.pomodoro_rule), style = AwakenTheme.type.caption, color = colors.textSecondary)
+        StatAndSubjectPickers(setup.stat, setup.subjectId, state, onEvent)
+        Text(lexString(R.string.gate_rule, shortClock(GateRules.BREACH_BUDGET_MS)), style = AwakenTheme.type.caption, color = colors.textSecondary)
+        PrimaryButton(text = lexString(R.string.pomodoro_start), onClick = { onEvent(GatesEvent.Enter) }, modifier = Modifier.fillMaxWidth())
+    }
+}
+
+/** One Pomodoro setting: its name, − and + around the current value. */
+@Composable
+private fun PomodoroStepper(@androidx.annotation.StringRes label: Int, value: String, field: PomodoroField, canLess: Boolean, canMore: Boolean, onEvent: (GatesEvent) -> Unit) {
+    val colors = AwakenTheme.colors
+    val name = lexString(label)
+    val lessCd = lexString(R.string.cd_pomodoro_less, name)
+    val moreCd = lexString(R.string.cd_pomodoro_more, name)
+    Column(verticalArrangement = Arrangement.spacedBy(Spacing.xxs)) {
+        Text(name, style = AwakenTheme.type.label, color = colors.textSecondary)
+        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.md), verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+            SecondaryButton(
+                text = lexString(R.string.pomodoro_minus),
+                onClick = { onEvent(GatesEvent.PomodoroAdjust(field, -1)) },
+                enabled = canLess,
+                modifier = Modifier.semantics { contentDescription = lessCd },
+            )
+            Text(value, style = AwakenTheme.type.metricL, color = colors.textPrimary, modifier = Modifier.weight(1f))
+            SecondaryButton(
+                text = lexString(R.string.pomodoro_plus),
+                onClick = { onEvent(GatesEvent.PomodoroAdjust(field, 1)) },
+                enabled = canMore,
+                modifier = Modifier.semantics { contentDescription = moreCd },
+            )
+        }
+    }
+}
+
+/**
+ * A Pomodoro break, or the end of the session (GD §16.3). Nothing here can collapse: breaks are not gates. The next round starts
+ * on a tap, because one that began while you were away would spend its breach budget.
+ */
+@Composable
+private fun PomodoroBreakScreen(pomodoro: PomodoroUi, onEvent: (GatesEvent) -> Unit) {
+    val colors = AwakenTheme.colors
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(Spacing.md),
+    ) {
+        PomodoroTrack(pomodoro.round, pomodoro.rounds, if (pomodoro.finished) PomodoroPhase.DONE else pomodoro.phase)
+        when {
+            pomodoro.finished -> {
+                Text(lexString(R.string.pomodoro_done_title), style = AwakenTheme.type.windowTitle, color = colors.textPrimary)
+                Text(lexString(R.string.pomodoro_done_body, pomodoro.rounds, pomodoro.config.focusMinutes), style = AwakenTheme.type.body, color = colors.textSecondary)
+                PrimaryButton(lexString(R.string.pomodoro_another), onClick = { onEvent(GatesEvent.PomodoroAnother) }, modifier = Modifier.fillMaxWidth())
+                QuietButton(lexString(R.string.pomodoro_done_button), onClick = { onEvent(GatesEvent.PomodoroDone) }, modifier = Modifier.fillMaxWidth())
+            }
+            pomodoro.breakOver -> {
+                Text(lexString(R.string.pomodoro_break_over_screen), style = AwakenTheme.type.windowTitle, color = colors.textPrimary)
+                PrimaryButton(
+                    lexString(R.string.pomodoro_start_round, pomodoro.round + 1),
+                    onClick = { onEvent(GatesEvent.PomodoroNextRound) },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                QuietButton(lexString(R.string.pomodoro_end_session), onClick = { onEvent(GatesEvent.PomodoroEnd) }, modifier = Modifier.fillMaxWidth())
+            }
+            else -> {
+                Text(
+                    lexString(if (pomodoro.phase == PomodoroPhase.LONG_BREAK) R.string.pomodoro_long_break_title else R.string.pomodoro_break_title),
+                    style = AwakenTheme.type.windowTitle,
+                    color = colors.textPrimary,
+                )
+                Text(lexString(R.string.pomodoro_break_left, shortClock(pomodoro.breakLeft.toMillis())), style = AwakenTheme.type.metricL, color = colors.textPrimary)
+                Text(lexString(R.string.pomodoro_break_hint), style = AwakenTheme.type.caption, color = colors.textSecondary)
+                SecondaryButton(lexString(R.string.pomodoro_skip_break), onClick = { onEvent(GatesEvent.PomodoroSkipBreak) }, modifier = Modifier.fillMaxWidth())
+                QuietButton(lexString(R.string.pomodoro_end_session), onClick = { onEvent(GatesEvent.PomodoroEnd) }, modifier = Modifier.fillMaxWidth())
+            }
         }
     }
 }
@@ -550,6 +665,83 @@ private fun GateStopwatchPreview() {
                     stat = Stat.INT, label = null, remaining = Duration.ofDays(1), total = Duration.ofDays(1),
                     breachUsed = Duration.ofSeconds(10), paused = false, pauseLeft = Duration.ZERO, canPause = true,
                 ),
+            ),
+            onEvent = {},
+            onBack = {},
+        )
+    }
+}
+
+@PhonePreviews
+@Composable
+private fun GatesGoalRingPreview() {
+    AwakenTheme {
+        GatesScreen(
+            GatesUiState(
+                loading = false,
+                tiles = previewTiles,
+                setup = GateSetup(GateRank.D, Stat.INT, ""),
+                focusGoal = FocusGoalState(minutesToday = 95, goal = 120, streak = 6),
+            ),
+            onEvent = {},
+            onBack = {},
+        )
+    }
+}
+
+@PhonePreviews
+@Composable
+private fun GatesPomodoroSetupPreview() {
+    AwakenTheme {
+        GatesScreen(
+            GatesUiState(loading = false, tiles = previewTiles, pomodoroSetup = PomodoroSetupUi(), subjects = listOf(SubjectUi("s1", "DSA"))),
+            onEvent = {},
+            onBack = {},
+        )
+    }
+}
+
+@PhonePreviews
+@Composable
+private fun GatesPomodoroBreakPreview() {
+    AwakenTheme {
+        GatesScreen(
+            GatesUiState(
+                loading = false,
+                tiles = previewTiles,
+                pomodoro = PomodoroUi(phase = PomodoroPhase.SHORT_BREAK, round = 2, rounds = 4, breakLeft = Duration.ofMinutes(3).plusSeconds(20)),
+            ),
+            onEvent = {},
+            onBack = {},
+        )
+    }
+}
+
+@PhonePreviews
+@Composable
+private fun GatesPomodoroDonePreview() {
+    AwakenTheme {
+        GatesScreen(
+            GatesUiState(loading = false, tiles = previewTiles, pomodoro = PomodoroUi(phase = PomodoroPhase.DONE, round = 4, rounds = 4)),
+            onEvent = {},
+            onBack = {},
+        )
+    }
+}
+
+@PhonePreviews
+@Composable
+private fun GatePomodoroRoundPreview() {
+    AwakenTheme {
+        GatesScreen(
+            GatesUiState(
+                loading = false,
+                tiles = previewTiles,
+                active = ActiveGate(
+                    rank = GateRank.D, stat = Stat.INT, label = null, remaining = Duration.ofMinutes(14), total = Duration.ofMinutes(25),
+                    breachUsed = Duration.ZERO, paused = false, pauseLeft = Duration.ZERO, canPause = true,
+                ),
+                pomodoro = PomodoroUi(phase = PomodoroPhase.FOCUS, round = 2, rounds = 4),
             ),
             onEvent = {},
             onBack = {},

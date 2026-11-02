@@ -14,6 +14,7 @@ import androidx.core.content.ContextCompat
 import com.assismohanty.awaken.MainActivity
 import com.assismohanty.awaken.R
 import com.assismohanty.awaken.core.data.repo.LexiconSource
+import com.assismohanty.awaken.core.domain.BreakAlert
 import com.assismohanty.awaken.feature.quest.shortClock
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.time.Duration
@@ -84,6 +85,24 @@ class GateNotifications @Inject constructor(
         )
     }
 
+    /** A Pomodoro break is over (GD §16.3): the next round waits for a tap, or the session is complete. */
+    fun showBreakOver(alert: BreakAlert) {
+        val resources = words.resources(context)
+        notify(
+            BREAK_ID,
+            base()
+                .setContentTitle(resources.getString(R.string.pomodoro_break_over_title))
+                .setContentText(
+                    alert.nextRound?.let { resources.getString(R.string.pomodoro_break_over_next, it, alert.rounds) }
+                        ?: resources.getString(R.string.pomodoro_session_complete),
+                )
+                .setAutoCancel(true)
+                .setCategory(NotificationCompat.CATEGORY_REMINDER),
+        )
+    }
+
+    fun cancelBreakOver() = NotificationManagerCompat.from(context).cancel(BREAK_ID)
+
     fun cancelRunning() = NotificationManagerCompat.from(context).cancel(RUNNING_ID)
 
     fun cancelAll() {
@@ -124,5 +143,6 @@ class GateNotifications @Inject constructor(
         const val RUNNING_ID = 801
         const val ENDED_ID = 802
         const val REST_ID = 803
+        const val BREAK_ID = 804
     }
 }

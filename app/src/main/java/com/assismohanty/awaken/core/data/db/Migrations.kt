@@ -284,9 +284,26 @@ val MIGRATION_18_19 = object : Migration(18, 19) {
     }
 }
 
+/**
+ * v19 -> v20: Pomodoro sessions, the versioned daily focus goal, and which session and round a gate run belongs to
+ * (GD §16.3-16.4). No existing row changes.
+ */
+val MIGRATION_19_20 = object : Migration(19, 20) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE `gate_run` ADD COLUMN `pomodoro_id` TEXT")
+        db.execSQL("ALTER TABLE `gate_run` ADD COLUMN `pomodoro_round` INTEGER")
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS `pomodoro_session` (`id` TEXT NOT NULL, `focus_min` INTEGER NOT NULL, `short_break_min` INTEGER NOT NULL, " +
+                "`long_break_min` INTEGER NOT NULL, `rounds` INTEGER NOT NULL, `stat` TEXT NOT NULL, `subject_id` TEXT, `started_at` INTEGER NOT NULL, " +
+                "`phase` TEXT NOT NULL, `current_round` INTEGER NOT NULL, `phase_ends_at` INTEGER, `status` TEXT NOT NULL, `ended_at` INTEGER, PRIMARY KEY(`id`))",
+        )
+        db.execSQL("CREATE TABLE IF NOT EXISTS `focus_goal` (`effective_from` TEXT NOT NULL, `minutes` INTEGER NOT NULL, PRIMARY KEY(`effective_from`))")
+    }
+}
+
 /** Every migration, in order. The database builder and the migration test both use this list. */
 val ALL_MIGRATIONS: Array<Migration> = arrayOf(
     MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9,
     MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17,
-    MIGRATION_17_18, MIGRATION_18_19,
+    MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20,
 )

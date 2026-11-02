@@ -199,9 +199,9 @@ class RulesTest {
     @Nested
     inner class AchievementEvaluatorTest {
         @Test
-        fun `the set has 37 unique ids - the launch 32, Reforged and the four v1_1 achievements`() {
+        fun `the set has 40 unique ids - the launch 32, Reforged, the four v1_1 achievements and Deep Work`() {
             assertThat(AchievementEvaluator.all.map { it.id }).containsNoDuplicates()
-            assertThat(AchievementEvaluator.all).hasSize(37)
+            assertThat(AchievementEvaluator.all).hasSize(40)
         }
 
         @Test

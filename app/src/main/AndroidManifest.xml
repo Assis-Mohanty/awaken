@@ -123,6 +123,31 @@
                 android:resource="@xml/focus_widget_info" />
         </receiver>
 
+        <!-- Start focus widget (2x1): one tap starts the last-used session. -->
+        <receiver
+            android:name=".core.widget.StartFocusWidgetReceiver"
+            android:exported="true"
+            android:label="@string/focus_start_widget_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/start_focus_widget_info" />
+        </receiver>
+
+        <!-- Quick Settings tile: start the last-used focus session. -->
+        <service
+            android:name=".core.widget.FocusTileService"
+            android:exported="true"
+            android:icon="@drawable/ic_stat_gate"
+            android:label="@string/focus_tile_label"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+        </service>
+
         <!-- WorkManager is configured by AwakenApp (Hilt worker factory), so its default initializer is removed. -->
         <provider
             android:name="androidx.startup.InitializationProvider"

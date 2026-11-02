@@ -15,6 +15,8 @@ import com.assismohanty.awaken.engine.GateRules
 import com.assismohanty.awaken.engine.GateTiming
 import com.assismohanty.awaken.engine.RankRules
 import com.assismohanty.awaken.engine.model.Difficulty
+import com.assismohanty.awaken.engine.PomodoroPhase
+import com.assismohanty.awaken.engine.PomodoroStatus
 import com.assismohanty.awaken.engine.model.GateRank
 import com.assismohanty.awaken.engine.model.HabitFrequency
 import com.assismohanty.awaken.engine.model.HabitType
@@ -251,6 +253,9 @@ data class GateRunEntity(
     @ColumnInfo(name = "lock_at_stop", defaultValue = "0") val lockAtStop: Boolean = false,
     /** The habit quest this run was started for (a Timed habit, GD §16.1): paid once as that quest, never as a standalone gate. */
     @ColumnInfo(name = "habit_quest_id") val habitQuestId: String? = null,
+    /** The Pomodoro session this run is a focus round of (GD §16.3), and which round; null for any other run. */
+    @ColumnInfo(name = "pomodoro_id") val pomodoroId: String? = null,
+    @ColumnInfo(name = "pomodoro_round") val pomodoroRound: Int? = null,
 ) {
     val timing: GateTiming
         get() = GateTiming(
@@ -454,4 +459,32 @@ data class RecapEntity(
     @ColumnInfo(name = "generated_at") val generatedAt: Instant,
     @ColumnInfo(name = "payload_version") val payloadVersion: Int,
     @ColumnInfo(name = "payload_json") val payloadJson: String,
+)
+
+/**
+ * One Pomodoro session (GD §16.3). Its focus rounds are ordinary gate runs ([GateRunEntity.pomodoroId]); the session only
+ * keeps where it is. [phaseEndsAt] is when the current break ends. A session is RUNNING until it finishes, ends or collapses.
+ */
+@Entity(tableName = "pomodoro_session")
+data class PomodoroSessionEntity(
+    @PrimaryKey val id: String,
+    @ColumnInfo(name = "focus_min") val focusMin: Int,
+    @ColumnInfo(name = "short_break_min") val shortBreakMin: Int,
+    @ColumnInfo(name = "long_break_min") val longBreakMin: Int,
+    val rounds: Int,
+    val stat: Stat,
+    @ColumnInfo(name = "subject_id") val subjectId: String?,
+    @ColumnInfo(name = "started_at") val startedAt: Instant,
+    val phase: PomodoroPhase,
+    @ColumnInfo(name = "current_round") val currentRound: Int,
+    @ColumnInfo(name = "phase_ends_at") val phaseEndsAt: Instant? = null,
+    val status: PomodoroStatus,
+    @ColumnInfo(name = "ended_at") val endedAt: Instant? = null,
+)
+
+/** The daily focus goal that took effect on [effectiveFrom] (GD §16.4). Versioned: an edit adds a row from today, past days keep theirs. */
+@Entity(tableName = "focus_goal")
+data class FocusGoalEntity(
+    @PrimaryKey @ColumnInfo(name = "effective_from") val effectiveFrom: LocalDate,
+    val minutes: Int,
 )

@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Pomodoro cycles, the daily focus goal and the Start focus tile and widget (GAME_DESIGN §16.3-16.4).
+    Written in a neutral voice, so no strings here need a Clean twin.
+-->
+<resources>
+    <!-- Break-over notification -->
+    <string name="pomodoro_break_over_title">Break over</string>
+    <string name="pomodoro_break_over_next">Ready for round %1$d of %2$d? Tap to continue.</string>
+    <string name="pomodoro_session_complete">Session complete. Nicely done.</string>
+    <!-- Daily focus goal ring and streak (GD §16.4) -->
+    <string name="focus_goal_of">%1$s of %2$s min today</string>
+    <string name="focus_goal_reached">Goal reached: %1$s of %2$s min</string>
+    <plurals name="focus_goal_streak">
+        <item quantity="one">Focus streak: %1$d day</item>
+        <item quantity="other">Focus streak: %1$d days</item>
+    </plurals>
+    <plurals name="focus_goal_cd">
+        <item quantity="one">Focus today: %1$d of %2$d minutes. Focus streak: %3$d day.</item>
+        <item quantity="other">Focus today: %1$d of %2$d minutes. Focus streak: %3$d days.</item>
+    </plurals>
+    <string name="focus_goal_title">Daily focus goal</string>
+    <string name="focus_goal_value">%1$d min a day</string>
+    <string name="focus_goal_settings_note">Minutes of focus to reach each day. A change applies from today; earlier days keep the goal they had.</string>
+    <string name="focus_goal_less">Less focus time goal</string>
+    <string name="focus_goal_more">More focus time goal</string>
+
+    <!-- Pomodoro (GD §16.3) -->
+    <string name="focus_mode_pomodoro">Pomodoro</string>
+    <string name="pomodoro_title">Pomodoro</string>
+    <string name="pomodoro_rule">Focus rounds with short breaks, then a long one. Each round is a custom session, so it counts toward the daily cap of four. Breaks never count against you.</string>
+    <string name="pomodoro_focus_label">Focus round</string>
+    <string name="pomodoro_short_label">Short break</string>
+    <string name="pomodoro_long_label">Long break</string>
+    <string name="pomodoro_rounds_label">Rounds</string>
+    <string name="pomodoro_minutes_value">%1$d min</string>
+    <string name="pomodoro_rounds_value">%1$d rounds</string>
+    <string name="cd_pomodoro_less">Less: %1$s</string>
+    <string name="cd_pomodoro_more">More: %1$s</string>
+    <string name="pomodoro_minus">−</string>
+    <string name="pomodoro_plus">+</string>
+    <string name="pomodoro_start">Start Pomodoro</string>
+    <string name="pomodoro_track_focus">Round %1$d of %2$d</string>
+    <string name="pomodoro_track_short_break">Round %1$d of %2$d · Break</string>
+    <string name="pomodoro_track_long_break">Round %1$d of %2$d · Long break</string>
+    <string name="pomodoro_track_done">All %2$d rounds done</string>
+    <string name="pomodoro_break_title">Break</string>
+    <string name="pomodoro_long_break_title">Long break</string>
+    <string name="pomodoro_break_hint">Step away for a moment. The next round waits for you.</string>
+    <string name="pomodoro_break_left">%1$s left</string>
+    <string name="pomodoro_break_over_screen">Break over</string>
+    <string name="pomodoro_start_round">Start round %1$d</string>
+    <string name="pomodoro_skip_break">Skip break</string>
+    <string name="pomodoro_end_session">End session</string>
+    <string name="pomodoro_done_title">Session complete</string>
+    <string name="pomodoro_done_body">%1$d rounds of %2$d minutes. Each one counted on its own.</string>
+    <string name="pomodoro_another">Another cycle</string>
+    <string name="pomodoro_done_button">Done</string>
+
+    <!-- Start focus widget and Quick Settings tile -->
+    <string name="focus_start_title">Start focus</string>
+    <string name="focus_start_widget_name">Start focus</string>
+    <string name="focus_start_widget_description">Start your last focus session with one tap. Shows when a running one ends.</string>
+    <string name="focus_start_pick">Pick a session</string>
+    <string name="focus_start_running_until">Running · ends %1$s</string>
+    <string name="focus_start_running_since">Running · since %1$s</string>
+    <string name="focus_start_break_over">Break over</string>
+    <string name="focus_start_break_until">Break · until %1$s</string>
+    <string name="focus_start_cd">%1$s. %2$s</string>
+    <string name="focus_last_preset">%1$s · %2$d min</string>
+    <string name="focus_last_custom">%1$d min</string>
+    <string name="focus_last_stopwatch">Stopwatch</string>
+    <string name="focus_last_pomodoro">Pomodoro · %1$d min × %2$d</string>
+    <string name="focus_last_with_subject">%1$s · %2$s</string>
+    <string name="focus_tile_label">Start focus</string>
+    <string name="focus_tile_left">%1$s left</string>
+    <string name="focus_tile_minutes">%1$d min</string>
+    <string name="focus_tile_running">Focus running</string>
+    <string name="focus_tile_break_left">Break · %1$s left</string>
+    <string name="focus_tile_round">Round %1$d of %2$d</string>
+    <!-- Deep Work achievements (GD §16.16); neutral voice, no Clean twin needed -->
+    <string name="achievement_focus_streak7">Deep Work I</string>
+    <string name="achievement_focus_streak30">Deep Work II</string>
+    <string name="achievement_focus_streak100">Deep Worker</string>
+    <string name="title_deep_worker">Deep Worker</string>
+    <string name="condition_focus_streak7">Meet your daily focus goal 7 days in a row.</string>
+    <string name="condition_focus_streak30">Meet your daily focus goal 30 days in a row.</string>
+    <string name="condition_focus_streak100">Meet your daily focus goal 100 days in a row.</string>
+</resources>

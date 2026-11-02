@@ -108,6 +108,27 @@ class GameDataPorterTest {
     }
 
     @Test
+    fun pomodoroSessionsAndFocusGoalsSurviveARoundTrip() = runTest {
+        source.seedHunter()
+        val start = java.time.Instant.parse("2026-11-02T08:00:00Z")
+        source.db.pomodoroDao().upsert(
+            com.assismohanty.awaken.core.data.db.entity.PomodoroSessionEntity(
+                id = "p1", focusMin = 25, shortBreakMin = 5, longBreakMin = 15, rounds = 4, stat = Stat.INT, subjectId = null,
+                startedAt = start, phase = com.assismohanty.awaken.engine.PomodoroPhase.SHORT_BREAK, currentRound = 1,
+                phaseEndsAt = start.plusSeconds(300), status = com.assismohanty.awaken.engine.PomodoroStatus.RUNNING,
+            ),
+        )
+        source.db.focusDao().upsertGoal(
+            com.assismohanty.awaken.core.data.db.entity.FocusGoalEntity(java.time.LocalDate.parse("2026-11-02"), 90),
+        )
+
+        assertThat(target.porter.import(source.porter.export())).isInstanceOf(ImportResult.Imported::class.java)
+
+        assertThat(target.db.pomodoroDao().get("p1")).isEqualTo(source.db.pomodoroDao().get("p1"))
+        assertThat(target.db.focusDao().goals()).isEqualTo(source.db.focusDao().goals())
+    }
+
+    @Test
     fun theSummaryDescribesWhatWasRestored() = runTest {
         playSomeGame()
         val summary = (target.porter.import(source.porter.export()) as ImportResult.Imported).summary

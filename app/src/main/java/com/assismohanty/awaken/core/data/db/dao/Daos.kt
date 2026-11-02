@@ -409,6 +409,12 @@ interface DayRecordDao {
     fun observeDatedOutcomesFrom(from: LocalDate): Flow<List<DatedOutcome>>
 
     @Query(
+        "SELECT game_date, outcome FROM day_record WHERE finalized_at IS NOT NULL AND outcome IS NOT NULL " +
+            "AND game_date >= :from ORDER BY game_date",
+    )
+    suspend fun datedOutcomesFrom(from: LocalDate): List<DatedOutcome>
+
+    @Query(
         "SELECT COUNT(*) FROM day_record WHERE finalized_at IS NOT NULL AND recovery = 1 " +
             "AND game_date BETWEEN :from AND :to",
     )

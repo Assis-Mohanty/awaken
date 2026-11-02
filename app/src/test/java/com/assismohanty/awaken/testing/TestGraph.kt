@@ -176,7 +176,8 @@ class TestGraph(
         db.hunterDao(), db.questDao(), db.habitDao(), reader, templates, pathPlanner, disciplinePlanner, transactions, clock,
     )
     val trialReader = TrialReader(db.questDao())
-    val achievements = AchievementUnlocker(db.questDao(), db.achievementDao(), ledger, reader)
+    val focusGoalReader = com.assismohanty.awaken.core.domain.FocusGoalReader(db.hunterDao(), db.focusDao(), db.dayRecordDao(), clock)
+    val achievements = AchievementUnlocker(db.questDao(), db.achievementDao(), ledger, reader, focusGoalReader)
     val completeQuest = CompleteQuestUseCase(
         db.hunterDao(), db.questDao(), db.completionDao(), achievements, db.trialDao(), trialReader, pathDao, db.habitDao(),
         ledger, reader, transactions, clock,

@@ -452,6 +452,31 @@ class MigrationTest {
     }
 
     @Test
+    fun v19To20AddsPomodoroAndFocusGoalAndKeepsGateRuns() = runTest {
+        val path = createFromSchema(19)
+        SQLiteDatabase.openDatabase(path, null, SQLiteDatabase.OPEN_READWRITE).use { db ->
+            db.execSQL(
+                "INSERT INTO gate_run (id, quest_instance_id, gate_rank, stat, label, planned_sec, started_at, background_ms, boot_count, status, mode, paused_before_ms, lock_at_stop) " +
+                    "VALUES ('g1', 'q1', 'D', 'INT', NULL, 1500, 0, 0, 1, 'CLEARED', 'PRESET', 0, 0)",
+            )
+        }
+        val db = Room.databaseBuilder(context, AwakenDatabase::class.java, path)
+            .addMigrations(*ALL_MIGRATIONS)
+            .allowMainThreadQueries()
+            .build()
+        try {
+            val run = db.gateRunDao().get("g1")
+            assertThat(run?.pomodoroId).isNull()
+            assertThat(run?.pomodoroRound).isNull()
+            assertThat(db.pomodoroDao().running()).isNull()
+            assertThat(db.focusDao().goals()).isEmpty()
+            assertThat(db.openHelper.readableDatabase.version).isEqualTo(AwakenDatabase.SCHEMA_VERSION)
+        } finally {
+            db.close()
+        }
+    }
+
+    @Test
     fun v4To5AddsThePathTablesAndKeepsExistingQuests() = runTest {
         val path = createFromSchema(4)
         SQLiteDatabase.openDatabase(path, null, SQLiteDatabase.OPEN_READWRITE).use { db ->

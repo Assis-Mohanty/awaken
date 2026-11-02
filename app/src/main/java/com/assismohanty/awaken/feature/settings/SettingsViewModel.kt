@@ -1,6 +1,10 @@
 package com.assismohanty.awaken.feature.settings
 
 import com.assismohanty.awaken.engine.TimeBlocks
+import com.assismohanty.awaken.engine.FocusGoalRules
+import com.assismohanty.awaken.core.domain.ObserveFocusGoalUseCase
+import com.assismohanty.awaken.core.domain.SetFocusGoalUseCase
+import kotlinx.coroutines.flow.emptyFlow
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -93,6 +97,8 @@ data class SettingsUiState(
     val showAiConsent: Boolean = false,
     /** A reminder is set but the system blocks notifications, so it can't reach the hunter. */
     val notificationsBlocked: Boolean = false,
+    /** Daily focus goal in minutes (GD §16.4). */
+    val focusGoal: Int = FocusGoalRules.DEFAULT_GOAL,
 ) {
     val canSaveName: Boolean get() = nameDraft.trim() != savedName && nameDraft.isNotBlank()
     val canSaveFocus: Boolean get() = focusDraft.size == 2 && focusDraft.toSet() != savedFocus.toSet()
@@ -104,6 +110,8 @@ sealed interface SettingsEvent {
     data class ToggleFocus(val stat: Stat) : SettingsEvent
     data object SaveFocus : SettingsEvent
     data class SetDayStart(val hour: Int) : SettingsEvent
+    /** One 15-minute step up (+1) or down (-1) on the daily focus goal. */
+    data class StepFocusGoal(val direction: Int) : SettingsEvent
     data object OpenReminderPicker : SettingsEvent
     data object DismissReminderPicker : SettingsEvent
     data class SetReminder(val time: LocalTime?) : SettingsEvent
@@ -170,12 +178,14 @@ class SettingsViewModel @Inject constructor(
     private val grantAiConsent: GrantAiConsentUseCase,
     private val revokeAiConsent: RevokeAiConsentUseCase,
     private val chimePlayer: ChimePlayer,
+    observeFocusGoal: ObserveFocusGoalUseCase,
+    private val setFocusGoal: SetFocusGoalUseCase,
 ) : ViewModel() {
 
     private val drafts = MutableStateFlow(Drafts())
 
-    val uiState: StateFlow<SettingsUiState> = combine(observeSettings(), uiPrefs.prefs, drafts, aiPrefs.consent) { model, prefs, drafts, consent ->
-        model?.toUiState(prefs, drafts, consent.given) ?: SettingsUiState()
+    val uiState: StateFlow<SettingsUiState> = combine(observeSettings(), uiPrefs.prefs, drafts, aiPrefs.consent, observeFocusGoal(emptyFlow())) { model, prefs, drafts, consent, goal ->
+        model?.toUiState(prefs, drafts, consent.given, goal?.goal ?: FocusGoalRules.DEFAULT_GOAL) ?: SettingsUiState()
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), SettingsUiState())
 
     fun onEvent(event: SettingsEvent) {
@@ -200,6 +210,10 @@ class SettingsViewModel @Inject constructor(
             }
             is SettingsEvent.SetDayStart -> save(afterSaved = { dayStartScheduler.reschedule(); dayRefresher.refresh() }) {
                 updateSettings.setDayStartHour(event.hour)
+            }
+            is SettingsEvent.StepFocusGoal -> {
+                val goal = current?.focusGoal ?: return
+                viewModelScope.launch { setFocusGoal(goal + event.direction * FocusGoalRules.GOAL_STEP) }
             }
             SettingsEvent.OpenReminderPicker -> drafts.update { it.copy(reminderPicker = true) }
             SettingsEvent.DismissReminderPicker -> drafts.update { it.copy(reminderPicker = false) }
@@ -404,7 +418,8 @@ class SettingsViewModel @Inject constructor(
     }
 }
 
-private fun SettingsModel.toUiState(prefs: UiPrefs, drafts: Drafts, aiConsent: Boolean) = SettingsUiState(
+private fun SettingsModel.toUiState(prefs: UiPrefs, drafts: Drafts, aiConsent: Boolean, focusGoal: Int) = SettingsUiState(
+    focusGoal = focusGoal,
     loading = false,
     savedName = name,
     nameDraft = drafts.name ?: name,

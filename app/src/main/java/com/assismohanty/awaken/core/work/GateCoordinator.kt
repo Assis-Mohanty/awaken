@@ -21,7 +21,15 @@ import com.assismohanty.awaken.engine.GateMode
 import com.assismohanty.awaken.engine.GateRunMath
 import com.assismohanty.awaken.engine.model.GateRank
 import com.assismohanty.awaken.engine.model.Stat
+import com.assismohanty.awaken.core.data.repo.FocusKind
+import com.assismohanty.awaken.core.data.repo.LastFocus
+import com.assismohanty.awaken.core.data.repo.LastFocusStore
+import com.assismohanty.awaken.core.domain.FocusRoundPort
+import com.assismohanty.awaken.core.domain.PomodoroSessions
+import com.assismohanty.awaken.core.domain.PomodoroStartResult
+import com.assismohanty.awaken.core.domain.StartLastResult
 import com.assismohanty.awaken.core.domain.TimedHabitStarter
+import com.assismohanty.awaken.engine.PomodoroConfig
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
@@ -52,8 +60,10 @@ class GateCoordinator @Inject constructor(
     private val clock: Clock,
     private val chimePlayer: ChimePlayer,
     private val uiPrefs: UiPrefsRepository,
+    private val pomodoro: PomodoroSessions,
+    private val lastFocusStore: LastFocusStore,
     @ApplicationScope private val appScope: CoroutineScope,
-) : DefaultLifecycleObserver, TimedHabitStarter {
+) : DefaultLifecycleObserver, TimedHabitStarter, FocusRoundPort {
 
     private val workManager: WorkManager get() = WorkManager.getInstance(context)
 
@@ -80,7 +90,10 @@ class GateCoordinator @Inject constructor(
     suspend fun start(rank: GateRank, stat: Stat, label: String?): StartGateResult {
         val result = startGate(rank, stat, label)
         when (result) {
-            is StartGateResult.Started -> scheduleEnd(result.run)
+            is StartGateResult.Started -> {
+                scheduleEnd(result.run)
+                lastFocusStore.save(LastFocus(FocusKind.PRESET, rank, rank.durationMinutes, stat, null, label.orEmpty(), PomodoroConfig()))
+            }
             StartGateResult.TooLate -> completionCenter.message(UserMessage.GateTooLate)
             StartGateResult.AlreadyRunning, StartGateResult.NoHunter, StartGateResult.NotATimedHabit -> Unit
         }
@@ -95,14 +108,65 @@ class GateCoordinator @Inject constructor(
     }
 
     /** A custom-length or stopwatch gate (GD §8.1). */
-    suspend fun startFocus(mode: GateMode, minutes: Int, stat: Stat, label: String?, subjectId: String?): StartGateResult {
-        val result = startGate.startFocus(mode, minutes, stat, label, subjectId)
+    suspend fun startFocus(
+        mode: GateMode,
+        minutes: Int,
+        stat: Stat,
+        label: String?,
+        subjectId: String?,
+        pomodoroId: String? = null,
+        pomodoroRound: Int? = null,
+    ): StartGateResult {
+        val result = startGate.startFocus(mode, minutes, stat, label, subjectId, pomodoroId, pomodoroRound)
         when (result) {
-            is StartGateResult.Started -> scheduleEnd(result.run)
+            is StartGateResult.Started -> {
+                scheduleEnd(result.run)
+                // A Pomodoro round is remembered once, as the session, by the session itself.
+                if (pomodoroId == null) {
+                    val kind = if (mode == GateMode.CUSTOM) FocusKind.CUSTOM else FocusKind.STOPWATCH
+                    lastFocusStore.save(LastFocus(kind, result.run.gateRank, minutes, stat, subjectId, label.orEmpty(), PomodoroConfig()))
+                }
+            }
             StartGateResult.TooLate -> completionCenter.message(UserMessage.GateTooLate)
             StartGateResult.AlreadyRunning, StartGateResult.NoHunter, StartGateResult.NotATimedHabit -> Unit
         }
         return result
+    }
+
+    override suspend fun startRound(config: PomodoroConfig, stat: Stat, subjectId: String?, sessionId: String, round: Int): StartGateResult =
+        startFocus(GateMode.CUSTOM, config.focusMinutes, stat, label = null, subjectId = subjectId, pomodoroId = sessionId, pomodoroRound = round)
+
+    override suspend fun endRunningRound() = abandon()
+
+    /**
+     * Starts the last session the hunter started again (the Quick Settings tile and the Start focus widget, GD §16.3, ARCH §3.15):
+     * a preset, a custom run, a stopwatch or a Pomodoro session.
+     */
+    suspend fun startLast(): StartLastResult {
+        val last = lastFocusStore.current() ?: return StartLastResult.NothingToRepeat
+        return when (last.kind) {
+            FocusKind.PRESET -> start(last.rank, last.stat, last.label).toLast()
+            FocusKind.CUSTOM -> startFocus(GateMode.CUSTOM, last.minutes, last.stat, last.label, last.subjectId).toLast()
+            FocusKind.STOPWATCH -> startFocus(GateMode.STOPWATCH, last.minutes, last.stat, last.label, last.subjectId).toLast()
+            FocusKind.POMODORO -> when (pomodoro.start(last.pomodoro, last.stat, last.subjectId)) {
+                is PomodoroStartResult.Started -> StartLastResult.Started
+                PomodoroStartResult.AlreadyRunning, PomodoroStartResult.NotReady -> StartLastResult.AlreadyRunning
+                PomodoroStartResult.TooLate -> StartLastResult.TooLate
+                PomodoroStartResult.NoHunter -> StartLastResult.NothingToRepeat
+            }
+        }.also { if (it == StartLastResult.TooLate) completionCenter.message(UserMessage.GateTooLate) }
+    }
+
+    private fun StartGateResult.toLast(): StartLastResult = when (this) {
+        is StartGateResult.Started -> StartLastResult.Started
+        StartGateResult.AlreadyRunning -> StartLastResult.AlreadyRunning
+        StartGateResult.TooLate -> StartLastResult.TooLate
+        StartGateResult.NoHunter, StartGateResult.NotATimedHabit -> StartLastResult.NothingToRepeat
+    }
+
+    /** The soft chime when a Pomodoro break ends while the hunter is watching (GD §16.3). */
+    suspend fun playBreakChime() {
+        chimePlayer.play(uiPrefs.prefs.first().chime)
     }
 
     /** Stops the running stopwatch and pays or logs it. */
@@ -129,6 +193,8 @@ class GateCoordinator @Inject constructor(
         controller.abandon()
         GateEndWorker.cancel(workManager)
         notifications.cancelAll()
+        // A Pomodoro round that was given up ends its session (asynchronously: the session may be the one calling this).
+        appScope.launch { pomodoro.sync() }
     }
 
     /** Re-evaluates the running gate (screen tick or return to foreground). */
@@ -152,6 +218,7 @@ class GateCoordinator @Inject constructor(
     private suspend fun handleStart() {
         notifications.cancelRunning()
         check()
+        pomodoro.sync()
     }
 
     private suspend fun handleStop() {
@@ -175,6 +242,7 @@ class GateCoordinator @Inject constructor(
                 notifications.cancelAll()
                 completionCenter.completed(check.outcome)
                 appScope.launch { chimePlayer.play(uiPrefs.prefs.first().chime) }
+                appScope.launch { pomodoro.sync() }
             }
             is GateCheck.Collapsed -> {
                 GateEndWorker.cancel(workManager)
@@ -183,6 +251,7 @@ class GateCoordinator @Inject constructor(
                 if (check.run.status == GateRunStatus.COLLAPSED && reason != null) {
                     completionCenter.gateCollapsed(reason, check.run.backgroundMs)
                 }
+                appScope.launch { pomodoro.sync() }
             }
             is GateCheck.Logged -> {
                 GateEndWorker.cancel(workManager)
@@ -190,6 +259,7 @@ class GateCoordinator @Inject constructor(
                 completionCenter.message(
                     if (check.outcome == FocusRunOutcome.OverCap) UserMessage.FocusOverCap else UserMessage.FocusShortRun,
                 )
+                appScope.launch { pomodoro.sync() }
             }
             GateCheck.NoRun -> Unit
         }

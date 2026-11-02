@@ -21,6 +21,11 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.assismohanty.awaken.core.data.repo.ThemeMode
 import com.assismohanty.awaken.core.designsystem.theme.AwakenTheme
 import com.assismohanty.awaken.core.work.ACTION_OPEN_GATES
+import com.assismohanty.awaken.core.work.ACTION_START_FOCUS
+import com.assismohanty.awaken.core.work.GateCoordinator
+import androidx.lifecycle.lifecycleScope
+import javax.inject.Inject
+import kotlinx.coroutines.launch
 import com.assismohanty.awaken.core.work.ACTION_OPEN_REVIEW
 import com.assismohanty.awaken.core.work.ACTION_OPEN_TODAY
 import com.assismohanty.awaken.navigation.AppearanceViewModel
@@ -35,6 +40,8 @@ class MainActivity : ComponentActivity() {
     private var openTodayRequests by mutableIntStateOf(0)
     private var openReviewRequests by mutableIntStateOf(0)
     private var openGatesRequests by mutableIntStateOf(0)
+
+    @Inject lateinit var gates: GateCoordinator
 
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
@@ -98,6 +105,11 @@ class MainActivity : ComponentActivity() {
             ACTION_OPEN_TODAY -> openTodayRequests++
             ACTION_OPEN_REVIEW -> openReviewRequests++
             ACTION_OPEN_GATES -> openGatesRequests++
+            ACTION_START_FOCUS -> lifecycleScope.launch {
+                // Starts the session the hunter ran last. If one already runs, or there is nothing to repeat, the Focus screen is the answer.
+                runCatching { gates.startLast() }
+                openGatesRequests++
+            }
         }
     }
 }

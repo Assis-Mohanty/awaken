@@ -31,6 +31,8 @@ data class AchievementSnapshot(
     val recoveries: Int = 0,
     /** Weekly reviews submitted (GD §14.4); reviews themselves grant nothing. */
     val reviewsSubmitted: Int = 0,
+    /** The focus streak on the day of evaluation (GD §16.4): consecutive days that met the daily focus goal. */
+    val focusStreak: Int = 0,
     val alreadyUnlocked: Set<String> = emptySet(),
 ) {
     fun statLevel(stat: Stat): Int = StatLevel.level(statXp[stat] ?: 0L)
@@ -97,6 +99,10 @@ object AchievementEvaluator {
         add(Achievement("review1", 10) { it.reviewsSubmitted >= 1 })
         add(Achievement("review4", 50) { it.reviewsSubmitted >= REVIEWS_STOCK })
         add(Achievement("review12", 150, "the_reflective") { it.reviewsSubmitted >= REVIEWS_REFLECTIVE })
+        // Deep Work (GD §16.16): the daily focus goal met 7, 30 and 100 days in a row. Gold only; no XP for a streak.
+        add(Achievement("focus_streak7", 30) { it.focusStreak >= FocusGoalRules.STREAK_MILESTONES[0] })
+        add(Achievement("focus_streak30", 100) { it.focusStreak >= FocusGoalRules.STREAK_MILESTONES[1] })
+        add(Achievement("focus_streak100", 200, "deep_worker") { it.focusStreak >= FocusGoalRules.STREAK_MILESTONES[2] })
     }
 
     val byId: Map<String, Achievement> = all.associateBy { it.id }

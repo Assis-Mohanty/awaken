@@ -24,6 +24,11 @@ annotation class NoticePrefs
 @Retention(AnnotationRetention.BINARY)
 annotation class UiPrefsStore
 
+/** The last focus session started and the Pomodoro defaults, for the tile and widget (GD §16.3, ARCH §3.15). */
+@Qualifier
+@Retention(AnnotationRetention.BINARY)
+annotation class LastFocusPrefs
+
 /** AI Paths consent and the random install ID (ARCH §4). */
 @Qualifier
 @Retention(AnnotationRetention.BINARY)
@@ -55,6 +60,16 @@ object DataStoreModule {
         @ApplicationScope scope: CoroutineScope,
     ): DataStore<Preferences> = PreferenceDataStoreFactory.create(scope = scope) {
         context.preferencesDataStoreFile("ui_prefs")
+    }
+
+    @Provides
+    @Singleton
+    @LastFocusPrefs
+    fun provideLastFocusPrefs(
+        @ApplicationContext context: Context,
+        @ApplicationScope scope: CoroutineScope,
+    ): DataStore<Preferences> = PreferenceDataStoreFactory.create(scope = scope) {
+        context.preferencesDataStoreFile("last_focus")
     }
 
     @Provides

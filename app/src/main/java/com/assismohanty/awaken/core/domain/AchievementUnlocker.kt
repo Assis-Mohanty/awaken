@@ -26,6 +26,7 @@ class AchievementUnlocker @Inject constructor(
     private val achievementDao: AchievementDao,
     private val ledger: LedgerRepository,
     private val reader: GameStateReader,
+    private val focusGoal: FocusGoalReader,
 ) {
     /** Returns the ids unlocked by this call, in definition order. */
     suspend fun unlockNew(profile: HunterProfileEntity, today: LocalDate, now: Instant): List<String> {
@@ -34,6 +35,7 @@ class AchievementUnlocker @Inject constructor(
         val todayRecord = questDao.getForDate(today).toDayRecord(today)
         val bestStreak = maxOf(finalized.bestStreak, StreakRules.displayStreak(StreakState(streak = finalized.streak), todayRecord))
         val snapshot = reader.achievementSnapshot(profile, LevelCurve.level(balances.xpTotal), balances, bestStreak)
+            .copy(focusStreak = focusGoal.streak(today))
         val ids = AchievementEvaluator.evaluate(snapshot)
         ids.forEach { id ->
             achievementDao.insert(AchievementUnlockEntity(id, now))
