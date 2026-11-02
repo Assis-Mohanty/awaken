@@ -138,9 +138,15 @@ class ReelAccessibilityService : AccessibilityService() {
         return RawSignal.Probe(fg, nodes, at)
     }
 
+    /**
+     * The package the hunter is looking at, or null when it cannot be told (which counts as "not a short-video app").
+     * The service only sees its five apps' windows, so on the home screen no window of ours is active. The
+     * `rootInActiveWindow` fallback can hand back the last short-video window after it went to the background, so it
+     * is trusted only while that root is refreshed and still visible to the user.
+     */
     private fun foregroundPackage(): String? = runCatching {
         windows.firstOrNull { it.isActive }?.root?.packageName?.toString()
-            ?: rootInActiveWindow?.packageName?.toString()
+            ?: rootInActiveWindow?.takeIf { it.refresh() && it.isVisibleToUser }?.packageName?.toString()
     }.getOrNull()
 
     @Suppress("DEPRECATION")
