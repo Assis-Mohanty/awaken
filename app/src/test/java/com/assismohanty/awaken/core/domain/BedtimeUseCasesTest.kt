@@ -93,6 +93,7 @@ class BedtimeUseCasesTest {
         assertThat(graph.settleCurrentBedtime()).isNull()
 
         assertThat(checkNotNull(quest(day2)).status).isEqualTo(QuestStatus.EXPIRED)
+        assertThat(checkNotNull(quest(day2)).nightVerdict).isEqualTo(com.assismohanty.awaken.engine.BedtimeVerdict.BROKEN)
         assertThat(graph.db.ledgerDao().all()).hasSize(before)
         assertThat(graph.db.ledgerDao().all().none { it.delta < 0 && it.kind == LedgerKind.XP_TOTAL }).isTrue()
     }
@@ -116,6 +117,7 @@ class BedtimeUseCasesTest {
         graph.settleCurrentBedtime()
 
         assertThat(checkNotNull(quest(day2)).status).isEqualTo(QuestStatus.EXPIRED)
+        assertThat(checkNotNull(quest(day2)).nightVerdict).isEqualTo(com.assismohanty.awaken.engine.BedtimeVerdict.NO_DATA)
         assertThat(xpRows().none { it.sourceType == SourceType.QUEST && it.sourceId.startsWith(quest(day2)?.id.orEmpty()) }).isTrue()
     }
 
@@ -243,14 +245,25 @@ class BedtimeUseCasesTest {
     }
 
     @Test
-    fun aBrokenNightShowsAsBrokenAndAnUnreadableOneAsNoData() = runTest {
+    fun aBrokenNightShowsAsBrokenEvenOnceTheLogCannotBeRead() = runTest {
         nightBehindUs()
         graph.usage.minutes[INSTAGRAM] = 9
         graph.settleCurrentBedtime()
         assertThat(checkNotNull(graph.loadBedtimeToday()).lastNight).isEqualTo(LastNight.Broken)
 
+        // The verdict was stored when the night settled (ENGINE_DECISIONS #147), so a log that turns unreadable later
+        // does not rewrite it.
         graph.usage.minutes.clear()
         graph.usage.readable = false
+        assertThat(checkNotNull(graph.loadBedtimeToday()).lastNight).isEqualTo(LastNight.Broken)
+    }
+
+    @Test
+    fun aNightThatCouldNotBeReadShowsAsNoData() = runTest {
+        nightBehindUs()
+        graph.usage.readable = false
+        graph.settleCurrentBedtime()
+
         assertThat(checkNotNull(graph.loadBedtimeToday()).lastNight).isEqualTo(LastNight.NoData)
     }
 

@@ -252,6 +252,9 @@ program(id PK, program_key, run_start_date, status, started_at, ended_at NULL)  
 program_mark(program_id, game_date, choice TEXT,                                       -- RESTART|CONTINUE
              PRIMARY KEY(program_id, game_date))
 habit + program_id NULL                                                                 -- program rule habits (read-only)
+
+-- v25 (Batch 9 review)
+quest_instance + night_verdict TEXT NULL     -- BROKEN|NO_DATA on an unpaid BEDTIME quest (ENGINE_DECISIONS #147)
 ```
 
 New ledger `sourceType` **DUNGEON** (`<dungeonId>:entry` fee, `<dungeonId>:clear` reward + fragment), QuestType **BEDTIME** and **DUNGEON**, QuestStatus **SKIPPED**. Every new table is added to `ExportDocument.TABLES` (none is a cache) and to `ExportUpgrade` for older files. Each version adds a `Migration` in `Migrations.kt` and a `MigrationTest` case from the previous exported schema.

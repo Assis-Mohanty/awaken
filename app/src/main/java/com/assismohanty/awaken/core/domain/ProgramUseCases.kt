@@ -24,9 +24,12 @@ import com.assismohanty.awaken.engine.ProgramSpec
 import com.assismohanty.awaken.engine.ProgramStart
 import com.assismohanty.awaken.engine.ProgramStatus
 import com.assismohanty.awaken.engine.QuestRules
+import com.assismohanty.awaken.engine.BedtimeVerdict
 import com.assismohanty.awaken.engine.model.HabitType
+import com.assismohanty.awaken.engine.model.HunterContext
 import com.assismohanty.awaken.engine.model.QuestStatus
 import com.assismohanty.awaken.engine.model.QuestType
+import com.assismohanty.awaken.engine.model.VerificationSource
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.time.LocalDate
 import java.util.UUID
@@ -47,6 +50,26 @@ class ProgramText @Inject constructor(@ApplicationContext private val context: C
             ProgramRuleKey.STEPS_10K -> if (plain) R.string.program_rule_steps_10k_plain else R.string.program_rule_steps_10k
         },
     )
+}
+
+/**
+ * A program's Health rule on a day whose Health check is unavailable (Health off, or that permission gone) becomes its plain
+ * SELF form for that day, so the run is not broken by a check nobody can pass (ENGINE_DECISIONS #148). Every other habit is
+ * returned unchanged; the stored habit is never rewritten, so the Health form returns once Health does.
+ */
+class ProgramHabitForDay @Inject constructor(
+    private val programDao: ProgramDao,
+    private val text: ProgramText,
+) {
+    suspend fun adapt(habit: HabitEntity, context: HunterContext): HabitEntity {
+        val programId = habit.programId ?: return habit
+        if (habit.verification.source != VerificationSource.HEALTH) return habit
+        if (context.healthAvailable && habit.verification !in context.unavailableHealth) return habit
+        val spec = programDao.get(programId)?.let { ProgramRules.spec(it.programKey) } ?: return habit
+        val rule = ProgramRules.healthRuleFor(spec, habit.verification, habit.target) ?: return habit
+        val plain = ProgramRules.effective(rule, healthOn = false)
+        return habit.copy(title = text.ruleTitle(rule.key, plain = true), verification = plain.verification, target = plain.target, unit = plain.unit)
+    }
 }
 
 sealed interface StartProgramResult {
@@ -140,9 +163,10 @@ class ProgramReader @Inject constructor(
         val habits = programDao.habits(program.id)
         val quests = questDao.getForDate(date)
         val rulesDone = habits.all { habit -> quests.any { it.habitId == habit.id && it.status == QuestStatus.COMPLETED } }
-        // The phone-down night counts only on days that have one (the feature is on and usage was readable that morning).
+        // The phone-down night counts only on days that have one (the feature is on and usage was readable that morning), and
+        // a night whose usage could not be read when it settled is not asked either (ENGINE_DECISIONS #147).
         val night = if (spec.needsPhoneDownNight) quests.firstOrNull { it.type == QuestType.BEDTIME } else null
-        val nightDone = night == null || night.status == QuestStatus.COMPLETED
+        val nightDone = night == null || night.status == QuestStatus.COMPLETED || night.nightVerdict == BedtimeVerdict.NO_DATA
         val outcome = dayRecordDao.get(date)?.outcome
         val restOrRecovery = outcome == DayOutcome.REST || outcome == DayOutcome.RECOVERY
         return ProgramRules.dayVerdict(allRulesDone = rulesDone && nightDone, restOrRecovery = restOrRecovery)

@@ -32,6 +32,7 @@ class GenerateDirectiveUseCase @Inject constructor(
     private val discipline: DisciplineQuestPlanner,
     private val bedtime: BedtimePlanner,
     private val dungeonStage: DungeonStagePlanner,
+    private val programHabits: ProgramHabitForDay,
     private val transactions: TransactionRunner,
     private val clock: Clock,
 ) {
@@ -58,10 +59,11 @@ class GenerateDirectiveUseCase @Inject constructor(
             bedtime.draftFor(profile, gameDate)?.let { questDao.insertAll(listOf(it.toEntity(now))) }
             // The active Dungeon's stage for this game-day, if any (GD §16.14).
             dungeonStage.entityFor(profile, gameDate, now)?.let { questDao.insertAll(listOf(it)) }
+            // A program's Health rule falls back to its plain form on a day its Health check is unavailable (ENGINE_DECISIONS #148).
+            val due = habitDao.active().filter { it.isDueOn(gameDate) }
+            val habitContext = if (due.any { it.programId != null }) reader.hunterContext(profile, gameDate) else null
             questDao.insertAll(
-                habitDao.active()
-                    .filter { it.isDueOn(gameDate) }
-                    .map { habit -> habit.toQuest(profile.hunterId, gameDate, now) },
+                due.map { habit -> (habitContext?.let { programHabits.adapt(habit, it) } ?: habit).toQuest(profile.hunterId, gameDate, now) },
             )
             questDao.getForDate(gameDate)
         }

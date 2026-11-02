@@ -110,7 +110,7 @@ class SettleBedtimeUseCase @Inject constructor(
         val quest = reader.quest(wakeDay)?.takeIf { it.isOpen } ?: return null
         val verdict = reader.verdict(wakeDay) ?: return null
         if (verdict != BedtimeVerdict.KEPT) {
-            questDao.setStatus(quest.id, QuestStatus.EXPIRED, completedAt = null)
+            questDao.expireNight(quest.id, verdict)
             return null
         }
         return completeQuest.completeVerified(quest.id, VerificationSource.USAGE)
@@ -206,8 +206,9 @@ class LoadBedtimeTodayUseCase @Inject constructor(
 
     private suspend fun lastNight(quest: QuestInstanceEntity, today: LocalDate, now: Instant): LastNight = when (quest.status) {
         QuestStatus.COMPLETED -> LastNight.Kept(completionDao.latestActive(quest.id)?.xp ?: 0)
+        // The verdict stored at settlement wins; nights settled before it was stored are read again.
         QuestStatus.EXPIRED, QuestStatus.MISSED ->
-            if (reader.verdict(today) == BedtimeVerdict.BROKEN) LastNight.Broken else LastNight.NoData
+            if ((quest.nightVerdict ?: reader.verdict(today)) == BedtimeVerdict.BROKEN) LastNight.Broken else LastNight.NoData
         else -> reader.windowFor(today)?.takeIf { now.isBefore(it.end) }?.let { LastNight.InProgress(it) } ?: LastNight.Pending
     }
 }

@@ -176,7 +176,8 @@ class TestGraph(
     val bedtimePlanner = com.assismohanty.awaken.core.domain.BedtimePlanner(bedtimeReader, usage, com.assismohanty.awaken.core.domain.BedtimeText(context))
     val dungeonStagePlanner = com.assismohanty.awaken.core.domain.DungeonStagePlanner(db.dungeonDao(), templates, reader, com.assismohanty.awaken.core.domain.DungeonText(context))
     val generateDirective = GenerateDirectiveUseCase(
-        db.hunterDao(), db.questDao(), db.habitDao(), reader, templates, pathPlanner, disciplinePlanner, bedtimePlanner, dungeonStagePlanner, transactions, clock,
+        db.hunterDao(), db.questDao(), db.habitDao(), reader, templates, pathPlanner, disciplinePlanner, bedtimePlanner, dungeonStagePlanner,
+        com.assismohanty.awaken.core.domain.ProgramHabitForDay(db.programDao(), com.assismohanty.awaken.core.domain.ProgramText(context)), transactions, clock,
     )
     val trialReader = TrialReader(db.questDao())
     val focusGoalReader = com.assismohanty.awaken.core.domain.FocusGoalReader(db.hunterDao(), db.focusDao(), db.dayRecordDao(), clock)

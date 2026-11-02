@@ -569,6 +569,31 @@ class MigrationTest {
     }
 
     @Test
+    fun v24To25AddsTheNightVerdictAndKeepsAnExpiredNightUnknown() = runTest {
+        val path = createFromSchema(24)
+        SQLiteDatabase.openDatabase(path, null, SQLiteDatabase.OPEN_READWRITE).use { db ->
+            db.execSQL(
+                "INSERT INTO quest_instance (id, game_date, type, stat, title, description, unit, target, difficulty, " +
+                    "verification, min_duration_sec, status, created_at) " +
+                    "VALUES ('n1', '2026-10-18', 'BEDTIME', 'VIT', 'Phone down', 'Phone down', 'night', 1, 'NORMAL', 'DEVICE_USAGE', 0, 'EXPIRED', 0)",
+            )
+        }
+        val db = Room.databaseBuilder(context, AwakenDatabase::class.java, path)
+            .addMigrations(*ALL_MIGRATIONS)
+            .allowMainThreadQueries()
+            .build()
+        try {
+            assertThat(db.questDao().get("n1")?.status).isEqualTo(com.assismohanty.awaken.engine.model.QuestStatus.EXPIRED)
+            assertThat(db.questDao().get("n1")?.nightVerdict).isNull()
+            db.questDao().expireNight("n1", com.assismohanty.awaken.engine.BedtimeVerdict.NO_DATA)
+            assertThat(db.questDao().get("n1")?.nightVerdict).isEqualTo(com.assismohanty.awaken.engine.BedtimeVerdict.NO_DATA)
+            assertThat(db.openHelper.readableDatabase.version).isEqualTo(AwakenDatabase.SCHEMA_VERSION)
+        } finally {
+            db.close()
+        }
+    }
+
+    @Test
     fun v4To5AddsThePathTablesAndKeepsExistingQuests() = runTest {
         val path = createFromSchema(4)
         SQLiteDatabase.openDatabase(path, null, SQLiteDatabase.OPEN_READWRITE).use { db ->

@@ -149,6 +149,6 @@ abstract class AwakenDatabase : RoomDatabase() {
         const val NAME = "awaken.db"
 
         /** Also the export format version: an export is only importable into the schema it was written from. */
-        const val SCHEMA_VERSION = 24
+        const val SCHEMA_VERSION = 25
     }
 }

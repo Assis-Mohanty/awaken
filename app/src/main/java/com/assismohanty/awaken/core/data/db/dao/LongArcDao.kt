@@ -43,6 +43,9 @@ interface ProgramDao {
     @Query("SELECT * FROM program WHERE status = 'ACTIVE' LIMIT 1")
     suspend fun active(): ProgramEntity?
 
+    @Query("SELECT * FROM program WHERE id = :id")
+    suspend fun get(id: String): ProgramEntity?
+
     @Query("SELECT * FROM program ORDER BY CASE status WHEN 'ACTIVE' THEN 0 ELSE 1 END, started_at DESC LIMIT 1")
     fun observeCurrent(): Flow<ProgramEntity?>
 

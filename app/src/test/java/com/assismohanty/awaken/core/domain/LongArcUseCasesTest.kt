@@ -177,15 +177,18 @@ class LongArcUseCasesTest {
         graph.enterDungeon(3, Stat.WIL)
         nextDay()
         val quest = checkNotNull(stage(graph.today()))
-        assertThat(quest.verification).isIn(Verification.entries.filter { it.source == VerificationSource.SELF })
+        assertThat(quest.difficulty).isEqualTo(Difficulty.HARD)
 
-        graph.completeQuest(quest.id)
+        // The stage template is picked from random ids, so it may be a SELF or a TIMER one; it is priced by its own check.
+        finish(quest)
 
         val completion = checkNotNull(graph.db.completionDao().latestActive(quest.id))
         assertThat(completion.questType).isEqualTo(QuestType.DUNGEON)
-        // Hard, self, streak 0 and no crit is 90 XP; a crit or a streak bonus only ever adds to it.
-        if (!completion.crit && graph.reader.finalizedStreak().streak == 0) assertThat(completion.xp).isEqualTo(90)
-        assertThat(completion.xp).isAtLeast(90)
+        val streak = graph.reader.finalizedStreak().streak
+        val expected = com.assismohanty.awaken.engine.XpCalculator.questXp(Difficulty.HARD, streak, quest.verification.source, completion.crit)
+        assertThat(completion.xp).isEqualTo(expected)
+        // Hard, self, streak 0 and no crit is 90 XP (vector #130).
+        if (quest.verification.source == VerificationSource.SELF && !completion.crit && streak == 0) assertThat(completion.xp).isEqualTo(90)
     }
 
     @Test
@@ -240,6 +243,51 @@ class LongArcUseCasesTest {
             id = habits.first().id, title = "x", stat = Stat.STR, difficulty = Difficulty.EASY, days = java.time.DayOfWeek.entries.toSet(), target = 1, unit = "x",
         ))).isEqualTo(SaveHabitResult.CampaignHabit)
         assertThat(graph.db.habitDao().get(habits.first().id)?.title).isEqualTo(habits.first().title)
+    }
+
+    @Test
+    fun aHealthRuleFallsBackToItsPlainFormOnADayWithoutHealth() = runTest {
+        graph.seedHunter()
+        graph.rollover()
+        graph.enableHealth()
+        val id = (graph.startProgram("steady_30") as StartProgramResult.Started).programId
+        val walkHabit = graph.db.programDao().habits(id).single { it.verification == Verification.HEALTH_STEPS }
+        assertThat(programQuests(day1).single { it.habitId == walkHabit.id }.verification).isEqualTo(Verification.HEALTH_STEPS)
+
+        graph.disableHealth()
+        nextDay()
+
+        val plain = programQuests(graph.today()).single { it.habitId == walkHabit.id }
+        assertThat(plain.verification).isEqualTo(Verification.SELF)
+        assertThat(plain.target to plain.unit).isEqualTo(30 to "min")
+        assertThat(plain.title).isEqualTo(context.getString(com.assismohanty.awaken.R.string.program_rule_walk_plain))
+        // The stored habit keeps its Health form, so it comes back with Health.
+        assertThat(graph.db.habitDao().get(walkHabit.id)?.verification).isEqualTo(Verification.HEALTH_STEPS)
+        keepToday()
+        assertThat(graph.programReader.dayVerdict(checkNotNull(graph.db.programDao().active()), com.assismohanty.awaken.engine.ProgramRules.spec("steady_30")!!, graph.today()))
+            .isEqualTo(com.assismohanty.awaken.engine.ProgramDay.KEPT)
+    }
+
+    @Test
+    fun anIroncladNightNobodyCouldReadIsNotAskedButABrokenOneBreaksTheDay() = runTest {
+        graph.seedHunter()
+        graph.rollover()
+        graph.startProgram("ironclad_75")
+        graph.setBedtime.enableOrEdit(com.assismohanty.awaken.engine.BedtimeRules.DEFAULT_BEDTIME, com.assismohanty.awaken.engine.BedtimeRules.DEFAULT_WAKE)
+        nextDay() // day 2: the first night is behind us and its quest exists
+        val program = checkNotNull(graph.db.programDao().active())
+        val spec = com.assismohanty.awaken.engine.ProgramRules.spec("ironclad_75")!!
+        keepToday()
+        graph.usage.readable = false
+
+        graph.settleCurrentBedtime()
+
+        val night = checkNotNull(graph.bedtimeReader.quest(graph.today()))
+        assertThat(night.status).isEqualTo(QuestStatus.EXPIRED)
+        assertThat(graph.programReader.dayVerdict(program, spec, graph.today())).isEqualTo(com.assismohanty.awaken.engine.ProgramDay.KEPT)
+        // The same night with evidence of use breaks the day.
+        graph.db.questDao().expireNight(night.id, com.assismohanty.awaken.engine.BedtimeVerdict.BROKEN)
+        assertThat(graph.programReader.dayVerdict(program, spec, graph.today())).isEqualTo(com.assismohanty.awaken.engine.ProgramDay.BROKEN)
     }
 
     @Test

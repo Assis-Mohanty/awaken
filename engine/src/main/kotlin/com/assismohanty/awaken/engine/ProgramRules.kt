@@ -111,6 +111,13 @@ object ProgramRules {
         else -> ProgramStart.OK
     }
 
+    /**
+     * The catalog rule a Health-checked program habit was made from, matched by its check and target (unique within a
+     * program); null for any other habit. Used to fall back for a day whose Health check is unavailable (ENGINE_DECISIONS #148).
+     */
+    fun healthRuleFor(spec: ProgramSpec, verification: Verification, target: Int): ProgramRule? =
+        spec.rules.firstOrNull { it.fallback != null && it.verification == verification && it.target == target }
+
     /** The rule as the habit will be made: its verified form with Health on, its plain form with Health off. */
     fun effective(rule: ProgramRule, healthOn: Boolean): ProgramRule =
         if (healthOn || rule.fallback == null) {

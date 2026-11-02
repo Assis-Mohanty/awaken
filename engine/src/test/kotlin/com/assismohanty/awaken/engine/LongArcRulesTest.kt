@@ -126,6 +126,20 @@ class LongArcRulesTest {
     }
 
     @Test
+    fun `a Health habit finds its rule again, so a day without Health can fall back`() {
+        ProgramRules.CATALOG.forEach { spec ->
+            val health = spec.rules.filter { it.fallback != null }
+            assertThat(health.map { it.verification to it.target }).containsNoDuplicates()
+            health.forEach { assertThat(ProgramRules.healthRuleFor(spec, it.verification, it.target)).isEqualTo(it) }
+        }
+        val ironclad = ProgramRules.spec("ironclad_75")!!
+        assertThat(ProgramRules.healthRuleFor(ironclad, Verification.HEALTH_STEPS, 10_000)?.key).isEqualTo(ProgramRuleKey.STEPS_10K)
+        // A rule already made plain (Health was off at start), or one with no Health form, is left alone.
+        assertThat(ProgramRules.healthRuleFor(ironclad, Verification.SELF, 10_000)).isNull()
+        assertThat(ProgramRules.healthRuleFor(ironclad, Verification.TIMER, 25)).isNull()
+    }
+
+    @Test
     fun `vector 131 - restart makes the answer day day 1, continue goes on with the day marked`() {
         val spec = ProgramRules.spec("steady_30")!!
         // Started Monday; day 5 (Friday) is broken, and it is answered on Saturday.

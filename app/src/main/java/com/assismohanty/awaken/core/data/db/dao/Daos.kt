@@ -18,6 +18,7 @@ import com.assismohanty.awaken.core.data.db.entity.OwnedCosmeticEntity
 import com.assismohanty.awaken.core.data.db.entity.QuestInstanceEntity
 import com.assismohanty.awaken.core.data.db.entity.StatTierEntity
 import com.assismohanty.awaken.core.data.db.entity.TrialEntity
+import com.assismohanty.awaken.engine.BedtimeVerdict
 import com.assismohanty.awaken.engine.DayOutcome
 import com.assismohanty.awaken.engine.model.Difficulty
 import com.assismohanty.awaken.engine.model.QuestStatus
@@ -176,6 +177,10 @@ interface QuestDao {
 
     @Query("UPDATE quest_instance SET status = :status, completed_at = :completedAt WHERE id = :id")
     suspend fun setStatus(id: String, status: QuestStatus, completedAt: Instant?)
+
+    /** Expires an unpaid phone-down night and records why, in one statement (GD §16.12, ENGINE_DECISIONS #147). */
+    @Query("UPDATE quest_instance SET status = 'EXPIRED', completed_at = NULL, night_verdict = :verdict WHERE id = :id")
+    suspend fun expireNight(id: String, verdict: BedtimeVerdict)
 
     /** A stopwatch gate is priced when it stops, once its counted time is known (GD §8.1). */
     @Query("UPDATE quest_instance SET difficulty = :difficulty, target = :target WHERE id = :id")

@@ -139,6 +139,10 @@ object ExportUpgrade {
                 tables = current.tables + LONG_ARC_V24_TABLES.filter { it !in current.tables }.associateWith { emptyList() },
             )
         }
+        // v24 → v25: quest_instance gains a nullable night_verdict (= unknown, as before); no table changes.
+        if (current.app == ExportDocument.APP_ID && current.schemaVersion == 24) {
+            current = current.copy(schemaVersion = 25)
+        }
         return current
     }
 }

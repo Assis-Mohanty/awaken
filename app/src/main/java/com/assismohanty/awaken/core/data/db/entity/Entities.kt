@@ -5,6 +5,7 @@ import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
 import com.assismohanty.awaken.engine.AppCategory
+import com.assismohanty.awaken.engine.BedtimeVerdict
 import com.assismohanty.awaken.engine.DayOutcome
 import com.assismohanty.awaken.engine.campaign.Archetype
 import com.assismohanty.awaken.engine.campaign.CampaignAct
@@ -126,6 +127,11 @@ data class QuestInstanceEntity(
     /** The Dungeon this stage quest belongs to and its 1-based stage (GD §16.14); null for every other quest. */
     @ColumnInfo(name = "dungeon_id") val dungeonId: String? = null,
     @ColumnInfo(name = "dungeon_stage") val dungeonStage: Int? = null,
+    /**
+     * Why an unpaid phone-down night expired, BROKEN or NO_DATA (GD §16.12, ENGINE_DECISIONS #147); written with the expiry,
+     * null for every other quest and for nights settled before v25.
+     */
+    @ColumnInfo(name = "night_verdict") val nightVerdict: BedtimeVerdict? = null,
 )
 
 /** One completion attempt; [id] is the completionId `questInstanceId#attemptN` (GD §9.3). Not a ledger table. */
