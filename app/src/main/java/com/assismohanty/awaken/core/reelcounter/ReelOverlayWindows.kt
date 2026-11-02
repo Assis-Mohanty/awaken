@@ -92,7 +92,7 @@ class ReelOverlayWindows @Inject constructor(
     private var lumiToday by mutableStateOf<ReelLumi?>(null)
     private var look by mutableStateOf(Look(dark = true, presentation = PresentationMode.CLEAN, reduceMotion = false))
 
-    private var placement = BubblePlacement(BubbleEdge.END, SettingsStore.DEFAULT_BUBBLE_Y)
+    private var placement = BubblePlacement(BubbleEdge.CENTER, SettingsStore.DEFAULT_BUBBLE_Y)
     private var bubbleEnabled = true
     private val hiddenSessions = mutableSetOf<Long>()
     private var bubbleParams: WindowManager.LayoutParams? = null
@@ -316,8 +316,21 @@ class ReelOverlayWindows @Inject constructor(
             PixelFormat.TRANSLUCENT,
         ).apply {
             gravity = Gravity.TOP or Gravity.START
-            x = if (placement.edge == BubbleEdge.END) anchor.x - width - px(EDGE_MARGIN) else anchor.x + size + px(EDGE_MARGIN)
-            y = anchor.y
+            when (placement.edge) {
+                // Top middle: the panel hangs centred just below the pill.
+                BubbleEdge.CENTER -> {
+                    x = anchor.x + (size - width) / 2
+                    y = anchor.y + bubbleHeight() + px(EDGE_MARGIN)
+                }
+                BubbleEdge.END -> {
+                    x = anchor.x - width - px(EDGE_MARGIN)
+                    y = anchor.y
+                }
+                BubbleEdge.START -> {
+                    x = anchor.x + size + px(EDGE_MARGIN)
+                    y = anchor.y
+                }
+            }
         }
         panelJob?.cancel()
         panelJob = scope?.launch {

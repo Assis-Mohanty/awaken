@@ -19,7 +19,8 @@ import java.io.IOException
 import javax.inject.Inject
 import javax.inject.Singleton
 
-enum class BubbleEdge { START, END }
+/** Where the counter bubble sits across the screen. [CENTER] (top middle) is the default. */
+enum class BubbleEdge { START, CENTER, END }
 
 @Singleton
 class SettingsStore @Inject constructor(@ReelPrefs private val store: DataStore<Preferences>) {
@@ -36,7 +37,7 @@ class SettingsStore @Inject constructor(@ReelPrefs private val store: DataStore<
     val bubbleEnabled: Flow<Boolean> = data.map { it[BUBBLE_ENABLED] ?: true }.distinctUntilChanged()
 
     val bubbleEdge: Flow<BubbleEdge> = data.map {
-        if (it[BUBBLE_EDGE] == BubbleEdge.START.name) BubbleEdge.START else BubbleEdge.END
+        BubbleEdge.entries.firstOrNull { edge -> edge.name == it[BUBBLE_EDGE] } ?: BubbleEdge.CENTER
     }.distinctUntilChanged()
 
     val bubbleYFraction: Flow<Float> = data.map { it[BUBBLE_Y_FRACTION] ?: DEFAULT_BUBBLE_Y }.distinctUntilChanged()
@@ -68,10 +69,11 @@ class SettingsStore @Inject constructor(@ReelPrefs private val store: DataStore<
     suspend fun setInspectorEnabled(enabled: Boolean) = store.edit { it[INSPECTOR_ENABLED] = enabled }
 
     companion object {
-        const val DEFAULT_BUBBLE_Y = 0.35f
+        /** Top of the usable band: the bubble starts just under the status bar. */
+        const val DEFAULT_BUBBLE_Y = 0f
 
         private val BUBBLE_ENABLED = booleanPreferencesKey("bubble_enabled")
-        private val BUBBLE_EDGE = stringPreferencesKey("bubble_edge")
+        private val BUBBLE_EDGE = stringPreferencesKey("bubble_anchor")
         private val BUBBLE_Y_FRACTION = floatPreferencesKey("bubble_y_fraction")
         private val ENABLED = booleanPreferencesKey("reel_enabled")
         private val LAST_HEARTBEAT = longPreferencesKey("last_heartbeat_ms")
