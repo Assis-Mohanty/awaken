@@ -90,6 +90,21 @@ class ContentAssetsTest {
         assertThat(DirectiveGenerator.penaltyQuest(library.templates, context, LocalDate.of(2026, 10, 18))).isNotNull()
     }
 
+    /**
+     * A Dungeon's fee is paid up front and a day without a stage quest fails it (GD §16.14, ENGINE_DECISIONS #141), so every
+     * stat must offer a Hard stage under the most restrictive settings: no equipment, every Injury Mode tag, Health off.
+     */
+    @Test
+    fun `every stat has a dungeon stage under the most restrictive settings`() {
+        val worst = HunterContext("h", focusStats = listOf(Stat.STR, Stat.INT), injuryTags = DirectiveGenerator.INJURY_TAGS.toSet(), healthAvailable = false)
+        Stat.entries.forEach { stat ->
+            (1..DungeonRules.LENGTHS.last()).forEach { stage ->
+                val draft = DirectiveGenerator.dungeonStage(library.templates, worst, stat, "d1", stage, LocalDate.of(2026, 11, 3))
+                assertWithMessage("$stat stage $stage").that(draft).isNotNull()
+            }
+        }
+    }
+
     @Test
     fun `real library supports a full directive under restrictive settings for 30 days`() {
         val restrictive = HunterContext("h", focusStats = listOf(Stat.STR, Stat.CHA), injuryTags = DirectiveGenerator.DEFAULT_INJURY_TAGS, healthAvailable = false)
