@@ -31,34 +31,36 @@ Q1 keep H1 dropped (Batch 6 builds nothing for H1) · Q2 separate allowance, max
 
 ## Batch 1 — Habits: A1 types, A2 reminders + skip
 
+✅ built in 88c40ac. Differences from the checklist below: the use cases live in `HabitProgressUseCases.kt` (count, avoid, skip) and `HabitReminderUseCases.kt`; skipping works per habit (`SkipHabitUseCase.skip(habitId)`) so the Today options sheet can offer it; the Timed habit start goes through a small `TimedHabitStarter` seam (implemented by `GateCoordinator`, which also arms the gate end). Decisions: ENGINE_DECISIONS #115–#121. Vectors #85–#95 pass.
+
 **Engine** (`engine/src/main/kotlin/com/assismohanty/awaken/engine/`)
-- [ ] `model/Enums.kt`: `HabitType { CHECK, QUANTITY, TIMED, NEGATIVE }`, `HabitFrequency { DAYS_OF_WEEK, TIMES_PER_WEEK }`, `QuestStatus.SKIPPED` (not hidden; not an item; not a miss).
-- [ ] `HabitRules.kt`: validation (`N1`–`N4`), timed difficulty from minutes (§8.1 P2 tiers), `instanceFor(habit, day, completionsThisWeek)`, flexible expiry (EXPIRED not MISSED), negative confirm window (Evening block start from `TimeBlocks`), `canSkip(skipsThisWeek)` (`N6`), reminder limit (`N5`).
-- [ ] `StreakRules` / day-clear item counting: SKIPPED is not an item; flexible EXPIRED is not a miss.
-- [ ] Tests: `HabitRulesTest` covering vectors **#85–#95**.
+- [x] `model/Enums.kt`: `HabitType { CHECK, QUANTITY, TIMED, NEGATIVE }`, `HabitFrequency { DAYS_OF_WEEK, TIMES_PER_WEEK }`, `QuestStatus.SKIPPED` (not hidden; not an item; not a miss).
+- [x] `HabitRules.kt`: validation (`N1`–`N4`), timed difficulty from minutes (§8.1 P2 tiers), `instanceFor(habit, day, completionsThisWeek)`, flexible expiry (EXPIRED not MISSED), negative confirm window (Evening block start from `TimeBlocks`), `canSkip(skipsThisWeek)` (`N6`), reminder limit (`N5`).
+- [x] `StreakRules` / day-clear item counting: SKIPPED is not an item; flexible EXPIRED is not a miss.
+- [x] Tests: `HabitRulesTest` covering vectors **#85–#95**.
 
 **Data** (`app/src/main/java/com/assismohanty/awaken/core/data/`)
-- [ ] `db/entity/Entities.kt`: `HabitEntity` + `type`, `frequency`, `timesPerWeek`, `reminderTime`; `QuestInstanceEntity` + `progress`; `GateRunEntity` + `habitQuestId`.
-- [ ] `db/AwakenDatabase.kt` `SCHEMA_VERSION = 19`; `db/Migrations.kt` `MIGRATION_18_19` (ALTER TABLE … ADD COLUMN with defaults); exported `app/schemas/…/19.json`.
-- [ ] `app/src/test/…/core/data/MigrationTest.kt`: 18 → 19 case (old rows get CHECK / DAYS_OF_WEEK / progress 0).
-- [ ] DAOs: open-instance progress update, skips this ISO week, completions this ISO week per habit.
-- [ ] Export: columns ride on existing tables; `GameDataPorterTest` round-trip with the new columns.
+- [x] `db/entity/Entities.kt`: `HabitEntity` + `type`, `frequency`, `timesPerWeek`, `reminderTime`; `QuestInstanceEntity` + `progress`; `GateRunEntity` + `habitQuestId`.
+- [x] `db/AwakenDatabase.kt` `SCHEMA_VERSION = 19`; `db/Migrations.kt` `MIGRATION_18_19` (ALTER TABLE … ADD COLUMN with defaults); exported `app/schemas/…/19.json`.
+- [x] `app/src/test/…/core/data/MigrationTest.kt`: 18 → 19 case (old rows get CHECK / DAYS_OF_WEEK / progress 0).
+- [x] DAOs: open-instance progress update, skips this ISO week, completions this ISO week per habit.
+- [x] Export: columns ride on existing tables; `GameDataPorterTest` round-trip with the new columns.
 
 **Domain** (`core/domain/`)
-- [ ] `HabitUseCases.kt`: draft gains type/frequency/timesPerWeek/reminderTime; `SaveHabitUseCase` validates via `HabitRules` (timed difficulty derived, not user-chosen).
-- [ ] `GenerateDirectiveUseCase.kt`: flexible weekly instances.
-- [ ] New `HabitProgressUseCases.kt`: `+1/−1` (completes at target via `CompleteQuestUseCase`; −1 on completed = undo), `ConfirmKeptUseCase`, `SlipUseCase` / undo slip, `SkipHabitUseCase` / `UndoSkipUseCase`.
-- [ ] TIMED: `GateUseCases.kt` start with `habitQuestId`; `GateRunController` pays the quest once (mirror `PathGateUseCase.kt`), not P5.
-- [ ] `RunRolloverUseCase` / `DayRolloverUseCase`: flexible → EXPIRED, unconfirmed negative → MISSED.
+- [x] `HabitUseCases.kt`: draft gains type/frequency/timesPerWeek/reminderTime; `SaveHabitUseCase` validates via `HabitRules` (timed difficulty derived, not user-chosen).
+- [x] `GenerateDirectiveUseCase.kt`: flexible weekly instances.
+- [x] New `HabitProgressUseCases.kt`: `+1/−1` (completes at target via `CompleteQuestUseCase`; −1 on completed = undo), `ConfirmKeptUseCase`, `SlipUseCase` / undo slip, `SkipHabitUseCase` / `UndoSkipUseCase`.
+- [x] TIMED: `GateUseCases.kt` start with `habitQuestId`; `GateRunController` pays the quest once (mirror `PathGateUseCase.kt`), not P5.
+- [x] `RunRolloverUseCase` / `DayRolloverUseCase`: flexible → EXPIRED, unconfirmed negative → MISSED.
 
 **Work**
-- [ ] `core/work/HabitReminderWork.kt` (`HabitReminderScheduler` + worker, unique per habit), channel `habit_reminder` in `ReminderNotifications.kt`; re-armed by `ReminderCoordinator.kt` and rollover; posts only if the instance is open.
+- [x] `core/work/HabitReminderWork.kt` (`HabitReminderScheduler` + worker, unique per habit), channel `habit_reminder` in `ReminderNotifications.kt`; re-armed by `ReminderCoordinator.kt` and rollover; posts only if the instance is open.
 
 **UI** (`feature/today/`, `core/designsystem/components/`)
-- [ ] Components: `QuantityStepper`, `HabitTypeChip`, `NegativeHabitRow` (+ previews of every DS §9.1 state).
-- [ ] `HabitSheets.kt` editor per DS §9.3 (type, frequency, reminder; read-only campaign/program).
-- [ ] `TodayScreen.kt` rows per type; long-press **Skip today / Undo skip**.
-- [ ] Strings (+ `_clean` twins where System voice), regenerate `LexiconPairs`.
+- [x] Components: `QuantityStepper`, `HabitTypeChip`, `NegativeHabitRow` (+ previews of every DS §9.1 state).
+- [x] `HabitSheets.kt` editor per DS §9.3 (type, frequency, reminder; read-only campaign/program).
+- [x] `TodayScreen.kt` rows per type; long-press **Skip today / Undo skip**.
+- [x] Strings (+ `_clean` twins where System voice), regenerate `LexiconPairs`.
 
 **Acceptance:** vectors #85–#95 pass; MigrationTest 18→19 passes; an existing habit looks and behaves exactly as before; a timed habit pays one QUEST reward with V TIMER; reminders never fire for a done/skipped habit; previews for every state; gate green; goldens changed: habit editor, Today habit rows (name them).
 
