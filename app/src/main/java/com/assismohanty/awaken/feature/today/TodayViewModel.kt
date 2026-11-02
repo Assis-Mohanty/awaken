@@ -221,7 +221,8 @@ class TodayViewModel @Inject constructor(
 }
 
 internal fun TodayModel.toUiState(): TodayUiState {
-    val directive = quests.filter { it.type == QuestType.MAIN || it.type == QuestType.SIDE }
+    // A Dungeon stage is one directive item (GD §16.14): listed with the side quests, counted, never rerollable.
+    val directive = quests.filter { it.type == QuestType.MAIN || it.type == QuestType.SIDE || it.type == QuestType.DUNGEON }
     val pathQuests = quests.filter { it.type == QuestType.PATH }
     val habits = quests.filter { it.type == QuestType.HABIT }
     val counted = directive + pathQuests + habits
@@ -243,7 +244,7 @@ internal fun TodayModel.toUiState(): TodayUiState {
         rank = hunter.rank,
         penalty = quests.firstOrNull { it.type == QuestType.PENALTY }?.toRowModel(),
         main = directive.firstOrNull { it.type == QuestType.MAIN }?.let { it.toRowModel(pathBadges[it.id]) },
-        sides = directive.filter { it.type == QuestType.SIDE }.map { it.toRowModel() },
+        sides = directive.filter { it.type == QuestType.SIDE || it.type == QuestType.DUNGEON }.map { it.toRowModel() },
         paths = pathQuests.map { it.toRowModel(pathBadges[it.id]) },
         habits = habits.map { it.toRowModel(habit = habitInfo[it.id]?.let { info -> it.toHabitRow(info, currentBlock) }) },
         habitIdByQuest = habits.mapNotNull { quest -> quest.habitId?.let { quest.id to it } }.toMap(),

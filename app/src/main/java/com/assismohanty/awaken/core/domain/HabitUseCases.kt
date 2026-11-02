@@ -99,7 +99,7 @@ class SaveHabitUseCase @Inject constructor(
         val result = transactions.run {
             val existing = draft.id?.let { habitDao.get(it) }
             // Campaign habits are planned and priced by the engine; they can be archived, not edited (ENGINE_DECISIONS #92).
-            if (existing?.campaignId != null) return@run SaveHabitResult.CampaignHabit
+            if (existing?.campaignId != null || existing?.programId != null) return@run SaveHabitResult.CampaignHabit
             if (existing == null && !QuestRules.canAddCustom(habitDao.countActive())) return@run SaveHabitResult.LimitReached
             val id = existing?.id ?: UUID.randomUUID().toString()
             if (draft.reminderMinutes != null && !HabitRules.canSetReminder(habitDao.countRemindersExcept(id))) {
@@ -184,7 +184,7 @@ class RemoveHabitUseCase @Inject constructor(
         val today = clock.gameDate(profile.dayStartHour)
         return transactions.run {
             val habit = habitDao.get(habitId) ?: return@run RemoveHabitResult.NotFound
-            if (habit.campaignId != null) return@run RemoveHabitResult.CampaignHabit
+            if (habit.campaignId != null || habit.programId != null) return@run RemoveHabitResult.CampaignHabit
             val open = questDao.openHabitInstancesFrom(habitId, today)
             questDao.deleteAll(open.map { it.id })
             if (delete) habitDao.delete(habitId) else habitDao.upsert(habit.copy(active = false))

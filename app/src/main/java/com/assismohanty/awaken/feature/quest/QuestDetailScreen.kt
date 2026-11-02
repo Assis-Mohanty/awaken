@@ -304,6 +304,7 @@ private val QuestType.kindRes: Int
         QuestType.PATH -> R.string.quest_kind_path
         QuestType.DISCIPLINE -> R.string.quest_kind_discipline
         QuestType.BEDTIME -> R.string.quest_kind_bedtime
+        QuestType.DUNGEON -> R.string.quest_kind_dungeon
     }
 
 private val VerificationSource.explanationRes: Int

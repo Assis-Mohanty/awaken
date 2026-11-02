@@ -54,6 +54,8 @@ import com.assismohanty.awaken.feature.reelcounter.ReelLimitsRoute as ReelLimits
 import com.assismohanty.awaken.feature.reelcounter.ReelStatsRoute as ReelStatsEntry
 import com.assismohanty.awaken.feature.screentime.ScreenTimeRoute as ScreenTimeEntry
 import com.assismohanty.awaken.feature.quit.QuitRoute as QuitEntry
+import com.assismohanty.awaken.feature.dungeon.DungeonRoute as DungeonEntry
+import com.assismohanty.awaken.feature.program.ProgramsRoute as ProgramsEntry
 import com.assismohanty.awaken.feature.today.WindDownRoute as WindDownEntry
 import com.assismohanty.awaken.feature.settings.SettingsRoute as SettingsEntry
 import com.assismohanty.awaken.feature.status.StatusRoute as StatusEntry
@@ -208,14 +210,23 @@ private fun MainScaffold(
                         onBack = { navController.popBackStack() },
                         onFixFocusLock = { navController.navigate(FocusLockSetupRoute) { launchSingleTop = true } },
                         onOpenCrystals = { navController.navigate(CrystalsRoute) { launchSingleTop = true } },
+                        onOpenDungeons = { navController.navigate(DungeonsRoute) { launchSingleTop = true } },
                     )
                 }
                 composable<CrystalsRoute> { CrystalGalleryEntry(onBack = { navController.popBackStack() }) }
+                composable<DungeonsRoute> {
+                    DungeonEntry(
+                        onBack = { navController.popBackStack() },
+                        onOpenQuest = { navController.navigate(QuestDetailRoute(it)) },
+                    )
+                }
+                composable<ProgramsRoute> { ProgramsEntry(onBack = { navController.popBackStack() }) }
                 composable<GymRoute> { GymEntry() }
                 composable<DietRoute> { DietEntry() }
                 composable<StatusRoute> {
                     StatusEntry(
                         onOpenQuit = { navController.navigate(QuitRoute) { launchSingleTop = true } },
+                        onOpenPrograms = { navController.navigate(ProgramsRoute) { launchSingleTop = true } },
                         onOpenSettings = { navController.navigate(SettingsRoute) },
                         onOpenPaths = { navController.navigate(PathsRoute) { launchSingleTop = true } },
                         onOpenReview = { navController.navigate(ReviewRoute) { launchSingleTop = true } },

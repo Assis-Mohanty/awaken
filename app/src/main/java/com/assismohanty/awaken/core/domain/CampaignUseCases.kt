@@ -50,6 +50,9 @@ enum class CampaignProblem {
     /** A campaign is already running. */
     ACTIVE,
 
+    /** A program is running: one long arc at a time (GD §16.15, Q8). */
+    PROGRAM_ACTIVE,
+
     /** Fewer than 3 free habit slots (GD §6.8). */
     NO_ROOM,
 
@@ -80,6 +83,7 @@ class PreviewCampaignUseCase @Inject constructor(
     private val hunterDao: HunterDao,
     private val habitDao: HabitDao,
     private val campaignDao: CampaignDao,
+    private val programDao: com.assismohanty.awaken.core.data.db.dao.ProgramDao,
     private val reader: GameStateReader,
     private val templates: TemplateRepository,
     private val clock: Clock,
@@ -111,6 +115,7 @@ class PreviewCampaignUseCase @Inject constructor(
         }
         val problem = when {
             campaignDao.active() != null -> CampaignProblem.ACTIVE
+            programDao.active() != null -> CampaignProblem.PROGRAM_ACTIVE
             count == 0 -> CampaignProblem.NO_ROOM
             habits.size < CampaignRules.MIN_HABITS -> CampaignProblem.NO_HABITS
             else -> null

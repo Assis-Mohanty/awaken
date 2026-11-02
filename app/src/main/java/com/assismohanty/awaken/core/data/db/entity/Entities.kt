@@ -35,6 +35,8 @@ import com.assismohanty.awaken.engine.path.PathUnit
 import com.assismohanty.awaken.engine.path.ProgressionSignal
 import com.assismohanty.awaken.engine.path.SlotOutcome
 import com.assismohanty.awaken.engine.model.VerificationSource
+import com.assismohanty.awaken.engine.ProgramBreakChoice
+import com.assismohanty.awaken.engine.ProgramStatus
 import com.assismohanty.awaken.engine.QuitDayVerdict
 import com.assismohanty.awaken.engine.QuitKind
 import java.time.Instant
@@ -121,6 +123,9 @@ data class QuestInstanceEntity(
     @ColumnInfo(name = "time_of_day") val timeOfDay: TimeOfDay? = null,
     /** Count-habit progress for the day, 0..target (GD §16.1). Progress only: a reward is paid when it reaches the target. */
     @ColumnInfo(name = "progress", defaultValue = "0") val progress: Int = 0,
+    /** The Dungeon this stage quest belongs to and its 1-based stage (GD §16.14); null for every other quest. */
+    @ColumnInfo(name = "dungeon_id") val dungeonId: String? = null,
+    @ColumnInfo(name = "dungeon_stage") val dungeonStage: Int? = null,
 )
 
 /** One completion attempt; [id] is the completionId `questInstanceId#attemptN` (GD §9.3). Not a ledger table. */
@@ -169,6 +174,8 @@ data class HabitEntity(
     @ColumnInfo(name = "times_per_week") val timesPerWeek: Int? = null,
     /** Reminder as minutes after local midnight; null = none. At most two habits have one (GD §16.2). */
     @ColumnInfo(name = "reminder_time") val reminderTime: Int? = null,
+    /** Set for a program rule (GD §16.15): planned by the engine, read-only in the habit editor, archived when the program ends. */
+    @ColumnInfo(name = "program_id") val programId: String? = null,
 )
 
 /** THE LEDGER (append-only, GD §9.3). Never update or delete rows; `stat`/`item_id` use '' instead of NULL. */
@@ -550,4 +557,41 @@ data class QuitDayEntity(
     val verdict: QuitDayVerdict,
     /** Distracting-app minutes that day, when they were read. */
     val minutes: Int? = null,
+)
+
+/**
+ * A Dungeon the hunter entered (GD §16.14). The entry fee and the reward are ledger rows keyed `<id>:entry` and
+ * `<id>:clear`; this row only says where the run stands. At most one is ACTIVE.
+ */
+@Entity(tableName = "dungeon")
+data class DungeonEntity(
+    @PrimaryKey val id: String,
+    @ColumnInfo(name = "length_days") val lengthDays: Int,
+    val stat: Stat,
+    val fee: Int,
+    @ColumnInfo(name = "entered_game_date") val enteredGameDate: LocalDate,
+    @ColumnInfo(name = "first_stage_date") val firstStageDate: LocalDate,
+    val status: DungeonStatus,
+    @ColumnInfo(name = "ended_at") val endedAt: Instant? = null,
+)
+
+enum class DungeonStatus { ACTIVE, CLEARED, FAILED }
+
+/** A running (or finished) program (GD §16.15). A restart moves [runStartDate]; nothing else about the run is stored. */
+@Entity(tableName = "program")
+data class ProgramEntity(
+    @PrimaryKey val id: String,
+    @ColumnInfo(name = "program_key") val programKey: String,
+    @ColumnInfo(name = "run_start_date") val runStartDate: LocalDate,
+    val status: ProgramStatus,
+    @ColumnInfo(name = "started_at") val startedAt: Instant,
+    @ColumnInfo(name = "ended_at") val endedAt: Instant? = null,
+)
+
+/** The answer (or the default) after a broken day: one per program and broken game-day. Only ever added. */
+@Entity(tableName = "program_mark", primaryKeys = ["program_id", "game_date"])
+data class ProgramMarkEntity(
+    @ColumnInfo(name = "program_id") val programId: String,
+    @ColumnInfo(name = "game_date") val gameDate: LocalDate,
+    val choice: ProgramBreakChoice,
 )

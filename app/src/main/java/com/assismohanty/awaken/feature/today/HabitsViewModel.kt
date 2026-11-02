@@ -338,7 +338,7 @@ class HabitsViewModel @Inject constructor(
 
 internal fun HabitEntity.toItem() = HabitItem(
     id, title, stat, difficulty, daysOfWeekMask.toDays(), target, unit, timeOfDay,
-    campaign = campaignId != null, type = type, frequency = frequency, timesPerWeek = timesPerWeek, reminderMinutes = reminderTime,
+    campaign = campaignId != null || programId != null, type = type, frequency = frequency, timesPerWeek = timesPerWeek, reminderMinutes = reminderTime,
 )
 
 /** A new type resets what does not carry over: a count starts at 8, a timed habit at 25 minutes, an avoid habit at one a day. */

@@ -62,6 +62,8 @@ class DayRolloverUseCase @Inject constructor(
     private val settleDiscipline: SettleDisciplineUseCase,
     private val settleBedtime: SettleBedtimeUseCase,
     private val recordQuitProgress: RecordQuitProgressUseCase,
+    private val settleDungeon: SettleDungeonUseCase,
+    private val programRollover: ProgramRolloverUseCase,
     private val advanceCampaign: AdvanceCampaignUseCase,
     private val achievements: AchievementUnlocker,
     private val transactions: TransactionRunner,
@@ -86,9 +88,12 @@ class DayRolloverUseCase @Inject constructor(
             settleDiscipline(date)
             // And the night that ended that morning, if no foreground check or worker got to it first (GD §16.12).
             settleBedtime(date)
+            // A Dungeon stage is decided before the day closes its open quests (GD §16.14).
+            settleDungeon(date)
             finalized += finalizeDay(date)
             // Doomscrolling verdicts for the day that just ended, and the Clean Run achievements (GD §16.13).
             recordQuitProgress(date)
+            programRollover(date)
             date = date.plusDays(1)
         }
         // Only the run that crosses into a new day carries Recovery into it, so turning it off today sticks.

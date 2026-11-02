@@ -121,7 +121,7 @@ data class Segment(val weight: Float, val color: Color)
 /** [total] and [highlight] are fractions of the tallest column (0..1); [description] is that column's TalkBack text. */
 data class StackedColumn(val total: Float, val highlight: Float, val description: String)
 
-enum class CalendarCell { FILLED, CURRENT, PAST, UPCOMING }
+enum class CalendarCell { FILLED, CURRENT, PAST, UPCOMING, REST, BROKEN }
 
 /** One bar of a [ChartSpec.Comparison]: [fraction] of the widest (0..1), [value] as shown text. */
 data class ComparisonRow(val label: String, val value: String, val fraction: Float, val color: Color? = null)
@@ -291,6 +291,8 @@ private fun CalendarGridChart(spec: ChartSpec.CalendarGrid, modifier: Modifier) 
                             CalendarCell.CURRENT -> cell.border(dimens.accentWidth, palette.crit, shape)
                             CalendarCell.PAST -> cell.border(dimens.hairline, palette.fog, shape)
                             CalendarCell.UPCOMING -> cell.background(palette.edge, shape)
+                            CalendarCell.REST -> cell.background(palette.fog.copy(alpha = REST_ALPHA), shape)
+                            CalendarCell.BROKEN -> cell.border(dimens.hairline, palette.crit, shape)
                         },
                     )
                 }
@@ -301,3 +303,4 @@ private fun CalendarGridChart(spec: ChartSpec.CalendarGrid, modifier: Modifier) 
 
 /** Keeps a zero-height part from collapsing the weights. */
 private const val MIN_WEIGHT = 0.001f
+private const val REST_ALPHA = 0.45f

@@ -37,6 +37,11 @@ data class AchievementSnapshot(
     val prEvents: Int = 0,
     /** The longest in-app quit run, in days, over all counters (GD §16.13): back-dated starts earn nothing. */
     val quitRunDays: Int = 0,
+    /** Dungeons cleared, and whether a seven-day one was (GD §16.14). */
+    val dungeonsCleared: Int = 0,
+    val sevenDayDungeonCleared: Boolean = false,
+    /** Program keys completed with no broken day (GD §16.15). */
+    val completedPrograms: Set<String> = emptySet(),
     val alreadyUnlocked: Set<String> = emptySet(),
 ) {
     fun statLevel(stat: Stat): Int = StatLevel.level(statXp[stat] ?: 0L)
@@ -116,6 +121,14 @@ object AchievementEvaluator {
         add(Achievement("quit_30", 100) { it.quitRunDays >= 30 })
         add(Achievement("quit_90", 150) { it.quitRunDays >= 90 })
         add(Achievement("quit_365", 200, "unshaken") { it.quitRunDays >= 365 })
+        // Delver (GD §16.14): clear a Dungeon. Gold only.
+        add(Achievement("dungeon_first", 20) { it.dungeonsCleared >= 1 })
+        add(Achievement("dungeon_7", 100, "delver") { it.sevenDayDungeonCleared })
+        // Programs (GD §16.15): a run with no broken day. A FINISHED run earns nothing (Q9).
+        ProgramRules.CATALOG.zip(listOf(150, 200, 200)).zip(listOf("steady", "grounded", "ironclad")).forEach { (entry, title) ->
+            val (spec, gold) = entry
+            add(Achievement(spec.achievementId, gold, title) { spec.key in it.completedPrograms })
+        }
     }
 
     val byId: Map<String, Achievement> = all.associateBy { it.id }

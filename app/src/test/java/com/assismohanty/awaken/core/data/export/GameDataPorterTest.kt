@@ -177,6 +177,35 @@ class GameDataPorterTest {
     }
 
     @Test
+    fun dungeonsProgramsAndTheirMarksSurviveARoundTrip() = runTest {
+        source.seedHunter()
+        source.rollover()
+        source.grant(com.assismohanty.awaken.engine.model.LedgerKind.XP_TOTAL, com.assismohanty.awaken.engine.LevelCurve.cumulative(10), "xp")
+        source.grant(com.assismohanty.awaken.engine.model.LedgerKind.GOLD, 500, "gold")
+        source.enterDungeon(3, Stat.STR)
+        source.clock.advance(java.time.Duration.ofDays(1))
+        source.rollover()
+        source.abandonDungeon()
+        source.startProgram("steady_30")
+        source.db.programDao().insertMark(
+            com.assismohanty.awaken.core.data.db.entity.ProgramMarkEntity(
+                checkNotNull(source.db.programDao().active()).id, source.today(), com.assismohanty.awaken.engine.ProgramBreakChoice.CONTINUE,
+            ),
+        )
+
+        assertThat(target.porter.import(source.porter.export())).isInstanceOf(ImportResult.Imported::class.java)
+
+        assertThat(target.db.dungeonDao().all()).isEqualTo(source.db.dungeonDao().all())
+        assertThat(target.db.dungeonDao().all()).hasSize(1)
+        val program = checkNotNull(source.db.programDao().active())
+        assertThat(target.db.programDao().active()).isEqualTo(program)
+        assertThat(target.db.programDao().marks(program.id)).isEqualTo(source.db.programDao().marks(program.id))
+        assertThat(target.db.programDao().habits(program.id)).isEqualTo(source.db.programDao().habits(program.id))
+        assertThat(target.db.questDao().getForDate(source.today()).filter { it.dungeonId != null }.map { it.dungeonStage })
+            .isEqualTo(source.db.questDao().getForDate(source.today()).filter { it.dungeonId != null }.map { it.dungeonStage })
+    }
+
+    @Test
     fun theSummaryDescribesWhatWasRestored() = runTest {
         playSomeGame()
         val summary = (target.porter.import(source.porter.export()) as ImportResult.Imported).summary

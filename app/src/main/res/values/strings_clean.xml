@@ -270,6 +270,10 @@
 
     <!-- strings_screentime.xml -->
     <string name="quest_kind_discipline_clean">Screen limits</string>
+
+    <!-- strings_longarcs.xml -->
+    <string name="dungeon_length_card_cd_clean">%1$d days. Entry fee %2$d gold. Reward %3$d gold and a shard.</string>
+    <string name="dungeon_cleared_body_clean">%1$d gold and a shard, added to your balance.</string>
     <string name="screentime_failed_clean">Couldn\'t read your usage. Try again in a moment.</string>
     <string name="screentime_window_access_clean">Grant usage access</string>
     <string name="screentime_window_today_clean">Today</string>

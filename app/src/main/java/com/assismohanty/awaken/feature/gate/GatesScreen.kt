@@ -66,6 +66,8 @@ import com.assismohanty.awaken.core.designsystem.components.StatChip
 import com.assismohanty.awaken.core.designsystem.components.SystemWindow
 import com.assismohanty.awaken.core.designsystem.components.label
 import com.assismohanty.awaken.core.designsystem.components.AwakenCard
+import com.assismohanty.awaken.core.designsystem.lexicon.Term
+import com.assismohanty.awaken.core.designsystem.lexicon.termString
 import com.assismohanty.awaken.core.designsystem.components.GateCrystal
 import com.assismohanty.awaken.core.designsystem.components.crystalTint
 import com.assismohanty.awaken.core.designsystem.components.ListRow
@@ -84,7 +86,7 @@ import com.assismohanty.awaken.feature.quest.shortClock
 import java.time.Duration
 
 @Composable
-fun GatesEntry(onBack: () -> Unit, modifier: Modifier = Modifier, onFixFocusLock: () -> Unit = {}, onOpenCrystals: () -> Unit = {}, viewModel: GatesViewModel = hiltViewModel()) {
+fun GatesEntry(onBack: () -> Unit, modifier: Modifier = Modifier, onFixFocusLock: () -> Unit = {}, onOpenCrystals: () -> Unit = {}, onOpenDungeons: () -> Unit = {}, viewModel: GatesViewModel = hiltViewModel()) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
     // The gate runs either way; the permission only adds the countdown outside the app (ARCH §3.3).
@@ -100,6 +102,7 @@ fun GatesEntry(onBack: () -> Unit, modifier: Modifier = Modifier, onFixFocusLock
             when (event) {
                 GatesEvent.FixFocusLock -> onFixFocusLock()
                 GatesEvent.OpenCrystals -> onOpenCrystals()
+                GatesEvent.OpenDungeons -> onOpenDungeons()
                 else -> viewModel.onEvent(event)
             }
         },
@@ -170,6 +173,7 @@ private fun GatePicker(state: GatesUiState, onEvent: (GatesEvent) -> Unit) {
         }
     }
     state.setup?.let { GateSetupWindow(it, onEvent) }
+    DungeonsRow(onOpen = { onEvent(GatesEvent.OpenDungeons) })
     CrystalsRow(onOpen = { onEvent(GatesEvent.OpenCrystals) })
 }
 
@@ -851,3 +855,18 @@ private fun CrystalsRow(onOpen: () -> Unit) {
     }
 }
 private const val STOPWATCH_CRYSTAL_SCALE = 0.3f
+
+/** The way into the Dungeon screen (GD §16.14); its name is the Lexicon term, "Challenge" in Clean words. */
+@Composable
+private fun DungeonsRow(onOpen: () -> Unit) {
+    AwakenCard(reveal = false, contentPadding = Spacing.listCard, spacing = Spacing.zero, modifier = Modifier.fillMaxWidth()) {
+        ListRow(
+            title = termString(Term.DUNGEON),
+            secondary = lexString(R.string.dungeon_row_note),
+            onClick = onOpen,
+            trailing = {
+                Icon(AwakenGlyphs.ChevronRight, contentDescription = null, tint = AwakenTheme.colors.textSecondary, modifier = Modifier.size(AwakenTheme.dimens.iconSmall))
+            },
+        )
+    }
+}

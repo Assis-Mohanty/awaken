@@ -300,7 +300,7 @@ interface HabitDao {
     suspend fun upsert(habit: HabitEntity)
 
     /** Archived by the hunter (campaign habits end with their campaign and never show here). */
-    @Query("SELECT * FROM habit WHERE active = 0 AND campaign_id IS NULL ORDER BY created_at")
+    @Query("SELECT * FROM habit WHERE active = 0 AND campaign_id IS NULL AND program_id IS NULL ORDER BY created_at")
     fun observeArchived(): Flow<List<HabitEntity>>
 
     /** The habit row only: its past quest instances, completions and ledger rows stay (invariant 1). */

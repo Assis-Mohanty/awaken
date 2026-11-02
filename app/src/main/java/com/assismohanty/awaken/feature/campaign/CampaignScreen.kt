@@ -386,6 +386,7 @@ private val Archetype.lineRes: Int
 private val CampaignProblem.messageRes: Int
     get() = when (this) {
         CampaignProblem.ACTIVE -> R.string.campaign_problem_active
+        CampaignProblem.PROGRAM_ACTIVE -> R.string.campaign_problem_program
         CampaignProblem.NO_ROOM -> R.string.campaign_problem_no_room
         CampaignProblem.NO_HABITS -> R.string.campaign_problem_no_habits
     }

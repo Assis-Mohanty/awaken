@@ -62,7 +62,10 @@ enum class QuestType {
     DISCIPLINE,
 
     /** Verified phone-down night (GD §16.12): belongs to the wake day, paid after the window if the phone stayed down. Not generated, no reroll. */
-    BEDTIME;
+    BEDTIME,
+
+    /** One stage of an entered Dungeon (GD §16.14): Hard, in the chosen stat, one per game-day. Not generated, no reroll. */
+    DUNGEON;
 
     /** Penalty quests and Rank Trial stages cannot crit (GD §4.2). */
     val canCrit: Boolean get() = this != PENALTY && this != TRIAL
@@ -109,7 +112,7 @@ enum class Rank(val minLevel: Int) {
 enum class LedgerKind { XP_TOTAL, XP_STAT, GOLD, ITEM, FRAGMENT }
 
 /** Ledger row source types (ARCHITECTURE §2). */
-enum class SourceType { QUEST, GATE, TRIAL, ACHIEVEMENT, DAY_CLEAR, SHOP, UNDO, SHIELD_USE, CACHE_OPEN }
+enum class SourceType { QUEST, GATE, TRIAL, ACHIEVEMENT, DAY_CLEAR, SHOP, UNDO, SHIELD_USE, CACHE_OPEN, DUNGEON }
 
 /** Focus Gate ranks (GD §8). */
 enum class GateRank(val durationMinutes: Int, val difficulty: Difficulty) {

@@ -343,9 +343,30 @@ val MIGRATION_22_23 = object : Migration(22, 23) {
     }
 }
 
+/** v23 → v24 (Dungeons, Programs): three new tables and three nullable columns; existing rows keep meaning what they did. */
+val MIGRATION_23_24 = object : Migration(23, 24) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE `quest_instance` ADD COLUMN `dungeon_id` TEXT")
+        db.execSQL("ALTER TABLE `quest_instance` ADD COLUMN `dungeon_stage` INTEGER")
+        db.execSQL("ALTER TABLE `habit` ADD COLUMN `program_id` TEXT")
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS `dungeon` (`id` TEXT NOT NULL, `length_days` INTEGER NOT NULL, `stat` TEXT NOT NULL, `fee` INTEGER NOT NULL, " +
+                "`entered_game_date` TEXT NOT NULL, `first_stage_date` TEXT NOT NULL, `status` TEXT NOT NULL, `ended_at` INTEGER, PRIMARY KEY(`id`))",
+        )
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS `program` (`id` TEXT NOT NULL, `program_key` TEXT NOT NULL, `run_start_date` TEXT NOT NULL, `status` TEXT NOT NULL, " +
+                "`started_at` INTEGER NOT NULL, `ended_at` INTEGER, PRIMARY KEY(`id`))",
+        )
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS `program_mark` (`program_id` TEXT NOT NULL, `game_date` TEXT NOT NULL, `choice` TEXT NOT NULL, " +
+                "PRIMARY KEY(`program_id`, `game_date`))",
+        )
+    }
+}
+
 /** Every migration, in order. The database builder and the migration test both use this list. */
 val ALL_MIGRATIONS: Array<Migration> = arrayOf(
     MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9,
     MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17,
-    MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21, MIGRATION_21_22, MIGRATION_22_23,
+    MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21, MIGRATION_21_22, MIGRATION_22_23, MIGRATION_23_24,
 )

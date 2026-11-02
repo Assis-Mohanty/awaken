@@ -17,6 +17,7 @@ object ExportUpgrade {
     private val GYM_V21_TABLES = listOf("exercise_pref", "gym_settings")
     private const val BEDTIME_TABLE = "bedtime_rule"
     private val QUIT_V23_TABLES = listOf("quit_counter", "relapse", "quit_day")
+    private val LONG_ARC_V24_TABLES = listOf("dungeon", "program", "program_mark")
     private val BODY_TABLES = listOf(
         "custom_exercise", "routine", "routine_exercise", "workout", "workout_set", "custom_food", "food_log", "nutrition_profile",
     )
@@ -129,6 +130,13 @@ object ExportUpgrade {
             current = current.copy(
                 schemaVersion = 23,
                 tables = current.tables + QUIT_V23_TABLES.filter { it !in current.tables }.associateWith { emptyList() },
+            )
+        }
+        // v23 → v24 (Dungeons, Programs): none existed, and the new quest and habit columns are nullable (= part of neither).
+        if (current.app == ExportDocument.APP_ID && current.schemaVersion == 23) {
+            current = current.copy(
+                schemaVersion = 24,
+                tables = current.tables + LONG_ARC_V24_TABLES.filter { it !in current.tables }.associateWith { emptyList() },
             )
         }
         return current

@@ -87,6 +87,10 @@ fun titleNameRes(titleId: String): Int? = when (titleId) {
     "deep_worker" -> R.string.title_deep_worker
     "record_breaker" -> R.string.title_record_breaker
     "unshaken" -> R.string.title_unshaken
+    "delver" -> R.string.title_delver
+    "steady" -> R.string.title_steady
+    "grounded" -> R.string.title_grounded
+    "ironclad" -> R.string.title_ironclad
     "d_rank_hunter" -> R.string.title_d_rank_hunter
     "c_rank_hunter" -> R.string.title_c_rank_hunter
     "b_rank_hunter" -> R.string.title_b_rank_hunter
@@ -145,6 +149,11 @@ fun achievementConditionRes(achievementId: String): Int? = when (achievementId) 
     "quit_30" -> R.string.condition_quit_30
     "quit_90" -> R.string.condition_quit_90
     "quit_365" -> R.string.condition_quit_365
+    "dungeon_first" -> R.string.condition_dungeon_first
+    "dungeon_7" -> R.string.condition_dungeon_7
+    "program_steady_30" -> R.string.condition_program_steady_30
+    "program_groundwork_66" -> R.string.condition_program_groundwork_66
+    "program_ironclad_75" -> R.string.condition_program_ironclad_75
     else -> null
 }
 
@@ -198,6 +207,11 @@ fun achievementNameRes(achievementId: String): Int? = when (achievementId) {
     "quit_30" -> R.string.achievement_quit_30
     "quit_90" -> R.string.achievement_quit_90
     "quit_365" -> R.string.achievement_quit_365
+    "dungeon_first" -> R.string.achievement_dungeon_first
+    "dungeon_7" -> R.string.achievement_dungeon_7
+    "program_steady_30" -> R.string.achievement_program_steady_30
+    "program_groundwork_66" -> R.string.achievement_program_groundwork_66
+    "program_ironclad_75" -> R.string.achievement_program_ironclad_75
     else -> null
 }
 

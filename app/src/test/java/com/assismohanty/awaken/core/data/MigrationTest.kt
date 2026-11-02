@@ -539,6 +539,36 @@ class MigrationTest {
     }
 
     @Test
+    fun v23To24AddsDungeonsAndProgramsAndKeepsQuestsAndHabits() = runTest {
+        val path = createFromSchema(23)
+        SQLiteDatabase.openDatabase(path, null, SQLiteDatabase.OPEN_READWRITE).use { db ->
+            db.execSQL(
+                "INSERT INTO habit (id, title, stat, difficulty, verification, days_of_week_mask, target, unit, active, created_at) " +
+                    "VALUES ('h1', 'Read', 'INT', 'EASY', 'SELF', 127, 10, 'pages', 1, 0)",
+            )
+            db.execSQL(
+                "INSERT INTO quest_instance (id, game_date, type, habit_id, stat, title, description, unit, target, difficulty, " +
+                    "verification, min_duration_sec, status, created_at) " +
+                    "VALUES ('q1', '2026-10-18', 'HABIT', 'h1', 'INT', 'Read', 'Read', 'pages', 10, 'EASY', 'SELF', 0, 'ACTIVE', 0)",
+            )
+        }
+        val db = Room.databaseBuilder(context, AwakenDatabase::class.java, path)
+            .addMigrations(*ALL_MIGRATIONS)
+            .allowMainThreadQueries()
+            .build()
+        try {
+            assertThat(db.habitDao().get("h1")?.programId).isNull()
+            assertThat(db.questDao().get("q1")?.dungeonId).isNull()
+            assertThat(db.questDao().get("q1")?.dungeonStage).isNull()
+            assertThat(db.dungeonDao().all()).isEmpty()
+            assertThat(db.programDao().active()).isNull()
+            assertThat(db.openHelper.readableDatabase.version).isEqualTo(AwakenDatabase.SCHEMA_VERSION)
+        } finally {
+            db.close()
+        }
+    }
+
+    @Test
     fun v4To5AddsThePathTablesAndKeepsExistingQuests() = runTest {
         val path = createFromSchema(4)
         SQLiteDatabase.openDatabase(path, null, SQLiteDatabase.OPEN_READWRITE).use { db ->

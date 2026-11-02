@@ -31,6 +31,7 @@ class GenerateDirectiveUseCase @Inject constructor(
     private val pathQuests: PathQuestPlanner,
     private val discipline: DisciplineQuestPlanner,
     private val bedtime: BedtimePlanner,
+    private val dungeonStage: DungeonStagePlanner,
     private val transactions: TransactionRunner,
     private val clock: Clock,
 ) {
@@ -55,6 +56,8 @@ class GenerateDirectiveUseCase @Inject constructor(
             discipline.draftFor(profile, gameDate)?.let { questDao.insertAll(listOf(it.toEntity(now))) }
             // Phone-down night (GD §16.12): the quest belongs to the wake day and exists only while usage can be read.
             bedtime.draftFor(profile, gameDate)?.let { questDao.insertAll(listOf(it.toEntity(now))) }
+            // The active Dungeon's stage for this game-day, if any (GD §16.14).
+            dungeonStage.entityFor(profile, gameDate, now)?.let { questDao.insertAll(listOf(it)) }
             questDao.insertAll(
                 habitDao.active()
                     .filter { it.isDueOn(gameDate) }

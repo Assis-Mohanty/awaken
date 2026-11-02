@@ -204,6 +204,8 @@ internal object LexiconPairs {
         R.string.notif_prompt_title to R.string.notif_prompt_title_clean,
         R.string.notif_prompt_body to R.string.notif_prompt_body_clean,
         R.string.quest_kind_discipline to R.string.quest_kind_discipline_clean,
+        R.string.dungeon_length_card_cd to R.string.dungeon_length_card_cd_clean,
+        R.string.dungeon_cleared_body to R.string.dungeon_cleared_body_clean,
         R.string.screentime_failed to R.string.screentime_failed_clean,
         R.string.screentime_window_access to R.string.screentime_window_access_clean,
         R.string.screentime_window_today to R.string.screentime_window_today_clean,

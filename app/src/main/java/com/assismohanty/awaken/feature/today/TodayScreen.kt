@@ -57,6 +57,7 @@ import com.assismohanty.awaken.core.designsystem.lexicon.lexString
 import com.assismohanty.awaken.core.designsystem.preview.PhonePreviews
 import com.assismohanty.awaken.core.designsystem.theme.AwakenTheme
 import com.assismohanty.awaken.core.designsystem.theme.Spacing
+import com.assismohanty.awaken.feature.program.ProgramBreakHost
 import com.assismohanty.awaken.feature.focus.FocusCard
 import com.assismohanty.awaken.feature.focus.FocusCardState
 import com.assismohanty.awaken.feature.focus.FocusCardViewModel
@@ -137,6 +138,8 @@ fun TodayRoute(
         onSetUpHealth = { if (summary.healthNeedsConnect) onOpenSettings() else openHealthConnectSettings(context) },
     )
     HabitSheets(state = habits, onEvent = habitsViewModel::onEvent)
+    // The question after a broken program day (GD §16.15), asked on the next open.
+    ProgramBreakHost()
     DayPlanSheet(state = dayPlan, onEvent = dayPlanViewModel::onEvent)
     HabitUndoSnackbar(habits.undo, snackbarHostState, habitsViewModel::onEvent)
 }

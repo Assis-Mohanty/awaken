@@ -166,6 +166,7 @@ sealed interface GatesEvent {
     data object CancelAbandon : GatesEvent
     data object FixFocusLock : GatesEvent
     data object OpenCrystals : GatesEvent
+    data object OpenDungeons : GatesEvent
 }
 
 private data class Base(
@@ -327,6 +328,7 @@ class GatesViewModel @Inject constructor(
             GatesEvent.CancelAbandon -> form.update { it.copy(confirmAbandon = false) }
             GatesEvent.FixFocusLock -> Unit // handled by the Route, which opens the setup
             GatesEvent.OpenCrystals -> Unit // handled by the Route, which opens the gallery
+            GatesEvent.OpenDungeons -> Unit // handled by the Route, which opens the Dungeon screen
             GatesEvent.ConfirmAbandon -> {
                 form.update { it.copy(confirmAbandon = false) }
                 viewModelScope.launch { safely("Abandoning a gate") { coordinator.abandon() } }

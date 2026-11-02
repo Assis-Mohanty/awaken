@@ -101,6 +101,7 @@ fun StatusRoute(
     onOpenReview: () -> Unit = {},
     onOpenRecap: (periodKey: String) -> Unit = {},
     onOpenQuit: () -> Unit = {},
+    onOpenPrograms: () -> Unit = {},
     viewModel: StatusViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -125,6 +126,7 @@ fun StatusRoute(
         onOpenReview = onOpenReview,
         onOpenRecap = onOpenRecap,
         onOpenQuit = onOpenQuit,
+        onOpenPrograms = onOpenPrograms,
         modifier = modifier,
     )
 }
@@ -140,6 +142,7 @@ fun StatusScreen(
     onOpenReview: () -> Unit = {},
     onOpenRecap: (periodKey: String) -> Unit = {},
     onOpenQuit: () -> Unit = {},
+    onOpenPrograms: () -> Unit = {},
 ) {
     val header = state.header
     val title = state.equippedTitleId?.let(::titleNameRes)?.let { lexString(it) }
@@ -188,6 +191,7 @@ fun StatusScreen(
         WeeklyWindow(state, onEvent, onOpenReview)
         if (state.recaps.isNotEmpty()) RecapsSection(state.recaps, onOpenRecap)
         QuitRow(onOpenQuit)
+        ProgramsRow(onOpenPrograms)
     }
     state.openChapter?.let { entry ->
         ChapterRevealDialog(
@@ -540,6 +544,21 @@ private fun QuitRow(onOpenQuit: () -> Unit) {
             title = lexString(R.string.quit_row_title),
             secondary = lexString(R.string.quit_row_note),
             onClick = onOpenQuit,
+            trailing = {
+                Icon(AwakenGlyphs.ChevronRight, contentDescription = null, tint = AwakenTheme.colors.textSecondary, modifier = Modifier.size(AwakenTheme.dimens.iconSmall))
+            },
+        )
+    }
+}
+
+/** The way into the programs (GD §16.15), next to the Campaign and the quit counters. */
+@Composable
+private fun ProgramsRow(onOpenPrograms: () -> Unit) {
+    AwakenCard(reveal = false, contentPadding = Spacing.listCard, spacing = Spacing.zero, modifier = Modifier.fillMaxWidth()) {
+        ListRow(
+            title = lexString(R.string.programs_row_title),
+            secondary = lexString(R.string.programs_row_note),
+            onClick = onOpenPrograms,
             trailing = {
                 Icon(AwakenGlyphs.ChevronRight, contentDescription = null, tint = AwakenTheme.colors.textSecondary, modifier = Modifier.size(AwakenTheme.dimens.iconSmall))
             },

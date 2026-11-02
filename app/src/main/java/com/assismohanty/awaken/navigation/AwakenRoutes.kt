@@ -108,3 +108,11 @@ data object QuitRoute
 /** The gate crystal gallery (GD §16.5), opened from the Gates screen. */
 @Serializable
 data object CrystalsRoute
+
+/** The Dungeon screen (GD §16.14; "Challenge" in Clean words), opened from the Gates screen. */
+@Serializable
+data object DungeonsRoute
+
+/** Programs: 30 / 66 / 75 days of a few daily rules (GD §16.15), opened from Status. */
+@Serializable
+data object ProgramsRoute

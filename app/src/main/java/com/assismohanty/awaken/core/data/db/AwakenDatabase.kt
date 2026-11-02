@@ -63,6 +63,11 @@ import com.assismohanty.awaken.core.data.db.entity.QuitCounterEntity
 import com.assismohanty.awaken.core.data.db.entity.QuitDayEntity
 import com.assismohanty.awaken.core.data.db.entity.RelapseEntity
 import com.assismohanty.awaken.core.data.db.dao.QuitDao
+import com.assismohanty.awaken.core.data.db.dao.DungeonDao
+import com.assismohanty.awaken.core.data.db.dao.ProgramDao
+import com.assismohanty.awaken.core.data.db.entity.DungeonEntity
+import com.assismohanty.awaken.core.data.db.entity.ProgramEntity
+import com.assismohanty.awaken.core.data.db.entity.ProgramMarkEntity
 import com.assismohanty.awaken.core.data.db.entity.GymSettingsEntity
 
 @Database(
@@ -104,6 +109,9 @@ import com.assismohanty.awaken.core.data.db.entity.GymSettingsEntity
         QuitCounterEntity::class,
         RelapseEntity::class,
         QuitDayEntity::class,
+        DungeonEntity::class,
+        ProgramEntity::class,
+        ProgramMarkEntity::class,
         CustomFoodEntity::class,
         FoodLogEntity::class,
         NutritionProfileEntity::class,
@@ -128,6 +136,8 @@ abstract class AwakenDatabase : RoomDatabase() {
     abstract fun campaignDao(): CampaignDao
     abstract fun gymDao(): GymDao
     abstract fun quitDao(): QuitDao
+    abstract fun dungeonDao(): DungeonDao
+    abstract fun programDao(): ProgramDao
     abstract fun dietDao(): DietDao
     abstract fun insightDao(): InsightDao
     abstract fun weeklyReviewDao(): WeeklyReviewDao
@@ -139,6 +149,6 @@ abstract class AwakenDatabase : RoomDatabase() {
         const val NAME = "awaken.db"
 
         /** Also the export format version: an export is only importable into the schema it was written from. */
-        const val SCHEMA_VERSION = 23
+        const val SCHEMA_VERSION = 24
     }
 }

@@ -2,6 +2,9 @@ package com.assismohanty.awaken.core.domain
 
 import com.assismohanty.awaken.core.data.db.dao.AchievementDao
 import com.assismohanty.awaken.core.data.db.dao.QuestDao
+import com.assismohanty.awaken.core.data.db.dao.DungeonDao
+import com.assismohanty.awaken.core.data.db.dao.ProgramDao
+import com.assismohanty.awaken.engine.DungeonRules
 import com.assismohanty.awaken.core.data.db.entity.AchievementUnlockEntity
 import com.assismohanty.awaken.core.data.db.entity.HunterProfileEntity
 import com.assismohanty.awaken.core.data.db.entity.LedgerEntryEntity
@@ -29,6 +32,8 @@ class AchievementUnlocker @Inject constructor(
     private val focusGoal: FocusGoalReader,
     private val records: PersonalRecordCounter,
     private val quitRuns: QuitRunReader,
+    private val dungeonDao: DungeonDao,
+    private val programDao: ProgramDao,
 ) {
     /** Returns the ids unlocked by this call, in definition order. */
     suspend fun unlockNew(profile: HunterProfileEntity, today: LocalDate, now: Instant): List<String> {
@@ -37,7 +42,11 @@ class AchievementUnlocker @Inject constructor(
         val todayRecord = questDao.getForDate(today).toDayRecord(today)
         val bestStreak = maxOf(finalized.bestStreak, StreakRules.displayStreak(StreakState(streak = finalized.streak), todayRecord))
         val snapshot = reader.achievementSnapshot(profile, LevelCurve.level(balances.xpTotal), balances, bestStreak)
-            .copy(focusStreak = focusGoal.streak(today), prEvents = records.events(), quitRunDays = quitRuns.bestInAppRunDays())
+            .copy(focusStreak = focusGoal.streak(today), prEvents = records.events(), quitRunDays = quitRuns.bestInAppRunDays(),
+                dungeonsCleared = dungeonDao.clearedCount(),
+                sevenDayDungeonCleared = dungeonDao.clearedCount(DungeonRules.LENGTHS.last()) > 0,
+                completedPrograms = programDao.completedKeys().toSet(),
+            )
         val ids = AchievementEvaluator.evaluate(snapshot)
         ids.forEach { id ->
             achievementDao.insert(AchievementUnlockEntity(id, now))
