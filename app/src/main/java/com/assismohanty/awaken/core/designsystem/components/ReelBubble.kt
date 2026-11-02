@@ -40,6 +40,10 @@ object ReelBubbleSize {
 private object Glass {
     const val TINT_DARK = 0.46f
     const val TINT_LIGHT = 0.58f
+
+    /** With the window blurring what is behind it the tint can be lighter: the blur does the frosting. */
+    const val TINT_BLURRED_DARK = 0.30f
+    const val TINT_BLURRED_LIGHT = 0.38f
     const val SHEEN_TOP_DARK = 0.20f
     const val SHEEN_TOP_LIGHT = 0.60f
     const val SHEEN_BOTTOM = 0.03f
@@ -49,16 +53,21 @@ private object Glass {
 /**
  * The Reel Counter bubble that floats over short-video screens, top middle by default: a frosted-glass pill with Lumi
  * at its current stage and today's reel count beside it. A soft glow behind Lumi fades as it tires. The rim turns
- * critical once a daily limit is reached ([over]). Lumi speaks the description ("Lumi, Getting tired, 42 reels today"),
+ * critical once a daily limit is reached ([over]). [blurredBehind] says the window itself blurs the video behind it
+ * (Android 12 and up), so the tint can be lighter. Lumi speaks the description ("Lumi, Getting tired, 42 reels today"),
  * so the number is hidden from accessibility.
  */
 @Composable
-fun ReelBubble(count: Int, lumi: LumiState, over: Boolean, modifier: Modifier = Modifier) {
+fun ReelBubble(count: Int, lumi: LumiState, over: Boolean, modifier: Modifier = Modifier, blurredBehind: Boolean = false) {
     val colors = AwakenTheme.colors
     val shape = AwakenTheme.shapes.pill
     val light = colors.surfaceOverlay.luminance() > 0.5f
 
-    val tint = colors.surfaceOverlay.copy(alpha = if (light) Glass.TINT_LIGHT else Glass.TINT_DARK)
+    val tintAlpha = when {
+        blurredBehind -> if (light) Glass.TINT_BLURRED_LIGHT else Glass.TINT_BLURRED_DARK
+        else -> if (light) Glass.TINT_LIGHT else Glass.TINT_DARK
+    }
+    val tint = colors.surfaceOverlay.copy(alpha = tintAlpha)
     val sheen = Brush.verticalGradient(
         listOf(Color.White.copy(alpha = if (light) Glass.SHEEN_TOP_LIGHT else Glass.SHEEN_TOP_DARK), Color.White.copy(alpha = Glass.SHEEN_BOTTOM)),
     )
@@ -148,6 +157,20 @@ private fun ReelBubblePlainBackdropPreview() {
         Row(horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
             ReelBubble(count = 3, lumi = lumiStage(3, null), over = false)
             ReelBubble(count = 61, lumi = lumiStage(61, null), over = false)
+        }
+    }
+}
+
+/** The tint on Android 12+, where the window blurs the video behind the pill (the blur itself shows only on a device). */
+@ComponentPreview
+@Composable
+private fun ReelBubbleBlurredTintPreview() {
+    AwakenTheme(reduceMotion = true) {
+        GlassBackdrop {
+            Row(horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+                ReelBubble(count = 7, lumi = lumiStage(7, null), over = false, blurredBehind = true)
+                ReelBubble(count = 61, lumi = lumiStage(61, null), over = false, blurredBehind = true)
+            }
         }
     }
 }

@@ -3,6 +3,7 @@ package com.assismohanty.awaken.core.reelcounter
 import android.accessibilityservice.AccessibilityService
 import android.content.res.Configuration
 import android.graphics.PixelFormat
+import android.os.Build
 import android.view.Gravity
 import android.view.WindowManager
 import android.widget.Toast
@@ -90,6 +91,9 @@ class ReelOverlayWindows @Inject constructor(
 
     /** Today's total across every app and the combined limit: what Lumi follows (the bubble's own count may run ahead of it). */
     private var lumiToday by mutableStateOf<ReelLumi?>(null)
+
+    /** Android 12+ with window blur switched on: the bubble window blurs the video behind it. */
+    private var blurBehind by mutableStateOf(false)
     private var look by mutableStateOf(Look(dark = true, presentation = PresentationMode.CLEAN, reduceMotion = false))
 
     private var placement = BubblePlacement(BubbleEdge.CENTER, SettingsStore.DEFAULT_BUBBLE_Y)
@@ -224,6 +228,7 @@ class ReelOverlayWindows @Inject constructor(
             gravity = Gravity.TOP or Gravity.START
             x = BubbleGeometry.x(placement.edge, screenWidth(), bubbleWidth(), margin)
             y = BubbleGeometry.y(placement.yFraction, usableTop(), usableBottom(), bubbleHeight())
+            blurBehind = applyBlurBehind(this)
         }
         bubbleParams = params
         host.show(params) {
@@ -237,10 +242,25 @@ class ReelOverlayWindows @Inject constructor(
                         lumi = lumiStage(total, lumiToday?.limit),
                         over = current.allowance != null && current.count >= current.allowance,
                         modifier = Modifier.bubbleGestures(),
+                        blurredBehind = blurBehind,
                     )
                 }
             }
         }
+    }
+
+    /**
+     * Asks the system to blur what is behind the bubble window. Only Android 12+ can, and only while the system's
+     * window blur is enabled (not in battery saver, not on devices that turn it off); otherwise the bubble keeps its
+     * plain translucent glass. Returns whether blur was requested.
+     */
+    private fun applyBlurBehind(params: WindowManager.LayoutParams): Boolean {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return false
+        val manager = service?.getSystemService(WindowManager::class.java) ?: return false
+        if (!manager.isCrossWindowBlurEnabled) return false
+        params.flags = params.flags or WindowManager.LayoutParams.FLAG_BLUR_BEHIND
+        params.blurBehindRadius = px(BLUR_RADIUS)
+        return true
     }
 
     private fun Modifier.bubbleGestures(): Modifier = this
@@ -370,6 +390,7 @@ class ReelOverlayWindows @Inject constructor(
         val TOP_INSET = 32.dp
         val BOTTOM_INSET = 48.dp
         val EDGE_MARGIN = 8.dp
+        val BLUR_RADIUS = 12.dp
         val PANEL_WIDTH = 260.dp
         const val PANEL_AUTO_CLOSE_MILLIS = 5_000L
     }
