@@ -8,6 +8,8 @@ import com.assismohanty.awaken.core.data.clock.gameDate
 import com.assismohanty.awaken.core.data.db.dao.GymDao
 import com.assismohanty.awaken.core.data.db.dao.HunterDao
 import com.assismohanty.awaken.core.data.db.entity.CustomExerciseEntity
+import com.assismohanty.awaken.core.data.db.entity.ExercisePrefEntity
+import com.assismohanty.awaken.core.data.db.entity.GymSettingsEntity
 import com.assismohanty.awaken.core.data.db.entity.RoutineEntity
 import com.assismohanty.awaken.core.data.db.entity.RoutineExerciseEntity
 import com.assismohanty.awaken.core.data.db.entity.WorkoutEntity
@@ -20,6 +22,15 @@ import com.assismohanty.awaken.engine.body.Muscle
 import com.assismohanty.awaken.engine.body.MuscleTargets
 import com.assismohanty.awaken.engine.body.RestRules
 import com.assismohanty.awaken.engine.body.TrainingMath
+import com.assismohanty.awaken.engine.body.ExerciseSession
+import com.assismohanty.awaken.engine.body.PlateMath
+import com.assismohanty.awaken.engine.body.PlateSetup
+import com.assismohanty.awaken.engine.body.PlateUnit
+import com.assismohanty.awaken.engine.body.ProgressionHint
+import com.assismohanty.awaken.engine.body.ProgressionRules
+import com.assismohanty.awaken.engine.body.RecordEvent
+import com.assismohanty.awaken.engine.body.RecordRules
+import com.assismohanty.awaken.engine.body.RepRange
 import java.time.Duration
 import java.time.Instant
 import java.time.LocalDate
@@ -81,8 +92,29 @@ data class GymOverview(
 /** A rest timer that ran out; [chime] is false when it ended long ago (the phone was away). */
 data class RestEnd(val chime: Boolean)
 
+/** The records one exercise broke in a finished session (GD §16.7); [events] is never empty. */
+data class ExerciseRecords(val exerciseId: String, val name: String, val events: List<RecordEvent>)
+
+/** The Gym settings the calculator and hints read (GD §16.6, §16.8). Defaults when nothing was saved. */
+data class GymPrefs(
+    val unit: PlateUnit = PlateUnit.KG,
+    val kg: PlateSetup = PlateMath.defaults(PlateUnit.KG),
+    val lb: PlateSetup = PlateMath.defaults(PlateUnit.LB),
+    val repRange: RepRange = ProgressionRules.DEFAULT_RANGE,
+) {
+    fun setup(unit: PlateUnit): PlateSetup = if (unit == PlateUnit.KG) kg else lb
+}
+
+/** An exercise's hint overrides and what they resolve to. */
+data class ExerciseProgression(val range: RepRange, val incrementKg: Double, val customRange: Boolean, val customIncrement: Boolean)
+
 sealed interface FinishResult {
-    data class Finished(val workoutId: String) : FinishResult
+    data class Finished(
+        val workoutId: String,
+        val records: List<ExerciseRecords> = emptyList(),
+        /** Achievements this finish unlocked (record counts, GD §16.7). */
+        val unlocked: List<String> = emptyList(),
+    ) : FinishResult
     /** Nothing was ticked done, so the session was dropped rather than saved empty. */
     data object DiscardedEmpty : FinishResult
 }
@@ -103,13 +135,15 @@ private fun CustomExerciseEntity.toExercise() = Exercise(
 
 /**
  * The Gym tracker (GD §13.2): exercise library, the session in progress, routines and the derived overview. A tracker
- * only: nothing here touches the ledger, XP or caps (ENGINE_DECISIONS #95).
+ * only: it pays no XP and writes no ledger row of its own (ENGINE_DECISIONS #95); the one exception is a personal-record
+ * achievement, unlocked after [finish] through the ordinary achievement pipeline (GD §16.7).
  */
 @Singleton
 class GymTracker @Inject constructor(
     private val gymDao: GymDao,
     private val hunterDao: HunterDao,
     private val catalog: ExerciseCatalog,
+    private val achievements: AchievementUnlocker,
     private val transactions: TransactionRunner,
     private val clock: Clock,
 ) {
@@ -265,9 +299,91 @@ class GymTracker @Inject constructor(
             discardInTransaction(workoutId)
             return@run FinishResult.DiscardedEmpty
         }
+        // Judged against finished sessions only: this one is still open, so it is not in its own history.
+        val records = sets.filter { it.done }.groupBy { it.exerciseId }.mapNotNull { (exerciseId, own) ->
+            val history = gymDao.exerciseSets(exerciseId).toSessions().map { it.sets }
+            val events = RecordRules.events(history, own.sortedBy { it.setIndex }.map { it.toLogged() })
+            if (events.isEmpty()) null else ExerciseRecords(exerciseId, own.first().exerciseName, events)
+        }
         sets.filterNot { it.done }.forEach { gymDao.deleteSet(it.id) }
-        gymDao.upsertWorkout(workout.copy(endedAt = clock.now(), restEndsAt = null, restTotalSec = null))
-        FinishResult.Finished(workoutId)
+        val now = clock.now()
+        gymDao.upsertWorkout(workout.copy(endedAt = now, restEndsAt = null, restTotalSec = null))
+        val unlocked = hunterDao.getProfile()?.let { achievements.unlockNew(it, today(), now) }.orEmpty()
+        FinishResult.Finished(workoutId, records, unlocked)
+    }
+
+    // Progression hints (GD §16.6)
+
+    /** The rep range and weight step for [exerciseId]: its own override, else the Gym default and the muscle-based step. */
+    suspend fun progression(exerciseId: String, primary: Set<Muscle>): ExerciseProgression {
+        val pref = gymDao.exercisePref(exerciseId)
+        val default = prefs().repRange
+        val range = if (pref?.repMin != null && pref.repMax != null) RepRange(pref.repMin, pref.repMax) else default
+        val increment = pref?.incrementKg
+        return ExerciseProgression(range, increment ?: ProgressionRules.defaultIncrement(primary), pref?.repMin != null, increment != null)
+    }
+
+    /** The hint for set 1 of [exerciseId], from its last finished session; null with no history. */
+    suspend fun hint(exerciseId: String): ProgressionHint? {
+        val last = gymDao.previousSets(exerciseId)
+        val first = last.firstOrNull() ?: return null
+        val settings = progression(exerciseId, first.primaryMuscles.mapNotNull(Muscle::fromKey).toSet())
+        return ProgressionRules.suggest(last.map { it.toLogged() }, settings.range, settings.incrementKg)
+    }
+
+    /** Saves one exercise's overrides; a null argument goes back to the default. Invalid input is ignored. */
+    suspend fun setExercisePref(exerciseId: String, range: RepRange?, incrementKg: Double?) {
+        val validRange = range?.takeIf { it.isValid }
+        val validStep = incrementKg?.takeIf { ProgressionRules.isValidIncrement(it) }
+        if (validRange == null && validStep == null) {
+            gymDao.deleteExercisePref(exerciseId)
+        } else {
+            gymDao.upsertExercisePref(ExercisePrefEntity(exerciseId, validRange?.min, validRange?.max, validStep))
+        }
+    }
+
+    // History and records (GD §16.7, §16.9)
+
+    /** Finished sessions of [exerciseId], oldest first. */
+    suspend fun history(exerciseId: String): List<ExerciseSession> = gymDao.exerciseSets(exerciseId).toSessions()
+
+    /** The done sets of each earlier finished session, oldest first: what a set is compared with for a record. */
+    suspend fun recordHistory(exerciseId: String): List<List<LoggedSet>> = history(exerciseId).map { it.sets }
+
+    // Gym settings
+
+    suspend fun prefs(): GymPrefs = gymDao.gymSettings().toPrefs()
+
+    fun observePrefs(): Flow<GymPrefs> = gymDao.observeGymSettings().map { it.toPrefs() }
+
+    suspend fun savePrefs(prefs: GymPrefs) {
+        val kg = prefs.kg.sanitised(PlateUnit.KG)
+        val lb = prefs.lb.sanitised(PlateUnit.LB)
+        val range = prefs.repRange.takeIf { it.isValid } ?: ProgressionRules.DEFAULT_RANGE
+        gymDao.upsertGymSettings(
+            GymSettingsEntity(
+                barKg = kg.barWeight, platesKg = kg.plates.joinToString(","), barLb = lb.barWeight, platesLb = lb.plates.joinToString(","),
+                unit = prefs.unit.name, repMin = range.min, repMax = range.max,
+            ),
+        )
+    }
+
+    /** Input sanity only: a bar weight within 0..1000 and positive plates; an empty plate list falls back to the defaults. */
+    private fun PlateSetup.sanitised(unit: PlateUnit): PlateSetup {
+        val bar = barWeight.takeIf { it > 0.0 && it <= TrainingMath.MAX_WEIGHT_KG } ?: PlateMath.defaults(unit).barWeight
+        val plates = plates.filter { it > 0.0 && it <= TrainingMath.MAX_WEIGHT_KG }.distinct().sortedDescending()
+        return PlateSetup(bar, plates.ifEmpty { PlateMath.defaults(unit).plates })
+    }
+
+    private fun GymSettingsEntity?.toPrefs(): GymPrefs {
+        if (this == null) return GymPrefs()
+        fun parse(csv: String) = csv.split(",").mapNotNull { it.trim().toDoubleOrNull() }
+        return GymPrefs(
+            unit = PlateUnit.entries.firstOrNull { it.name == unit } ?: PlateUnit.KG,
+            kg = PlateSetup(barKg, parse(platesKg)),
+            lb = PlateSetup(barLb, parse(platesLb)),
+            repRange = RepRange(repMin, repMax).takeIf { it.isValid } ?: ProgressionRules.DEFAULT_RANGE,
+        )
     }
 
     suspend fun discard(workoutId: String) = transactions.run { discardInTransaction(workoutId) }

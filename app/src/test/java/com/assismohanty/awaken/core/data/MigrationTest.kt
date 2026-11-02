@@ -477,6 +477,29 @@ class MigrationTest {
     }
 
     @Test
+    fun v20To21AddsTheGymProgressTablesAndKeepsWorkouts() = runTest {
+        val path = createFromSchema(20)
+        SQLiteDatabase.openDatabase(path, null, SQLiteDatabase.OPEN_READWRITE).use { db ->
+            db.execSQL(
+                "INSERT INTO workout (id, name, game_date, started_at, ended_at, rest_ends_at, rest_total_sec) " +
+                    "VALUES ('w1', 'Push', '2026-10-18', 0, 1000, NULL, NULL)",
+            )
+        }
+        val db = Room.databaseBuilder(context, AwakenDatabase::class.java, path)
+            .addMigrations(*ALL_MIGRATIONS)
+            .allowMainThreadQueries()
+            .build()
+        try {
+            assertThat(db.gymDao().workout("w1")?.name).isEqualTo("Push")
+            assertThat(db.gymDao().exercisePref("bench")).isNull()
+            assertThat(db.gymDao().gymSettings()).isNull()
+            assertThat(db.openHelper.readableDatabase.version).isEqualTo(AwakenDatabase.SCHEMA_VERSION)
+        } finally {
+            db.close()
+        }
+    }
+
+    @Test
     fun v4To5AddsThePathTablesAndKeepsExistingQuests() = runTest {
         val path = createFromSchema(4)
         SQLiteDatabase.openDatabase(path, null, SQLiteDatabase.OPEN_READWRITE).use { db ->

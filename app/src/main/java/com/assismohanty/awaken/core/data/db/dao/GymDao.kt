@@ -1,10 +1,13 @@
 package com.assismohanty.awaken.core.data.db.dao
 
+import androidx.room.ColumnInfo
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.Query
 import androidx.room.Upsert
 import com.assismohanty.awaken.core.data.db.entity.CustomExerciseEntity
+import com.assismohanty.awaken.core.data.db.entity.ExercisePrefEntity
+import com.assismohanty.awaken.core.data.db.entity.GymSettingsEntity
 import com.assismohanty.awaken.core.data.db.entity.RoutineEntity
 import com.assismohanty.awaken.core.data.db.entity.RoutineExerciseEntity
 import com.assismohanty.awaken.core.data.db.entity.WorkoutEntity
@@ -112,4 +115,51 @@ interface GymDao {
 
     @Query("DELETE FROM workout_set WHERE workout_id = :workoutId")
     suspend fun deleteAllSets(workoutId: String)
+
+    // Progression, records and history (GD §16.6-16.9). Derived from finished workouts; nothing here is a ledger.
+
+    /** Done set rows of finished workouts for one exercise, oldest first. */
+    @Query(
+        "SELECT s.workout_id AS workoutId, s.exercise_id AS exerciseId, w.game_date AS gameDate, s.set_index AS setIndex, " +
+            "s.weight_kg AS weightKg, s.reps AS reps, s.done AS done FROM workout_set s JOIN workout w ON w.id = s.workout_id " +
+            "WHERE w.ended_at IS NOT NULL AND s.exercise_id = :exerciseId ORDER BY w.started_at, s.set_index",
+    )
+    suspend fun exerciseSets(exerciseId: String): List<ExerciseSetRow>
+
+    /** Every set row of every finished workout, oldest first: replayed to count personal-record events. */
+    @Query(
+        "SELECT s.workout_id AS workoutId, s.exercise_id AS exerciseId, w.game_date AS gameDate, s.set_index AS setIndex, " +
+            "s.weight_kg AS weightKg, s.reps AS reps, s.done AS done FROM workout_set s JOIN workout w ON w.id = s.workout_id " +
+            "WHERE w.ended_at IS NOT NULL ORDER BY w.started_at, s.exercise_id, s.set_index",
+    )
+    suspend fun allFinishedSetRows(): List<ExerciseSetRow>
+
+    @Query("SELECT * FROM exercise_pref WHERE exercise_id = :exerciseId")
+    suspend fun exercisePref(exerciseId: String): ExercisePrefEntity?
+
+    @Upsert
+    suspend fun upsertExercisePref(pref: ExercisePrefEntity)
+
+    @Query("DELETE FROM exercise_pref WHERE exercise_id = :exerciseId")
+    suspend fun deleteExercisePref(exerciseId: String)
+
+    @Query("SELECT * FROM gym_settings WHERE id = 1")
+    suspend fun gymSettings(): GymSettingsEntity?
+
+    @Query("SELECT * FROM gym_settings WHERE id = 1")
+    fun observeGymSettings(): Flow<GymSettingsEntity?>
+
+    @Upsert
+    suspend fun upsertGymSettings(settings: GymSettingsEntity)
 }
+
+/** A set row joined with its workout's game-day. */
+data class ExerciseSetRow(
+    val workoutId: String,
+    val exerciseId: String,
+    val gameDate: LocalDate,
+    val setIndex: Int,
+    @ColumnInfo(name = "weightKg") val weightKg: Double,
+    val reps: Int,
+    val done: Boolean,
+)

@@ -122,3 +122,28 @@ data class NutritionProfileEntity(
         const val SINGLE_ID = 1
     }
 }
+
+/** Per-exercise overrides for progression hints (GD §16.6). A null column means "use the default". */
+@Entity(tableName = "exercise_pref")
+data class ExercisePrefEntity(
+    @PrimaryKey @ColumnInfo(name = "exercise_id") val exerciseId: String,
+    @ColumnInfo(name = "rep_min") val repMin: Int? = null,
+    @ColumnInfo(name = "rep_max") val repMax: Int? = null,
+    @ColumnInfo(name = "increment_kg") val incrementKg: Double? = null,
+)
+
+/**
+ * Gym settings (GD §16.6, §16.8): the plate calculator's bars and owned plates in both units, its last unit, and the
+ * default rep range. One row, id 1; no row means every default. Plates are comma-separated numbers.
+ */
+@Entity(tableName = "gym_settings")
+data class GymSettingsEntity(
+    @PrimaryKey val id: Int = 1,
+    @ColumnInfo(name = "bar_kg") val barKg: Double,
+    @ColumnInfo(name = "plates_kg") val platesKg: String,
+    @ColumnInfo(name = "bar_lb") val barLb: Double,
+    @ColumnInfo(name = "plates_lb") val platesLb: String,
+    val unit: String,
+    @ColumnInfo(name = "rep_min") val repMin: Int,
+    @ColumnInfo(name = "rep_max") val repMax: Int,
+)

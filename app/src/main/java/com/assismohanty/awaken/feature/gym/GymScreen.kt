@@ -2,9 +2,11 @@ package com.assismohanty.awaken.feature.gym
 
 import com.assismohanty.awaken.core.designsystem.lexicon.lexString
 import com.assismohanty.awaken.core.designsystem.components.heatAlpha
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -66,6 +68,13 @@ import com.assismohanty.awaken.core.designsystem.preview.PhonePreviews
 import com.assismohanty.awaken.core.designsystem.theme.AwakenTheme
 import com.assismohanty.awaken.core.designsystem.theme.Spacing
 import com.assismohanty.awaken.core.domain.ActiveWorkout
+import com.assismohanty.awaken.core.domain.ExerciseRecords
+import com.assismohanty.awaken.core.designsystem.components.PrChip
+import com.assismohanty.awaken.core.designsystem.components.ProgressionHint
+import com.assismohanty.awaken.core.designsystem.components.achievementNameRes
+import com.assismohanty.awaken.engine.body.ProgressionHint as EngineHint
+import com.assismohanty.awaken.engine.body.RecordEvent
+import com.assismohanty.awaken.engine.body.RecordType
 import com.assismohanty.awaken.core.domain.GymOverview
 import com.assismohanty.awaken.core.domain.PersonalRecord
 import com.assismohanty.awaken.core.domain.RoutineSummary
@@ -73,6 +82,7 @@ import com.assismohanty.awaken.core.domain.WorkoutExercise
 import com.assismohanty.awaken.core.domain.WorkoutSummary
 import com.assismohanty.awaken.core.domain.elapsedSince
 import com.assismohanty.awaken.engine.body.Muscle
+import com.assismohanty.awaken.engine.body.WorkingSets
 import com.assismohanty.awaken.engine.body.RestRules
 import com.assismohanty.awaken.engine.body.TrainingMath
 import java.time.Duration
@@ -99,9 +109,11 @@ fun GymScreen(state: GymUiState, onEvent: (GymEvent) -> Unit, modifier: Modifier
         }
         val active = state.active
         if (active != null) {
-            ActiveSession(active, state.now, state.previous, onEvent)
+            ActiveSession(active, state.now, state.previous, state.hints, state.prSetIds, onEvent)
         } else {
-            state.summaryId?.let { id -> state.overview?.history?.firstOrNull { it.workoutId == id }?.let { SessionSummary(it, onEvent) } }
+            state.summaryId?.let { id ->
+                state.overview?.history?.firstOrNull { it.workoutId == id }?.let { SessionSummary(it, state.summaryRecords, state.summaryUnlocked, onEvent) }
+            }
             state.notice?.let { NoticeLine(it, onEvent) }
             PrimaryButton(
                 text = lexString(R.string.gym_start_empty),
@@ -114,6 +126,9 @@ fun GymScreen(state: GymUiState, onEvent: (GymEvent) -> Unit, modifier: Modifier
     }
     state.picker?.let { ExercisePickerSheet(it, onEvent) }
     state.detail?.let { ExerciseDetailSheet(it, canAdd = true, onEvent = onEvent) }
+    state.plates?.let { PlatesSheet(it, onEvent) }
+    if (state.settingsOpen) GymSettingsSheet(state.prefs, onEvent)
+    state.history?.let { HistorySheet(it, onEvent) }
     if (state.confirmDiscard) DiscardDialog(onEvent)
     if (state.routinePrompt) RoutineNameDialog(onEvent)
 }
@@ -139,7 +154,8 @@ private fun NoticeLine(notice: GymNotice, onEvent: (GymEvent) -> Unit) {
 private fun GymHome(overview: GymOverview, onEvent: (GymEvent) -> Unit) {
     WeekWindow(overview, Modifier.staggeredEntrance(0))
     RoutinesWindow(overview.routines, onEvent, Modifier.staggeredEntrance(1))
-    RecordsWindow(overview.records, Modifier.staggeredEntrance(2))
+    QuietButton(text = lexString(R.string.gym_settings_open), onClick = { onEvent(GymEvent.OpenGymSettings) })
+    RecordsWindow(overview.records, onEvent, Modifier.staggeredEntrance(2))
     HistoryWindow(overview.history, onEvent, Modifier.staggeredEntrance(3))
 }
 
@@ -237,12 +253,19 @@ private fun RoutinesWindow(routines: List<RoutineSummary>, onEvent: (GymEvent) -
 }
 
 @Composable
-private fun RecordsWindow(records: List<PersonalRecord>, modifier: Modifier = Modifier) {
+private fun RecordsWindow(records: List<PersonalRecord>, onEvent: (GymEvent) -> Unit, modifier: Modifier = Modifier) {
     val colors = AwakenTheme.colors
     SystemWindow(title = lexString(R.string.gym_window_records), accent = colors.reward, modifier = modifier, reveal = false) {
         if (records.isEmpty()) Text(lexString(R.string.gym_records_empty), style = AwakenTheme.type.body, color = colors.textSecondary)
         records.take(MAX_RECORDS).forEach { record ->
-            Column {
+            val historyLabel = lexString(R.string.gym_history_open_cd, record.name)
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .defaultMinSize(minHeight = AwakenTheme.dimens.touchTarget)
+                    .clickable(onClickLabel = historyLabel) { onEvent(GymEvent.OpenHistory(record.exerciseId, record.name)) },
+                verticalArrangement = Arrangement.Center,
+            ) {
                 Text(record.name, style = AwakenTheme.type.label, color = colors.textPrimary)
                 Text(
                     lexString(R.string.gym_record_line, formatNumber(record.weightKg), record.reps, formatNumber(record.estimatedMaxKg.roundTo1())),
@@ -293,6 +316,8 @@ private fun ActiveSession(
     active: ActiveWorkout,
     now: Instant,
     previous: Map<String, List<WorkoutSetEntity>>,
+    hints: Map<String, HintUi>,
+    prSetIds: Set<String>,
     onEvent: (GymEvent) -> Unit,
 ) {
     val colors = AwakenTheme.colors
@@ -327,7 +352,9 @@ private fun ActiveSession(
             }
         }
     }
-    active.exercises.forEach { exercise -> ExerciseCard(exercise, previous[exercise.exerciseId].orEmpty(), onEvent) }
+    active.exercises.forEach { exercise ->
+        ExerciseCard(exercise, previous[exercise.exerciseId].orEmpty(), hints[exercise.exerciseId], prSetIds, onEvent)
+    }
     SecondaryButton(text = lexString(R.string.gym_add_exercise), onClick = { onEvent(GymEvent.OpenPicker) }, modifier = Modifier.fillMaxWidth())
     PrimaryButton(text = lexString(R.string.gym_finish), onClick = { onEvent(GymEvent.Finish) }, modifier = Modifier.fillMaxWidth())
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
@@ -337,7 +364,13 @@ private fun ActiveSession(
 }
 
 @Composable
-private fun ExerciseCard(exercise: WorkoutExercise, previous: List<WorkoutSetEntity>, onEvent: (GymEvent) -> Unit) {
+private fun ExerciseCard(
+    exercise: WorkoutExercise,
+    previous: List<WorkoutSetEntity>,
+    hint: HintUi?,
+    prSetIds: Set<String>,
+    onEvent: (GymEvent) -> Unit,
+) {
     val colors = AwakenTheme.colors
     SystemWindow(
         title = exercise.name,
@@ -356,12 +389,42 @@ private fun ExerciseCard(exercise: WorkoutExercise, previous: List<WorkoutSetEnt
             HeaderCell(lexString(R.string.gym_col_reps), Modifier.width(AwakenTheme.dimens.numberField))
             Spacer(Modifier.width(AwakenTheme.dimens.touchTarget))
         }
-        exercise.sets.forEachIndexed { i, set -> SetRow(i + 1, set, previous.getOrNull(i), onEvent) }
+        hint?.let { ProgressionHint(hintText(it)) }
+        exercise.sets.forEachIndexed { i, set -> SetRow(i + 1, set, previous.getOrNull(i), set.id in prSetIds, onEvent) }
         RestStepper(exercise, onEvent)
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             QuietButton(text = lexString(R.string.gym_add_set), onClick = { onEvent(GymEvent.AddSet(exercise.position)) })
             exercise.sets.lastOrNull()?.takeIf { exercise.sets.size > 1 }?.let { last ->
                 QuietButton(text = lexString(R.string.gym_remove_set), onClick = { onEvent(GymEvent.RemoveSet(last.id)) })
+            }
+        }
+        val historyDescription = lexString(R.string.gym_history_open_cd, exercise.name)
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            QuietButton(
+                text = lexString(R.string.gym_plates_open),
+                onClick = { onEvent(GymEvent.OpenPlates(exercise.sets.lastOrNull()?.weightKg?.takeIf { it > 0.0 })) },
+            )
+            QuietButton(
+                text = lexString(R.string.gym_history_open),
+                onClick = { onEvent(GymEvent.OpenHistory(exercise.exerciseId, exercise.name)) },
+                modifier = Modifier.semantics { contentDescription = historyDescription },
+            )
+        }
+    }
+}
+
+/** "Last: 50 kg × 12, 12, 12 → try 52.5 kg × 8" and its two cousins (GD §16.6). */
+@Composable
+private fun hintText(ui: HintUi): String {
+    val lastReps = ui.last.reps.joinToString(", ")
+    return when (val hint = ui.hint) {
+        EngineHint.AddWeightOrVariation -> lexString(R.string.gym_hint_add_load)
+        is EngineHint.Suggest -> {
+            val reps = if (hint.reps.distinct().size == 1) hint.reps.first().toString() else hint.reps.joinToString(", ")
+            if (hint.weightKg <= 0.0) {
+                lexString(R.string.gym_hint_bodyweight, lastReps, reps)
+            } else {
+                lexString(R.string.gym_hint_weighted, formatNumber(ui.last.weightKg), lastReps, formatNumber(hint.weightKg), reps)
             }
         }
     }
@@ -401,7 +464,7 @@ private fun RestStepper(exercise: WorkoutExercise, onEvent: (GymEvent) -> Unit) 
 
 /** The finished session: time, sets, volume and the exercises, until dismissed. */
 @Composable
-private fun SessionSummary(summary: WorkoutSummary, onEvent: (GymEvent) -> Unit) {
+private fun SessionSummary(summary: WorkoutSummary, records: List<ExerciseRecords>, unlocked: List<String>, onEvent: (GymEvent) -> Unit) {
     val colors = AwakenTheme.colors
     SystemWindow(title = lexString(R.string.gym_summary_title), accent = colors.accent, reveal = false) {
         Row(horizontalArrangement = Arrangement.spacedBy(Spacing.lg), modifier = Modifier.fillMaxWidth()) {
@@ -410,6 +473,18 @@ private fun SessionSummary(summary: WorkoutSummary, onEvent: (GymEvent) -> Unit)
             Stat(lexString(R.string.gym_summary_volume), formatCount(summary.volumeKg.roundToLong()), Modifier.weight(1f))
         }
         Text(summary.exerciseNames.joinToString(" · "), style = AwakenTheme.type.body, color = colors.textSecondary)
+        if (records.isNotEmpty()) {
+            Text(lexString(R.string.gym_summary_records_title), style = AwakenTheme.type.label, color = colors.reward)
+            records.forEach { exercise ->
+                exercise.events.forEach { event ->
+                    Text(recordLine(exercise.name, event), style = AwakenTheme.type.caption, color = colors.textSecondary)
+                }
+            }
+        }
+        if (unlocked.isNotEmpty()) {
+            val names = unlocked.map { id -> achievementNameRes(id)?.let { lexString(it) } ?: id }
+            Text(lexString(R.string.gym_summary_unlocked, names.joinToString()), style = AwakenTheme.type.label, color = colors.reward)
+        }
         SecondaryButton(text = lexString(R.string.gym_summary_done), onClick = { onEvent(GymEvent.DismissSummary) }, modifier = Modifier.fillMaxWidth())
     }
 }
@@ -420,48 +495,51 @@ private fun HeaderCell(text: String, modifier: Modifier) {
 }
 
 @Composable
-private fun SetRow(number: Int, set: WorkoutSetEntity, previous: WorkoutSetEntity?, onEvent: (GymEvent) -> Unit) {
+private fun SetRow(number: Int, set: WorkoutSetEntity, previous: WorkoutSetEntity?, isRecord: Boolean, onEvent: (GymEvent) -> Unit) {
     val colors = AwakenTheme.colors
     var weight by remember(set.id) { mutableDoubleStateOf(set.weightKg) }
     var reps by remember(set.id) { mutableIntStateOf(set.reps) }
-    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
-        Text(number.toString(), style = AwakenTheme.type.label, color = if (set.done) colors.accent else colors.textPrimary, modifier = Modifier.width(Spacing.lg))
-        Text(
-            previous?.let { lexString(R.string.gym_previous_value, formatNumber(it.weightKg).ifEmpty { "0" }, it.reps) }
-                ?: lexString(R.string.gym_previous_none),
-            style = AwakenTheme.type.caption,
-            color = colors.textSecondary,
-            modifier = Modifier.weight(1f),
-        )
-        NumberField(
-            value = weight,
-            onValueChange = {
-                weight = it
-                onEvent(GymEvent.UpdateSet(set, weight, reps, set.done))
-            },
-            description = lexString(R.string.cd_gym_set_weight, number),
-            key = set.id,
-        )
-        NumberField(
-            value = reps.toDouble(),
-            onValueChange = {
-                reps = it.toInt()
-                onEvent(GymEvent.UpdateSet(set, weight, reps, set.done))
-            },
-            description = lexString(R.string.cd_gym_set_reps, number),
-            key = set.id,
-            decimals = false,
-        )
-        val doneLabel = lexString(R.string.cd_gym_set_done, number)
-        Checkbox(
-            checked = set.done,
-            onCheckedChange = { onEvent(GymEvent.UpdateSet(set, weight, reps, it)) },
-            enabled = reps > 0,
-            colors = CheckboxDefaults.colors(checkedColor = colors.accent, uncheckedColor = colors.divider, checkmarkColor = colors.surface),
-            modifier = Modifier
-                .size(AwakenTheme.dimens.touchTarget)
-                .semantics { this.contentDescription = doneLabel },
-        )
+    Column {
+        if (isRecord) PrChip(Modifier.padding(start = Spacing.lg))
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+            Text(number.toString(), style = AwakenTheme.type.label, color = if (set.done) colors.accent else colors.textPrimary, modifier = Modifier.width(Spacing.lg))
+            Text(
+                previous?.let { lexString(R.string.gym_previous_value, formatNumber(it.weightKg).ifEmpty { "0" }, it.reps) }
+                    ?: lexString(R.string.gym_previous_none),
+                style = AwakenTheme.type.caption,
+                color = colors.textSecondary,
+                modifier = Modifier.weight(1f),
+            )
+            NumberField(
+                value = weight,
+                onValueChange = {
+                    weight = it
+                    onEvent(GymEvent.UpdateSet(set, weight, reps, set.done))
+                },
+                description = lexString(R.string.cd_gym_set_weight, number),
+                key = set.id,
+            )
+            NumberField(
+                value = reps.toDouble(),
+                onValueChange = {
+                    reps = it.toInt()
+                    onEvent(GymEvent.UpdateSet(set, weight, reps, set.done))
+                },
+                description = lexString(R.string.cd_gym_set_reps, number),
+                key = set.id,
+                decimals = false,
+            )
+            val doneLabel = lexString(R.string.cd_gym_set_done, number)
+            Checkbox(
+                checked = set.done,
+                onCheckedChange = { onEvent(GymEvent.UpdateSet(set, weight, reps, it)) },
+                enabled = reps > 0,
+                colors = CheckboxDefaults.colors(checkedColor = colors.accent, uncheckedColor = colors.divider, checkmarkColor = colors.surface),
+                modifier = Modifier
+                    .size(AwakenTheme.dimens.touchTarget)
+                    .semantics { this.contentDescription = doneLabel },
+            )
+        }
     }
 }
 
@@ -514,7 +592,7 @@ internal fun formatElapsed(duration: Duration): String {
 private fun Double.roundTo1(): Double = Math.round(this * 10.0) / 10.0
 
 @Composable
-private fun formatDate(date: LocalDate): String =
+internal fun formatDate(date: LocalDate): String =
     DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).withLocale(currentLocale()).format(date)
 
 private const val MAX_RECORDS = 8
@@ -575,4 +653,51 @@ private fun GymSessionPreview() {
 @Composable
 private fun GymSummaryPreview() {
     AwakenTheme(reduceMotion = true) { GymScreen(previewGymState().copy(summaryId = "w0"), onEvent = {}) }
+}
+
+/** One line of the finish summary for a record the session broke (GD §16.7). */
+@Composable
+private fun recordLine(exercise: String, event: RecordEvent): String = when (event.type) {
+    RecordType.HEAVIEST_WEIGHT -> lexString(R.string.gym_record_heaviest, exercise, formatNumber(event.value))
+    RecordType.BEST_E1RM -> lexString(R.string.gym_record_e1rm, exercise, formatNumber(event.value.roundTo1()))
+    RecordType.MOST_REPS_AT_WEIGHT -> lexString(R.string.gym_record_reps, exercise, formatNumber(event.weightKg ?: 0.0), event.value.toInt())
+    RecordType.BEST_SESSION_VOLUME -> lexString(R.string.gym_record_volume, exercise, formatCount(event.value.roundToLong()))
+}
+
+@PhonePreviews
+@Composable
+private fun GymSessionHintsPreview() {
+    val base = previewGymState(active = true)
+    AwakenTheme(reduceMotion = true) {
+        GymScreen(
+            base.copy(
+                hints = mapOf(
+                    "e0" to HintUi(WorkingSets(70.0, listOf(8, 8)), EngineHint.Suggest(70.0, listOf(9, 9))),
+                    "e1" to HintUi(WorkingSets(0.0, listOf(12, 12)), EngineHint.AddWeightOrVariation),
+                ),
+                prSetIds = setOf("s01"),
+            ),
+            onEvent = {},
+        )
+    }
+}
+
+@PhonePreviews
+@Composable
+private fun GymSummaryRecordsPreview() {
+    AwakenTheme(reduceMotion = true) {
+        GymScreen(
+            previewGymState().copy(
+                summaryId = "w0",
+                summaryRecords = listOf(
+                    ExerciseRecords(
+                        "e0", "Barbell Bench Press",
+                        listOf(RecordEvent(RecordType.HEAVIEST_WEIGHT, 82.5), RecordEvent(RecordType.MOST_REPS_AT_WEIGHT, 9.0, 80.0)),
+                    ),
+                ),
+                summaryUnlocked = listOf("pr1"),
+            ),
+            onEvent = {},
+        )
+    }
 }

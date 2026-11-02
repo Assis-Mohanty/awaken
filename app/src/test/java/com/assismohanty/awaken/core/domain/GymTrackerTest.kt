@@ -3,6 +3,13 @@ package com.assismohanty.awaken.core.domain
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.assismohanty.awaken.engine.body.Equipment
 import com.assismohanty.awaken.engine.body.Muscle
+import com.assismohanty.awaken.engine.body.PlateSetup
+import com.assismohanty.awaken.engine.body.PlateUnit
+import com.assismohanty.awaken.engine.body.ProgressionHint
+import com.assismohanty.awaken.engine.body.RecordType
+import com.assismohanty.awaken.engine.body.RepRange
+import com.assismohanty.awaken.engine.model.LedgerKind
+import com.assismohanty.awaken.engine.model.SourceType
 import com.assismohanty.awaken.testing.TestGraph
 import com.google.common.truth.Truth.assertThat
 import java.time.Duration
@@ -181,5 +188,106 @@ class GymTrackerTest {
 
         assertThat(checkNotNull(gym.observeActive().first()).workout.id).isEqualTo(next)
         assertThat(checkNotNull(gym.observeActive().first()).exercises.single().restSec).isEqualTo(120)
+    }
+
+    /** Logs one bench session with exactly these (kg, reps) sets, finishes it and moves the clock on a day. */
+    private suspend fun logBench(vararg sets: Pair<Double, Int>): FinishResult.Finished {
+        val workoutId = gym.start("Push")
+        gym.addExercise(workoutId, benchId())
+        var rows = checkNotNull(gym.observeActive().first()).exercises.single().sets
+        while (rows.size < sets.size) {
+            gym.addSet(workoutId, position = 0)
+            rows = checkNotNull(gym.observeActive().first()).exercises.single().sets
+        }
+        sets.forEachIndexed { i, (kg, reps) -> gym.updateSet(rows[i], kg, reps, done = true) }
+        val result = gym.finish(workoutId) as FinishResult.Finished
+        graph.clock.advance(Duration.ofDays(1))
+        return result
+    }
+
+    @Test
+    fun theHintAfterASessionAtTheTopOfTheRangeAddsWeight() = runTest {
+        logBench(50.0 to 12, 50.0 to 12, 50.0 to 12)
+
+        assertThat(gym.hint(benchId())).isEqualTo(ProgressionHint.Suggest(52.5, listOf(8, 8, 8)))
+    }
+
+    @Test
+    fun noHintWithoutAFinishedSession() = runTest {
+        assertThat(gym.hint(benchId())).isNull()
+    }
+
+    @Test
+    fun anExercisesOwnRangeAndStepOverrideTheDefaultsAndBadInputIsIgnored() = runTest {
+        logBench(50.0 to 8, 50.0 to 8)
+        val id = benchId()
+
+        gym.setExercisePref(id, RepRange(5, 8), 5.0)
+        assertThat(gym.hint(id)).isEqualTo(ProgressionHint.Suggest(55.0, listOf(5, 5)))
+        assertThat(gym.progression(id, setOf(Muscle.CHEST)).customRange).isTrue()
+
+        gym.setExercisePref(id, RepRange(9, 3), 0.25) // min above max and a step that is not a multiple of 0.5
+        assertThat(gym.progression(id, setOf(Muscle.CHEST)).customRange).isFalse()
+        assertThat(gym.hint(id)).isEqualTo(ProgressionHint.Suggest(50.0, listOf(9, 9)))
+    }
+
+    @Test
+    fun theFirstSessionOfAnExerciseBreaksNoRecordAndAHeavierOneDoesWithOneTimeGold() = runTest {
+        graph.seedHunter()
+        val first = logBench(60.0 to 10)
+        assertThat(first.records).isEmpty()
+        assertThat(first.unlocked).doesNotContain("pr1")
+
+        val second = logBench(65.0 to 10)
+        val types = second.records.single().events.map { it.type }
+        assertThat(types).containsAtLeast(RecordType.HEAVIEST_WEIGHT, RecordType.BEST_E1RM, RecordType.BEST_SESSION_VOLUME)
+        assertThat(second.unlocked).contains("pr1")
+        suspend fun prGold() = graph.db.ledgerDao().all().filter { it.sourceType == SourceType.ACHIEVEMENT && it.sourceId == "pr1" && it.kind == LedgerKind.GOLD }
+        assertThat(prGold().map { it.delta }).containsExactly(10L)
+
+        // Another record later pays nothing more for pr1 (an achievement unlocks once), and gym itself writes no XP row.
+        val third = logBench(70.0 to 10)
+        assertThat(third.unlocked).doesNotContain("pr1")
+        assertThat(prGold()).hasSize(1)
+        assertThat(graph.db.ledgerDao().all().filter { it.kind == LedgerKind.XP_TOTAL && it.sourceType != SourceType.QUEST }).isEmpty()
+    }
+
+    @Test
+    fun aTieIsNotARecord() = runTest {
+        graph.seedHunter()
+        logBench(60.0 to 10)
+        assertThat(logBench(60.0 to 10).records).isEmpty()
+    }
+
+    @Test
+    fun historyListsFinishedSessionsOldestFirst() = runTest {
+        logBench(60.0 to 10)
+        logBench(62.5 to 10, 62.5 to 9)
+
+        val sessions = gym.history(benchId())
+
+        assertThat(sessions).hasSize(2)
+        assertThat(sessions[0].date).isLessThan(sessions[1].date)
+        assertThat(sessions[1].sets.map { it.reps }).containsExactly(10, 9).inOrder()
+    }
+
+    @Test
+    fun gymSettingsStartAtTheDefaultsAndSurviveASaveWithBadValuesCleaned() = runTest {
+        assertThat(gym.prefs()).isEqualTo(GymPrefs())
+
+        gym.savePrefs(
+            GymPrefs(
+                unit = PlateUnit.LB,
+                kg = PlateSetup(15.0, listOf(10.0, 20.0, 20.0, -5.0)),
+                lb = PlateSetup(-1.0, emptyList()),
+                repRange = RepRange(12, 6),
+            ),
+        )
+
+        val saved = gym.prefs()
+        assertThat(saved.unit).isEqualTo(PlateUnit.LB)
+        assertThat(saved.kg).isEqualTo(PlateSetup(15.0, listOf(20.0, 10.0)))
+        assertThat(saved.lb).isEqualTo(GymPrefs().lb)
+        assertThat(saved.repRange).isEqualTo(GymPrefs().repRange)
     }
 }

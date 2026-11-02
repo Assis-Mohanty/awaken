@@ -301,9 +301,20 @@ val MIGRATION_19_20 = object : Migration(19, 20) {
     }
 }
 
+/** v20 → v21 (progression hints, plate calculator): two new tables; no existing row changes. */
+val MIGRATION_20_21 = object : Migration(20, 21) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("CREATE TABLE IF NOT EXISTS `exercise_pref` (`exercise_id` TEXT NOT NULL, `rep_min` INTEGER, `rep_max` INTEGER, `increment_kg` REAL, PRIMARY KEY(`exercise_id`))")
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS `gym_settings` (`id` INTEGER NOT NULL, `bar_kg` REAL NOT NULL, `plates_kg` TEXT NOT NULL, `bar_lb` REAL NOT NULL, " +
+                "`plates_lb` TEXT NOT NULL, `unit` TEXT NOT NULL, `rep_min` INTEGER NOT NULL, `rep_max` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        )
+    }
+}
+
 /** Every migration, in order. The database builder and the migration test both use this list. */
 val ALL_MIGRATIONS: Array<Migration> = arrayOf(
     MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9,
     MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17,
-    MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20,
+    MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21,
 )

@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Progression hints, personal records, plate calculator and exercise history (GAME_DESIGN §16.6-16.9).
+    Written in a neutral voice, so no strings here need a Clean twin.
+-->
+<resources>
+    <!-- Progression hint above set 1 (C1) -->
+    <string name="gym_hint_weighted">Last: %1$s kg × %2$s → try %3$s kg × %4$s</string>
+    <string name="gym_hint_bodyweight">Last: %1$s reps → try %2$s reps</string>
+    <string name="gym_hint_add_load">Add weight or a harder variation</string>
+
+    <!-- Personal records (C2) -->
+    <string name="gym_pr_chip">New record</string>
+    <string name="gym_summary_records_title">New records</string>
+    <string name="gym_record_heaviest">%1$s: heaviest weight, %2$s kg</string>
+    <string name="gym_record_e1rm">%1$s: best estimated 1RM, %2$s kg</string>
+    <string name="gym_record_reps">%1$s: most reps at %2$s kg, %3$d</string>
+    <string name="gym_record_volume">%1$s: best session volume, %2$s kg</string>
+    <string name="gym_summary_unlocked">Unlocked: %1$s</string>
+    <string name="achievement_pr1">First Record</string>
+    <string name="achievement_pr25">Record Chaser</string>
+    <string name="achievement_pr100">Record Breaker</string>
+    <string name="title_record_breaker">Record Breaker</string>
+    <string name="condition_pr1">Break a personal record.</string>
+    <string name="condition_pr25">Break 25 personal records.</string>
+    <string name="condition_pr100">Break 100 personal records.</string>
+
+    <!-- Plate calculator (C3) -->
+    <string name="gym_plates_open">Plate calculator</string>
+    <string name="gym_plates_title">Plate calculator</string>
+    <string name="gym_plates_target">Target weight (%1$s)</string>
+    <string name="gym_plates_unit_kg">kg</string>
+    <string name="gym_plates_unit_lb">lb</string>
+    <string name="gym_plates_enter">Enter the weight you want on the bar.</string>
+    <string name="gym_plates_exact">%1$s on each side</string>
+    <string name="gym_plates_empty_bar">Just the bar</string>
+    <string name="gym_plates_short">Closest you can build is %1$s %3$s, %2$s %3$s short.</string>
+    <string name="gym_plates_below">Below the bar\'s %1$s %2$s</string>
+    <string name="gym_plates_cd_each_side">%1$s on each side</string>
+    <string name="gym_plates_edit">Edit bar and plates</string>
+
+    <!-- Gym settings (C3, C1) -->
+    <string name="gym_settings_open">Gym settings</string>
+    <string name="gym_settings_title">Gym settings</string>
+    <string name="gym_settings_bar">Bar weight (%1$s)</string>
+    <string name="gym_settings_plates">Plates you own (%1$s)</string>
+    <string name="gym_settings_range">Default rep range</string>
+    <string name="gym_settings_range_value">%1$d to %2$d reps</string>
+    <string name="gym_settings_min_less">Fewer minimum reps</string>
+    <string name="gym_settings_min_more">More minimum reps</string>
+    <string name="gym_settings_max_less">Fewer maximum reps</string>
+    <string name="gym_settings_max_more">More maximum reps</string>
+    <string name="gym_settings_note">A hint suggests more reps until you reach the top of the range, then a little more weight.</string>
+
+    <!-- Exercise history (C7) -->
+    <string name="gym_history_open">History</string>
+    <string name="gym_history_open_cd">History of %1$s</string>
+    <string name="gym_history_screen_title">%1$s</string>
+    <string name="gym_range_month">Month</string>
+    <string name="gym_range_3months">3 months</string>
+    <string name="gym_range_year">Year</string>
+    <string name="gym_range_all">All</string>
+    <string name="gym_metric_top">Top weight</string>
+    <string name="gym_metric_e1rm">Best estimated 1RM</string>
+    <string name="gym_metric_volume">Volume</string>
+    <string name="gym_trend_empty">Log this exercise in at least two sessions in this range to see a trend.</string>
+    <string name="gym_trend_cd">%1$s, %2$s to %3$s kg over %4$s, best %5$s kg</string>
+    <string name="gym_history_sessions">Sessions</string>
+    <string name="gym_history_none">No finished sessions of this exercise yet.</string>
+    <string name="gym_history_session_line">%1$s: %2$s</string>
+    <string name="gym_history_set_group">%1$s kg × %2$s</string>
+    <string name="gym_history_reps_only">%1$s reps</string>
+    <string name="gym_pref_title">Hints for this exercise</string>
+    <string name="gym_pref_range">Rep range</string>
+    <string name="gym_pref_increment">Step up by</string>
+    <string name="gym_pref_default">Default</string>
+    <string name="gym_pref_reset">Use the defaults</string>
+    <string name="gym_pref_increment_value">%1$s kg</string>
+    <string name="gym_pref_less">Smaller</string>
+    <string name="gym_pref_more">Larger</string>
+</resources>

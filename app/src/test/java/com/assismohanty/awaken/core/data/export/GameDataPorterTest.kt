@@ -129,6 +129,25 @@ class GameDataPorterTest {
     }
 
     @Test
+    fun exercisePrefsAndGymSettingsSurviveARoundTrip() = runTest {
+        source.seedHunter()
+        source.db.gymDao().upsertExercisePref(
+            com.assismohanty.awaken.core.data.db.entity.ExercisePrefEntity("bench", repMin = 5, repMax = 8, incrementKg = 5.0),
+        )
+        source.gym.savePrefs(
+            com.assismohanty.awaken.core.domain.GymPrefs(
+                unit = com.assismohanty.awaken.engine.body.PlateUnit.LB,
+                kg = com.assismohanty.awaken.engine.body.PlateSetup(15.0, listOf(20.0, 10.0)),
+            ),
+        )
+
+        assertThat(target.porter.import(source.porter.export())).isInstanceOf(ImportResult.Imported::class.java)
+
+        assertThat(target.db.gymDao().exercisePref("bench")).isEqualTo(source.db.gymDao().exercisePref("bench"))
+        assertThat(target.gym.prefs()).isEqualTo(source.gym.prefs())
+    }
+
+    @Test
     fun theSummaryDescribesWhatWasRestored() = runTest {
         playSomeGame()
         val summary = (target.porter.import(source.porter.export()) as ImportResult.Imported).summary

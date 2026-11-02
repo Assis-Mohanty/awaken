@@ -33,6 +33,8 @@ data class AchievementSnapshot(
     val reviewsSubmitted: Int = 0,
     /** The focus streak on the day of evaluation (GD §16.4): consecutive days that met the daily focus goal. */
     val focusStreak: Int = 0,
+    /** Personal-record events across all exercises (GD §16.7): one per record type per exercise per session. */
+    val prEvents: Int = 0,
     val alreadyUnlocked: Set<String> = emptySet(),
 ) {
     fun statLevel(stat: Stat): Int = StatLevel.level(statXp[stat] ?: 0L)
@@ -103,6 +105,10 @@ object AchievementEvaluator {
         add(Achievement("focus_streak7", 30) { it.focusStreak >= FocusGoalRules.STREAK_MILESTONES[0] })
         add(Achievement("focus_streak30", 100) { it.focusStreak >= FocusGoalRules.STREAK_MILESTONES[1] })
         add(Achievement("focus_streak100", 200, "deep_worker") { it.focusStreak >= FocusGoalRules.STREAK_MILESTONES[2] })
+        // New Record (GD §16.7): personal-record events, self-logged, so gold only and only once each.
+        add(Achievement("pr1", 10) { it.prEvents >= 1 })
+        add(Achievement("pr25", 50) { it.prEvents >= 25 })
+        add(Achievement("pr100", 150, "record_breaker") { it.prEvents >= 100 })
     }
 
     val byId: Map<String, Achievement> = all.associateBy { it.id }

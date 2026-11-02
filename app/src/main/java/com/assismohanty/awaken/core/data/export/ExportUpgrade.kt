@@ -14,6 +14,7 @@ object ExportUpgrade {
     private const val RECAP_TABLE = "recap"
     private const val SUBJECT_TABLE = "focus_subject"
     private val FOCUS_V20_TABLES = listOf("pomodoro_session", "focus_goal")
+    private val GYM_V21_TABLES = listOf("exercise_pref", "gym_settings")
     private val BODY_TABLES = listOf(
         "custom_exercise", "routine", "routine_exercise", "workout", "workout_set", "custom_food", "food_log", "nutrition_profile",
     )
@@ -105,6 +106,13 @@ object ExportUpgrade {
             current = current.copy(
                 schemaVersion = 20,
                 tables = current.tables + FOCUS_V20_TABLES.filter { it !in current.tables }.associateWith { emptyList() },
+            )
+        }
+        // v20 → v21 (progression hints, plate calculator): neither table existed, so the old file has none of their rows.
+        if (current.app == ExportDocument.APP_ID && current.schemaVersion == 20) {
+            current = current.copy(
+                schemaVersion = 21,
+                tables = current.tables + GYM_V21_TABLES.filter { it !in current.tables }.associateWith { emptyList() },
             )
         }
         return current

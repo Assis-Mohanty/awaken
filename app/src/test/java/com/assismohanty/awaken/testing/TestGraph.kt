@@ -177,7 +177,7 @@ class TestGraph(
     )
     val trialReader = TrialReader(db.questDao())
     val focusGoalReader = com.assismohanty.awaken.core.domain.FocusGoalReader(db.hunterDao(), db.focusDao(), db.dayRecordDao(), clock)
-    val achievements = AchievementUnlocker(db.questDao(), db.achievementDao(), ledger, reader, focusGoalReader)
+    val achievements = AchievementUnlocker(db.questDao(), db.achievementDao(), ledger, reader, focusGoalReader, com.assismohanty.awaken.core.domain.PersonalRecordCounter(db.gymDao()))
     val completeQuest = CompleteQuestUseCase(
         db.hunterDao(), db.questDao(), db.completionDao(), achievements, db.trialDao(), trialReader, pathDao, db.habitDao(),
         ledger, reader, transactions, clock,
@@ -270,7 +270,7 @@ class TestGraph(
     // Gym and Diet (trackers, GD §13).
     val exerciseCatalog = ExerciseCatalog(context, Dispatchers.Unconfined)
     val foodCatalog = FoodCatalog(context, Dispatchers.Unconfined)
-    val gym = GymTracker(db.gymDao(), db.hunterDao(), exerciseCatalog, transactions, clock)
+    val gym = GymTracker(db.gymDao(), db.hunterDao(), exerciseCatalog, achievements, transactions, clock)
     val diet = DietTracker(db.dietDao(), db.hunterDao(), foodCatalog, clock)
 
     // AI Paths. `oracle` records calls, so tests can assert "no network request was made".

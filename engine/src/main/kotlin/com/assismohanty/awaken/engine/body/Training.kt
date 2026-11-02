@@ -25,8 +25,12 @@ enum class Muscle(val key: String) {
     TRICEPS("triceps"),
     ;
 
+    /** Lower-body muscles take the bigger progression step (GD §16.6, N15). */
+    val isLowerBody: Boolean get() = this in LOWER_BODY
+
     companion object {
         private val byKey = entries.associateBy { it.key }
+        private val LOWER_BODY = setOf(QUADRICEPS, HAMSTRINGS, GLUTES, CALVES, ADDUCTORS, ABDUCTORS)
 
         fun fromKey(key: String): Muscle? = byKey[key]
     }
