@@ -75,6 +75,8 @@ data class QuestRowModel(
     val timeOfDay: TimeOfDay? = null,
     /** The penalty quest (GD §7.3): a normal row with a coral "Comeback" chip. */
     val comeback: Boolean = false,
+    /** Set for habit quests (GD §16.1-16.2): the type's own controls and chips. */
+    val habit: HabitRowModel? = null,
 )
 
 /**
@@ -93,6 +95,7 @@ fun QuestRow(
     showDivider: Boolean = true,
     onLongPress: (() -> Unit)? = null,
     longPressLabel: String? = null,
+    habitActions: HabitRowActions = HabitRowActions(),
 ) {
     val dimens = AwakenTheme.dimens
     Column(modifier = modifier.fillMaxWidth()) {
@@ -114,6 +117,14 @@ fun QuestRow(
                 CheckControl(model, onComplete)
             }
         }
+        model.habit?.let { habit ->
+            HabitRowControls(
+                row = model,
+                habit = habit,
+                actions = habitActions,
+                modifier = Modifier.padding(start = dimens.iconWell + Spacing.sm),
+            )
+        }
     }
 }
 
@@ -131,7 +142,7 @@ private fun SwipeToComplete(
     val colors = AwakenTheme.colors
     val haptics = AwakenTheme.haptics
     val motion = AwakenTheme.motion
-    val canComplete = model.state == QuestRowState.OPEN && model.verification == VerificationSource.SELF
+    val canComplete = model.state == QuestRowState.OPEN && model.verification == VerificationSource.SELF && model.habit?.completesByHand != false
     // Plain state updated synchronously per drag delta; the snap-back animates the same value, so nothing can race.
     var offset by remember(model.id) { mutableFloatStateOf(0f) }
     var rowWidth by remember { mutableIntStateOf(0) }
@@ -251,7 +262,7 @@ private fun QuestText(model: QuestRowModel, modifier: Modifier = Modifier) {
             color = if (dimmed) colors.textMuted else colors.textSecondary,
             textDecoration = decoration,
         )
-        if (model.isMain || model.comeback || model.verification != VerificationSource.SELF || model.pathBadge != null) {
+        if (model.isMain || model.comeback || model.verification != VerificationSource.SELF || model.pathBadge != null || model.habit?.hasChip() == true) {
             FlowRow(
                 horizontalArrangement = Arrangement.spacedBy(Spacing.xxs),
                 verticalArrangement = Arrangement.spacedBy(Spacing.xxs),
@@ -265,6 +276,7 @@ private fun QuestText(model: QuestRowModel, modifier: Modifier = Modifier) {
                         gate = badge.gateRank?.let { rank -> lexString(R.string.path_badge_gate, rank.name, badge.gateMinutes ?: rank.durationMinutes) },
                     )
                 }
+                model.habit?.let { HabitTypeChip(it, model.target) }
                 VerifiedBadge(model.verification)
             }
         }
@@ -275,7 +287,7 @@ private fun QuestText(model: QuestRowModel, modifier: Modifier = Modifier) {
 private fun CheckControl(model: QuestRowModel, onComplete: () -> Unit) {
     val colors = AwakenTheme.colors
     val dimens = AwakenTheme.dimens
-    val canComplete = model.state == QuestRowState.OPEN && model.verification == VerificationSource.SELF
+    val canComplete = model.state == QuestRowState.OPEN && model.verification == VerificationSource.SELF && model.habit?.completesByHand != false
     when {
         model.state == QuestRowState.DONE -> Box(
             modifier = Modifier

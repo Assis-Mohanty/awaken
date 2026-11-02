@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Habit types, reminders and skip today (GAME_DESIGN §16.1-16.2). Written in a neutral voice, so no strings here need a Clean twin.
+-->
+<resources>
+    <!-- Types (editor) -->
+    <string name="habit_type_check">Check</string>
+    <string name="habit_type_count">Count</string>
+    <string name="habit_type_timed">Timed</string>
+    <string name="habit_type_avoid">Avoid</string>
+    <string name="habit_type_label">Type</string>
+    <string name="habit_type_check_note">Tick it off when it is done.</string>
+    <string name="habit_type_count_note">Tap + through the day until you reach the target.</string>
+    <string name="habit_type_timed_note">Runs a focus session of this length. Done when it ends.</string>
+    <string name="habit_type_avoid_note">Something to hold off from. Confirm in the evening that you kept it.</string>
+
+    <!-- Frequency (editor) -->
+    <string name="habit_freq_label">How often</string>
+    <string name="habit_freq_days">On these days</string>
+    <string name="habit_freq_times">Times a week</string>
+    <string name="habit_times_value">%1$d× a week</string>
+    <string name="habit_times_note">Any days count. Once you reach it, the habit rests until Monday.</string>
+    <string name="habit_timed_minutes">Minutes</string>
+    <string name="habit_timed_difficulty">%1$s, from %2$d minutes</string>
+    <string name="habit_count_target">Target</string>
+
+    <!-- Reminder (editor) -->
+    <string name="habit_reminder_label">Reminder</string>
+    <string name="habit_reminder_off">Off</string>
+    <string name="habit_reminder_at">At %1$s</string>
+    <string name="habit_reminder_limit">Two habits can have a reminder.</string>
+    <string name="habit_reminder_note">Only while the habit is still open that day.</string>
+    <string name="habit_reminder_text">Time for this habit.</string>
+    <string name="habit_reminder_channel_name">Habit reminders</string>
+    <string name="habit_reminder_channel_description">A reminder for a habit you chose, only while it is still open.</string>
+
+    <!-- Editor errors -->
+    <string name="habit_error_quantity">Pick a target from 2 to 100.</string>
+    <string name="habit_error_timed">Pick 15 to 180 minutes, in steps of 5.</string>
+    <string name="habit_error_weekly">Pick 1 to 6 times a week.</string>
+    <string name="habit_error_avoid_days">An avoid habit runs on fixed days.</string>
+
+    <!-- Today rows -->
+    <string name="habit_chip_holding">Holding</string>
+    <string name="habit_chip_week">%1$d of %2$d this week</string>
+    <string name="habit_chip_skipped">Skipped</string>
+    <string name="habit_chip_slipped">Slipped</string>
+    <string name="habit_start_timed">Start · %1$d min</string>
+    <string name="habit_slip">I slipped</string>
+    <string name="habit_kept">Kept it today</string>
+    <string name="habit_kept_hint">Available this evening</string>
+    <string name="habit_slipped_line">Slipped today. Tomorrow is a new day.</string>
+    <string name="habit_undo_slip">Undo</string>
+    <string name="habit_skipped_line">Skipped for today. It doesn\'t count against you.</string>
+    <string name="habit_undo_skip">Undo skip</string>
+    <string name="habit_count_progress">%1$s / %2$s %3$s</string>
+    <string name="cd_habit_plus">Add one to %1$s</string>
+    <string name="cd_habit_minus">Remove one from %1$s</string>
+    <string name="cd_habit_progress">%1$s: %2$d of %3$d</string>
+
+    <string name="msg_habit_not_allowed">That isn\'t available right now.</string>
+
+    <!-- Options sheet -->
+    <string name="habit_skip_today">Skip today</string>
+    <string name="habit_skip_left">1 skip left this week</string>
+    <string name="habit_skip_none">No skips left this week</string>
+    <string name="habit_no_skip_flexible">Not needed: any day counts</string>
+</resources>

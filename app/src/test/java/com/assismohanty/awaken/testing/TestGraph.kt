@@ -55,7 +55,10 @@ import com.assismohanty.awaken.core.domain.AdvanceCampaignUseCase
 import com.assismohanty.awaken.core.domain.DisciplineQuestPlanner
 import com.assismohanty.awaken.core.domain.ObserveCampaignUseCase
 import com.assismohanty.awaken.core.domain.PreviewCampaignUseCase
+import com.assismohanty.awaken.core.domain.AdjustQuantityUseCase
+import com.assismohanty.awaken.core.domain.AvoidHabitUseCases
 import com.assismohanty.awaken.core.domain.SaveHabitUseCase
+import com.assismohanty.awaken.core.domain.SkipHabitUseCase
 import com.assismohanty.awaken.core.domain.StartCampaignUseCase
 import com.assismohanty.awaken.core.domain.DisciplineSyncUseCase
 import com.assismohanty.awaken.core.domain.DisciplineText
@@ -175,11 +178,11 @@ class TestGraph(
     val trialReader = TrialReader(db.questDao())
     val achievements = AchievementUnlocker(db.questDao(), db.achievementDao(), ledger, reader)
     val completeQuest = CompleteQuestUseCase(
-        db.hunterDao(), db.questDao(), db.completionDao(), achievements, db.trialDao(), trialReader, pathDao,
+        db.hunterDao(), db.questDao(), db.completionDao(), achievements, db.trialDao(), trialReader, pathDao, db.habitDao(),
         ledger, reader, transactions, clock,
     )
     val undoCompletion = UndoCompletionUseCase(
-        db.hunterDao(), db.questDao(), db.trialDao(), db.completionDao(), db.ledgerDao(), pathDao, ledger, transactions, clock,
+        db.hunterDao(), db.questDao(), db.trialDao(), db.completionDao(), db.ledgerDao(), pathDao, db.habitDao(), ledger, transactions, clock,
     )
     val rerollQuest = RerollQuestUseCase(db.hunterDao(), db.questDao(), pathDao, ledger, reader, templates, transactions, clock)
     val advanceTrial = AdvanceTrialUseCase(db.questDao(), db.trialDao(), trialReader, reader, templates, transactions, clock)
@@ -201,7 +204,10 @@ class TestGraph(
     val startCampaign = StartCampaignUseCase(db.hunterDao(), db.habitDao(), db.campaignDao(), previewCampaign, generateDirective, transactions, clock)
     val abandonCampaign = AbandonCampaignUseCase(db.campaignDao(), db.habitDao(), transactions, clock)
     val observeCampaign = ObserveCampaignUseCase(db.hunterDao(), db.campaignDao(), db.dayRecordDao(), clock)
-    val saveHabit = SaveHabitUseCase(db.hunterDao(), db.habitDao(), db.questDao(), generateDirective, transactions, clock)
+    val habitReminders = RecordingHabitReminders()
+    val saveHabit = SaveHabitUseCase(db.hunterDao(), db.habitDao(), db.questDao(), generateDirective, habitReminders, transactions, clock)
+    val adjustQuantity = AdjustQuantityUseCase(db.hunterDao(), db.questDao(), db.habitDao(), completeQuest, undoCompletion, transactions, clock)
+    val skipHabit = SkipHabitUseCase(db.hunterDao(), db.questDao(), db.habitDao(), transactions, clock)
     val removeHabit = RemoveHabitUseCase(db.hunterDao(), db.habitDao(), db.questDao(), transactions, clock)
     val restoreHabit = RestoreHabitUseCase(db.hunterDao(), db.habitDao(), db.questDao(), generateDirective, transactions, clock)
     val seedAppRules = SeedAppRulesUseCase(db.hunterDao(), db.screenTimeDao(), usage, clock)
@@ -219,6 +225,7 @@ class TestGraph(
     val uiPrefs = UiPrefsRepository(
         PreferenceDataStoreFactory.create(scope = noticeScope) { File(context.filesDir, "ui-prefs-${UUID.randomUUID()}.preferences_pb") },
     )
+    val avoidHabit = AvoidHabitUseCases(db.hunterDao(), db.questDao(), db.habitDao(), completeQuest, uiPrefs, transactions, clock)
     val notificationAccess = NotificationAccess(context)
     val generateRecaps = GenerateRecapsUseCase(db.hunterDao(), db.recapDao(), db.insightDao(), clock)
     val runRollover = RunRolloverUseCase(rollover, notices, generateRecaps)
@@ -229,13 +236,13 @@ class TestGraph(
         db.hunterDao(), db.questDao(), db.dayRecordDao(), db.trialDao(), ledger, clock,
     )
     val observeToday = ObserveTodayUseCase(
-        observeHunterState, db.hunterDao(), db.questDao(), reader, db.trialDao(), pathDao, trialReader, narrative, clock, uiPrefs,
+        observeHunterState, db.hunterDao(), db.questDao(), reader, db.trialDao(), pathDao, db.habitDao(), trialReader, narrative, clock, uiPrefs,
         db.dayRecordDao(), db.weeklyReviewDao(),
     )
     val dayRefresher = DayRefresher(runRollover)
     val setRestDay = SetRestDayUseCase(db.hunterDao(), db.dayRecordDao(), transactions, clock)
     val setRecoveryMode = SetRecoveryModeUseCase(db.hunterDao(), db.dayRecordDao(), transactions, clock)
-    val startGate = StartGateUseCase(db.hunterDao(), db.questDao(), db.gateRunDao(), transactions, uptime, clock)
+    val startGate = StartGateUseCase(db.hunterDao(), db.questDao(), db.habitDao(), db.gateRunDao(), transactions, uptime, clock)
     val focusLock = FakeFocusLockStatus()
     val distractingApps = DistractingApps(db.screenTimeDao(), db.hunterDao(), clock)
     val gateRuns = GateRunController(

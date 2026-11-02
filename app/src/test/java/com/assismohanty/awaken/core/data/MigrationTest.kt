@@ -416,6 +416,42 @@ class MigrationTest {
         }
     }
     @Test
+    fun v18To19AddsHabitTypesDefaultingToTheOldBehaviour() = runTest {
+        val path = createFromSchema(18)
+        SQLiteDatabase.openDatabase(path, null, SQLiteDatabase.OPEN_READWRITE).use { db ->
+            db.execSQL(
+                "INSERT INTO habit (id, title, stat, difficulty, verification, days_of_week_mask, target, unit, active, created_at) " +
+                    "VALUES ('h1', 'Read', 'INT', 'EASY', 'SELF', 127, 10, 'pages', 1, 0)",
+            )
+            db.execSQL(
+                "INSERT INTO quest_instance (id, game_date, type, habit_id, stat, title, description, unit, target, difficulty, " +
+                    "verification, min_duration_sec, status, created_at) " +
+                    "VALUES ('q1', '2026-10-18', 'HABIT', 'h1', 'INT', 'Read', 'Read', 'pages', 10, 'EASY', 'SELF', 0, 'ACTIVE', 0)",
+            )
+            db.execSQL(
+                "INSERT INTO gate_run (id, quest_instance_id, gate_rank, stat, label, planned_sec, started_at, background_ms, boot_count, status, mode, paused_before_ms, lock_at_stop) " +
+                    "VALUES ('g1', 'q1', 'D', 'INT', NULL, 1500, 0, 0, 1, 'CLEARED', 'PRESET', 0, 0)",
+            )
+        }
+        val db = Room.databaseBuilder(context, AwakenDatabase::class.java, path)
+            .addMigrations(*ALL_MIGRATIONS)
+            .allowMainThreadQueries()
+            .build()
+        try {
+            val habit = db.habitDao().get("h1")
+            assertThat(habit?.type).isEqualTo(com.assismohanty.awaken.engine.model.HabitType.CHECK)
+            assertThat(habit?.frequency).isEqualTo(com.assismohanty.awaken.engine.model.HabitFrequency.DAYS_OF_WEEK)
+            assertThat(habit?.timesPerWeek).isNull()
+            assertThat(habit?.reminderTime).isNull()
+            assertThat(db.questDao().get("q1")?.progress).isEqualTo(0)
+            assertThat(db.gateRunDao().get("g1")?.habitQuestId).isNull()
+            assertThat(db.openHelper.readableDatabase.version).isEqualTo(AwakenDatabase.SCHEMA_VERSION)
+        } finally {
+            db.close()
+        }
+    }
+
+    @Test
     fun v4To5AddsThePathTablesAndKeepsExistingQuests() = runTest {
         val path = createFromSchema(4)
         SQLiteDatabase.openDatabase(path, null, SQLiteDatabase.OPEN_READWRITE).use { db ->

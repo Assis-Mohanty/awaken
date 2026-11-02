@@ -73,11 +73,22 @@ enum class QuestStatus {
     ACTIVE, STARTED, COMPLETED, EXPIRED, MISSED, REROLLED,
 
     /** A Path quest the hunter reported (PRD F21): hidden like REROLLED, but never counted as a paid reroll. */
-    REPORTED;
+    REPORTED,
+
+    /** A habit skipped for today (GD §16.2): not a miss, not a directive item, never paid. Undoable until the game-day ends. */
+    SKIPPED;
 
     /** Replaced or removed quests: not shown, not counted, not attempted (ENGINE_DECISIONS #74). */
     val isHidden: Boolean get() = this == REROLLED || this == REPORTED
 }
+
+/** What a habit asks of the hunter (GD §16.1). Habits that existed before v1.2 are all [CHECK]. */
+@Serializable
+enum class HabitType { CHECK, QUANTITY, TIMED, NEGATIVE }
+
+/** How often a habit is due (GD §16.1): on fixed weekdays, or a number of days per ISO week. */
+@Serializable
+enum class HabitFrequency { DAYS_OF_WEEK, TIMES_PER_WEEK }
 
 /** Hunter ranks and their level bands (GD §5). */
 enum class Rank(val minLevel: Int) {

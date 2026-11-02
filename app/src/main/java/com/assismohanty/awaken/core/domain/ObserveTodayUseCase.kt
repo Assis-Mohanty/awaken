@@ -2,6 +2,7 @@ package com.assismohanty.awaken.core.domain
 
 import com.assismohanty.awaken.core.data.clock.Clock
 import com.assismohanty.awaken.core.data.db.dao.DayRecordDao
+import com.assismohanty.awaken.core.data.db.dao.HabitDao
 import com.assismohanty.awaken.core.data.db.dao.HunterDao
 import com.assismohanty.awaken.core.data.db.dao.PathDao
 import com.assismohanty.awaken.core.data.db.dao.QuestDao
@@ -15,6 +16,9 @@ import com.assismohanty.awaken.engine.Consistency
 import com.assismohanty.awaken.engine.ConsistencyScore
 import com.assismohanty.awaken.engine.DayOutcome
 import com.assismohanty.awaken.engine.GameDay
+import com.assismohanty.awaken.engine.HabitRules
+import com.assismohanty.awaken.engine.model.HabitFrequency
+import com.assismohanty.awaken.engine.model.HabitType
 import com.assismohanty.awaken.engine.MissLine
 import com.assismohanty.awaken.engine.TimeBlocks
 import com.assismohanty.awaken.engine.model.TimeOfDay
@@ -42,6 +46,9 @@ sealed interface TrialSummary {
     data class Active(val rank: Rank, val cleared: Int, val stages: Int, val daysLeft: Int) : TrialSummary
 }
 
+/** What a habit's row needs that the quest instance does not hold (GD §16.1): its type and, for a flexible habit, the week's tally. */
+data class HabitTodayInfo(val type: HabitType, val timesPerWeek: Int?, val weekDone: Int)
+
 /** Where a Path quest came from; [gateRank] is set for GATE-mode quests. */
 data class PathBadgeInfo(val pathName: String, val gateRank: GateRank?)
 
@@ -54,6 +61,8 @@ data class TodayModel(
     val trial: TrialSummary? = null,
     /** Path name and gate per quest id, for the Path badge on rows (DS §3 PathQuestBadge). */
     val pathBadges: Map<String, PathBadgeInfo> = emptyMap(),
+    /** Per habit quest id: its type and weekly tally (GD §16.1). */
+    val habitInfo: Map<String, HabitTodayInfo> = emptyMap(),
     /**
      * The time-of-day block "now" falls in (GD §14.5), from the injected clock. Re-derived on every emission (quest
      * changes, foreground, rollover) and when the block boundaries change, not on a timer.
@@ -83,6 +92,7 @@ class ObserveTodayUseCase @Inject constructor(
     private val reader: GameStateReader,
     private val trialDao: TrialDao,
     private val pathDao: PathDao,
+    private val habitDao: HabitDao,
     private val trialReader: TrialReader,
     private val narrative: NarrativeRepository,
     private val clock: Clock,
@@ -115,6 +125,7 @@ class ObserveTodayUseCase @Inject constructor(
                         systemLine = systemLine(hunter, quests),
                         trial = trialSummary(hunter),
                         pathBadges = pathBadges(quests),
+                        habitInfo = habitInfo(quests, today),
                         currentBlock = block,
                         consistency = Consistency.score(outcomes, today, profile?.firstGameDate ?: today),
                         missLine = Consistency.missLine(outcomes[today.minusDays(1)], outcomes[today.minusDays(2)]),
@@ -150,6 +161,18 @@ class ObserveTodayUseCase @Inject constructor(
             neglected = SystemLines.neglectedStat(lastActive, hunter.gameDate),
         )
         return SystemLines.pick(narrative.systemLines(), key, profile.hunterId, hunter.gameDate, hunter.streak)
+    }
+
+    private suspend fun habitInfo(quests: List<QuestInstanceEntity>, today: LocalDate): Map<String, HabitTodayInfo> = buildMap {
+        quests.filter { it.type == QuestType.HABIT }.forEach { quest ->
+            val habit = quest.habitId?.let { habitDao.get(it) } ?: return@forEach
+            val done = if (habit.frequency == HabitFrequency.TIMES_PER_WEEK) {
+                questDao.habitCompletionsBetween(habit.id, HabitRules.weekStart(today), HabitRules.weekEnd(today))
+            } else {
+                0
+            }
+            put(quest.id, HabitTodayInfo(habit.type, habit.timesPerWeek.takeIf { habit.frequency == HabitFrequency.TIMES_PER_WEEK }, done))
+        }
     }
 
     private suspend fun pathBadges(quests: List<QuestInstanceEntity>): Map<String, PathBadgeInfo> {

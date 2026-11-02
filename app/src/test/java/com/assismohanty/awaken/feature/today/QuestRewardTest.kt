@@ -1,5 +1,7 @@
 package com.assismohanty.awaken.feature.today
 
+import com.assismohanty.awaken.core.domain.StartGateResult
+import com.assismohanty.awaken.core.domain.TimedHabitStarter
 import androidx.compose.ui.test.performScrollTo
 import com.assismohanty.awaken.core.designsystem.lexicon.PresentationMode
 import androidx.compose.material3.SnackbarHost
@@ -45,7 +47,10 @@ class QuestRewardTest {
             graph.seedHunter()
             graph.fixtureQuest("Do push-ups")
         }
-        val todayViewModel = TodayViewModel(graph.observeToday, graph.dayRefresher, graph.completionCenter, graph.startTrial, graph.observeCampaign)
+        val todayViewModel = TodayViewModel(
+            graph.observeToday, graph.dayRefresher, graph.completionCenter, graph.startTrial, graph.observeCampaign,
+            graph.adjustQuantity, graph.avoidHabit, graph.skipHabit, TimedHabitStarter { StartGateResult.NoHunter },
+        )
         val hostViewModel = RewardHostViewModel(graph.completionCenter, graph.notices, graph.narrative, graph.notificationAccess, graph.uiPrefs, graph.submitFeedback)
 
         composeRule.setContent {

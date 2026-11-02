@@ -3,6 +3,7 @@ package com.assismohanty.awaken.core.domain
 import com.assismohanty.awaken.core.data.clock.Clock
 import com.assismohanty.awaken.core.data.clock.gameDate
 import com.assismohanty.awaken.core.data.db.dao.CompletionDao
+import com.assismohanty.awaken.core.data.db.dao.HabitDao
 import com.assismohanty.awaken.core.data.db.dao.HunterDao
 import com.assismohanty.awaken.core.data.db.dao.PathDao
 import com.assismohanty.awaken.core.data.db.dao.LedgerDao
@@ -13,6 +14,7 @@ import com.assismohanty.awaken.core.data.repo.LedgerRepository
 import com.assismohanty.awaken.core.data.repo.TransactionRunner
 import com.assismohanty.awaken.engine.QuestRules
 import com.assismohanty.awaken.engine.RankRules
+import com.assismohanty.awaken.engine.model.HabitType
 import com.assismohanty.awaken.engine.model.QuestType
 import com.assismohanty.awaken.engine.model.VerificationSource
 import com.assismohanty.awaken.engine.path.SlotOutcome
@@ -45,6 +47,7 @@ class UndoCompletionUseCase @Inject constructor(
     private val completionDao: CompletionDao,
     private val ledgerDao: LedgerDao,
     private val pathDao: PathDao,
+    private val habitDao: HabitDao,
     private val ledger: LedgerRepository,
     private val transactions: TransactionRunner,
     private val clock: Clock,
@@ -52,7 +55,9 @@ class UndoCompletionUseCase @Inject constructor(
     suspend operator fun invoke(questInstanceId: String): UndoResult = transactions.run {
         val completion = completionDao.latestActive(questInstanceId) ?: return@run UndoResult.NothingToUndo
         val quest = questDao.get(questInstanceId)
-        val clearedThroughGate = completion.verificationSource == VerificationSource.TIMER && quest?.pathSlotId != null
+        // Timed work is final: a Path quest or a Timed habit cleared through its focus session (ENGINE_DECISIONS #36, #76).
+        val clearedThroughGate = completion.verificationSource == VerificationSource.TIMER &&
+            (quest?.pathSlotId != null || quest?.habitId != null)
         if (completion.questType == QuestType.GATE || clearedThroughGate) return@run UndoResult.GateClear
         if (completion.verificationSource == VerificationSource.HEALTH) return@run UndoResult.HealthVerified
         val now = clock.now()
@@ -73,6 +78,10 @@ class UndoCompletionUseCase @Inject constructor(
         quest?.pathSlotId?.let {
             pathDao.setOutcome(it, SlotOutcome.PENDING)
             pathDao.setFeedback(it, null)
+        }
+        // A count habit that reached its target steps back one, so the next tap completes it again (GD §16.1).
+        if (quest?.habitId != null && habitDao.get(quest.habitId)?.type == HabitType.QUANTITY) {
+            questDao.updateProgress(quest.id, (quest.target - 1).coerceAtLeast(0))
         }
         // The cleared stage had closed the day's other stages; they are open again.
         if (isTrialStage) questDao.reopenTrialStages(completion.gameDate)

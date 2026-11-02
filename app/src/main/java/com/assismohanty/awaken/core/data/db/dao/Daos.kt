@@ -203,12 +203,36 @@ interface QuestDao {
     @Query("UPDATE quest_instance SET status = 'ACTIVE', started_at = NULL WHERE type = 'TRIAL' AND game_date = :gameDate AND status = 'EXPIRED'")
     suspend fun reopenTrialStages(gameDate: LocalDate)
 
-    /** Day end (GD §6.5): unfinished generated/system quests expire, habits are missed. */
+    /**
+     * Day end (GD §6.5, §16.1): unfinished generated/system quests expire; fixed-day habits are missed; a flexible
+     * (times-per-week) habit never records a miss, so its open instance expires.
+     */
     @Query(
-        "UPDATE quest_instance SET status = CASE WHEN type = 'HABIT' THEN 'MISSED' ELSE 'EXPIRED' END " +
+        "UPDATE quest_instance SET status = CASE WHEN type = 'HABIT' AND habit_id NOT IN " +
+            "(SELECT id FROM habit WHERE frequency = 'TIMES_PER_WEEK') THEN 'MISSED' ELSE 'EXPIRED' END " +
             "WHERE game_date = :gameDate AND status IN ('ACTIVE', 'STARTED')",
     )
     suspend fun closeOpen(gameDate: LocalDate)
+
+    /** Count-habit progress (GD §16.1); only while the instance is open. Returns the rows changed. */
+    @Query("UPDATE quest_instance SET progress = :progress WHERE id = :id AND status IN ('ACTIVE', 'STARTED')")
+    suspend fun updateProgress(id: String, progress: Int): Int
+
+    /** Completions of [habitId] in `[from, to]`, the ISO week for a flexible habit's quota (GD §16.1). */
+    @Query("SELECT COUNT(*) FROM quest_instance WHERE habit_id = :habitId AND game_date BETWEEN :from AND :to AND status = 'COMPLETED'")
+    suspend fun habitCompletionsBetween(habitId: String, from: LocalDate, to: LocalDate): Int
+
+    /** Skips of [habitId] in `[from, to]`, the ISO week for the one-skip allowance (GD §16.2). */
+    @Query("SELECT COUNT(*) FROM quest_instance WHERE habit_id = :habitId AND game_date BETWEEN :from AND :to AND status = 'SKIPPED'")
+    suspend fun habitSkipsBetween(habitId: String, from: LocalDate, to: LocalDate): Int
+
+    /** The habit's instance on [gameDate], whatever its status. */
+    @Query("SELECT * FROM quest_instance WHERE habit_id = :habitId AND game_date = :gameDate LIMIT 1")
+    suspend fun habitInstanceOn(habitId: String, gameDate: LocalDate): QuestInstanceEntity?
+
+    /** Skipping or un-skipping flips between open and SKIPPED, nothing else. Returns the rows changed. */
+    @Query("UPDATE quest_instance SET status = :to, started_at = NULL WHERE id = :id AND status IN (:from)")
+    suspend fun moveStatus(id: String, from: List<QuestStatus>, to: QuestStatus): Int
 }
 
 @Dao
@@ -261,6 +285,13 @@ interface HabitDao {
 
     @Query("SELECT COUNT(*) FROM habit WHERE active = 1")
     suspend fun countActive(): Int
+
+    /** Active habits that have a reminder, not counting [exceptId] (the habit being edited, GD §16.2). */
+    @Query("SELECT COUNT(*) FROM habit WHERE active = 1 AND reminder_time IS NOT NULL AND id != :exceptId")
+    suspend fun countRemindersExcept(exceptId: String): Int
+
+    @Query("SELECT * FROM habit WHERE active = 1 AND reminder_time IS NOT NULL")
+    suspend fun withReminder(): List<HabitEntity>
 
     @Upsert
     suspend fun upsert(habit: HabitEntity)

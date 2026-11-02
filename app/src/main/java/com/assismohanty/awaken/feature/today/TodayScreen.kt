@@ -34,6 +34,7 @@ import com.assismohanty.awaken.core.designsystem.components.AwakenCard
 import com.assismohanty.awaken.core.designsystem.components.AwakenGlyphs
 import com.assismohanty.awaken.core.designsystem.components.BlockState
 import com.assismohanty.awaken.core.designsystem.components.EmptyState
+import com.assismohanty.awaken.core.designsystem.components.HabitRowActions
 import com.assismohanty.awaken.core.designsystem.components.HeaderIconButton
 import com.assismohanty.awaken.core.designsystem.components.HunterHeaderModel
 import com.assismohanty.awaken.core.designsystem.components.InsightCard
@@ -104,6 +105,8 @@ fun TodayRoute(
     }
     val habits by habitsViewModel.uiState.collectAsStateWithLifecycle()
     val dayPlan by dayPlanViewModel.uiState.collectAsStateWithLifecycle()
+    // A Timed habit's session started: open the Focus screen where it runs (GD §16.1).
+    LaunchedEffect(viewModel) { viewModel.gateEntered.collect { onOpenGates() } }
     TodayScreen(
         state = state,
         onEvent = viewModel::onEvent,
@@ -308,6 +311,15 @@ private fun Timeline(
                                 showDivider = index > 0,
                                 onLongPress = habitId?.let { { onHabitsEvent(HabitsEvent.Options(it)) } },
                                 longPressLabel = habitId?.let { lexString(R.string.action_habit_options) },
+                                habitActions = HabitRowActions(
+                                    onPlus = { onEvent(TodayEvent.HabitPlus(row.id)) },
+                                    onMinus = { onEvent(TodayEvent.HabitMinus(row.id)) },
+                                    onStartTimed = { onEvent(TodayEvent.HabitStartTimed(row.id)) },
+                                    onKept = { onEvent(TodayEvent.HabitKept(row.id)) },
+                                    onSlip = { onEvent(TodayEvent.HabitSlip(row.id)) },
+                                    onUndoSlip = { onEvent(TodayEvent.HabitUndoSlip(row.id)) },
+                                    onUndoSkip = { habitId?.let { onEvent(TodayEvent.HabitUndoSkip(it)) } },
+                                ),
                             )
                         }
                     }

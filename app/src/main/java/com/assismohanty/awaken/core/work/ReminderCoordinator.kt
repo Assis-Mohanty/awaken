@@ -2,6 +2,7 @@ package com.assismohanty.awaken.core.work
 
 import com.assismohanty.awaken.core.data.db.dao.HunterDao
 import com.assismohanty.awaken.core.data.di.ApplicationScope
+import com.assismohanty.awaken.core.domain.HabitReminderScheduling
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.coroutines.cancellation.CancellationException
@@ -19,9 +20,20 @@ import timber.log.Timber
 class ReminderCoordinator @Inject constructor(
     private val hunterDao: HunterDao,
     private val scheduler: ReminderScheduler,
+    private val habitReminders: HabitReminderScheduling,
     @ApplicationScope private val scope: CoroutineScope,
 ) {
     fun start() {
+        // Habit reminders (GD §16.2) are re-armed on every start, so one lost to an update, an import or a reboot returns.
+        scope.launch {
+            try {
+                habitReminders.rearm()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Timber.e(e, "Scheduling habit reminders failed")
+            }
+        }
         scope.launch {
             hunterDao.observeProfile()
                 .map { profile -> profile?.let { it.reminderTime to it.dayStartHour } }

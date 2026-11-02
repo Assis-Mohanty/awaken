@@ -262,6 +262,8 @@ object AwakenGlyphs {
 
     val Close: ImageVector by lazy { line("Close") { moveTo(6.5f, 6.5f); lineTo(17.5f, 17.5f); moveTo(17.5f, 6.5f); lineTo(6.5f, 17.5f) } }
 
+    val Minus: ImageVector by lazy { line("Minus") { moveTo(5f, 12f); lineTo(19f, 12f) } }
+
     val Plus: ImageVector by lazy { line("Plus") { moveTo(12f, 5f); lineTo(12f, 19f); moveTo(5f, 12f); lineTo(19f, 12f) } }
 
     val Info: ImageVector by lazy {

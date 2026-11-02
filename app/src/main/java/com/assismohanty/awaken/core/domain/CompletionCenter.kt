@@ -47,6 +47,9 @@ sealed interface UserMessage {
     /** The 4 paid custom and stopwatch runs of the game-day are used (GD §8.1 P5). */
     data object FocusOverCap : UserMessage
     data object GateAlreadyRunning : UserMessage
+
+    /** A habit action that is not available right now (GD §16.1): kept it before the evening, a count on a closed day. */
+    data object HabitNotAllowed : UserMessage
     /** A Path quest was reported and removed (PRD F21). */
     data object QuestReported : UserMessage
     data object TrialStarted : UserMessage

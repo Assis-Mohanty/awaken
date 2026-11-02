@@ -2,7 +2,13 @@ package com.assismohanty.awaken.core.data.export
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.assismohanty.awaken.core.data.db.AwakenDatabase
+import com.assismohanty.awaken.core.domain.HabitDraft
+import com.assismohanty.awaken.core.domain.SaveHabitResult
 import com.assismohanty.awaken.engine.ShopKind
+import com.assismohanty.awaken.engine.model.Difficulty
+import com.assismohanty.awaken.engine.model.HabitFrequency
+import com.assismohanty.awaken.engine.model.HabitType
+import java.time.DayOfWeek
 import com.assismohanty.awaken.engine.model.LedgerKind
 import com.assismohanty.awaken.engine.model.Stat
 import com.assismohanty.awaken.testing.TestGraph
@@ -75,6 +81,30 @@ class GameDataPorterTest {
         assertThat(target.db.hunterDao().getProfile()).isEqualTo(source.db.hunterDao().getProfile())
         assertThat(target.db.hunterDao().getProfile()?.equippedSigilId).isEqualTo("sigil_wolf")
         assertThat(target.db.hunterDao().getProfile()?.injuryTags).containsExactly("upper")
+    }
+
+    @Test
+    fun habitTypesRemindersAndProgressSurviveARoundTrip() = runTest {
+        source.seedHunter()
+        source.rollover()
+        val habitId = (
+            source.saveHabit(
+                HabitDraft(
+                    id = null, title = "Drink water", stat = Stat.VIT, difficulty = Difficulty.EASY, days = DayOfWeek.entries.toSet(),
+                    target = 8, unit = "glasses", type = HabitType.QUANTITY, reminderMinutes = 540,
+                ),
+            ) as SaveHabitResult.Saved
+            ).habitId
+        val quest = source.db.questDao().habitInstanceOn(habitId, source.today())!!
+        repeat(3) { source.adjustQuantity.plus(quest.id) }
+
+        assertThat(target.porter.import(source.porter.export())).isInstanceOf(ImportResult.Imported::class.java)
+
+        val habit = target.db.habitDao().get(habitId)!!
+        assertThat(habit.type).isEqualTo(HabitType.QUANTITY)
+        assertThat(habit.frequency).isEqualTo(HabitFrequency.DAYS_OF_WEEK)
+        assertThat(habit.reminderTime).isEqualTo(540)
+        assertThat(target.db.questDao().get(quest.id)?.progress).isEqualTo(3)
     }
 
     @Test

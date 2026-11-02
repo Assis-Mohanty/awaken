@@ -42,7 +42,8 @@ fun TodayModel?.toWidgetSnapshot(): WidgetSnapshot {
         level = hunter.level,
         streak = hunter.streak,
         completed = counted.count { it.status == QuestStatus.COMPLETED },
-        total = counted.size,
+        // A skipped habit is neither done nor owed today (GD §16.2).
+        total = counted.count { it.status != QuestStatus.SKIPPED },
         nextQuest = next?.title,
         cleared = hunter.todayCleared,
     )

@@ -3,6 +3,18 @@ package com.assismohanty.awaken.feature.today
 import java.time.LocalDate
 import com.assismohanty.awaken.engine.model.TimeOfDay
 import androidx.lifecycle.ViewModel
+import com.assismohanty.awaken.core.designsystem.components.HabitRowModel
+import com.assismohanty.awaken.core.domain.AdjustQuantityUseCase
+import com.assismohanty.awaken.core.domain.AvoidHabitUseCases
+import com.assismohanty.awaken.core.domain.HabitActionResult
+import com.assismohanty.awaken.core.domain.HabitTodayInfo
+import com.assismohanty.awaken.core.domain.SkipHabitUseCase
+import com.assismohanty.awaken.core.domain.StartGateResult
+import com.assismohanty.awaken.core.domain.TimedHabitStarter
+import com.assismohanty.awaken.engine.model.HabitType
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import androidx.lifecycle.viewModelScope
 import com.assismohanty.awaken.core.data.db.entity.QuestInstanceEntity
 import com.assismohanty.awaken.core.designsystem.components.HunterHeaderModel
@@ -92,6 +104,15 @@ data class DisciplineCard(val held: Boolean, val xpAtStake: Int)
 sealed interface TodayEvent {
     data class Complete(val questInstanceId: String) : TodayEvent
     data object BeginTrial : TodayEvent
+
+    /** Habit controls (GD §16.1-16.2); the id is the day's habit quest instance. */
+    data class HabitPlus(val questInstanceId: String) : TodayEvent
+    data class HabitMinus(val questInstanceId: String) : TodayEvent
+    data class HabitKept(val questInstanceId: String) : TodayEvent
+    data class HabitSlip(val questInstanceId: String) : TodayEvent
+    data class HabitUndoSlip(val questInstanceId: String) : TodayEvent
+    data class HabitStartTimed(val questInstanceId: String) : TodayEvent
+    data class HabitUndoSkip(val habitId: String) : TodayEvent
 }
 
 @HiltViewModel
@@ -101,7 +122,16 @@ class TodayViewModel @Inject constructor(
     private val completionCenter: CompletionCenter,
     private val startTrial: StartTrialUseCase,
     observeCampaign: ObserveCampaignUseCase,
+    private val adjustQuantity: AdjustQuantityUseCase,
+    private val avoidHabit: AvoidHabitUseCases,
+    private val skipHabit: SkipHabitUseCase,
+    private val timedHabits: TimedHabitStarter,
 ) : ViewModel() {
+
+    private val gateStarted = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+
+    /** Emits once when a Timed habit's session started, so Today opens the Focus screen (GD §16.1). */
+    val gateEntered: SharedFlow<Unit> = gateStarted.asSharedFlow()
 
     val uiState: StateFlow<TodayUiState> = combine(
         observeToday(dayChanges = dayRefresher.ticks),
@@ -128,6 +158,27 @@ class TodayViewModel @Inject constructor(
                     completionCenter.message(UserMessage.Error)
                 }
             }
+            is TodayEvent.HabitPlus -> habitAction { adjustQuantity.plus(event.questInstanceId) }
+            is TodayEvent.HabitMinus -> habitAction { adjustQuantity.minus(event.questInstanceId) }
+            is TodayEvent.HabitKept -> habitAction { avoidHabit.keptToday(event.questInstanceId) }
+            is TodayEvent.HabitSlip -> habitAction { avoidHabit.slipped(event.questInstanceId) }
+            is TodayEvent.HabitUndoSlip -> habitAction { avoidHabit.undoSlip(event.questInstanceId) }
+            is TodayEvent.HabitUndoSkip -> habitAction { skipHabit.undoSkip(event.habitId) }
+            is TodayEvent.HabitStartTimed -> viewModelScope.launch {
+                try {
+                    when (timedHabits.startHabit(event.questInstanceId)) {
+                        is StartGateResult.Started -> gateStarted.tryEmit(Unit)
+                        StartGateResult.AlreadyRunning -> completionCenter.message(UserMessage.GateAlreadyRunning)
+                        StartGateResult.TooLate -> completionCenter.message(UserMessage.GateTooLate)
+                        StartGateResult.NoHunter, StartGateResult.NotATimedHabit -> completionCenter.message(UserMessage.HabitNotAllowed)
+                    }
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    Timber.e(e, "Starting the habit session failed")
+                    completionCenter.message(UserMessage.Error)
+                }
+            }
             TodayEvent.BeginTrial -> viewModelScope.launch {
                 val message = try {
                     when (startTrial()) {
@@ -142,6 +193,24 @@ class TodayViewModel @Inject constructor(
                     UserMessage.Error
                 }
                 completionCenter.message(message)
+            }
+        }
+    }
+
+    /** Runs a habit action; a completion goes to the reward host, a refusal says so, nothing else needs saying. */
+    private fun habitAction(action: suspend () -> HabitActionResult) {
+        viewModelScope.launch {
+            try {
+                when (val result = action()) {
+                    is HabitActionResult.Completed -> completionCenter.completed(result.outcome)
+                    HabitActionResult.NotAllowed, HabitActionResult.NotFound -> completionCenter.message(UserMessage.HabitNotAllowed)
+                    is HabitActionResult.Progressed, HabitActionResult.Done -> Unit
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Timber.e(e, "Habit action failed")
+                completionCenter.message(UserMessage.Error)
             }
         }
     }
@@ -176,10 +245,11 @@ internal fun TodayModel.toUiState(): TodayUiState {
         main = directive.firstOrNull { it.type == QuestType.MAIN }?.let { it.toRowModel(pathBadges[it.id]) },
         sides = directive.filter { it.type == QuestType.SIDE }.map { it.toRowModel() },
         paths = pathQuests.map { it.toRowModel(pathBadges[it.id]) },
-        habits = habits.map { it.toRowModel() },
+        habits = habits.map { it.toRowModel(habit = habitInfo[it.id]?.let { info -> it.toHabitRow(info, currentBlock) }) },
         habitIdByQuest = habits.mapNotNull { quest -> quest.habitId?.let { quest.id to it } }.toMap(),
         completed = counted.count { it.status == QuestStatus.COMPLETED },
-        total = counted.size,
+        // A skipped habit is neither done nor owed today (GD §16.2).
+        total = counted.count { it.status != QuestStatus.SKIPPED },
         cleared = hunter.todayCleared,
         systemLine = systemLine,
         currentBlock = currentBlock,
@@ -200,7 +270,18 @@ internal fun TodayModel.toUiState(): TodayUiState {
     )
 }
 
-internal fun QuestInstanceEntity.toRowModel(badge: PathBadgeInfo? = null) = QuestRowModel(
+/** The habit part of a row (GD §16.1-16.2). Kept-it opens with the Evening block, which Today re-derives, never on a timer. */
+internal fun QuestInstanceEntity.toHabitRow(info: HabitTodayInfo, currentBlock: TimeOfDay) = HabitRowModel(
+    type = info.type,
+    progress = progress,
+    weekDone = info.weekDone.takeIf { info.timesPerWeek != null },
+    weekTarget = info.timesPerWeek,
+    skipped = status == QuestStatus.SKIPPED,
+    slipped = info.type == HabitType.NEGATIVE && status == QuestStatus.MISSED,
+    keptWindowOpen = currentBlock == TimeOfDay.EVENING,
+)
+
+internal fun QuestInstanceEntity.toRowModel(badge: PathBadgeInfo? = null, habit: HabitRowModel? = null) = QuestRowModel(
     id = id,
     title = title,
     stat = stat,
@@ -212,11 +293,12 @@ internal fun QuestInstanceEntity.toRowModel(badge: PathBadgeInfo? = null) = Ques
     state = when (status) {
         QuestStatus.COMPLETED -> QuestRowState.DONE
         QuestStatus.ACTIVE, QuestStatus.STARTED -> QuestRowState.OPEN
-        QuestStatus.EXPIRED, QuestStatus.MISSED, QuestStatus.REROLLED, QuestStatus.REPORTED -> QuestRowState.CLOSED
+        QuestStatus.EXPIRED, QuestStatus.MISSED, QuestStatus.REROLLED, QuestStatus.REPORTED, QuestStatus.SKIPPED -> QuestRowState.CLOSED
     },
     pathBadge = badge?.let { PathBadgeModel(it.pathName, it.gateRank) },
     progress = if (SetCounter.appliesTo(unit, verification) && status in OPEN_STATUSES) SetCounter.total(SetCounter.parse(setReps)).takeIf { it > 0 } else null,
     timeOfDay = timeOfDay,
+    habit = habit,
 )
 
 private val OPEN_STATUSES = setOf(QuestStatus.ACTIVE, QuestStatus.STARTED)

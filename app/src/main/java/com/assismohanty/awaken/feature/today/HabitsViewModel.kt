@@ -14,9 +14,15 @@ import com.assismohanty.awaken.core.domain.RemoveHabitUseCase
 import com.assismohanty.awaken.core.domain.RestoreHabitUseCase
 import com.assismohanty.awaken.core.domain.SaveHabitResult
 import com.assismohanty.awaken.core.domain.SaveHabitUseCase
+import com.assismohanty.awaken.core.domain.SkipHabitUseCase
+import com.assismohanty.awaken.core.domain.SkipState
 import com.assismohanty.awaken.core.domain.toDays
+import com.assismohanty.awaken.engine.HabitProblem
+import com.assismohanty.awaken.engine.HabitRules
 import com.assismohanty.awaken.engine.QuestRules
 import com.assismohanty.awaken.engine.model.Difficulty
+import com.assismohanty.awaken.engine.model.HabitFrequency
+import com.assismohanty.awaken.engine.model.HabitType
 import com.assismohanty.awaken.engine.model.Stat
 import com.assismohanty.awaken.engine.model.VerificationSource
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -43,6 +49,10 @@ data class HabitItem(
     val timeOfDay: TimeOfDay? = null,
     /** Planned by a campaign: read-only, ends with the campaign (GD §6.8). */
     val campaign: Boolean = false,
+    val type: HabitType = HabitType.CHECK,
+    val frequency: HabitFrequency = HabitFrequency.DAYS_OF_WEEK,
+    val timesPerWeek: Int? = null,
+    val reminderMinutes: Int? = null,
 )
 
 /** What the hunter can do to a habit from its options sheet. */
@@ -63,12 +73,30 @@ data class HabitEditorState(
     val unit: String = "",
     /** GD §14.5: where this habit shows on Today's timeline; null = Anytime. */
     val timeOfDay: TimeOfDay? = null,
+    /** GD §16.1: what the habit asks. For Timed the [target] field is minutes. */
+    val type: HabitType = HabitType.CHECK,
+    val frequency: HabitFrequency = HabitFrequency.DAYS_OF_WEEK,
+    /** The times-per-week stepper's value (1..6); only used with [HabitFrequency.TIMES_PER_WEEK]. */
+    val timesPerWeek: Int = DEFAULT_TIMES_PER_WEEK,
+    /** GD §16.2: minutes after local midnight; null = no reminder. */
+    val reminderMinutes: Int? = null,
+    val reminderPickerOpen: Boolean = false,
     @StringRes val error: Int? = null,
     val saving: Boolean = false,
 ) {
     /** GD §4.3: self-reported habits go up to Normal. */
     val difficulties: List<Difficulty>
         get() = Difficulty.entries.filter { it <= QuestRules.maxCustomDifficulty(VerificationSource.SELF) }
+
+    /** A Timed habit's difficulty comes from its minutes (GD §16.1), shown read-only. */
+    val timedDifficulty: Difficulty? get() = target.toIntOrNull()?.takeIf { type == HabitType.TIMED && it > 0 }?.let(HabitRules::timedDifficulty)
+
+    companion object {
+        const val DEFAULT_TIMES_PER_WEEK = 3
+        const val DEFAULT_TIMED_MINUTES = 25
+        const val DEFAULT_COUNT_TARGET = 8
+        const val DEFAULT_REMINDER_MINUTES = 9 * 60
+    }
 }
 
 sealed interface HabitSheet {
@@ -77,7 +105,7 @@ sealed interface HabitSheet {
     data class Editor(val editor: HabitEditorState) : HabitSheet
 
     /** Long-press on Today or in the list: Archive or Delete. [fromList] returns to the list afterwards. */
-    data class Options(val habit: HabitItem, val fromList: Boolean) : HabitSheet
+    data class Options(val habit: HabitItem, val fromList: Boolean, val skip: SkipState = SkipState.NONE) : HabitSheet
 
     data class Confirm(val habit: HabitItem, val action: HabitRemoveAction, val fromList: Boolean) : HabitSheet
 }
@@ -103,7 +131,17 @@ sealed interface HabitsEvent {
     data class TargetChanged(val target: String) : HabitsEvent
     data class UnitChanged(val unit: String) : HabitsEvent
     data class BlockChanged(val timeOfDay: TimeOfDay?) : HabitsEvent
+    data class TypeChanged(val type: HabitType) : HabitsEvent
+    data class FrequencyChanged(val frequency: HabitFrequency) : HabitsEvent
+    data class TimesPerWeekChanged(val times: Int) : HabitsEvent
+    data object OpenReminderPicker : HabitsEvent
+    data object DismissReminderPicker : HabitsEvent
+    data class ReminderChanged(val minutes: Int?) : HabitsEvent
     data object Save : HabitsEvent
+
+    /** Options sheet: skip today / take the skip back (GD §16.2). */
+    data object SkipToday : HabitsEvent
+    data object UndoSkip : HabitsEvent
 
     /** The editor's Archive / Delete buttons: confirm first. */
     data object Archive : HabitsEvent
@@ -124,6 +162,7 @@ class HabitsViewModel @Inject constructor(
     private val saveHabit: SaveHabitUseCase,
     private val removeHabit: RemoveHabitUseCase,
     private val restoreHabit: RestoreHabitUseCase,
+    private val skipHabit: SkipHabitUseCase,
 ) : ViewModel() {
 
     private val sheet = MutableStateFlow<HabitSheet>(HabitSheet.None)
@@ -150,11 +189,23 @@ class HabitsViewModel @Inject constructor(
             is HabitsEvent.TargetChanged -> edit { it.copy(target = event.target.filter(Char::isDigit).take(TARGET_MAX_DIGITS), error = null) }
             is HabitsEvent.UnitChanged -> edit { it.copy(unit = event.unit.take(UNIT_MAX_LENGTH)) }
             is HabitsEvent.BlockChanged -> edit { it.copy(timeOfDay = event.timeOfDay) }
+            is HabitsEvent.TypeChanged -> edit { it.withType(event.type) }
+            is HabitsEvent.FrequencyChanged -> edit { it.copy(frequency = event.frequency, error = null) }
+            is HabitsEvent.TimesPerWeekChanged -> edit { it.copy(timesPerWeek = event.times.coerceIn(HabitRules.WEEKLY_MIN, HabitRules.WEEKLY_MAX), error = null) }
+            HabitsEvent.OpenReminderPicker -> edit { it.copy(reminderPickerOpen = true) }
+            HabitsEvent.DismissReminderPicker -> edit { it.copy(reminderPickerOpen = false) }
+            is HabitsEvent.ReminderChanged -> edit { it.copy(reminderMinutes = event.minutes, reminderPickerOpen = false, error = null) }
+            HabitsEvent.SkipToday -> skip(undo = false)
+            HabitsEvent.UndoSkip -> skip(undo = true)
             HabitsEvent.Save -> save()
             HabitsEvent.Archive -> confirmFromEditor(HabitRemoveAction.ARCHIVE)
             HabitsEvent.Delete -> confirmFromEditor(HabitRemoveAction.DELETE)
-            is HabitsEvent.Options -> uiState.value.habits.firstOrNull { it.id == event.habitId }?.let {
-                sheet.value = HabitSheet.Options(it, event.fromList)
+            is HabitsEvent.Options -> uiState.value.habits.firstOrNull { it.id == event.habitId }?.let { habit ->
+                viewModelScope.launch {
+                    // The skip offer is only about today's instance, so it is not asked from the list.
+                    val skip = if (event.fromList) SkipState.NONE else runCatching { skipHabit.state(habit.id) }.getOrDefault(SkipState.NONE)
+                    sheet.value = HabitSheet.Options(habit, event.fromList, skip)
+                }
             }
             is HabitsEvent.RequestRemove -> sheet.update { current ->
                 if (current is HabitSheet.Options) HabitSheet.Confirm(current.habit, event.action, current.fromList) else current
@@ -165,6 +216,20 @@ class HabitsViewModel @Inject constructor(
                 removals.remove(event.token)
                 undo.update { if (it?.token == event.token) null else it }
             }
+        }
+    }
+
+    private fun skip(undo: Boolean) {
+        val options = sheet.value as? HabitSheet.Options ?: return
+        viewModelScope.launch {
+            try {
+                if (undo) skipHabit.undoSkip(options.habit.id) else skipHabit.skip(options.habit.id)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Timber.e(e, "Skipping habit failed")
+            }
+            sheet.value = HabitSheet.None
         }
     }
 
@@ -231,6 +296,10 @@ class HabitsViewModel @Inject constructor(
                         target = editor.target.toIntOrNull() ?: 0,
                         unit = editor.unit.trim(),
                         timeOfDay = editor.timeOfDay,
+                        type = editor.type,
+                        frequency = editor.frequency,
+                        timesPerWeek = editor.timesPerWeek.takeIf { editor.frequency == HabitFrequency.TIMES_PER_WEEK },
+                        reminderMinutes = editor.reminderMinutes,
                     ),
                 )
             } catch (e: CancellationException) {
@@ -247,6 +316,13 @@ class HabitsViewModel @Inject constructor(
                 SaveHabitResult.InvalidTarget -> R.string.habit_error_target
                 SaveHabitResult.DifficultyTooHigh -> R.string.habit_difficulty_note
                 SaveHabitResult.CampaignHabit -> R.string.habit_campaign_locked
+                SaveHabitResult.ReminderLimit -> R.string.habit_reminder_limit
+                is SaveHabitResult.InvalidHabit -> when (result.problem) {
+                    HabitProblem.QUANTITY_TARGET -> R.string.habit_error_quantity
+                    HabitProblem.TIMED_MINUTES -> R.string.habit_error_timed
+                    HabitProblem.TIMES_PER_WEEK -> R.string.habit_error_weekly
+                    HabitProblem.NEGATIVE_NEEDS_DAYS -> R.string.habit_error_avoid_days
+                }
                 null -> R.string.msg_error
             }
             if (error == null) sheet.value = HabitSheet.Overview else edit { it.copy(saving = false, error = error) }
@@ -260,7 +336,25 @@ class HabitsViewModel @Inject constructor(
     }
 }
 
-internal fun HabitEntity.toItem() = HabitItem(id, title, stat, difficulty, daysOfWeekMask.toDays(), target, unit, timeOfDay, campaign = campaignId != null)
+internal fun HabitEntity.toItem() = HabitItem(
+    id, title, stat, difficulty, daysOfWeekMask.toDays(), target, unit, timeOfDay,
+    campaign = campaignId != null, type = type, frequency = frequency, timesPerWeek = timesPerWeek, reminderMinutes = reminderTime,
+)
+
+/** A new type resets what does not carry over: a count starts at 8, a timed habit at 25 minutes, an avoid habit at one a day. */
+private fun HabitEditorState.withType(newType: HabitType): HabitEditorState = copy(
+    type = newType,
+    error = null,
+    target = when (newType) {
+        HabitType.CHECK -> "1"
+        HabitType.QUANTITY -> HabitEditorState.DEFAULT_COUNT_TARGET.toString()
+        HabitType.TIMED -> HabitEditorState.DEFAULT_TIMED_MINUTES.toString()
+        HabitType.NEGATIVE -> "1"
+    },
+    unit = if (newType == HabitType.TIMED || newType == HabitType.NEGATIVE) "" else unit,
+    // An avoid habit runs on fixed weekdays (GD §16.1).
+    frequency = if (newType == HabitType.NEGATIVE) HabitFrequency.DAYS_OF_WEEK else frequency,
+)
 
 private fun HabitItem.toEditor() = HabitEditorState(
     habitId = id,
@@ -271,4 +365,8 @@ private fun HabitItem.toEditor() = HabitEditorState(
     target = target.toString(),
     unit = unit,
     timeOfDay = timeOfDay,
+    type = type,
+    frequency = frequency,
+    timesPerWeek = timesPerWeek ?: HabitEditorState.DEFAULT_TIMES_PER_WEEK,
+    reminderMinutes = reminderMinutes,
 )

@@ -9,8 +9,12 @@ import com.assismohanty.awaken.core.data.db.dao.QuestDao
 import com.assismohanty.awaken.core.data.db.entity.HabitEntity
 import com.assismohanty.awaken.core.data.db.entity.QuestInstanceEntity
 import com.assismohanty.awaken.core.data.repo.TransactionRunner
+import com.assismohanty.awaken.engine.HabitProblem
+import com.assismohanty.awaken.engine.HabitRules
 import com.assismohanty.awaken.engine.QuestRules
 import com.assismohanty.awaken.engine.model.Difficulty
+import com.assismohanty.awaken.engine.model.HabitFrequency
+import com.assismohanty.awaken.engine.model.HabitType
 import com.assismohanty.awaken.engine.model.Stat
 import com.assismohanty.awaken.engine.model.Verification
 import java.time.DayOfWeek
@@ -29,6 +33,13 @@ data class HabitDraft(
     val unit: String,
     /** GD §14.5: the block this habit shows in on Today; null = Anytime. */
     val timeOfDay: TimeOfDay? = null,
+    /** GD §16.1. A Timed habit's [target] is its minutes and its [difficulty] is ignored (it comes from the length). */
+    val type: HabitType = HabitType.CHECK,
+    val frequency: HabitFrequency = HabitFrequency.DAYS_OF_WEEK,
+    /** 1..6 with [HabitFrequency.TIMES_PER_WEEK]. */
+    val timesPerWeek: Int? = null,
+    /** GD §16.2: minutes after local midnight; null = no reminder. */
+    val reminderMinutes: Int? = null,
 )
 
 sealed interface SaveHabitResult {
@@ -39,6 +50,12 @@ sealed interface SaveHabitResult {
     data object InvalidDays : SaveHabitResult
     data object InvalidTarget : SaveHabitResult
     data object DifficultyTooHigh : SaveHabitResult
+
+    /** The type, frequency or target breaks a GD §16.1 rule. */
+    data class InvalidHabit(val problem: HabitProblem) : SaveHabitResult
+
+    /** Two other habits already have a reminder (GD §16.2). */
+    data object ReminderLimit : SaveHabitResult
 }
 
 /** Bit (dayOfWeek.value − 1) per scheduled day; Monday = bit 0 (matches GenerateDirectiveUseCase). */
@@ -55,34 +72,56 @@ class SaveHabitUseCase @Inject constructor(
     private val habitDao: HabitDao,
     private val questDao: QuestDao,
     private val generateDirective: GenerateDirectiveUseCase,
+    private val reminders: HabitReminderScheduling,
     private val transactions: TransactionRunner,
     private val clock: Clock,
 ) {
     suspend operator fun invoke(draft: HabitDraft): SaveHabitResult {
         val title = draft.title.trim()
+        val verification = HabitRules.verificationFor(draft.type)
+        // Avoid habits are one yes/no a day; a Timed habit's difficulty comes from its length (GD §16.1).
+        val target = if (draft.type == HabitType.NEGATIVE) 1 else draft.target
+        val difficulty = if (draft.type == HabitType.TIMED) HabitRules.timedDifficulty(target) else draft.difficulty
+        val unit = when (draft.type) {
+            HabitType.TIMED -> TIMED_UNIT
+            HabitType.NEGATIVE -> ""
+            else -> draft.unit
+        }
+        val flexible = draft.frequency == HabitFrequency.TIMES_PER_WEEK
         when {
             title.isEmpty() -> return SaveHabitResult.InvalidTitle
-            draft.days.isEmpty() -> return SaveHabitResult.InvalidDays
-            draft.target < 1 -> return SaveHabitResult.InvalidTarget
-            draft.difficulty > QuestRules.maxCustomDifficulty(Verification.SELF.source) -> return SaveHabitResult.DifficultyTooHigh
+            !flexible && draft.days.isEmpty() -> return SaveHabitResult.InvalidDays
+            target < 1 -> return SaveHabitResult.InvalidTarget
+            difficulty > QuestRules.maxCustomDifficulty(verification.source) -> return SaveHabitResult.DifficultyTooHigh
         }
+        HabitRules.validate(draft.type, draft.frequency, draft.timesPerWeek, target)?.let { return SaveHabitResult.InvalidHabit(it) }
+        if (draft.reminderMinutes != null && !HabitRules.isValidReminder(draft.reminderMinutes)) return SaveHabitResult.InvalidTarget
         val result = transactions.run {
             val existing = draft.id?.let { habitDao.get(it) }
             // Campaign habits are planned and priced by the engine; they can be archived, not edited (ENGINE_DECISIONS #92).
             if (existing?.campaignId != null) return@run SaveHabitResult.CampaignHabit
             if (existing == null && !QuestRules.canAddCustom(habitDao.countActive())) return@run SaveHabitResult.LimitReached
+            val id = existing?.id ?: UUID.randomUUID().toString()
+            if (draft.reminderMinutes != null && !HabitRules.canSetReminder(habitDao.countRemindersExcept(id))) {
+                return@run SaveHabitResult.ReminderLimit
+            }
             val habit = HabitEntity(
-                id = existing?.id ?: UUID.randomUUID().toString(),
+                id = id,
                 title = title,
                 stat = draft.stat,
-                difficulty = draft.difficulty,
-                verification = Verification.SELF,
-                daysOfWeekMask = draft.days.toMask(),
-                target = draft.target,
-                unit = draft.unit,
+                difficulty = difficulty,
+                verification = verification,
+                // A flexible habit is due any day: all seven bits, so nothing else needs to special-case it.
+                daysOfWeekMask = if (flexible) ALL_DAYS_MASK else draft.days.toMask(),
+                target = target,
+                unit = unit,
                 active = true,
                 createdAt = existing?.createdAt ?: clock.now(),
                 timeOfDay = draft.timeOfDay,
+                type = draft.type,
+                frequency = draft.frequency,
+                timesPerWeek = if (flexible) draft.timesPerWeek else null,
+                reminderTime = draft.reminderMinutes,
             )
             habitDao.upsert(habit)
             hunterDao.getProfile()?.let { profile ->
@@ -95,9 +134,21 @@ class SaveHabitUseCase @Inject constructor(
         // A new habit scheduled today joins today's directive straight away (deterministic id, so no duplicates).
         if (result is SaveHabitResult.Saved) {
             hunterDao.getProfile()?.let { generateDirective(clock.gameDate(it.dayStartHour)) }
+            reminders.rearm()
         }
         return result
     }
+
+    private companion object {
+        const val TIMED_UNIT = "min"
+        const val ALL_DAYS_MASK = 0b1111111
+    }
+}
+
+/** Arms or cancels the per-habit reminders (GD §16.2). The WorkManager implementation lives in `core/work`. */
+interface HabitReminderScheduling {
+    /** Re-reads every habit with a reminder and arms exactly those; cancels the rest. */
+    suspend fun rearm()
 }
 
 /** What an archive or delete took away, so Undo can put back exactly that. */

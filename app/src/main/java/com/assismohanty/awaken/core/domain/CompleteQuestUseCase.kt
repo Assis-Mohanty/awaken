@@ -3,6 +3,7 @@ package com.assismohanty.awaken.core.domain
 import com.assismohanty.awaken.core.data.clock.Clock
 import com.assismohanty.awaken.core.data.clock.gameDate
 import com.assismohanty.awaken.core.data.db.dao.CompletionDao
+import com.assismohanty.awaken.core.data.db.dao.HabitDao
 import com.assismohanty.awaken.core.data.db.dao.HunterDao
 import com.assismohanty.awaken.core.data.db.dao.PathDao
 import com.assismohanty.awaken.core.data.db.dao.QuestDao
@@ -21,6 +22,7 @@ import com.assismohanty.awaken.engine.RankRules
 import com.assismohanty.awaken.engine.XpCalculator
 import com.assismohanty.awaken.engine.model.BreakdownItem
 import com.assismohanty.awaken.engine.model.Difficulty
+import com.assismohanty.awaken.engine.model.HabitType
 import com.assismohanty.awaken.engine.model.LedgerKind
 import com.assismohanty.awaken.engine.model.QuestReward
 import com.assismohanty.awaken.engine.model.QuestStatus
@@ -79,6 +81,7 @@ class CompleteQuestUseCase @Inject constructor(
     private val trialDao: TrialDao,
     private val trialReader: TrialReader,
     private val pathDao: PathDao,
+    private val habitDao: HabitDao,
     private val ledger: LedgerRepository,
     private val reader: GameStateReader,
     private val transactions: TransactionRunner,
@@ -87,11 +90,23 @@ class CompleteQuestUseCase @Inject constructor(
     /** Manual completion from the UI: SELF quests only. */
     suspend operator fun invoke(questInstanceId: String): CompleteQuestResult = complete(questInstanceId, verifiedBy = null)
 
+    /**
+     * Completion driven by a habit's own rule (GD §16.1): a count habit reaching its target, or an avoid habit confirmed in the
+     * evening. Still SELF, so the SELF cap applies. A manual tap on such a quest is refused by [invoke].
+     */
+    suspend fun completeHabit(questInstanceId: String): CompleteQuestResult =
+        complete(questInstanceId, verifiedBy = null, habitDriven = true)
+
     /** Verified entry point for Focus Gates (TIMER, Phase 8), Health Connect sync (HEALTH, Phase 11) and Screen Discipline (USAGE). */
     suspend fun completeVerified(questInstanceId: String, verifiedBy: VerificationSource, gateFragment: Boolean = true): CompleteQuestResult =
         complete(questInstanceId, verifiedBy, gateFragment)
 
-    private suspend fun complete(questInstanceId: String, verifiedBy: VerificationSource?, gateFragment: Boolean = true): CompleteQuestResult =
+    private suspend fun complete(
+        questInstanceId: String,
+        verifiedBy: VerificationSource?,
+        gateFragment: Boolean = true,
+        habitDriven: Boolean = false,
+    ): CompleteQuestResult =
         transactions.run {
             val profile = hunterDao.getProfile() ?: return@run CompleteQuestResult.NoHunter
             val quest = questDao.get(questInstanceId) ?: return@run CompleteQuestResult.NotFound
@@ -106,6 +121,9 @@ class CompleteQuestUseCase @Inject constructor(
             val dayOk = if (verifiedBy == VerificationSource.USAGE) quest.gameDate < currentDay else quest.gameDate == currentDay
             if (!dayOk) return@run CompleteQuestResult.WrongDay
 
+            if (!habitDriven && verifiedBy == null && quest.habitId?.let { habitDao.get(it)?.type }.let { it == HabitType.QUANTITY || it == HabitType.NEGATIVE }) {
+                return@run CompleteQuestResult.VerificationRequired
+            }
             val source = quest.verification.source
             // SELF quests complete by hand only; HEALTH/TIMER/USAGE only through their own verifier.
             val expectedVerifier = if (source == VerificationSource.SELF) null else source
@@ -163,7 +181,7 @@ class CompleteQuestUseCase @Inject constructor(
                     unlockedAchievements = unlocked,
                     // Timed work is final: a cleared Focus Gate, or a Path quest cleared through its gate (ENGINE_DECISIONS #36, #76).
                     undoable = quest.type != QuestType.GATE && source != VerificationSource.HEALTH && source != VerificationSource.USAGE &&
-                        !(source == VerificationSource.TIMER && quest.pathSlotId != null),
+                        !(source == VerificationSource.TIMER && (quest.pathSlotId != null || quest.habitId != null)),
                     pathQuest = quest.pathSlotId != null,
                 ),
             )

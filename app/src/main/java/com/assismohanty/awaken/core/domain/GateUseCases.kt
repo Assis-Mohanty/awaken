@@ -4,6 +4,7 @@ import com.assismohanty.awaken.core.data.clock.Clock
 import com.assismohanty.awaken.core.data.clock.DeviceUptime
 import com.assismohanty.awaken.core.data.clock.gameDate
 import com.assismohanty.awaken.core.data.db.dao.GateRunDao
+import com.assismohanty.awaken.core.data.db.dao.HabitDao
 import com.assismohanty.awaken.core.data.db.dao.HunterDao
 import com.assismohanty.awaken.core.data.db.dao.QuestDao
 import com.assismohanty.awaken.core.data.db.entity.GateRunEntity
@@ -27,6 +28,7 @@ import com.assismohanty.awaken.engine.GateTiming
 import java.time.Instant
 import com.assismohanty.awaken.engine.GateRunMath
 import com.assismohanty.awaken.engine.model.GateRank
+import com.assismohanty.awaken.engine.model.HabitType
 import com.assismohanty.awaken.engine.model.QuestStatus
 import com.assismohanty.awaken.engine.model.QuestType
 import com.assismohanty.awaken.engine.model.Stat
@@ -41,6 +43,9 @@ import kotlinx.coroutines.sync.withLock
 
 sealed interface StartGateResult {
     data class Started(val run: GateRunEntity) : StartGateResult
+
+    /** The quest is not an open Timed habit of today. */
+    data object NotATimedHabit : StartGateResult
     data object NoHunter : StartGateResult
     data object AlreadyRunning : StartGateResult
     /** The gate could not end, with a full pause, before the day resets (ENGINE_DECISIONS #35). */
@@ -57,6 +62,11 @@ sealed interface GateCheck {
     data class Logged(val run: GateRunEntity, val outcome: FocusRunOutcome) : GateCheck
 }
 
+/** Starts the focus session of a Timed habit and arms its end (GD §16.1). Implemented by the gate coordinator; a seam so Today can be tested. */
+fun interface TimedHabitStarter {
+    suspend fun startHabit(questInstanceId: String): StartGateResult
+}
+
 /** Stats a gate can train (GD §8: INT default, or WIL/CHA/STR for practice sessions). */
 val GATE_STATS: List<Stat> = listOf(Stat.INT, Stat.WIL, Stat.CHA, Stat.STR)
 
@@ -66,6 +76,7 @@ const val GATE_LABEL_MAX = 40
 class StartGateUseCase @Inject constructor(
     private val hunterDao: HunterDao,
     private val questDao: QuestDao,
+    private val habitDao: HabitDao,
     private val gateRunDao: GateRunDao,
     private val transactions: TransactionRunner,
     private val uptime: DeviceUptime,
@@ -82,6 +93,41 @@ class StartGateUseCase @Inject constructor(
         // The quest opens at the lowest tier; a stopwatch is repriced when it stops, a custom run keeps its tier.
         val rank = FocusRules.tierFor(planned) ?: GateRank.E
         return open(rank, mode, planned, stat, label, subjectId)
+    }
+
+    /**
+     * The focus session of a Timed habit (GD §16.1): a custom-length run linked to the habit's own quest, which is paid once
+     * when the run clears. It is not one of the day's four paid custom runs (§8.1 P5) and it is final once cleared.
+     */
+    suspend fun startHabit(questInstanceId: String): StartGateResult = transactions.run {
+        val profile = hunterDao.getProfile() ?: return@run StartGateResult.NoHunter
+        val quest = questDao.get(questInstanceId) ?: return@run StartGateResult.NotATimedHabit
+        val habit = quest.habitId?.let { habitDao.get(it) }
+        val today = clock.gameDate(profile.dayStartHour)
+        val open = quest.status == QuestStatus.ACTIVE || quest.status == QuestStatus.STARTED
+        if (habit?.type != HabitType.TIMED || !open || quest.gameDate != today) return@run StartGateResult.NotATimedHabit
+        if (gateRunDao.running() != null) return@run StartGateResult.AlreadyRunning
+        val now = clock.now()
+        val minutes = quest.target
+        if (!GateRunMath.canStart(Duration.ofMinutes(minutes.toLong()), now, GameDay.endOf(today, clock.zone(), profile.dayStartHour))) {
+            return@run StartGateResult.TooLate
+        }
+        val run = GateRunEntity(
+            id = UUID.randomUUID().toString(),
+            questInstanceId = quest.id,
+            gateRank = FocusRules.tierFor(minutes) ?: GateRank.E,
+            stat = quest.stat,
+            label = quest.title.take(GATE_LABEL_MAX),
+            plannedSec = minutes * 60,
+            startedAt = now,
+            bootCount = uptime.bootCount(),
+            status = GateRunStatus.RUNNING,
+            mode = GateMode.CUSTOM,
+            habitQuestId = quest.id,
+        )
+        questDao.markStarted(quest.id, now)
+        gateRunDao.upsert(run)
+        StartGateResult.Started(run)
     }
 
     private suspend fun open(rank: GateRank, mode: GateMode, minutes: Int, stat: Stat, label: String?, subjectId: String?): StartGateResult =
@@ -275,6 +321,8 @@ class GateRunController @Inject constructor(
 
     private suspend fun claim(run: GateRunEntity): GateCheck {
         if (run.mode == GateMode.PRESET) return claimPaid(run, fragment = true)
+        // A Timed habit's run pays its own quest at the habit's tier, outside the custom-run cap (GD §16.1); P4 still decides the fragment.
+        if (run.habitQuestId != null) return claimPaid(run, fragment = run.plannedSec / 60 >= FocusRules.FRAGMENT_MIN_MINUTES)
         val quest = questDao.get(run.questInstanceId)
         val today = quest?.gameDate
         val paidToday = if (today == null) 0 else focusDao.paidCustomRuns(today)
@@ -307,8 +355,8 @@ class GateRunController @Inject constructor(
         val closed = run.copy(status = status, endedAt = clock.now(), collapseReason = reason, lastStopAt = null, lastStopElapsedMs = null)
         gateRunDao.upsert(closed)
         val quest = questDao.get(run.questInstanceId)
-        if (quest?.pathSlotId != null) {
-            // A Path quest outlives its gate attempt: leaving or collapsing reopens it for another go today.
+        if (quest != null && (quest.pathSlotId != null || run.habitQuestId != null)) {
+            // A Path quest or a Timed habit outlives its gate attempt: leaving or collapsing reopens it for another go today.
             questDao.reopen(quest.id)
         } else if (quest != null && (quest.status == QuestStatus.STARTED || quest.status == QuestStatus.ACTIVE)) {
             questDao.setStatus(quest.id, QuestStatus.EXPIRED, completedAt = null)

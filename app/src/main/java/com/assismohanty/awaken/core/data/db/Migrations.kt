@@ -269,9 +269,24 @@ val MIGRATION_17_18 = object : Migration(17, 18) {
     }
 }
 
+/**
+ * v18 → v19: habit types, frequency and reminders, count progress, and the quest a Timed habit's run belongs to
+ * (GD §16.1–16.2). Every column defaults to the behaviour habits had before (CHECK, fixed weekdays, no reminder).
+ */
+val MIGRATION_18_19 = object : Migration(18, 19) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE `habit` ADD COLUMN `type` TEXT NOT NULL DEFAULT 'CHECK'")
+        db.execSQL("ALTER TABLE `habit` ADD COLUMN `frequency` TEXT NOT NULL DEFAULT 'DAYS_OF_WEEK'")
+        db.execSQL("ALTER TABLE `habit` ADD COLUMN `times_per_week` INTEGER")
+        db.execSQL("ALTER TABLE `habit` ADD COLUMN `reminder_time` INTEGER")
+        db.execSQL("ALTER TABLE `quest_instance` ADD COLUMN `progress` INTEGER NOT NULL DEFAULT 0")
+        db.execSQL("ALTER TABLE `gate_run` ADD COLUMN `habit_quest_id` TEXT")
+    }
+}
+
 /** Every migration, in order. The database builder and the migration test both use this list. */
 val ALL_MIGRATIONS: Array<Migration> = arrayOf(
     MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9,
     MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17,
-    MIGRATION_17_18,
+    MIGRATION_17_18, MIGRATION_18_19,
 )

@@ -10,6 +10,8 @@ import com.assismohanty.awaken.core.data.repo.GameStateReader
 import com.assismohanty.awaken.core.data.repo.TemplateRepository
 import com.assismohanty.awaken.core.data.repo.TransactionRunner
 import com.assismohanty.awaken.engine.DirectiveGenerator
+import com.assismohanty.awaken.engine.HabitRules
+import com.assismohanty.awaken.engine.model.HabitFrequency
 import com.assismohanty.awaken.engine.model.QuestStatus
 import com.assismohanty.awaken.engine.model.QuestType
 import java.time.Instant
@@ -52,7 +54,7 @@ class GenerateDirectiveUseCase @Inject constructor(
             discipline.draftFor(profile, gameDate)?.let { questDao.insertAll(listOf(it.toEntity(now))) }
             questDao.insertAll(
                 habitDao.active()
-                    .filter { it.isScheduledOn(gameDate) }
+                    .filter { it.isDueOn(gameDate) }
                     .map { habit -> habit.toQuest(profile.hunterId, gameDate, now) },
             )
             questDao.getForDate(gameDate)
@@ -61,6 +63,17 @@ class GenerateDirectiveUseCase @Inject constructor(
 
     private fun HabitEntity.isScheduledOn(date: LocalDate): Boolean =
         daysOfWeekMask and (1 shl (date.dayOfWeek.value - 1)) != 0
+
+    /**
+     * A fixed-day habit is due on its weekdays. A times-per-week habit is due every day of the ISO week until its quota is
+     * completed (GD §16.1); an instance that already exists is never removed, only not created again.
+     */
+    private suspend fun HabitEntity.isDueOn(date: LocalDate): Boolean = when (frequency) {
+        HabitFrequency.DAYS_OF_WEEK -> isScheduledOn(date)
+        HabitFrequency.TIMES_PER_WEEK -> timesPerWeek?.let { quota ->
+            HabitRules.flexibleNeedsInstance(quota, questDao.habitCompletionsBetween(id, HabitRules.weekStart(date), HabitRules.weekEnd(date)))
+        } ?: false
+    }
 
     private fun HabitEntity.toQuest(hunterId: String, gameDate: LocalDate, now: Instant) = QuestInstanceEntity(
         id = DirectiveGenerator.instanceId(hunterId, gameDate, "habit:$id"),

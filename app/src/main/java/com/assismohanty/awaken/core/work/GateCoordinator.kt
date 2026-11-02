@@ -21,7 +21,12 @@ import com.assismohanty.awaken.engine.GateMode
 import com.assismohanty.awaken.engine.GateRunMath
 import com.assismohanty.awaken.engine.model.GateRank
 import com.assismohanty.awaken.engine.model.Stat
+import com.assismohanty.awaken.core.domain.TimedHabitStarter
+import dagger.Binds
+import dagger.Module
+import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
+import dagger.hilt.components.SingletonComponent
 import java.time.Duration
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -48,7 +53,7 @@ class GateCoordinator @Inject constructor(
     private val chimePlayer: ChimePlayer,
     private val uiPrefs: UiPrefsRepository,
     @ApplicationScope private val appScope: CoroutineScope,
-) : DefaultLifecycleObserver {
+) : DefaultLifecycleObserver, TimedHabitStarter {
 
     private val workManager: WorkManager get() = WorkManager.getInstance(context)
 
@@ -77,8 +82,15 @@ class GateCoordinator @Inject constructor(
         when (result) {
             is StartGateResult.Started -> scheduleEnd(result.run)
             StartGateResult.TooLate -> completionCenter.message(UserMessage.GateTooLate)
-            StartGateResult.AlreadyRunning, StartGateResult.NoHunter -> Unit
+            StartGateResult.AlreadyRunning, StartGateResult.NoHunter, StartGateResult.NotATimedHabit -> Unit
         }
+        return result
+    }
+
+    /** The focus session of a Timed habit (GD §16.1): armed like any other timed run, paid as the habit quest. */
+    override suspend fun startHabit(questInstanceId: String): StartGateResult {
+        val result = startGate.startHabit(questInstanceId)
+        if (result is StartGateResult.Started) scheduleEnd(result.run)
         return result
     }
 
@@ -88,7 +100,7 @@ class GateCoordinator @Inject constructor(
         when (result) {
             is StartGateResult.Started -> scheduleEnd(result.run)
             StartGateResult.TooLate -> completionCenter.message(UserMessage.GateTooLate)
-            StartGateResult.AlreadyRunning, StartGateResult.NoHunter -> Unit
+            StartGateResult.AlreadyRunning, StartGateResult.NoHunter, StartGateResult.NotATimedHabit -> Unit
         }
         return result
     }
@@ -194,4 +206,11 @@ class GateCoordinator @Inject constructor(
         val now = clock.now()
         GateEndWorker.schedule(workManager, Duration.between(now, GateRunMath.endAt(run.timing, now)))
     }
+}
+
+@Module
+@InstallIn(SingletonComponent::class)
+abstract class TimedHabitModule {
+    @Binds
+    abstract fun bindTimedHabitStarter(impl: GateCoordinator): TimedHabitStarter
 }

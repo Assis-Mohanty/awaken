@@ -16,6 +16,8 @@ import com.assismohanty.awaken.engine.GateTiming
 import com.assismohanty.awaken.engine.RankRules
 import com.assismohanty.awaken.engine.model.Difficulty
 import com.assismohanty.awaken.engine.model.GateRank
+import com.assismohanty.awaken.engine.model.HabitFrequency
+import com.assismohanty.awaken.engine.model.HabitType
 import com.assismohanty.awaken.engine.model.LedgerKind
 import com.assismohanty.awaken.engine.model.QuestStatus
 import com.assismohanty.awaken.engine.model.QuestType
@@ -111,6 +113,8 @@ data class QuestInstanceEntity(
     @ColumnInfo(name = "set_reps", defaultValue = "") val setReps: String = "",
     /** Time-of-day block copied at generation (GD §14.5); null = Anytime. Presentation only. */
     @ColumnInfo(name = "time_of_day") val timeOfDay: TimeOfDay? = null,
+    /** Count-habit progress for the day, 0..target (GD §16.1). Progress only: a reward is paid when it reaches the target. */
+    @ColumnInfo(name = "progress", defaultValue = "0") val progress: Int = 0,
 )
 
 /** One completion attempt; [id] is the completionId `questInstanceId#attemptN` (GD §9.3). Not a ledger table. */
@@ -151,6 +155,14 @@ data class HabitEntity(
     @ColumnInfo(name = "template_id") val templateId: String? = null,
     /** The user's time-of-day block for this habit (GD §14.5); null = Anytime. */
     @ColumnInfo(name = "time_of_day") val timeOfDay: TimeOfDay? = null,
+    /** What the habit asks (GD §16.1). Habits from before v1.2 are CHECK. */
+    @ColumnInfo(name = "type", defaultValue = "CHECK") val type: HabitType = HabitType.CHECK,
+    /** Fixed weekdays ([daysOfWeekMask]) or [timesPerWeek] days in the ISO week (GD §16.1). */
+    @ColumnInfo(name = "frequency", defaultValue = "DAYS_OF_WEEK") val frequency: HabitFrequency = HabitFrequency.DAYS_OF_WEEK,
+    /** 1..6 when [frequency] is TIMES_PER_WEEK, else null. */
+    @ColumnInfo(name = "times_per_week") val timesPerWeek: Int? = null,
+    /** Reminder as minutes after local midnight; null = none. At most two habits have one (GD §16.2). */
+    @ColumnInfo(name = "reminder_time") val reminderTime: Int? = null,
 )
 
 /** THE LEDGER (append-only, GD §9.3). Never update or delete rows; `stat`/`item_id` use '' instead of NULL. */
@@ -237,6 +249,8 @@ data class GateRunEntity(
     @ColumnInfo(name = "paused_before_ms", defaultValue = "0") val pausedBeforeMs: Long = 0,
     /** True when the app went to the background while Focus Lock was active: that stretch away is not a breach (GD 8.2). */
     @ColumnInfo(name = "lock_at_stop", defaultValue = "0") val lockAtStop: Boolean = false,
+    /** The habit quest this run was started for (a Timed habit, GD §16.1): paid once as that quest, never as a standalone gate. */
+    @ColumnInfo(name = "habit_quest_id") val habitQuestId: String? = null,
 ) {
     val timing: GateTiming
         get() = GateTiming(

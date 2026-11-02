@@ -54,6 +54,7 @@ fun UserMessage.text(resources: LexResources): String = when (this) {
     UserMessage.FocusShortRun -> resources.getString(R.string.msg_focus_short_run, FocusRules.STOPWATCH_MIN_MINUTES)
     UserMessage.FocusOverCap -> resources.getString(R.string.msg_focus_over_cap, FocusRules.DAILY_CAP)
     UserMessage.GateAlreadyRunning -> resources.getString(R.string.msg_gate_running)
+    UserMessage.HabitNotAllowed -> resources.getString(R.string.msg_habit_not_allowed)
     UserMessage.QuestReported -> resources.getString(R.string.report_done)
     UserMessage.TrialStarted -> resources.getString(R.string.msg_trial_started)
     UserMessage.TrialNoStages -> resources.getString(R.string.msg_trial_no_stages)

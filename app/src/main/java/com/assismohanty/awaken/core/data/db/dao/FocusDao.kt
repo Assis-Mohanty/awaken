@@ -38,7 +38,7 @@ interface FocusDao {
     /** Custom and stopwatch runs that were paid on [gameDate]: the daily cap counts these (GD §8.1 P5). */
     @Query(
         "SELECT COUNT(*) FROM gate_run g JOIN quest_instance q ON q.id = g.quest_instance_id " +
-            "WHERE g.status = 'CLEARED' AND g.mode IN ('CUSTOM', 'STOPWATCH') AND q.game_date = :gameDate",
+            "WHERE g.status = 'CLEARED' AND g.mode IN ('CUSTOM', 'STOPWATCH') AND g.habit_quest_id IS NULL AND q.game_date = :gameDate",
     )
     suspend fun paidCustomRuns(gameDate: LocalDate): Int
 

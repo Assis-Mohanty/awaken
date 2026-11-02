@@ -5,7 +5,20 @@ import com.assismohanty.awaken.core.designsystem.components.nameRes
 import com.assismohanty.awaken.engine.model.TimeOfDay
 import com.assismohanty.awaken.core.designsystem.lexicon.lexString
 import com.assismohanty.awaken.core.designsystem.lexicon.lexPlural
+import android.text.format.DateFormat
 import androidx.annotation.StringRes
+import androidx.compose.material3.TimeInput
+import androidx.compose.material3.rememberTimePickerState
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.window.Dialog
+import com.assismohanty.awaken.core.designsystem.components.SystemWindow
+import com.assismohanty.awaken.core.domain.SkipState
+import com.assismohanty.awaken.engine.HabitRules
+import com.assismohanty.awaken.engine.model.HabitFrequency
+import com.assismohanty.awaken.engine.model.HabitType
+import java.time.LocalTime
+import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
@@ -86,7 +99,7 @@ fun HabitSheets(state: HabitsUiState, onEvent: (HabitsEvent) -> Unit) {
         when (val sheet = state.sheet) {
             HabitSheet.Overview -> HabitOverview(state, onEvent, content)
             is HabitSheet.Editor -> HabitEditor(sheet.editor, onEvent, content)
-            is HabitSheet.Options -> HabitOptions(sheet.habit, onEvent, content)
+            is HabitSheet.Options -> HabitOptions(sheet.habit, onEvent, content, sheet.skip)
             HabitSheet.None, is HabitSheet.Confirm -> Unit
         }
     }
@@ -131,7 +144,15 @@ fun HabitOverview(state: HabitsUiState, onEvent: (HabitsEvent) -> Unit, modifier
                 Column(modifier = Modifier.weight(1f)) {
                     Text(habit.title, style = type.body, color = colors.textPrimary)
                     Text(
-                        text = lexString(R.string.habit_schedule_line, habit.days.sorted().joinToString(" ") { it.shortName(locale) }, habit.difficulty.label()),
+                        text = lexString(
+                            R.string.habit_schedule_line,
+                            if (habit.frequency == HabitFrequency.TIMES_PER_WEEK) {
+                                lexString(R.string.habit_times_value, habit.timesPerWeek ?: 1)
+                            } else {
+                                habit.days.sorted().joinToString(" ") { it.shortName(locale) }
+                            },
+                            habit.difficulty.label(),
+                        ),
                         style = type.caption,
                         color = colors.textSecondary,
                     )
@@ -172,6 +193,22 @@ fun HabitEditor(editor: HabitEditorState, onEvent: (HabitsEvent) -> Unit, modifi
             modifier = Modifier.fillMaxWidth(),
         )
 
+        SectionLabel(R.string.habit_type_label)
+        FlowRow(
+            modifier = Modifier.selectableGroup(),
+            horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
+            verticalArrangement = Arrangement.spacedBy(Spacing.xs),
+        ) {
+            HabitType.entries.forEach { habitType ->
+                ChoiceChip(
+                    text = lexString(habitType.nameRes()),
+                    selected = editor.type == habitType,
+                    onClick = { onEvent(HabitsEvent.TypeChanged(habitType)) },
+                )
+            }
+        }
+        Text(lexString(editor.type.noteRes()), style = type.caption, color = colors.textSecondary)
+
         SectionLabel(R.string.habit_stat)
         FlowRow(
             modifier = Modifier.selectableGroup(),
@@ -190,17 +227,25 @@ fun HabitEditor(editor: HabitEditorState, onEvent: (HabitsEvent) -> Unit, modifi
         }
 
         SectionLabel(R.string.habit_difficulty)
-        Row(modifier = Modifier.selectableGroup(), horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
-            editor.difficulties.forEach { difficulty ->
-                ChoiceChip(
-                    text = difficulty.label(),
-                    selected = editor.difficulty == difficulty,
-                    onClick = { onEvent(HabitsEvent.DifficultyChanged(difficulty)) },
-                    modifier = Modifier.weight(1f),
-                )
+        if (editor.type == HabitType.TIMED) {
+            Text(
+                text = editor.timedDifficulty?.let { lexString(R.string.habit_timed_difficulty, it.label(), editor.target.toIntOrNull() ?: 0) }.orEmpty(),
+                style = type.body,
+                color = colors.textPrimary,
+            )
+        } else {
+            Row(modifier = Modifier.selectableGroup(), horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+                editor.difficulties.forEach { difficulty ->
+                    ChoiceChip(
+                        text = difficulty.label(),
+                        selected = editor.difficulty == difficulty,
+                        onClick = { onEvent(HabitsEvent.DifficultyChanged(difficulty)) },
+                        modifier = Modifier.weight(1f),
+                    )
+                }
             }
+            Text(lexString(R.string.habit_difficulty_note), style = type.caption, color = colors.textSecondary)
         }
-        Text(lexString(R.string.habit_difficulty_note), style = type.caption, color = colors.textSecondary)
 
         SectionLabel(R.string.habit_block)
         FlowRow(
@@ -219,36 +264,104 @@ fun HabitEditor(editor: HabitEditorState, onEvent: (HabitsEvent) -> Unit, modifi
             }
         }
 
-        SectionLabel(R.string.habit_days)
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.xs), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
-            DayOfWeek.entries.forEach { day ->
+        SectionLabel(R.string.habit_freq_label)
+        if (editor.type != HabitType.NEGATIVE) {
+            Row(modifier = Modifier.selectableGroup(), horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
                 ChoiceChip(
-                    text = day.shortName(locale),
-                    selected = day in editor.days,
-                    onClick = { onEvent(HabitsEvent.DayToggled(day)) },
-                    multiSelect = true,
+                    text = lexString(R.string.habit_freq_days),
+                    selected = editor.frequency == HabitFrequency.DAYS_OF_WEEK,
+                    onClick = { onEvent(HabitsEvent.FrequencyChanged(HabitFrequency.DAYS_OF_WEEK)) },
+                    modifier = Modifier.weight(1f),
+                )
+                ChoiceChip(
+                    text = lexString(R.string.habit_freq_times),
+                    selected = editor.frequency == HabitFrequency.TIMES_PER_WEEK,
+                    onClick = { onEvent(HabitsEvent.FrequencyChanged(HabitFrequency.TIMES_PER_WEEK)) },
+                    modifier = Modifier.weight(1f),
                 )
             }
         }
+        if (editor.frequency == HabitFrequency.TIMES_PER_WEEK) {
+            FlowRow(
+                modifier = Modifier.selectableGroup(),
+                horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
+                verticalArrangement = Arrangement.spacedBy(Spacing.xs),
+            ) {
+                (HabitRules.WEEKLY_MIN..HabitRules.WEEKLY_MAX).forEach { times ->
+                    ChoiceChip(
+                        text = lexString(R.string.habit_times_value, times),
+                        selected = editor.timesPerWeek == times,
+                        onClick = { onEvent(HabitsEvent.TimesPerWeekChanged(times)) },
+                    )
+                }
+            }
+            Text(lexString(R.string.habit_times_note), style = type.caption, color = colors.textSecondary)
+        } else {
+            SectionLabel(R.string.habit_days)
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.xs), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+                DayOfWeek.entries.forEach { day ->
+                    ChoiceChip(
+                        text = day.shortName(locale),
+                        selected = day in editor.days,
+                        onClick = { onEvent(HabitsEvent.DayToggled(day)) },
+                        multiSelect = true,
+                    )
+                }
+            }
+        }
 
-        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
-            OutlinedTextField(
+        when (editor.type) {
+            HabitType.CHECK, HabitType.QUANTITY -> Row(horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+                OutlinedTextField(
+                    value = editor.target,
+                    onValueChange = { onEvent(HabitsEvent.TargetChanged(it)) },
+                    label = { Text(lexString(R.string.habit_target)) },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    colors = fieldColors,
+                    modifier = Modifier.weight(1f),
+                )
+                OutlinedTextField(
+                    value = editor.unit,
+                    onValueChange = { onEvent(HabitsEvent.UnitChanged(it)) },
+                    label = { Text(lexString(R.string.habit_unit)) },
+                    singleLine = true,
+                    colors = fieldColors,
+                    modifier = Modifier.weight(1f),
+                )
+            }
+            HabitType.TIMED -> OutlinedTextField(
                 value = editor.target,
                 onValueChange = { onEvent(HabitsEvent.TargetChanged(it)) },
-                label = { Text(lexString(R.string.habit_target)) },
+                label = { Text(lexString(R.string.habit_timed_minutes)) },
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 colors = fieldColors,
-                modifier = Modifier.weight(1f),
+                modifier = Modifier.fillMaxWidth(),
             )
-            OutlinedTextField(
-                value = editor.unit,
-                onValueChange = { onEvent(HabitsEvent.UnitChanged(it)) },
-                label = { Text(lexString(R.string.habit_unit)) },
-                singleLine = true,
-                colors = fieldColors,
-                modifier = Modifier.weight(1f),
+            HabitType.NEGATIVE -> Unit
+        }
+
+        SectionLabel(R.string.habit_reminder_label)
+        Row(
+            modifier = Modifier.selectableGroup(),
+            horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            ChoiceChip(
+                text = lexString(R.string.habit_reminder_off),
+                selected = editor.reminderMinutes == null,
+                onClick = { onEvent(HabitsEvent.ReminderChanged(null)) },
             )
+            ChoiceChip(
+                text = editor.reminderMinutes?.let { lexString(R.string.habit_reminder_at, reminderLabel(it)) } ?: lexString(R.string.habit_reminder_at, reminderLabel(HabitEditorState.DEFAULT_REMINDER_MINUTES)),
+                selected = editor.reminderMinutes != null,
+                onClick = { onEvent(HabitsEvent.OpenReminderPicker) },
+            )
+        }
+        Text(lexString(R.string.habit_reminder_note), style = type.caption, color = colors.textSecondary)
+        if (editor.reminderPickerOpen) {
+            HabitReminderDialog(editor.reminderMinutes ?: HabitEditorState.DEFAULT_REMINDER_MINUTES, onEvent)
         }
 
         editor.error?.let { Text(lexString(it), style = type.label, color = colors.critical) }
@@ -279,11 +392,12 @@ fun HabitEditor(editor: HabitEditorState, onEvent: (HabitsEvent) -> Unit, modifi
 
 /** Long-press options: Archive (restorable in Settings) or Delete; campaign habits only explain why they can't. */
 @Composable
-fun HabitOptions(habit: HabitItem, onEvent: (HabitsEvent) -> Unit, modifier: Modifier = Modifier) {
+fun HabitOptions(habit: HabitItem, onEvent: (HabitsEvent) -> Unit, modifier: Modifier = Modifier, skip: SkipState = SkipState.NONE) {
     val colors = AwakenTheme.colors
     val type = AwakenTheme.type
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
         Text(habit.title, style = type.windowTitle, color = colors.textPrimary, modifier = Modifier.semantics { heading() })
+        SkipOffer(skip, onEvent)
         if (habit.campaign) {
             Text(lexString(R.string.habit_campaign_locked), style = type.body, color = colors.textSecondary)
         } else {
@@ -303,6 +417,76 @@ fun HabitOptions(habit: HabitItem, onEvent: (HabitsEvent) -> Unit, modifier: Mod
         QuietButton(text = lexString(R.string.action_cancel), onClick = { onEvent(HabitsEvent.Dismiss) })
     }
 }
+
+/** Skip today and its one-a-week allowance (GD §16.2); nothing when there is no open instance today. */
+@Composable
+private fun SkipOffer(skip: SkipState, onEvent: (HabitsEvent) -> Unit) {
+    val colors = AwakenTheme.colors
+    val type = AwakenTheme.type
+    when (skip) {
+        SkipState.NONE -> Unit
+        SkipState.AVAILABLE -> {
+            SecondaryButton(
+                text = lexString(R.string.habit_skip_today),
+                onClick = { onEvent(HabitsEvent.SkipToday) },
+                modifier = Modifier.fillMaxWidth(),
+            )
+            Text(lexString(R.string.habit_skip_left), style = type.caption, color = colors.textSecondary)
+        }
+        SkipState.NO_SKIPS_LEFT -> Text(lexString(R.string.habit_skip_none), style = type.caption, color = colors.textMuted)
+        SkipState.NOT_NEEDED -> Text(lexString(R.string.habit_no_skip_flexible), style = type.caption, color = colors.textMuted)
+        SkipState.SKIPPED -> SecondaryButton(
+            text = lexString(R.string.habit_undo_skip),
+            onClick = { onEvent(HabitsEvent.UndoSkip) },
+            modifier = Modifier.fillMaxWidth(),
+        )
+    }
+}
+
+/** Pick the reminder time with the same compact input the daily reminder uses (it fits small phones). */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun HabitReminderDialog(initialMinutes: Int, onEvent: (HabitsEvent) -> Unit) {
+    val timeState = rememberTimePickerState(
+        initialHour = initialMinutes / MINUTES_PER_HOUR,
+        initialMinute = initialMinutes % MINUTES_PER_HOUR,
+        is24Hour = DateFormat.is24HourFormat(LocalContext.current),
+    )
+    Dialog(onDismissRequest = { onEvent(HabitsEvent.DismissReminderPicker) }) {
+        SystemWindow(title = lexString(R.string.habit_reminder_label), accent = AwakenTheme.colors.accent) {
+            TimeInput(state = timeState, modifier = Modifier.align(Alignment.CenterHorizontally))
+            Row(horizontalArrangement = Arrangement.spacedBy(Spacing.xs), modifier = Modifier.fillMaxWidth()) {
+                QuietButton(text = lexString(R.string.action_cancel), onClick = { onEvent(HabitsEvent.DismissReminderPicker) })
+                PrimaryButton(
+                    text = lexString(R.string.action_done),
+                    onClick = { onEvent(HabitsEvent.ReminderChanged(timeState.hour * MINUTES_PER_HOUR + timeState.minute)) },
+                    modifier = Modifier.weight(1f),
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun reminderLabel(minutes: Int): String =
+    LocalTime.ofSecondOfDay(minutes * SECONDS_PER_MINUTE).format(DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT))
+
+private fun HabitType.nameRes(): Int = when (this) {
+    HabitType.CHECK -> R.string.habit_type_check
+    HabitType.QUANTITY -> R.string.habit_type_count
+    HabitType.TIMED -> R.string.habit_type_timed
+    HabitType.NEGATIVE -> R.string.habit_type_avoid
+}
+
+private fun HabitType.noteRes(): Int = when (this) {
+    HabitType.CHECK -> R.string.habit_type_check_note
+    HabitType.QUANTITY -> R.string.habit_type_count_note
+    HabitType.TIMED -> R.string.habit_type_timed_note
+    HabitType.NEGATIVE -> R.string.habit_type_avoid_note
+}
+
+private const val MINUTES_PER_HOUR = 60
+private const val SECONDS_PER_MINUTE = 60L
 
 @Composable
 private fun HabitConfirmDialog(confirm: HabitSheet.Confirm, onEvent: (HabitsEvent) -> Unit) {
@@ -370,4 +554,62 @@ private fun HabitOptionsCampaignPreview() {
 @Composable
 private fun HabitEditorPreview() {
     AwakenTheme { HabitEditor(HabitEditorState(title = "Read", stat = Stat.INT, error = R.string.habit_error_days), onEvent = {}) }
+}
+
+@PhonePreviews
+@Composable
+private fun HabitEditorCountPreview() {
+    AwakenTheme {
+        HabitEditor(
+            HabitEditorState(title = "Drink water", stat = Stat.VIT, type = HabitType.QUANTITY, target = "8", unit = "glasses", reminderMinutes = 9 * 60),
+            onEvent = {},
+        )
+    }
+}
+
+@PhonePreviews
+@Composable
+private fun HabitEditorTimedPreview() {
+    AwakenTheme { HabitEditor(HabitEditorState(title = "Read", stat = Stat.INT, type = HabitType.TIMED, target = "30"), onEvent = {}) }
+}
+
+@PhonePreviews
+@Composable
+private fun HabitEditorAvoidPreview() {
+    AwakenTheme { HabitEditor(HabitEditorState(title = "No sugar", stat = Stat.WIL, type = HabitType.NEGATIVE), onEvent = {}) }
+}
+
+@PhonePreviews
+@Composable
+private fun HabitEditorFlexiblePreview() {
+    AwakenTheme {
+        HabitEditor(
+            HabitEditorState(title = "Gym", stat = Stat.STR, frequency = HabitFrequency.TIMES_PER_WEEK, timesPerWeek = 3, error = R.string.habit_reminder_limit),
+            onEvent = {},
+        )
+    }
+}
+
+@PhonePreviews
+@Composable
+private fun HabitOptionsSkipPreview() {
+    AwakenTheme {
+        Column(verticalArrangement = Arrangement.spacedBy(Spacing.md)) {
+            val habit = HabitItem("2", "Read", Stat.INT, Difficulty.NORMAL, DayOfWeek.entries.toSet(), 20, "pages")
+            HabitOptions(habit, onEvent = {}, skip = SkipState.AVAILABLE)
+            HabitOptions(habit, onEvent = {}, skip = SkipState.SKIPPED)
+        }
+    }
+}
+
+@PhonePreviews
+@Composable
+private fun HabitOptionsNoSkipPreview() {
+    AwakenTheme {
+        Column(verticalArrangement = Arrangement.spacedBy(Spacing.md)) {
+            val habit = HabitItem("2", "Read", Stat.INT, Difficulty.NORMAL, DayOfWeek.entries.toSet(), 20, "pages")
+            HabitOptions(habit, onEvent = {}, skip = SkipState.NO_SKIPS_LEFT)
+            HabitOptions(habit, onEvent = {}, skip = SkipState.NOT_NEEDED)
+        }
+    }
 }
