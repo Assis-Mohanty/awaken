@@ -146,7 +146,7 @@ Q1 keep H1 dropped (Batch 6 builds nothing for H1) · Q2 separate allowance, max
 
 ## Batch 5 — Quit counters: D4
 
-✅ built in BATCH5_COMMIT. Differences from the checklist: a third table `quit_day` (ENGINE_DECISIONS #138); use cases are in `QuitUseCases.kt` (recording runs from `DayRolloverUseCase` through `RecordQuitProgressUseCase`, not `RunRolloverUseCase` itself); the entry is a Status row, not the habits sheet; `feature/quit` is added to CLAUDE.md. Decisions: ENGINE_DECISIONS #136–#139. Vectors #122–#126 pass.
+✅ built in 4f81ae3. Differences from the checklist: a third table `quit_day` (ENGINE_DECISIONS #138); use cases are in `QuitUseCases.kt` (recording runs from `DayRolloverUseCase` through `RecordQuitProgressUseCase`, not `RunRolloverUseCase` itself); the entry is a Status row, not the habits sheet; `feature/quit` is added to CLAUDE.md. Decisions: ENGINE_DECISIONS #136–#139. Vectors #122–#126 pass.
 
 **Engine**
 - [ ] `QuitRules.kt` (runs, best run, in-app run from `max(start, created)`, money/time, milestones `N25`, doomscrolling day verdicts `N26`, counter limit `N24`).
