@@ -445,6 +445,10 @@ interface GateRunDao {
     @Query("SELECT * FROM gate_run WHERE status = 'RUNNING' LIMIT 1")
     fun observeRunning(): Flow<GateRunEntity?>
 
+    /** Every finished run for the crystal gallery (GD §16.5), newest first. Read-only: the gallery stores nothing of its own. */
+    @Query("SELECT * FROM gate_run WHERE status IN ('CLEARED', 'COLLAPSED', 'LOGGED') ORDER BY started_at DESC")
+    fun observeFinished(): Flow<List<GateRunEntity>>
+
     /** The most recent run, so the screen can show how the last gate ended. */
     @Query("SELECT * FROM gate_run ORDER BY started_at DESC LIMIT 1")
     fun observeLatest(): Flow<GateRunEntity?>

@@ -104,3 +104,7 @@ data object WindDownRoute
 /** Quit counters: days clean of something the hunter wants to stop (GD §16.13), opened from Status. */
 @Serializable
 data object QuitRoute
+
+/** The gate crystal gallery (GD §16.5), opened from the Gates screen. */
+@Serializable
+data object CrystalsRoute

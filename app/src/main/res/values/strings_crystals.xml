@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    The gate crystal gallery (GAME_DESIGN §16.5). Written in a neutral voice, so no strings here need a Clean twin.
+-->
+<resources>
+    <string name="crystals_title">Crystals</string>
+    <string name="crystals_row_title">Crystals</string>
+    <string name="crystals_row_note">One for every focus session you finish.</string>
+    <string name="crystals_empty">Finish a focus session and its crystal appears here.</string>
+    <string name="crystals_note">A whole crystal is a finished session, a cracked one a session that ended early, and a shard a short logged one.</string>
+    <string name="crystals_caption">%1$d min</string>
+    <string name="crystals_status_cleared">cleared</string>
+    <string name="crystals_status_collapsed">ended early</string>
+    <string name="crystals_status_logged">logged</string>
+    <string name="crystals_cell_cd">%1$s, %2$d minutes, %3$s, %4$s</string>
+    <string name="crystal_dial_cd">Crystal at stage %1$d of 5</string>
+</resources>

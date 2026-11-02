@@ -174,6 +174,8 @@ Q1 keep H1 dropped (Batch 6 builds nothing for H1) · Q2 separate allowance, max
 
 ## Batch 7 — Crystal: B3
 
+✅ built in BATCH7_COMMIT. Differences from the checklist: the gallery is `ObserveCrystalGalleryUseCase` over a new read-only `GateRunDao.observeFinished()` query (no new table); the dial shows the crystal behind the timer and the stopwatch screen shows it above its controls; the Gates picker has a Crystals row. Decision: ENGINE_DECISIONS #140. Vector #102 passes.
+
 - [ ] Engine `CrystalRules.kt` (stage from fraction, stopwatch to 90 min `N13`, tier size, colour index by `fnv1a64(subjectId) mod 6`); vector **#102**.
 - [ ] Components `GateCrystal`, `CrystalGalleryGrid` (vector only, every stage/cracked/shard previewed).
 - [ ] `GateDial` shows the growing crystal (reduce motion: stage steps only); gallery route from the Gates screen (`GatesScreen.kt`), query over `gate_run`.

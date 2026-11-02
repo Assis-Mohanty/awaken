@@ -35,6 +35,7 @@ import com.assismohanty.awaken.debug.DebugEntry
 import com.assismohanty.awaken.engine.model.Rank
 import com.assismohanty.awaken.feature.diet.DietRoute as DietEntry
 import com.assismohanty.awaken.feature.gate.GatesEntry
+import com.assismohanty.awaken.feature.gate.CrystalGalleryRoute as CrystalGalleryEntry
 import com.assismohanty.awaken.feature.gym.GymRoute as GymEntry
 import com.assismohanty.awaken.feature.onboarding.OnboardingRoute as OnboardingEntry
 import com.assismohanty.awaken.feature.paths.PathDetailRoute as PathDetailEntry
@@ -206,8 +207,10 @@ private fun MainScaffold(
                     GatesEntry(
                         onBack = { navController.popBackStack() },
                         onFixFocusLock = { navController.navigate(FocusLockSetupRoute) { launchSingleTop = true } },
+                        onOpenCrystals = { navController.navigate(CrystalsRoute) { launchSingleTop = true } },
                     )
                 }
+                composable<CrystalsRoute> { CrystalGalleryEntry(onBack = { navController.popBackStack() }) }
                 composable<GymRoute> { GymEntry() }
                 composable<DietRoute> { DietEntry() }
                 composable<StatusRoute> {
