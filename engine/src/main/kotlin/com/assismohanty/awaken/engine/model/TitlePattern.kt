@@ -11,7 +11,7 @@ package com.assismohanty.awaken.engine.model
 object TitlePattern {
     const val N = "{n}"
     const val DURATION = "{dur}"
-    private val AGREEMENT = Regex("""\{([^{}|]+)\|([^{}|]+)}""")
+    private val AGREEMENT = Regex("""\{([^{}|]+)\|([^{}|]+)\}""")
 
     fun render(pattern: String, target: Int): String {
         val agreed = AGREEMENT.replace(pattern) { m -> if (target == 1) m.groupValues[1] else m.groupValues[2] }
