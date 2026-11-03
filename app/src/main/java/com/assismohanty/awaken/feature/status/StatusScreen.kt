@@ -39,7 +39,7 @@ import com.assismohanty.awaken.core.designsystem.components.LargeTitleScaffold
 import com.assismohanty.awaken.core.designsystem.components.LevelModule
 import com.assismohanty.awaken.core.designsystem.components.AwakenCard
 import com.assismohanty.awaken.core.designsystem.components.ListRow
-import com.assismohanty.awaken.core.designsystem.components.MetricCard
+import com.assismohanty.awaken.core.designsystem.components.StreakModule
 import com.assismohanty.awaken.core.designsystem.components.SkeletonCard
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -90,6 +90,7 @@ fun StatusRoute(
     onOpenReview: () -> Unit = {},
     onOpenQuit: () -> Unit = {},
     onOpenPrograms: () -> Unit = {},
+    onOpenStore: () -> Unit = {},
     viewModel: StatusViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -114,6 +115,7 @@ fun StatusRoute(
         onOpenReview = onOpenReview,
         onOpenQuit = onOpenQuit,
         onOpenPrograms = onOpenPrograms,
+        onOpenStore = onOpenStore,
         modifier = modifier,
     )
 }
@@ -129,6 +131,7 @@ fun StatusScreen(
     onOpenReview: () -> Unit = {},
     onOpenQuit: () -> Unit = {},
     onOpenPrograms: () -> Unit = {},
+    onOpenStore: () -> Unit = {},
 ) {
     val header = state.header
     LargeTitleScaffold(
@@ -146,7 +149,7 @@ fun StatusScreen(
             SkeletonCard()
             return@LargeTitleScaffold
         }
-        // Level and gold side by side, equal heights.
+        // Level and streak (with the 28-day consistency) side by side, equal heights.
         Row(modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(Spacing.cardGap)) {
             LevelModule(
                 level = header.level,
@@ -155,13 +158,10 @@ fun StatusScreen(
                 xpForLevel = header.xpForLevel,
                 modifier = Modifier.weight(1f).fillMaxHeight(),
             )
-            MetricCard(
-                label = lexString(R.string.reward_gold),
-                value = formatCount(header.gold),
-                secondary = lexPlural(R.plurals.cd_streak, header.streak, header.streak),
-                icon = AwakenGlyphs.Coin,
-                iconTint = AwakenTheme.colors.reward,
-                description = lexString(R.string.cd_gold, formatCount(header.gold)),
+            StreakModule(
+                streak = header.streak,
+                best = state.bestStreak,
+                consistency = state.consistency,
                 modifier = Modifier.weight(1f).fillMaxHeight(),
             )
         }
@@ -170,6 +170,7 @@ fun StatusScreen(
         StatsWindow(state.rank, state.stats)
         ActivityWindow(state, onEvent)
         WeeklyWindow(state, onEvent, onOpenReview)
+        StoreRow(gold = header.gold, onOpenStore = onOpenStore)
         QuitRow(onOpenQuit)
         ProgramsRow(onOpenPrograms)
     }
@@ -415,6 +416,23 @@ private fun ProgramsRow(onOpenPrograms: () -> Unit) {
             title = lexString(R.string.programs_row_title),
             secondary = lexString(R.string.programs_row_note),
             onClick = onOpenPrograms,
+            trailing = {
+                Icon(AwakenGlyphs.ChevronRight, contentDescription = null, tint = AwakenTheme.colors.textSecondary, modifier = Modifier.size(AwakenTheme.dimens.iconSmall))
+            },
+        )
+    }
+}
+
+/** Gold is spent in the Store: the balance sits on the row that opens it. */
+@Composable
+private fun StoreRow(gold: Long, onOpenStore: () -> Unit) {
+    AwakenCard(reveal = false, contentPadding = Spacing.listCard, spacing = Spacing.zero, modifier = Modifier.fillMaxWidth()) {
+        ListRow(
+            title = lexString(R.string.status_store_row),
+            icon = AwakenGlyphs.Coin,
+            iconTint = AwakenTheme.colors.reward,
+            secondary = lexString(R.string.status_store_row_gold, formatCount(gold)),
+            onClick = onOpenStore,
             trailing = {
                 Icon(AwakenGlyphs.ChevronRight, contentDescription = null, tint = AwakenTheme.colors.textSecondary, modifier = Modifier.size(AwakenTheme.dimens.iconSmall))
             },

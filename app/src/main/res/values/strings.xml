@@ -5,8 +5,6 @@
     <string name="nav_today">Today</string>
     <string name="nav_status">Progress</string>
     <string name="nav_vault">Store</string>
-    <string name="action_open_gates">Open focus sessions</string>
-    <string name="action_open_vault">Open store</string>
 
     <!-- Placeholders (Phase 1 only) -->
 

@@ -42,7 +42,6 @@
     <string name="habit_delete_body">It leaves Today and won\'t come back. Your XP, stats and history stay.</string>
     <string name="habit_archived_snack">Archived \"%1$s\"</string>
     <string name="habit_deleted_snack">Deleted \"%1$s\"</string>
-    <string name="settings_archived_habits">Archived habits</string>
     <string name="settings_archived_habits_empty">Nothing archived. Long-press a habit on Today to archive it.</string>
     <string name="settings_restore_habit_label">Restore %1$s</string>
     <string name="habit_restored">Restored \"%1$s\". It\'s back on its days, starting today if scheduled.</string>
@@ -86,19 +85,8 @@
     <string name="onboarding_complete_body">Your first plan is ready.</string>
 
     <!-- Today (DESIGN_SYSTEM §4.2) -->
-    <string name="system_title_directive_cleared">Plan complete</string>
     <string name="today_habits">Habits</string>
-    <string name="today_greeting_morning">Good morning, %1$s</string>
-    <string name="today_greeting_day">Good afternoon, %1$s</string>
-    <string name="today_greeting_evening">Good evening, %1$s</string>
-    <string name="today_hero_cd">%1$d of %2$d quests done today</string>
     <string name="today_ring_unit">of %1$d</string>
-    <string name="today_ring_done">done today</string>
-    <string name="today_plan_secondary">Move quests between morning, day and evening</string>
-    <plurals name="today_habits_count">
-        <item quantity="one">%1$d habit today</item>
-        <item quantity="other">%1$d habits today</item>
-    </plurals>
     <string name="today_no_habits">No habits yet. Add one you want to track.</string>
     <plurals name="habit_count">
         <item quantity="one">%1$d of %2$d habit</item>
@@ -308,9 +296,6 @@
     <string name="settings_day_end">Day ends</string>
     <string name="settings_blocks_note">Today groups your quests into Morning, Day and Evening by these times.</string>
     <string name="settings_window_profile">Profile</string>
-    <string name="settings_window_day">Day</string>
-    <string name="settings_window_training">Training</string>
-    <string name="settings_window_comfort">Comfort</string>
     <string name="settings_window_data">Your data</string>
     <string name="settings_name_label">Your name</string>
     <string name="settings_name_error">Use 3 to 20 characters.</string>

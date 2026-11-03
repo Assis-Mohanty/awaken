@@ -57,7 +57,6 @@ import com.assismohanty.awaken.core.data.health.HealthStatus
 import com.assismohanty.awaken.core.audio.ChimeChoice
 import com.assismohanty.awaken.core.data.repo.ThemeMode
 import com.assismohanty.awaken.core.designsystem.components.ChoiceChip
-import com.assismohanty.awaken.core.designsystem.components.GateBackground
 import com.assismohanty.awaken.core.designsystem.components.LargeTitleScaffold
 import com.assismohanty.awaken.core.designsystem.components.PrimaryButton
 import com.assismohanty.awaken.core.designsystem.components.QuietButton
@@ -69,7 +68,6 @@ import com.assismohanty.awaken.core.designsystem.components.label
 import com.assismohanty.awaken.core.designsystem.preview.PhonePreviews
 import com.assismohanty.awaken.core.designsystem.theme.AwakenTheme
 import com.assismohanty.awaken.core.designsystem.theme.Spacing
-import com.assismohanty.awaken.engine.model.Rank
 import com.assismohanty.awaken.engine.model.Stat
 import com.assismohanty.awaken.feature.focuslock.FocusLockWindow
 import com.assismohanty.awaken.feature.reelcounter.ReelCounterWindow
@@ -170,22 +168,22 @@ fun SettingsScreen(
     onRestoreHabit: (habitId: String) -> Unit = {},
     showAiPaths: Boolean = true,
 ) {
-    GateBackground(rank = Rank.E, modifier = modifier) {
-        LargeTitleScaffold(title = lexString(R.string.settings_title), onBack = onBack) {
-            if (!state.loading) {
-                ProfileWindow(state, onEvent)
-                DayWindow(state, onEvent, onOpenNotificationSettings)
-                TrainingWindow(state, onEvent, onOpenHealth, onOpenScreenTime)
-                focusWindow()
-                ArchivedHabitsWindow(archivedHabits, onRestoreHabit)
-                if (showAiPaths) AiPathsWindow(state, onEvent)
-                ComfortWindow(state, onEvent)
-                DataWindow(state, onExport, onImport, onOpenPrivacy)
-                // Debug builds only (DebugEntry is a no-op in release): never floats over content.
-                if (DebugEntry.ENABLED) {
-                    SystemWindow(title = lexString(R.string.settings_window_developer), accent = accent(), reveal = false) {
-                        DebugEntry.LauncherButton(onClick = onOpenDebug)
-                    }
+    LargeTitleScaffold(title = lexString(R.string.settings_title), onBack = onBack, modifier = modifier) {
+        if (!state.loading) {
+            // The ten sections of DECLUTTER_PLAN §5, in order.
+            ProfileWindow(state, onEvent)
+            DayWindow(state, onEvent, onOpenNotificationSettings)
+            GoalsWindow(state, onEvent)
+            HealthTrainingWindow(state, onEvent, onOpenHealth)
+            PhoneFocusSection(onOpenScreenTime, focusWindow)
+            ArchivedHabitsWindow(archivedHabits, onRestoreHabit)
+            if (showAiPaths) AiPathsWindow(state, onEvent)
+            AppearanceWindow(state, onEvent)
+            DataWindow(state, onExport, onImport, onOpenPrivacy)
+            // Debug builds only (DebugEntry is a no-op in release): never floats over content.
+            if (DebugEntry.ENABLED) {
+                SystemWindow(title = lexString(R.string.settings_window_developer), accent = accent(), reveal = false) {
+                    DebugEntry.LauncherButton(onClick = onOpenDebug)
                 }
             }
         }
@@ -252,6 +250,15 @@ private fun ProfileWindow(state: SettingsUiState, onEvent: (SettingsEvent) -> Un
             enabled = state.canSaveFocus,
             modifier = Modifier.fillMaxWidth(),
         )
+    }
+}
+
+/** Daily targets: focus minutes and steps. Both change from today on. */
+@Composable
+private fun GoalsWindow(state: SettingsUiState, onEvent: (SettingsEvent) -> Unit) {
+    val colors = AwakenTheme.colors
+    val type = AwakenTheme.type
+    SystemWindow(title = lexString(R.string.settings_window_goals), accent = accent(), reveal = false) {
         Text(lexString(R.string.focus_goal_title), style = type.label, color = colors.textPrimary)
         val goalLessCd = lexString(R.string.focus_goal_less)
         val goalMoreCd = lexString(R.string.focus_goal_more)
@@ -271,6 +278,7 @@ private fun ProfileWindow(state: SettingsUiState, onEvent: (SettingsEvent) -> Un
             )
         }
         Text(lexString(R.string.focus_goal_settings_note), style = type.caption, color = colors.textSecondary)
+        StepGoalRow(state, onEvent)
     }
 }
 
@@ -278,7 +286,7 @@ private fun ProfileWindow(state: SettingsUiState, onEvent: (SettingsEvent) -> Un
 private fun DayWindow(state: SettingsUiState, onEvent: (SettingsEvent) -> Unit, onOpenNotificationSettings: () -> Unit) {
     val colors = AwakenTheme.colors
     val type = AwakenTheme.type
-    SystemWindow(title = lexString(R.string.settings_window_day), accent = accent(), reveal = false) {
+    SystemWindow(title = lexString(R.string.settings_window_day_reminders), accent = accent(), reveal = false) {
         Text(lexString(R.string.settings_day_start_title), style = type.label, color = colors.textPrimary)
         FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.xs), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
             state.dayStartOptions.forEach { hour ->
@@ -340,7 +348,7 @@ private fun DayWindow(state: SettingsUiState, onEvent: (SettingsEvent) -> Unit, 
 private fun ArchivedHabitsWindow(habits: List<ArchivedHabit>, onRestore: (String) -> Unit) {
     val colors = AwakenTheme.colors
     val type = AwakenTheme.type
-    SystemWindow(title = lexString(R.string.settings_archived_habits), accent = accent(), reveal = false) {
+    SystemWindow(title = lexString(R.string.settings_window_habits), accent = accent(), reveal = false) {
         if (habits.isEmpty()) {
             Text(lexString(R.string.settings_archived_habits_empty), style = type.caption, color = colors.textSecondary)
         }
@@ -363,15 +371,11 @@ private fun ArchivedHabitsWindow(habits: List<ArchivedHabit>, onRestore: (String
 }
 
 @Composable
-private fun TrainingWindow(state: SettingsUiState, onEvent: (SettingsEvent) -> Unit, onOpenHealth: () -> Unit, onOpenScreenTime: () -> Unit) {
+private fun HealthTrainingWindow(state: SettingsUiState, onEvent: (SettingsEvent) -> Unit, onOpenHealth: () -> Unit) {
     val colors = AwakenTheme.colors
     val type = AwakenTheme.type
-    SystemWindow(title = lexString(R.string.settings_window_training), accent = accent(), reveal = false) {
+    SystemWindow(title = lexString(R.string.settings_window_health_training), accent = accent(), reveal = false) {
         HealthRow(state, onEvent, onOpenHealth)
-        StepGoalRow(state, onEvent)
-        Text(lexString(R.string.settings_screen_time_title), style = type.label, color = colors.textPrimary)
-        Text(lexString(R.string.settings_screen_time_note), style = type.caption, color = colors.textSecondary)
-        SecondaryButton(text = lexString(R.string.action_open_screen_time), onClick = onOpenScreenTime, modifier = Modifier.fillMaxWidth())
         Text(lexString(R.string.settings_equipment_title), style = type.label, color = colors.textPrimary)
         FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.xs), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
             state.equipmentOptions.forEach { id ->
@@ -455,8 +459,8 @@ private fun AiPathsWindow(state: SettingsUiState, onEvent: (SettingsEvent) -> Un
 }
 
 @Composable
-private fun ComfortWindow(state: SettingsUiState, onEvent: (SettingsEvent) -> Unit) {
-    SystemWindow(title = lexString(R.string.settings_window_comfort), accent = accent(), reveal = false) {
+private fun AppearanceWindow(state: SettingsUiState, onEvent: (SettingsEvent) -> Unit) {
+    SystemWindow(title = lexString(R.string.settings_window_appearance), accent = accent(), reveal = false) {
         Text(lexString(R.string.settings_appearance_title), style = AwakenTheme.type.label, color = AwakenTheme.colors.textPrimary)
         FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.xs), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
             ThemeMode.entries.forEach { mode ->
@@ -731,4 +735,20 @@ private fun StepGoalRow(state: SettingsUiState, onEvent: (SettingsEvent) -> Unit
         )
     }
     Text(lexString(R.string.step_goal_note), style = type.caption, color = colors.textSecondary)
+}
+
+/**
+ * Phone and focus: the screen-time link, then Focus Lock, phone-down nights and the Reel counter (each in the [windows]
+ * slot, wired by the route), under one heading.
+ */
+@Composable
+private fun PhoneFocusSection(onOpenScreenTime: () -> Unit, windows: @Composable () -> Unit) {
+    val colors = AwakenTheme.colors
+    val type = AwakenTheme.type
+    SystemWindow(title = lexString(R.string.settings_window_phone_focus), accent = accent(), reveal = false) {
+        Text(lexString(R.string.settings_screen_time_title), style = type.label, color = colors.textPrimary)
+        Text(lexString(R.string.settings_screen_time_note), style = type.caption, color = colors.textSecondary)
+        SecondaryButton(text = lexString(R.string.action_open_screen_time), onClick = onOpenScreenTime, modifier = Modifier.fillMaxWidth())
+    }
+    windows()
 }

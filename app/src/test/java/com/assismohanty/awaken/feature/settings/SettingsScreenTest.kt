@@ -8,6 +8,8 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onLast
+import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.test.printToString
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
@@ -43,9 +45,19 @@ class SettingsScreenTest {
     @Test
     fun showsEveryGroup() {
         show(previewSettingsState())
-        listOf("Profile", "Day", "Training", "AI Paths", "Comfort", "Your data").forEach {
+        listOf("Profile", "Day and reminders", "Goals", "Health and training", "Phone and focus", "Habits", "AI Paths", "Appearance and sound", "Your data").forEach {
             composeRule.onAllNodesWithText(it).onFirst().performScrollTo().assertIsDisplayed()
         }
+    }
+
+    @Test
+    fun sectionsAreInThePlannedOrder() {
+        show(previewSettingsState())
+        val titles = listOf("Profile", "Day and reminders", "Goals", "Health and training", "Phone and focus", "Habits", "AI Paths", "Appearance and sound", "Your data")
+        val tree = composeRule.onRoot().printToString(Int.MAX_VALUE)
+        val indexes = titles.map { tree.indexOf(it) }
+        assertThat(indexes).doesNotContain(-1)
+        assertThat(indexes).isInOrder()
     }
 
     @Test

@@ -6,6 +6,8 @@ import com.assismohanty.awaken.core.data.clock.Clock
 import com.assismohanty.awaken.core.data.clock.gameDate
 import com.assismohanty.awaken.core.data.db.dao.FocusDao
 import com.assismohanty.awaken.core.data.db.dao.HunterDao
+import com.assismohanty.awaken.core.domain.DayRefresher
+import com.assismohanty.awaken.core.domain.ObserveFocusGoalUseCase
 import com.assismohanty.awaken.engine.GameDay
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.LocalDate
@@ -22,8 +24,17 @@ private const val STOP_TIMEOUT_MS = 5_000L
 private const val WEEK_DAYS = 7L
 private const val SECONDS_PER_MINUTE = 60L
 
-/** The Focus card on Today: cleared focus time for today and the last 7 game-days. */
-data class FocusCardState(val todayMinutes: Int = 0, val weekMinutes: Int = 0)
+/** The Focus section on Today: today's focus against the daily goal, the focus streak, and the last 7 game-days. */
+data class FocusCardState(
+    val todayMinutes: Int = 0,
+    val weekMinutes: Int = 0,
+    /** Daily goal in minutes (GD §16.4); 0 until it has been read. */
+    val goal: Int = 0,
+    val streak: Int = 0,
+) {
+    /** The bar's fill, 0..1. */
+    val progress: Float get() = if (goal <= 0) 0f else (todayMinutes.toFloat() / goal).coerceIn(0f, 1f)
+}
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
@@ -31,18 +42,21 @@ class FocusCardViewModel @Inject constructor(
     hunterDao: HunterDao,
     focusDao: FocusDao,
     clock: Clock,
+    observeFocusGoal: ObserveFocusGoalUseCase,
+    dayRefresher: DayRefresher,
 ) : ViewModel() {
-    val uiState: StateFlow<FocusCardState> = hunterDao.observeProfile()
+    private val week = hunterDao.observeProfile()
         .flatMapLatest { profile ->
             val today = clock.gameDate(profile?.dayStartHour ?: GameDay.DEFAULT_DAY_START_HOUR)
             focusDao.observeSecondsByDay(today.minusDays(WEEK_DAYS - 1), today).map { rows ->
-                FocusCardState(
-                    todayMinutes = (rows.filter { it.gameDate == today }.sumOf { it.seconds } / SECONDS_PER_MINUTE).toInt(),
-                    weekMinutes = (rows.sumOf { it.seconds } / SECONDS_PER_MINUTE).toInt(),
-                )
+                (rows.filter { it.gameDate == today }.sumOf { it.seconds } / SECONDS_PER_MINUTE).toInt() to
+                    (rows.sumOf { it.seconds } / SECONDS_PER_MINUTE).toInt()
             }
         }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), FocusCardState())
+
+    val uiState: StateFlow<FocusCardState> = combine(week, observeFocusGoal(dayRefresher.ticks)) { (todayMinutes, weekMinutes), goal ->
+        FocusCardState(todayMinutes = todayMinutes, weekMinutes = weekMinutes, goal = goal?.goal ?: 0, streak = goal?.streak ?: 0)
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), FocusCardState())
 }
 
 data class FocusDayUi(val date: LocalDate, val minutes: Int)

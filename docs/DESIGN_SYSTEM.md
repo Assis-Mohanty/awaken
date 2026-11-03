@@ -186,36 +186,34 @@ First quest is guaranteed Easy and doable now (e.g., "Drink a glass of water" VI
 ### 4.2 Today
 ```
 ┌──────────────────────────────────┐
-│ Tuesday, 27 October       (◎)(▣) │  date over the large title; Gates / Vault actions
-│ Good morning, Assis              │  34sp; collapses to a 17sp pinned title on scroll
-│ ┌ Today ───────────────── ╭──╮ ┐ │  RingCard: one green ring
-│ │ 3 of 10                 │  │ │ │
-│ │ done today              ╰──╯ │ │
+│ Tuesday 3 November               │  the date is the title; no greeting, no header icons
+│ ┌ Level 12 · Rank D   14-day … ┐ │  1. Header: thin XP bar; tap → Progress
+│ │ ▬▬▬▬▬▬░░░  1,240 / 1,800 XP  │ │
 │ └──────────────────────────────┘ │
-│ ┌ ⚡ Level ────┐ ┌ 🔥 Streak ───┐ │  LevelModule + StreakModule (metric cards)
-│ │ 24 rank C   │ │ 12 days      │ │
-│ │ ▬▬▬▬▬░░     │ │ Best 30      │ │
-│ └─────────────┘ └──────────────┘ │
-│ ┌ ✦ INT is falling behind…   › ┐ │  InsightCard (one sentence)
+│ Today's plan · 3 of 7 done  Plan day  Habits │  2. Today's plan
+│ ┌ Comeback ────────────────────┐ │  only after a missed day: quest + "never miss twice" line
 │ Morning            1 of 1 done › │  past block: collapsed
 │ Day  [Now]         0 of 2 done ⌄ │
-│ ┌ (♥) Take a short walk  ◯ ┐    │  penalty quest: normal row + coral "Comeback" chip
-│ │ (♥) Call your family   ◯ │    │  list rows, hollow check
-│ └──────────────────────────┘    │
-│ Evening / Anytime …              │
-│ ┌ (▦) Day plan              › ┐ │  quiet rows: plan, habits, campaign, screen limits
-│ │ (☰) Habits                › │ │
-│ └──────────────────────────────┘ │
+│ ┌ (♥) Call your family      ◯ ┐  │  list rows, hollow check
+│ Evening: … + Phone-down night row│
+│ Anytime: … + App limits row      │
+│ Your weekly review is open     › │  Sat–Mon only
+│ Focus                            │  3. Focus: 42 of 60 min, streak, [Start a session]
+│ Health and screen                │  4. Steps + sleep tile, screen-time tile, reels
+│ Quit counters                    │  5. only if any exist: "Smoking · 12 days clean"
 └──────────────────────────────────┘
 ```
+- **At most five sections:** Header, Today's plan, Focus, Health and screen, Quit counters. Each section has a `SectionHeader`; the plan's carries the two quiet actions *Plan day* and *Habits*.
 - **The plan:** every directive item and habit, grouped by time-of-day block (GD §14.5) in the order Morning → Day → Evening → Anytime.
   - Each block is a section title over a card of rows; empty blocks are hidden.
   - The current block is marked "Now"; earlier blocks start collapsed (tap to expand; open quests stay completable).
   - The current block is recomputed whenever Today re-derives, not on a timer.
-- **The penalty quest** (GD §7.3) leads the current block as a normal row with a coral "Comeback" chip. No red tint, no glow.
-- **Rank Trial:** its card follows the insight.
-- **Day cleared:** the ring card's label reads "Plan complete".
-- **Closing rows:** Day plan, Habits (with "Add habit" when empty), Campaign and Screen limits close the screen as quiet rows with chevrons.
+- **Comeback row** (GD §7.3): after a missed day the comeback quest and the calm "never miss twice" line share one card at the top of the plan. No red tint, no glow.
+- **Rank-up test:** while one is available or running, its group follows the comeback row.
+- **Phone-down night** is a plan row: tonight's window in Evening (with a *Wind down* link from 30 minutes before bedtime), last night's result in Morning. **App limits** is a row in Anytime.
+- **Empty habits:** the "Add habit" empty state stays inside the plan.
+- **Focus:** minutes against the daily goal, the focus streak, [Start a session] and a link to the weekly report.
+- **Health and screen:** each tile opens its detail; missing access shows the existing grant or set-up prompt, never a 0.
 - **Debug:** the Debug entry lives in Settings → Developer (debug builds only), never floating over content.
 
 ### 4.3 Quest detail (long-press / tap title)
@@ -231,7 +229,17 @@ HunterHeader (large) → RadarChart (this week vs last) → stat list (level + X
 Gold balance and Streak Shields (owned/2), one streak freeze item and a note on rerolls. Purchase = confirm sheet showing price and resulting balance.
 
 ### 4.7 Settings
-Profile (name, focus stats), Day starts at, Reminder times, Rest day (pick next), Recovery mode, Health Connect, **AI Paths** (on/off, "What we send", revoke), Equipment I own (jump rope, dumbbells, pull-up bar, gym access), Injury mode (excludes impact/legs/upper tags), Haptics, Reduce motion, Export/Import data, Privacy policy, About, (debug) Debug screen.
+Plain sentence-case section titles on the page colour, in this order:
+1. **Profile:** name, focus stats.
+2. **Day and reminders:** day starts at, morning ends, evening starts, daily reminder, notifications-blocked notice.
+3. **Goals:** daily focus goal, daily step goal.
+4. **Health and training:** Health Connect (connect, view, disconnect), equipment, injury mode.
+5. **Phone and focus:** screen time and app limits, Focus Lock (setup, allowed apps), phone-down nights, Reel counter (setup, limits, stats, permissions; the inspector row only in debug builds).
+6. **Habits:** archived habits.
+7. **AI Paths:** debug and internal builds only.
+8. **Appearance and sound:** theme, timer sound, haptics, reduce motion.
+9. **Your data:** export, import, privacy policy, licences, version.
+10. **Developer:** debug builds only.
 
 ### 4.8 Paths
 - **Paths tab:** up to 3 Path windows, each: goal as window title, primary-stat sigil, `PathLadder` (collapsed to the current milestone), this week's quests with outcomes, `OracleStatus`. Empty state: "Name what you're leveling toward. The System will chart the way." [Create path]. Create is disabled with a reason at 3 active Paths.
@@ -246,13 +254,13 @@ Profile (name, focus stats), Day starts at, Reminder times, Rest day (pick next)
 - **Report flow:** bottom sheet with reasons (Unsafe · Not relevant · Impossible for me · Offensive · Other) → "Reported. This quest has been removed." The slot leaves today's Directive immediately.
 
 ### 4.9 Screen time (GD §6.7)
-Opened from Settings → Training → "Screen time" and from the Today card. No tab.
+Opened from Settings → Phone and focus → "Screen time" and from the Today screen. No tab.
 - **No usage access:** a USAGE ACCESS window explains what is read (app times, on this phone, never sent, nothing blocked), then [Allow usage access] opens `Settings.ACTION_USAGE_ACCESS_SETTINGS`. Returning to the screen re-reads.
 - **TODAY:** total time as `displayXL`, a 6dp segmented bar (Distracting `ember` · Productive `verified` · Neutral `mist`; meaning, not decoration) and a legend with minutes per category.
 - **SCREEN DISCIPLINE:** `+N XP` (`crit`) in the header; one status line (off / starts tomorrow / no limits / every limit holds / forfeited, "Your earned XP is untouched"); up to 4 limit bars (bar turns `ember` from 84 % of the limit); [Turn on] (with "Starts tomorrow" rules caption) or a quiet [Turn off].
 - **APPS:** filter chips (All + 3 categories), rows with launcher icon, label, category · limit, minutes and a category pill; a `crit` caption "From tomorrow: …" when an edit is pending. Unused apps fold behind "Show N more apps". Tap → rule sheet: category chips, −5 / +5 min stepper (5–240), [Track without a limit], the caption "Applies from tomorrow, so today's limits stay fair.", [Save].
 - **LAST 7 DAYS:** bars of total time (`edge`) with the distracting part (`ember`); each bar has a content description.
-- **Today card:** a SCREEN DISCIPLINE window under the directive (`verified` accent while holding, `ember` once forfeited) with "Limits holding · +N XP at day end" or "Limit crossed · stake forfeited" and a [Screen time] link. The DISCIPLINE quest is never a quest row.
+- **Today row:** an "App limits" row in the Anytime group (`positive` icon while holding, `critical` once forfeited) with "Limits holding · +N XP at day end" or "Limit crossed · stake forfeited". The DISCIPLINE quest is never a quest row.
 
 ### 4.10 (removed)
 
@@ -374,7 +382,7 @@ Supportive, factual, never shaming. Yes: "Day 12", "Best run: 30 days. It's stil
 - **Gym (C1/C2/C3/C7):** running session: `ProgressionHint` above set 1 of each exercise; `PrChip` on a set row that is a record; the finish summary lists records. Exercise row → **Exercise history** route: segmented range (Month · 3 months · Year · All), three `TrendLine` cards (Top weight, Best e1RM, Volume), then a session list; states: none / one session (no chart) / many. A plate icon on the weight field opens the **Plate calculator** sheet (`PlateDiagram`, kg/lb switch, [Edit bar & plates] → Gym settings). Gym settings add: bar weight, owned plates (chips), default rep range, per-exercise overrides (from the history screen's overflow).
 - **Screen time (D1):** a PICKUPS card under TODAY: pickups (or "Screen-ons"), first pickup, last use yesterday, longest stretch; states: data / no access / unavailable.
 - **Today Health tile (D2):** `StepGoalRing` replaces the steps number; Settings → Health gets "Daily step goal".
-- **Phone-down nights (D3):** Settings → Focus → "Phone-down nights" window (explanation, bedtime/wake pickers, "Changes apply from tomorrow night", allowed apps listed in words). Today card: evening "Phone down tonight 23:00–06:30 · +78 XP if kept" with [Wind down] from 30 minutes before; morning "Kept · +78 XP" / "Phone used at night · no XP" / "No usage data · no XP". Wind-down screen with `BreathingGuide` and [Done]. States: off / no access / evening / kept / broken / no data.
+- **Phone-down nights (D3):** Settings → Phone and focus → "Phone-down nights" window (explanation, bedtime/wake pickers, "Changes apply from tomorrow night", allowed apps listed in words). Today plan row: Evening group "Phone down tonight 23:00–06:30 · +78 XP if kept" with [Wind down] from 30 minutes before; Morning group "Kept · +78 XP" / "Phone used at night · no XP" / "No usage data · no XP". Wind-down screen with `BreathingGuide` and [Done]. States: off / no access / evening / kept / broken / no data.
 - **Quit counters (D4):** new route from Progress ("Quit counters" row) and the habits sheet. List of `QuitCounterCard`s, [Add counter] (preset chips, start date "Today / Earlier…", optional cost and minutes per day); counter detail: big day count, `MilestoneLadder`, money and time, **Restarts** log (date, trigger chip, note), [Log a restart] behind a calm confirm ("Restart the count? Your best run stays."). States: empty / one / several / detail with and without restarts / doomscrolling paused / no usage access.
 - **Programs (F6):** entry from Progress ("Programs" row) next to Campaign. List of three programs (name, days, rules); detail with [Start] (reason shown when slots are short or a campaign runs); running: "Day 12 / 66", `ProgramCalendar`, today's rules; the break choice is a sheet on next open: "Yesterday wasn't kept. Restart from day 1, or continue with the day marked?" [Restart] [Continue] (equal weight). Finished: COMPLETED (achievement) / FINISHED (marks shown, no blame). States: list / detail / running / break choice / completed / finished / abandoned.
 - **Quick Settings tile (A4):** label "Start focus"; subtitle the last-used session ("D · 25 min · Maths"); while running "18:24 left" (stopwatch: "32 min"); inactive look when nothing was ever started (tap opens Gates). Icon = the existing focus glyph as a monochrome vector.

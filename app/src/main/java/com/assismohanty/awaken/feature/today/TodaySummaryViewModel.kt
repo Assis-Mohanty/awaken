@@ -5,9 +5,11 @@ import androidx.lifecycle.viewModelScope
 import com.assismohanty.awaken.core.reelcounter.ReelWidgetData
 import com.assismohanty.awaken.core.designsystem.components.HealthTileModel
 import com.assismohanty.awaken.core.designsystem.components.ScreenTimeTileModel
+import com.assismohanty.awaken.core.domain.DayRefresher
 import com.assismohanty.awaken.core.domain.HealthOverviewResult
 import com.assismohanty.awaken.core.domain.LoadHealthOverviewUseCase
 import com.assismohanty.awaken.core.domain.LoadScreenTimeSummaryUseCase
+import com.assismohanty.awaken.core.domain.ObserveQuitCountersUseCase
 import com.assismohanty.awaken.core.domain.ScreenTimeSummary
 import com.assismohanty.awaken.core.domain.StepSource
 import com.assismohanty.awaken.engine.AppCategory
@@ -21,7 +23,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import timber.log.Timber
 
-/** The two summary tiles above Today's quests (phone feedback Part 2). */
+/** The Health and screen tiles and the Quit counters section on Today. */
 data class TodaySummaryUiState(
     val screenTime: ScreenTimeTileModel = ScreenTimeTileModel.Loading,
     val health: HealthTileModel = HealthTileModel.Loading,
@@ -29,7 +31,12 @@ data class TodaySummaryUiState(
     val healthNeedsConnect: Boolean = false,
     /** Reels watched today (Reel counter); null while that feature is switched off, so no tile shows. */
     val reelsToday: Int? = null,
+    /** One line per active quit counter, for the Quit counters section (hidden when empty). */
+    val quit: List<QuitSummaryLine> = emptyList(),
 )
+
+/** A counter reduced to what Today shows: its name and whole days clean. */
+data class QuitSummaryLine(val id: String, val name: String, val days: Int)
 
 /** Reads both tiles on every resume (usage and Health Connect change outside the app). Display only. */
 @HiltViewModel
@@ -37,6 +44,8 @@ class TodaySummaryViewModel @Inject constructor(
     private val loadScreenTime: LoadScreenTimeSummaryUseCase,
     private val loadHealth: LoadHealthOverviewUseCase,
     reelData: ReelWidgetData,
+    observeQuit: ObserveQuitCountersUseCase,
+    dayRefresher: DayRefresher,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(TodaySummaryUiState())
@@ -44,6 +53,13 @@ class TodaySummaryViewModel @Inject constructor(
 
     init {
         viewModelScope.launch { reelData.observe().collect { total -> _uiState.update { it.copy(reelsToday = total) } } }
+        viewModelScope.launch {
+            observeQuit(dayRefresher.ticks).collect { counters ->
+                _uiState.update { state ->
+                    state.copy(quit = counters.map { QuitSummaryLine(it.counter.id, it.counter.name, it.current.toDays().toInt()) })
+                }
+            }
+        }
     }
 
     fun refresh() {

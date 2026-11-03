@@ -2,32 +2,26 @@ package com.assismohanty.awaken.feature.today
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Icon
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.platform.LocalContext
-import androidx.lifecycle.compose.LifecycleResumeEffect
-import com.assismohanty.awaken.core.designsystem.components.HealthTile
-import com.assismohanty.awaken.core.designsystem.components.HealthTileModel
-import com.assismohanty.awaken.core.designsystem.components.ReelsTile
-import com.assismohanty.awaken.core.designsystem.components.ScreenTimeTile
-import com.assismohanty.awaken.core.designsystem.components.ScreenTimeTileModel
-import com.assismohanty.awaken.feature.health.openHealthConnectSettings
-import com.assismohanty.awaken.feature.screentime.openUsageAccessSettings
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.assismohanty.awaken.R
 import com.assismohanty.awaken.core.designsystem.components.AwakenCard
@@ -35,32 +29,29 @@ import com.assismohanty.awaken.core.designsystem.components.AwakenGlyphs
 import com.assismohanty.awaken.core.designsystem.components.BlockState
 import com.assismohanty.awaken.core.designsystem.components.EmptyState
 import com.assismohanty.awaken.core.designsystem.components.HabitRowActions
-import com.assismohanty.awaken.core.designsystem.components.HeaderIconButton
+import com.assismohanty.awaken.core.designsystem.components.HealthTile
+import com.assismohanty.awaken.core.designsystem.components.HealthTileModel
 import com.assismohanty.awaken.core.designsystem.components.HunterHeaderModel
-import com.assismohanty.awaken.core.designsystem.components.NeverMissTwiceLine
 import com.assismohanty.awaken.core.designsystem.components.LargeTitleScaffold
-import com.assismohanty.awaken.core.designsystem.components.LevelModule
 import com.assismohanty.awaken.core.designsystem.components.ListRow
 import com.assismohanty.awaken.core.designsystem.components.QuestRow
 import com.assismohanty.awaken.core.designsystem.components.QuestRowModel
 import com.assismohanty.awaken.core.designsystem.components.QuestRowState
-import com.assismohanty.awaken.core.designsystem.components.RingCard
-import com.assismohanty.awaken.core.designsystem.components.RingSpec
+import com.assismohanty.awaken.core.designsystem.components.QuietButton
+import com.assismohanty.awaken.core.designsystem.components.ReelsTile
+import com.assismohanty.awaken.core.designsystem.components.ScreenTimeTile
+import com.assismohanty.awaken.core.designsystem.components.ScreenTimeTileModel
+import com.assismohanty.awaken.core.designsystem.components.SectionHeader
 import com.assismohanty.awaken.core.designsystem.components.SkeletonCard
-import com.assismohanty.awaken.core.designsystem.components.StreakModule
 import com.assismohanty.awaken.core.designsystem.components.TimeBlockHeader
-import com.assismohanty.awaken.core.designsystem.components.formatCount
+import com.assismohanty.awaken.core.designsystem.components.TodayHeaderRow
 import com.assismohanty.awaken.core.designsystem.components.staggeredEntrance
 import com.assismohanty.awaken.core.designsystem.lexicon.lexPlural
 import com.assismohanty.awaken.core.designsystem.lexicon.lexString
 import com.assismohanty.awaken.core.designsystem.preview.PhonePreviews
 import com.assismohanty.awaken.core.designsystem.theme.AwakenTheme
 import com.assismohanty.awaken.core.designsystem.theme.Spacing
-import com.assismohanty.awaken.feature.program.ProgramBreakHost
-import com.assismohanty.awaken.feature.focus.FocusCard
-import com.assismohanty.awaken.feature.focus.FocusCardState
-import com.assismohanty.awaken.feature.focus.FocusCardViewModel
-import com.assismohanty.awaken.engine.ConsistencyScore
+import com.assismohanty.awaken.core.domain.BedtimeToday
 import com.assismohanty.awaken.engine.MissLine
 import com.assismohanty.awaken.engine.TimeBlocks
 import com.assismohanty.awaken.engine.model.Difficulty
@@ -68,20 +59,27 @@ import com.assismohanty.awaken.engine.model.Rank
 import com.assismohanty.awaken.engine.model.Stat
 import com.assismohanty.awaken.engine.model.TimeOfDay
 import com.assismohanty.awaken.engine.model.VerificationSource
+import com.assismohanty.awaken.feature.focus.FocusCard
+import com.assismohanty.awaken.feature.focus.FocusCardState
+import com.assismohanty.awaken.feature.focus.FocusCardViewModel
+import com.assismohanty.awaken.feature.health.openHealthConnectSettings
+import com.assismohanty.awaken.feature.program.ProgramBreakHost
+import com.assismohanty.awaken.feature.screentime.openUsageAccessSettings
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
-import java.time.format.FormatStyle
+import java.util.Locale
 
 @Composable
 fun TodayRoute(
     onOpenQuest: (questInstanceId: String) -> Unit,
     onOpenTrial: () -> Unit,
     modifier: Modifier = Modifier,
+    onOpenProgress: () -> Unit = {},
     onOpenScreenTime: () -> Unit = {},
     onOpenReelStats: () -> Unit = {},
     onOpenGates: () -> Unit = {},
     onOpenFocusReport: () -> Unit = {},
-    onOpenVault: () -> Unit = {},
+    onOpenQuit: () -> Unit = {},
     onOpenReview: () -> Unit = {},
     onOpenHealth: () -> Unit = {},
     onOpenWindDown: () -> Unit = {},
@@ -92,10 +90,12 @@ fun TodayRoute(
     dayPlanViewModel: DayPlanViewModel = hiltViewModel(),
     summaryViewModel: TodaySummaryViewModel = hiltViewModel(),
     focusViewModel: FocusCardViewModel = hiltViewModel(),
+    bedtimeViewModel: BedtimeCardViewModel = hiltViewModel(),
 ) {
     val focus by focusViewModel.uiState.collectAsStateWithLifecycle()
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val summary by summaryViewModel.uiState.collectAsStateWithLifecycle()
+    val bedtime by bedtimeViewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
     // Usage and Health Connect change outside the app (and after granting access in Settings): re-read on every return.
     LifecycleResumeEffect(summaryViewModel) {
@@ -114,23 +114,19 @@ fun TodayRoute(
         onHabitsEvent = habitsViewModel::onEvent,
         onDayPlanEvent = dayPlanViewModel::onEvent,
         modifier = modifier,
+        onOpenProgress = onOpenProgress,
         onOpenScreenTime = onOpenScreenTime,
         onOpenReelStats = onOpenReelStats,
         onOpenReview = onOpenReview,
         onOpenGates = onOpenGates,
         onOpenFocusReport = onOpenFocusReport,
-        onOpenVault = onOpenVault,
+        onOpenQuit = onOpenQuit,
         summary = summary,
         focus = focus,
+        bedtime = bedtime,
+        onOpenWindDown = onOpenWindDown,
         onOpenHealth = onOpenHealth,
         onGrantUsageAccess = { openUsageAccessSettings(context) },
-        bedtimeCard = {
-            BedtimeCardRoute(
-                currentBlock = state.currentBlock,
-                onWindDown = onOpenWindDown,
-                onGrantAccess = { openUsageAccessSettings(context) },
-            )
-        },
         onSetUpHealth = { if (summary.healthNeedsConnect) onOpenSettings() else openHealthConnectSettings(context) },
     )
     HabitSheets(state = habits, onEvent = habitsViewModel::onEvent)
@@ -156,10 +152,9 @@ private fun HabitUndoSnackbar(undo: HabitUndo?, host: SnackbarHostState?, onEven
 }
 
 /**
- * Today (DESIGN_SYSTEM §4.2): "Good morning, Sam" as the large title over the date; one ring card for the day ("3 of 10
- * done today"); Level and Streak as two metric cards; one insight; then the quests grouped Morning → Day → Evening →
- * Anytime (GD §14.5) as list rows with a hollow check. The penalty quest is a normal row with a Comeback chip at the top
- * of the current block (GD §7.3); planning, habits, campaign and screen limits follow as quiet rows.
+ * Today (DECLUTTER_PLAN §4): the date as the title, then at most five sections. Header (level, XP, streak; opens
+ * Progress) → Today's plan (comeback, rank-up test, Morning / Day / Evening / Anytime, weekly review) → Focus →
+ * Health and screen → Quit counters (only when one exists).
  */
 @Composable
 fun TodayScreen(
@@ -170,81 +165,59 @@ fun TodayScreen(
     onHabitsEvent: (HabitsEvent) -> Unit,
     onDayPlanEvent: (DayPlanEvent) -> Unit,
     modifier: Modifier = Modifier,
+    onOpenProgress: () -> Unit = {},
     onOpenScreenTime: () -> Unit = {},
     onOpenReelStats: () -> Unit = {},
     onOpenGates: () -> Unit = {},
     onOpenFocusReport: () -> Unit = {},
+    onOpenQuit: () -> Unit = {},
     focus: FocusCardState = FocusCardState(),
-    onOpenVault: () -> Unit = {},
     onOpenReview: () -> Unit = {},
     summary: TodaySummaryUiState = TodaySummaryUiState(),
+    bedtime: BedtimeToday? = null,
+    onOpenWindDown: () -> Unit = {},
     onOpenHealth: () -> Unit = {},
     onGrantUsageAccess: () -> Unit = {},
     onSetUpHealth: () -> Unit = {},
-    bedtimeCard: @Composable () -> Unit = {},
 ) {
-    val colors = AwakenTheme.colors
     val header = state.header
     LargeTitleScaffold(
-        title = greeting(state.currentBlock, header?.name),
-        subtitle = state.gameDate?.let(::formatDay),
+        title = state.gameDate?.let(::formatDay) ?: lexString(R.string.nav_today),
         modifier = modifier,
-        actions = {
-            HeaderIconButton(AwakenGlyphs.Portal, lexString(R.string.action_open_gates), onOpenGates)
-            HeaderIconButton(AwakenGlyphs.Vault, lexString(R.string.action_open_vault), onOpenVault)
-        },
     ) {
         if (state.loading || header == null) {
             SkeletonCard()
             SkeletonCard(lines = 4)
             return@LargeTitleScaffold
         }
-        RingCard(
-            label = lexString(if (state.cleared) R.string.system_title_directive_cleared else R.string.nav_today),
-            value = formatCount(state.completed),
-            unit = lexString(R.string.today_ring_unit, state.total),
-            secondary = lexString(R.string.today_ring_done),
-            rings = listOf(RingSpec(if (state.total > 0) state.completed.toFloat() / state.total else 0f, colors.positive)),
-            description = lexString(R.string.today_hero_cd, state.completed, state.total),
+        TodayHeaderRow(
+            level = header.level,
+            rank = header.rank,
+            xpIntoLevel = header.xpIntoLevel,
+            xpForLevel = header.xpForLevel,
+            streak = header.streak,
+            onClick = onOpenProgress,
             modifier = Modifier.staggeredEntrance(0),
         )
-        // Equal heights: the taller card (at large font sizes) sets both.
-        Row(
-            modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min).staggeredEntrance(1),
-            horizontalArrangement = Arrangement.spacedBy(Spacing.cardGap),
-        ) {
-            LevelModule(
-                level = header.level,
-                rank = header.rank,
-                xpIntoLevel = header.xpIntoLevel,
-                xpForLevel = header.xpForLevel,
-                modifier = Modifier.weight(1f).fillMaxHeight(),
-            )
-            StreakModule(
-                streak = header.streak,
-                best = state.bestStreak,
-                consistency = state.consistency,
-                modifier = Modifier.weight(1f).fillMaxHeight(),
-            )
-        }
-        val missLine = state.missLine
-        if (missLine != null) {
-            NeverMissTwiceLine(lexString(missLine.stringRes()), modifier = Modifier.staggeredEntrance(2))
-        } else {
-        }
+        TodayPlan(
+            state = state,
+            bedtime = bedtime,
+            onEvent = onEvent,
+            onOpenQuest = onOpenQuest,
+            onOpenTrial = onOpenTrial,
+            onHabitsEvent = onHabitsEvent,
+            onDayPlanEvent = onDayPlanEvent,
+            onOpenReview = onOpenReview,
+            onOpenScreenTime = onOpenScreenTime,
+            onOpenWindDown = onOpenWindDown,
+            onGrantUsageAccess = onGrantUsageAccess,
+        )
 
-        state.trial?.let { trial ->
-            TrialWindow(
-                trial = trial,
-                stages = state.trialStages,
-                onBegin = { onEvent(TodayEvent.BeginTrial) },
-                onOpenTrial = onOpenTrial,
-                onComplete = { onEvent(TodayEvent.Complete(it)) },
-                onOpenQuest = onOpenQuest,
-            )
-        }
+        SectionHeader(title = lexString(R.string.today_section_focus))
+        FocusCard(state = focus, onStart = onOpenGates, onOpenReport = onOpenFocusReport)
 
-        // Phone feedback Part 2: today's screen time and body numbers, above the quests; each opens its detail screen.
+        SectionHeader(title = lexString(R.string.today_section_health))
+        // Equal heights: the taller tile (at large font sizes) sets both.
         Row(
             modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min),
             horizontalArrangement = Arrangement.spacedBy(Spacing.cardGap),
@@ -262,35 +235,114 @@ fun TodayScreen(
                 modifier = Modifier.weight(1f).fillMaxHeight(),
             )
         }
-
         summary.reelsToday?.let { ReelsTile(total = it, onClick = onOpenReelStats, modifier = Modifier.fillMaxWidth()) }
 
-        FocusCard(state = focus, onStart = onOpenGates, onOpenReport = onOpenFocusReport)
-
-        Timeline(state, onEvent, onOpenQuest, onHabitsEvent)
-
-        if (state.reviewOpen) ReviewRow(onOpenReview)
-        PlanCard(state, onHabitsEvent, onDayPlanEvent)
-        state.discipline?.let { card -> DisciplineRow(card, onOpenScreenTime) }
-        bedtimeCard()
+        if (summary.quit.isNotEmpty()) {
+            SectionHeader(title = lexString(R.string.today_section_quit))
+            AwakenCard(reveal = false, contentPadding = Spacing.listCard, spacing = Spacing.zero, modifier = Modifier.fillMaxWidth()) {
+                summary.quit.forEach { line ->
+                    ListRow(title = quitLine(line), onClick = onOpenQuit, trailing = { Chevron() })
+                }
+            }
+        }
     }
 }
 
 /**
- * The quests as sections (GD §14.5): Morning → Day → Evening → Anytime, empty blocks hidden, each a card of list rows.
- * The block "now" is in is marked; earlier blocks start collapsed and expand on tap, and their open quests stay
- * completable. An open penalty quest leads the current block.
+ * Today's plan: the section header with its two actions, a comeback row after a missed day, the rank-up test while one is
+ * active, then the quests as blocks (GD §14.5) Morning → Day → Evening → Anytime with empty blocks hidden. The block "now"
+ * is in is marked; earlier blocks start collapsed and expand on tap, and their open quests stay completable. The phone-down
+ * row sits in Evening (tonight) or Morning (last night); the app-limits row in Anytime. The weekly review closes the plan.
  */
+@Composable
+private fun TodayPlan(
+    state: TodayUiState,
+    bedtime: BedtimeToday?,
+    onEvent: (TodayEvent) -> Unit,
+    onOpenQuest: (String) -> Unit,
+    onOpenTrial: () -> Unit,
+    onHabitsEvent: (HabitsEvent) -> Unit,
+    onDayPlanEvent: (DayPlanEvent) -> Unit,
+    onOpenReview: () -> Unit,
+    onOpenScreenTime: () -> Unit,
+    onOpenWindDown: () -> Unit,
+    onGrantUsageAccess: () -> Unit,
+) {
+    SectionHeader(
+        title = if (state.total > 0) lexString(R.string.today_plan_title, state.completed, state.total) else lexString(R.string.today_plan_title_empty),
+    ) {
+        QuietButton(text = lexString(R.string.action_plan_day), onClick = { onDayPlanEvent(DayPlanEvent.Open) })
+        QuietButton(text = lexString(R.string.today_habits), onClick = { onHabitsEvent(HabitsEvent.OpenList) })
+    }
+
+    ComebackRow(state, onEvent, onOpenQuest)
+
+    state.trial?.let { trial ->
+        TrialWindow(
+            trial = trial,
+            stages = state.trialStages,
+            onBegin = { onEvent(TodayEvent.BeginTrial) },
+            onOpenTrial = onOpenTrial,
+            onComplete = { onEvent(TodayEvent.Complete(it)) },
+            onOpenQuest = onOpenQuest,
+        )
+    }
+
+    Timeline(state, bedtime, onEvent, onOpenQuest, onHabitsEvent, onOpenScreenTime, onOpenWindDown, onGrantUsageAccess)
+
+    if (state.habits.isEmpty()) {
+        AwakenCard(reveal = false, contentPadding = Spacing.listCard, spacing = Spacing.zero, modifier = Modifier.fillMaxWidth()) {
+            EmptyState(
+                line = lexString(R.string.today_no_habits),
+                actionLabel = lexString(R.string.action_add_habit),
+                onAction = { onHabitsEvent(HabitsEvent.Add) },
+            )
+        }
+    }
+    if (state.reviewOpen) ReviewRow(onOpenReview)
+}
+
+/** After a missed day: the comeback quest with the calm "never miss twice" line, as one card. Nothing when neither exists. */
+@Composable
+private fun ComebackRow(state: TodayUiState, onEvent: (TodayEvent) -> Unit, onOpenQuest: (String) -> Unit) {
+    val missLine = state.missLine
+    val comeback = state.penalty?.copy(timeOfDay = state.currentBlock, comeback = true)
+    if (missLine == null && comeback == null) return
+    AwakenCard(
+        reveal = false,
+        title = lexString(R.string.today_comeback_title),
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        missLine?.let { Text(lexString(it.stringRes()), style = AwakenTheme.type.body, color = AwakenTheme.colors.textSecondary) }
+        comeback?.let {
+            QuestRow(
+                model = it,
+                onComplete = { onEvent(TodayEvent.Complete(it.id)) },
+                onOpen = { onOpenQuest(it.id) },
+            )
+        }
+    }
+}
+
 @Composable
 private fun Timeline(
     state: TodayUiState,
+    bedtime: BedtimeToday?,
     onEvent: (TodayEvent) -> Unit,
     onOpenQuest: (String) -> Unit,
     onHabitsEvent: (HabitsEvent) -> Unit,
+    onOpenScreenTime: () -> Unit,
+    onOpenWindDown: () -> Unit,
+    onGrantUsageAccess: () -> Unit,
 ) {
-    val comeback = state.penalty?.copy(timeOfDay = state.currentBlock, comeback = true)
-    val quests = listOfNotNull(comeback, state.main) + state.paths + state.sides + state.habits
-    val byBlock = quests.groupBy { it.timeOfDay }.toSortedMap(compareBy(TimeBlocks::order))
+    val quests = listOfNotNull(state.main) + state.paths + state.sides + state.habits
+    val bedtimeAt = bedtime?.let { bedtimeBlock(it, state.currentBlock) }
+    val showBedtime = bedtime != null && bedtimeAt != null
+    val showLimits = state.discipline != null
+    val grouped = quests.groupBy { it.timeOfDay }.toMutableMap<TimeOfDay?, List<QuestRowModel>>()
+    if (showBedtime) grouped.putIfAbsent(bedtimeAt, emptyList())
+    if (showLimits) grouped.putIfAbsent(null, emptyList())
+    val byBlock = grouped.toSortedMap(compareBy(TimeBlocks::order))
     val expanded = rememberSaveable(saver = expandedSaver) { mutableStateMapOf() }
     byBlock.forEach { (block, rows) ->
         val blockState = blockState(block, state.currentBlock)
@@ -328,40 +380,14 @@ private fun Timeline(
                                 ),
                             )
                         }
+                        if (showBedtime && bedtimeAt == block && bedtime != null) {
+                            BedtimeRow(bedtime, state.currentBlock, onWindDown = onOpenWindDown, onGrantAccess = onGrantUsageAccess)
+                        }
+                        val limits = state.discipline
+                        if (block == null && limits != null) LimitsRow(limits, onOpenScreenTime)
                     }
                 }
             }
-        }
-    }
-}
-
-/** Planning and habits as two quiet rows in one card; an empty habit list offers to add one. */
-@Composable
-private fun PlanCard(state: TodayUiState, onHabitsEvent: (HabitsEvent) -> Unit, onDayPlanEvent: (DayPlanEvent) -> Unit) {
-    val colors = AwakenTheme.colors
-    AwakenCard(reveal = false, contentPadding = Spacing.listCard, spacing = Spacing.zero, modifier = Modifier.fillMaxWidth()) {
-        ListRow(
-            title = lexString(R.string.action_day_plan),
-            icon = AwakenGlyphs.Calendar,
-            iconTint = colors.stat(Stat.WIL),
-            secondary = lexString(R.string.today_plan_secondary),
-            onClick = { onDayPlanEvent(DayPlanEvent.Open) },
-            trailing = { Chevron() },
-        )
-        ListRow(
-            title = lexString(R.string.today_habits),
-            icon = AwakenGlyphs.Directive,
-            iconTint = colors.stat(Stat.CHA),
-            secondary = if (state.habits.isEmpty()) null else lexPlural(R.plurals.today_habits_count, state.habits.size, state.habits.size),
-            onClick = { onHabitsEvent(HabitsEvent.OpenList) },
-            trailing = { Chevron() },
-        )
-        if (state.habits.isEmpty()) {
-            EmptyState(
-                line = lexString(R.string.today_no_habits),
-                actionLabel = lexString(R.string.action_add_habit),
-                onAction = { onHabitsEvent(HabitsEvent.Add) },
-            )
         }
     }
 }
@@ -381,24 +407,31 @@ private fun ReviewRow(onOpenReview: () -> Unit) {
     }
 }
 
+/** Screen discipline as an Anytime row: whether today's app limits are holding (GD §6.7). */
 @Composable
-private fun DisciplineRow(card: DisciplineCard, onOpenScreenTime: () -> Unit) {
+private fun LimitsRow(card: DisciplineCard, onOpenScreenTime: () -> Unit) {
     val colors = AwakenTheme.colors
-    AwakenCard(reveal = false, contentPadding = Spacing.listCard, spacing = Spacing.zero, modifier = Modifier.fillMaxWidth()) {
-        ListRow(
-            title = lexString(R.string.quest_kind_discipline),
-            icon = AwakenGlyphs.Phone,
-            iconTint = if (card.held) colors.positive else colors.critical,
-            secondary = if (card.held) {
-                lexString(R.string.today_discipline_on_track, card.xpAtStake)
-            } else {
-                lexString(R.string.today_discipline_forfeited)
-            },
-            onClick = onOpenScreenTime,
-            trailing = { Chevron() },
-        )
-    }
+    ListRow(
+        title = lexString(R.string.today_limits_title),
+        icon = AwakenGlyphs.Phone,
+        iconTint = if (card.held) colors.positive else colors.critical,
+        secondary = if (card.held) {
+            lexString(R.string.today_discipline_on_track, card.xpAtStake)
+        } else {
+            lexString(R.string.today_discipline_forfeited)
+        },
+        onClick = onOpenScreenTime,
+        trailing = { Chevron() },
+    )
 }
+
+@Composable
+private fun quitLine(line: QuitSummaryLine): String =
+    if (line.days <= 0) {
+        lexString(R.string.today_quit_started_today, line.name)
+    } else {
+        lexPlural(R.plurals.today_quit_days, line.days, line.name, line.days)
+    }
 
 @Composable
 private fun Chevron() {
@@ -418,17 +451,8 @@ private val expandedSaver = androidx.compose.runtime.saveable.Saver<androidx.com
     restore = { saved -> mutableStateMapOf<String, Boolean>().apply { saved.chunked(2).forEach { (k, v) -> put(k as String, v as Boolean) } } },
 )
 
-@Composable
-private fun greeting(block: TimeOfDay, name: String?): String {
-    val res = when (block) {
-        TimeOfDay.MORNING -> R.string.today_greeting_morning
-        TimeOfDay.DAY -> R.string.today_greeting_day
-        TimeOfDay.EVENING -> R.string.today_greeting_evening
-    }
-    return lexString(res, name.orEmpty()).trimEnd(',', ' ')
-}
-
-private fun formatDay(date: LocalDate): String = DateTimeFormatter.ofLocalizedDate(FormatStyle.FULL).format(date)
+/** "Tuesday 3 November": the title (DECLUTTER_PLAN §4). */
+private fun formatDay(date: LocalDate): String = DateTimeFormatter.ofPattern("EEEE d MMMM", Locale.getDefault()).format(date)
 
 private const val ANYTIME_KEY = "ANYTIME"
 
@@ -481,8 +505,7 @@ internal val previewTodayState = TodayUiState(
     total = 6,
     currentBlock = TimeOfDay.DAY,
     gameDate = LocalDate.of(2026, 10, 27),
-    bestStreak = 30,
-    consistency = ConsistencyScore(cleared = 22, eligible = 28),
+    discipline = DisciplineCard(held = true, xpAtStake = 42),
 )
 
 internal val previewSummary = TodaySummaryUiState(
@@ -490,11 +513,13 @@ internal val previewSummary = TodaySummaryUiState(
     health = HealthTileModel.Ready(steps = 8_412, distanceKm = 6.2, activeKcal = 412, sleepMinutes = 452),
 )
 
+private val previewFocus = FocusCardState(todayMinutes = 42, weekMinutes = 310, goal = 60, streak = 5)
+
 @PhonePreviews
 @Composable
 private fun TodayScreenPreview() {
     AwakenTheme {
-        TodayScreen(previewTodayState, onEvent = {}, onOpenQuest = {}, onOpenTrial = {}, onHabitsEvent = {}, onDayPlanEvent = {}, summary = previewSummary)
+        TodayScreen(previewTodayState, onEvent = {}, onOpenQuest = {}, onOpenTrial = {}, onHabitsEvent = {}, onDayPlanEvent = {}, summary = previewSummary, focus = previewFocus)
     }
 }
 
@@ -515,15 +540,17 @@ private fun TodayScreenNoAccessPreview() {
     }
 }
 
+/** Evening with a quit counter, a comeback after a missed day and no habits. */
 @PhonePreviews
 @Composable
-private fun TodayScreenClearedPreview() {
+private fun TodayScreenEveningPreview() {
     AwakenTheme {
         TodayScreen(
             previewTodayState.copy(
                 cleared = true,
                 completed = 6,
                 penalty = previewRow("p", "Take a short walk", Stat.VIT, 20, "min", block = null),
+                missLine = MissLine.MISSED_YESTERDAY,
                 habits = emptyList(),
                 currentBlock = TimeOfDay.EVENING,
             ),
@@ -532,23 +559,8 @@ private fun TodayScreenClearedPreview() {
             onOpenTrial = {},
             onHabitsEvent = {},
             onDayPlanEvent = {},
-            summary = previewSummary,
-        )
-    }
-}
-
-@PhonePreviews
-@Composable
-private fun TodayMissedYesterdayPreview() {
-    AwakenTheme {
-        TodayScreen(
-            previewTodayState.copy(missLine = MissLine.MISSED_YESTERDAY, consistency = ConsistencyScore(cleared = 21, eligible = 28)),
-            onEvent = {},
-            onOpenQuest = {},
-            onOpenTrial = {},
-            onHabitsEvent = {},
-            onDayPlanEvent = {},
-            summary = previewSummary,
+            summary = previewSummary.copy(quit = listOf(QuitSummaryLine("q1", "Smoking", 12))),
+            focus = previewFocus,
         )
     }
 }

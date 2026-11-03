@@ -1,17 +1,14 @@
 package com.assismohanty.awaken.feature.today
 
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import com.assismohanty.awaken.R
 import com.assismohanty.awaken.core.designsystem.components.AwakenCard
-import com.assismohanty.awaken.core.designsystem.components.SecondaryButton
+import com.assismohanty.awaken.core.designsystem.components.AwakenGlyphs
+import com.assismohanty.awaken.core.designsystem.components.ListRow
+import com.assismohanty.awaken.core.designsystem.components.QuietButton
 import com.assismohanty.awaken.core.designsystem.lexicon.lexString
 import com.assismohanty.awaken.core.designsystem.preview.PhonePreviews
 import com.assismohanty.awaken.core.designsystem.theme.AwakenTheme
@@ -37,7 +34,7 @@ import kotlinx.coroutines.flow.stateIn
 import timber.log.Timber
 
 /**
- * Reads the phone-down card once a minute while Today is on screen (GD §16.12). Read-only: the settling itself runs in the
+ * Reads the phone-down row once a minute while Today is on screen (GD §16.12). Read-only: the settling itself runs in the
  * screen-time check and the rollover, never here, so opening Today cannot pay or expire anything.
  */
 @HiltViewModel
@@ -64,34 +61,31 @@ class BedtimeCardViewModel @Inject constructor(private val load: LoadBedtimeToda
     }
 }
 
-/** Today's phone-down card with its own ViewModel, so the Today model stays about quests. */
-@Composable
-fun BedtimeCardRoute(
-    currentBlock: TimeOfDay,
-    onWindDown: () -> Unit,
-    onGrantAccess: () -> Unit,
-    modifier: Modifier = Modifier,
-    viewModel: BedtimeCardViewModel = hiltViewModel(),
-) {
-    val model by viewModel.uiState.collectAsStateWithLifecycle()
-    model?.let { BedtimeCard(it, currentBlock, onWindDown, onGrantAccess, modifier) }
+/**
+ * Where the phone-down row sits in Today's plan (DECLUTTER_PLAN §4): tonight's window in Evening, last night's result in
+ * Morning. Without usage access it sits in Evening and offers to fix that. Null: nothing to show.
+ */
+fun bedtimeBlock(model: BedtimeToday, currentBlock: TimeOfDay): TimeOfDay? = when {
+    model.needsAccess -> TimeOfDay.EVENING
+    currentBlock == TimeOfDay.EVENING && model.tonight != null -> TimeOfDay.EVENING
+    model.lastNight != null -> TimeOfDay.MORNING
+    else -> null
 }
 
 /**
- * The phone-down card (DESIGN_SYSTEM §9.3). Evening shows tonight's window and what keeping it pays, with a wind-down button
- * from 30 minutes before bedtime; the rest of the day shows last night's result. Without usage access it offers nothing
- * to earn and says why.
+ * The phone-down row (DESIGN_SYSTEM §9.3), a plan row. Evening shows tonight's window and what keeping it pays, with a
+ * wind-down link from 30 minutes before bedtime; Morning shows last night's result. Without usage access it offers
+ * nothing to earn and says why.
  */
 @Composable
-fun BedtimeCard(
+fun BedtimeRow(
     model: BedtimeToday,
     currentBlock: TimeOfDay,
     onWindDown: () -> Unit,
     onGrantAccess: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val colors = AwakenTheme.colors
-    val line: String?
+    val line: String
     var windDown = false
     when {
         model.needsAccess -> line = lexString(R.string.bedtime_card_needs_access)
@@ -100,18 +94,20 @@ fun BedtimeCard(
             windDown = !model.now.isBefore(model.tonight.windDownFrom) && model.now.isBefore(model.tonight.window.end)
         }
         model.lastNight != null -> line = lastNightLine(model.lastNight)
-        else -> line = null
+        else -> return
     }
-    if (line == null) return
-    AwakenCard(reveal = false, modifier = modifier.fillMaxWidth()) {
-        Text(lexString(R.string.bedtime_card_title), style = AwakenTheme.type.label, color = colors.textSecondary)
-        Text(line, style = AwakenTheme.type.body, color = colors.textPrimary)
-        if (model.needsAccess) {
-            SecondaryButton(text = lexString(R.string.bedtime_grant_access), onClick = onGrantAccess, modifier = Modifier.fillMaxWidth())
-        } else if (windDown) {
-            SecondaryButton(text = lexString(R.string.bedtime_wind_down), onClick = onWindDown, modifier = Modifier.fillMaxWidth())
-        }
-    }
+    ListRow(
+        title = lexString(R.string.bedtime_card_title),
+        icon = AwakenGlyphs.Moon,
+        iconTint = AwakenTheme.colors.accent,
+        secondary = line,
+        modifier = modifier,
+        trailing = when {
+            model.needsAccess -> {{ QuietButton(text = lexString(R.string.bedtime_grant_access), onClick = onGrantAccess) }}
+            windDown -> {{ QuietButton(text = lexString(R.string.bedtime_wind_down), onClick = onWindDown) }}
+            else -> null
+        },
+    )
 }
 
 @Composable
@@ -139,41 +135,41 @@ private val previewNow = Instant.parse("2026-11-02T22:10:00Z")
 @PhonePreviews
 @Composable
 private fun BedtimeEveningPreview() = AwakenTheme(reduceMotion = true) {
-    BedtimeCard(BedtimeToday(false, null, previewTonight, previewNow), TimeOfDay.EVENING, {}, {})
+    AwakenCard(reveal = false) { BedtimeRow(BedtimeToday(false, null, previewTonight, previewNow), TimeOfDay.EVENING, {}, {}) }
 }
 
 @PhonePreviews
 @Composable
 private fun BedtimeWindDownPreview() = AwakenTheme(reduceMotion = true) {
-    BedtimeCard(BedtimeToday(false, null, previewTonight, previewWindow.start.minusSeconds(600)), TimeOfDay.EVENING, {}, {})
+    AwakenCard(reveal = false) { BedtimeRow(BedtimeToday(false, null, previewTonight, previewWindow.start.minusSeconds(600)), TimeOfDay.EVENING, {}, {}) }
 }
 
 @PhonePreviews
 @Composable
 private fun BedtimeKeptPreview() = AwakenTheme(reduceMotion = true) {
-    BedtimeCard(BedtimeToday(false, LastNight.Kept(78), previewTonight, previewNow), TimeOfDay.MORNING, {}, {})
+    AwakenCard(reveal = false) { BedtimeRow(BedtimeToday(false, LastNight.Kept(78), previewTonight, previewNow), TimeOfDay.MORNING, {}, {}) }
 }
 
 @PhonePreviews
 @Composable
 private fun BedtimeBrokenPreview() = AwakenTheme(reduceMotion = true) {
-    BedtimeCard(BedtimeToday(false, LastNight.Broken, previewTonight, previewNow), TimeOfDay.DAY, {}, {})
+    AwakenCard(reveal = false) { BedtimeRow(BedtimeToday(false, LastNight.Broken, previewTonight, previewNow), TimeOfDay.DAY, {}, {}) }
 }
 
 @PhonePreviews
 @Composable
 private fun BedtimeNoDataPreview() = AwakenTheme(reduceMotion = true) {
-    BedtimeCard(BedtimeToday(false, LastNight.NoData, null, previewNow), TimeOfDay.MORNING, {}, {})
+    AwakenCard(reveal = false) { BedtimeRow(BedtimeToday(false, LastNight.NoData, null, previewNow), TimeOfDay.MORNING, {}, {}) }
 }
 
 @PhonePreviews
 @Composable
 private fun BedtimeInProgressPreview() = AwakenTheme(reduceMotion = true) {
-    BedtimeCard(BedtimeToday(false, LastNight.InProgress(previewWindow), previewTonight, previewNow), TimeOfDay.MORNING, {}, {})
+    AwakenCard(reveal = false) { BedtimeRow(BedtimeToday(false, LastNight.InProgress(previewWindow), previewTonight, previewNow), TimeOfDay.MORNING, {}, {}) }
 }
 
 @PhonePreviews
 @Composable
 private fun BedtimeNeedsAccessPreview() = AwakenTheme(reduceMotion = true) {
-    BedtimeCard(BedtimeToday(true, null, previewTonight, previewNow), TimeOfDay.EVENING, {}, {})
+    AwakenCard(reveal = false) { BedtimeRow(BedtimeToday(true, null, previewTonight, previewNow), TimeOfDay.EVENING, {}, {}) }
 }

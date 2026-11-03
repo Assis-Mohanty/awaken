@@ -182,7 +182,14 @@ private fun MainScaffold(
                         onOpenSettings = { navController.navigate(SettingsRoute) { launchSingleTop = true } },
                         onOpenTrial = { navController.navigate(TrialRoute) },
                         onOpenGates = { navController.navigate(GatesRoute) { launchSingleTop = true } },
-                        onOpenVault = { navController.navigate(VaultRoute) { launchSingleTop = true } },
+                        onOpenProgress = {
+                            navController.navigate(StatusRoute) {
+                                popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                                launchSingleTop = true
+                                restoreState = true
+                            }
+                        },
+                        onOpenQuit = { navController.navigate(QuitRoute) { launchSingleTop = true } },
                     )
                 }
                 composable<QuestDetailRoute> {
@@ -215,6 +222,7 @@ private fun MainScaffold(
                 composable<DietRoute> { DietEntry() }
                 composable<StatusRoute> {
                     StatusEntry(
+                        onOpenStore = { navController.navigate(VaultRoute) { launchSingleTop = true } },
                         onOpenQuit = { navController.navigate(QuitRoute) { launchSingleTop = true } },
                         onOpenPrograms = { navController.navigate(ProgramsRoute) { launchSingleTop = true } },
                         onOpenSettings = { navController.navigate(SettingsRoute) },

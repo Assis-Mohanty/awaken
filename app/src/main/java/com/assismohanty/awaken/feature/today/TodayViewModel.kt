@@ -28,7 +28,6 @@ import com.assismohanty.awaken.core.domain.PathBadgeInfo
 import com.assismohanty.awaken.core.domain.StartTrialResult
 import com.assismohanty.awaken.core.domain.StartTrialUseCase
 import com.assismohanty.awaken.core.domain.TodayModel
-import com.assismohanty.awaken.engine.ConsistencyScore
 import com.assismohanty.awaken.engine.MissLine
 import com.assismohanty.awaken.core.domain.TrialSummary
 import com.assismohanty.awaken.core.domain.isOpen
@@ -53,7 +52,7 @@ data class TodayUiState(
     val loading: Boolean = true,
     val header: HunterHeaderModel? = null,
     val rank: Rank = Rank.E,
-    /** Pinned above the directive in an ember window when a penalty quest exists (DESIGN_SYSTEM §4.2). */
+    /** The comeback quest after a missed day (GD §7.3); leads the plan in its own row. */
     val penalty: QuestRowModel? = null,
     val main: QuestRowModel? = null,
     val sides: List<QuestRowModel> = emptyList(),
@@ -64,22 +63,17 @@ data class TodayUiState(
     val habitIdByQuest: Map<String, String> = emptyMap(),
     val completed: Int = 0,
     val total: Int = 0,
-    /** The day meets the clear rule (GD §7.1): title becomes "DIRECTIVE CLEARED". */
+    /** The day meets the clear rule (GD §7.1). */
     val cleared: Boolean = false,
-    /** The Rank Trial slot: available to begin, or running (GD §5). */
+    /** The rank-up test: available to begin, or running (GD §5). */
     val trial: TrialSummary? = null,
     /** Today's open and cleared trial stage quests. */
     val trialStages: List<QuestRowModel> = emptyList(),
-    /** A penalty quest is still open: Today is tinted ember (GD §7.3, visual only). */
-    val penaltyOpen: Boolean = false,
-    /** Today's Screen Discipline quest (GD §6.7), shown as its own card, not as a quest row. */
+    /** Today's app-limits quest (GD §6.7), shown as an Anytime row, not as a quest row. */
     val discipline: DisciplineCard? = null,
     /** The block "now" is in (GD §14.5): highlighted on the timeline, earlier blocks collapse. */
     val currentBlock: TimeOfDay = TimeOfDay.MORNING,
     val gameDate: LocalDate? = null,
-    val bestStreak: Int = 0,
-    /** Cleared of eligible days over the last 28 (GD §14.2), beside the streak. */
-    val consistency: ConsistencyScore = ConsistencyScore(0, 0),
     /** The calm line shown the day after a missed day. */
     val missLine: MissLine? = null,
     /** "Your weekly review is open" row, Saturday to Monday until done (GD §14.4). */
@@ -227,13 +221,10 @@ internal fun TodayModel.toUiState(): TodayUiState {
         cleared = hunter.todayCleared,
         currentBlock = currentBlock,
         gameDate = hunter.gameDate,
-        bestStreak = hunter.bestStreak,
-        consistency = consistency,
         missLine = missLine,
         reviewOpen = reviewOpen,
         trial = trial,
         trialStages = quests.filter { it.type == QuestType.TRIAL }.map { it.toRowModel() },
-        penaltyOpen = quests.any { it.type == QuestType.PENALTY && it.isOpen },
         discipline = quests.firstOrNull { it.type == QuestType.DISCIPLINE }?.let { quest ->
             DisciplineCard(
                 held = quest.status != QuestStatus.EXPIRED,
