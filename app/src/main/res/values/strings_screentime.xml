@@ -1,15 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Screen Discipline (GAME_DESIGN §6.7, DESIGN_SYSTEM §4.9) -->
-    <string name="quest_kind_discipline">SCREEN DISCIPLINE</string>
+    <string name="quest_kind_discipline">Screen limits</string>
     <string name="discipline_quest_title">Screen Discipline</string>
     <string name="discipline_quest_description">Keep every distracting app under its daily limit until the day ends.</string>
     <string name="verify_usage">Verified by your phone\'s usage data. Pays at the end of the day if every limit held.</string>
 
     <string name="screentime_title">Screen time</string>
     <string name="screentime_loading">Reading today\'s usage…</string>
-    <string name="screentime_failed">The System couldn\'t read your usage. Try again in a moment.</string>
-    <string name="screentime_window_access">GRANT USAGE ACCESS</string>
+    <string name="screentime_failed">Couldn\'t read your usage. Try again in a moment.</string>
+    <string name="screentime_window_access">Grant usage access</string>
     <string name="screentime_access_body">To show how long you spend in each app, AWAKEN needs usage access. It reads app times on this phone only. Nothing is sent anywhere, and no app is ever blocked.</string>
     <string name="screentime_access_steps">On the next screen, find AWAKEN and turn on \"Permit usage access\".</string>
     <string name="screentime_access_action">Grant usage access</string>
@@ -18,9 +18,9 @@
     <string name="screentime_limit_not_tracked">Not tracked</string>
     <string name="screentime_discipline_not_tracked">Limits are not tracked right now, so nothing is at stake and no XP is paid today. Grant usage access to track them.</string>
     <string name="screentime_discipline_unreadable">Limits are not tracked right now: this phone isn\'t reporting app usage, so nothing is at stake and no XP is paid until it does.</string>
-    <string name="screentime_window_today">TODAY</string>
-    <string name="screentime_window_apps">APPS</string>
-    <string name="screentime_window_trend">LAST 7 DAYS</string>
+    <string name="screentime_window_today">Today</string>
+    <string name="screentime_window_apps">Apps</string>
+    <string name="screentime_window_trend">Last 7 days</string>
     <string name="screentime_trend_note">Grey is all screen time, red the distracting part.</string>
     <string name="screentime_trend_day">%1$s: %2$s total, %3$s distracting</string>
     <string name="screentime_privacy_note">Usage stays on this phone. It never leaves the device and never changes XP by itself.</string>
@@ -34,7 +34,7 @@
     <string name="screentime_filter_all">All</string>
 
     <string name="screentime_xp_at_stake">+%1$d XP</string>
-    <string name="screentime_discipline_off">Set daily limits on distracting apps. Hold them all day and the System pays +%1$d XP. Cross one and you forfeit it. Nothing you\'ve earned is ever taken.</string>
+    <string name="screentime_discipline_off">Set daily limits on distracting apps. Stay under them all day and earn +%1$d XP. Cross one and you forfeit it. Nothing you\'ve earned is ever taken.</string>
     <string name="screentime_discipline_starts">Screen Discipline starts tomorrow. Today\'s usage is tracked but nothing is at stake yet.</string>
     <string name="screentime_discipline_no_limits">No distracting app has a limit, so nothing is at stake. Set one below.</string>
     <string name="screentime_discipline_on_track">Every limit holds. Keep it until the day ends to claim +%1$d XP.</string>

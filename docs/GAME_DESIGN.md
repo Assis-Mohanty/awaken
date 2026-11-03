@@ -158,7 +158,7 @@ Quests are generated from a **bundled JSON template library** (`assets/quests/te
   "id": "str_pushups",
   "stat": "STR",
   "secondaryStat": "WIL",
-  "titles": ["Do push-ups", "Practise push-ups"],
+  "title": "Do {n} push-ups",
   "description": "Complete {target} push-ups. Sets of any size.",
   "unit": "reps",
   "targets": { "EASY": 20, "NORMAL": 40, "HARD": 80, "EXTREME": 120 },
@@ -169,7 +169,7 @@ Quests are generated from a **bundled JSON template library** (`assets/quests/te
 }
 ```
 
-**Titles** say what to do, in plain words: action first, **2–5 words**, sentence case, **≤ 40 chars**, 1–3 variants per template. No numbers (the target line under the title shows them, and campaign habits keep their title while the target grows), no metaphors or fantasy words (forge, power, gate, realm, …: the full list is `TemplateLibrary.BANNED_TITLE_WORDS`). Good: "Do push-ups", "Walk your steps", "Eat protein-rich food". Bad: "Iron Arms", "Fuel the Forge". `TemplateLibrary.validate()` enforces this, so `ContentAssetsTest` fails on a bad title.
+**Titles** say what to do, in plain words, and carry the target: `title` is one pattern per template, rendered with the quest's target when it is generated ("Walk {n} steps" becomes "Walk 7,000 steps"), so the quest row has no separate target line. Action first, sentence case, at least 2 words, **≤ 44 chars once rendered at any difficulty**, no random variants. Tokens: `{n}` (the target, thousands separators), `{dur}` for `sec` targets ("30 seconds", "1 minute", "90 seconds", "3 minutes"), and `{one|many}` for a word that agrees with a target of 1 ("Compliment {n} {person|people}"). Exactly one of `{n}` / `{dur}` per pattern; no other digits. No metaphors or fantasy words (forge, power, gate, realm, …: the full list is `TemplateLibrary.BANNED_TITLE_WORDS`). Good: "Do 25 push-ups", "Walk 7,000 steps". Bad: "Iron Arms", "Fuel the Forge". `TemplateLibrary.validate()` enforces this, so `ContentAssetsTest` fails on a bad title. Already generated quests keep the title they were created with. Path (AI) titles are untouched; the proxy prompt already asks for plain titles.
 
 Verification options in templates: `SELF`, `TIMER` (completed by the Focus Gate engine), `HEALTH_STEPS`, `HEALTH_EXERCISE` (any exercise session ≥ target minutes), `HEALTH_SLEEP` (sleep session ≥ target hours), `HEALTH_DISTANCE` (walking + running distance for the game-day ≥ target km), `HEALTH_CALORIES` (active calories for the game-day ≥ target kcal).
 
@@ -656,7 +656,6 @@ S(W)  = first 3 of rot(Q(W) \ S0(W−1), W)  followed by  rot(Q(W) ∩ S0(W−1)
   5. Intention: optional one line, **≤ 120 chars**.
   Text is cleaned like Path text (ENGINE_DECISIONS #59: control/format chars → space, collapse whitespace, trim, truncate by code points). It never leaves the phone.
 - **Focus stats** from step 4 are written to `hunter_profile` like a Settings change and apply from the **next generated directive** (today's is never regenerated). The generator uses its existing focus weighting (§6.3); no new numbers.
-- **Identity line** (§14.7): if the hunter has identities, step 2 is headed "Did you act like someone who {identity}?", the identity picked by `fnv1a64("hunterId|W|identity") mod count`. Nothing is stored beyond the free text.
 - **Rewards:** none. Achievements for 1 / 4 / 12 submitted reviews (§14.8).
 - **Notification:** on game-day Sunday, if a reminder time is set and `W` has no review, the existing directive notification at the reminder time gains a second line ("Your weekly review is open.") and a review action. It stays one notification, so the 2-per-day cap (ARCH §3.5) is untouched.
 
@@ -678,39 +677,17 @@ S(W)  = first 3 of rot(Q(W) \ S0(W−1), W)  followed by  rot(Q(W) ∩ S0(W−1)
 
 Monthly and yearly recaps were removed on 2026-11-03 (see `docs/DECLUTTER_PLAN.md`). The weekly report, heatmap and insights cover the same ground.
 
-### 14.7 Identities (PRD F33)
+### 14.7 (removed)
 
-- `assets/identities.json` = `{version, identities: [{id, stat}]}`; display text in `strings.xml` as `identity_<id>`. Launch list (12):
-
-| id | "Someone who …" | Stat |
-|---|---|---|
-| trains | trains | STR |
-| runs | runs | STR |
-| reads | reads | INT |
-| ships | ships | INT |
-| learns | keeps learning | INT |
-| focuses | focuses deeply | WIL |
-| keeps_promises | keeps their promises | WIL |
-| meditates | meditates | WIL |
-| sleeps_well | sleeps well | VIT |
-| eats_well | eats well | VIT |
-| stays_in_touch | stays in touch | CHA |
-| speaks_up | speaks up | CHA |
-
-- Onboarding step "Who are you becoming?" before the focus-stat step: pick **1–3**, skippable. Stored as ordered ids in `hunter_profile.identities` (exported).
-- **Pre-selection:** the distinct stats of the picks, in pick order; the first two become the pre-selected focus stats; a single distinct stat pre-selects only that one. The hunter can still change both.
-- Shown under the name on Status ("Someone who trains · reads"), editable in Settings (0–3), used by the review line (§14.4). **No rewards.** Existing hunters have none until they set them.
+Identities ("Who are you becoming?") were removed on 2026-11-03 (see `docs/DECLUTTER_PLAN.md`). The onboarding step, the Status line, the Settings row and the review line are gone; `hunter_profile.identities` was dropped in Room v27.
 
 ### 14.8 (removed)
 
 The v1.1 achievements were removed on 2026-11-03 (see `docs/DECLUTTER_PLAN.md`).
 
-### 14.9 Presentation mode (Clean / System) (PRD F34)
+### 14.9 (removed)
 
-- `presentationMode ∈ {CLEAN, SYSTEM}` in the UI DataStore (not exported, like other UI prefs, ENGINE_DECISIONS #48). **New installs: CLEAN. Installs upgrading from v1.0 (onboarding already done when the pref is first read): SYSTEM**, so nobody's app changes under them.
-- **Invite:** after the first level-up ceremony (end of the reward chain, after any chapter and rank-up) while in CLEAN and never answered: "Want the full System experience?" [Try it] [Keep clean]. Either button records the answer and it never shows again; dismissing without a choice shows it again at the next level-up.
-- **Same game in both modes:** ranks E–S, levels, XP, gold, streaks, caps and every number in this file are identical. Only labels, copy voice and the gate glow differ (term list in DESIGN_SYSTEM §8.3).
-- **Voice:** `assets/narrative/system_lines_clean.json` mirrors `system_lines.json` (same contexts and placeholders; line counts may differ). Selection is unchanged (`fnv1a64(hunterId|date|context) mod lines`, ENGINE_DECISIONS #29) over the active file.
+There is one vocabulary: plain words, no System voice, no presentation mode (see ENGINE_DECISIONS #109 and #156). The Lexicon survives only as the `lexString` / `lexPlural` entry point.
 
 ### 14.10 Test vectors (v1.1, continuing §12 numbering)
 

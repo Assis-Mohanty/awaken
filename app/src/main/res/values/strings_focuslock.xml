@@ -62,7 +62,7 @@
     <string name="focus_lock_close">Close</string>
 
     <!-- Settings -->
-    <string name="settings_window_focus">FOCUS</string>
+    <string name="settings_window_focus">Focus</string>
     <string name="focus_lock_setting_title">Focus Lock</string>
     <string name="focus_lock_setting_note">Cover other apps while a focus session runs.</string>
     <string name="focus_lock_status_accessibility">Switched on in Android accessibility settings</string>

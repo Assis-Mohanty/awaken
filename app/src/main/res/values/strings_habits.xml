@@ -64,4 +64,5 @@
     <string name="habit_skip_left">1 skip left this week</string>
     <string name="habit_skip_none">No skips left this week</string>
     <string name="habit_no_skip_flexible">Not needed: any day counts</string>
+    <string name="habit_program_locked">This habit belongs to your program. The app sets it; you can archive it, not edit it.</string>
 </resources>

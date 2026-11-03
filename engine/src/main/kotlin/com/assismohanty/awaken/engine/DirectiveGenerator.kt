@@ -7,6 +7,7 @@ import com.assismohanty.awaken.engine.model.QuestDraft
 import com.assismohanty.awaken.engine.model.QuestTemplate
 import com.assismohanty.awaken.engine.model.QuestType
 import com.assismohanty.awaken.engine.model.Stat
+import com.assismohanty.awaken.engine.model.TitlePattern
 import com.assismohanty.awaken.engine.model.VerificationSource
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
@@ -64,7 +65,7 @@ object DirectiveGenerator {
             val mainCandidates = pool.filter { it.stat == mainStatPreference && it.supports(mainDifficulty(context, it.stat)) }
                 .ifEmpty { pool.filter { it.supports(mainDifficulty(context, it.stat)) } }
             pickWeighted(mainCandidates, context, gameDate, rng)?.let { template ->
-                draft(template, QuestType.MAIN, mainDifficulty(context, template.stat), context, gameDate, "main", rng)
+                draft(template, QuestType.MAIN, mainDifficulty(context, template.stat), context, gameDate, "main")
             }
         }
         val paths = pathQuests.filter { it !== promoted }.map { it.copy(type = QuestType.PATH) }
@@ -80,13 +81,13 @@ object DirectiveGenerator {
             }
             pickWeighted(starters, context, gameDate, rng)?.let { template ->
                 used += template.id
-                sides += draft(template, QuestType.SIDE, Difficulty.EASY, context, gameDate, "side0", rng)
+                sides += draft(template, QuestType.SIDE, Difficulty.EASY, context, gameDate, "side0")
             }
         }
         for (index in sides.size until sideCount) {
             val template = pickSide(pool, used, main?.stat, context, gameDate, rng) ?: break
             used += template.id
-            sides += draft(template, QuestType.SIDE, context.tier(template.stat), context, gameDate, "side$index", rng)
+            sides += draft(template, QuestType.SIDE, context.tier(template.stat), context, gameDate, "side$index")
         }
         return Directive(gameDate, main, sides, paths)
     }
@@ -119,7 +120,7 @@ object DirectiveGenerator {
         val pool = eligible(templates, context).filter { it.id !in context.recentTemplateIds }
         val used = current.quests.mapNotNullTo(HashSet()) { it.templateId } + alsoExclude
         val template = pickSide(pool, used, current.main?.stat, context, gameDate, rng) ?: return null
-        return draft(template, QuestType.SIDE, context.tier(template.stat), context, gameDate, "reroll$rerollNumber", rng)
+        return draft(template, QuestType.SIDE, context.tier(template.stat), context, gameDate, "reroll$rerollNumber")
     }
 
     /** Gold cost of the [rerollNumber]-th reroll today (1-based): first free, next three 40 each, then not allowed. */
@@ -138,7 +139,7 @@ object DirectiveGenerator {
             .sortedBy { it.id }
         if (candidates.isEmpty()) return null
         val template = candidates[rng.nextInt(candidates.size)]
-        return draft(template, QuestType.PENALTY, Difficulty.NORMAL, context, gameDate, "penalty", rng)
+        return draft(template, QuestType.PENALTY, Difficulty.NORMAL, context, gameDate, "penalty")
     }
 
     /**
@@ -154,7 +155,7 @@ object DirectiveGenerator {
             if (candidates.isEmpty()) return@mapNotNull null
             val slot = "trial-${stat.name}"
             val rng = SplittableRandom(seed(context.hunterId, gameDate, slot))
-            draft(candidates[rng.nextInt(candidates.size)], QuestType.TRIAL, Difficulty.HARD, context, gameDate, slot, rng)
+            draft(candidates[rng.nextInt(candidates.size)], QuestType.TRIAL, Difficulty.HARD, context, gameDate, slot)
         }
     }
 
@@ -238,7 +239,6 @@ object DirectiveGenerator {
         context: HunterContext,
         gameDate: LocalDate,
         slot: String,
-        rng: SplittableRandom,
     ): QuestDraft {
         val target = template.targets.getValue(difficulty)
         return QuestDraft(
@@ -248,7 +248,7 @@ object DirectiveGenerator {
             templateId = template.id,
             stat = template.stat,
             secondaryStat = template.secondaryStat,
-            title = template.titles[rng.nextInt(template.titles.size)],
+            title = TitlePattern.render(template.title, target),
             description = template.description.replace("{target}", target.toString()),
             unit = template.unit,
             target = target,

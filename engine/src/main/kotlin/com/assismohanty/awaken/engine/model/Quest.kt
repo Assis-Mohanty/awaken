@@ -9,7 +9,8 @@ data class QuestTemplate(
     val id: String,
     val stat: Stat,
     val secondaryStat: Stat? = null,
-    val titles: List<String>,
+    /** A [TitlePattern]: one title per template, rendered with the target at generation (GD §6.2). */
+    val title: String,
     val description: String,
     val unit: String,
     val targets: Map<Difficulty, Int>,
@@ -21,7 +22,7 @@ data class QuestTemplate(
     val timeOfDay: TimeOfDay? = null,
 ) {
     init {
-        require(titles.isNotEmpty()) { "template $id has no titles" }
+        require(title.isNotBlank()) { "template $id has no title" }
         require(targets.isNotEmpty()) { "template $id has no targets" }
     }
 }

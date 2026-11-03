@@ -1,9 +1,10 @@
 package com.assismohanty.awaken.feature.screentime
 
-import com.assismohanty.awaken.core.designsystem.lexicon.PresentationMode
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onLast
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
@@ -28,7 +29,7 @@ class ScreenTimeScreenTest {
         onOpenUsageAccess: () -> Unit = {},
     ) {
         composeRule.setContent {
-            AwakenTheme(reduceMotion = true, presentation = PresentationMode.SYSTEM) {
+            AwakenTheme(reduceMotion = true) {
                 ScreenTimeScreen(state = state, onEvent = { events += it }, onBack = {}, onOpenUsageAccess = onOpenUsageAccess)
             }
         }
@@ -37,10 +38,10 @@ class ScreenTimeScreenTest {
     @Test
     fun showsTodayTheStakeAndTheApps() {
         show()
-        composeRule.onNodeWithText("TODAY").assertIsDisplayed()
+        composeRule.onNodeWithText("Today").assertIsDisplayed()
         composeRule.onNodeWithText("Every limit holds. Keep it until the day ends to claim +78 XP.").performScrollTo().assertIsDisplayed()
         composeRule.onNodeWithContentDescription("Instagram: 26 of 30 minutes used").performScrollTo().assertIsDisplayed()
-        composeRule.onNodeWithText("APPS").performScrollTo().assertIsDisplayed()
+        composeRule.onNodeWithText("Apps").performScrollTo().assertIsDisplayed()
         composeRule.onNodeWithText("From tomorrow: Distracting, 60 min").performScrollTo().assertIsDisplayed()
     }
 
@@ -52,9 +53,9 @@ class ScreenTimeScreenTest {
             state = state.copy(overview = state.overview?.copy(hasAccess = false, status = DisciplineStatus.OFF, apps = emptyList())),
             onOpenUsageAccess = { opened++ },
         )
-        composeRule.onNodeWithText("Grant usage access").performClick()
+        composeRule.onAllNodesWithText("Grant usage access").onLast().performClick()
         assertThat(opened).isEqualTo(1)
-        composeRule.onNodeWithText("APPS").assertDoesNotExist()
+        composeRule.onNodeWithText("Apps").assertDoesNotExist()
     }
 
     @Test
@@ -96,7 +97,7 @@ class ScreenTimeScreenTest {
     fun theEditorStepsTheLimitAndSaysItAppliesTomorrow() {
         val events = mutableListOf<ScreenTimeEvent>()
         composeRule.setContent {
-            AwakenTheme(reduceMotion = true, presentation = PresentationMode.SYSTEM) {
+            AwakenTheme(reduceMotion = true) {
                 RuleEditorContent(AppRuleEditor("pkg", "Instagram", AppCategory.DISTRACTING, 30), onEvent = { events += it })
             }
         }
@@ -114,7 +115,7 @@ class ScreenTimeScreenTest {
     @Test
     fun aNonDistractingAppHasNoLimitControls() {
         composeRule.setContent {
-            AwakenTheme(reduceMotion = true, presentation = PresentationMode.SYSTEM) {
+            AwakenTheme(reduceMotion = true) {
                 RuleEditorContent(AppRuleEditor("pkg", "Docs", AppCategory.PRODUCTIVE, null), onEvent = {})
             }
         }

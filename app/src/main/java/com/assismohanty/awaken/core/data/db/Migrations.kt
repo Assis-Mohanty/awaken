@@ -402,9 +402,22 @@ val MIGRATION_25_26 = object : Migration(25, 26) {
     }
 }
 
+/**
+ * v27 (declutter Batch 2): identities ("Someone who ...") are gone. `hunter_profile` is rebuilt without the column (SQLite on
+ * minSdk 28 cannot drop one). `completion.crit` stays: old rows keep their value and new rows are always false.
+ */
+val MIGRATION_26_27 = object : Migration(26, 27) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("CREATE TABLE IF NOT EXISTS `hunter_profile_new` (`id` TEXT NOT NULL, `hunter_id` TEXT NOT NULL, `name` TEXT NOT NULL, `created_at` INTEGER NOT NULL, `first_game_date` TEXT NOT NULL, `focus_stat_1` TEXT NOT NULL, `focus_stat_2` TEXT NOT NULL, `day_start_hour` INTEGER NOT NULL, `reminder_time` TEXT, `onboarding_done` INTEGER NOT NULL, `owned_equipment` TEXT NOT NULL, `injury_mode` INTEGER NOT NULL, `injury_tags` TEXT NOT NULL DEFAULT 'impact,legs', `health_enabled` INTEGER NOT NULL, `last_recalibrated_on` TEXT, `screen_time_from` TEXT, `step_goal` INTEGER NOT NULL DEFAULT 8000, PRIMARY KEY(`id`))")
+        db.execSQL("INSERT INTO `hunter_profile_new` (`id`, `hunter_id`, `name`, `created_at`, `first_game_date`, `focus_stat_1`, `focus_stat_2`, `day_start_hour`, `reminder_time`, `onboarding_done`, `owned_equipment`, `injury_mode`, `injury_tags`, `health_enabled`, `last_recalibrated_on`, `screen_time_from`, `step_goal`) SELECT `id`, `hunter_id`, `name`, `created_at`, `first_game_date`, `focus_stat_1`, `focus_stat_2`, `day_start_hour`, `reminder_time`, `onboarding_done`, `owned_equipment`, `injury_mode`, `injury_tags`, `health_enabled`, `last_recalibrated_on`, `screen_time_from`, `step_goal` FROM `hunter_profile`")
+        db.execSQL("DROP TABLE `hunter_profile`")
+        db.execSQL("ALTER TABLE `hunter_profile_new` RENAME TO `hunter_profile`")
+    }
+}
+
 /** Every migration, in order. The database builder and the migration test both use this list. */
 val ALL_MIGRATIONS: Array<Migration> = arrayOf(
     MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9,
     MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17,
-    MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21, MIGRATION_21_22, MIGRATION_22_23, MIGRATION_23_24, MIGRATION_24_25, MIGRATION_25_26,
+    MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21, MIGRATION_21_22, MIGRATION_22_23, MIGRATION_23_24, MIGRATION_24_25, MIGRATION_25_26, MIGRATION_26_27,
 )

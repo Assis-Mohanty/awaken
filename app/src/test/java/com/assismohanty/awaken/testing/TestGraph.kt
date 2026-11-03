@@ -14,7 +14,6 @@ import com.assismohanty.awaken.core.data.db.entity.QuestInstanceEntity
 import com.assismohanty.awaken.core.data.repo.GameStateReader
 import com.assismohanty.awaken.core.data.repo.LedgerRepository
 import com.assismohanty.awaken.core.data.repo.NoticeStore
-import com.assismohanty.awaken.core.data.repo.IdentityRepository
 import com.assismohanty.awaken.core.data.repo.TemplateRepository
 import com.assismohanty.awaken.core.data.repo.TransactionRunner
 import com.assismohanty.awaken.core.domain.DistractingApps
@@ -147,7 +146,6 @@ class TestGraph(
     val transactions = TransactionRunner(db)
     val ledger = LedgerRepository(db.ledgerDao(), transactions)
     val templates = TemplateRepository(context, Dispatchers.Unconfined)
-    val identities = IdentityRepository(context, Dispatchers.Unconfined)
     val health = FakeHealthGateway()
     val phoneSteps = FakePhoneStepsGateway()
     val reader = GameStateReader(
@@ -247,8 +245,8 @@ class TestGraph(
     val purchaseItem = PurchaseItemUseCase(db.hunterDao(), ledger, transactions, clock)
     val observeVault = ObserveVaultUseCase(ledger)
     val porter = GameDataPorter(db, ledger, transactions, clock, Dispatchers.Unconfined)
-    val updateSettings = UpdateSettingsUseCase(db.hunterDao(), templates, identities, clock)
-    val observeSettings = ObserveSettingsUseCase(db.hunterDao(), templates, identities)
+    val updateSettings = UpdateSettingsUseCase(db.hunterDao(), templates, clock)
+    val observeSettings = ObserveSettingsUseCase(db.hunterDao(), templates)
     val healthSync = HealthSyncUseCase(db.hunterDao(), db.questDao(), health, phoneSteps, completeQuest, completionCenter, clock)
     val loadInsights = LoadInsightsUseCase(db.insightDao(), clock)
     val refreshHealthCache = RefreshHealthCacheUseCase(db.hunterDao(), db.insightDao(), health, clock)

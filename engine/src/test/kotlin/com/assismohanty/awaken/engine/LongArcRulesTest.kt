@@ -16,7 +16,7 @@ class LongArcRulesTest {
     private val monday = LocalDate.of(2026, 11, 2)
 
     private fun template(id: String, stat: Stat, vararg difficulties: Difficulty) = QuestTemplate(
-        id = id, stat = stat, titles = listOf(id), description = "Do {target}", unit = "reps",
+        id = id, stat = stat, title = "Do {n} $id", description = "Do {target}", unit = "reps",
         targets = difficulties.associateWith { 10 }, verification = Verification.SELF,
     )
 

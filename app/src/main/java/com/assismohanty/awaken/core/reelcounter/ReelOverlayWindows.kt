@@ -21,7 +21,6 @@ import com.assismohanty.awaken.core.data.repo.UiPrefs
 import com.assismohanty.awaken.core.data.repo.UiPrefsRepository
 import com.assismohanty.awaken.core.designsystem.components.ReelBubble
 import com.assismohanty.awaken.core.designsystem.components.ReelBubbleSize
-import com.assismohanty.awaken.core.designsystem.lexicon.PresentationMode
 import com.assismohanty.awaken.core.designsystem.theme.AwakenTheme
 import com.assismohanty.awaken.feature.reelcounter.ReelNudgeContent
 import com.assismohanty.awaken.feature.reelcounter.ReelPanelContent
@@ -71,7 +70,7 @@ class ReelOverlayWindows @Inject constructor(
 
     private data class Bubble(val app: ShortVideoApp, val sessionId: Long, val count: Int, val allowance: Int?)
     private data class Nudge(val app: ShortVideoApp, val count: Int, val allowance: Int?, val snoozesLeft: Int)
-    private data class Look(val dark: Boolean, val presentation: PresentationMode, val reduceMotion: Boolean)
+    private data class Look(val dark: Boolean, val reduceMotion: Boolean)
 
     private var service: AccessibilityService? = null
     private var actions: ReelOverlayActions? = null
@@ -86,7 +85,7 @@ class ReelOverlayWindows @Inject constructor(
 
     /** Today's total across every app (the bubble's own count may run ahead of it). */
     private var reelsToday by mutableStateOf<Int?>(null)
-    private var look by mutableStateOf(Look(dark = true, presentation = PresentationMode.CLEAN, reduceMotion = false))
+    private var look by mutableStateOf(Look(dark = true, reduceMotion = false))
 
     private var placement = BubblePlacement(BubbleEdge.CENTER, SettingsStore.DEFAULT_BUBBLE_Y)
     private var bubbleEnabled = true
@@ -185,7 +184,7 @@ class ReelOverlayWindows @Inject constructor(
 
     @Composable
     private fun Themed(content: @Composable () -> Unit) {
-        AwakenTheme(darkTheme = look.dark, presentation = look.presentation, reduceMotion = look.reduceMotion, content = content)
+        AwakenTheme(darkTheme = look.dark, reduceMotion = look.reduceMotion, content = content)
     }
 
     // --- bubble ---
@@ -348,7 +347,7 @@ class ReelOverlayWindows @Inject constructor(
             ThemeMode.SYSTEM ->
                 service.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK == Configuration.UI_MODE_NIGHT_YES
         }
-        return Look(dark, presentationMode ?: PresentationMode.CLEAN, reduceMotion)
+        return Look(dark, reduceMotion)
     }
 
     private companion object {

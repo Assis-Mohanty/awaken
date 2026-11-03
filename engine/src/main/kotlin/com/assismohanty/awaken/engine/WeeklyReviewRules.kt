@@ -38,10 +38,4 @@ object WeeklyReviewRules {
 
     /** Free text cleaned like Path text (ENGINE_DECISIONS #59); blank becomes null. */
     fun cleanText(raw: String?, max: Int): String? = raw?.let { PathText.clean(it, max) }?.takeIf { it.isNotEmpty() }
-
-    /** "Did you act like someone who {identity}?": one of the hunter's identities, stable for the week. */
-    fun identityFor(hunterId: String, weekKey: String, identities: List<String>): String? {
-        if (identities.isEmpty()) return null
-        return identities[Math.floorMod(Fnv1a.hash64("$hunterId|$weekKey|identity"), identities.size.toLong()).toInt()]
-    }
 }

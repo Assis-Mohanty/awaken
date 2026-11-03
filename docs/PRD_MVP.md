@@ -72,7 +72,7 @@ Habit/RPG apps are a crowded but low-quality niche on Play: Habitica (aging, pun
 | F29 | **Personal insights**: on-device correlations (sleep, weekday, time of day, focus hour, steps, momentum) with statistical guardrails and correlational copy; up to 3 on Status, rotated per ISO week | GD §14.3; DS §8.1 |
 | F30 | **Weekly review**: Sat–Mon ritual, ≤ 5 taps (numbers, went well, slipped, next week's focus stats, intention); stored locally, exported; no XP, achievements only | GD §14.4; DS §8.2 |
 | F31 | **Time-of-day blocks**: Morning / Day / Evening / Anytime grouping on Today with editable boundaries; templates and habits carry a block; no change to generation or rewards | GD §14.5; DS §8.2 |
-| F33 | **Identity framing**: "Who are you becoming?" (1–3 of 12) in onboarding, pre-selects focus stats, shown on Status, used in the review; no rewards | GD §14.7; DS §8.2 |
+| F33 | **Removed (2026-11-03).** Identity framing ("Who are you becoming?") left with the declutter; see GD §14.7 | |
 | F34 | **Superseded (2026-10-27).** The v2 redesign dropped System mode, so the app always uses Clean words; no ModeSwitch, invite or clean voice-line file was built. Original spec — **Clean / System presentation**: Clean by default for new installs, one-time invite after the first level-up; a Lexicon swaps game terms and voice; numbers identical | GD §14.9; DS §8.3 |
 
 **v1.2 feature batch (PROPOSED 2026-11-02, awaiting approval)** (source: `docs/NEW_IDEAS_TO_IMPLEMENT.md`; build order: `docs/BUILD_PLAN.md`). On-device only, no AI, no network, no new money flows, no new Accessibility Service. Idea IDs in brackets. G3 is F28 (built); H1 is F34 (superseded; open question).

@@ -4,7 +4,6 @@ import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.assismohanty.awaken.core.designsystem.lexicon.PresentationMode
 import com.assismohanty.awaken.core.designsystem.theme.AwakenTheme
 import com.assismohanty.awaken.feature.onboarding.OnboardingStep
 import com.assismohanty.awaken.feature.onboarding.OnboardingUiState
@@ -26,7 +25,7 @@ class AiPathsHiddenTest {
     @Test
     fun statusHasNoPathsButtonWithoutAiPaths() {
         composeRule.setContent {
-            AwakenTheme(reduceMotion = true, presentation = PresentationMode.SYSTEM) {
+            AwakenTheme(reduceMotion = true) {
                 StatusScreen(state = previewStatusState(), onEvent = {}, onOpenPaths = null)
             }
         }
@@ -36,7 +35,7 @@ class AiPathsHiddenTest {
     @Test
     fun settingsHasNoAiPathsWindowWithoutAiPaths() {
         composeRule.setContent {
-            AwakenTheme(reduceMotion = true, presentation = PresentationMode.SYSTEM) {
+            AwakenTheme(reduceMotion = true) {
                 SettingsScreen(
                     state = previewSettingsState().copy(showAiConsent = true),
                     onEvent = {},

@@ -1,6 +1,5 @@
 package com.assismohanty.awaken.feature.paths
 
-import com.assismohanty.awaken.core.designsystem.lexicon.PresentationMode
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -53,7 +52,7 @@ class PathsScreenTest {
 
     private fun show(state: PathsUiState, events: MutableList<PathsEvent> = mutableListOf()) {
         composeRule.setContent {
-            AwakenTheme(presentation = PresentationMode.SYSTEM) { PathsScreen(state = state, onEvent = { events += it }, onOpenPath = {}) }
+            AwakenTheme { PathsScreen(state = state, onEvent = { events += it }, onOpenPath = {}) }
         }
     }
 
@@ -62,7 +61,7 @@ class PathsScreenTest {
         val events = mutableListOf<PathsEvent>()
         show(PathsUiState(loading = false), events)
 
-        composeRule.onNodeWithText("Name what you're leveling toward. The System will chart the way.").assertExists()
+        composeRule.onNodeWithText("Name what you're working toward. The app will plan the steps.").assertExists()
         composeRule.onNodeWithText("Create path").performClick()
 
         assertThat(events).containsExactly(PathsEvent.Create)
@@ -76,7 +75,7 @@ class PathsScreenTest {
         composeRule.onNodeWithText("Easy 3K run").assertExists()
         composeRule.onNodeWithText("Cleared").assertExists()
         composeRule.onNodeWithText("Week charted").assertExists()
-        composeRule.onNodeWithText("The System has raised the bar.").assertExists()
+        composeRule.onNodeWithText("Targets go up a step.").assertExists()
     }
 
     @Test
@@ -94,7 +93,7 @@ class PathsScreenTest {
         val events = mutableListOf<PathsEvent>()
         show(PathsUiState(loading = false, consentGiven = true, paths = listOf(card(advanceTo = "Speed"))), events)
 
-        composeRule.onNodeWithText("The System judges you ready for: Speed").assertExists()
+        composeRule.onNodeWithText("You look ready for: Speed").assertExists()
         composeRule.onNodeWithText("Advance").performScrollTo().performClick()
         composeRule.onNodeWithText("Stay").performScrollTo().performClick()
 

@@ -11,9 +11,6 @@ import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.ui.graphics.Color
-import com.assismohanty.awaken.core.designsystem.lexicon.Lexicon
-import com.assismohanty.awaken.core.designsystem.lexicon.LocalLexicon
-import com.assismohanty.awaken.core.designsystem.lexicon.PresentationMode
 import com.assismohanty.awaken.engine.model.Rank
 
 /**
@@ -23,14 +20,12 @@ import com.assismohanty.awaken.engine.model.Rank
  * @param darkTheme the resolved Appearance choice; the default follows the device.
  * @param reduceMotion the in-app toggle; the system "Remove animations" setting is OR-ed in (§2.5).
  * @param hapticsEnabled the in-app toggle (§2.6).
- * @param presentation the words, provided as [LocalLexicon]. The app always passes Clean; tests may pin System words.
  */
 @Composable
 fun AwakenTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     reduceMotion: Boolean = false,
     hapticsEnabled: Boolean = true,
-    presentation: PresentationMode = PresentationMode.CLEAN,
     content: @Composable () -> Unit,
 ) {
     val palette = if (darkTheme) AwakenPalette.Dark else AwakenPalette.Light
@@ -49,7 +44,6 @@ fun AwakenTheme(
         LocalAwakenShapes provides shapes,
         LocalAwakenDimens provides dimens,
         LocalHaptics provides rememberHaptics(hapticsEnabled),
-        LocalLexicon provides Lexicon.of(presentation),
     ) {
         MaterialTheme(
             colorScheme = colorScheme,

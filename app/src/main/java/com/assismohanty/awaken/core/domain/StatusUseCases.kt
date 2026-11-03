@@ -46,8 +46,6 @@ data class StatusModel(
     val projectedRecalibration: Map<Stat, DifficultyAdapter.Change>,
     /** Cleared of eligible days over the last 28 (GD §14.2), next to the heatmap. */
     val consistency: ConsistencyScore = ConsistencyScore(0, 0),
-    /** Identity ids in pick order (GD §14.7), shown under the name. */
-    val identityIds: List<String> = emptyList(),
     /** This week's personal insights (GD §14.3). */
     val insights: InsightsModel = InsightsModel(),
     /** The weekly review can be done now (GD §14.4). */
@@ -141,7 +139,6 @@ class ObserveStatusUseCase @Inject constructor(
             weeklyReport = StatusMath.weeklyReport(week, rows.statXpWeek.byStat(), rows.xpPerDay, weekCompletions),
             projectedRecalibration = projectRecalibration(week),
             consistency = Consistency.score(rows.outcomes, today, hunterDao.getProfile()?.firstGameDate ?: today),
-            identityIds = hunterDao.getProfile()?.identityIds.orEmpty(),
             insights = hunterDao.getProfile()?.let { loadInsights(it, today) } ?: InsightsModel(),
             reviewOpen = WeeklyReviewRules.isOpen(today, weeklyReviewDao.submittedWeeks().toSet()),
         )

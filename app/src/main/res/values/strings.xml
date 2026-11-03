@@ -3,17 +3,17 @@
 
     <!-- Bottom navigation -->
     <string name="nav_today">Today</string>
-    <string name="nav_status">Status</string>
-    <string name="nav_vault">Vault</string>
-    <string name="action_open_gates">Open Gates</string>
-    <string name="action_open_vault">Open Vault</string>
+    <string name="nav_status">Progress</string>
+    <string name="nav_vault">Store</string>
+    <string name="action_open_gates">Open focus sessions</string>
+    <string name="action_open_vault">Open store</string>
 
     <!-- Placeholders (Phase 1 only) -->
 
     <!-- System window titles: UPPERCASE is reserved for the System speaking (DESIGN_SYSTEM §2.2) -->
-    <string name="system_title_daily_directive">DAILY DIRECTIVE</string>
-    <string name="system_title_quest_cleared">QUEST CLEARED</string>
-    <string name="system_title_system_warning">SYSTEM WARNING</string>
+    <string name="system_title_daily_directive">Today\'s plan</string>
+    <string name="system_title_quest_cleared">Quest complete</string>
+    <string name="system_title_system_warning">You missed a day</string>
 
     <!-- Stats and difficulty -->
     <string name="stat_str">Strength</string>
@@ -105,25 +105,6 @@
     <string name="consistency_none_cd">No consistency score yet.</string>
     <string name="miss_line_yesterday">Missed yesterday. Don\'t miss twice.</string>
     <string name="miss_line_fresh_start">A fresh start today.</string>
-    <!-- Identities (GD §14.7): the words after "Someone who" -->
-    <string name="identity_trains">trains</string>
-    <string name="identity_runs">runs</string>
-    <string name="identity_reads">reads</string>
-    <string name="identity_ships">ships</string>
-    <string name="identity_learns">keeps learning</string>
-    <string name="identity_focuses">focuses deeply</string>
-    <string name="identity_keeps_promises">keeps their promises</string>
-    <string name="identity_meditates">meditates</string>
-    <string name="identity_sleeps_well">sleeps well</string>
-    <string name="identity_eats_well">eats well</string>
-    <string name="identity_stays_in_touch">stays in touch</string>
-    <string name="identity_speaks_up">speaks up</string>
-    <string name="identity_statement">Someone who %1$s</string>
-    <string name="identity_separator">" · "</string>
-    <string name="identity_title">Who are you becoming?</string>
-    <string name="identity_body">Pick up to three. They set your starting focus; you can change them any time.</string>
-    <string name="identity_limit">Pick up to 3</string>
-    <string name="identity_settings_title">Identities</string>
     <!-- Personal insights (GD §14.3): correlational only, never causal, never medical, never shaming -->
     <string name="insights_title">Insights</string>
     <string name="insights_caption">Based on your last 84 days. A pattern, not a cause.</string>
@@ -140,10 +121,10 @@
     <string name="insight_steps_less">On days under 7,000 steps, you complete %1$d%% more quests.</string>
     <string name="insight_steps_more_abs">On days you walk 7,000 steps or more, you complete %1$s quests a day, against %2$s otherwise.</string>
     <string name="insight_steps_less_abs">On days under 7,000 steps, you complete %1$s quests a day, against %2$s otherwise.</string>
-    <string name="insight_momentum_more">In the 3 days after a promotion challenge stage, you complete %1$d%% more quests.</string>
-    <string name="insight_momentum_less">Outside the 3 days after a promotion challenge stage, you complete %1$d%% more quests.</string>
-    <string name="insight_momentum_more_abs">In the 3 days after a promotion challenge stage, you complete %1$s quests a day, against %2$s otherwise.</string>
-    <string name="insight_momentum_less_abs">Outside the 3 days after a promotion challenge stage, you complete %1$s quests a day, against %2$s.</string>
+    <string name="insight_momentum_more">In the 3 days after a rank-up test stage, you complete %1$d%% more quests.</string>
+    <string name="insight_momentum_less">Outside the 3 days after a rank-up test stage, you complete %1$d%% more quests.</string>
+    <string name="insight_momentum_more_abs">In the 3 days after a rank-up test stage, you complete %1$s quests a day, against %2$s otherwise.</string>
+    <string name="insight_momentum_less_abs">Outside the 3 days after a rank-up test stage, you complete %1$s quests a day, against %2$s.</string>
     <string name="insight_weekday">You complete %1$d%% more quests on %2$s than on %3$s.</string>
     <string name="insight_weekday_abs">You complete %1$s quests on %2$s, against %3$s on %4$s.</string>
     <string name="insight_block">You finish %1$d%% more of your %2$s quests than your %3$s ones.</string>
@@ -169,7 +150,6 @@
     <string name="review_xp">XP earned</string>
     <string name="review_best_day">Best day</string>
     <string name="review_went_well">What went well?</string>
-    <string name="review_identity_prompt">Did you act like someone who %1$s?</string>
     <string name="review_slipped">What slipped?</string>
     <string name="review_focus_title">Next week\'s focus</string>
     <string name="review_focus_body">Pick two. They shape your plans from the next one on.</string>

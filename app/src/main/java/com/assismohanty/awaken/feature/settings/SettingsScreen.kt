@@ -1,7 +1,6 @@
 package com.assismohanty.awaken.feature.settings
 
 import com.assismohanty.awaken.core.designsystem.components.formatCount
-import com.assismohanty.awaken.engine.Identity
 import com.assismohanty.awaken.engine.FocusGoalRules
 import com.assismohanty.awaken.engine.TimeBlocks
 import com.assismohanty.awaken.core.designsystem.lexicon.lexString
@@ -64,10 +63,7 @@ import com.assismohanty.awaken.core.designsystem.components.PrimaryButton
 import com.assismohanty.awaken.core.designsystem.components.QuietButton
 import com.assismohanty.awaken.core.designsystem.components.SecondaryButton
 import com.assismohanty.awaken.core.designsystem.components.SystemWindow
-import com.assismohanty.awaken.core.designsystem.components.IdentityChips
-import com.assismohanty.awaken.core.designsystem.components.IdentityOption
 import com.assismohanty.awaken.core.designsystem.components.equipmentNameRes
-import com.assismohanty.awaken.core.designsystem.components.identityPhraseRes
 import com.assismohanty.awaken.core.designsystem.components.injuryTagNameRes
 import com.assismohanty.awaken.core.designsystem.components.label
 import com.assismohanty.awaken.core.designsystem.preview.PhonePreviews
@@ -275,15 +271,6 @@ private fun ProfileWindow(state: SettingsUiState, onEvent: (SettingsEvent) -> Un
             )
         }
         Text(lexString(R.string.focus_goal_settings_note), style = type.caption, color = colors.textSecondary)
-        Text(lexString(R.string.identity_settings_title), style = type.label, color = colors.textPrimary)
-        IdentityChips(
-            options = state.identityOptions.mapNotNull { identity ->
-                identityPhraseRes(identity.id)?.let { IdentityOption(identity.id, identity.stat, lexString(it)) }
-            },
-            selected = state.identities,
-            onToggle = { onEvent(SettingsEvent.ToggleIdentity(it)) },
-            showLimit = state.identityLimitHit,
-        )
     }
 }
 
@@ -660,11 +647,6 @@ internal fun previewSettingsState() = SettingsUiState(
     reminder = LocalTime.of(7, 30),
     equipment = setOf("dumbbells", "jump_rope"),
     equipmentOptions = listOf("dumbbells", "kettlebell", "pullup_bar", "resistance_band", "jump_rope", "gym_access", "bicycle"),
-    identities = listOf("reads", "trains"),
-    identityOptions = listOf(
-        Identity("trains", Stat.STR), Identity("runs", Stat.STR), Identity("reads", Stat.INT), Identity("ships", Stat.INT),
-        Identity("focuses", Stat.WIL), Identity("sleeps_well", Stat.VIT), Identity("speaks_up", Stat.CHA),
-    ),
     injuryMode = true,
     injuryTags = setOf("impact", "legs"),
 )

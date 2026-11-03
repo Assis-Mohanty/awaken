@@ -84,24 +84,4 @@ class GrowthVectorsTest {
         val outcomes = listOf(CLEARED, BROKEN, CLEARED, SHIELDED, CLEARED, BROKEN, BROKEN, CLEARED)
         assertThat(Consistency.recoveries(outcomes)).isEqualTo(3)
     }
-
-    private val identities = IdentityCatalog(
-        version = 1,
-        identities = listOf(
-            Identity("trains", Stat.STR),
-            Identity("reads", Stat.INT),
-            Identity("ships", Stat.INT),
-        ),
-    )
-
-    @Test
-    fun `vector 75 - picks reads, trains, ships pre-select INT and STR`() {
-        assertThat(identities.preselect(listOf("reads", "trains", "ships"))).containsExactly(Stat.INT, Stat.STR).inOrder()
-    }
-
-    @Test
-    fun `vector 76 - picks reads, ships pre-select INT only`() {
-        assertThat(identities.preselect(listOf("reads", "ships"))).containsExactly(Stat.INT)
-    }
-
 }

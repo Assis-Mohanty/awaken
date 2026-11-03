@@ -40,8 +40,7 @@ class ContentAssetsTest {
     fun `ids are unique and titles are not empty`() {
         assertThat(library.templates.map { it.id }).containsNoDuplicates()
         library.templates.forEach { t ->
-            assertWithMessage(t.id).that(t.titles).isNotEmpty()
-            t.titles.forEach { assertWithMessage(t.id).that(it.isNotBlank()).isTrue() }
+            assertWithMessage(t.id).that(t.title.isNotBlank()).isTrue()
         }
     }
 
@@ -110,12 +109,5 @@ class ContentAssetsTest {
         val banned = listOf("solo leveling", "jin-woo", "jinwoo", "monarch", "arise", "igris", "beru", "hunter association")
         val text = (resource("quests/templates.json")).lowercase()
         banned.forEach { assertWithMessage(it).that(text.contains(it)).isFalse() }
-    }
-
-    @Test
-    fun `identities file has the 12 launch identities and passes validation`() {
-        val catalog = IdentityCatalog.parse(resource("identities.json"))
-        assertWithMessage(catalog.validate().joinToString("\n")).that(catalog.validate()).isEmpty()
-        assertThat(catalog.identities).hasSize(12)
     }
 }

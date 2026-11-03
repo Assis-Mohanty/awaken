@@ -265,10 +265,10 @@ Bottom tab. No session: [Start workout], THIS WEEK (workouts · sets · volume i
 Bottom tab. First open: CALORIE BUDGET window (goal, sex, birth year/height/weight, activity as full-width choices) with a live engine preview ("2,749 kcal / day", BMR and maintenance, macros); [Save budget] is enabled only when every field is valid. Then: a date stepper (no future days), DAILY ENERGY with a `ProgressRing` (remaining kcal in the middle; `ember` once over) beside Eaten / Goal and bars for protein, carbs, fat and fiber; one window per meal with its kcal, rows "2 × 1 piece · 404 kcal" (tap to edit) and [Add food]; NUTRIENTS with a bar per target, limits turning `ember` with "Over limit". Sheets: food search (recent foods when empty; "kcal · P · C · F per 100 g"), amount (grams or a household portion × count, live macro line, meal chips), targets (grouped like a label, defaults shown, empty = default), custom food (per-100 g values and an optional serving).
 
 ## 5. Copy voice
-- System lines: terse, second person, present tense. "Quest cleared." "The System has recalibrated your STR trials." "You missed yesterday. One quest stands between you and redemption."
-- Human UI text: plain verbs, sentence case. Button labels name the action: "Complete quest", "Start gate", "Buy shield". A button that says "Start gate" leads to a notification "Gate in progress".
+- Plain, second person, sentence case. No story, no game jargon (hunter, gate, directive, trial, dungeon, oath, realm, sigil, relic, shard, chapter), no capitals for emphasis. `LexiconResourcesTest` scans every string for the jargon list.
+- Button labels name the action: "Complete quest", "Start focus session", "Buy streak freeze".
 - Errors say what happened + what to do: "Health Connect isn't installed. Install it from Play Store to verify steps automatically." No apologies, no jokes.
-- Never shame. Penalty copy is stern, never insulting.
+- Never shame. A missed day is stated plainly ("Your streak reset. Finish the comeback quest today."), never insulted.
 
 ## 6. Accessibility floor (release blockers)
 TalkBack labels on every interactive element and chart (radar exposes "Strength level 12, Intelligence level 9…"); 48dp targets; font scale 200% doesn't clip; reduce-motion honoured; contrast table above respected; no information conveyed by colour alone.
@@ -303,37 +303,26 @@ Rules for everything below: semantic tokens only (§8.4), charts only through Ch
 - **Habit editor:** a block picker (Morning / Day / Evening / Anytime).
 - ~~**System invite sheet**~~: not built (F34 superseded).
 
-### 8.3 Lexicon (Clean ↔ System)
+### 8.3 Words (one vocabulary)
 
-`Lexicon` (interface in `core/designsystem/lexicon`) exposes one function per term key; `CleanLexicon` and `SystemLexicon` read string resources `term_<key>_clean` / `term_<key>_system`. Provided by `LocalLexicon` from the `presentationMode` DataStore pref. Whole sentences that speak *as* the System ("THE SYSTEM HAS RECALIBRATED") get a full Clean string rather than term substitution, because word-swapping breaks grammar. Window titles are UPPERCASE in System mode and sentence case in Clean mode (the case is copy, not the type style).
+There is one set of strings (`res/values/strings*.xml`) in plain words. `core/designsystem/lexicon/Lexicon.kt` keeps only the entry points `lexString` / `lexPlural` (composition) and `LexResources` (snackbars, notifications via `LexiconSource`); `FeatureBoundaryTest` makes feature code use them instead of `stringResource`. There is no presentation mode, no `_clean` twin and no `term_*` resource.
 
-| Key | Clean | System |
-|---|---|---|
-| `hunter` | Profile | Hunter |
-| `gate` / `gates` | Focus session / Focus sessions | Gate / Gates |
-| `gate_collapsed` | Session ended early | Gate collapsed |
-| `breach` | Time away | Breach |
-| `dungeon` | Challenge | Dungeon *(reserved; no UI uses it yet)* |
-| `directive` | Today's plan | Daily Directive |
-| `directive_cleared` | Plan complete | Directive cleared |
-| `penalty_zone` | Comeback | Penalty Zone |
-| `penalty_quest` | Comeback quest | Penalty quest |
-| `rank_trial` | Promotion challenge | Rank Trial |
-| `relic_cache` | Reward chest | Relic Cache |
-| `fragments` | Shards | Loot Fragments |
-| `system_message` | Daily focus | System message |
-| `awakening` | Getting started | Awakening |
-| `vault` | Shop | Vault |
-| `status` | Progress | Status |
-| `sigil` | Badge | Sigil |
-| `chapter` | Story | Chapter |
-| `oath` | Commitment | Oath |
-| `streak_shield` | Streak freeze | Streak Shield |
-| `crit` | Bonus | Critical |
-| `recalibrated` | Adjusted | Recalibrated |
-| `oracle` | AI planner | Oracle |
+| Old game word | Plain word |
+|---|---|
+| Hunter | Profile |
+| Gate | Focus session |
+| Gate collapsed / Breach | Session ended early / Time away |
+| Daily Directive / Directive cleared | Today's plan / Plan done |
+| Penalty Zone / Penalty quest | Comeback / Comeback quest |
+| Rank Trial | Rank-up test |
+| Awakening | Getting started |
+| Vault | Store |
+| Status | Progress |
+| Streak Shield | Streak freeze |
+| Recalibrated | Difficulty adjusted |
+| Oracle | AI planner (debug and internal builds only) |
 
-Unchanged in both: ranks E–S, level, XP, gold, streak, stats, quest, title, Path, campaign. Gate tiles keep their rank letter and duration in both modes ("C · 50 min" Clean, "C-Gate · 50 min" System). Clean mode turns off the gate glow (`GateBackground`); nothing else visual changes in v1.1.
+Ranks E–S, level, XP, gold, streak, stats, quest and Path keep their names.
 
 ### 8.4 Token architecture (Part 2 refactor; no visual change)
 
@@ -351,7 +340,7 @@ Enforcement: a unit test scans `feature/**` and fails on raw palette names, `Col
 
 ## 9. v1.2 feature batch: components, screens and states (PROPOSED with GD §16)
 
-Same rules as §8: semantic tokens only, drawing only inside `core/designsystem` (ChartKit for charts), every word through the Lexicon (`lexString` / `lexPlural`; a System-voice string needs a `_clean` twin), `@PhonePreviews` (or `@ComponentPreview` for components) for **every state listed below**, dark + light, 48dp targets, a TalkBack description on every ring, crystal, chart and counter, reduce motion = no growth/celebration animation (instant state). No screen shows an XP number that GD §16 does not pay.
+Same rules as §8: semantic tokens only, drawing only inside `core/designsystem` (ChartKit for charts), every word through the Lexicon (`lexString` / `lexPlural`; plain words only (`LexiconResourcesTest`)), `@PhonePreviews` (or `@ComponentPreview` for components) for **every state listed below**, dark + light, 48dp targets, a TalkBack description on every ring, crystal, chart and counter, reduce motion = no growth/celebration animation (instant state). No screen shows an XP number that GD §16 does not pay.
 
 ### 9.1 New components (`core/designsystem/components`)
 

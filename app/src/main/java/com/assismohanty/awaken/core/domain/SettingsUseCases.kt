@@ -2,12 +2,8 @@ package com.assismohanty.awaken.core.domain
 
 import com.assismohanty.awaken.core.data.clock.Clock
 import com.assismohanty.awaken.core.data.db.dao.HunterDao
-import com.assismohanty.awaken.core.data.db.entity.HunterProfileEntity
-import com.assismohanty.awaken.core.data.repo.IdentityRepository
 import com.assismohanty.awaken.core.data.repo.TemplateRepository
 import com.assismohanty.awaken.engine.Awakening
-import com.assismohanty.awaken.engine.Identity
-import com.assismohanty.awaken.engine.IdentityCatalog
 import com.assismohanty.awaken.engine.SettingsRules
 import com.assismohanty.awaken.engine.model.Stat
 import java.time.LocalTime
@@ -28,9 +24,6 @@ data class SettingsModel(
     val injuryTags: Set<String>,
     /** Verified quests are on (Health Connect connected and granted). */
     val healthEnabled: Boolean = false,
-    /** Identity ids in pick order (GD §14.7) and the launch list to pick from. */
-    val identities: List<String> = emptyList(),
-    val identityOptions: List<Identity> = emptyList(),
     /** Daily step goal for the Today ring (GD §16.11). */
     val stepGoal: Int = com.assismohanty.awaken.engine.StepGoalRules.DEFAULT_GOAL,
 )
@@ -38,7 +31,6 @@ data class SettingsModel(
 class ObserveSettingsUseCase @Inject constructor(
     private val hunterDao: HunterDao,
     private val templates: TemplateRepository,
-    private val identityRepository: IdentityRepository,
 ) {
     operator fun invoke(): Flow<SettingsModel?> = hunterDao.observeProfile().map { profile ->
         profile?.let {
@@ -52,8 +44,6 @@ class ObserveSettingsUseCase @Inject constructor(
                 injuryMode = it.injuryMode,
                 injuryTags = it.injuryTags,
                 healthEnabled = it.healthEnabled,
-                identities = it.identityIds,
-                identityOptions = identityRepository.catalog().identities,
                 stepGoal = it.stepGoal,
             )
         }
@@ -76,7 +66,6 @@ sealed interface SettingsResult {
 class UpdateSettingsUseCase @Inject constructor(
     private val hunterDao: HunterDao,
     private val templates: TemplateRepository,
-    private val identityRepository: IdentityRepository,
     private val clock: Clock,
 ) {
     suspend fun rename(name: String): SettingsResult {
@@ -108,13 +97,6 @@ class UpdateSettingsUseCase @Inject constructor(
 
     suspend fun setEquipment(owned: Set<String>): SettingsResult =
         withProfile { hunterDao.setOwnedEquipment(SettingsRules.validEquipment(owned, templates.library().equipment)) }
-
-    /** 0–3 known ids, kept in pick order (GD §14.7); identities shape nothing but wording, so they apply at once. */
-    suspend fun setIdentities(ids: List<String>): SettingsResult {
-        val known = identityRepository.catalog().byId
-        val valid = ids.filter { it in known }.distinct().take(IdentityCatalog.MAX_PICKS)
-        return withProfile { hunterDao.setIdentities(HunterProfileEntity.identitiesOf(valid)) }
-    }
 
     suspend fun setInjury(enabled: Boolean, tags: Set<String>): SettingsResult =
         withProfile { hunterDao.setInjury(enabled, SettingsRules.normalizeInjuryTags(tags)) }

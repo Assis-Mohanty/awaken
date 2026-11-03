@@ -1,6 +1,5 @@
 package com.assismohanty.awaken.feature.today
 
-import com.assismohanty.awaken.core.designsystem.lexicon.PresentationMode
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.performClick
@@ -21,7 +20,7 @@ class TodayHeaderActionsTest {
     fun theTopRightIconsOpenGatesAndVault() {
         val opened = mutableListOf<String>()
         composeRule.setContent {
-            AwakenTheme(presentation = PresentationMode.SYSTEM) {
+            AwakenTheme {
                 TodayScreen(
                     state = TodayUiState(),
                     onEvent = {},
@@ -35,8 +34,8 @@ class TodayHeaderActionsTest {
             }
         }
 
-        composeRule.onNodeWithContentDescription("Open Gates").performClick()
-        composeRule.onNodeWithContentDescription("Open Vault").performClick()
+        composeRule.onNodeWithContentDescription("Open focus sessions").performClick()
+        composeRule.onNodeWithContentDescription("Open store").performClick()
 
         assertThat(opened).containsExactly("gates", "vault").inOrder()
     }

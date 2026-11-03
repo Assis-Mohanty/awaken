@@ -1,6 +1,5 @@
 package com.assismohanty.awaken.feature.gate
 
-import com.assismohanty.awaken.core.designsystem.lexicon.PresentationMode
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -46,7 +45,7 @@ class GatesScreenTest {
         val events = mutableListOf<GatesEvent>()
         composeRule.setContent {
             var state by remember { mutableStateOf(GatesUiState(loading = false, tiles = tiles)) }
-            AwakenTheme(presentation = PresentationMode.SYSTEM) {
+            AwakenTheme {
                 GatesScreen(
                     state = state,
                     onEvent = { event ->
@@ -69,8 +68,8 @@ class GatesScreenTest {
             }
         }
 
-        composeRule.onNodeWithContentDescription("D-Gate, 25 min").performClick()
-        composeRule.onNodeWithText("Start gate").performScrollTo().performClick()
+        composeRule.onNodeWithContentDescription("D session, 25 min").performClick()
+        composeRule.onNodeWithText("Start session").performScrollTo().performClick()
 
         assertThat(events).containsExactly(GatesEvent.Pick(GateRank.D), GatesEvent.Enter).inOrder()
         composeRule.onNodeWithContentDescription("25:00 remaining", substring = true).assertExists()

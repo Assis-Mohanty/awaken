@@ -19,13 +19,12 @@ import java.util.UUID
 import javax.inject.Inject
 import kotlinx.coroutines.flow.first
 
-/** Step 1 of the review plus what the other steps need (GD §14.4). [identity] heads step 2 when the hunter has one. */
+/** Step 1 of the review plus what the other steps need (GD §14.4). */
 data class WeeklyReviewModel(
     val isoWeek: String,
     val report: WeeklyReport,
     val consistency: ConsistencyScore,
     val insights: InsightsModel,
-    val identity: String?,
     val focus: List<Stat>,
     /** Reviewed on Saturday or Sunday: the week is not over and the numbers are "so far". */
     val soFar: Boolean = false,
@@ -80,7 +79,6 @@ class LoadWeeklyReviewUseCase @Inject constructor(
             report = report,
             consistency = Consistency.score(outcomes, today, profile.firstGameDate),
             insights = loadInsights(profile, today),
-            identity = WeeklyReviewRules.identityFor(profile.hunterId, key, profile.identityIds),
             focus = profile.focusStats,
             soFar = today in week,
         )

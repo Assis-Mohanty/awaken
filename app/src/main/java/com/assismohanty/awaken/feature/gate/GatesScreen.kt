@@ -66,8 +66,6 @@ import com.assismohanty.awaken.core.designsystem.components.StatChip
 import com.assismohanty.awaken.core.designsystem.components.SystemWindow
 import com.assismohanty.awaken.core.designsystem.components.label
 import com.assismohanty.awaken.core.designsystem.components.AwakenCard
-import com.assismohanty.awaken.core.designsystem.lexicon.Term
-import com.assismohanty.awaken.core.designsystem.lexicon.termString
 import com.assismohanty.awaken.core.designsystem.components.ListRow
 import androidx.compose.material3.Icon
 import androidx.compose.foundation.layout.size

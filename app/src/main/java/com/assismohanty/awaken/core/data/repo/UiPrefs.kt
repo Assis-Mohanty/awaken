@@ -9,7 +9,6 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import com.assismohanty.awaken.core.audio.ChimeChoice
 import com.assismohanty.awaken.core.data.di.UiPrefsStore
-import com.assismohanty.awaken.core.designsystem.lexicon.PresentationMode
 import com.assismohanty.awaken.engine.TimeBlocks
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -36,7 +35,6 @@ data class UiPrefs(
      * Clean or System (GD §14.9); null until first resolved. New installs resolve to CLEAN, installs upgrading from v1.0
      * to SYSTEM ([com.assismohanty.awaken.navigation.AppearanceViewModel]).
      */
-    val presentationMode: PresentationMode? = null,
     /** Time-of-day block boundaries (GD §14.5), whole hours. */
     val morningEndHour: Int = TimeBlocks.DEFAULT_MORNING_END,
     val dayEndHour: Int = TimeBlocks.DEFAULT_DAY_END,
@@ -56,7 +54,6 @@ class UiPrefsRepository @Inject constructor(@UiPrefsStore private val store: Dat
             focusLock = it[FOCUS_LOCK] ?: false,
             allowedApps = it[ALLOWED_APPS] ?: emptySet(),
             chime = it[CHIME]?.let { name -> ChimeChoice.entries.firstOrNull { choice -> choice.name == name } } ?: ChimeChoice.SOFT_BELL,
-            presentationMode = it[PRESENTATION_MODE]?.let { name -> PresentationMode.entries.firstOrNull { mode -> mode.name == name } },
             morningEndHour = it[MORNING_END] ?: TimeBlocks.DEFAULT_MORNING_END,
             dayEndHour = it[DAY_END] ?: TimeBlocks.DEFAULT_DAY_END,
         )
@@ -90,15 +87,6 @@ class UiPrefsRepository @Inject constructor(@UiPrefsStore private val store: Dat
         store.edit { it[CHIME] = choice.name }
     }
 
-    suspend fun setPresentationMode(mode: PresentationMode) {
-        store.edit { it[PRESENTATION_MODE] = mode.name }
-    }
-
-    /** Resolves the first-launch default once; never overrides a choice already made. */
-    suspend fun initPresentationMode(mode: PresentationMode) {
-        store.edit { if (it[PRESENTATION_MODE] == null) it[PRESENTATION_MODE] = mode.name }
-    }
-
     suspend fun setMorningEnd(hour: Int) {
         require(hour in TimeBlocks.MORNING_END_HOURS)
         store.edit { it[MORNING_END] = hour }
@@ -114,7 +102,6 @@ class UiPrefsRepository @Inject constructor(@UiPrefsStore private val store: Dat
         val REDUCE_MOTION = booleanPreferencesKey("reduce_motion")
         val NOTIFICATIONS_PROMPTED = booleanPreferencesKey("notifications_prompted")
         val THEME_MODE = stringPreferencesKey("theme_mode")
-        val PRESENTATION_MODE = stringPreferencesKey("presentation_mode")
         val CHIME = stringPreferencesKey("timer_chime")
         val FOCUS_LOCK = booleanPreferencesKey("focus_lock")
         val ALLOWED_APPS = stringSetPreferencesKey("focus_lock_allowed_apps")

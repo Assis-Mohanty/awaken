@@ -28,9 +28,9 @@
     <string name="programs_row_title">Programs</string>
     <string name="programs_row_note">30, 66 or 75 days of a few daily rules.</string>
     <string name="programs_intro">A program is a fixed set of daily rules with a day counter. Nothing is ever taken from you: a missed day just changes how the run ends.</string>
-    <string name="program_name_steady_30">Steady 30</string>
-    <string name="program_name_groundwork_66">Groundwork 66</string>
-    <string name="program_name_ironclad_75">Ironclad 75</string>
+    <string name="program_name_steady_30">30-day program</string>
+    <string name="program_name_groundwork_66">66-day program</string>
+    <string name="program_name_ironclad_75">75-day program</string>
     <string name="program_days">%1$d days</string>
     <string name="program_card_note">%1$d daily rules</string>
     <string name="program_rules_title">Daily rules</string>

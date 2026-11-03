@@ -27,6 +27,9 @@ object ExportUpgrade {
         "habit" to listOf("campaign_id"),
         "quest_instance" to listOf("dungeon_id", "dungeon_stage"),
     )
+    /** v26 → v27: the identities column left the profile. */
+    private const val PROFILE_TABLE = "hunter_profile"
+    private const val IDENTITIES_COLUMN = "identities"
     private val BODY_TABLES = listOf(
         "custom_exercise", "routine", "routine_exercise", "workout", "workout_set", "custom_food", "food_log", "nutrition_profile",
     )
@@ -160,6 +163,15 @@ object ExportUpgrade {
                 tables = current.tables.filterKeys { it !in REMOVED_V26_TABLES }.mapValues { (table, rows) ->
                     val dropped = REMOVED_V26_COLUMNS[table]
                     if (dropped == null) rows else rows.map { row -> JsonObject(row.filterKeys { it !in dropped }) }
+                },
+            )
+        }
+        // v26 → v27 (declutter Batch 2): identities are gone, so the column is dropped from every profile row.
+        if (current.app == ExportDocument.APP_ID && current.schemaVersion == 26) {
+            current = current.copy(
+                schemaVersion = 27,
+                tables = current.tables.mapValues { (table, rows) ->
+                    if (table != PROFILE_TABLE) rows else rows.map { row -> JsonObject(row.filterKeys { it != IDENTITIES_COLUMN }) }
                 },
             )
         }

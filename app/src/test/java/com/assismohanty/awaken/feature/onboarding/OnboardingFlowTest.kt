@@ -1,6 +1,5 @@
 package com.assismohanty.awaken.feature.onboarding
 
-import com.assismohanty.awaken.core.designsystem.lexicon.PresentationMode
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
@@ -37,7 +36,7 @@ class OnboardingFlowTest {
         composeRule.onNodeWithText(text, substring = substring).performScrollTo().performClick()
 
     private fun newViewModel() = OnboardingViewModel(
-        graph.completeOnboarding, graph.completionCenter, graph.health, graph.grantConsent, graph.createPath, graph.identities,
+        graph.completeOnboarding, graph.completionCenter, graph.health, graph.grantConsent, graph.createPath,
     )
 
     /** Welcome through Health Connect, ending on step 6 "Your first Path". */
@@ -45,7 +44,6 @@ class OnboardingFlowTest {
         click("Accept")
         composeRule.onNode(hasSetTextAction()).performTextInput("Jinwoo")
         click("Continue")
-        click("Skip")
         click("Strength", substring = true)
         click("Intelligence", substring = true)
         click("Continue")
@@ -64,12 +62,12 @@ class OnboardingFlowTest {
     @Test
     fun aGoalThenEnablingAiCreatesTheFirstPathAfterTheHunterExists() {
         val viewModel = newViewModel()
-        composeRule.setContent { AwakenTheme(presentation = PresentationMode.SYSTEM) { OnboardingRoute(viewModel = viewModel) } }
+        composeRule.setContent { AwakenTheme { OnboardingRoute(viewModel = viewModel) } }
 
         walkToPathStep()
         click("Run a 10K")
         click("Continue")
-        composeRule.onNodeWithText("The System needs to consult the Oracle.").assertExists()
+        composeRule.onNodeWithText("AI Paths uses an AI planner to write your quests.").assertExists()
         click("Enable AI Paths")
         // Consent is saved on a coroutine; the step moves on once it is stored.
         composeRule.waitUntil(timeoutMillis = 5_000) {
@@ -93,40 +91,9 @@ class OnboardingFlowTest {
     }
 
     @Test
-    fun identityPicksPreselectFocusAndAreSavedInOrder() {
-        val viewModel = newViewModel()
-        composeRule.setContent { AwakenTheme(presentation = PresentationMode.SYSTEM) { OnboardingRoute(viewModel = viewModel) } }
-
-        click("Accept")
-        composeRule.onNode(hasSetTextAction()).performTextInput("Jinwoo")
-        click("Continue")
-        click("Someone who reads")
-        click("Someone who trains")
-        click("Someone who ships")
-        click("Someone who runs")
-        composeRule.onNodeWithText("Pick up to 3").assertExists()
-        click("Continue")
-
-        assertThat(viewModel.uiState.value.step).isEqualTo(OnboardingStep.FOCUS)
-        assertThat(viewModel.uiState.value.focus).containsExactly(Stat.INT, Stat.STR)
-        click("Continue")
-        click("Sometimes")
-        click("1–3")
-        click("7h+")
-        click("Continue")
-        click("Not now")
-        click("Skip")
-        click("Continue")
-        click("Enter")
-        awaitAwakened()
-
-        runBlocking { assertThat(graph.db.hunterDao().getProfile()?.identityIds).containsExactly("reads", "trains", "ships").inOrder() }
-    }
-
-    @Test
     fun skippingTheFirstPathSendsAndCreatesNothing() {
         val viewModel = newViewModel()
-        composeRule.setContent { AwakenTheme(presentation = PresentationMode.SYSTEM) { OnboardingRoute(viewModel = viewModel) } }
+        composeRule.setContent { AwakenTheme { OnboardingRoute(viewModel = viewModel) } }
 
         walkToPathStep()
         click("Skip")
@@ -144,7 +111,7 @@ class OnboardingFlowTest {
     @Test
     fun decliningConsentDropsTheGoalAndMovesOn() {
         val viewModel = newViewModel()
-        composeRule.setContent { AwakenTheme(presentation = PresentationMode.SYSTEM) { OnboardingRoute(viewModel = viewModel) } }
+        composeRule.setContent { AwakenTheme { OnboardingRoute(viewModel = viewModel) } }
 
         walkToPathStep()
         click("Run a 10K")
@@ -166,7 +133,7 @@ class OnboardingFlowTest {
     @Test
     fun awakeningCreatesTheHunterAndTheFirstDirective() {
         val viewModel = newViewModel()
-        composeRule.setContent { AwakenTheme(presentation = PresentationMode.SYSTEM) { OnboardingRoute(viewModel = viewModel) } }
+        composeRule.setContent { AwakenTheme { OnboardingRoute(viewModel = viewModel) } }
 
         walkToPathStep()
         click("Skip")
@@ -203,7 +170,7 @@ class OnboardingFlowTest {
     @Test
     fun nameIsValidatedBeforeMovingOn() {
         val viewModel = newViewModel()
-        composeRule.setContent { AwakenTheme(presentation = PresentationMode.SYSTEM) { OnboardingRoute(viewModel = viewModel) } }
+        composeRule.setContent { AwakenTheme { OnboardingRoute(viewModel = viewModel) } }
 
         click("Accept")
         composeRule.onNode(hasSetTextAction()).performTextInput("Al")

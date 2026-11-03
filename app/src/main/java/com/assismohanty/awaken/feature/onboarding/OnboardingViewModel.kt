@@ -4,7 +4,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.assismohanty.awaken.core.data.health.HealthGateway
 import com.assismohanty.awaken.core.data.health.HealthStatus
-import com.assismohanty.awaken.core.data.repo.IdentityRepository
 import com.assismohanty.awaken.core.domain.AiFeature
 import com.assismohanty.awaken.core.domain.CompleteOnboardingUseCase
 import com.assismohanty.awaken.core.domain.CreatePathUseCase
@@ -12,8 +11,6 @@ import com.assismohanty.awaken.core.domain.GrantAiConsentUseCase
 import com.assismohanty.awaken.core.domain.CompletionCenter
 import com.assismohanty.awaken.core.domain.OnboardingResult
 import com.assismohanty.awaken.engine.Awakening
-import com.assismohanty.awaken.engine.Identity
-import com.assismohanty.awaken.engine.IdentityCatalog
 import com.assismohanty.awaken.engine.model.Stat
 import com.assismohanty.awaken.engine.path.PathInput
 import com.assismohanty.awaken.engine.path.PathRules
@@ -33,8 +30,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import timber.log.Timber
 
-/** The nine Awakening steps (DESIGN_SYSTEM §4.1), in order. */
-enum class OnboardingStep { WELCOME, NAME, IDENTITY, FOCUS, CALIBRATION, HEALTH, PATH, REMINDER, COMPLETE }
+/** The Getting started steps (DESIGN_SYSTEM §4.1), in order. */
+enum class OnboardingStep { WELCOME, NAME, FOCUS, CALIBRATION, HEALTH, PATH, REMINDER, COMPLETE }
 
 enum class CalibrationQuestion { TRAINING, STUDY, SLEEP }
 
@@ -42,12 +39,6 @@ data class OnboardingUiState(
     val step: OnboardingStep = OnboardingStep.WELCOME,
     val name: String = "",
     val showNameError: Boolean = false,
-    /** "Who are you becoming?" picks in order, 0–3 (GD §14.7); they pre-select [focus]. */
-    val identities: List<String> = emptyList(),
-    /** The launch identity list from assets/identities.json. */
-    val identityOptions: List<Identity> = emptyList(),
-    /** A 4th identity was tapped: "Pick up to 3" shows. */
-    val identityLimitHit: Boolean = false,
     val focus: Set<Stat> = emptySet(),
     val answers: Map<CalibrationQuestion, Awakening.Answer> = emptyMap(),
     /** All three Health Connect read permissions were granted in step 5; saved on the profile at Finish. */
@@ -64,7 +55,7 @@ data class OnboardingUiState(
     val showConsent: Boolean = false,
     /** The hunter pressed [Enable AI Paths] in step 6; the Path is created right after the hunter exists. */
     val pathConsented: Boolean = false,
-    /** False in a build without AI Paths: step 6 is not offered and the count drops to seven. */
+    /** False in a build without AI Paths: step 6 is not offered and the count drops by one. */
     val pathStepEnabled: Boolean = true,
     val reminder: LocalTime = DEFAULT_REMINDER,
     val submitting: Boolean = false,
@@ -115,9 +106,6 @@ sealed interface OnboardingEvent {
     data object Next : OnboardingEvent
     data object Back : OnboardingEvent
     data class NameChanged(val name: String) : OnboardingEvent
-    data class IdentityToggled(val id: String) : OnboardingEvent
-    /** [Skip] on "Who are you becoming?": no identities, focus stats are picked by hand. */
-    data object SkipIdentity : OnboardingEvent
     data class FocusToggled(val stat: Stat) : OnboardingEvent
     data class Answered(val question: CalibrationQuestion, val answer: Awakening.Answer) : OnboardingEvent
     data object ConnectHealth : OnboardingEvent
@@ -141,26 +129,10 @@ class OnboardingViewModel @Inject constructor(
     private val healthGateway: HealthGateway,
     private val grantConsent: GrantAiConsentUseCase,
     private val createPath: CreatePathUseCase,
-    private val identityRepository: IdentityRepository,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(OnboardingUiState(pathStepEnabled = AiFeature.enabled))
     val uiState: StateFlow<OnboardingUiState> = _uiState.asStateFlow()
-
-    init {
-        viewModelScope.launch {
-            val options = try {
-                identityRepository.catalog().identities
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                // A bad asset only hides the optional step content; Skip still works.
-                Timber.e(e, "Loading identities failed")
-                emptyList()
-            }
-            _uiState.update { it.copy(identityOptions = options) }
-        }
-    }
 
     fun onEvent(event: OnboardingEvent) {
         when (event) {
@@ -169,16 +141,6 @@ class OnboardingViewModel @Inject constructor(
                 if (state.submitting) state else state.copy(step = state.previousStep)
             }
             is OnboardingEvent.NameChanged -> _uiState.update { it.copy(name = event.name, showNameError = false) }
-            is OnboardingEvent.IdentityToggled -> _uiState.update { state ->
-                when {
-                    event.id in state.identities -> state.copy(identities = state.identities - event.id, identityLimitHit = false)
-                    state.identities.size < IdentityCatalog.MAX_PICKS -> state.copy(identities = state.identities + event.id)
-                    else -> state.copy(identityLimitHit = true)
-                }
-            }
-            OnboardingEvent.SkipIdentity -> _uiState.update {
-                it.copy(identities = emptyList(), identityLimitHit = false, step = OnboardingStep.FOCUS)
-            }
             is OnboardingEvent.FocusToggled -> _uiState.update { state ->
                 when {
                     event.stat in state.focus -> state.copy(focus = state.focus - event.stat)
@@ -258,11 +220,6 @@ class OnboardingViewModel @Inject constructor(
             } else {
                 state.copy(showConsent = true)
             }
-            // Picks pre-select the focus stats (GD §14.7); the hunter can still change both.
-            state.step == OnboardingStep.IDENTITY && state.identities.isNotEmpty() -> state.copy(
-                step = OnboardingStep.FOCUS,
-                focus = IdentityCatalog(version = 1, identities = state.identityOptions).preselect(state.identities).toSet(),
-            )
             else -> state.copy(step = state.nextStep)
         }
     }
@@ -294,7 +251,7 @@ class OnboardingViewModel @Inject constructor(
         viewModelScope.launch {
             val result = try {
                 completeOnboarding(
-                    state.name, state.focus, training, study, sleep, state.reminder, state.healthConnected, state.identities,
+                    state.name, state.focus, training, study, sleep, state.reminder, state.healthConnected,
                 )
             } catch (e: CancellationException) {
                 throw e

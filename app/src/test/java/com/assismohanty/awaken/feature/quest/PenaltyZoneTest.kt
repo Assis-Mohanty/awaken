@@ -1,6 +1,5 @@
 package com.assismohanty.awaken.feature.quest
 
-import com.assismohanty.awaken.core.designsystem.lexicon.PresentationMode
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -36,7 +35,7 @@ class PenaltyZoneTest {
         runBlocking { graph.notices.add(listOf(Notice.PenaltyWarning("2026-10-18"))) }
         val viewModel = RewardHostViewModel(graph.completionCenter, graph.notices, graph.notificationAccess, graph.uiPrefs, graph.submitFeedback)
         composeRule.setContent {
-            AwakenTheme(presentation = PresentationMode.SYSTEM) { RewardHost(snackbarHostState = remember { SnackbarHostState() }, viewModel = viewModel) }
+            AwakenTheme { RewardHost(snackbarHostState = remember { SnackbarHostState() }, viewModel = viewModel) }
         }
 
         // The notice leaves the store asynchronously; wait for it instead of racing it.

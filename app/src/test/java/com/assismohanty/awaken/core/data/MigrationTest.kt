@@ -7,6 +7,7 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.assismohanty.awaken.core.data.db.ALL_MIGRATIONS
 import com.assismohanty.awaken.core.data.db.AwakenDatabase
+import com.assismohanty.awaken.engine.model.Stat
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
@@ -263,7 +264,6 @@ class MigrationTest {
         try {
             val profile = db.hunterDao().getProfile()
             assertThat(profile?.name).isEqualTo("Assis")
-            assertThat(profile?.identityIds).isEmpty()
             assertThat(db.openHelper.readableDatabase.version).isEqualTo(AwakenDatabase.SCHEMA_VERSION)
         } finally {
             db.close()
@@ -649,7 +649,6 @@ class MigrationTest {
             // The rows of the rebuilt tables survive.
             val profile = db.hunterDao().getProfile()
             assertThat(profile?.name).isEqualTo("Assis")
-            assertThat(profile?.identities).isEqualTo("trains,reads")
             assertThat(profile?.stepGoal).isEqualTo(9000)
             assertThat(db.habitDao().get("h1")?.title).isEqualTo("Read")
             assertThat(db.questDao().get("q1")?.title).isEqualTo("Stage")
@@ -659,6 +658,47 @@ class MigrationTest {
             }
             assertThat(tables).containsNoneOf("achievement_unlock", "owned_cosmetic", "campaign", "dungeon", "recap")
             assertThat(db.ledgerDao().balances().none { it.key == "fragments" }).isTrue()
+            assertThat(db.openHelper.readableDatabase.version).isEqualTo(AwakenDatabase.SCHEMA_VERSION)
+        } finally {
+            db.close()
+        }
+    }
+
+    /**
+     * v26 -> v27 drops the identities column by rebuilding hunter_profile. The profile row, its other columns and the ledger
+     * come through unchanged.
+     */
+    @Test
+    fun v26To27DropsIdentitiesAndKeepsTheProfileAndTheLedger() = runTest {
+        val path = createFromSchema(26)
+        SQLiteDatabase.openDatabase(path, null, SQLiteDatabase.OPEN_READWRITE).use { db ->
+            db.execSQL(
+                "INSERT INTO hunter_profile (id, hunter_id, name, created_at, first_game_date, focus_stat_1, focus_stat_2, " +
+                    "day_start_hour, onboarding_done, owned_equipment, injury_mode, health_enabled, identities, step_goal) " +
+                    "VALUES ('me', 'h1', 'Assis', 0, '2026-10-18', 'STR', 'INT', 4, 1, 'dumbbells', 0, 1, 'trains,reads', 9000)",
+            )
+            db.execSQL(
+                "INSERT INTO ledger_entry (kind, stat, item_id, delta, source_type, source_id, game_date, xp_source, created_at) " +
+                    "VALUES ('GOLD', '', '', 60, 'QUEST', 'q1#1', '2026-10-18', 'SELF', 0)",
+            )
+        }
+
+        val db = Room.databaseBuilder(context, AwakenDatabase::class.java, path)
+            .addMigrations(*ALL_MIGRATIONS)
+            .allowMainThreadQueries()
+            .build()
+        try {
+            val profile = db.hunterDao().getProfile()
+            assertThat(profile?.name).isEqualTo("Assis")
+            assertThat(profile?.focusStats).containsExactly(Stat.STR, Stat.INT).inOrder()
+            assertThat(profile?.stepGoal).isEqualTo(9000)
+            assertThat(profile?.healthEnabled).isTrue()
+            assertThat(profile?.ownedEquipment).containsExactly("dumbbells")
+            assertThat(db.ledgerDao().all()).hasSize(1)
+            val columns = db.openHelper.readableDatabase.query("PRAGMA table_info(hunter_profile)").use { c ->
+                buildList { while (c.moveToNext()) add(c.getString(c.getColumnIndexOrThrow("name"))) }
+            }
+            assertThat(columns).doesNotContain("identities")
             assertThat(db.openHelper.readableDatabase.version).isEqualTo(AwakenDatabase.SCHEMA_VERSION)
         } finally {
             db.close()

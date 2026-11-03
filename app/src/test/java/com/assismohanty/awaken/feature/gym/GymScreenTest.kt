@@ -1,6 +1,5 @@
 package com.assismohanty.awaken.feature.gym
 
-import com.assismohanty.awaken.core.designsystem.lexicon.PresentationMode
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -44,7 +43,7 @@ class GymScreenTest {
         val viewModel = GymViewModel(graph.gym, graph.clock, NoRestScheduler, SilentChimePlayer, graph.uiPrefs)
         val benchId = runBlocking { graph.gym.searchExercises("barbell bench press medium grip", setOf(Equipment.BARBELL), Muscle.CHEST).first().id }
         composeRule.setContent {
-            AwakenTheme(reduceMotion = true, presentation = PresentationMode.SYSTEM) {
+            AwakenTheme(reduceMotion = true) {
                 val state by viewModel.uiState.collectAsState()
                 GymScreen(state = state, onEvent = viewModel::onEvent)
             }
