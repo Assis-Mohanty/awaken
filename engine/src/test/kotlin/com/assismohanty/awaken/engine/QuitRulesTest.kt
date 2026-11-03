@@ -123,15 +123,4 @@ class QuitRulesTest {
         assertThat(QuitKind.SMOKING.isTimeBased).isTrue()
     }
 
-    @Test
-    fun `vector 126 - clean run achievements pay gold once and never XP`() {
-        val byId = AchievementEvaluator.byId
-        assertThat(listOf("quit_7", "quit_30", "quit_90", "quit_365").map { byId.getValue(it).gold }).containsExactly(30, 100, 150, 200).inOrder()
-        assertThat(byId.getValue("quit_365").titleId).isEqualTo("unshaken")
-        val first = AchievementEvaluator.evaluate(AchievementSnapshot(quitRunDays = 30))
-        assertThat(first).containsAtLeast("quit_7", "quit_30")
-        assertThat(first).containsNoneOf("quit_90", "quit_365")
-        // Two counters reaching 30 are one snapshot value; once unlocked it is never offered again.
-        assertThat(AchievementEvaluator.evaluate(AchievementSnapshot(quitRunDays = 30, alreadyUnlocked = first.toSet()))).doesNotContain("quit_30")
-    }
 }

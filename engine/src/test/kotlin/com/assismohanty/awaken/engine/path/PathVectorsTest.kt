@@ -23,7 +23,7 @@ import java.time.Instant
 class PathVectorsTest {
 
     private fun xp(priced: PricedBlueprint) =
-        XpCalculator.questXp(priced.difficulty, streakDays = 0, verification = priced.verification.source, crit = false)
+        XpCalculator.questXp(priced.difficulty, streakDays = 0, verification = priced.verification.source)
 
     @Test
     fun `vector 16 - SELF extreme effort is priced NORMAL and earns 60 XP`() {

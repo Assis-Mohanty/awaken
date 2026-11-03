@@ -158,26 +158,6 @@ object DirectiveGenerator {
         }
     }
 
-    /**
-     * One Dungeon stage quest (GD §16.14): Hard, in [stat], from templates that offer Hard. Equipment, Injury Mode and Health
-     * filters apply; recovery mode and the novelty window do not (a dungeon is a chosen challenge). Deterministic by
-     * `fnv1a64(hunterId|dungeonId|stage)`. Null when no template fits.
-     */
-    fun dungeonStage(
-        templates: List<QuestTemplate>,
-        context: HunterContext,
-        stat: Stat,
-        dungeonId: String,
-        stage: Int,
-        gameDate: LocalDate,
-    ): QuestDraft? {
-        val candidates = eligible(templates, context.copy(recoveryMode = false)).filter { it.stat == stat && it.supports(Difficulty.HARD) }
-        if (candidates.isEmpty()) return null
-        val rng = SplittableRandom(Fnv1a.hash64("${context.hunterId}|$dungeonId|$stage"))
-        val template = candidates[rng.nextInt(candidates.size)]
-        val slot = "dungeon:$dungeonId:$stage"
-        return draft(template, QuestType.DUNGEON, Difficulty.HARD, context, gameDate, slot, rng)
-    }
 
     /** Templates usable for normal generation before the novelty filter. */
     fun eligible(templates: List<QuestTemplate>, context: HunterContext): List<QuestTemplate> =

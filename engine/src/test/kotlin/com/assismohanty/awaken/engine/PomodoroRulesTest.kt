@@ -79,9 +79,9 @@ class PomodoroRulesTest {
         assertThat(FocusRules.tierFor(PomodoroConfig().focusMinutes)).isEqualTo(GateRank.D)
         assertThat(GateRank.D.difficulty).isEqualTo(Difficulty.NORMAL)
         // 69 XP and one fragment for each of the four paid rounds (TIMER, Normal, streak 0, no crit).
-        assertThat(XpCalculator.questXp(Difficulty.NORMAL, 0, com.assismohanty.awaken.engine.model.VerificationSource.TIMER, crit = false)).isEqualTo(69)
+        assertThat(XpCalculator.questXp(Difficulty.NORMAL, 0, com.assismohanty.awaken.engine.model.VerificationSource.TIMER)).isEqualTo(69)
         (0 until FocusRules.DAILY_CAP).forEach { paid ->
-            assertThat(FocusRules.outcome(25, paidToday = paid)).isEqualTo(FocusRunOutcome.Paid(GateRank.D, fragment = true))
+            assertThat(FocusRules.outcome(25, paidToday = paid)).isEqualTo(FocusRunOutcome.Paid(GateRank.D))
         }
         assertThat(FocusRules.outcome(25, paidToday = FocusRules.DAILY_CAP)).isEqualTo(FocusRunOutcome.OverCap)
     }

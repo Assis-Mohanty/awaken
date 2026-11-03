@@ -105,7 +105,11 @@ data class HunterContext(
 /** One factor of the explainable XP formula (GD §1 pillar 4). The UI localises [kind]. */
 @Serializable
 data class BreakdownItem(val kind: Kind, val value: Double) {
-    enum class Kind { BASE, DIFFICULTY, STREAK, VERIFICATION, CRIT, DAILY_CAP }
+    enum class Kind { BASE, DIFFICULTY, STREAK, VERIFICATION, DAILY_CAP,
+
+        /** Historic: ledger rows written before critical hits were removed still carry this kind in `breakdown_json`. */
+        CRIT,
+    }
 }
 
 /** The full result of completing one quest (GD §4, §9.1). */
@@ -113,9 +117,7 @@ data class QuestReward(
     val xp: Int,
     val statXp: Map<Stat, Int>,
     val gold: Int,
-    val crit: Boolean,
     /** Non-null when the daily cap for this source reduced the reward. */
     val cappedSource: VerificationSource?,
-    val fragments: Int,
     val breakdown: List<BreakdownItem>,
 )

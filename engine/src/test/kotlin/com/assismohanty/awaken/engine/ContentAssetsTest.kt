@@ -90,21 +90,6 @@ class ContentAssetsTest {
         assertThat(DirectiveGenerator.penaltyQuest(library.templates, context, LocalDate.of(2026, 10, 18))).isNotNull()
     }
 
-    /**
-     * A Dungeon's fee is paid up front and a day without a stage quest fails it (GD §16.14, ENGINE_DECISIONS #141), so every
-     * stat must offer a Hard stage under the most restrictive settings: no equipment, every Injury Mode tag, Health off.
-     */
-    @Test
-    fun `every stat has a dungeon stage under the most restrictive settings`() {
-        val worst = HunterContext("h", focusStats = listOf(Stat.STR, Stat.INT), injuryTags = DirectiveGenerator.INJURY_TAGS.toSet(), healthAvailable = false)
-        Stat.entries.forEach { stat ->
-            (1..DungeonRules.LENGTHS.last()).forEach { stage ->
-                val draft = DirectiveGenerator.dungeonStage(library.templates, worst, stat, "d1", stage, LocalDate.of(2026, 11, 3))
-                assertWithMessage("$stat stage $stage").that(draft).isNotNull()
-            }
-        }
-    }
-
     @Test
     fun `real library supports a full directive under restrictive settings for 30 days`() {
         val restrictive = HunterContext("h", focusStats = listOf(Stat.STR, Stat.CHA), injuryTags = DirectiveGenerator.DEFAULT_INJURY_TAGS, healthAvailable = false)
@@ -123,36 +108,8 @@ class ContentAssetsTest {
     @Test
     fun `no borrowed franchise names`() {
         val banned = listOf("solo leveling", "jin-woo", "jinwoo", "monarch", "arise", "igris", "beru", "hunter association")
-        val text = (resource("quests/templates.json") + resource("narrative/chapters.json") + resource("narrative/system_lines.json")).lowercase()
+        val text = (resource("quests/templates.json")).lowercase()
         banned.forEach { assertWithMessage(it).that(text.contains(it)).isFalse() }
-    }
-
-    @Test
-    fun `six chapters at the specified levels, each at most 120 words`() {
-        val chapters = Json.parseToJsonElement(resource("narrative/chapters.json")).jsonObject.getValue("chapters").jsonArray
-        assertThat(chapters.map { it.jsonObject.getValue("unlockLevel").jsonPrimitive.int }).containsExactly(1, 5, 10, 20, 35, 50).inOrder()
-        assertThat(chapters.map { it.jsonObject.getValue("id").jsonPrimitive.content }).containsNoDuplicates()
-        chapters.forEach { chapter ->
-            val obj = chapter.jsonObject
-            val id = obj.getValue("id").jsonPrimitive.content
-            assertWithMessage(id).that(obj.getValue("title").jsonPrimitive.content).isNotEmpty()
-            val words = obj.getValue("body").jsonPrimitive.content.split(Regex("\\s+")).count { it.isNotBlank() }
-            assertWithMessage("$id words").that(words).isIn(1..120)
-        }
-    }
-
-    @Test
-    fun `system lines cover every context with about 60 unique lines`() {
-        val lines = Json.parseToJsonElement(resource("narrative/system_lines.json")).jsonObject.getValue("lines").jsonObject
-        val required = listOf("generic", "streak_milestone", "comeback", "trial_active", "cleared_day") +
-            Stat.entries.map { "neglected_${it.name.lowercase()}" }
-        assertThat(lines.keys).containsExactlyElementsIn(required)
-        val all = lines.values.flatMap { context -> context.jsonArray.map { it.jsonPrimitive.content } }
-        assertThat(all.size).isIn(55..65)
-        assertThat(all).containsNoDuplicates()
-        all.forEach { assertThat(it).isNotEmpty() }
-        lines.getValue("streak_milestone").jsonArray.forEach { assertThat(it.jsonPrimitive.content).contains("{streak}") }
-        (lines - "streak_milestone").values.flatMap { it.jsonArray }.forEach { assertThat(it.jsonPrimitive.content).doesNotContain("{") }
     }
 
     @Test

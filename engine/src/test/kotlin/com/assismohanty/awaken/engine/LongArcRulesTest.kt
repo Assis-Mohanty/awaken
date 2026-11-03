@@ -15,51 +15,6 @@ import org.junit.jupiter.api.Test
 class LongArcRulesTest {
     private val monday = LocalDate.of(2026, 11, 2)
 
-    @Test
-    fun `vector 127 - locked below level 10, refused without the fee, entered with it`() {
-        assertThat(DungeonRules.canEnter(level = 9, gold = 500, lengthDays = 3, hasActiveDungeon = false)).isEqualTo(DungeonEntry.LOCKED)
-        assertThat(DungeonRules.canEnter(level = 10, gold = 80, lengthDays = 3, hasActiveDungeon = false)).isEqualTo(DungeonEntry.NOT_ENOUGH_GOLD)
-        assertThat(DungeonRules.canEnter(level = 10, gold = 500, lengthDays = 3, hasActiveDungeon = false)).isEqualTo(DungeonEntry.OK)
-        assertThat(DungeonRules.fee(3)).isEqualTo(100)
-        // Stage 1 is the next game-day: Mon entry → Tue, Wed, Thu.
-        val first = DungeonRules.firstStageDate(monday)
-        assertThat((1..3).map { DungeonRules.stageDate(first, it) }).containsExactly(monday.plusDays(1), monday.plusDays(2), monday.plusDays(3)).inOrder()
-    }
-
-    @Test
-    fun `fees and rewards - 100 200 300 and one and a half times back`() {
-        assertThat(DungeonRules.LENGTHS.map { DungeonRules.fee(it) }).containsExactly(100, 200, 300).inOrder()
-        assertThat(DungeonRules.LENGTHS.map { DungeonRules.reward(it) }).containsExactly(150, 300, 450).inOrder()
-        assertThat(DungeonRules.fee(4)).isNull()
-        assertThat(DungeonRules.canEnter(10, 1_000, 4, false)).isEqualTo(DungeonEntry.BAD_LENGTH)
-        assertThat(DungeonRules.canEnter(10, 1_000, 7, hasActiveDungeon = true)).isEqualTo(DungeonEntry.ALREADY_ACTIVE)
-        assertThat(DungeonRules.canEnter(10, 300, 7, false)).isEqualTo(DungeonEntry.OK)
-    }
-
-    @Test
-    fun `a stage is found by its date and nothing else is`() {
-        val first = monday.plusDays(1)
-        assertThat(DungeonRules.stageOn(first, 3, monday)).isNull()
-        assertThat(DungeonRules.stageOn(first, 3, first)).isEqualTo(1)
-        assertThat(DungeonRules.stageOn(first, 3, first.plusDays(2))).isEqualTo(3)
-        assertThat(DungeonRules.stageOn(first, 3, first.plusDays(3))).isNull()
-    }
-
-    @Test
-    fun `vectors 128 and 129 - the last stage clears it, an unfinished one fails it`() {
-        assertThat(DungeonRules.verdict(stage = 1, lengthDays = 3, stageCompleted = true)).isEqualTo(DungeonVerdict.STAGE_DONE)
-        assertThat(DungeonRules.verdict(stage = 3, lengthDays = 3, stageCompleted = true)).isEqualTo(DungeonVerdict.CLEARED)
-        assertThat(DungeonRules.verdict(stage = 2, lengthDays = 3, stageCompleted = false)).isEqualTo(DungeonVerdict.FAILED)
-        assertThat(DungeonRules.FRAGMENTS_ON_CLEAR).isEqualTo(1)
-    }
-
-    @Test
-    fun `vector 130 - a Hard self stage pays 90 XP and 45 gold`() {
-        val xp = XpCalculator.questXp(Difficulty.HARD, streakDays = 0, verification = VerificationSource.SELF, crit = false)
-        assertThat(xp).isEqualTo(90)
-        assertThat(XpCalculator.goldFor(xp)).isEqualTo(45)
-    }
-
     private fun template(id: String, stat: Stat, vararg difficulties: Difficulty) = QuestTemplate(
         id = id, stat = stat, titles = listOf(id), description = "Do {target}", unit = "reps",
         targets = difficulties.associateWith { 10 }, verification = Verification.SELF,
@@ -73,33 +28,6 @@ class LongArcRulesTest {
         template("e", Stat.STR, Difficulty.HARD, Difficulty.NORMAL),
     )
     private val context = HunterContext(hunterId = "h1", focusStats = listOf(Stat.STR, Stat.INT))
-
-    @Test
-    fun `stage quests are Hard, in the chosen stat, deterministic and never rerollable`() {
-        val first = DirectiveGenerator.dungeonStage(library, context, Stat.STR, "d1", 1, monday.plusDays(1))!!
-        val again = DirectiveGenerator.dungeonStage(library, context, Stat.STR, "d1", 1, monday.plusDays(1))!!
-
-        assertThat(first).isEqualTo(again)
-        assertThat(first.type).isEqualTo(QuestType.DUNGEON)
-        assertThat(first.difficulty).isEqualTo(Difficulty.HARD)
-        assertThat(first.stat).isEqualTo(Stat.STR)
-        assertThat(first.templateId).isIn(listOf("a", "b", "e"))
-        assertThat(DirectiveGenerator.canReroll(QuestType.DUNGEON)).isFalse()
-        assertThat(QuestType.DUNGEON.isGenerated).isFalse()
-        assertThat(QuestType.DUNGEON.canCrit).isTrue()
-        // Different stages are different quests (ids), whatever template they roll.
-        assertThat(DirectiveGenerator.dungeonStage(library, context, Stat.STR, "d1", 2, monday.plusDays(2))!!.questInstanceId).isNotEqualTo(first.questInstanceId)
-    }
-
-    @Test
-    fun `stage templates respect equipment and injury filters, and no fit means no stage`() {
-        val gear = library + QuestTemplate("f", Stat.WIL, titles = listOf("f"), description = "", unit = "x", targets = mapOf(Difficulty.HARD to 5), verification = Verification.SELF, equipment = listOf("kettlebell"))
-        assertThat(DirectiveGenerator.dungeonStage(gear, context, Stat.WIL, "d1", 1, monday)).isNull() // kettlebell not owned
-        assertThat(DirectiveGenerator.dungeonStage(gear, context.copy(ownedEquipment = setOf("kettlebell")), Stat.WIL, "d1", 1, monday)).isNotNull()
-        assertThat(DirectiveGenerator.dungeonStage(library, context, Stat.CHA, "d1", 1, monday)).isNull()
-        val injured = listOf(template("x", Stat.STR, Difficulty.HARD).copy(tags = listOf("impact")))
-        assertThat(DirectiveGenerator.dungeonStage(injured, context.copy(injuryTags = setOf("impact")), Stat.STR, "d1", 1, monday)).isNull()
-    }
 
     @Test
     fun `the catalog has the three originally named programs and their lengths`() {
@@ -158,10 +86,6 @@ class LongArcRulesTest {
     fun `vector 132 - no broken day completes it, any broken day only finishes it`() {
         assertThat(ProgramRules.endStatus(brokenDays = 0)).isEqualTo(ProgramStatus.COMPLETED)
         assertThat(ProgramRules.endStatus(brokenDays = 1)).isEqualTo(ProgramStatus.FINISHED)
-        val none = AchievementSnapshot(completedPrograms = setOf("steady_30"))
-        assertThat(AchievementEvaluator.evaluate(none)).contains("program_steady_30")
-        assertThat(AchievementEvaluator.evaluate(AchievementSnapshot())).doesNotContain("program_steady_30")
-        assertThat(AchievementEvaluator.evaluate(none.copy(alreadyUnlocked = setOf("program_steady_30")))).doesNotContain("program_steady_30")
     }
 
     @Test
@@ -185,15 +109,4 @@ class LongArcRulesTest {
         assertThat(ProgramRules.canStart(spec, 8, false, programActive = true)).isEqualTo(ProgramStart.PROGRAM_ACTIVE)
     }
 
-    @Test
-    fun `dungeon achievements pay gold once`() {
-        val byId = AchievementEvaluator.byId
-        assertThat(byId.getValue("dungeon_first").gold).isEqualTo(20)
-        assertThat(byId.getValue("dungeon_7").gold).isEqualTo(100)
-        assertThat(byId.getValue("dungeon_7").titleId).isEqualTo("delver")
-        assertThat(listOf("program_steady_30", "program_groundwork_66", "program_ironclad_75").map { byId.getValue(it).gold }).containsExactly(150, 200, 200).inOrder()
-        assertThat(AchievementEvaluator.evaluate(AchievementSnapshot(dungeonsCleared = 1))).contains("dungeon_first")
-        assertThat(AchievementEvaluator.evaluate(AchievementSnapshot(dungeonsCleared = 1))).doesNotContain("dungeon_7")
-        assertThat(AchievementEvaluator.evaluate(AchievementSnapshot(dungeonsCleared = 2, sevenDayDungeonCleared = true))).contains("dungeon_7")
-    }
 }

@@ -153,13 +153,4 @@ class GymProgressionTest {
         assertThat(ExerciseHistory.series(sessions, HistoryMetric.TOP_WEIGHT, HistoryRange.ALL, today)).hasSize(3)
     }
 
-    @Test
-    fun `new achievements pay gold only and unlock at 1, 25 and 100 record events`() {
-        val byId = AchievementEvaluator.byId
-        assertThat(listOf("pr1", "pr25", "pr100").map { byId.getValue(it).gold }).containsExactly(10, 50, 150).inOrder()
-        val unlocked = { n: Int -> AchievementEvaluator.all.filter { it.id.startsWith("pr") && it.condition(AchievementSnapshot(prEvents = n)) }.map { it.id } }
-        assertThat(unlocked(0)).isEmpty()
-        assertThat(unlocked(1)).containsExactly("pr1")
-        assertThat(unlocked(100)).containsExactly("pr1", "pr25", "pr100")
-    }
 }

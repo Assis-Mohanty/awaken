@@ -6,8 +6,8 @@ import org.junit.jupiter.api.Test
 
 class FocusRulesTest {
     @Test
-    fun `custom 30 minutes is a D tier with a fragment`() {
-        assertThat(FocusRules.outcome(30, paidToday = 0)).isEqualTo(FocusRunOutcome.Paid(GateRank.D, fragment = true))
+    fun `custom 30 minutes is a D tier`() {
+        assertThat(FocusRules.outcome(30, paidToday = 0)).isEqualTo(FocusRunOutcome.Paid(GateRank.D))
     }
 
     @Test
@@ -29,13 +29,7 @@ class FocusRulesTest {
 
     @Test
     fun `stopwatch 120 minutes is B and no higher`() {
-        assertThat(FocusRules.outcome(120, paidToday = 0)).isEqualTo(FocusRunOutcome.Paid(GateRank.B, fragment = true))
-    }
-
-    @Test
-    fun `an E tier run pays no fragment`() {
-        assertThat(FocusRules.outcome(20, paidToday = 0)).isEqualTo(FocusRunOutcome.Paid(GateRank.E, fragment = false))
-        assertThat(FocusRules.outcome(24, paidToday = 0)).isEqualTo(FocusRunOutcome.Paid(GateRank.E, fragment = false))
+        assertThat(FocusRules.outcome(120, paidToday = 0)).isEqualTo(FocusRunOutcome.Paid(GateRank.B))
     }
 
     @Test

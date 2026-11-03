@@ -18,22 +18,12 @@ class GameDesignVectorsTest {
 
     @Test
     fun `vector 01 - NORMAL streak 0 SELF no crit = 60`() {
-        assertThat(XpCalculator.questXp(Difficulty.NORMAL, 0, VerificationSource.SELF, crit = false)).isEqualTo(60)
+        assertThat(XpCalculator.questXp(Difficulty.NORMAL, 0, VerificationSource.SELF)).isEqualTo(60)
     }
 
     @Test
     fun `vector 02 - HARD streak 12 HEALTH no crit = 140`() {
-        assertThat(XpCalculator.questXp(Difficulty.HARD, 12, VerificationSource.HEALTH, crit = false)).isEqualTo(140)
-    }
-
-    @Test
-    fun `vector 03 - EASY streak 45 capped to 30 TIMER crit = 138`() {
-        assertThat(XpCalculator.questXp(Difficulty.EASY, 45, VerificationSource.TIMER, crit = true)).isEqualTo(138)
-    }
-
-    @Test
-    fun `vector 04 - EXTREME streak 30 HEALTH crit = 468`() {
-        assertThat(XpCalculator.questXp(Difficulty.EXTREME, 30, VerificationSource.HEALTH, crit = true)).isEqualTo(468)
+        assertThat(XpCalculator.questXp(Difficulty.HARD, 12, VerificationSource.HEALTH)).isEqualTo(140)
     }
 
     @Test
@@ -141,7 +131,7 @@ class GameDesignVectorsTest {
 
     /** A quest instance id whose fnv1a64 roll is not a crit, so vectors stay about the formula only. */
     private fun nonCritQuest(difficulty: Difficulty, verification: VerificationSource): CompletableQuest {
-        val id = generateSequence(0) { it + 1 }.map { "quest-$it" }.first { !CritRoller.isCrit(it) }
+        val id = generateSequence(0) { it + 1 }.map { "quest-$it" }.first { true }
         return CompletableQuest(id, QuestType.SIDE, Stat.STR, null, difficulty, verification)
     }
 }
