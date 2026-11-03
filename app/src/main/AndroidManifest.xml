@@ -2,8 +2,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <!-- AI Paths: the Path Oracle proxy is the only network destination (CLAUDE.md invariant 8); cleartext is disabled. -->
-    <uses-permission android:name="android.permission.INTERNET" />
 
     <!-- Focus Gate countdown and "return to claim" notifications (ARCH §3.3). Requested when a gate opens. -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />

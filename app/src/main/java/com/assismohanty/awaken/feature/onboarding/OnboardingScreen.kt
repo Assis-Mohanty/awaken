@@ -110,7 +110,7 @@ fun OnboardingScreen(state: OnboardingUiState, onEvent: (OnboardingEvent) -> Uni
             ) {
                 SystemWindow(title = lexString(step.titleRes), accent = AwakenTheme.colors.accent) {
                     Text(
-                        text = lexString(R.string.onboarding_step, step.ordinal + 1, OnboardingStep.entries.size),
+                        text = lexString(R.string.onboarding_step, state.steps.indexOf(step) + 1, state.steps.size),
                         style = AwakenTheme.type.caption,
                         color = AwakenTheme.colors.textMuted,
                     )

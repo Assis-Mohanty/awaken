@@ -97,7 +97,7 @@ import java.time.format.FormatStyle
 fun StatusRoute(
     onOpenSettings: () -> Unit,
     modifier: Modifier = Modifier,
-    onOpenPaths: () -> Unit = {},
+    onOpenPaths: (() -> Unit)? = {},
     onOpenReview: () -> Unit = {},
     onOpenRecap: (periodKey: String) -> Unit = {},
     onOpenQuit: () -> Unit = {},
@@ -138,7 +138,7 @@ fun StatusScreen(
     onEvent: (StatusEvent) -> Unit,
     modifier: Modifier = Modifier,
     onOpenSettings: () -> Unit = {},
-    onOpenPaths: () -> Unit = {},
+    onOpenPaths: (() -> Unit)? = {},
     onOpenReview: () -> Unit = {},
     onOpenRecap: (periodKey: String) -> Unit = {},
     onOpenQuit: () -> Unit = {},
@@ -152,7 +152,8 @@ fun StatusScreen(
         modifier = modifier,
         actions = {
             // Paths left the bottom bar in the v1.1 redesign; they open from here.
-            HeaderIconButton(AwakenGlyphs.Path, lexString(R.string.cd_open_paths), onOpenPaths)
+            // Null when the build has no AI Paths: the Paths entry is hidden, not just gated.
+            if (onOpenPaths != null) HeaderIconButton(AwakenGlyphs.Path, lexString(R.string.cd_open_paths), onOpenPaths)
             HeaderIconButton(AwakenGlyphs.Settings, lexString(R.string.cd_open_settings), onOpenSettings)
         },
     ) {

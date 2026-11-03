@@ -1,6 +1,7 @@
 package com.assismohanty.awaken.navigation
 
 import com.assismohanty.awaken.core.designsystem.lexicon.lexString
+import com.assismohanty.awaken.core.domain.AiFeature
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -201,10 +202,13 @@ private fun MainScaffold(
                         onOpenQuest = { navController.navigate(QuestDetailRoute(it)) },
                     )
                 }
-                composable<PathsRoute> {
-                    PathsEntry(onOpenPath = { navController.navigate(PathDetailRoute(it)) }, onBack = { navController.popBackStack() })
+                // AI Paths screens exist only in builds that have AI Paths (debug); the release build compiles them out of the graph.
+                if (AiFeature.enabled) {
+                    composable<PathsRoute> {
+                        PathsEntry(onOpenPath = { navController.navigate(PathDetailRoute(it)) }, onBack = { navController.popBackStack() })
+                    }
+                    composable<PathDetailRoute> { PathDetailEntry(onBack = { navController.popBackStack() }) }
                 }
-                composable<PathDetailRoute> { PathDetailEntry(onBack = { navController.popBackStack() }) }
                 composable<GatesRoute> {
                     GatesEntry(
                         onBack = { navController.popBackStack() },
@@ -228,7 +232,7 @@ private fun MainScaffold(
                         onOpenQuit = { navController.navigate(QuitRoute) { launchSingleTop = true } },
                         onOpenPrograms = { navController.navigate(ProgramsRoute) { launchSingleTop = true } },
                         onOpenSettings = { navController.navigate(SettingsRoute) },
-                        onOpenPaths = { navController.navigate(PathsRoute) { launchSingleTop = true } },
+                        onOpenPaths = if (AiFeature.enabled) {{ navController.navigate(PathsRoute) { launchSingleTop = true } }} else null,
                         onOpenReview = { navController.navigate(ReviewRoute) { launchSingleTop = true } },
                         onOpenRecap = { navController.navigate(RecapRoute(it)) { launchSingleTop = true } },
                     )

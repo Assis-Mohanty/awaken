@@ -43,7 +43,12 @@ class HealthConnectManifestTest {
             "android.permission.health.READ_HEART_RATE",
         )
         // Phase 15: INTERNET is declared for the Path Oracle only (CLAUDE.md invariant 8), and no other sensitive permission.
-        assertThat(requested.toList()).contains("android.permission.INTERNET")
+        // INTERNET is declared for the Path Oracle only, and only in builds that have AI Paths (debug).
+        if (com.assismohanty.awaken.BuildConfig.AI_PATHS_ENABLED) {
+            assertThat(requested.toList()).contains("android.permission.INTERNET")
+        } else {
+            assertThat(requested.toList()).doesNotContain("android.permission.INTERNET")
+        }
         assertThat(requested.toList()).containsNoneOf(
             "android.permission.ACCESS_FINE_LOCATION", "android.permission.ACCESS_COARSE_LOCATION",
             "android.permission.READ_CONTACTS", "android.permission.RECORD_AUDIO", "android.permission.CAMERA",

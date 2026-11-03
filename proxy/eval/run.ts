@@ -12,6 +12,8 @@
  *   EVAL_DEBUG_KEY=<the staging X-Debug-Key secret> \
  *   npm run eval
  *
+ * Optional: EVAL_LIMIT=N runs only N goals, EVAL_SKIP=N skips the first N (e.g. 10 a day on the free AI allowance).
+ *
  * Re-run this on every prompt version change (ARCH §6).
  */
 import { writeFile } from "node:fs/promises";
@@ -205,7 +207,11 @@ function renderMarkdown(results: GoalResult[]): string {
 
 async function main() {
   const results: GoalResult[] = [];
-  for (const goal of goals as Goal[]) {
+  // EVAL_LIMIT=N runs only the first N goals (stay inside the Workers AI daily free allowance); EVAL_SKIP=N skips the first N.
+  const skip = Number(process.env.EVAL_SKIP ?? 0);
+  const limit = process.env.EVAL_LIMIT ? Number(process.env.EVAL_LIMIT) : undefined;
+  const selected = (goals as Goal[]).slice(skip, limit === undefined ? undefined : skip + limit);
+  for (const goal of selected) {
     console.log(`Evaluating ${goal.id}...`);
     results.push(await evalGoal(goal));
   }

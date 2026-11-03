@@ -87,6 +87,8 @@ PRIVATE BY DESIGN
 
 ## 4. Data safety form (v1 — offline game + opt-in AI Paths)
 
+> **Release build for the Play listing (release prep, 2026-11-03):** AI Paths is compiled out. No `INTERNET` permission, no Play Integrity, no install ID. Nothing leaves the device, so §4 can be answered "No data collected" for this release; the rows below apply again only when AI Paths ships in a release build (see BACKLOG).
+
 Because AI Paths send user-entered text off the device, the answer is no longer "No data collected". Draft answers below; **re-read Play's current Data safety definitions when you fill the form** and make the answers match what the app actually does.
 
 | Data type (Play category) | Collected? | Shared? | Ephemeral? | Required/optional | Purpose |

@@ -6,6 +6,7 @@ import com.assismohanty.awaken.engine.FocusGoalRules
 import com.assismohanty.awaken.engine.TimeBlocks
 import com.assismohanty.awaken.core.designsystem.lexicon.lexString
 import com.assismohanty.awaken.core.designsystem.lexicon.lexPlural
+import com.assismohanty.awaken.core.domain.AiFeature
 import android.content.Intent
 import android.provider.Settings
 import android.text.format.DateFormat
@@ -144,6 +145,7 @@ fun SettingsRoute(
         onOpenDebug = onOpenDebug,
         archivedHabits = archived,
         onRestoreHabit = archivedViewModel::restore,
+        showAiPaths = AiFeature.enabled,
         onOpenNotificationSettings = {
             context.startActivity(
                 Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName),
@@ -170,6 +172,7 @@ fun SettingsScreen(
     focusWindow: @Composable () -> Unit = {},
     archivedHabits: List<ArchivedHabit> = emptyList(),
     onRestoreHabit: (habitId: String) -> Unit = {},
+    showAiPaths: Boolean = true,
 ) {
     GateBackground(rank = Rank.E, modifier = modifier) {
         LargeTitleScaffold(title = lexString(R.string.settings_title), onBack = onBack) {
@@ -179,7 +182,7 @@ fun SettingsScreen(
                 TrainingWindow(state, onEvent, onOpenHealth, onOpenScreenTime)
                 focusWindow()
                 ArchivedHabitsWindow(archivedHabits, onRestoreHabit)
-                AiPathsWindow(state, onEvent)
+                if (showAiPaths) AiPathsWindow(state, onEvent)
                 ComfortWindow(state, onEvent)
                 DataWindow(state, onExport, onImport, onOpenPrivacy)
                 // Debug builds only (DebugEntry is a no-op in release): never floats over content.
@@ -193,7 +196,7 @@ fun SettingsScreen(
     }
     if (state.showReminderPicker) ReminderDialog(state.reminder, onEvent)
     if (state.importPending) ImportConfirmDialog(onEvent)
-    if (state.showAiConsent) {
+    if (showAiPaths && state.showAiConsent) {
         AiConsentSheet(onEnable = { onEvent(SettingsEvent.EnableAiPaths) }, onNotNow = { onEvent(SettingsEvent.DeclineAiPaths) })
     }
     if (state.healthAction == HealthAction.SHOW_RATIONALE) {

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- AI Paths (debug/internal builds only): the Path Oracle proxy is the only network destination (CLAUDE.md invariant 8). Release has no INTERNET. -->
+    <uses-permission android:name="android.permission.INTERNET" />
+</manifest>

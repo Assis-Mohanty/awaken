@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.assismohanty.awaken.core.data.health.HealthGateway
 import com.assismohanty.awaken.core.data.health.HealthStatus
 import com.assismohanty.awaken.core.data.repo.IdentityRepository
+import com.assismohanty.awaken.core.domain.AiFeature
 import com.assismohanty.awaken.core.domain.CompleteOnboardingUseCase
 import com.assismohanty.awaken.core.domain.CreatePathUseCase
 import com.assismohanty.awaken.core.domain.GrantAiConsentUseCase
@@ -63,6 +64,8 @@ data class OnboardingUiState(
     val showConsent: Boolean = false,
     /** The hunter pressed [Enable AI Paths] in step 6; the Path is created right after the hunter exists. */
     val pathConsented: Boolean = false,
+    /** False in a build without AI Paths: step 6 is not offered and the count drops to seven. */
+    val pathStepEnabled: Boolean = true,
     val reminder: LocalTime = DEFAULT_REMINDER,
     val submitting: Boolean = false,
     val failed: Boolean = false,
@@ -85,6 +88,13 @@ data class OnboardingUiState(
             weeklyMinutes = PathEditorState.DEFAULT_MINUTES,
         )
     }
+
+    /** The steps this build shows, in order. */
+    val steps: List<OnboardingStep>
+        get() = OnboardingStep.entries.filter { it != OnboardingStep.PATH || pathStepEnabled }
+
+    val nextStep: OnboardingStep get() = steps[(steps.indexOf(step) + 1).coerceAtMost(steps.lastIndex)]
+    val previousStep: OnboardingStep get() = steps[(steps.indexOf(step) - 1).coerceAtLeast(0)]
 
     val canContinue: Boolean
         get() = when (step) {
@@ -134,7 +144,7 @@ class OnboardingViewModel @Inject constructor(
     private val identityRepository: IdentityRepository,
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(OnboardingUiState())
+    private val _uiState = MutableStateFlow(OnboardingUiState(pathStepEnabled = AiFeature.enabled))
     val uiState: StateFlow<OnboardingUiState> = _uiState.asStateFlow()
 
     init {
@@ -156,7 +166,7 @@ class OnboardingViewModel @Inject constructor(
         when (event) {
             OnboardingEvent.Next -> next()
             OnboardingEvent.Back -> _uiState.update { state ->
-                if (state.submitting) state else state.copy(step = OnboardingStep.entries[(state.step.ordinal - 1).coerceAtLeast(0)])
+                if (state.submitting) state else state.copy(step = state.previousStep)
             }
             is OnboardingEvent.NameChanged -> _uiState.update { it.copy(name = event.name, showNameError = false) }
             is OnboardingEvent.IdentityToggled -> _uiState.update { state ->
@@ -253,7 +263,7 @@ class OnboardingViewModel @Inject constructor(
                 step = OnboardingStep.FOCUS,
                 focus = IdentityCatalog(version = 1, identities = state.identityOptions).preselect(state.identities).toSet(),
             )
-            else -> state.copy(step = OnboardingStep.entries[state.step.ordinal + 1])
+            else -> state.copy(step = state.nextStep)
         }
     }
 
