@@ -36,6 +36,11 @@
             <action android:name="android.intent.action.MAIN" />
             <category android:name="android.intent.category.HOME" />
         </intent>
+        <!-- Focus Lock: finds UPI and bank apps so it never watches or covers a payment. -->
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="upi" />
+        </intent>
         <!-- Phone-down nights: finds the dialer and clock apps so a call or an alarm never breaks the night. -->
         <intent>
             <action android:name="android.intent.action.DIAL" />
@@ -68,7 +73,7 @@
             </intent-filter>
         </activity>
 
-        <!-- Focus Lock (GD 8.2): window-change events only, package name only. Opt-in in Android Accessibility settings. -->
+        <!-- Focus Lock (GD 8.2): window-change events only, package name only; scoped to AWAKEN while idle and never to payment apps (ED #149). Opt-in in Android Accessibility settings. -->
         <service
             android:name=".core.lock.FocusLockService"
             android:exported="true"

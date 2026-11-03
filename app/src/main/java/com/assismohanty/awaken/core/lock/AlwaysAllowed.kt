@@ -4,11 +4,13 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
 import android.provider.Settings
 import android.provider.Telephony
 import android.telecom.TelecomManager
 import com.assismohanty.awaken.core.data.clock.DeviceUptime
+import com.assismohanty.awaken.engine.FocusLockRules
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -25,11 +27,50 @@ class AlwaysAllowed @Inject constructor(
     private val uptime: DeviceUptime,
 ) {
     private var cached: Set<String> = emptySet()
+    private var cachedPayment: Set<String> = emptySet()
     private var cachedAtMs: Long = NEVER
 
     /** The fixed part plus the keyboard as it is right now. */
     @Synchronized
     fun current(): Set<String> {
+        refreshIfStale()
+        val fixed = cached + cachedPayment
+        return inputMethod()?.let { fixed + it } ?: fixed
+    }
+
+    /** Every UPI handler on this phone, its default tap-to-pay app and the built-in payment list. Never watched, never covered. */
+    @Synchronized
+    fun paymentApps(): Set<String> {
+        refreshIfStale()
+        return cachedPayment
+    }
+
+    /**
+     * The packages the Focus Lock service may listen to while a session runs, before payment apps are taken out: every
+     * app with a launcher icon (these are the ones that get covered), the phone's launchers, keyboard, dialer, messages
+     * app, the built-in never-block list and AWAKEN (so going home or to the system UI uncovers at once).
+     */
+    @Synchronized
+    fun watchCandidates(): Set<String> = current() + FocusLockRules.NEVER_BLOCK + launcherApps()
+
+    private fun launcherApps(): Set<String> = runCatching {
+        val intent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
+        val infos = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            context.packageManager.queryIntentActivities(intent, PackageManager.ResolveInfoFlags.of(0))
+        } else {
+            @Suppress("DEPRECATION")
+            context.packageManager.queryIntentActivities(intent, 0)
+        }
+        infos.mapNotNull { it.activityInfo?.packageName }.toSet()
+    }.onFailure { Timber.w(it, "Could not list apps") }.getOrDefault(emptySet())
+
+    /** Forget what was learned, e.g. when an app is installed, removed or updated. */
+    @Synchronized
+    fun invalidate() {
+        cachedAtMs = NEVER
+    }
+
+    private fun refreshIfStale() {
         val now = uptime.elapsedRealtimeMs()
         if (cachedAtMs == NEVER || now - cachedAtMs > CACHE_MS || now < cachedAtMs) {
             cached = buildSet {
@@ -38,10 +79,31 @@ class AlwaysAllowed @Inject constructor(
                 defaultDialer()?.let(::add)
                 defaultSms()?.let(::add)
             }
+            cachedPayment = buildSet {
+                addAll(upiHandlers())
+                defaultTapToPay()?.let(::add)
+            }
             cachedAtMs = now
         }
-        return inputMethod()?.let { cached + it } ?: cached
     }
+
+    /** Every app that can open a `upi://pay` link: GPay, PhonePe, Paytm, BHIM and the banks' own apps. */
+    private fun upiHandlers(): Set<String> = runCatching {
+        val intent = Intent(Intent.ACTION_VIEW, Uri.parse("upi://pay"))
+        val infos = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            context.packageManager.queryIntentActivities(intent, PackageManager.ResolveInfoFlags.of(0))
+        } else {
+            @Suppress("DEPRECATION")
+            context.packageManager.queryIntentActivities(intent, 0)
+        }
+        infos.mapNotNull { it.activityInfo?.packageName }.toSet()
+    }.onFailure { Timber.w(it, "Could not list UPI apps") }.getOrDefault(emptySet())
+
+    /** The app the phone uses for tap-to-pay; null without NFC. */
+    private fun defaultTapToPay(): String? = runCatching {
+        Settings.Secure.getString(context.contentResolver, NFC_PAYMENT_DEFAULT)
+            ?.let(ComponentName::unflattenFromString)?.packageName
+    }.getOrNull()
 
     private fun homePackages(): Set<String> = runCatching {
         val intent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME)
@@ -65,6 +127,7 @@ class AlwaysAllowed @Inject constructor(
     }.getOrNull()
 
     private companion object {
+        const val NFC_PAYMENT_DEFAULT = "nfc_payment_default_component"
         const val CACHE_MS = 5 * 60 * 1000L
         const val NEVER = -1L
     }

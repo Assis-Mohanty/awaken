@@ -37,11 +37,35 @@ object FocusLockRules {
         "com.google.android.packageinstaller",
     )
 
+    /**
+     * Well-known UPI and bank apps. Focus Lock never watches or covers them, so an enabled accessibility service can not
+     * disturb a payment. The app adds every UPI handler and the default tap-to-pay app found on the phone at runtime.
+     */
+    val PAYMENT_APPS: Set<String> = setOf(
+        "com.google.android.apps.nbu.paisa.user",
+        "com.phonepe.app",
+        "net.one97.paytm",
+        "in.org.npci.upiapp",
+        "com.dreamplug.androidapp",
+        "com.sbi.lyp.onlinesbi",
+        "com.csam.icici.bank.imobile",
+        "com.snapwork.hdfc",
+        "com.axis.mobile",
+        "com.msf.kbank.mobile",
+    )
+
     /** Anything whose name says it is a dialer, in-call screen, emergency or telecom app is left alone too. */
     private val ALWAYS_SAFE_NAME = Regex("""(^|\.)(dialer|incallui|emergency|telecom|sos)(\.|$)""")
 
     fun neverBlocked(packageName: String, alwaysAllowed: Set<String> = emptySet()): Boolean =
-        packageName in NEVER_BLOCK || packageName in alwaysAllowed || ALWAYS_SAFE_NAME.containsMatchIn(packageName)
+        packageName in NEVER_BLOCK || packageName in PAYMENT_APPS || packageName in alwaysAllowed || ALWAYS_SAFE_NAME.containsMatchIn(packageName)
+
+    /**
+     * The packages the accessibility service listens to while a session runs: [candidates] minus every payment app, plus
+     * [ownPackage]. Never empty, because an empty list would mean "every app" to Android.
+     */
+    fun watchScope(candidates: Set<String>, payment: Set<String>, ownPackage: String): Set<String> =
+        (candidates - payment - PAYMENT_APPS) + ownPackage
 
     /**
      * @param alwaysAllowed this phone's launcher, keyboard, dialer and SMS app, and AWAKEN's own package

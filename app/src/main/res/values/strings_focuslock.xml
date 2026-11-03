@@ -26,8 +26,8 @@
     <string name="focus_lock_explain_how">To do this, AWAKEN uses an Android accessibility service. It detects which app comes to the foreground during a running focus session, so it can cover that app.</string>
     <string name="focus_lock_explain_listens">It listens only for a new window opening, and reads only the name of the app.</string>
     <string name="focus_lock_explain_reads_nothing">It reads no screen content, typing, passwords, messages or notifications.</string>
-    <string name="focus_lock_explain_idle">It does nothing when no session is running or the session is paused.</string>
-    <string name="focus_lock_explain_never">It never covers phone, messages, emergency, Android settings, the keyboard, your launcher or AWAKEN.</string>
+    <string name="focus_lock_explain_idle">It watches only AWAKEN when no session is running, and does nothing when the session is paused.</string>
+    <string name="focus_lock_explain_never">It never covers or watches phone, messages, emergency, Android settings, payment and UPI apps, the keyboard, your launcher or AWAKEN.</string>
     <string name="focus_lock_explain_stores">It stores nothing about the apps you open. Nothing leaves your phone.</string>
     <string name="focus_lock_explain_off">You can turn it off at any time.</string>
     <string name="focus_lock_continue">Continue</string>

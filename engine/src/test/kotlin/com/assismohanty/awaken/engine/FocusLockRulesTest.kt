@@ -45,6 +45,27 @@ class FocusLockRulesTest {
     }
 
     @Test
+    fun `payment apps are never blocked`() {
+        FocusLockRules.PAYMENT_APPS.forEach { assertThat(decide(it)).isEqualTo(BlockDecision.ALLOW) }
+    }
+
+    @Test
+    fun `the watch scope drops payment apps and always holds AWAKEN`() {
+        val scope = FocusLockRules.watchScope(
+            candidates = setOf("com.sec.android.app.launcher", "com.bank.upi", "com.phonepe.app"),
+            payment = setOf("com.bank.upi"),
+            ownPackage = "com.assismohanty.awaken",
+        )
+        assertThat(scope).containsExactly("com.sec.android.app.launcher", "com.assismohanty.awaken")
+    }
+
+    @Test
+    fun `the watch scope is never empty`() {
+        val scope = FocusLockRules.watchScope(emptySet(), emptySet(), "com.assismohanty.awaken")
+        assertThat(scope).containsExactly("com.assismohanty.awaken")
+    }
+
+    @Test
     fun `an app the hunter allowed is not blocked`() {
         assertThat(decide("com.spotify.music")).isEqualTo(BlockDecision.ALLOW)
     }

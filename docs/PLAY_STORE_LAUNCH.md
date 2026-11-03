@@ -128,6 +128,7 @@ Request nothing else. The privacy policy link shown inside Health Connect must b
 
 ## 5c. Accessibility Service (Focus Lock) — declaration text (adapt)
 - **Core feature:** "Focus Lock covers other apps with a full-screen reminder while the user own focus session is running, so the session is not broken by distracting apps." Opt-in; the user switches it on in Android Accessibility settings after an in-app explanation, and can switch it off any time.
+- **Scope:** the service is limited to AWAKEN itself while no session runs; while a user-started focus session runs it is limited to non-payment apps (UPI, bank and tap-to-pay apps are never watched or covered).
 - **What it does:** listens to window-change events only, reads only the package name of the app that came to the front, retrieves no screen content, typing, passwords or notifications, performs no gestures, stores nothing and sends nothing (the app has no network use apart from the optional AI Paths).
 - **Data safety:** no data collected or shared by this service.
 - **Demo video (about 30 s):** Settings → Focus Lock → explanation → Continue → Android Accessibility settings → switch on → start a 25-min Focus Gate → open another app → the cover shows → Back to focus.
