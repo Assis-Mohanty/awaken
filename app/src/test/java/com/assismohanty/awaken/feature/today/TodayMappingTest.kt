@@ -2,9 +2,7 @@ package com.assismohanty.awaken.feature.today
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.assismohanty.awaken.core.designsystem.components.QuestRowState
-import com.assismohanty.awaken.core.designsystem.components.achievementNameRes
 import com.assismohanty.awaken.core.designsystem.components.unitPluralRes
-import com.assismohanty.awaken.engine.AchievementEvaluator
 import com.assismohanty.awaken.engine.model.QuestType
 import com.assismohanty.awaken.engine.model.Verification
 import com.assismohanty.awaken.testing.TestGraph
@@ -40,7 +38,6 @@ class TodayMappingTest {
         assertThat(state.completed).isEqualTo(1)
         assertThat(state.total).isEqualTo(4)
         assertThat(state.cleared).isFalse() // GD §7.1: needs the main quest or 3 items
-        assertThat(state.systemLine).isNotNull()
         assertThat(state.header?.name).isEqualTo("Test Hunter")
     }
 
@@ -55,11 +52,6 @@ class TodayMappingTest {
         val state = graph.observeToday(graph.dayRefresher.ticks).filterNotNull().first().toUiState()
 
         assertThat(state.cleared).isTrue()
-    }
-
-    @Test
-    fun everyAchievementHasADisplayName() {
-        AchievementEvaluator.all.forEach { assertThat(achievementNameRes(it.id)).isNotNull() }
     }
 
     @Test

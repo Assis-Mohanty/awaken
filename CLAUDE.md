@@ -16,7 +16,7 @@ Kotlin 2.x · Jetpack Compose + Material 3 (heavily themed) · Navigation Compos
 Proxy (`/proxy`): TypeScript on Cloudflare Workers · zod · Wrangler · Vitest. See ARCHITECTURE §3.8.
 
 ## Modules
-- `:engine` — pure Kotlin/JVM. ALL game rules (XP, levels, ranks, streaks, caps, crits, directive generation, achievements, adaptive difficulty, **Path validation and scheduling**). Zero Android imports. 100% of GAME_DESIGN §12 test vectors live here.
+- `:engine` — pure Kotlin/JVM. ALL game rules (XP, levels, ranks, streaks, caps, directive generation, adaptive difficulty, **Path validation and scheduling**). Zero Android imports. 100% of GAME_DESIGN §12 test vectors live here.
 - `:app` — Android: data (Room, DataStore, Health Connect, Path Oracle client), DI, UI, workers, widget.
 - `:reelcounter-core` — pure Kotlin/JVM: the Reel Counter state machine (a short-video count, its time on screen, limits, stats). Not game rules: it never touches the ledger, XP or gold. Zero Android imports.
 - `:reelcounter-android` — Android library for Reel Counter: its own `AccessibilityService` (reads view ids only, never node text; declared separately from Focus Lock because it needs content retrieval), its own Room file `reelcounter.db`, settings and detector rules. No visual design and no `INTERNET`: all UI lives in `:app` (`feature/reelcounter`) and reaches the module through `ReelOverlayUi`, `ReelClock` and `ReelDayStart`. See `docs/reelcounter/INTEGRATION.md`.
@@ -24,7 +24,7 @@ Proxy (`/proxy`): TypeScript on Cloudflare Workers · zod · Wrangler · Vitest.
 - `/contracts` — JSON Schemas shared by `:engine` tests and `/proxy` (the wire contract for AI Paths).
 
 ## Hard invariants (violating any of these is a bug, not a style choice)
-1. **Ledger only.** XP, stat XP, gold, items, fragments change ONLY by inserting ledger rows. No `UPDATE`/`DELETE` on ledger tables. Undo = reversing row.
+1. **Ledger only.** XP, stat XP, gold and items change ONLY by inserting ledger rows. No `UPDATE`/`DELETE` on ledger tables. Undo = reversing row.
 2. **Idempotent writes.** Every ledger row has a unique `(sourceType, sourceId, kind)`. Applying the same event twice must be a no-op. Use `@Insert(onConflict = IGNORE)` + check the result.
 3. **One transaction per game action.** Completing a quest = quest status + all ledger rows + cached balances + achievement unlocks in ONE `withTransaction {}`.
 4. **Rules live in `:engine`.** ViewModels and repositories call engine functions; they never compute XP, levels, streaks, or caps themselves.
@@ -35,7 +35,7 @@ Proxy (`/proxy`): TypeScript on Cloudflare Workers · zod · Wrangler · Vitest.
 9. **User text is untrusted input.** Path goal text goes to the model only inside the delimited data block defined in the proxy prompt, length-limited, and it can only influence wording within validator clamps.
 
 ## Code conventions
-- Package-by-feature in `:app`: `feature/today`, `feature/quest`, `feature/trial`, `feature/paths`, `feature/gym`, `feature/diet`, `feature/gate`, `feature/status`, `feature/vault`, `feature/onboarding`, `feature/settings`, `feature/health`, `feature/screentime`, `feature/campaign`, `feature/review`, `feature/recap`, `feature/focus`, `feature/focuslock`, `feature/reelcounter`, `feature/quit` (quit counters, GD §16.13), `feature/dungeon` (GD §16.14), `feature/program` (GD §16.15); shared in `core/designsystem`, `core/data` (network code only in `core/data/ai`), `core/domain`, `core/work` (WorkManager workers), `core/lock` (Focus Lock accessibility service: window-change events and package names only, no screen content, GD 8.2), `core/reelcounter` (Reel Counter host wiring and overlay windows; the service itself is `:reelcounter-android`).
+- Package-by-feature in `:app`: `feature/today`, `feature/quest`, `feature/trial`, `feature/paths`, `feature/gym`, `feature/diet`, `feature/gate`, `feature/status`, `feature/vault`, `feature/onboarding`, `feature/settings`, `feature/health`, `feature/screentime`, `feature/review`, `feature/focus`, `feature/focuslock`, `feature/reelcounter`, `feature/quit` (quit counters, GD §16.13), `feature/program` (GD §16.15); shared in `core/designsystem`, `core/data` (network code only in `core/data/ai`), `core/domain`, `core/work` (WorkManager workers), `core/lock` (Focus Lock accessibility service: window-change events and package names only, no screen content, GD 8.2), `core/reelcounter` (Reel Counter host wiring and overlay windows; the service itself is `:reelcounter-android`).
 - Every day rollover goes through `RunRolloverUseCase` (app foreground, day-start tick, `DayRolloverWorker`); it records one-shot System notices in `NoticeStore` (DataStore, UI-only).
 - UDF: `ViewModel` exposes `StateFlow<UiState>` (immutable data class) + `fun onEvent(event)`. Screens are stateless composables taking state + lambdas; a thin `Route` composable wires the ViewModel.
 - Naming: `camelCase` in Kotlin; Room columns `snake_case` via `@ColumnInfo`. One name per concept everywhere (`questInstanceId`, never `qid`/`quest_id` in Kotlin).

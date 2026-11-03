@@ -285,7 +285,6 @@ private fun ruleTitleRes(key: ProgramRuleKey): Int = when (key) {
 private fun refusalRes(start: ProgramStart): Int? = when (start) {
     ProgramStart.OK -> null
     ProgramStart.NOT_ENOUGH_SLOTS -> R.string.program_refused_slots
-    ProgramStart.CAMPAIGN_ACTIVE -> R.string.program_refused_campaign
     ProgramStart.PROGRAM_ACTIVE -> R.string.program_refused_program
 }
 

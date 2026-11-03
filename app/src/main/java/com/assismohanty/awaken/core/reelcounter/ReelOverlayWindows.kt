@@ -28,7 +28,6 @@ import com.assismohanty.awaken.feature.reelcounter.ReelPanelContent
 import com.assismohanty.awaken.feature.reelcounter.ReelPanelRow
 import com.assismohanty.awaken.reelcounter.core.ShortVideoApp
 import com.assismohanty.awaken.reelcounter.core.count.CounterConfig
-import com.assismohanty.awaken.reelcounter.core.lumi.lumiStage
 import com.assismohanty.awaken.reelcounter.core.stats.StatsCalculator
 import com.assismohanty.awaken.reelcounter.core.time.GameDay
 import com.assismohanty.awaken.reelcounter.core.time.ReelClock
@@ -85,8 +84,8 @@ class ReelOverlayWindows @Inject constructor(
     private var nudge by mutableStateOf<Nudge?>(null)
     private var panelRows by mutableStateOf<List<ReelPanelRow>>(emptyList())
 
-    /** Today's total across every app and the combined limit: what Lumi follows (the bubble's own count may run ahead of it). */
-    private var lumiToday by mutableStateOf<ReelLumi?>(null)
+    /** Today's total across every app (the bubble's own count may run ahead of it). */
+    private var reelsToday by mutableStateOf<Int?>(null)
     private var look by mutableStateOf(Look(dark = true, presentation = PresentationMode.CLEAN, reduceMotion = false))
 
     private var placement = BubblePlacement(BubbleEdge.CENTER, SettingsStore.DEFAULT_BUBBLE_Y)
@@ -104,7 +103,7 @@ class ReelOverlayWindows @Inject constructor(
         val s = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
         scope = s
         prefsRepository.prefs.onEach { look = it.toLook(service) }.launchIn(s)
-        reelData.observeLumi().onEach { lumiToday = it }.launchIn(s)
+        reelData.observe().onEach { reelsToday = it }.launchIn(s)
         settings.bubbleEnabled.onEach {
             bubbleEnabled = it
             if (!it) closeBubbleAndPanel() else bubble?.let { _ -> ensureBubbleWindow() }
@@ -226,10 +225,9 @@ class ReelOverlayWindows @Inject constructor(
             if (current != null) {
                 Themed {
                     // The service counts first and the database follows, so never show less than the app's own count.
-                    val total = maxOf(lumiToday?.total ?: 0, current.count)
+                    val total = maxOf(reelsToday ?: 0, current.count)
                     ReelBubble(
                         count = total,
-                        lumi = lumiStage(total, lumiToday?.limit),
                         over = current.allowance != null && current.count >= current.allowance,
                         modifier = Modifier.bubbleGestures(),
                     )

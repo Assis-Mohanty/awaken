@@ -39,13 +39,11 @@ class GameDataPorterTest {
     private suspend fun playSomeGame() {
         source.seedHunter()
         listOf("one", "two", "crit").forEach { name ->
-            val quest = source.fixtureQuest(name, crit = name == "crit")
+            val quest = source.fixtureQuest(name)
             source.completeQuest(quest.id)
         }
         source.grant(LedgerKind.GOLD, 2_000, "bonus")
         source.purchaseItem("streak_shield", "buy-shield")
-        source.purchaseItem("sigil_wolf", "buy-sigil")
-        source.equipCosmetic(ShopKind.SIGIL, "sigil_wolf")
         source.updateSettings.setEquipment(setOf("dumbbells"))
         source.updateSettings.setInjury(true, setOf("upper"))
     }
@@ -79,7 +77,6 @@ class GameDataPorterTest {
         assertThat(target.ledger.balances()).isEqualTo(source.ledger.balances())
         assertThat(target.ledger.balances()).isEqualTo(target.ledger.balancesFromLedger())
         assertThat(target.db.hunterDao().getProfile()).isEqualTo(source.db.hunterDao().getProfile())
-        assertThat(target.db.hunterDao().getProfile()?.equippedSigilId).isEqualTo("sigil_wolf")
         assertThat(target.db.hunterDao().getProfile()?.injuryTags).containsExactly("upper")
     }
 
@@ -177,15 +174,11 @@ class GameDataPorterTest {
     }
 
     @Test
-    fun dungeonsProgramsAndTheirMarksSurviveARoundTrip() = runTest {
+    fun programsAndTheirMarksSurviveARoundTrip() = runTest {
         source.seedHunter()
         source.rollover()
         source.grant(com.assismohanty.awaken.engine.model.LedgerKind.XP_TOTAL, com.assismohanty.awaken.engine.LevelCurve.cumulative(10), "xp")
         source.grant(com.assismohanty.awaken.engine.model.LedgerKind.GOLD, 500, "gold")
-        source.enterDungeon(3, Stat.STR)
-        source.clock.advance(java.time.Duration.ofDays(1))
-        source.rollover()
-        source.abandonDungeon()
         source.startProgram("steady_30")
         source.db.programDao().insertMark(
             com.assismohanty.awaken.core.data.db.entity.ProgramMarkEntity(
@@ -195,14 +188,10 @@ class GameDataPorterTest {
 
         assertThat(target.porter.import(source.porter.export())).isInstanceOf(ImportResult.Imported::class.java)
 
-        assertThat(target.db.dungeonDao().all()).isEqualTo(source.db.dungeonDao().all())
-        assertThat(target.db.dungeonDao().all()).hasSize(1)
         val program = checkNotNull(source.db.programDao().active())
         assertThat(target.db.programDao().active()).isEqualTo(program)
         assertThat(target.db.programDao().marks(program.id)).isEqualTo(source.db.programDao().marks(program.id))
         assertThat(target.db.programDao().habits(program.id)).isEqualTo(source.db.programDao().habits(program.id))
-        assertThat(target.db.questDao().getForDate(source.today()).filter { it.dungeonId != null }.map { it.dungeonStage })
-            .isEqualTo(source.db.questDao().getForDate(source.today()).filter { it.dungeonId != null }.map { it.dungeonStage })
     }
 
     @Test
@@ -364,6 +353,46 @@ class GameDataPorterTest {
         assertThat(target.ledger.balances()).isEqualTo(source.ledger.balances())
         assertThat(target.pathDao.all()).isEmpty()
         assertThat(tablesOf(target.porter.export())).isEqualTo(tablesOf(v5))
+    }
+
+    /**
+     * The declutter dropped achievements, cosmetics, campaigns, dungeons and recaps (schema v26). A backup written before that
+     * still imports: the removed tables and columns are ignored, and the ledger comes through untouched.
+     */
+    @Test
+    fun aBackupFromBeforeTheDeclutterStillImports() = runTest {
+        playSomeGame()
+        val current = source.porter.export()
+        val v25 = mutate(current) { root ->
+            root["schemaVersion"] = JsonPrimitive(25)
+            val tables = root.getValue("tables").jsonObject.toMutableMap()
+            tables["achievement_unlock"] = JsonArray(listOf(JsonObject(mapOf("achievement_id" to JsonPrimitive("first_blood"), "unlocked_at" to JsonPrimitive(0)))))
+            tables["owned_cosmetic"] = JsonArray(listOf(JsonObject(mapOf("cosmetic_id" to JsonPrimitive("sigil_blade"), "acquired_at" to JsonPrimitive(0), "source" to JsonPrimitive("SHOP")))))
+            tables["campaign"] = JsonArray(emptyList())
+            tables["dungeon"] = JsonArray(emptyList())
+            tables["recap"] = JsonArray(listOf(JsonObject(mapOf("period_key" to JsonPrimitive("M:2026-09"), "generated_at" to JsonPrimitive(0), "payload_version" to JsonPrimitive(1), "payload_json" to JsonPrimitive("{}")))))
+            fun JsonObject.plus(vararg extra: Pair<String, kotlinx.serialization.json.JsonElement>) = JsonObject(this + extra)
+            tables["hunter_profile"] = JsonArray(
+                tables.getValue("hunter_profile").jsonArray.map {
+                    it.jsonObject.plus(
+                        "equipped_title_id" to JsonPrimitive("veteran"), "theme_id" to JsonPrimitive("default"),
+                        "equipped_frame_id" to kotlinx.serialization.json.JsonNull, "equipped_sigil_id" to kotlinx.serialization.json.JsonNull,
+                    )
+                },
+            )
+            tables["habit"] = JsonArray(tables.getValue("habit").jsonArray.map { it.jsonObject.plus("campaign_id" to kotlinx.serialization.json.JsonNull) })
+            tables["quest_instance"] = JsonArray(
+                tables.getValue("quest_instance").jsonArray.map {
+                    it.jsonObject.plus("dungeon_id" to kotlinx.serialization.json.JsonNull, "dungeon_stage" to kotlinx.serialization.json.JsonNull)
+                },
+            )
+            root["tables"] = JsonObject(tables)
+        }
+
+        assertThat(target.porter.import(v25)).isInstanceOf(ImportResult.Imported::class.java)
+        assertThat(target.ledger.balances()).isEqualTo(source.ledger.balances())
+        assertThat(target.db.ledgerDao().all().size).isEqualTo(source.db.ledgerDao().all().size)
+        assertThat(tablesOf(target.porter.export())).isEqualTo(tablesOf(current))
     }
 
     @Test

@@ -3,13 +3,11 @@ package com.assismohanty.awaken.debug
 import com.assismohanty.awaken.core.data.clock.Clock
 import com.assismohanty.awaken.core.data.clock.gameDate
 import com.assismohanty.awaken.core.data.db.AwakenDatabase
-import com.assismohanty.awaken.core.data.db.dao.AchievementDao
 import com.assismohanty.awaken.core.data.db.dao.CompletionDao
 import com.assismohanty.awaken.core.data.db.dao.DayRecordDao
 import com.assismohanty.awaken.core.data.db.dao.HunterDao
 import com.assismohanty.awaken.core.data.db.dao.PathDao
 import com.assismohanty.awaken.core.data.db.dao.TrialDao
-import com.assismohanty.awaken.core.data.db.entity.AchievementUnlockEntity
 import com.assismohanty.awaken.core.data.db.entity.CompletionEntity
 import com.assismohanty.awaken.core.data.db.entity.DayRecordEntity
 import com.assismohanty.awaken.core.data.db.entity.LedgerEntryEntity
@@ -51,7 +49,7 @@ import kotlinx.coroutines.withContext
 
 /**
  * Debug-only "Screenshot mode": wipes the database and builds a realistic demo hunter for Play Store screenshots
- * (LV 24, C-rank, 12-day streak, varied stats, achievements, two active Paths with a charted week, one milestone cleared).
+ * (LV 24, C-rank, 12-day streak, varied stats, two active Paths with a charted week, one milestone cleared).
  *
  * Everything an economy balance depends on is written as ledger rows (invariant 1); the rest are plain history rows. The
  * demo data is never produced by release code.
@@ -65,7 +63,6 @@ class DemoSeeder @Inject constructor(
     private val hunterDao: HunterDao,
     private val dayRecordDao: DayRecordDao,
     private val completionDao: CompletionDao,
-    private val achievementDao: AchievementDao,
     private val trialDao: TrialDao,
     private val pathDao: PathDao,
     private val ledger: LedgerRepository,
@@ -80,10 +77,10 @@ class DemoSeeder @Inject constructor(
         val profile = createHunter(name = DEMO_NAME, focusStats = listOf(Stat.INT, Stat.STR))
         val today = clock.gameDate(profile.dayStartHour)
         val now = clock.now()
-        hunterDao.upsertProfile(profile.copy(firstGameDate = today.minusDays(HISTORY_DAYS), equippedTitleId = "rising_hunter"))
+        hunterDao.upsertProfile(profile.copy(firstGameDate = today.minusDays(HISTORY_DAYS)))
 
         seedHistory(today, now)
-        seedRankAndAchievements(today, now)
+        seedRanks(today, now)
         seedPaths(today, now)
         ledger.rebuildBalancesFromLedger()
         dayRefresher.refresh()
@@ -117,7 +114,7 @@ class DemoSeeder @Inject constructor(
                 completions += CompletionEntity(
                     id = "demo-$offset-$n#1", questInstanceId = "demo-$offset-$n", attempt = 1, gameDate = date,
                     questType = if (n == 0) QuestType.MAIN else QuestType.SIDE, stat = stat,
-                    verificationSource = VerificationSource.SELF, crit = offset == CRIT_DAY && n == 0,
+                    verificationSource = VerificationSource.SELF,
                     xp = (perDayXp / count).toInt(), completedAt = now,
                 )
             }
@@ -132,7 +129,6 @@ class DemoSeeder @Inject constructor(
             )
         }
         rows += row(LedgerKind.GOLD, BASE_GOLD, "gold", baselineDate)
-        rows += row(LedgerKind.FRAGMENT, FRAGMENTS, "fragments", baselineDate)
         rows += LedgerEntryEntity(
             kind = LedgerKind.ITEM, itemId = LedgerRepository.STREAK_SHIELD_ITEM_ID, delta = SHIELDS,
             sourceType = SourceType.SHOP, sourceId = "demo:shields", gameDate = baselineDate, createdAt = now,
@@ -141,7 +137,7 @@ class DemoSeeder @Inject constructor(
         completions.forEach { completionDao.insert(it) }
     }
 
-    private suspend fun seedRankAndAchievements(today: LocalDate, now: Instant) {
+    private suspend fun seedRanks(today: LocalDate, now: Instant) {
         listOf(Rank.D, Rank.C).forEach { rank ->
             trialDao.upsert(
                 TrialEntity(
@@ -151,7 +147,6 @@ class DemoSeeder @Inject constructor(
                 ),
             )
         }
-        ACHIEVEMENTS.forEach { achievementDao.insert(AchievementUnlockEntity(it, now)) }
     }
 
     /** Two ACTIVE Paths with a READY week. Slots earlier in the week are done; today's and later ones are PENDING. */
@@ -231,10 +226,8 @@ class DemoSeeder @Inject constructor(
         const val STREAK_DAYS = 12
         const val HISTORY_DAYS = 40L
         const val DAY_XP = 340
-        const val CRIT_DAY = 3
         const val BASE_GOLD = 1_850L
         const val GOLD_PER_DAY = 60L
-        const val FRAGMENTS = 3L
         const val SHIELDS = 2L
         const val MILESTONE_DAYS = 9L
         const val PATH_AGE_DAYS = 24L
@@ -245,10 +238,6 @@ class DemoSeeder @Inject constructor(
 
         /** Varied stat XP: statLevel = floor(sqrt(xp / 40)) + 1 — INT 14, STR 13, WIL 9, VIT 11, CHA 6. */
         val STAT_XP = mapOf(Stat.INT to 7_400L, Stat.STR to 6_200L, Stat.WIL to 2_800L, Stat.VIT to 4_100L, Stat.CHA to 1_100L)
-
-        val ACHIEVEMENTS = listOf(
-            "awakened", "first_blood", "lvl5", "lvl10", "streak3", "streak7", "crit1", "rank_d", "rank_c",
-        )
 
         val DEMO_PATHS = listOf(
             DemoPath(

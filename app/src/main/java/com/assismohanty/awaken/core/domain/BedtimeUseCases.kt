@@ -198,7 +198,7 @@ class LoadBedtimeTodayUseCase @Inject constructor(
         val streak = gameState.hunterContext(profile, today).streak
         val tonight = tonightSetting?.let {
             val window = BedtimeRules.window(today.plusDays(1), it, clock.zone())
-            TonightNight(window, XpCalculator.questXp(BedtimeRules.BEDTIME_DIFFICULTY, streak, VerificationSource.USAGE, crit = false), BedtimeRules.windDownOpensAt(window))
+            TonightNight(window, XpCalculator.questXp(BedtimeRules.BEDTIME_DIFFICULTY, streak, VerificationSource.USAGE), BedtimeRules.windDownOpensAt(window))
         }
         val last = quest?.let { lastNight(it, today, now) }
         return BedtimeToday(needsAccess = !usage.hasAccess(), lastNight = last, tonight = tonight, now = now)

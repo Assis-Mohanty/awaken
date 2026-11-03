@@ -22,7 +22,6 @@
     <string name="habit_times_note">Any days count. Once you reach it, the habit rests until Monday.</string>
     <string name="habit_timed_minutes">Minutes</string>
     <string name="habit_timed_difficulty">%1$s, from %2$d minutes</string>
-    <string name="habit_count_target">Target</string>
 
     <!-- Reminder (editor) -->
     <string name="habit_reminder_label">Reminder</string>

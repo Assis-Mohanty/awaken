@@ -44,7 +44,7 @@ data class HabitDraft(
 
 sealed interface SaveHabitResult {
     data class Saved(val habitId: String) : SaveHabitResult
-    data object CampaignHabit : SaveHabitResult
+    data object ProgramHabit : SaveHabitResult
     data object LimitReached : SaveHabitResult
     data object InvalidTitle : SaveHabitResult
     data object InvalidDays : SaveHabitResult
@@ -98,8 +98,8 @@ class SaveHabitUseCase @Inject constructor(
         if (draft.reminderMinutes != null && !HabitRules.isValidReminder(draft.reminderMinutes)) return SaveHabitResult.InvalidTarget
         val result = transactions.run {
             val existing = draft.id?.let { habitDao.get(it) }
-            // Campaign habits are planned and priced by the engine; they can be archived, not edited (ENGINE_DECISIONS #92).
-            if (existing?.campaignId != null || existing?.programId != null) return@run SaveHabitResult.CampaignHabit
+            // Program habits are planned and priced by the engine; they can be archived, not edited.
+            if (existing?.programId != null) return@run SaveHabitResult.ProgramHabit
             if (existing == null && !QuestRules.canAddCustom(habitDao.countActive())) return@run SaveHabitResult.LimitReached
             val id = existing?.id ?: UUID.randomUUID().toString()
             if (draft.reminderMinutes != null && !HabitRules.canSetReminder(habitDao.countRemindersExcept(id))) {
@@ -158,8 +158,8 @@ sealed interface RemoveHabitResult {
     data class Removed(val removal: HabitRemoval) : RemoveHabitResult
     data object NotFound : RemoveHabitResult
 
-    /** Campaign habits end with their campaign (GD §6.8). */
-    data object CampaignHabit : RemoveHabitResult
+    /** Program habits end with their program (GD §16.15). */
+    data object ProgramHabit : RemoveHabitResult
 }
 
 /**
@@ -184,7 +184,7 @@ class RemoveHabitUseCase @Inject constructor(
         val today = clock.gameDate(profile.dayStartHour)
         return transactions.run {
             val habit = habitDao.get(habitId) ?: return@run RemoveHabitResult.NotFound
-            if (habit.campaignId != null || habit.programId != null) return@run RemoveHabitResult.CampaignHabit
+            if (habit.programId != null) return@run RemoveHabitResult.ProgramHabit
             val open = questDao.openHabitInstancesFrom(habitId, today)
             questDao.deleteAll(open.map { it.id })
             if (delete) habitDao.delete(habitId) else habitDao.upsert(habit.copy(active = false))

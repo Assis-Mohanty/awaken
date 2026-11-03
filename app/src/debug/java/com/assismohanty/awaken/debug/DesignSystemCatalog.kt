@@ -68,7 +68,6 @@ import com.assismohanty.awaken.core.designsystem.components.GateDial
 import com.assismohanty.awaken.core.designsystem.components.Heatmap
 import com.assismohanty.awaken.core.designsystem.components.HeatmapDay
 import com.assismohanty.awaken.core.designsystem.components.HunterHeader
-import com.assismohanty.awaken.core.designsystem.components.LevelUpDialog
 import com.assismohanty.awaken.core.designsystem.components.Pill
 import com.assismohanty.awaken.core.designsystem.components.PrimaryButton
 import com.assismohanty.awaken.core.designsystem.components.QuestRow
@@ -150,7 +149,6 @@ private fun CatalogContent(
     val rankColor = colors.rank(rank)
     var revealKey by remember { mutableIntStateOf(0) }
     var reward by remember { mutableStateOf<RewardModel?>(null) }
-    var levelUp by remember { mutableStateOf(false) }
     var toast by remember { mutableStateOf(false) }
     var xp by remember { mutableLongStateOf(1_240L) }
     val quests = remember { mutableStateListOf(*previewQuests.toTypedArray()) }
@@ -201,8 +199,7 @@ private fun CatalogContent(
                     FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.xs), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
                         SecondaryButton(stringResource(R.string.catalog_replay_reveal), onClick = { revealKey++ })
                         SecondaryButton(stringResource(R.string.catalog_reward), onClick = { reward = previewReward })
-                        SecondaryButton(stringResource(R.string.catalog_reward_crit), onClick = { reward = critReward })
-                        SecondaryButton(stringResource(R.string.catalog_level_up), onClick = { levelUp = true })
+                        SecondaryButton(stringResource(R.string.catalog_reward_level), onClick = { reward = levelReward })
                         SecondaryButton(stringResource(R.string.catalog_toast), onClick = { toast = true })
                         SecondaryButton(stringResource(R.string.catalog_add_xp), onClick = { xp = (xp + XP_STEP) % previewHunter.xpForLevel })
                     }
@@ -443,21 +440,13 @@ private fun CatalogContent(
 
         SystemToast(
             visible = toast,
-            title = stringResource(R.string.system_title_title_unlocked),
-            message = "Unbroken",
+            title = stringResource(R.string.notice_shield_title),
+            message = stringResource(R.string.notice_shield_body),
             modifier = Modifier
                 .align(Alignment.TopCenter)
                 .statusBarsPadding()
                 .padding(top = Spacing.md),
         )
-        if (levelUp) {
-            LevelUpDialog(
-                oldLevel = 9,
-                newLevel = 10,
-                statGains = mapOf(Stat.STR to 94, Stat.WIL to 28),
-                onDismiss = { levelUp = false },
-            )
-        }
     }
     reward?.let { RewardSheet(model = it, onDone = { reward = null }) }
 }
@@ -470,12 +459,7 @@ private fun Section(titleRes: Int, content: @Composable androidx.compose.foundat
     }
 }
 
-private val critReward = previewReward.copy(
-    xp = 188,
-    crit = true,
-    fragments = 1,
-    breakdown = previewReward.breakdown + BreakdownItem(BreakdownItem.Kind.CRIT, 2.0),
-)
+private val levelReward = previewReward.copy(levelReached = 10)
 
 private val sampleHeatmap: List<HeatmapDay> = LocalDate.of(2026, 6, 15).let { monday ->
     (0 until WEEKS * 7).map { i -> HeatmapDay(monday.plusDays(i.toLong()), intensity = (i * 7 + i / 3) % 5, restDay = i % 13 == 6) }

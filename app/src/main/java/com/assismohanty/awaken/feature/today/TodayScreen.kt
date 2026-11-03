@@ -37,7 +37,6 @@ import com.assismohanty.awaken.core.designsystem.components.EmptyState
 import com.assismohanty.awaken.core.designsystem.components.HabitRowActions
 import com.assismohanty.awaken.core.designsystem.components.HeaderIconButton
 import com.assismohanty.awaken.core.designsystem.components.HunterHeaderModel
-import com.assismohanty.awaken.core.designsystem.components.InsightCard
 import com.assismohanty.awaken.core.designsystem.components.NeverMissTwiceLine
 import com.assismohanty.awaken.core.designsystem.components.LargeTitleScaffold
 import com.assismohanty.awaken.core.designsystem.components.LevelModule
@@ -64,7 +63,6 @@ import com.assismohanty.awaken.feature.focus.FocusCardViewModel
 import com.assismohanty.awaken.engine.ConsistencyScore
 import com.assismohanty.awaken.engine.MissLine
 import com.assismohanty.awaken.engine.TimeBlocks
-import com.assismohanty.awaken.engine.campaign.CampaignAct
 import com.assismohanty.awaken.engine.model.Difficulty
 import com.assismohanty.awaken.engine.model.Rank
 import com.assismohanty.awaken.engine.model.Stat
@@ -81,7 +79,6 @@ fun TodayRoute(
     modifier: Modifier = Modifier,
     onOpenScreenTime: () -> Unit = {},
     onOpenReelStats: () -> Unit = {},
-    onOpenCampaign: () -> Unit = {},
     onOpenGates: () -> Unit = {},
     onOpenFocusReport: () -> Unit = {},
     onOpenVault: () -> Unit = {},
@@ -119,7 +116,6 @@ fun TodayRoute(
         modifier = modifier,
         onOpenScreenTime = onOpenScreenTime,
         onOpenReelStats = onOpenReelStats,
-        onOpenCampaign = onOpenCampaign,
         onOpenReview = onOpenReview,
         onOpenGates = onOpenGates,
         onOpenFocusReport = onOpenFocusReport,
@@ -176,7 +172,6 @@ fun TodayScreen(
     modifier: Modifier = Modifier,
     onOpenScreenTime: () -> Unit = {},
     onOpenReelStats: () -> Unit = {},
-    onOpenCampaign: () -> Unit = {},
     onOpenGates: () -> Unit = {},
     onOpenFocusReport: () -> Unit = {},
     focus: FocusCardState = FocusCardState(),
@@ -236,7 +231,6 @@ fun TodayScreen(
         if (missLine != null) {
             NeverMissTwiceLine(lexString(missLine.stringRes()), modifier = Modifier.staggeredEntrance(2))
         } else {
-            state.systemLine?.let { line -> InsightCard(text = line, modifier = Modifier.staggeredEntrance(2)) }
         }
 
         state.trial?.let { trial ->
@@ -269,7 +263,7 @@ fun TodayScreen(
             )
         }
 
-        summary.reelsToday?.let { ReelsTile(total = it, lumi = summary.reelsLumi, onClick = onOpenReelStats, modifier = Modifier.fillMaxWidth()) }
+        summary.reelsToday?.let { ReelsTile(total = it, onClick = onOpenReelStats, modifier = Modifier.fillMaxWidth()) }
 
         FocusCard(state = focus, onStart = onOpenGates, onOpenReport = onOpenFocusReport)
 
@@ -277,7 +271,6 @@ fun TodayScreen(
 
         if (state.reviewOpen) ReviewRow(onOpenReview)
         PlanCard(state, onHabitsEvent, onDayPlanEvent)
-        CampaignRow(state, onOpenCampaign)
         state.discipline?.let { card -> DisciplineRow(card, onOpenScreenTime) }
         bedtimeCard()
     }
@@ -388,27 +381,6 @@ private fun ReviewRow(onOpenReview: () -> Unit) {
     }
 }
 
-/** The campaign (GD §6.8): its day and act while one runs, otherwise a quiet offer to begin one. */
-@Composable
-private fun CampaignRow(state: TodayUiState, onOpenCampaign: () -> Unit) {
-    val card = state.campaign
-    if (card == null && !state.campaignOffer) return
-    AwakenCard(reveal = false, contentPadding = Spacing.listCard, spacing = Spacing.zero, modifier = Modifier.fillMaxWidth()) {
-        ListRow(
-            title = lexString(R.string.campaign_window_progress),
-            icon = AwakenGlyphs.Path,
-            iconTint = AwakenTheme.colors.reward,
-            secondary = if (card != null) {
-                lexString(R.string.today_campaign_day, card.dayIndex, lexString(card.act.todayNameRes))
-            } else {
-                lexString(R.string.today_campaign_begin)
-            },
-            onClick = onOpenCampaign,
-            trailing = { Chevron() },
-        )
-    }
-}
-
 @Composable
 private fun DisciplineRow(card: DisciplineCard, onOpenScreenTime: () -> Unit) {
     val colors = AwakenTheme.colors
@@ -458,13 +430,6 @@ private fun greeting(block: TimeOfDay, name: String?): String {
 
 private fun formatDay(date: LocalDate): String = DateTimeFormatter.ofLocalizedDate(FormatStyle.FULL).format(date)
 
-private val CampaignAct.todayNameRes: Int
-    get() = when (this) {
-        CampaignAct.FOUNDATION -> R.string.campaign_act_foundation
-        CampaignAct.BUILD -> R.string.campaign_act_build
-        CampaignAct.ASCEND -> R.string.campaign_act_ascend
-    }
-
 private const val ANYTIME_KEY = "ANYTIME"
 
 // region previews
@@ -496,7 +461,6 @@ internal val previewTodayState = TodayUiState(
     loading = false,
     header = HunterHeaderModel(
         name = "Assis",
-        title = null,
         level = 24,
         rank = Rank.C,
         xpIntoLevel = 1_240,
@@ -515,7 +479,6 @@ internal val previewTodayState = TodayUiState(
     habits = listOf(previewRow("h1", "Call your family", Stat.CHA, 1, "call", block = TimeOfDay.DAY)),
     completed = 2,
     total = 6,
-    systemLine = "INT is falling behind. One short study block puts it back on track.",
     currentBlock = TimeOfDay.DAY,
     gameDate = LocalDate.of(2026, 10, 27),
     bestStreak = 30,

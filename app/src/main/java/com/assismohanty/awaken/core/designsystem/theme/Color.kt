@@ -58,15 +58,6 @@ data class AwakenPalette(
     val statWil: Color,
     val statVit: Color,
     val statCha: Color,
-    // Vault themes (GD §9.2): re-tint small accents, never the rank crest, never a background.
-    val themeCrimson: Color,
-    val themeViolet: Color,
-    val themeGold: Color,
-    // Title frame marks (GD §9.2), cheapest to most prestigious.
-    val frameIron: Color,
-    val frameEmber: Color,
-    val frameUmbral: Color,
-    val frameRegal: Color,
 ) {
     val isDark: Boolean get() = void.luminance() < HALF
 
@@ -81,21 +72,6 @@ data class AwakenPalette(
 
     /** Gates share the colour of the rank with the same letter. */
     fun gate(gate: GateRank): Color = rank(Rank.valueOf(gate.name))
-
-    /** Accent override for a Vault theme id; null for the default theme. */
-    fun theme(themeId: String): Color? = when (themeId) {
-        "theme_crimson_gate" -> themeCrimson
-        "theme_abyssal_violet" -> themeViolet
-        "theme_sovereign_gold" -> themeGold
-        else -> null
-    }
-
-    fun frame(frameId: String): Color = when (frameId) {
-        "frame_iron" -> frameIron
-        "frame_ember" -> frameEmber
-        "frame_umbral" -> frameUmbral
-        else -> frameRegal
-    }
 
     fun stat(stat: Stat): Color = when (stat) {
         Stat.STR -> statStr
@@ -147,13 +123,6 @@ data class AwakenPalette(
                 statWil = AccentWil,
                 statVit = AccentVit,
                 statCha = AccentCha,
-                themeCrimson = Negative,
-                themeViolet = AccentInt,
-                themeGold = AccentStr,
-                frameIron = ink2,
-                frameEmber = AccentCha,
-                frameUmbral = AccentInt,
-                frameRegal = AccentStr,
             )
 
         val Light = look(
@@ -230,8 +199,6 @@ class AwakenColors(private val palette: AwakenPalette) {
     /** A stat's fill for rings, bars and charts. */
     fun statFill(stat: Stat): Color = palette.statFill(stat)
     fun gate(gate: GateRank): Color = palette.gate(gate)
-    fun theme(themeId: String): Color? = palette.theme(themeId)
-    fun frame(frameId: String): Color = palette.frame(frameId)
 
     override fun equals(other: Any?): Boolean = other is AwakenColors && other.palette == palette
     override fun hashCode(): Int = palette.hashCode()

@@ -79,7 +79,7 @@ class BedtimeUseCasesTest {
         assertThat(completion.verificationSource).isEqualTo(VerificationSource.USAGE)
         assertThat(completion.gameDate).isEqualTo(day2)
         // 78 XP at streak 0 without a crit (vector #117); the quest can crit like any other.
-        assertThat(completion.xp).isEqualTo(XpCalculator.questXp(BedtimeRules.BEDTIME_DIFFICULTY, 0, VerificationSource.USAGE, completion.crit))
+        assertThat(completion.xp).isEqualTo(XpCalculator.questXp(BedtimeRules.BEDTIME_DIFFICULTY, 0, VerificationSource.USAGE))
         if (!completion.crit) assertThat(completion.xp).isEqualTo(78)
         assertThat(xpRows().any { it.sourceType == SourceType.QUEST && it.sourceId.startsWith(quest.id) }).isTrue()
     }

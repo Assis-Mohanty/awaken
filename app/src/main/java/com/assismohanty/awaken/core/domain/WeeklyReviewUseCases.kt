@@ -40,8 +40,8 @@ data class WeeklyReviewInput(
 )
 
 sealed interface ReviewResult {
-    /** Saved; [unlocked] are any review achievements (gold through the normal pipeline, never XP). */
-    data class Saved(val unlocked: List<String>) : ReviewResult
+    /** Saved. */
+    data object Saved : ReviewResult
     /** This week already has a review: nothing changed. */
     data object AlreadySubmitted : ReviewResult
     /** No review is open today (outside Saturday to Monday). */
@@ -89,13 +89,11 @@ class LoadWeeklyReviewUseCase @Inject constructor(
 
 /**
  * Saves a review in one transaction (invariant 3): the row (unique per ISO week, a second submit is a no-op), next
- * week's focus stats on the profile (applied from the next generated directive; today's is never regenerated), and any
- * review achievement. No XP row is ever written for a review.
+ * week's focus stats on the profile (applied from the next generated directive; today's is never regenerated). No XP row is ever written for a review.
  */
 class SubmitWeeklyReviewUseCase @Inject constructor(
     private val hunterDao: HunterDao,
     private val weeklyReviewDao: WeeklyReviewDao,
-    private val achievements: AchievementUnlocker,
     private val transactions: TransactionRunner,
     private val clock: Clock,
 ) {
@@ -120,7 +118,7 @@ class SubmitWeeklyReviewUseCase @Inject constructor(
             )
             if (inserted == -1L) return@run ReviewResult.AlreadySubmitted
             hunterDao.setFocusStats(input.focus[0], input.focus[1])
-            ReviewResult.Saved(achievements.unlockNew(profile, today, now))
+            ReviewResult.Saved
         }
     }
 

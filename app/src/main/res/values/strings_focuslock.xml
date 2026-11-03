@@ -84,7 +84,6 @@
     <string name="focus_lock_allowed_search">Search apps</string>
     <string name="focus_lock_allowed_always">Always allowed</string>
     <string name="focus_lock_allowed_empty">No apps match.</string>
-    <string name="focus_lock_allowed_toggle">Allow %1$s during focus sessions</string>
 
     <!-- Session screen warning -->
     <string name="focus_lock_warning">Focus Lock is on but not running, so apps are not covered. Time away from AWAKEN still counts against the session.</string>

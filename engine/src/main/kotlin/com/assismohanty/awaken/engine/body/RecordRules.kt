@@ -80,7 +80,4 @@ object RecordRules {
         return events
     }
 
-    /** All record events across one exercise's finished sessions, oldest first. Feeds `pr1 / pr25 / pr100`. */
-    fun eventCount(sessionsOldestFirst: List<List<LoggedSet>>): Int =
-        sessionsOldestFirst.indices.sumOf { i -> events(sessionsOldestFirst.subList(0, i), sessionsOldestFirst[i]).size }
 }

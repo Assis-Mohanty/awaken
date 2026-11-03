@@ -7,9 +7,6 @@ import androidx.room.PrimaryKey
 import com.assismohanty.awaken.engine.AppCategory
 import com.assismohanty.awaken.engine.BedtimeVerdict
 import com.assismohanty.awaken.engine.DayOutcome
-import com.assismohanty.awaken.engine.campaign.Archetype
-import com.assismohanty.awaken.engine.campaign.CampaignAct
-import com.assismohanty.awaken.engine.campaign.CampaignStatus
 import com.assismohanty.awaken.engine.GateCollapseReason
 import com.assismohanty.awaken.engine.GateMode
 import com.assismohanty.awaken.engine.GateRules
@@ -56,10 +53,6 @@ data class HunterProfileEntity(
     @ColumnInfo(name = "focus_stat_2") val focusStat2: Stat,
     @ColumnInfo(name = "day_start_hour") val dayStartHour: Int,
     @ColumnInfo(name = "reminder_time") val reminderTime: String? = null,
-    @ColumnInfo(name = "equipped_title_id") val equippedTitleId: String? = null,
-    @ColumnInfo(name = "theme_id") val themeId: String = DEFAULT_THEME_ID,
-    @ColumnInfo(name = "equipped_frame_id") val equippedFrameId: String? = null,
-    @ColumnInfo(name = "equipped_sigil_id") val equippedSigilId: String? = null,
     @ColumnInfo(name = "onboarding_done") val onboardingDone: Boolean,
     @ColumnInfo(name = "owned_equipment") val ownedEquipment: Set<String> = emptySet(),
     @ColumnInfo(name = "injury_mode") val injuryMode: Boolean = false,
@@ -80,7 +73,6 @@ data class HunterProfileEntity(
 
     companion object {
         const val SINGLETON_ID = "me"
-        const val DEFAULT_THEME_ID = "default"
         const val IDENTITY_SEPARATOR = ","
 
         fun identitiesOf(ids: List<String>): String = ids.joinToString(IDENTITY_SEPARATOR)
@@ -124,9 +116,6 @@ data class QuestInstanceEntity(
     @ColumnInfo(name = "time_of_day") val timeOfDay: TimeOfDay? = null,
     /** Count-habit progress for the day, 0..target (GD §16.1). Progress only: a reward is paid when it reaches the target. */
     @ColumnInfo(name = "progress", defaultValue = "0") val progress: Int = 0,
-    /** The Dungeon this stage quest belongs to and its 1-based stage (GD §16.14); null for every other quest. */
-    @ColumnInfo(name = "dungeon_id") val dungeonId: String? = null,
-    @ColumnInfo(name = "dungeon_stage") val dungeonStage: Int? = null,
     /**
      * Why an unpaid phone-down night expired, BROKEN or NO_DATA (GD §16.12, ENGINE_DECISIONS #147); written with the expiry,
      * null for every other quest and for nights settled before v25.
@@ -147,7 +136,8 @@ data class CompletionEntity(
     @ColumnInfo(name = "quest_type") val questType: QuestType,
     val stat: Stat,
     @ColumnInfo(name = "verification_source") val verificationSource: VerificationSource,
-    val crit: Boolean,
+    /** Historic: critical hits were removed on 2026-11-03; old rows may be true, new rows are always false. */
+    val crit: Boolean = false,
     val xp: Int,
     @ColumnInfo(name = "completed_at") val completedAt: Instant,
     @ColumnInfo(name = "undone_at") val undoneAt: Instant? = null,
@@ -166,9 +156,7 @@ data class HabitEntity(
     val unit: String,
     val active: Boolean,
     @ColumnInfo(name = "created_at") val createdAt: Instant,
-    /** Set for campaign habits (GD §6.8): planned by the engine and read-only in the habit editor (ENGINE_DECISIONS #92). */
-    @ColumnInfo(name = "campaign_id") val campaignId: String? = null,
-    /** The template a campaign habit was planned from, so each act re-prices it from the same targets. */
+    /** The template a program habit was planned from, so it keeps its targets. */
     @ColumnInfo(name = "template_id") val templateId: String? = null,
     /** The user's time-of-day block for this habit (GD §14.5); null = Anytime. */
     @ColumnInfo(name = "time_of_day") val timeOfDay: TimeOfDay? = null,
@@ -291,19 +279,6 @@ data class TrialEntity(
     @ColumnInfo(name = "ended_at") val endedAt: Instant?,
 )
 
-@Entity(tableName = "achievement_unlock")
-data class AchievementUnlockEntity(
-    @PrimaryKey @ColumnInfo(name = "achievement_id") val achievementId: String,
-    @ColumnInfo(name = "unlocked_at") val unlockedAt: Instant,
-)
-
-@Entity(tableName = "owned_cosmetic")
-data class OwnedCosmeticEntity(
-    @PrimaryKey @ColumnInfo(name = "cosmetic_id") val cosmeticId: String,
-    @ColumnInfo(name = "acquired_at") val acquiredAt: Instant,
-    val source: String,
-)
-
 @Entity(tableName = "health_sync_state")
 data class HealthSyncStateEntity(
     @PrimaryKey @ColumnInfo(name = "record_type") val recordType: String,
@@ -419,21 +394,6 @@ data class AppRuleEntity(
     @ColumnInfo(name = "daily_limit_minutes") val dailyLimitMinutes: Int?,
 )
 
-/** One 45-day campaign (GD §6.8). [scores] is the scan result as "STR:3,INT:5,…". Not a ledger table. */
-@Entity(tableName = "campaign")
-data class CampaignEntity(
-    @PrimaryKey val id: String,
-    @ColumnInfo(name = "start_date") val startDate: LocalDate,
-    @ColumnInfo(name = "focus_stat") val focusStat: Stat,
-    val archetype: Archetype,
-    val scores: String,
-    @ColumnInfo(name = "oath_sealed_at") val oathSealedAt: Instant,
-    val status: CampaignStatus,
-    @ColumnInfo(name = "current_act") val currentAct: CampaignAct,
-    @ColumnInfo(name = "cleared_days") val clearedDays: Int = 0,
-    @ColumnInfo(name = "ended_at") val endedAt: Instant? = null,
-)
-
 /**
  * Per-day Health Connect aggregates for insights (GD §14.3 I1/I5). A cache, not truth (invariant 7): it can be dropped
  * and refilled from Health Connect, so it is left out of export and cleared on import. Only finalized days are cached.
@@ -464,18 +424,6 @@ data class WeeklyReviewEntity(
     @ColumnInfo(name = "focus_stat_1") val focusStat1: Stat,
     @ColumnInfo(name = "focus_stat_2") val focusStat2: Stat,
     val intention: String? = null,
-)
-
-/**
- * A generated monthly or yearly recap (GD §14.6). [periodKey] is "M:2026-10" or "Y:2026"; generation is idempotent on
- * it. [payloadJson] is a snapshot cache of `RecapPayload`, rebuildable from Room, kept so a recap can be reopened.
- */
-@Entity(tableName = "recap")
-data class RecapEntity(
-    @PrimaryKey @ColumnInfo(name = "period_key") val periodKey: String,
-    @ColumnInfo(name = "generated_at") val generatedAt: Instant,
-    @ColumnInfo(name = "payload_version") val payloadVersion: Int,
-    @ColumnInfo(name = "payload_json") val payloadJson: String,
 )
 
 /**
@@ -564,24 +512,6 @@ data class QuitDayEntity(
     /** Distracting-app minutes that day, when they were read. */
     val minutes: Int? = null,
 )
-
-/**
- * A Dungeon the hunter entered (GD §16.14). The entry fee and the reward are ledger rows keyed `<id>:entry` and
- * `<id>:clear`; this row only says where the run stands. At most one is ACTIVE.
- */
-@Entity(tableName = "dungeon")
-data class DungeonEntity(
-    @PrimaryKey val id: String,
-    @ColumnInfo(name = "length_days") val lengthDays: Int,
-    val stat: Stat,
-    val fee: Int,
-    @ColumnInfo(name = "entered_game_date") val enteredGameDate: LocalDate,
-    @ColumnInfo(name = "first_stage_date") val firstStageDate: LocalDate,
-    val status: DungeonStatus,
-    @ColumnInfo(name = "ended_at") val endedAt: Instant? = null,
-)
-
-enum class DungeonStatus { ACTIVE, CLEARED, FAILED }
 
 /** A running (or finished) program (GD §16.15). A restart moves [runStartDate]; nothing else about the run is stored. */
 @Entity(tableName = "program")

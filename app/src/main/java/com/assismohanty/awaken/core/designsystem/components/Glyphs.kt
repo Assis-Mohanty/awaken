@@ -85,15 +85,6 @@ object AwakenGlyphs {
         }
     }
 
-    /** A gem: fragments. */
-    val Fragment: ImageVector by lazy {
-        line("Fragment") {
-            moveTo(7.5f, 4.5f); lineTo(16.5f, 4.5f); lineTo(20.5f, 9.5f); lineTo(12f, 20f); lineTo(3.5f, 9.5f); close()
-            moveTo(3.5f, 9.5f); lineTo(20.5f, 9.5f)
-            moveTo(9f, 9.5f); lineTo(12f, 20f); lineTo(15f, 9.5f)
-        }
-    }
-
     val Portal: ImageVector by lazy {
         line("Portal") {
             circle(12f, 12f, 8.5f)
@@ -216,38 +207,6 @@ object AwakenGlyphs {
         }
     }
 
-    // ---- Sigils (Vault, GD §9.2); flame and hourglass reuse the glyphs above ----
-
-    val Blade: ImageVector by lazy {
-        line("Blade") {
-            moveTo(12f, 2.75f); lineTo(14.25f, 5.25f); lineTo(14.25f, 15f); lineTo(9.75f, 15f); lineTo(9.75f, 5.25f); close()
-            moveTo(7f, 15f); lineTo(17f, 15f); moveTo(12f, 15f); lineTo(12f, 21.25f)
-        }
-    }
-
-    val Eye: ImageVector by lazy {
-        line("Eye") {
-            moveTo(2.75f, 12f); curveTo(5.1f, 7.6f, 8.3f, 5.5f, 12f, 5.5f); curveTo(15.7f, 5.5f, 18.9f, 7.6f, 21.25f, 12f)
-            curveTo(18.9f, 16.4f, 15.7f, 18.5f, 12f, 18.5f); curveTo(8.3f, 18.5f, 5.1f, 16.4f, 2.75f, 12f); close()
-            circle(12f, 12f, 3f)
-        }
-    }
-
-    val Wolf: ImageVector by lazy {
-        line("Wolf") {
-            moveTo(4.5f, 4f); lineTo(9f, 7.75f); lineTo(15f, 7.75f); lineTo(19.5f, 4f); lineTo(19f, 12.5f)
-            lineTo(14.25f, 19.5f); lineTo(12f, 20.75f); lineTo(9.75f, 19.5f); lineTo(5f, 12.5f); close()
-            moveTo(8.5f, 12f); lineTo(10f, 12.75f); moveTo(15.5f, 12f); lineTo(14f, 12.75f)
-        }
-    }
-
-    val Crown: ImageVector by lazy {
-        line("Crown") {
-            moveTo(4.5f, 17f); lineTo(3.25f, 8f); lineTo(8f, 11.5f); lineTo(12f, 5f); lineTo(16f, 11.5f); lineTo(20.75f, 8f); lineTo(19.5f, 17f); close()
-            moveTo(5f, 20.25f); lineTo(19f, 20.25f)
-        }
-    }
-
     val Star: ImageVector by lazy { line("Star") { star(points = 5, outer = 9.5f, inner = 4.2f, cy = 12.75f) } }
 
     val Gate: ImageVector by lazy {
@@ -357,19 +316,6 @@ object AwakenGlyphs {
 
     val Clock: ImageVector by lazy { line("Clock") { circle(12f, 12f, 8.75f); moveTo(12f, 7.25f); lineTo(12f, 12f); lineTo(15.25f, 14f) } }
 
-    /** Glyph for a sigil id from the shop catalogue; null for an id this build doesn't know. */
-    fun sigil(sigilId: String): ImageVector? = when (sigilId) {
-        "sigil_blade" -> Blade
-        "sigil_flame" -> Flame
-        "sigil_eye" -> Eye
-        "sigil_wolf" -> Wolf
-        "sigil_crown" -> Crown
-        "sigil_hourglass" -> Hourglass
-        "sigil_star" -> Star
-        "sigil_gate" -> Gate
-        else -> null
-    }
-
     fun stat(stat: Stat): ImageVector = when (stat) {
         Stat.STR -> Strength
         Stat.INT -> Intelligence
@@ -384,8 +330,8 @@ object AwakenGlyphs {
             Strength, Intelligence, Willpower, Vitality, Charisma, Flame, Sparkle, More,
             Home, HomeSolid, Dumbbell, DumbbellSolid, Bowl, BowlSolid, Bars, BarsSolid,
             Directive, Pentagon, Vault, Path, Settings, Bell, Level, Trophy,
-            Shield, Fragment, Portal, Coin, VerifiedSeal, Hourglass, Check, Gate,
-            Blade, Eye, Wolf, Crown, Star, Close, Plus, Info,
+            Shield, Portal, Coin, VerifiedSeal, Hourglass, Check, Gate,
+            Star, Close, Plus, Info,
             ChevronLeft, ChevronDown, ChevronRight, ArrowLeft, ArrowUp, ArrowDown, Search, Pencil,
             Trash, Lock, Calendar, Timer, Drop, Phone, Sunrise, Sun, Moon, Clock,
         )

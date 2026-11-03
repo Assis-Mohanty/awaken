@@ -77,22 +77,4 @@ class GatesScreenTest {
         composeRule.onNodeWithText("Pause (5:00)").assertExists()
     }
 
-    @Test
-    fun aCollapseShowsTheEmberWindowWithTheBackgroundTime() {
-        graph.completionCenter.gateCollapsed(GateCollapseReason.BREACH, backgroundMs = 102_000)
-        val viewModel = RewardHostViewModel(graph.completionCenter, graph.notices, graph.narrative, graph.notificationAccess, graph.uiPrefs, graph.submitFeedback)
-        composeRule.setContent {
-            AwakenTheme(presentation = PresentationMode.SYSTEM) { RewardHost(snackbarHostState = remember { SnackbarHostState() }, viewModel = viewModel) }
-        }
-
-        composeRule.waitUntil(timeoutMillis = 5_000) {
-            ShadowLooper.idleMainLooper()
-            composeRule.onAllNodesWithText("Background time 1:42 exceeded the 1:30 limit.").fetchSemanticsNodes().isNotEmpty()
-        }
-        composeRule.onNodeWithText("Continue").performClick()
-        composeRule.waitUntil(timeoutMillis = 5_000) {
-            ShadowLooper.idleMainLooper()
-            graph.completionCenter.events.value.isEmpty()
-        }
-    }
 }

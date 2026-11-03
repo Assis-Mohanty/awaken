@@ -45,17 +45,9 @@ data object HealthRoute
 @Serializable
 data object ScreenTimeRoute
 
-/** The 45-day Campaign (GD §6.8), opened from the Today card. */
 /** The weekly review (GD §14.4). */
 @Serializable
 data object ReviewRoute
-
-/** A monthly or yearly recap by its period key, "M:2026-10" or "Y:2026" (GD §14.6). */
-@Serializable
-data class RecapRoute(val periodKey: String)
-
-@Serializable
-data object CampaignRoute
 
 /** Gym: workout tracker, exercise library and routines (bottom tab). */
 @Serializable
@@ -104,14 +96,6 @@ data object WindDownRoute
 /** Quit counters: days clean of something the hunter wants to stop (GD §16.13), opened from Status. */
 @Serializable
 data object QuitRoute
-
-/** The gate crystal gallery (GD §16.5), opened from the Gates screen. */
-@Serializable
-data object CrystalsRoute
-
-/** The Dungeon screen (GD §16.14; "Challenge" in Clean words), opened from the Gates screen. */
-@Serializable
-data object DungeonsRoute
 
 /** Programs: 30 / 66 / 75 days of a few daily rules (GD §16.15), opened from Status. */
 @Serializable

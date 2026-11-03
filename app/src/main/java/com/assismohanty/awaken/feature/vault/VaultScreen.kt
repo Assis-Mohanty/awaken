@@ -1,43 +1,38 @@
 package com.assismohanty.awaken.feature.vault
 
 import com.assismohanty.awaken.core.designsystem.lexicon.lexString
-import com.assismohanty.awaken.core.designsystem.components.CosmeticSwatch
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.heading
-import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.window.Dialog
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.assismohanty.awaken.R
+import com.assismohanty.awaken.engine.model.Rank
+import com.assismohanty.awaken.engine.ShopRules
 import com.assismohanty.awaken.core.designsystem.components.MetricCard
+import com.assismohanty.awaken.core.designsystem.components.AwakenGlyphs
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.Alignment
+import androidx.compose.material3.Icon
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.heightIn
 import com.assismohanty.awaken.core.designsystem.components.LargeTitleScaffold
 import com.assismohanty.awaken.core.designsystem.components.SkeletonCard
-import com.assismohanty.awaken.core.designsystem.components.AwakenGlyphs
-import com.assismohanty.awaken.core.designsystem.components.Pill
 import com.assismohanty.awaken.core.designsystem.components.PrimaryButton
 import com.assismohanty.awaken.core.designsystem.components.QuietButton
-import com.assismohanty.awaken.core.designsystem.components.SecondaryButton
 import com.assismohanty.awaken.core.designsystem.components.SystemWindow
 import com.assismohanty.awaken.core.designsystem.components.formatCount
 import com.assismohanty.awaken.core.designsystem.components.shopItemNameRes
@@ -47,9 +42,6 @@ import com.assismohanty.awaken.core.designsystem.theme.Spacing
 import com.assismohanty.awaken.core.domain.VaultItemState
 import com.assismohanty.awaken.engine.BuyCheck
 import com.assismohanty.awaken.engine.ShopItem
-import com.assismohanty.awaken.engine.ShopKind
-import com.assismohanty.awaken.engine.ShopRules
-import com.assismohanty.awaken.engine.model.Rank
 
 @Composable
 fun VaultRoute(onBack: () -> Unit, modifier: Modifier = Modifier, viewModel: VaultViewModel = hiltViewModel()) {
@@ -57,7 +49,7 @@ fun VaultRoute(onBack: () -> Unit, modifier: Modifier = Modifier, viewModel: Vau
     VaultScreen(state = state, onEvent = viewModel::onEvent, onBack = onBack, modifier = modifier)
 }
 
-/** Vault (DESIGN_SYSTEM §4.6): balances, Relic Cache, then the shield, themes, frames and sigils. */
+/** Store (DESIGN_SYSTEM §4.6): the gold balance, then the streak freeze and a note about rerolls. */
 @Composable
 fun VaultScreen(state: VaultUiState, onEvent: (VaultEvent) -> Unit, onBack: () -> Unit, modifier: Modifier = Modifier) {
     LargeTitleScaffold(title = lexString(R.string.nav_vault), onBack = onBack, modifier = modifier) {
@@ -66,23 +58,16 @@ fun VaultScreen(state: VaultUiState, onEvent: (VaultEvent) -> Unit, onBack: () -
             return@LargeTitleScaffold
         }
         BalanceWindow(state)
-        CacheWindow(state, onEvent)
         ShieldWindow(state, onEvent)
-        ThemesWindow(state, onEvent)
-        ItemsWindow(R.string.vault_window_frames, state.frames, state, onEvent)
-        ItemsWindow(R.string.vault_window_sigils, state.sigils, state, onEvent)
     }
     state.pending?.let { pending ->
         ConfirmSheet(pending.state.item, gold = state.gold, busy = state.busy, onEvent = onEvent)
     }
-    state.cacheDrop?.let { drop -> CacheDropDialog(drop, onDismiss = { onEvent(VaultEvent.DismissCacheDrop) }) }
 }
 
 @Composable
 private fun BalanceWindow(state: VaultUiState) {
-    val colors = AwakenTheme.colors
-    val type = AwakenTheme.type
-    // The balance is the one big number on the Vault.
+    // The balance is the one big number in the Store.
     val shields = lexString(R.string.vault_shields, state.shields, state.shieldMax)
     MetricCard(
         label = lexString(R.string.vault_window_balance),
@@ -90,78 +75,19 @@ private fun BalanceWindow(state: VaultUiState) {
         unit = lexString(R.string.unit_gold),
         secondary = shields,
         icon = AwakenGlyphs.Coin,
-        iconTint = colors.reward,
+        iconTint = AwakenTheme.colors.reward,
         large = true,
         description = lexString(R.string.vault_gold, formatCount(state.gold)) + ". " + shields,
     )
 }
 
 @Composable
-private fun CacheWindow(state: VaultUiState, onEvent: (VaultEvent) -> Unit) {
-    val colors = AwakenTheme.colors
-    val type = AwakenTheme.type
-    SystemWindow(title = lexString(R.string.vault_window_cache), accent = AwakenTheme.rankAccent(state.rank), reveal = false) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
-            Icon(AwakenGlyphs.Fragment, contentDescription = null, tint = colors.accent, modifier = Modifier.size(AwakenTheme.dimens.icon))
-            Text(
-                lexString(R.string.vault_fragments, state.fragments.toInt(), state.cacheFragments),
-                style = type.label,
-                color = colors.textPrimary,
-            )
-        }
-        Text(
-            lexString(if (state.cachePoolEmpty) R.string.vault_cache_empty else R.string.vault_cache_body),
-            style = type.caption,
-            color = colors.textSecondary,
-        )
-        PrimaryButton(
-            text = lexString(R.string.action_open_cache),
-            onClick = { onEvent(VaultEvent.OpenCache) },
-            enabled = state.cacheReady && !state.busy,
-            modifier = Modifier.fillMaxWidth(),
-        )
-    }
-}
-
-@Composable
 private fun ShieldWindow(state: VaultUiState, onEvent: (VaultEvent) -> Unit) {
     val colors = AwakenTheme.colors
-    SystemWindow(title = lexString(R.string.vault_window_shield), accent = AwakenTheme.rankAccent(state.rank), reveal = false) {
+    SystemWindow(title = lexString(R.string.vault_window_shield), accent = AwakenTheme.rankAccent(Rank.E), reveal = false) {
         Text(lexString(R.string.vault_shield_body), style = AwakenTheme.type.caption, color = colors.textSecondary)
         state.shield?.let { ItemRow(it, state, onEvent) }
         Text(lexString(R.string.vault_reroll_body), style = AwakenTheme.type.caption, color = colors.textSecondary)
-    }
-}
-
-@Composable
-private fun ThemesWindow(state: VaultUiState, onEvent: (VaultEvent) -> Unit) {
-    val colors = AwakenTheme.colors
-    SystemWindow(title = lexString(R.string.vault_window_themes), accent = AwakenTheme.rankAccent(state.rank), reveal = false) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .heightIn(min = AwakenTheme.dimens.touchTarget),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
-        ) {
-            Text(lexString(R.string.shop_theme_default), style = AwakenTheme.type.label, color = colors.textPrimary, modifier = Modifier.weight(1f))
-            if (state.defaultThemeEquipped) {
-                Pill(text = lexString(R.string.action_equipped), color = colors.accent)
-            } else {
-                SecondaryButton(
-                    text = lexString(R.string.action_equip),
-                    onClick = { onEvent(VaultEvent.Equip(ShopKind.THEME, ShopRules.DEFAULT_THEME_ID)) },
-                )
-            }
-        }
-        state.themes.forEach { ItemRow(it, state, onEvent) }
-    }
-}
-
-@Composable
-private fun ItemsWindow(titleRes: Int, items: List<VaultItemState>, state: VaultUiState, onEvent: (VaultEvent) -> Unit) {
-    SystemWindow(title = lexString(titleRes), accent = AwakenTheme.rankAccent(state.rank), reveal = false) {
-        items.forEach { ItemRow(it, state, onEvent) }
     }
 }
 
@@ -170,6 +96,8 @@ private fun ItemRow(item: VaultItemState, state: VaultUiState, onEvent: (VaultEv
     val colors = AwakenTheme.colors
     val type = AwakenTheme.type
     val name = shopItemNameRes(item.item.id)?.let { lexString(it) } ?: item.item.id
+    val action = lexString(R.string.action_buy)
+    val label = lexString(R.string.cd_vault_action, action, name)
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -177,78 +105,26 @@ private fun ItemRow(item: VaultItemState, state: VaultUiState, onEvent: (VaultEv
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
     ) {
-        ItemMark(item.item)
+        Icon(AwakenGlyphs.Shield, contentDescription = null, tint = colors.accent, modifier = Modifier.size(AwakenTheme.dimens.sigil))
         Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(Spacing.xxs)) {
             Text(name, style = type.label, color = colors.textPrimary)
-            when {
-                item.equipped -> Pill(text = lexString(R.string.action_equipped), color = colors.accent)
-                item.owned -> Text(lexString(R.string.vault_owned), style = type.caption, color = colors.textSecondary)
-                else -> {
-                    Text(lexString(R.string.vault_price, formatCount(item.item.price)), style = type.numericSmall, color = colors.reward)
-                    blockReason(item.check)?.let { Text(it, style = type.caption, color = colors.textSecondary) }
-                }
-            }
+            Text(lexString(R.string.vault_price, formatCount(item.item.price)), style = type.numericSmall, color = colors.reward)
+            blockReason(item.check)?.let { Text(it, style = type.caption, color = colors.textSecondary) }
         }
-        val equippable = item.item.kind != ShopKind.SHIELD
-        when {
-            item.equipped -> {
-                val action = lexString(R.string.action_unequip)
-                SecondaryButton(
-                    text = action,
-                    onClick = { onEvent(VaultEvent.Equip(item.item.kind, null)) },
-                    modifier = Modifier.actionLabel(action, name),
-                )
-            }
-            item.owned && equippable -> {
-                val action = lexString(R.string.action_equip)
-                SecondaryButton(
-                    text = action,
-                    onClick = { onEvent(VaultEvent.Equip(item.item.kind, item.item.id)) },
-                    modifier = Modifier.actionLabel(action, name),
-                )
-            }
-            else -> {
-                val action = lexString(R.string.action_buy)
-                PrimaryButton(
-                    text = action,
-                    onClick = { onEvent(VaultEvent.Buy(item.item.id)) },
-                    enabled = item.check == BuyCheck.Buyable && !state.busy,
-                    modifier = Modifier.actionLabel(action, name),
-                )
-            }
-        }
+        PrimaryButton(
+            text = action,
+            onClick = { onEvent(VaultEvent.Buy(item.item.id)) },
+            enabled = item.check == BuyCheck.Buyable && !state.busy,
+            modifier = Modifier.semantics { contentDescription = label },
+        )
     }
 }
 
-
-/** Every row has a "Buy"/"Equip" button, so TalkBack hears which item it acts on: "Buy: Iron Frame". */
-@Composable
-private fun Modifier.actionLabel(action: String, itemName: String): Modifier {
-    val label = lexString(R.string.cd_vault_action, action, itemName)
-    return semantics { contentDescription = label }
-}
 @Composable
 private fun blockReason(check: BuyCheck): String? = when (check) {
-    BuyCheck.Buyable, BuyCheck.AlreadyOwned -> null
+    BuyCheck.Buyable -> null
     is BuyCheck.InsufficientGold -> lexString(R.string.vault_missing_gold, formatCount(check.missing))
     BuyCheck.ShieldLimit -> lexString(R.string.vault_shield_limit)
-    is BuyCheck.RankRequired -> lexString(R.string.vault_requires_rank, check.rank.name)
-}
-
-/** The item's picture: a sigil glyph, a shield, a framed swatch or a theme colour chip. Decorative; the name is read. */
-@Composable
-private fun ItemMark(item: ShopItem) {
-    val colors = AwakenTheme.colors
-    val dimens = AwakenTheme.dimens
-    val markSize = dimens.sigil
-    when (item.kind) {
-        ShopKind.SIGIL -> AwakenGlyphs.sigil(item.id)?.let {
-            Icon(it, contentDescription = null, tint = colors.accent, modifier = Modifier.size(markSize))
-        }
-        ShopKind.SHIELD -> Icon(AwakenGlyphs.Shield, contentDescription = null, tint = colors.accent, modifier = Modifier.size(markSize))
-        ShopKind.FRAME -> CosmeticSwatch(color = colors.frame(item.id), outlined = true)
-        ShopKind.THEME -> CosmeticSwatch(color = colors.theme(item.id) ?: colors.divider, outlined = false)
-    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -286,38 +162,14 @@ private fun ConfirmSheet(item: ShopItem, gold: Long, busy: Boolean, onEvent: (Va
     }
 }
 
-@Composable
-private fun CacheDropDialog(drop: ShopItem, onDismiss: () -> Unit) {
-    val colors = AwakenTheme.colors
-    val name = shopItemNameRes(drop.id)?.let { lexString(it) } ?: drop.id
-    Dialog(onDismissRequest = onDismiss) {
-        SystemWindow(title = lexString(R.string.vault_cache_result_title), accent = colors.reward) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-                ItemMark(drop)
-                Text(lexString(R.string.vault_cache_result_body, name), style = AwakenTheme.type.body, color = colors.textPrimary)
-            }
-            PrimaryButton(text = lexString(R.string.action_done), onClick = onDismiss, modifier = Modifier.fillMaxWidth())
-        }
-    }
-}
-
 internal fun previewVaultState(rich: Boolean = true): VaultUiState {
-    fun state(item: ShopItem, owned: Boolean = false, equipped: Boolean = false, check: BuyCheck = BuyCheck.Buyable) =
-        VaultItemState(item, check, owned, equipped)
-    val catalog = ShopRules.catalog
     val gold = if (rich) 1_240L else 120L
-    fun check(item: ShopItem) = ShopRules.canBuy(item, gold, emptySet(), shields = 1, rank = Rank.C)
+    val item = ShopRules.byId.getValue(ShopRules.SHIELD_ID)
     return VaultUiState(
         loading = false,
         gold = gold,
-        fragments = if (rich) 10 else 3,
         shields = 1,
-        rank = Rank.C,
-        cacheReady = rich,
-        shield = state(catalog.first { it.kind == ShopKind.SHIELD }, check = check(catalog.first { it.kind == ShopKind.SHIELD })),
-        themes = catalog.filter { it.kind == ShopKind.THEME }.map { state(it, check = check(it)) },
-        frames = catalog.filter { it.kind == ShopKind.FRAME }.mapIndexed { i, it -> state(it, owned = rich && i == 0, equipped = rich && i == 0, check = check(it)) },
-        sigils = catalog.filter { it.kind == ShopKind.SIGIL }.mapIndexed { i, it -> state(it, owned = rich && i == 1, check = check(it)) },
+        shield = VaultItemState(item, ShopRules.canBuy(item, gold, shields = 1)),
     )
 }
 

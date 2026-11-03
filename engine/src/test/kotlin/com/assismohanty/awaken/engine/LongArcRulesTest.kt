@@ -103,10 +103,9 @@ class LongArcRulesTest {
     @Test
     fun `a program starts only with the slots, no campaign and no other program`() {
         val spec = ProgramRules.spec("groundwork_66")!!
-        assertThat(ProgramRules.canStart(spec, freeHabitSlots = 4, campaignActive = false, programActive = false)).isEqualTo(ProgramStart.OK)
-        assertThat(ProgramRules.canStart(spec, 3, false, false)).isEqualTo(ProgramStart.NOT_ENOUGH_SLOTS)
-        assertThat(ProgramRules.canStart(spec, 8, campaignActive = true, programActive = false)).isEqualTo(ProgramStart.CAMPAIGN_ACTIVE)
-        assertThat(ProgramRules.canStart(spec, 8, false, programActive = true)).isEqualTo(ProgramStart.PROGRAM_ACTIVE)
+        assertThat(ProgramRules.canStart(spec, freeHabitSlots = 4, programActive = false)).isEqualTo(ProgramStart.OK)
+        assertThat(ProgramRules.canStart(spec, 3, false)).isEqualTo(ProgramStart.NOT_ENOUGH_SLOTS)
+        assertThat(ProgramRules.canStart(spec, 8, programActive = true)).isEqualTo(ProgramStart.PROGRAM_ACTIVE)
     }
 
 }

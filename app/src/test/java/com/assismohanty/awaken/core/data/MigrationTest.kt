@@ -68,7 +68,7 @@ class MigrationTest {
     }
 
     @Test
-    fun v2To3AddsTheEquippedFrameAndSigilWithoutTouchingTheProfile() = runTest {
+    fun v2To3KeepsTheProfile() = runTest {
         val path = createFromSchema(2)
         SQLiteDatabase.openDatabase(path, null, SQLiteDatabase.OPEN_READWRITE).use { db ->
             db.execSQL(
@@ -85,9 +85,6 @@ class MigrationTest {
         try {
             val profile = db.hunterDao().getProfile()
             assertThat(profile?.name).isEqualTo("Assis")
-            assertThat(profile?.equippedTitleId).isEqualTo("veteran")
-            assertThat(profile?.equippedFrameId).isNull()
-            assertThat(profile?.equippedSigilId).isNull()
             assertThat(db.openHelper.readableDatabase.version).isEqualTo(AwakenDatabase.SCHEMA_VERSION)
         } finally {
             db.close()
@@ -175,7 +172,7 @@ class MigrationTest {
     }
 
     @Test
-    fun v7To8KeepsHabitsPlainAndAddsAnEmptyCampaignTable() = runTest {
+    fun v7To8KeepsHabitsPlain() = runTest {
         val path = createFromSchema(7)
         SQLiteDatabase.openDatabase(path, null, SQLiteDatabase.OPEN_READWRITE).use { db ->
             db.execSQL(
@@ -191,9 +188,7 @@ class MigrationTest {
         try {
             val habit = db.habitDao().get("h1")
             assertThat(habit?.title).isEqualTo("Read")
-            assertThat(habit?.campaignId).isNull()
             assertThat(habit?.templateId).isNull()
-            assertThat(db.campaignDao().active()).isNull()
             assertThat(db.openHelper.readableDatabase.version).isEqualTo(AwakenDatabase.SCHEMA_VERSION)
         } finally {
             db.close()
@@ -306,7 +301,7 @@ class MigrationTest {
     }
 
     @Test
-    fun v13To14AddsRecapsAndHealthDistance() = runTest {
+    fun v13To14AddsHealthDistance() = runTest {
         val path = createFromSchema(13)
         SQLiteDatabase.openDatabase(path, null, SQLiteDatabase.OPEN_READWRITE).use { db ->
             db.execSQL("INSERT INTO health_day_cache (game_date, steps, sleep_minutes, read_at) VALUES ('2026-10-01', 9000, 420, 0)")
@@ -316,7 +311,6 @@ class MigrationTest {
             .allowMainThreadQueries()
             .build()
         try {
-            assertThat(db.recapDao().keys()).isEmpty()
             val cached = db.insightDao().healthDays(java.time.LocalDate.parse("2026-01-01"), java.time.LocalDate.parse("2026-12-31")).single()
             assertThat(cached.steps).isEqualTo(9000L)
             assertThat(cached.distanceMeters).isNull()
@@ -539,7 +533,7 @@ class MigrationTest {
     }
 
     @Test
-    fun v23To24AddsDungeonsAndProgramsAndKeepsQuestsAndHabits() = runTest {
+    fun v23To24AddsProgramsAndKeepsQuestsAndHabits() = runTest {
         val path = createFromSchema(23)
         SQLiteDatabase.openDatabase(path, null, SQLiteDatabase.OPEN_READWRITE).use { db ->
             db.execSQL(
@@ -558,9 +552,7 @@ class MigrationTest {
             .build()
         try {
             assertThat(db.habitDao().get("h1")?.programId).isNull()
-            assertThat(db.questDao().get("q1")?.dungeonId).isNull()
-            assertThat(db.questDao().get("q1")?.dungeonStage).isNull()
-            assertThat(db.dungeonDao().all()).isEmpty()
+            assertThat(db.questDao().get("q1")?.title).isEqualTo("Read")
             assertThat(db.programDao().active()).isNull()
             assertThat(db.openHelper.readableDatabase.version).isEqualTo(AwakenDatabase.SCHEMA_VERSION)
         } finally {
@@ -587,6 +579,86 @@ class MigrationTest {
             assertThat(db.questDao().get("n1")?.nightVerdict).isNull()
             db.questDao().expireNight("n1", com.assismohanty.awaken.engine.BedtimeVerdict.NO_DATA)
             assertThat(db.questDao().get("n1")?.nightVerdict).isEqualTo(com.assismohanty.awaken.engine.BedtimeVerdict.NO_DATA)
+            assertThat(db.openHelper.readableDatabase.version).isEqualTo(AwakenDatabase.SCHEMA_VERSION)
+        } finally {
+            db.close()
+        }
+    }
+
+    /**
+     * The declutter migration drops achievements, cosmetics, campaigns, dungeons and recaps and rebuilds three tables, but it
+     * never touches the ledger: every row, and every balance derived from it, comes through unchanged.
+     */
+    @Test
+    fun v25To26DropsTheRemovedFeaturesAndKeepsTheLedgerAndTheRowsThatSurvive() = runTest {
+        val path = createFromSchema(25)
+        SQLiteDatabase.openDatabase(path, null, SQLiteDatabase.OPEN_READWRITE).use { db ->
+            db.execSQL(
+                "INSERT INTO hunter_profile (id, hunter_id, name, created_at, first_game_date, focus_stat_1, focus_stat_2, " +
+                    "day_start_hour, equipped_title_id, theme_id, equipped_frame_id, equipped_sigil_id, onboarding_done, " +
+                    "owned_equipment, injury_mode, health_enabled, identities, step_goal) " +
+                    "VALUES ('me', 'h1', 'Assis', 0, '2026-10-18', 'STR', 'INT', 4, 'veteran', 'theme_crimson_gate', 'frame_iron', " +
+                    "'sigil_blade', 1, '', 0, 0, 'trains,reads', 9000)",
+            )
+            db.execSQL(
+                "INSERT INTO habit (id, title, stat, difficulty, verification, days_of_week_mask, target, unit, active, created_at, campaign_id) " +
+                    "VALUES ('h1', 'Read', 'INT', 'EASY', 'SELF', 127, 10, 'pages', 1, 0, 'c1')",
+            )
+            db.execSQL(
+                "INSERT INTO quest_instance (id, game_date, type, habit_id, stat, title, description, unit, target, difficulty, " +
+                    "verification, min_duration_sec, status, created_at, dungeon_id, dungeon_stage) " +
+                    "VALUES ('q1', '2026-10-18', 'DUNGEON', NULL, 'INT', 'Stage', 'Stage', 'pages', 10, 'HARD', 'SELF', 0, 'ACTIVE', 0, 'd1', 2)",
+            )
+            listOf(
+                "('XP_TOTAL', '', '', 120, 'QUEST', 'q1#1', '2026-10-18', 'SELF')",
+                "('GOLD', '', '', 60, 'QUEST', 'q1#1', '2026-10-18', 'SELF')",
+                "('GOLD', '', '', 50, 'ACHIEVEMENT', 'never_twice', '2026-10-18', '')",
+                "('FRAGMENT', '', '', 3, 'QUEST', 'q1#1', '2026-10-18', 'SELF')",
+                "('ITEM', '', 'sigil_blade', 1, 'SHOP', 'p1', '2026-10-18', '')",
+            ).forEach { values ->
+                db.execSQL(
+                    "INSERT INTO ledger_entry (kind, stat, item_id, delta, source_type, source_id, game_date, xp_source, created_at) " +
+                        "VALUES " + values.dropLast(1) + ", 0)",
+                )
+            }
+            db.execSQL("INSERT INTO balance_cache (key, value) VALUES ('fragments', 3)")
+            db.execSQL("INSERT INTO achievement_unlock (achievement_id, unlocked_at) VALUES ('never_twice', 0)")
+            db.execSQL("INSERT INTO owned_cosmetic (cosmetic_id, acquired_at, source) VALUES ('sigil_blade', 0, 'SHOP')")
+            db.execSQL(
+                "INSERT INTO campaign (id, start_date, focus_stat, archetype, scores, oath_sealed_at, status, current_act, cleared_days) " +
+                    "VALUES ('c1', '2026-10-01', 'INT', 'SCHOLAR', 'STR:3', 0, 'ACTIVE', 'FOUNDATION', 4)",
+            )
+            db.execSQL(
+                "INSERT INTO dungeon (id, length_days, stat, fee, entered_game_date, first_stage_date, status) " +
+                    "VALUES ('d1', 3, 'INT', 100, '2026-10-17', '2026-10-18', 'ACTIVE')",
+            )
+            db.execSQL("INSERT INTO recap (period_key, generated_at, payload_version, payload_json) VALUES ('M:2026-09', 0, 1, '{}')")
+        }
+
+        val db = Room.databaseBuilder(context, AwakenDatabase::class.java, path)
+            .addMigrations(*ALL_MIGRATIONS)
+            .allowMainThreadQueries()
+            .build()
+        try {
+            // The ledger is intact: same rows, same sums, removed kinds included.
+            val rows = db.ledgerDao().all()
+            assertThat(rows).hasSize(5)
+            assertThat(rows.filter { it.kind == com.assismohanty.awaken.engine.model.LedgerKind.GOLD }.sumOf { it.delta }).isEqualTo(110)
+            assertThat(rows.single { it.sourceId == "never_twice" }.delta).isEqualTo(50)
+            assertThat(rows.single { it.kind == com.assismohanty.awaken.engine.model.LedgerKind.FRAGMENT }.delta).isEqualTo(3)
+            // The rows of the rebuilt tables survive.
+            val profile = db.hunterDao().getProfile()
+            assertThat(profile?.name).isEqualTo("Assis")
+            assertThat(profile?.identities).isEqualTo("trains,reads")
+            assertThat(profile?.stepGoal).isEqualTo(9000)
+            assertThat(db.habitDao().get("h1")?.title).isEqualTo("Read")
+            assertThat(db.questDao().get("q1")?.title).isEqualTo("Stage")
+            // The removed tables are gone and the fragment balance cache entry with them.
+            val tables = db.openHelper.readableDatabase.query("SELECT name FROM sqlite_master WHERE type = 'table'").use { c ->
+                buildList { while (c.moveToNext()) add(c.getString(0)) }
+            }
+            assertThat(tables).containsNoneOf("achievement_unlock", "owned_cosmetic", "campaign", "dungeon", "recap")
+            assertThat(db.ledgerDao().balances().none { it.key == "fragments" }).isTrue()
             assertThat(db.openHelper.readableDatabase.version).isEqualTo(AwakenDatabase.SCHEMA_VERSION)
         } finally {
             db.close()

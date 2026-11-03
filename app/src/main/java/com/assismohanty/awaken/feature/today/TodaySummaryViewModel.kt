@@ -3,7 +3,6 @@ package com.assismohanty.awaken.feature.today
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.assismohanty.awaken.core.reelcounter.ReelWidgetData
-import com.assismohanty.awaken.reelcounter.core.lumi.LumiState
 import com.assismohanty.awaken.core.designsystem.components.HealthTileModel
 import com.assismohanty.awaken.core.designsystem.components.ScreenTimeTileModel
 import com.assismohanty.awaken.core.domain.HealthOverviewResult
@@ -30,8 +29,6 @@ data class TodaySummaryUiState(
     val healthNeedsConnect: Boolean = false,
     /** Reels watched today (Reel counter); null while that feature is switched off, so no tile shows. */
     val reelsToday: Int? = null,
-    /** Lumi for [reelsToday] (every app, against the combined daily limit). */
-    val reelsLumi: LumiState = LumiState.Rested,
 )
 
 /** Reads both tiles on every resume (usage and Health Connect change outside the app). Display only. */
@@ -46,9 +43,7 @@ class TodaySummaryViewModel @Inject constructor(
     val uiState: StateFlow<TodaySummaryUiState> = _uiState.asStateFlow()
 
     init {
-        viewModelScope.launch { reelData.observeLumi().collect { lumi ->
-                _uiState.update { it.copy(reelsToday = lumi?.total, reelsLumi = lumi?.state ?: LumiState.Rested) }
-            } }
+        viewModelScope.launch { reelData.observe().collect { total -> _uiState.update { it.copy(reelsToday = total) } } }
     }
 
     fun refresh() {

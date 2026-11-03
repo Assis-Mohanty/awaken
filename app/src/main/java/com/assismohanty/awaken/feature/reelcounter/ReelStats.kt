@@ -18,9 +18,6 @@ import com.assismohanty.awaken.core.designsystem.charts.StackedColumn
 import com.assismohanty.awaken.core.designsystem.components.AwakenCard
 import com.assismohanty.awaken.core.designsystem.components.BigValue
 import com.assismohanty.awaken.core.designsystem.components.LargeTitleScaffold
-import com.assismohanty.awaken.core.designsystem.components.LumiSizes
-import com.assismohanty.awaken.core.designsystem.components.LumiView
-import com.assismohanty.awaken.core.designsystem.components.lumiStatusRes
 import com.assismohanty.awaken.core.designsystem.components.SectionTitle
 import com.assismohanty.awaken.core.designsystem.components.SegmentedControl
 import com.assismohanty.awaken.core.designsystem.components.ValueRow
@@ -29,9 +26,6 @@ import com.assismohanty.awaken.core.designsystem.lexicon.lexString
 import com.assismohanty.awaken.core.designsystem.preview.PhonePreviews
 import com.assismohanty.awaken.core.designsystem.theme.AwakenTheme
 import com.assismohanty.awaken.reelcounter.core.ShortVideoApp
-import com.assismohanty.awaken.reelcounter.core.lumi.LumiState
-import com.assismohanty.awaken.reelcounter.core.lumi.lumiDailyLimit
-import com.assismohanty.awaken.reelcounter.core.lumi.lumiStage
 import com.assismohanty.awaken.reelcounter.core.stats.StatsCalculator
 import com.assismohanty.awaken.reelcounter.core.time.GameDay
 import com.assismohanty.awaken.reelcounter.core.time.ReelClock
@@ -66,8 +60,6 @@ data class ReelStatsUiState(
     val range: ReelRange = ReelRange.WEEK,
     val todayTotal: Int = 0,
     val todayMinutes: Long = 0,
-    /** Lumi for [todayTotal]: every app, against the combined daily limit. */
-    val lumi: LumiState = LumiState.Rested,
     val rows: List<ReelAppRowUi> = emptyList(),
     val bars: List<ReelBarUi> = emptyList(),
     val average: Int = 0,
@@ -110,7 +102,6 @@ class ReelStatsViewModel @Inject constructor(
                 range = selected,
                 todayTotal = todayRows.values.sumOf { it.count },
                 todayMinutes = StatsCalculator.minutes(todayRows.values.sumOf { it.seconds }),
-                lumi = lumiStage(todayRows.values.sumOf { it.count }, lumiDailyLimit(limits.values)),
                 rows = ShortVideoApp.entries.map { app ->
                     ReelAppRowUi(app, todayRows[app]?.count ?: 0, StatsCalculator.minutes(todayRows[app]?.seconds ?: 0))
                 },
@@ -145,10 +136,6 @@ fun ReelStatsScreen(state: ReelStatsUiState, onEvent: (ReelStatsEvent) -> Unit, 
     val colors = AwakenTheme.colors
     val type = AwakenTheme.type
     LargeTitleScaffold(title = lexString(R.string.reel_stats_title), onBack = onBack, modifier = modifier) {
-        Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-            LumiView(state = state.lumi, size = LumiSizes.Hero, reelsToday = state.todayTotal)
-            Text(lexString(lumiStatusRes(state.lumi.stage)), style = type.label, color = colors.textSecondary)
-        }
         BigValue(value = state.todayTotal.toString(), unit = lexPlural(R.plurals.reel_stats_today, state.todayTotal), large = true)
         if (state.todayMinutes > 0) {
             Text(lexString(R.string.reel_stats_minutes, state.todayMinutes), style = type.body, color = colors.textSecondary)
@@ -202,7 +189,6 @@ private fun previewState(range: ReelRange, days: Int) = ReelStatsUiState(
     range = range,
     todayTotal = 38,
     todayMinutes = 52,
-    lumi = lumiStage(38, null),
     rows = listOf(
         ReelAppRowUi(ShortVideoApp.INSTAGRAM, 23, 31),
         ReelAppRowUi(ShortVideoApp.YOUTUBE, 15, 21),
@@ -232,7 +218,7 @@ private fun ReelStatsMonthPreview() {
 @Composable
 private fun ReelStatsTiredPreview() {
     AwakenTheme(reduceMotion = true) {
-        ReelStatsScreen(previewState(ReelRange.WEEK, 7).copy(todayTotal = 61, lumi = lumiStage(61, null)), {}, {})
+        ReelStatsScreen(previewState(ReelRange.WEEK, 7).copy(todayTotal = 61), {}, {})
     }
 }
 

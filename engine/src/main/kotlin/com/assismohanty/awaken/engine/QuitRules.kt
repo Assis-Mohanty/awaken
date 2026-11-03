@@ -46,16 +46,6 @@ object QuitRules {
         return QuitRuns(current = gaps.last(), best = gaps.max())
     }
 
-    /**
-     * The best run counted only from when the counter was made in the app (vector #123): a start date in the past never
-     * earns anything. Restarts before the in-app start are ignored.
-     */
-    fun bestInAppRun(start: Instant, created: Instant, restarts: List<Instant>, now: Instant): Duration =
-        runs(maxOf(start, created), restarts, now).best
-
-    fun bestInAppRunDays(start: Instant, created: Instant, restarts: List<Instant>, now: Instant): Int =
-        bestInAppRun(start, created, restarts, now).toDays().toInt()
-
     /** Cost per day times whole days of the current run, in minor units. Display only: no real money is involved. */
     fun moneySavedMinor(costPerDayMinor: Long, currentRun: Duration): Long = costPerDayMinor * currentRun.toDays()
 

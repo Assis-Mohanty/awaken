@@ -112,8 +112,6 @@ sealed interface FinishResult {
     data class Finished(
         val workoutId: String,
         val records: List<ExerciseRecords> = emptyList(),
-        /** Achievements this finish unlocked (record counts, GD §16.7). */
-        val unlocked: List<String> = emptyList(),
     ) : FinishResult
     /** Nothing was ticked done, so the session was dropped rather than saved empty. */
     data object DiscardedEmpty : FinishResult
@@ -136,14 +134,13 @@ private fun CustomExerciseEntity.toExercise() = Exercise(
 /**
  * The Gym tracker (GD §13.2): exercise library, the session in progress, routines and the derived overview. A tracker
  * only: it pays no XP and writes no ledger row of its own (ENGINE_DECISIONS #95); the one exception is a personal-record
- * achievement, unlocked after [finish] through the ordinary achievement pipeline (GD §16.7).
+ * record event (GD §16.7).
  */
 @Singleton
 class GymTracker @Inject constructor(
     private val gymDao: GymDao,
     private val hunterDao: HunterDao,
     private val catalog: ExerciseCatalog,
-    private val achievements: AchievementUnlocker,
     private val transactions: TransactionRunner,
     private val clock: Clock,
 ) {
@@ -308,8 +305,7 @@ class GymTracker @Inject constructor(
         sets.filterNot { it.done }.forEach { gymDao.deleteSet(it.id) }
         val now = clock.now()
         gymDao.upsertWorkout(workout.copy(endedAt = now, restEndsAt = null, restTotalSec = null))
-        val unlocked = hunterDao.getProfile()?.let { achievements.unlockNew(it, today(), now) }.orEmpty()
-        FinishResult.Finished(workoutId, records, unlocked)
+        FinishResult.Finished(workoutId, records)
     }
 
     // Progression hints (GD §16.6)

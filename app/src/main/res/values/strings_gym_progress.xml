@@ -16,14 +16,6 @@
     <string name="gym_record_e1rm">%1$s: best estimated 1RM, %2$s kg</string>
     <string name="gym_record_reps">%1$s: most reps at %2$s kg, %3$d</string>
     <string name="gym_record_volume">%1$s: best session volume, %2$s kg</string>
-    <string name="gym_summary_unlocked">Unlocked: %1$s</string>
-    <string name="achievement_pr1">First Record</string>
-    <string name="achievement_pr25">Record Chaser</string>
-    <string name="achievement_pr100">Record Breaker</string>
-    <string name="title_record_breaker">Record Breaker</string>
-    <string name="condition_pr1">Break a personal record.</string>
-    <string name="condition_pr25">Break 25 personal records.</string>
-    <string name="condition_pr100">Break 100 personal records.</string>
 
     <!-- Plate calculator (C3) -->
     <string name="gym_plates_open">Plate calculator</string>
@@ -36,7 +28,6 @@
     <string name="gym_plates_empty_bar">Just the bar</string>
     <string name="gym_plates_short">Closest you can build is %1$s %3$s, %2$s %3$s short.</string>
     <string name="gym_plates_below">Below the bar\'s %1$s %2$s</string>
-    <string name="gym_plates_cd_each_side">%1$s on each side</string>
     <string name="gym_plates_edit">Edit bar and plates</string>
 
     <!-- Gym settings (C3, C1) -->
@@ -73,7 +64,6 @@
     <string name="gym_pref_title">Hints for this exercise</string>
     <string name="gym_pref_range">Rep range</string>
     <string name="gym_pref_increment">Step up by</string>
-    <string name="gym_pref_default">Default</string>
     <string name="gym_pref_reset">Use the defaults</string>
     <string name="gym_pref_increment_value">%1$s kg</string>
     <string name="gym_pref_less">Smaller</string>

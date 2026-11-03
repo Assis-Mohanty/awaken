@@ -10,7 +10,6 @@ import com.assismohanty.awaken.core.data.db.dao.TrialDao
 import com.assismohanty.awaken.core.data.db.dao.WeeklyReviewDao
 import com.assismohanty.awaken.core.data.db.entity.QuestInstanceEntity
 import com.assismohanty.awaken.core.data.repo.GameStateReader
-import com.assismohanty.awaken.core.data.repo.NarrativeRepository
 import com.assismohanty.awaken.core.data.repo.UiPrefsRepository
 import com.assismohanty.awaken.engine.Consistency
 import com.assismohanty.awaken.engine.ConsistencyScore
@@ -23,7 +22,6 @@ import com.assismohanty.awaken.engine.MissLine
 import com.assismohanty.awaken.engine.TimeBlocks
 import com.assismohanty.awaken.engine.model.TimeOfDay
 import com.assismohanty.awaken.engine.RankRules
-import com.assismohanty.awaken.engine.SystemLines
 import com.assismohanty.awaken.engine.WeeklyReviewRules
 import com.assismohanty.awaken.engine.model.GateRank
 import com.assismohanty.awaken.engine.model.QuestStatus
@@ -56,8 +54,6 @@ data class PathBadgeInfo(val pathName: String, val gateRank: GateRank?)
 data class TodayModel(
     val hunter: HunterState,
     val quests: List<QuestInstanceEntity>,
-    /** The daily System line (GD §11); null only if the narrative file has no lines. */
-    val systemLine: String?,
     val trial: TrialSummary? = null,
     /** Path name and gate per quest id, for the Path badge on rows (DS §3 PathQuestBadge). */
     val pathBadges: Map<String, PathBadgeInfo> = emptyMap(),
@@ -70,7 +66,7 @@ data class TodayModel(
     val currentBlock: TimeOfDay = TimeOfDay.MORNING,
     /** Cleared of eligible days over the last 28 finalized days (GD §14.2). */
     val consistency: ConsistencyScore = ConsistencyScore(0, 0),
-    /** Replaces [systemLine] the day after a missed day (GD §14.2). */
+    /** The calm line the day after a missed day (GD §14.2). */
     val missLine: MissLine? = null,
     /** The weekly review is open and not yet done (GD §14.4: Saturday to Monday). */
     val reviewOpen: Boolean = false,
@@ -94,7 +90,6 @@ class ObserveTodayUseCase @Inject constructor(
     private val pathDao: PathDao,
     private val habitDao: HabitDao,
     private val trialReader: TrialReader,
-    private val narrative: NarrativeRepository,
     private val clock: Clock,
     private val uiPrefs: UiPrefsRepository,
     private val dayRecordDao: DayRecordDao,
@@ -122,7 +117,6 @@ class ObserveTodayUseCase @Inject constructor(
                     TodayModel(
                         hunter = hunter,
                         quests = quests,
-                        systemLine = systemLine(hunter, quests),
                         trial = trialSummary(hunter),
                         pathBadges = pathBadges(quests),
                         habitInfo = habitInfo(quests, today),
@@ -148,19 +142,6 @@ class ObserveTodayUseCase @Inject constructor(
             lastFailedAt = trialDao.lastFailedAt(),
             now = clock.now(),
         )?.let { TrialSummary.Available(it) }
-    }
-
-    private suspend fun systemLine(hunter: HunterState, quests: List<QuestInstanceEntity>): String? {
-        val profile = hunterDao.getProfile() ?: return null
-        val lastActive = reader.lastActiveDates()
-        val key = SystemLines.contextKey(
-            penaltyOpen = quests.any { it.type == QuestType.PENALTY && it.isOpen },
-            trialActive = trialDao.activeCount() > 0,
-            streak = hunter.streak,
-            todayCleared = hunter.todayCleared,
-            neglected = SystemLines.neglectedStat(lastActive, hunter.gameDate),
-        )
-        return SystemLines.pick(narrative.systemLines(), key, profile.hunterId, hunter.gameDate, hunter.streak)
     }
 
     private suspend fun habitInfo(quests: List<QuestInstanceEntity>, today: LocalDate): Map<String, HabitTodayInfo> = buildMap {

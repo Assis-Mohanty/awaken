@@ -5,7 +5,6 @@ import com.assismohanty.awaken.core.designsystem.lexicon.lexPlural
 import androidx.compose.animation.core.animateIntAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -34,20 +33,15 @@ import com.assismohanty.awaken.engine.model.Rank
 @Immutable
 data class HunterHeaderModel(
     val name: String,
-    /** Equipped title, already localised; null when none is equipped. */
-    val title: String?,
     val level: Int,
     val rank: Rank,
     val xpIntoLevel: Long,
     val xpForLevel: Long,
     val streak: Int,
     val gold: Long,
-    /** Equipped Vault cosmetics (GD §9.2): a sigil badge beside the name and a frame around the name block. */
-    val frameId: String? = null,
-    val sigilId: String? = null,
 )
 
-/** Crest, name, title, level, XP bar, streak flame and gold (DESIGN_SYSTEM §3, §4.2). [large] is the Status variant. */
+/** Crest, name, level, XP bar, streak flame and gold (DESIGN_SYSTEM §3, §4.2). [large] is the Status variant. */
 @Composable
 fun HunterHeader(model: HunterHeaderModel, modifier: Modifier = Modifier, large: Boolean = false) {
     val colors = AwakenTheme.palette
@@ -61,27 +55,14 @@ fun HunterHeader(model: HunterHeaderModel, modifier: Modifier = Modifier, large:
     Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
             RankCrest(model.rank, if (large) dimens.crestLarge else dimens.crestSmall)
-            val frameModifier = model.frameId?.let { frame ->
-                Modifier
-                    .border(dimens.hairline, colors.frame(frame), AwakenTheme.shapes.button)
-                    .padding(horizontal = Spacing.xs, vertical = Spacing.xxs)
-            } ?: Modifier
-            Column(modifier = Modifier.weight(1f).then(frameModifier)) {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.xxs)) {
-                    model.sigilId?.let { sigilId ->
-                        AwakenGlyphs.sigil(sigilId)?.let { glyph ->
-                            Icon(
-                                imageVector = glyph,
-                                contentDescription = shopItemNameRes(sigilId)?.let { lexString(it) },
-                                tint = colors.crit,
-                                modifier = Modifier.size(dimens.iconSmall),
-                            )
-                        }
-                    }
-                    Text(model.name, style = if (large) type.headline else type.title, color = colors.bone, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                }
-                model.title?.let { Text(it, style = type.label, color = colors.mist) }
-            }
+            Text(
+                model.name,
+                style = if (large) type.headline else type.title,
+                color = colors.bone,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f),
+            )
             Counter(
                 icon = AwakenGlyphs.Flame,
                 value = formatCount(model.streak),
@@ -130,7 +111,7 @@ private fun Counter(icon: ImageVector, value: String, tint: Color, description: 
 }
 
 internal val previewHunter = HunterHeaderModel(
-    name = "Assis", title = "Unbroken", level = 24, rank = Rank.C, xpIntoLevel = 1_240, xpForLevel = 1_434, streak = 12, gold = 1_920,
+    name = "Assis", level = 24, rank = Rank.C, xpIntoLevel = 1_240, xpForLevel = 1_434, streak = 12, gold = 1_920,
 )
 
 @ComponentPreview
@@ -139,7 +120,7 @@ private fun HunterHeaderPreview() {
     AwakenTheme {
         Column(modifier = Modifier.padding(Spacing.gutter), verticalArrangement = Arrangement.spacedBy(Spacing.xl)) {
             HunterHeader(previewHunter)
-            HunterHeader(previewHunter.copy(name = "A very long hunter name", title = null, rank = Rank.S), large = true)
+            HunterHeader(previewHunter.copy(name = "A very long name for the header", rank = Rank.S), large = true)
         }
     }
 }

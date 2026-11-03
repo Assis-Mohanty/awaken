@@ -23,11 +23,7 @@ import com.assismohanty.awaken.core.designsystem.components.QuestRowModel
 import com.assismohanty.awaken.core.designsystem.components.QuestRowState
 import com.assismohanty.awaken.core.domain.CompletionCenter
 import com.assismohanty.awaken.core.domain.DayRefresher
-import com.assismohanty.awaken.core.domain.ObserveCampaignUseCase
 import com.assismohanty.awaken.core.domain.ObserveTodayUseCase
-import com.assismohanty.awaken.engine.campaign.CampaignAct
-import com.assismohanty.awaken.engine.campaign.CampaignStatus
-import kotlinx.coroutines.flow.combine
 import com.assismohanty.awaken.core.domain.PathBadgeInfo
 import com.assismohanty.awaken.core.domain.StartTrialResult
 import com.assismohanty.awaken.core.domain.StartTrialUseCase
@@ -56,8 +52,6 @@ import timber.log.Timber
 data class TodayUiState(
     val loading: Boolean = true,
     val header: HunterHeaderModel? = null,
-    /** Equipped title id; the screen resolves the display text into the header. */
-    val equippedTitleId: String? = null,
     val rank: Rank = Rank.E,
     /** Pinned above the directive in an ember window when a penalty quest exists (DESIGN_SYSTEM §4.2). */
     val penalty: QuestRowModel? = null,
@@ -72,7 +66,6 @@ data class TodayUiState(
     val total: Int = 0,
     /** The day meets the clear rule (GD §7.1): title becomes "DIRECTIVE CLEARED". */
     val cleared: Boolean = false,
-    val systemLine: String? = null,
     /** The Rank Trial slot: available to begin, or running (GD §5). */
     val trial: TrialSummary? = null,
     /** Today's open and cleared trial stage quests. */
@@ -81,24 +74,19 @@ data class TodayUiState(
     val penaltyOpen: Boolean = false,
     /** Today's Screen Discipline quest (GD §6.7), shown as its own card, not as a quest row. */
     val discipline: DisciplineCard? = null,
-    /** The running campaign's day and act, or null with [campaignOffer] when none runs (GD §6.8). */
-    val campaign: CampaignCard? = null,
-    val campaignOffer: Boolean = false,
     /** The block "now" is in (GD §14.5): highlighted on the timeline, earlier blocks collapse. */
     val currentBlock: TimeOfDay = TimeOfDay.MORNING,
     val gameDate: LocalDate? = null,
     val bestStreak: Int = 0,
     /** Cleared of eligible days over the last 28 (GD §14.2), beside the streak. */
     val consistency: ConsistencyScore = ConsistencyScore(0, 0),
-    /** Shown instead of [systemLine] the day after a missed day. */
+    /** The calm line shown the day after a missed day. */
     val missLine: MissLine? = null,
     /** "Your weekly review is open" row, Saturday to Monday until done (GD §14.4). */
     val reviewOpen: Boolean = false,
 )
 
-data class CampaignCard(val dayIndex: Int, val act: CampaignAct)
-
-/** [held] false once a limit was crossed; [xpAtStake] is the no-crit price for today's streak. */
+/** [held] false once a limit was crossed; [xpAtStake] is the price for today's streak. */
 data class DisciplineCard(val held: Boolean, val xpAtStake: Int)
 
 sealed interface TodayEvent {
@@ -121,7 +109,6 @@ class TodayViewModel @Inject constructor(
     dayRefresher: DayRefresher,
     private val completionCenter: CompletionCenter,
     private val startTrial: StartTrialUseCase,
-    observeCampaign: ObserveCampaignUseCase,
     private val adjustQuantity: AdjustQuantityUseCase,
     private val avoidHabit: AvoidHabitUseCases,
     private val skipHabit: SkipHabitUseCase,
@@ -133,17 +120,8 @@ class TodayViewModel @Inject constructor(
     /** Emits once when a Timed habit's session started, so Today opens the Focus screen (GD §16.1). */
     val gateEntered: SharedFlow<Unit> = gateStarted.asSharedFlow()
 
-    val uiState: StateFlow<TodayUiState> = combine(
-        observeToday(dayChanges = dayRefresher.ticks),
-        observeCampaign(dayRefresher.ticks),
-    ) { model, campaign ->
-        val base = model?.toUiState() ?: return@combine TodayUiState()
-        val running = campaign?.takeIf { it.campaign.status == CampaignStatus.ACTIVE }
-        base.copy(
-            campaign = running?.dayIndex?.let { CampaignCard(it, running.act) },
-            campaignOffer = running == null,
-        )
-    }
+    val uiState: StateFlow<TodayUiState> = observeToday(dayChanges = dayRefresher.ticks)
+        .map { model -> model?.toUiState() ?: TodayUiState() }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), TodayUiState())
 
     fun onEvent(event: TodayEvent) {
@@ -221,8 +199,7 @@ class TodayViewModel @Inject constructor(
 }
 
 internal fun TodayModel.toUiState(): TodayUiState {
-    // A Dungeon stage is one directive item (GD §16.14): listed with the side quests, counted, never rerollable.
-    val directive = quests.filter { it.type == QuestType.MAIN || it.type == QuestType.SIDE || it.type == QuestType.DUNGEON }
+    val directive = quests.filter { it.type == QuestType.MAIN || it.type == QuestType.SIDE }
     val pathQuests = quests.filter { it.type == QuestType.PATH }
     val habits = quests.filter { it.type == QuestType.HABIT }
     val counted = directive + pathQuests + habits
@@ -230,21 +207,17 @@ internal fun TodayModel.toUiState(): TodayUiState {
         loading = false,
         header = HunterHeaderModel(
             name = hunter.name,
-            title = null,
             level = hunter.level,
             rank = hunter.rank,
             xpIntoLevel = hunter.xpIntoLevel,
             xpForLevel = hunter.xpForLevel,
             streak = hunter.streak,
             gold = hunter.gold,
-            frameId = hunter.equippedFrameId,
-            sigilId = hunter.equippedSigilId,
         ),
-        equippedTitleId = hunter.equippedTitleId,
         rank = hunter.rank,
         penalty = quests.firstOrNull { it.type == QuestType.PENALTY }?.toRowModel(),
         main = directive.firstOrNull { it.type == QuestType.MAIN }?.let { it.toRowModel(pathBadges[it.id]) },
-        sides = directive.filter { it.type == QuestType.SIDE || it.type == QuestType.DUNGEON }.map { it.toRowModel() },
+        sides = directive.filter { it.type == QuestType.SIDE }.map { it.toRowModel() },
         paths = pathQuests.map { it.toRowModel(pathBadges[it.id]) },
         habits = habits.map { it.toRowModel(habit = habitInfo[it.id]?.let { info -> it.toHabitRow(info, currentBlock) }) },
         habitIdByQuest = habits.mapNotNull { quest -> quest.habitId?.let { quest.id to it } }.toMap(),
@@ -252,7 +225,6 @@ internal fun TodayModel.toUiState(): TodayUiState {
         // A skipped habit is neither done nor owed today (GD §16.2).
         total = counted.count { it.status != QuestStatus.SKIPPED },
         cleared = hunter.todayCleared,
-        systemLine = systemLine,
         currentBlock = currentBlock,
         gameDate = hunter.gameDate,
         bestStreak = hunter.bestStreak,
@@ -265,7 +237,7 @@ internal fun TodayModel.toUiState(): TodayUiState {
         discipline = quests.firstOrNull { it.type == QuestType.DISCIPLINE }?.let { quest ->
             DisciplineCard(
                 held = quest.status != QuestStatus.EXPIRED,
-                xpAtStake = XpCalculator.questXp(quest.difficulty, hunter.streak, VerificationSource.USAGE, crit = false),
+                xpAtStake = XpCalculator.questXp(quest.difficulty, hunter.streak, VerificationSource.USAGE),
             )
         },
     )

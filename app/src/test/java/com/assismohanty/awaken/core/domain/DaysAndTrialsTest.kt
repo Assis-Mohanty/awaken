@@ -3,7 +3,6 @@ package com.assismohanty.awaken.core.domain
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.assismohanty.awaken.core.data.db.entity.LedgerEntryEntity
 import com.assismohanty.awaken.core.data.repo.Notice
-import com.assismohanty.awaken.engine.AchievementEvaluator
 import com.assismohanty.awaken.engine.DayOutcome
 import com.assismohanty.awaken.engine.DifficultyAdapter
 import com.assismohanty.awaken.engine.LevelCurve
@@ -185,9 +184,7 @@ class DaysAndTrialsTest {
 
         assertThat(outcome.promotedTo).isEqualTo(Rank.D)
         assertThat(trialDao.passedRanks()).containsExactly(Rank.D)
-        assertThat(outcome.unlockedAchievements).contains("rank_d")
-        val achievementGold = outcome.unlockedAchievements.sumOf { AchievementEvaluator.byId.getValue(it).gold }
-        assertThat(graph.ledger.balances().gold - goldBefore).isEqualTo((RankRules.TRIAL_REWARD_GOLD + outcome.reward.gold + achievementGold).toLong())
+        assertThat(graph.ledger.balances().gold - goldBefore).isEqualTo((RankRules.TRIAL_REWARD_GOLD + outcome.reward.gold).toLong())
 
         // Promotion is permanent (ENGINE_DECISIONS #32).
         assertThat(graph.undoCompletion(last.id)).isEqualTo(UndoResult.TrialPassed)

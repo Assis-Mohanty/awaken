@@ -99,13 +99,6 @@ class GymProgressionTest {
     }
 
     @Test
-    fun `event count walks the sessions oldest first and the first session scores nothing`() {
-        val sessions = listOf(sets(50.0, 10), sets(55.0, 10), sets(55.0, 10))
-        // Session 2 beats session 1 on heaviest, e1RM and volume; session 3 only ties.
-        assertThat(RecordRules.eventCount(sessions)).isEqualTo(3)
-    }
-
-    @Test
     fun `vector 111 - kg plates`() {
         val setup = PlateMath.defaults(PlateUnit.KG)
         assertThat(PlateMath.plan(100.0, setup)).isEqualTo(PlatePlan.Exact(listOf(25.0, 15.0)))

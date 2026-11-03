@@ -123,7 +123,7 @@ class LoadScreenTimeOverviewUseCase @Inject constructor(
         val profile = hunterDao.getProfile() ?: return null
         val today = clock.gameDate(profile.dayStartHour)
         val streak = gameState.hunterContext(profile, today).streak
-        val xp = XpCalculator.questXp(ScreenTimeRules.DISCIPLINE_DIFFICULTY, streak, VerificationSource.USAGE, crit = false)
+        val xp = XpCalculator.questXp(ScreenTimeRules.DISCIPLINE_DIFFICULTY, streak, VerificationSource.USAGE)
         if (!usage.hasAccess()) {
             return ScreenTimeOverview(today, false, false, statusWithoutUsage(profile.screenTimeFrom, today), profile.screenTimeFrom, xp, 0, emptyMap(), emptyList(), emptyList())
         }

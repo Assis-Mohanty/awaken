@@ -4,6 +4,8 @@
 **Platform:** Android only, phones (tablets render centred). Offline-first, no account. One network feature: opt-in AI Paths through our own stateless proxy.
 **Build window:** no fixed deadline; quality over speed. **Store:** closed test as soon as the core loop is solid → production after Google's testing gate (see `PLAY_STORE_LAUNCH.md`).
 
+> **Declutter on 2026-11-03 (see `docs/DECLUTTER_PLAN.md`):** achievements, titles, cosmetics, loot, story, critical hits, the 45-day Campaign, Dungeons, crystals, recaps and the Lumi mascot are removed. Rows F25, F32, F41 and F50 below are gone; F12 and F13 describe what remains.
+
 ## 1. Problem & positioning
 
 Habit/RPG apps are a crowded but low-quality niche on Play: Habitica (aging, punishing, no charts), and a wave of "Solo Leveling"-style clones with 10K–50K installs and ~3.9–4.2 ratings whose reviews complain about rigid workouts, no offline mode, and broken polish. Every one of them is **honor-system** (you tap a box, you get XP) and **generic** (the same "do 20 push-ups" list for a competitive programmer and a marathoner).
@@ -36,18 +38,18 @@ Habit/RPG apps are a crowded but low-quality niche on Play: Habitica (aging, pun
 | # | Feature | Spec |
 |---|---|---|
 | F1 | Awakening onboarding (≤ 60 s, no account) | DESIGN_SYSTEM §4.1 |
-| F2 | Hunter profile: level, 5 stats, rank, title, gold, streak | GAME_DESIGN §2–5 |
+| F2 | Profile: level, 5 stats, rank, gold, streak | GAME_DESIGN §2–5 |
 | F3 | Daily Directive: 1 main + Path quests + 1–3 side quests (template library), deterministic per day, novelty window, equipment/injury filters, 1 free reroll | GD §6 |
 | F4 | Custom habits (max 8, days-of-week) | GD §6.1 |
 | F5 | Quest completion pipeline w/ ledger, caps, crits, undo (10 min), reward sheet with formula breakdown | GD §4, §9.3; ARCH §3.1 |
-| F6 | Level-up ceremony; rank-trial unlock | GD §4.4, §5; DS §2.5 |
+| F6 | Level and rank-up lines in the reward sheet; rank-up test unlock | GD §4.4, §5 |
 | F7 | Streak, Rest Day, Recovery Mode, Streak Shield, Penalty Zone | GD §7 |
 | F8 | Focus Gates (E/D/C/B timer dungeons, breach rule) | GD §8; ARCH §3.3 |
 | F9 | Health Connect verified quests (core: Steps, ExerciseSession, SleepSession; optional: Distance, ActiveCaloriesBurned, HeartRate; read-only; manual entries ignored; Health screen with workouts, sleep stages and 7-day trend) | ARCH §3.4; GD §6.2 |
 | F10 | Rank Trials (3-stage gate to promote) | GD §5 |
 | F11 | Adaptive difficulty per stat (weekly) | GD §6.4 |
-| F12 | Status: radar (this vs last week), stat list, 18-week heatmap, achievements & titles (32), chapters (6) | GD §10–11; DS §4.5 |
-| F13 | Vault: gold shop (shields, rerolls, themes, frames, sigils), Relic Cache from fragments | GD §9 |
+| F12 | Status: radar (this vs last week), stat list, 18-week heatmap | GD §11; DS §4.5 |
+| F13 | Store: gold shop (streak freeze, extra rerolls) | GD §9 |
 | F14 | Notifications (max 2/day + gate), asked after first completion | ARCH §3.5 |
 | F15 | Home-screen widget (Glance) | ARCH §3.6 |
 | F16 | Weekly Report + shareable image card | GD §11; DS §3 |
@@ -58,7 +60,6 @@ Habit/RPG apps are a crowded but low-quality niche on Play: Habitica (aging, pun
 | F21 | **AI content safety**: in-app "Report this quest" (hides it immediately, sends report), prompt content rules, eval set passing before each prompt release | ARCH §3.7–3.8, §6; PLAY_STORE_LAUNCH §2 |
 | F22 | **Set counter**: tap-per-set reps and a rest timer on SELF rep quests; progress only, the hunter still taps Complete (stays SELF, ×1.00, capped) | GD §6.5; ENGINE_DECISIONS #84–85 |
 | F23 | **Screen time + Screen Discipline**: per-app usage today and over 7 days (usage access, on-device only); apps tagged Distracting / Productive / Neutral with bundled defaults the hunter can change; daily limits on distracting apps; a daily DISCIPLINE quest paid at day end if every limit held, forfeited (never deducted) on the first crossing; edits apply from tomorrow; ≤ 5 min warning and crossing notice | GD §6.7; ARCH §3.11; DS §4.9; ENGINE_DECISIONS #86–#91 |
-| F25 | **45-day Campaign** (clean-room): 10-question scan → weakest stat + archetype on the radar; up to 5 engine-planned habits; oath sealed by a long press; 3 acts of 15 days that raise habit difficulty; 45-cell progress calendar; ≥ 32 cleared days → Reforged (+1,000 gold, title); abandon anytime, nothing deducted | GD §6.8; ARCH §3.12; DS §4.10; ENGINE_DECISIONS #92–#94 |
 | F24 | **Appearance**: System / Dark / Light; premium black default, light palette on the same tokens | DS §2.1b |
 | F26 | **Gym** (tracker, no XP): Gym tab; start an empty workout or a routine; kg × reps set rows prefilled from the last session; finish keeps done sets; save as routine; week snapshot (workouts, sets, volume) with a muscle-load body map; estimated-1RM records; history. Offline exercise library (free-exercise-db, 876 exercises): search, equipment chips, tap-a-muscle filter, how-to steps, custom exercises | GD §13.2; ARCH §3.13; DS §4.11; ENGINE_DECISIONS #95–#98 |
 | F27 | **Diet** (tracker, no XP): Diet tab; one-time budget setup (goal, sex, birth year, height, weight, activity → BMR, budget, macro and Daily Value targets, all editable); day view with calorie ring, macros, four meals, nutrient panel; offline food search (USDA SR Legacy + FNDDS, 13k foods) with recent foods; log by grams or household portion; edit/remove entries; custom foods | GD §13.1; ARCH §3.13; DS §4.12 |
@@ -71,7 +72,6 @@ Habit/RPG apps are a crowded but low-quality niche on Play: Habitica (aging, pun
 | F29 | **Personal insights**: on-device correlations (sleep, weekday, time of day, focus hour, steps, momentum) with statistical guardrails and correlational copy; up to 3 on Status, rotated per ISO week | GD §14.3; DS §8.1 |
 | F30 | **Weekly review**: Sat–Mon ritual, ≤ 5 taps (numbers, went well, slipped, next week's focus stats, intention); stored locally, exported; no XP, achievements only | GD §14.4; DS §8.2 |
 | F31 | **Time-of-day blocks**: Morning / Day / Evening / Anytime grouping on Today with editable boundaries; templates and habits carry a block; no change to generation or rewards | GD §14.5; DS §8.2 |
-| F32 | **Monthly and yearly recap**: 3–5 story cards, reopenable, last card shared as a 1080×1350 image | GD §14.6; DS §8.2 |
 | F33 | **Identity framing**: "Who are you becoming?" (1–3 of 12) in onboarding, pre-selects focus stats, shown on Status, used in the review; no rewards | GD §14.7; DS §8.2 |
 | F34 | **Superseded (2026-10-27).** The v2 redesign dropped System mode, so the app always uses Clean words; no ModeSwitch, invite or clean voice-line file was built. Original spec — **Clean / System presentation**: Clean by default for new installs, one-time invite after the first level-up; a Lexicon swaps game terms and voice; numbers identical | GD §14.9; DS §8.3 |
 
@@ -85,7 +85,6 @@ Habit/RPG apps are a crowded but low-quality niche on Play: Habitica (aging, pun
 | F38 | **Start focus widget** [A5, only this widget]: 2×1, one tap starts the last-used session | DS §9.3; ARCH §3.15 |
 | F39 | **Pomodoro** [B1]: focus rounds as ordinary custom sessions, short/long breaks without breach, next round on tap | GD §16.3; DS §9.3 |
 | F40 | **Daily focus goal + focus streak** [B2]: ring on the Gates screen, separate focus streak, achievements only | GD §16.4; DS §9.1 |
-| F41 | **Gate crystal + gallery** [B3]: a vector crystal grows during a session; finished runs fill a gallery (cracked when collapsed); no rewards | GD §16.5; DS §9.1 |
 | F42 | **Progression hints** [C1]: double progression on set 1, per-exercise rep range and increment | GD §16.6; DS §9.3 |
 | F43 | **Personal records** [C2]: heaviest, best e1RM, most reps at a weight, best session volume; in-session "New record"; achievements | GD §16.7; DS §9.3 |
 | F44 | **Plate calculator** [C3]: plates per side, owned plates, kg/lb in the calculator | GD §16.8; DS §9.3 |
@@ -94,10 +93,8 @@ Habit/RPG apps are a crowded but low-quality niche on Play: Habitica (aging, pun
 | F47 | **Daily step goal ring** [D2]: on the Health tile, display only | GD §16.11; DS §9.3 |
 | F48 | **Phone-down nights** [D3]: a verified BEDTIME quest from usage data, fails closed; optional wind-down breathing | GD §16.12; DS §9.3 |
 | F49 | **Quit counters** [D4]: days clean, best run kept forever, money/time, restart log, milestones, auto doomscrolling (fails closed); no XP, achievements only | GD §16.13; DS §9.2–9.3 |
-| F50 | **Dungeons** [F3]: 3/5/7-day Hard stage challenges with a gold entry fee and a clear reward | GD §16.14; DS §9.3 |
 | F51 | **Programs** [F6]: Steady 30, Groundwork 66, Ironclad 75; restart or continue after a broken day | GD §16.15; DS §9.3 |
 
-Note: §5 below lists "multi-day dungeons" as out of scope for v1.0; F50 brings them in for v1.2 once approved.
 
 ## 5. Explicitly OUT of scope for v1.0 (put in `BACKLOG.md`)
 Accounts/sync · global/friends leaderboards · guilds · PvP duels & wagers · premium currency / IAP / ads · AI mentor chat (free-form conversation) · AI deciding any reward · on-device LLM · photo/video proof · multi-day dungeons · hardcore/permadeath · prestige · territory wars · iOS · web · Wear OS · localisation beyond English (strings are externalised though; Path goals may be typed in any language).

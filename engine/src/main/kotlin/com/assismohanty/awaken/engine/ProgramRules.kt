@@ -14,7 +14,7 @@ enum class ProgramBreakChoice { RESTART, CONTINUE }
 /** How one finished program day went. */
 enum class ProgramDay { KEPT, REST, BROKEN }
 
-enum class ProgramStart { OK, NOT_ENOUGH_SLOTS, CAMPAIGN_ACTIVE, PROGRAM_ACTIVE }
+enum class ProgramStart { OK, NOT_ENOUGH_SLOTS, PROGRAM_ACTIVE }
 
 /** Words for a rule, by key; the app maps a key to a localised title. */
 enum class ProgramRuleKey { WALK, READ, FOCUS_15, PLAN, WORKOUT, FOCUS_25, STEPS_10K }
@@ -104,9 +104,8 @@ object ProgramRules {
     /** No broken day in the run → COMPLETED; any broken day (continued past) → FINISHED. */
     fun endStatus(brokenDays: Int): ProgramStatus = if (brokenDays == 0) ProgramStatus.COMPLETED else ProgramStatus.FINISHED
 
-    fun canStart(spec: ProgramSpec, freeHabitSlots: Int, campaignActive: Boolean, programActive: Boolean): ProgramStart = when {
+    fun canStart(spec: ProgramSpec, freeHabitSlots: Int, programActive: Boolean): ProgramStart = when {
         programActive -> ProgramStart.PROGRAM_ACTIVE
-        campaignActive -> ProgramStart.CAMPAIGN_ACTIVE
         freeHabitSlots < spec.rules.size -> ProgramStart.NOT_ENOUGH_SLOTS
         else -> ProgramStart.OK
     }

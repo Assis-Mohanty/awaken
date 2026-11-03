@@ -371,9 +371,40 @@ val MIGRATION_24_25 = object : Migration(24, 25) {
     }
 }
 
+/**
+ * v26 (declutter Batch 1): achievements, titles, cosmetics, campaigns, dungeons and recaps are gone. Their tables are
+ * dropped and three tables are rebuilt without the removed columns (SQLite on minSdk 28 cannot drop a column). Ledger
+ * rows are never touched: past gold and XP stay, and old enum values stay readable.
+ */
+val MIGRATION_25_26 = object : Migration(25, 26) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        listOf("achievement_unlock", "owned_cosmetic", "campaign", "dungeon", "recap").forEach { db.execSQL("DROP TABLE IF EXISTS `$it`") }
+        // Fragments are no longer earned or shown; the balance cache is rebuildable from the ledger.
+        db.execSQL("DELETE FROM `balance_cache` WHERE `key` = 'fragments'")
+        // hunter_profile
+        db.execSQL("CREATE TABLE IF NOT EXISTS `hunter_profile_new` (`id` TEXT NOT NULL, `hunter_id` TEXT NOT NULL, `name` TEXT NOT NULL, `created_at` INTEGER NOT NULL, `first_game_date` TEXT NOT NULL, `focus_stat_1` TEXT NOT NULL, `focus_stat_2` TEXT NOT NULL, `day_start_hour` INTEGER NOT NULL, `reminder_time` TEXT, `onboarding_done` INTEGER NOT NULL, `owned_equipment` TEXT NOT NULL, `injury_mode` INTEGER NOT NULL, `injury_tags` TEXT NOT NULL DEFAULT 'impact,legs', `health_enabled` INTEGER NOT NULL, `last_recalibrated_on` TEXT, `screen_time_from` TEXT, `identities` TEXT NOT NULL DEFAULT '', `step_goal` INTEGER NOT NULL DEFAULT 8000, PRIMARY KEY(`id`))")
+        db.execSQL("INSERT INTO `hunter_profile_new` (`id`, `hunter_id`, `name`, `created_at`, `first_game_date`, `focus_stat_1`, `focus_stat_2`, `day_start_hour`, `reminder_time`, `onboarding_done`, `owned_equipment`, `injury_mode`, `injury_tags`, `health_enabled`, `last_recalibrated_on`, `screen_time_from`, `identities`, `step_goal`) SELECT `id`, `hunter_id`, `name`, `created_at`, `first_game_date`, `focus_stat_1`, `focus_stat_2`, `day_start_hour`, `reminder_time`, `onboarding_done`, `owned_equipment`, `injury_mode`, `injury_tags`, `health_enabled`, `last_recalibrated_on`, `screen_time_from`, `identities`, `step_goal` FROM `hunter_profile`")
+        db.execSQL("DROP TABLE `hunter_profile`")
+        db.execSQL("ALTER TABLE `hunter_profile_new` RENAME TO `hunter_profile`")
+        // habit
+        db.execSQL("CREATE TABLE IF NOT EXISTS `habit_new` (`id` TEXT NOT NULL, `title` TEXT NOT NULL, `stat` TEXT NOT NULL, `difficulty` TEXT NOT NULL, `verification` TEXT NOT NULL, `days_of_week_mask` INTEGER NOT NULL, `target` INTEGER NOT NULL, `unit` TEXT NOT NULL, `active` INTEGER NOT NULL, `created_at` INTEGER NOT NULL, `template_id` TEXT, `time_of_day` TEXT, `type` TEXT NOT NULL DEFAULT 'CHECK', `frequency` TEXT NOT NULL DEFAULT 'DAYS_OF_WEEK', `times_per_week` INTEGER, `reminder_time` INTEGER, `program_id` TEXT, PRIMARY KEY(`id`))")
+        db.execSQL("INSERT INTO `habit_new` (`id`, `title`, `stat`, `difficulty`, `verification`, `days_of_week_mask`, `target`, `unit`, `active`, `created_at`, `template_id`, `time_of_day`, `type`, `frequency`, `times_per_week`, `reminder_time`, `program_id`) SELECT `id`, `title`, `stat`, `difficulty`, `verification`, `days_of_week_mask`, `target`, `unit`, `active`, `created_at`, `template_id`, `time_of_day`, `type`, `frequency`, `times_per_week`, `reminder_time`, `program_id` FROM `habit`")
+        db.execSQL("DROP TABLE `habit`")
+        db.execSQL("ALTER TABLE `habit_new` RENAME TO `habit`")
+        // quest_instance
+        db.execSQL("CREATE TABLE IF NOT EXISTS `quest_instance_new` (`id` TEXT NOT NULL, `game_date` TEXT NOT NULL, `type` TEXT NOT NULL, `template_id` TEXT, `habit_id` TEXT, `stat` TEXT NOT NULL, `secondary_stat` TEXT, `title` TEXT NOT NULL, `description` TEXT NOT NULL, `unit` TEXT NOT NULL, `target` INTEGER NOT NULL, `difficulty` TEXT NOT NULL, `verification` TEXT NOT NULL, `min_duration_sec` INTEGER NOT NULL, `status` TEXT NOT NULL, `started_at` INTEGER, `completed_at` INTEGER, `created_at` INTEGER NOT NULL, `path_slot_id` TEXT, `set_reps` TEXT NOT NULL DEFAULT '', `time_of_day` TEXT, `progress` INTEGER NOT NULL DEFAULT 0, `night_verdict` TEXT, PRIMARY KEY(`id`))")
+        db.execSQL("INSERT INTO `quest_instance_new` (`id`, `game_date`, `type`, `template_id`, `habit_id`, `stat`, `secondary_stat`, `title`, `description`, `unit`, `target`, `difficulty`, `verification`, `min_duration_sec`, `status`, `started_at`, `completed_at`, `created_at`, `path_slot_id`, `set_reps`, `time_of_day`, `progress`, `night_verdict`) SELECT `id`, `game_date`, `type`, `template_id`, `habit_id`, `stat`, `secondary_stat`, `title`, `description`, `unit`, `target`, `difficulty`, `verification`, `min_duration_sec`, `status`, `started_at`, `completed_at`, `created_at`, `path_slot_id`, `set_reps`, `time_of_day`, `progress`, `night_verdict` FROM `quest_instance`")
+        db.execSQL("DROP TABLE `quest_instance`")
+        db.execSQL("ALTER TABLE `quest_instance_new` RENAME TO `quest_instance`")
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_quest_instance_game_date` ON `quest_instance` (`game_date`)")
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_quest_instance_status` ON `quest_instance` (`status`)")
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_quest_instance_path_slot_id` ON `quest_instance` (`path_slot_id`)")
+    }
+}
+
 /** Every migration, in order. The database builder and the migration test both use this list. */
 val ALL_MIGRATIONS: Array<Migration> = arrayOf(
     MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9,
     MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17,
-    MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21, MIGRATION_21_22, MIGRATION_22_23, MIGRATION_23_24, MIGRATION_24_25,
+    MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21, MIGRATION_21_22, MIGRATION_22_23, MIGRATION_23_24, MIGRATION_24_25, MIGRATION_25_26,
 )

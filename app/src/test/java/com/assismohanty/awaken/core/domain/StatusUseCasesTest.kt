@@ -1,16 +1,12 @@
 package com.assismohanty.awaken.core.domain
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.assismohanty.awaken.core.data.db.entity.AchievementUnlockEntity
 import com.assismohanty.awaken.core.data.db.entity.LedgerEntryEntity
-import com.assismohanty.awaken.core.data.repo.Chapter
 import com.assismohanty.awaken.engine.GameWeek
 import com.assismohanty.awaken.engine.model.LedgerKind
 import com.assismohanty.awaken.engine.model.SourceType
 import com.assismohanty.awaken.engine.model.Stat
-import com.assismohanty.awaken.feature.quest.newlyUnlockedChapters
 import com.assismohanty.awaken.testing.TestGraph
-import com.assismohanty.awaken.engine.AchievementEvaluator
 import com.google.common.truth.Truth.assertThat
 import java.time.LocalDate
 import kotlinx.coroutines.flow.filterNotNull
@@ -26,9 +22,8 @@ class StatusUseCasesTest {
     private val graph = TestGraph()
     private val observeStatus = ObserveStatusUseCase(
         graph.observeHunterState, graph.db.ledgerDao(), graph.db.completionDao(), graph.db.dayRecordDao(),
-        graph.db.achievementDao(), graph.db.questDao(), graph.db.hunterDao(), graph.narrative, graph.db.insightDao(), graph.loadInsights, graph.db.weeklyReviewDao(), graph.db.recapDao(),
+        graph.db.questDao(), graph.db.hunterDao(), graph.db.insightDao(), graph.loadInsights, graph.db.weeklyReviewDao(),
     )
-    private val equipTitle = EquipTitleUseCase(graph.db.hunterDao(), graph.db.achievementDao())
 
     @After
     fun tearDown() = graph.close()
@@ -93,40 +88,4 @@ class StatusUseCasesTest {
         assertThat(heatmap.last().date).isEqualTo(GameWeek.of(graph.today()).sunday)
     }
 
-    @Test
-    fun onlyTitlesFromUnlockedAchievementsCanBeEquipped() = runTest {
-        graph.seedHunter()
-        graph.db.achievementDao().insert(AchievementUnlockEntity("awakened", graph.clock.now()))
-
-        assertThat(equipTitle("veteran")).isEqualTo(EquipTitleResult.Locked)
-        assertThat(equipTitle("no_such_title")).isEqualTo(EquipTitleResult.Locked)
-        assertThat(graph.db.hunterDao().getProfile()?.equippedTitleId).isNull()
-
-        assertThat(equipTitle("the_awakened")).isEqualTo(EquipTitleResult.Equipped)
-        assertThat(status().hunter.equippedTitleId).isEqualTo("the_awakened")
-
-        assertThat(equipTitle(null)).isEqualTo(EquipTitleResult.Unequipped)
-        assertThat(graph.db.hunterDao().getProfile()?.equippedTitleId).isNull()
-    }
-
-    @Test
-    fun achievementsAndChaptersReflectUnlocks() = runTest {
-        graph.seedHunter()
-        graph.db.achievementDao().insert(AchievementUnlockEntity("first_blood", graph.clock.now()))
-
-        val model = status()
-
-        assertThat(model.achievements).hasSize(AchievementEvaluator.all.size)
-        assertThat(model.achievements.filter { it.unlocked }.map { it.id }).containsExactly("first_blood")
-        assertThat(model.chapters).hasSize(6)
-        assertThat(model.chapters.filter { it.unlocked }.map { it.chapter.unlockLevel }).containsExactly(1)
-    }
-
-    @Test
-    fun aLevelUpRevealsEveryChapterItCrossed() {
-        val chapters = listOf(1, 5, 10, 20, 35, 50).map { Chapter("ch$it", it, "t$it", "b") }
-        assertThat(newlyUnlockedChapters(chapters, 4, 5).map { it.index }).containsExactly(1)
-        assertThat(newlyUnlockedChapters(chapters, 5, 6)).isEmpty()
-        assertThat(newlyUnlockedChapters(chapters, 1, 12).map { it.value.unlockLevel }).containsExactly(5, 10).inOrder()
-    }
 }

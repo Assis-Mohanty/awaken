@@ -40,8 +40,6 @@ data class RolloverOutcome(
     val recalibration: Map<Stat, DifficultyAdapter.Change>,
     /** The rank whose trial this run found expired (GD §5), if any. */
     val trialFailed: Rank? = null,
-    /** A campaign act began or the campaign ended in this run (GD §6.8). */
-    val campaign: CampaignAdvance? = null,
 )
 
 /**
@@ -62,10 +60,7 @@ class DayRolloverUseCase @Inject constructor(
     private val settleDiscipline: SettleDisciplineUseCase,
     private val settleBedtime: SettleBedtimeUseCase,
     private val recordQuitProgress: RecordQuitProgressUseCase,
-    private val settleDungeon: SettleDungeonUseCase,
     private val programRollover: ProgramRolloverUseCase,
-    private val advanceCampaign: AdvanceCampaignUseCase,
-    private val achievements: AchievementUnlocker,
     private val transactions: TransactionRunner,
     private val clock: Clock,
 ) {
@@ -88,10 +83,8 @@ class DayRolloverUseCase @Inject constructor(
             settleDiscipline(date)
             // And the night that ended that morning, if no foreground check or worker got to it first (GD §16.12).
             settleBedtime(date)
-            // A Dungeon stage is decided before the day closes its open quests (GD §16.14).
-            settleDungeon(date)
             finalized += finalizeDay(date)
-            // Doomscrolling verdicts for the day that just ended, and the Clean Run achievements (GD §16.13).
+            // Doomscrolling verdicts for the day that just ended (GD §16.13).
             recordQuitProgress(date)
             programRollover(date)
             date = date.plusDays(1)
@@ -101,13 +94,11 @@ class DayRolloverUseCase @Inject constructor(
 
         val recalibration = recalibrateIfDue(today)
         pathWeeks.requestDue(today)
-        // Before the directive, so today's habit instances carry the new act's targets (GD §6.8).
-        val campaign = advanceCampaign(today)
         generateDirective(today)
         val brokenDay = finalized.lastOrNull { it.outcome == DayOutcome.BROKEN }?.gameDate
         val penaltyIssued = brokenDay != null && issuePenalty(profile, today, brokenDay)
         val trialFailed = advanceTrial(profile, today)
-        return RolloverOutcome(today, finalized, penaltyIssued, recalibration, trialFailed, campaign)
+        return RolloverOutcome(today, finalized, penaltyIssued, recalibration, trialFailed)
     }
 
     /**
@@ -176,7 +167,6 @@ class DayRolloverUseCase @Inject constructor(
             ),
         )
         // A cleared day after a missed one is a recovery (GD §14.2); never_twice can only unlock here.
-        if (result.outcome == DayOutcome.CLEARED) hunterDao.getProfile()?.let { achievements.unlockNew(it, date, now) }
         result
     }
 

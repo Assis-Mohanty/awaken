@@ -14,7 +14,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
-/** DESIGN_SYSTEM §4.5: Status sections, locked achievements, equipping a title, chart descriptions. */
+/** DESIGN_SYSTEM §4.5: Progress sections and chart descriptions. */
 @RunWith(AndroidJUnit4::class)
 class StatusScreenTest {
     @get:Rule
@@ -25,10 +25,10 @@ class StatusScreenTest {
     }
 
     @Test
-    fun sectionsRenderInOrderWithTheEquippedTitle() {
+    fun sectionsRender() {
         show(previewStatusState())
-        composeRule.onNodeWithText("Assis · Rising Hunter").assertIsDisplayed()
-        listOf("STAT PENTAGON", "STATS", "ACTIVITY", "TITLES & ACHIEVEMENTS", "CHAPTERS", "WEEKLY REPORT").forEach {
+        composeRule.onNodeWithText("Assis").assertIsDisplayed()
+        listOf("STAT PENTAGON", "STATS", "ACTIVITY", "WEEKLY REPORT").forEach {
             composeRule.onNodeWithText(it).performScrollTo().assertIsDisplayed()
         }
     }
@@ -37,28 +37,6 @@ class StatusScreenTest {
     fun radarExposesStatLevelsToTalkBack() {
         show(previewStatusState())
         composeRule.onNode(hasContentDescription("Strength level", substring = true)).assertExists()
-    }
-
-    @Test
-    fun lockedAchievementShowsItsCondition() {
-        show(previewStatusState(locked = true))
-        composeRule.onNodeWithText("Reach level 50.").performScrollTo().assertIsDisplayed()
-    }
-
-    @Test
-    fun tappingAnUnlockedTitleEquipsIt() {
-        val events = mutableListOf<StatusEvent>()
-        show(previewStatusState(locked = true), events)
-        composeRule.onNodeWithText("Title: The Awakened").performScrollTo().performClick()
-        assertThat(events).containsExactly(StatusEvent.EquipTitle("the_awakened"))
-    }
-
-    @Test
-    fun tappingTheEquippedTitleUnequipsIt() {
-        val events = mutableListOf<StatusEvent>()
-        show(previewStatusState(), events)
-        composeRule.onNodeWithText("Title: Rising Hunter").performScrollTo().performClick()
-        assertThat(events).containsExactly(StatusEvent.EquipTitle(null))
     }
 
     @Test

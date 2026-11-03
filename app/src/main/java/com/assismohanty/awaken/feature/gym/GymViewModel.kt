@@ -74,7 +74,6 @@ data class GymFlow(
     /** Earlier finished sessions per exercise id: what a set is compared with for a record (GD §16.7). */
     val recordHistory: Map<String, List<List<LoggedSet>>> = emptyMap(),
     val summaryRecords: List<ExerciseRecords> = emptyList(),
-    val summaryUnlocked: List<String> = emptyList(),
     val plates: PlatesFlow? = null,
     val settingsOpen: Boolean = false,
     val history: HistoryFlow? = null,
@@ -131,7 +130,6 @@ data class GymUiState(
     /** Ids of set rows that broke a personal record, for the "New record" chip. */
     val prSetIds: Set<String> = emptySet(),
     val summaryRecords: List<ExerciseRecords> = emptyList(),
-    val summaryUnlocked: List<String> = emptyList(),
     val prefs: GymPrefs = GymPrefs(),
     val plates: PlatesUi? = null,
     val settingsOpen: Boolean = false,
@@ -237,7 +235,6 @@ class GymViewModel @Inject constructor(
             hints = f.hints,
             prSetIds = prSetIds,
             summaryRecords = f.summaryRecords,
-            summaryUnlocked = f.summaryUnlocked,
             prefs = prefs,
             plates = f.plates?.let { PlatesUi(it.target, it.unit, prefs.setup(it.unit), if (it.target > 0.0) PlateMath.plan(it.target, prefs.setup(it.unit)) else null) },
             settingsOpen = f.settingsOpen,
@@ -398,7 +395,7 @@ class GymViewModel @Inject constructor(
             GymEvent.Finish -> withActive { workoutId ->
                 when (val result = gym.finish(workoutId)) {
                     is FinishResult.Finished -> flow.update {
-                        it.copy(summaryId = workoutId, notice = null, summaryRecords = result.records, summaryUnlocked = result.unlocked)
+                        it.copy(summaryId = workoutId, notice = null, summaryRecords = result.records)
                     }
                     FinishResult.DiscardedEmpty -> flow.update { it.copy(notice = GymNotice.DISCARDED_EMPTY) }
                 }
@@ -421,7 +418,7 @@ class GymViewModel @Inject constructor(
                 gym.setRest(workoutId, event.position, if (event.up) RestRules.stepUp(event.current) else RestRules.stepDown(event.current))
             }
             GymEvent.SkipRest -> withActive { gym.skipRest(it) }
-            GymEvent.DismissSummary -> flow.update { it.copy(summaryId = null, summaryRecords = emptyList(), summaryUnlocked = emptyList()) }
+            GymEvent.DismissSummary -> flow.update { it.copy(summaryId = null, summaryRecords = emptyList()) }
         }
     }
 

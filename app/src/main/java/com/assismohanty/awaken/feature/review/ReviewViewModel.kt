@@ -128,9 +128,8 @@ class ReviewViewModel @Inject constructor(
                 null
             }
             when (result) {
-                is ReviewResult.Saved -> {
+                ReviewResult.Saved -> {
                     completionCenter.message(UserMessage.ReviewSaved)
-                    completionCenter.achievements(result.unlocked)
                     _uiState.update { it.copy(submitting = false, done = true) }
                 }
                 ReviewResult.AlreadySubmitted, ReviewResult.Closed -> _uiState.update { it.copy(submitting = false, done = true) }

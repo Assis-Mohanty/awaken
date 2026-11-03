@@ -1,7 +1,5 @@
 package com.assismohanty.awaken.core.domain
 
-import com.assismohanty.awaken.core.data.clock.Clock
-import com.assismohanty.awaken.core.data.clock.gameDate
 import com.assismohanty.awaken.core.data.repo.TransactionRunner
 import com.assismohanty.awaken.engine.Awakening
 import com.assismohanty.awaken.engine.IdentityCatalog
@@ -10,23 +8,20 @@ import java.time.LocalTime
 import javax.inject.Inject
 
 sealed interface OnboardingResult {
-    /** [unlocked] holds the achievement ids granted on completion (at least "awakened"). */
-    data class Done(val unlocked: List<String>) : OnboardingResult
+    data object Done : OnboardingResult
     data object InvalidName : OnboardingResult
     data object InvalidFocus : OnboardingResult
 }
 
 /**
- * Awakening (DESIGN_SYSTEM §4.1): creates the hunter with calibrated baseline tiers, grants "Awakened", then runs the
- * first rollover, which generates the first directive (with its Easy starter quest, GD §6.3). Health is enabled before
- * that rollover, so day one can already offer verified quests.
+ * Getting started (DESIGN_SYSTEM §4.1): creates the profile with calibrated baseline tiers, then runs the first
+ * rollover, which generates the first plan (with its Easy starter quest, GD §6.3). Health is enabled before that
+ * rollover, so day one can already offer verified quests.
  */
 class CompleteOnboardingUseCase @Inject constructor(
     private val createHunter: CreateHunterUseCase,
-    private val achievements: AchievementUnlocker,
     private val rollover: DayRolloverUseCase,
     private val transactions: TransactionRunner,
-    private val clock: Clock,
 ) {
     suspend operator fun invoke(
         name: String,
@@ -42,8 +37,8 @@ class CompleteOnboardingUseCase @Inject constructor(
     ): OnboardingResult {
         if (!Awakening.isValidName(name)) return OnboardingResult.InvalidName
         if (focusStats.size != 2) return OnboardingResult.InvalidFocus
-        val unlocked = transactions.run {
-            val profile = createHunter(
+        transactions.run {
+            createHunter(
                 name = name.trim(),
                 focusStats = Stat.entries.filter { it in focusStats },
                 baselineTiers = Awakening.baselineTiers(training, study, sleep),
@@ -51,9 +46,8 @@ class CompleteOnboardingUseCase @Inject constructor(
                 healthEnabled = healthEnabled,
                 identities = identities.take(IdentityCatalog.MAX_PICKS),
             )
-            achievements.unlockNew(profile, clock.gameDate(profile.dayStartHour), clock.now())
         }
         rollover()
-        return OnboardingResult.Done(unlocked)
+        return OnboardingResult.Done
     }
 }

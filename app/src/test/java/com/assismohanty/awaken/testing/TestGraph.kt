@@ -13,7 +13,6 @@ import com.assismohanty.awaken.core.data.db.entity.LedgerEntryEntity
 import com.assismohanty.awaken.core.data.db.entity.QuestInstanceEntity
 import com.assismohanty.awaken.core.data.repo.GameStateReader
 import com.assismohanty.awaken.core.data.repo.LedgerRepository
-import com.assismohanty.awaken.core.data.repo.NarrativeRepository
 import com.assismohanty.awaken.core.data.repo.NoticeStore
 import com.assismohanty.awaken.core.data.repo.IdentityRepository
 import com.assismohanty.awaken.core.data.repo.TemplateRepository
@@ -21,7 +20,6 @@ import com.assismohanty.awaken.core.data.repo.TransactionRunner
 import com.assismohanty.awaken.core.domain.DistractingApps
 import com.assismohanty.awaken.core.domain.AcceptPlanUseCase
 import com.assismohanty.awaken.core.domain.AcceptWeekPlanUseCase
-import com.assismohanty.awaken.core.domain.AchievementUnlocker
 import com.assismohanty.awaken.core.domain.AdvanceMilestoneUseCase
 import com.assismohanty.awaken.core.domain.ChangePathStatusUseCase
 import com.assismohanty.awaken.core.domain.CreatePathUseCase
@@ -50,16 +48,11 @@ import com.assismohanty.awaken.core.domain.DayRefresher
 import com.assismohanty.awaken.core.domain.DietTracker
 import com.assismohanty.awaken.core.domain.GymTracker
 import com.assismohanty.awaken.core.domain.DayRolloverUseCase
-import com.assismohanty.awaken.core.domain.AbandonCampaignUseCase
-import com.assismohanty.awaken.core.domain.AdvanceCampaignUseCase
 import com.assismohanty.awaken.core.domain.DisciplineQuestPlanner
-import com.assismohanty.awaken.core.domain.ObserveCampaignUseCase
-import com.assismohanty.awaken.core.domain.PreviewCampaignUseCase
 import com.assismohanty.awaken.core.domain.AdjustQuantityUseCase
 import com.assismohanty.awaken.core.domain.AvoidHabitUseCases
 import com.assismohanty.awaken.core.domain.SaveHabitUseCase
 import com.assismohanty.awaken.core.domain.SkipHabitUseCase
-import com.assismohanty.awaken.core.domain.StartCampaignUseCase
 import com.assismohanty.awaken.core.domain.DisciplineSyncUseCase
 import com.assismohanty.awaken.core.domain.DisciplineText
 import com.assismohanty.awaken.core.domain.LoadScreenTimeOverviewUseCase
@@ -75,7 +68,6 @@ import com.assismohanty.awaken.core.work.NotificationAccess
 import com.assismohanty.awaken.core.domain.BuildReminderUseCase
 import com.assismohanty.awaken.core.domain.DisableHealthUseCase
 import com.assismohanty.awaken.core.domain.EnableHealthUseCase
-import com.assismohanty.awaken.core.domain.GenerateRecapsUseCase
 import com.assismohanty.awaken.core.domain.HealthSyncUseCase
 import com.assismohanty.awaken.core.domain.RemoveHabitUseCase
 import com.assismohanty.awaken.core.domain.RestoreHabitUseCase
@@ -85,9 +77,7 @@ import com.assismohanty.awaken.core.domain.SubmitWeeklyReviewUseCase
 import com.assismohanty.awaken.core.domain.LoadWeeklyReviewUseCase
 import com.assismohanty.awaken.core.domain.ObserveSettingsUseCase
 import com.assismohanty.awaken.core.domain.UpdateSettingsUseCase
-import com.assismohanty.awaken.core.domain.EquipCosmeticUseCase
 import com.assismohanty.awaken.core.domain.ObserveVaultUseCase
-import com.assismohanty.awaken.core.domain.OpenRelicCacheUseCase
 import com.assismohanty.awaken.core.domain.PurchaseItemUseCase
 import com.assismohanty.awaken.core.domain.GenerateDirectiveUseCase
 import com.assismohanty.awaken.core.domain.ObserveHunterStateUseCase
@@ -100,7 +90,6 @@ import com.assismohanty.awaken.core.domain.StartGateUseCase
 import com.assismohanty.awaken.core.domain.StartTrialUseCase
 import com.assismohanty.awaken.core.domain.TrialReader
 import com.assismohanty.awaken.core.domain.UndoCompletionUseCase
-import com.assismohanty.awaken.engine.CritRoller
 import com.assismohanty.awaken.engine.GameDay
 import com.assismohanty.awaken.engine.model.Difficulty
 import com.assismohanty.awaken.engine.model.LedgerKind
@@ -163,7 +152,7 @@ class TestGraph(
     val phoneSteps = FakePhoneStepsGateway()
     val reader = GameStateReader(
         db.hunterDao(), db.questDao(), db.completionDao(), db.ledgerDao(), db.dayRecordDao(),
-        db.gateRunDao(), db.trialDao(), db.achievementDao(), clock, health, db.campaignDao(), db.weeklyReviewDao(),
+        health,
     )
 
     val pathDao = db.pathDao()
@@ -174,17 +163,13 @@ class TestGraph(
     val disciplinePlanner = DisciplineQuestPlanner(screenTimeReader, DisciplineText(context))
     val bedtimeReader = com.assismohanty.awaken.core.domain.BedtimeReader(db.screenTimeDao(), db.questDao(), usage, clock)
     val bedtimePlanner = com.assismohanty.awaken.core.domain.BedtimePlanner(bedtimeReader, usage, com.assismohanty.awaken.core.domain.BedtimeText(context))
-    val dungeonStagePlanner = com.assismohanty.awaken.core.domain.DungeonStagePlanner(db.dungeonDao(), templates, reader, com.assismohanty.awaken.core.domain.DungeonText(context))
     val generateDirective = GenerateDirectiveUseCase(
-        db.hunterDao(), db.questDao(), db.habitDao(), reader, templates, pathPlanner, disciplinePlanner, bedtimePlanner, dungeonStagePlanner,
+        db.hunterDao(), db.questDao(), db.habitDao(), reader, templates, pathPlanner, disciplinePlanner, bedtimePlanner,
         com.assismohanty.awaken.core.domain.ProgramHabitForDay(db.programDao(), com.assismohanty.awaken.core.domain.ProgramText(context)), transactions, clock,
     )
     val trialReader = TrialReader(db.questDao())
-    val focusGoalReader = com.assismohanty.awaken.core.domain.FocusGoalReader(db.hunterDao(), db.focusDao(), db.dayRecordDao(), clock)
-    val quitRunReader = com.assismohanty.awaken.core.domain.QuitRunReader(db.quitDao(), clock)
-    val achievements = AchievementUnlocker(db.questDao(), db.achievementDao(), ledger, reader, focusGoalReader, com.assismohanty.awaken.core.domain.PersonalRecordCounter(db.gymDao()), quitRunReader, db.dungeonDao(), db.programDao())
     val completeQuest = CompleteQuestUseCase(
-        db.hunterDao(), db.questDao(), db.completionDao(), achievements, db.trialDao(), trialReader, pathDao, db.habitDao(),
+        db.hunterDao(), db.questDao(), db.completionDao(), db.trialDao(), trialReader, pathDao, db.habitDao(),
         ledger, reader, transactions, clock,
     )
     val undoCompletion = UndoCompletionUseCase(
@@ -200,15 +185,12 @@ class TestGraph(
     val pathWeeks = PathWeekRequester(pathDao, aiPrefs, pathWork, transactions, clock)
     val settleDiscipline = SettleDisciplineUseCase(db.hunterDao(), db.questDao(), screenTimeReader, completeQuest)
     val distractingMinutes = com.assismohanty.awaken.core.domain.DistractingMinutesReader(screenTimeReader, usage)
-    val settleDungeon = com.assismohanty.awaken.core.domain.SettleDungeonUseCase(db.hunterDao(), db.dungeonDao(), db.questDao(), ledger, achievements, transactions, clock)
-    val enterDungeon = com.assismohanty.awaken.core.domain.EnterDungeonUseCase(db.hunterDao(), db.dungeonDao(), ledger, transactions, clock)
-    val abandonDungeon = com.assismohanty.awaken.core.domain.AbandonDungeonUseCase(db.dungeonDao(), db.questDao(), db.hunterDao(), transactions, clock)
     val programReader = com.assismohanty.awaken.core.domain.ProgramReader(db.programDao(), db.questDao(), db.dayRecordDao(), db.screenTimeDao())
-    val programRollover = com.assismohanty.awaken.core.domain.ProgramRolloverUseCase(db.hunterDao(), db.programDao(), db.habitDao(), programReader, achievements, transactions, clock)
-    val startProgram = com.assismohanty.awaken.core.domain.StartProgramUseCase(db.hunterDao(), db.habitDao(), db.programDao(), db.campaignDao(), generateDirective, com.assismohanty.awaken.core.domain.ProgramText(context), transactions, clock)
+    val programRollover = com.assismohanty.awaken.core.domain.ProgramRolloverUseCase(db.programDao(), db.habitDao(), programReader, transactions, clock)
+    val startProgram = com.assismohanty.awaken.core.domain.StartProgramUseCase(db.hunterDao(), db.habitDao(), db.programDao(), generateDirective, com.assismohanty.awaken.core.domain.ProgramText(context), transactions, clock)
     val chooseProgramBreak = com.assismohanty.awaken.core.domain.ChooseProgramBreakUseCase(db.hunterDao(), db.programDao(), programReader, transactions, clock)
     val abandonProgram = com.assismohanty.awaken.core.domain.AbandonProgramUseCase(db.programDao(), db.habitDao(), transactions, clock)
-    val recordQuitProgress = com.assismohanty.awaken.core.domain.RecordQuitProgressUseCase(db.hunterDao(), db.quitDao(), distractingMinutes, achievements, transactions, clock)
+    val recordQuitProgress = com.assismohanty.awaken.core.domain.RecordQuitProgressUseCase(db.hunterDao(), db.quitDao(), distractingMinutes, transactions, clock)
     val addQuitCounter = com.assismohanty.awaken.core.domain.AddQuitCounterUseCase(db.quitDao(), transactions, clock)
     val logQuitRestart = com.assismohanty.awaken.core.domain.LogQuitRestartUseCase(db.quitDao(), transactions, clock)
     val archiveQuitCounter = com.assismohanty.awaken.core.domain.ArchiveQuitCounterUseCase(db.quitDao(), clock)
@@ -216,17 +198,10 @@ class TestGraph(
     val settleCurrentBedtime = com.assismohanty.awaken.core.domain.SettleCurrentBedtimeUseCase(db.hunterDao(), settleBedtime, clock)
     val setBedtime = com.assismohanty.awaken.core.domain.SetBedtimeUseCase(db.hunterDao(), db.screenTimeDao(), bedtimeReader, clock)
     val loadBedtimeToday = com.assismohanty.awaken.core.domain.LoadBedtimeTodayUseCase(db.hunterDao(), db.completionDao(), bedtimeReader, usage, reader, clock)
-    val advanceCampaign = AdvanceCampaignUseCase(
-        db.hunterDao(), db.campaignDao(), db.dayRecordDao(), db.habitDao(), reader, templates, achievements, transactions, clock,
-    )
     val rollover = DayRolloverUseCase(
         db.hunterDao(), db.questDao(), db.dayRecordDao(), ledger, reader, templates, generateDirective, advanceTrial, pathDao, pathWeeks,
-        settleDiscipline, settleBedtime, recordQuitProgress, settleDungeon, programRollover, advanceCampaign, achievements, transactions, clock,
+        settleDiscipline, settleBedtime, recordQuitProgress, programRollover, transactions, clock,
     )
-    val previewCampaign = PreviewCampaignUseCase(db.hunterDao(), db.habitDao(), db.campaignDao(), db.programDao(), reader, templates, clock)
-    val startCampaign = StartCampaignUseCase(db.hunterDao(), db.habitDao(), db.campaignDao(), previewCampaign, generateDirective, transactions, clock)
-    val abandonCampaign = AbandonCampaignUseCase(db.campaignDao(), db.habitDao(), transactions, clock)
-    val observeCampaign = ObserveCampaignUseCase(db.hunterDao(), db.campaignDao(), db.dayRecordDao(), clock)
     val habitReminders = RecordingHabitReminders()
     val saveHabit = SaveHabitUseCase(db.hunterDao(), db.habitDao(), db.questDao(), generateDirective, habitReminders, transactions, clock)
     val adjustQuantity = AdjustQuantityUseCase(db.hunterDao(), db.questDao(), db.habitDao(), completeQuest, undoCompletion, transactions, clock)
@@ -250,16 +225,14 @@ class TestGraph(
     )
     val avoidHabit = AvoidHabitUseCases(db.hunterDao(), db.questDao(), db.habitDao(), completeQuest, uiPrefs, transactions, clock)
     val notificationAccess = NotificationAccess(context)
-    val generateRecaps = GenerateRecapsUseCase(db.hunterDao(), db.recapDao(), db.insightDao(), clock)
-    val runRollover = RunRolloverUseCase(rollover, notices, generateRecaps)
+    val runRollover = RunRolloverUseCase(rollover, notices)
     val completionCenter = CompletionCenter(completeQuest, undoCompletion)
-    val completeOnboarding = CompleteOnboardingUseCase(createHunter, achievements, rollover, transactions, clock)
-    val narrative = NarrativeRepository(context, Dispatchers.Unconfined)
+    val completeOnboarding = CompleteOnboardingUseCase(createHunter, rollover, transactions)
     val observeHunterState = ObserveHunterStateUseCase(
         db.hunterDao(), db.questDao(), db.dayRecordDao(), db.trialDao(), ledger, clock,
     )
     val observeToday = ObserveTodayUseCase(
-        observeHunterState, db.hunterDao(), db.questDao(), reader, db.trialDao(), pathDao, db.habitDao(), trialReader, narrative, clock, uiPrefs,
+        observeHunterState, db.hunterDao(), db.questDao(), reader, db.trialDao(), pathDao, db.habitDao(), trialReader, clock, uiPrefs,
         db.dayRecordDao(), db.weeklyReviewDao(),
     )
     val dayRefresher = DayRefresher(runRollover)
@@ -271,17 +244,15 @@ class TestGraph(
     val gateRuns = GateRunController(
         db.questDao(), db.gateRunDao(), db.focusDao(), completeQuest, transactions, uptime, clock, focusLock, usage, distractingApps,
     )
-    val purchaseItem = PurchaseItemUseCase(db.hunterDao(), db.ownedCosmeticDao(), db.trialDao(), ledger, transactions, clock)
-    val openRelicCache = OpenRelicCacheUseCase(db.hunterDao(), db.ownedCosmeticDao(), ledger, transactions, clock)
-    val equipCosmetic = EquipCosmeticUseCase(db.hunterDao(), db.ownedCosmeticDao())
-    val observeVault = ObserveVaultUseCase(db.hunterDao(), db.ownedCosmeticDao(), db.trialDao(), ledger)
+    val purchaseItem = PurchaseItemUseCase(db.hunterDao(), ledger, transactions, clock)
+    val observeVault = ObserveVaultUseCase(ledger)
     val porter = GameDataPorter(db, ledger, transactions, clock, Dispatchers.Unconfined)
     val updateSettings = UpdateSettingsUseCase(db.hunterDao(), templates, identities, clock)
     val observeSettings = ObserveSettingsUseCase(db.hunterDao(), templates, identities)
     val healthSync = HealthSyncUseCase(db.hunterDao(), db.questDao(), health, phoneSteps, completeQuest, completionCenter, clock)
     val loadInsights = LoadInsightsUseCase(db.insightDao(), clock)
     val refreshHealthCache = RefreshHealthCacheUseCase(db.hunterDao(), db.insightDao(), health, clock)
-    val submitReview = SubmitWeeklyReviewUseCase(db.hunterDao(), db.weeklyReviewDao(), achievements, transactions, clock)
+    val submitReview = SubmitWeeklyReviewUseCase(db.hunterDao(), db.weeklyReviewDao(), transactions, clock)
     val loadReview = LoadWeeklyReviewUseCase(
         db.hunterDao(), db.ledgerDao(), db.completionDao(), db.dayRecordDao(), db.weeklyReviewDao(), loadInsights, clock,
     )
@@ -292,7 +263,7 @@ class TestGraph(
     // Gym and Diet (trackers, GD §13).
     val exerciseCatalog = ExerciseCatalog(context, Dispatchers.Unconfined)
     val foodCatalog = FoodCatalog(context, Dispatchers.Unconfined)
-    val gym = GymTracker(db.gymDao(), db.hunterDao(), exerciseCatalog, achievements, transactions, clock)
+    val gym = GymTracker(db.gymDao(), db.hunterDao(), exerciseCatalog, transactions, clock)
     val diet = DietTracker(db.dietDao(), db.hunterDao(), foodCatalog, clock)
 
     // AI Paths. `oracle` records calls, so tests can assert "no network request was made".
@@ -326,16 +297,15 @@ class TestGraph(
         createHunter(name = "Test Hunter", focusStats = listOf(Stat.STR, Stat.INT))
     }
 
-    /** Inserts a quest for today with exact properties; [crit] picks an id whose fnv1a64 roll matches. */
+    /** Inserts a quest for today with exact properties. */
     suspend fun fixtureQuest(
         name: String,
         difficulty: Difficulty = Difficulty.NORMAL,
         verification: Verification = Verification.SELF,
         target: Int = 10,
         type: QuestType = QuestType.SIDE,
-        crit: Boolean = false,
     ): QuestInstanceEntity {
-        val id = generateSequence(0) { it + 1 }.map { "$name-$it" }.first { CritRoller.isCrit(it) == crit }
+        val id = "$name-0"
         val quest = QuestInstanceEntity(
             id = id, gameDate = today(), type = type, templateId = null, habitId = null, stat = Stat.STR,
             secondaryStat = null, title = name, description = name, unit = "reps", target = target, difficulty = difficulty,
@@ -345,12 +315,12 @@ class TestGraph(
         return quest
     }
 
-    /** Test-only faucet: a GOLD or FRAGMENT credit with its own idempotency key. */
+    /** Test-only faucet: a GOLD credit with its own idempotency key. */
     suspend fun grant(kind: LedgerKind, amount: Long, key: String) {
         ledger.insertIdempotent(
             listOf(
                 LedgerEntryEntity(
-                    kind = kind, delta = amount, sourceType = SourceType.ACHIEVEMENT, sourceId = key,
+                    kind = kind, delta = amount, sourceType = SourceType.SHOP, sourceId = key,
                     gameDate = today(), createdAt = clock.now(),
                 ),
             ),

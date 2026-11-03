@@ -33,13 +33,13 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import com.assismohanty.awaken.R
-import com.assismohanty.awaken.core.designsystem.lexicon.lexPlural
 import com.assismohanty.awaken.core.designsystem.lexicon.lexString
 import com.assismohanty.awaken.core.designsystem.preview.ComponentPreview
 import com.assismohanty.awaken.core.designsystem.theme.AwakenTheme
 import com.assismohanty.awaken.core.designsystem.theme.Spacing
 import com.assismohanty.awaken.engine.model.BreakdownItem
 import com.assismohanty.awaken.engine.model.Difficulty
+import com.assismohanty.awaken.engine.model.Rank
 import com.assismohanty.awaken.engine.model.Stat
 import com.assismohanty.awaken.engine.model.VerificationSource
 import com.assismohanty.awaken.engine.path.Feedback
@@ -49,8 +49,6 @@ data class RewardModel(
     val xp: Int,
     val statXp: Map<Stat, Int>,
     val gold: Int,
-    val fragments: Int,
-    val crit: Boolean,
     val capped: Boolean,
     val difficulty: Difficulty,
     val verification: VerificationSource,
@@ -58,6 +56,10 @@ data class RewardModel(
     val breakdown: List<BreakdownItem>,
     /** Path quests show the feedback chips (DS §3); they never change the reward. */
     val pathQuest: Boolean = false,
+    /** Set when this completion crossed into a new level. */
+    val levelReached: Int? = null,
+    /** Set when this completion cleared the last Rank-up test stage. */
+    val rankReached: Rank? = null,
 )
 
 /** Bottom sheet wrapper; the content is separately previewable and testable. */
@@ -82,9 +84,9 @@ fun RewardSheet(model: RewardModel, onDone: () -> Unit, feedback: Feedback? = nu
 }
 
 /**
- * Quest complete (DESIGN_SYSTEM §3): restrained and celebratory. A thin ring closes around a check, the XP counts up as
- * the one big number, a haptic lands (crit: a double click), the gains follow as list rows and the formula as clean
- * label / value rows. No confetti, no glow.
+ * Quest complete (DESIGN_SYSTEM §3): restrained. A thin ring closes around a check, the XP counts up as the one big
+ * number, a haptic lands, the gains follow as list rows (plus a line when a level or rank was reached) and the formula as
+ * clean label / value rows. No confetti, no glow.
  */
 @Composable
 fun RewardSheetContent(
@@ -100,7 +102,7 @@ fun RewardSheetContent(
     val haptics = AwakenTheme.haptics
     val shownXp = remember(model) { Animatable(if (motion.reduceMotion) model.xp.toFloat() else 0f) }
     LaunchedEffect(model) {
-        if (model.crit) haptics.crit() else haptics.confirm()
+        haptics.confirm()
         shownXp.animateTo(model.xp.toFloat(), tween(motion.duration(motion.countUpMs), easing = motion.standardEasing))
     }
     val finalXp = lexString(R.string.xp_gain, formatCount(model.xp))
@@ -113,12 +115,12 @@ fun RewardSheetContent(
         verticalArrangement = Arrangement.spacedBy(Spacing.md),
     ) {
         Box(contentAlignment = Alignment.Center) {
-            Rings(listOf(RingSpec(1f, if (model.crit) colors.reward else colors.positive)), size = AwakenTheme.dimens.avatar * 2)
+            Rings(listOf(RingSpec(1f, colors.positive)), size = AwakenTheme.dimens.avatar * 2)
             Icon(AwakenGlyphs.Check, contentDescription = null, tint = colors.textPrimary, modifier = Modifier.size(AwakenTheme.dimens.icon * 1.5f))
         }
         Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(Spacing.xxs)) {
             Text(
-                text = lexString(if (model.crit) R.string.system_title_critical_clear else R.string.system_title_quest_cleared),
+                text = lexString(R.string.system_title_quest_cleared),
                 style = type.title,
                 color = colors.textSecondary,
                 modifier = Modifier.semantics { heading() },
@@ -137,8 +139,11 @@ fun RewardSheetContent(
             if (model.gold > 0) {
                 GainRow(AwakenGlyphs.Coin, colors.reward, lexString(R.string.reward_gold), "+" + formatCount(model.gold))
             }
-            if (model.fragments > 0) {
-                GainRow(AwakenGlyphs.Fragment, colors.stat(Stat.INT), lexPlural(R.plurals.fragment_gain, model.fragments, model.fragments), "")
+            model.levelReached?.let { level ->
+                GainRow(AwakenGlyphs.Level, colors.accent, lexString(R.string.reward_level_reached, level), "")
+            }
+            model.rankReached?.let { rank ->
+                GainRow(AwakenGlyphs.Level, colors.rank(rank), lexString(R.string.reward_rank_reached, rank.name), "")
             }
         }
         Breakdown(model)
@@ -170,7 +175,7 @@ private fun Breakdown(model: RewardModel) {
                     lexString(R.string.reward_row_verified) to "×" + formatMultiplier(item.value, fixed = true)
                 VerificationSource.TIMER -> lexString(R.string.reward_row_timed) to "×" + formatMultiplier(item.value, fixed = true)
             }
-            BreakdownItem.Kind.CRIT -> lexString(R.string.reward_row_crit) to "×" + formatMultiplier(item.value, fixed = false)
+            BreakdownItem.Kind.CRIT -> null // historic ledger rows only; nothing creates this kind any more
             BreakdownItem.Kind.DAILY_CAP -> lexString(R.string.reward_row_cap) to "×" + formatMultiplier(item.value, fixed = true)
         }
     }
@@ -201,8 +206,6 @@ internal val previewReward = RewardModel(
     xp = 94,
     statXp = mapOf(Stat.STR to 94, Stat.WIL to 28),
     gold = 47,
-    fragments = 0,
-    crit = false,
     capped = false,
     difficulty = Difficulty.NORMAL,
     verification = VerificationSource.HEALTH,
@@ -220,13 +223,7 @@ private fun RewardSheetPreview() {
     AwakenTheme(reduceMotion = true) {
         Column(verticalArrangement = Arrangement.spacedBy(Spacing.lg)) {
             RewardSheetContent(previewReward, onDone = {})
-            RewardSheetContent(
-                previewReward.copy(
-                    xp = 188, crit = true, fragments = 1,
-                    breakdown = previewReward.breakdown + BreakdownItem(BreakdownItem.Kind.CRIT, 2.0),
-                ),
-                onDone = {},
-            )
+            RewardSheetContent(previewReward.copy(levelReached = 12, rankReached = Rank.D), onDone = {})
             RewardSheetContent(
                 previewReward.copy(
                     xp = 15, gold = 0, capped = true, verification = VerificationSource.SELF, statXp = mapOf(Stat.STR to 15),

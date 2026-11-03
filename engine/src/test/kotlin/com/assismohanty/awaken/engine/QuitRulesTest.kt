@@ -52,27 +52,6 @@ class QuitRulesTest {
     }
 
     @Test
-    fun `vector 123 - a back-dated start shows its days but earns only the in-app run`() {
-        val start = at("2026-10-01T00:00:00")
-        val created = at("2026-11-01T12:00:00")
-        val now = at("2026-11-08T12:00:00")
-
-        assertThat(QuitRules.runs(start, emptyList(), now).currentDays).isEqualTo(38)
-        assertThat(QuitRules.bestInAppRunDays(start, created, emptyList(), now)).isEqualTo(7)
-    }
-
-    @Test
-    fun `the in-app run ignores restarts from before the counter was made`() {
-        val days = QuitRules.bestInAppRunDays(
-            start = at("2026-10-01T00:00:00"),
-            created = at("2026-11-01T00:00:00"),
-            restarts = listOf(at("2026-10-20T00:00:00")),
-            now = at("2026-11-11T00:00:00"),
-        )
-        assertThat(days).isEqualTo(10)
-    }
-
-    @Test
     fun `vector 124 - money saved and time reclaimed use whole days`() {
         val run = Duration.ofDays(2).plusHours(13)
         assertThat(QuitRules.moneySavedMinor(150, run)).isEqualTo(300)

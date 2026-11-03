@@ -67,7 +67,6 @@ class MainActivity : ComponentActivity() {
                 darkTheme = dark,
                 reduceMotion = look.reduceMotion,
                 hapticsEnabled = look.hapticsEnabled,
-                themeId = look.themeId,
             ) {
                 AwakenNavHost(
                     openTodayRequests = openTodayRequests,

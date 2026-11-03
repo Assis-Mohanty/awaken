@@ -23,9 +23,6 @@ import androidx.compose.ui.unit.dp
 import com.assismohanty.awaken.core.designsystem.preview.ComponentPreview
 import com.assismohanty.awaken.core.designsystem.theme.AwakenTheme
 import com.assismohanty.awaken.core.designsystem.theme.Spacing
-import com.assismohanty.awaken.reelcounter.core.lumi.LumiRules
-import com.assismohanty.awaken.reelcounter.core.lumi.LumiState
-import com.assismohanty.awaken.reelcounter.core.lumi.lumiStage
 
 /** The count shown inside the bubble stops at 999 so it always fits the pill. */
 private const val MAX_SHOWN = 999
@@ -43,17 +40,14 @@ private object Glass {
     const val SHEEN_TOP_DARK = 0.20f
     const val SHEEN_TOP_LIGHT = 0.60f
     const val SHEEN_BOTTOM = 0.03f
-    const val GLOW_MAX = 0.34f
 }
 
 /**
- * The Reel Counter bubble that floats over short-video screens, top middle by default: a frosted-glass pill with Lumi
- * at its current stage and today's reel count beside it. A soft glow behind Lumi fades as it tires. The rim turns
- * critical once a daily limit is reached ([over]). Lumi speaks the description ("Lumi, Getting tired, 42 reels today"),
- * so the number is hidden from accessibility.
+ * The Reel Counter bubble that floats over short-video screens, top middle by default: a frosted-glass pill with today's
+ * reel count. The rim turns critical once a daily limit is reached ([over]).
  */
 @Composable
-fun ReelBubble(count: Int, lumi: LumiState, over: Boolean, modifier: Modifier = Modifier) {
+fun ReelBubble(count: Int, over: Boolean, modifier: Modifier = Modifier) {
     val colors = AwakenTheme.colors
     val shape = AwakenTheme.shapes.pill
     val light = colors.surfaceOverlay.luminance() > 0.5f
@@ -68,11 +62,6 @@ fun ReelBubble(count: Int, lumi: LumiState, over: Boolean, modifier: Modifier = 
         else -> Brush.linearGradient(listOf(Color.White.copy(alpha = 0.55f), Color.White.copy(alpha = 0.06f), Color.White.copy(alpha = 0.26f)))
     }
     val rimWidth = if (over) AwakenTheme.dimens.accentWidth else AwakenTheme.dimens.hairline
-    // Fully charged glows warm; each stage lowers it until a switched-off Lumi has none.
-    val glow = colors.reward.copy(
-        alpha = Glass.GLOW_MAX * (LumiRules.LAST_STAGE - lumi.stage) / (LumiRules.LAST_STAGE - LumiRules.FIRST_STAGE),
-    )
-
     Row(
         modifier = modifier
             .size(ReelBubbleSize.Width, ReelBubbleSize.Height)
@@ -83,13 +72,6 @@ fun ReelBubble(count: Int, lumi: LumiState, over: Boolean, modifier: Modifier = 
             .padding(horizontal = Spacing.xs),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Box(
-            modifier = Modifier
-                .size(LumiSizes.Bubble)
-                .drawBehind { drawCircle(Brush.radialGradient(listOf(glow, Color.Transparent), radius = size.minDimension * 0.85f)) },
-        ) {
-            LumiView(state = lumi, size = LumiSizes.Bubble, reelsToday = count)
-        }
         Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
             BasicText(
                 text = if (count > MAX_SHOWN) "$MAX_SHOWN+" else count.toString(),
@@ -117,9 +99,9 @@ private fun ReelBubblePreview() {
     AwakenTheme(reduceMotion = true) {
         GlassBackdrop {
             Row(horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
-                ReelBubble(count = 7, lumi = lumiStage(7, null), over = false)
-                ReelBubble(count = 23, lumi = lumiStage(23, 50), over = false)
-                ReelBubble(count = 57, lumi = lumiStage(57, 55), over = true)
+                ReelBubble(count = 7, over = false)
+                ReelBubble(count = 23, over = false)
+                ReelBubble(count = 57, over = true)
             }
         }
     }
@@ -133,7 +115,7 @@ private fun ReelBubbleLadderPreview() {
             Column(verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
                 listOf(listOf(0, 12, 30), listOf(55, 90, 1_204)).forEach { counts ->
                     Row(horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
-                        counts.forEach { ReelBubble(count = it, lumi = lumiStage(it, null), over = false) }
+                        counts.forEach { ReelBubble(count = it, over = false) }
                     }
                 }
             }
@@ -146,8 +128,8 @@ private fun ReelBubbleLadderPreview() {
 private fun ReelBubblePlainBackdropPreview() {
     AwakenTheme(reduceMotion = true) {
         Row(horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
-            ReelBubble(count = 3, lumi = lumiStage(3, null), over = false)
-            ReelBubble(count = 61, lumi = lumiStage(61, null), over = false)
+            ReelBubble(count = 3, over = false)
+            ReelBubble(count = 61, over = false)
         }
     }
 }

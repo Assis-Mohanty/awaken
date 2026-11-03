@@ -58,7 +58,7 @@ class OnboardingFlowTest {
 
     private fun awaitAwakened() = composeRule.waitUntil(timeoutMillis = 5_000) {
         ShadowLooper.idleMainLooper()
-        graph.completionCenter.events.value.isNotEmpty()
+        kotlinx.coroutines.runBlocking { graph.db.hunterDao().getProfile() } != null
     }
 
     @Test
@@ -173,11 +173,11 @@ class OnboardingFlowTest {
         click("Continue")
         click("Enter")
 
-        // Onboarding posts its unlocks once the hunter and first directive exist. The ViewModel resumes on the paused
-        // Robolectric main looper, so pump it while polling.
+        // The hunter and first directive appear once the ViewModel resumes on the paused Robolectric main looper, so pump it
+        // while polling.
         composeRule.waitUntil(timeoutMillis = 5_000) {
             ShadowLooper.idleMainLooper()
-            graph.completionCenter.events.value.isNotEmpty()
+            runBlocking { graph.db.questDao().getForDate(graph.today()).isNotEmpty() }
         }
 
         runBlocking {
@@ -198,8 +198,6 @@ class OnboardingFlowTest {
             assertThat(quests.count { it.type == QuestType.SIDE }).isEqualTo(3)
             assertThat(quests.any { it.type == QuestType.SIDE && it.difficulty == Difficulty.EASY && it.stat in profile.focusStats }).isTrue()
         }
-        val unlocks = graph.completionCenter.events.value.filterIsInstance<CompletionEvent.Achievements>()
-        assertThat(unlocks.flatMap { it.achievementIds }).contains("awakened")
     }
 
     @Test

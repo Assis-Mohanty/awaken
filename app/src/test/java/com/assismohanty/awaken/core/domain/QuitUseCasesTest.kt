@@ -36,9 +36,6 @@ class QuitUseCasesTest {
         return quitState(counter, graph.db.quitDao().relapses(), graph.db.quitDao().days(), graph.clock.now())
     }
 
-    private suspend fun achievementRows(id: String) =
-        graph.db.ledgerDao().all().filter { it.sourceType == SourceType.ACHIEVEMENT && it.sourceId == id }
-
     @Test
     fun aRestartKeepsTheBestRunAndStartsTheCurrentOneAgain() = runTest {
         graph.seedHunter()
@@ -113,25 +110,7 @@ class QuitUseCasesTest {
     }
 
     @Test
-    fun vector123_aBackDatedStartShowsItsDaysButEarnsNothing() = runTest {
-        graph.seedHunter()
-        val id = add(daysAgo = 38)
-        graph.recordQuitProgress(day1)
-
-        assertThat(state(id).currentDays).isEqualTo(38)
-        assertThat(graph.quitRunReader.bestInAppRunDays()).isEqualTo(0)
-        assertThat(achievementRows("quit_7")).isEmpty()
-
-        graph.clock.advance(Duration.ofDays(7))
-        graph.recordQuitProgress(day1.plusDays(7))
-
-        assertThat(graph.quitRunReader.bestInAppRunDays()).isEqualTo(7)
-        assertThat(achievementRows("quit_7").map { it.delta }).containsExactly(30L)
-        assertThat(achievementRows("quit_30")).isEmpty()
-    }
-
-    @Test
-    fun vector126_twoCountersReachingThirtyUnlockItOnceAndPayNoXp() = runTest {
+    fun vector126_countersNeverMintXpOrGold() = runTest {
         graph.seedHunter()
         add(QuitKind.SMOKING, "Smoking")
         add(QuitKind.ALCOHOL, "Alcohol")
@@ -140,11 +119,9 @@ class QuitUseCasesTest {
         graph.recordQuitProgress(day1.plusDays(31))
         graph.recordQuitProgress(day1.plusDays(31))
 
-        assertThat(achievementRows("quit_30").map { it.delta }).containsExactly(100L)
-        assertThat(achievementRows("quit_7")).hasSize(1)
-        // Counters never mint XP: the only ledger rows from them are one-time achievement gold.
+        // Counters never mint anything: no XP and no gold rows come from them.
         assertThat(graph.db.ledgerDao().all().filter { it.kind == LedgerKind.XP_TOTAL && it.sourceType != SourceType.QUEST }).isEmpty()
-        assertThat(graph.db.ledgerDao().all().filter { it.sourceType == SourceType.ACHIEVEMENT && it.sourceId.startsWith("quit") }.all { it.kind == LedgerKind.GOLD }).isTrue()
+        assertThat(graph.db.ledgerDao().all().filter { it.kind == LedgerKind.GOLD && it.sourceType != SourceType.DAY_CLEAR }).isEmpty()
     }
 
     @Test

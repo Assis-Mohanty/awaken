@@ -51,7 +51,6 @@ data class CompletionOutcome(
     val rankTrialUnlocked: Rank?,
     /** Set when this completion cleared the last Rank Trial stage: the hunter was promoted to this rank (GD §5). */
     val promotedTo: Rank? = null,
-    val unlockedAchievements: List<String>,
     /** False for a cleared Focus Gate, which is final (ENGINE_DECISIONS #36). */
     val undoable: Boolean = true,
     /** A Path quest: the reward sheet offers the Too easy / Right / Too hard chips (GD §6.6.5). */
@@ -77,7 +76,6 @@ class CompleteQuestUseCase @Inject constructor(
     private val hunterDao: HunterDao,
     private val questDao: QuestDao,
     private val completionDao: CompletionDao,
-    private val achievements: AchievementUnlocker,
     private val trialDao: TrialDao,
     private val trialReader: TrialReader,
     private val pathDao: PathDao,
@@ -98,13 +96,12 @@ class CompleteQuestUseCase @Inject constructor(
         complete(questInstanceId, verifiedBy = null, habitDriven = true)
 
     /** Verified entry point for Focus Gates (TIMER, Phase 8), Health Connect sync (HEALTH, Phase 11) and Screen Discipline (USAGE). */
-    suspend fun completeVerified(questInstanceId: String, verifiedBy: VerificationSource, gateFragment: Boolean = true): CompleteQuestResult =
-        complete(questInstanceId, verifiedBy, gateFragment)
+    suspend fun completeVerified(questInstanceId: String, verifiedBy: VerificationSource): CompleteQuestResult =
+        complete(questInstanceId, verifiedBy)
 
     private suspend fun complete(
         questInstanceId: String,
         verifiedBy: VerificationSource?,
-        gateFragment: Boolean = true,
         habitDriven: Boolean = false,
     ): CompleteQuestResult =
         transactions.run {
@@ -143,7 +140,7 @@ class CompleteQuestUseCase @Inject constructor(
             val attempt = completionDao.countFor(quest.id) + 1
             val completionId = LedgerMath.completionId(quest.id, attempt)
             val context = reader.hunterContext(profile, today)
-            val reward = XpCalculator.forCompletion(quest.toCompletable(source, gateFragment), context)
+            val reward = XpCalculator.forCompletion(quest.toCompletable(source), context)
 
             questDao.setStatus(quest.id, QuestStatus.COMPLETED, completedAt = now)
             quest.pathSlotId?.let { pathDao.setOutcome(it, SlotOutcome.COMPLETED) }
@@ -156,7 +153,6 @@ class CompleteQuestUseCase @Inject constructor(
                     questType = quest.type,
                     stat = quest.stat,
                     verificationSource = source,
-                    crit = reward.crit,
                     xp = reward.xp,
                     completedAt = now,
                 ),
@@ -166,7 +162,6 @@ class CompleteQuestUseCase @Inject constructor(
 
             val balances = ledger.balances()
             val levelAfter = LevelCurve.level(balances.xpTotal)
-            val unlocked = achievements.unlockNew(profile, today, now) // after the reward is written (GD §10)
             val trialAfter = trialAvailable(levelAfter, passedTrials, now)
 
             CompleteQuestResult.Completed(
@@ -180,7 +175,6 @@ class CompleteQuestUseCase @Inject constructor(
                     levelAfter = levelAfter,
                     rankTrialUnlocked = trialAfter.takeIf { it != null && it != trialBefore },
                     promotedTo = promotedTo,
-                    unlockedAchievements = unlocked,
                     // Timed work is final: a cleared Focus Gate, or a Path quest cleared through its gate (ENGINE_DECISIONS #36, #76).
                     undoable = quest.type != QuestType.GATE && source != VerificationSource.HEALTH && source != VerificationSource.USAGE &&
                         !(source == VerificationSource.TIMER && (quest.pathSlotId != null || quest.habitId != null)),
@@ -205,14 +199,13 @@ class CompleteQuestUseCase @Inject constructor(
     private suspend fun trialAvailable(level: Int, passedTrials: Set<Rank>, now: Instant): Rank? =
         RankRules.trialAvailable(level, passedTrials, trialDao.activeCount() > 0, trialDao.lastFailedAt(), now)
 
-    private fun QuestInstanceEntity.toCompletable(source: VerificationSource, gateFragment: Boolean) = CompletableQuest(
+    private fun QuestInstanceEntity.toCompletable(source: VerificationSource) = CompletableQuest(
         questInstanceId = id,
         type = type,
         stat = stat,
         secondaryStat = secondaryStat,
         difficulty = difficulty,
         verification = source,
-        gateFragment = gateFragment,
     )
 
     private fun QuestReward.toLedgerRows(

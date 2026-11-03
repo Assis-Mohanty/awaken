@@ -31,7 +31,6 @@ import com.assismohanty.awaken.core.domain.UserMessage
 import com.assismohanty.awaken.core.work.GateCoordinator
 import com.assismohanty.awaken.engine.FocusRules
 import com.assismohanty.awaken.engine.GameDay
-import com.assismohanty.awaken.engine.CrystalRules
 import com.assismohanty.awaken.engine.GateMode
 import com.assismohanty.awaken.engine.GatePhase
 import com.assismohanty.awaken.engine.GateRunMath
@@ -74,9 +73,6 @@ data class ActiveGate(
     val canPause: Boolean,
     /** Focus Lock is switched on but its service is not running (GD 8.2): apps are not being covered. */
     val lockWarning: Boolean = false,
-    /** How far the crystal has grown (GD §16.5, presentation only) and its subject colour index, null = the stat colour. */
-    val crystalStage: Int = 0,
-    val crystalColour: Int? = null,
 )
 
 /** Picking a gate: the chosen rank, stat and optional label (GD §8). */
@@ -165,8 +161,6 @@ sealed interface GatesEvent {
     data object ConfirmAbandon : GatesEvent
     data object CancelAbandon : GatesEvent
     data object FixFocusLock : GatesEvent
-    data object OpenCrystals : GatesEvent
-    data object OpenDungeons : GatesEvent
 }
 
 private data class Base(
@@ -327,8 +321,6 @@ class GatesViewModel @Inject constructor(
             GatesEvent.Abandon -> form.update { it.copy(confirmAbandon = true) }
             GatesEvent.CancelAbandon -> form.update { it.copy(confirmAbandon = false) }
             GatesEvent.FixFocusLock -> Unit // handled by the Route, which opens the setup
-            GatesEvent.OpenCrystals -> Unit // handled by the Route, which opens the gallery
-            GatesEvent.OpenDungeons -> Unit // handled by the Route, which opens the Dungeon screen
             GatesEvent.ConfirmAbandon -> {
                 form.update { it.copy(confirmAbandon = false) }
                 viewModelScope.launch { safely("Abandoning a gate") { coordinator.abandon() } }
@@ -420,8 +412,6 @@ class GatesViewModel @Inject constructor(
             paused = paused,
             pauseLeft = (phase as? GatePhase.Paused)?.pauseLeft ?: Duration.ZERO,
             canPause = pausedAt == null && phase is GatePhase.Running,
-            crystalStage = CrystalRules.stage(GateRunMath.elapsed(timing, now), CrystalRules.plannedFor(mode, plannedSec)),
-            crystalColour = CrystalRules.colourIndex(subjectId),
         )
     }
 

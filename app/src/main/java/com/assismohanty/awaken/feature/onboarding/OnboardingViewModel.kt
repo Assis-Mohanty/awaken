@@ -303,11 +303,8 @@ class OnboardingViewModel @Inject constructor(
                 null
             }
             when (result) {
-                // The app switches to Today as soon as the profile exists; the unlocks toast there.
-                is OnboardingResult.Done -> {
-                    completionCenter.achievements(result.unlocked)
-                    chartFirstPath(state)
-                }
+                // The app switches to Today as soon as the profile exists.
+                OnboardingResult.Done -> chartFirstPath(state)
                 OnboardingResult.InvalidName -> _uiState.update { it.copy(submitting = false, step = OnboardingStep.NAME, showNameError = true) }
                 OnboardingResult.InvalidFocus -> _uiState.update { it.copy(submitting = false, step = OnboardingStep.FOCUS) }
                 null -> _uiState.update { it.copy(submitting = false, failed = true) }

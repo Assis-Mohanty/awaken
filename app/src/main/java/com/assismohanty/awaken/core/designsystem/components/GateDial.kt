@@ -39,9 +39,6 @@ fun GateDial(
     breachUsed: Duration,
     modifier: Modifier = Modifier,
     breachBudget: Duration = Duration.ofMillis(GateRules.BREACH_BUDGET_MS),
-    /** The crystal growing behind the timer (GD §16.5); null draws none. It steps with the stage and never animates. */
-    crystalStage: Int? = null,
-    crystalTint: androidx.compose.ui.graphics.Color = androidx.compose.ui.graphics.Color.Unspecified,
 ) {
     val colors = AwakenTheme.palette
     val dimens = AwakenTheme.dimens
@@ -57,15 +54,6 @@ fun GateDial(
             .semantics(mergeDescendants = true) { contentDescription = description },
         contentAlignment = Alignment.Center,
     ) {
-        if (crystalStage != null) {
-            GateCrystal(
-                stage = crystalStage,
-                tint = crystalTint,
-                size = dimens.gateDialSize * CRYSTAL_SCALE,
-                modifier = androidx.compose.ui.Modifier.alpha(CRYSTAL_ALPHA),
-                description = lexString(R.string.crystal_dial_cd, crystalStage),
-            )
-        }
         Canvas(modifier = Modifier.fillMaxSize()) {
             val ring = dimens.gateDialRing.toPx()
             val inner = dimens.gateDialInnerRing.toPx()
@@ -94,8 +82,6 @@ fun formatClock(duration: Duration): String {
     return if (hours > 0) "%d:%02d:%02d".format(hours, minutes, secs) else "%02d:%02d".format(minutes, secs)
 }
 
-private const val CRYSTAL_SCALE = 0.55f
-private const val CRYSTAL_ALPHA = 0.55f
 private const val FULL = 360f
 private const val START = -90f
 private const val SECONDS_PER_HOUR = 3_600L
@@ -116,22 +102,5 @@ private fun GateDialPreview() {
 private fun GateDialBreachPreview() {
     AwakenTheme {
         GateDial(GateRank.B, remaining = Duration.ofMinutes(61), total = Duration.ofMinutes(90), breachUsed = Duration.ofSeconds(80))
-    }
-}
-
-@ComponentPreview
-@Composable
-private fun GateDialCrystalPreview() {
-    AwakenTheme(reduceMotion = true) {
-        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.md)) {
-            GateDial(
-                GateRank.C, remaining = Duration.ofMinutes(30), total = Duration.ofMinutes(50), breachUsed = Duration.ZERO,
-                crystalStage = 2, crystalTint = AwakenTheme.colors.chartSeries2,
-            )
-            GateDial(
-                GateRank.C, remaining = Duration.ofMinutes(4), total = Duration.ofMinutes(50), breachUsed = Duration.ZERO,
-                crystalStage = 5, crystalTint = AwakenTheme.colors.chartSeries1,
-            )
-        }
     }
 }

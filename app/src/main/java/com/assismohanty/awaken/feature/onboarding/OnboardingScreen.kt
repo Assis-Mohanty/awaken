@@ -56,7 +56,6 @@ import com.assismohanty.awaken.core.designsystem.components.PrimaryButton
 import com.assismohanty.awaken.core.designsystem.components.QuietButton
 import com.assismohanty.awaken.core.designsystem.components.SecondaryButton
 import com.assismohanty.awaken.core.designsystem.components.SystemWindow
-import com.assismohanty.awaken.core.designsystem.components.TypeOnText
 import com.assismohanty.awaken.core.designsystem.components.label
 import com.assismohanty.awaken.core.designsystem.preview.PhonePreviews
 import com.assismohanty.awaken.core.designsystem.theme.AwakenTheme
@@ -146,7 +145,7 @@ private val OnboardingStep.titleRes: Int
 
 @Composable
 private fun WelcomeStep(onEvent: (OnboardingEvent) -> Unit) {
-    TypeOnText(
+    Text(
         text = lexString(R.string.onboarding_welcome_body),
         style = AwakenTheme.type.body,
         color = AwakenTheme.colors.textPrimary,

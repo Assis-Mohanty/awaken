@@ -192,24 +192,6 @@ fun IconPlaceholder(modifier: Modifier = Modifier) {
     )
 }
 
-/** A cosmetic's picture: a frame outline or a filled theme chip. Decorative; the name is read. */
-@Composable
-fun CosmeticSwatch(color: Color, outlined: Boolean, modifier: Modifier = Modifier) {
-    val dimens = AwakenTheme.dimens
-    val base = modifier.size(dimens.sigil)
-    Box(
-        if (outlined) {
-            base.border(dimens.accentWidth, color, AwakenTheme.shapes.tile)
-        } else {
-            base.background(color, AwakenTheme.shapes.tile)
-        },
-    )
-}
-
-/** Kept for callers before v2: the penalty no longer tints the screen; the Comeback chip carries it (GD §7.3). */
-@Suppress("UnusedReceiverParameter", "UNUSED_PARAMETER")
-fun Modifier.penaltyTint(active: Boolean): Modifier = this
-
 /** Alpha for a heat band 0..4 (body map, heatmap), from the shared steps (DESIGN_SYSTEM §3). */
 fun heatAlpha(band: Int): Float = AwakenAlpha.HEATMAP_STEPS[band.coerceIn(0, AwakenAlpha.HEATMAP_STEPS.lastIndex)]
 

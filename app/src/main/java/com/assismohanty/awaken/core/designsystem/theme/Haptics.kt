@@ -19,14 +19,6 @@ class Haptics internal constructor(private val view: View?, private val enabled:
     /** Quest completed. */
     fun confirm() = perform(if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) HapticFeedbackConstants.CONFIRM else HapticFeedbackConstants.VIRTUAL_KEY)
 
-    /** Two quick clicks. */
-    fun crit() {
-        perform(HapticFeedbackConstants.CONTEXT_CLICK)
-        if (enabled) view?.postDelayed({ view.performHapticFeedback(HapticFeedbackConstants.CONTEXT_CLICK) }, CRIT_GAP_MS)
-    }
-
-    /** The heaviest available feedback, when the level number lands. */
-    fun levelUp() = perform(HapticFeedbackConstants.LONG_PRESS)
 
     /** Gate collapse, penalty. */
     fun reject() = perform(if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) HapticFeedbackConstants.REJECT else HapticFeedbackConstants.LONG_PRESS)
@@ -36,7 +28,6 @@ class Haptics internal constructor(private val view: View?, private val enabled:
     }
 
     private companion object {
-        const val CRIT_GAP_MS = 80L
     }
 }
 
