@@ -980,3 +980,43 @@ The v1.2 achievements were removed on 2026-11-03 (see `docs/DECLUTTER_PLAN.md`).
 **Approved numbers (2026-11-02):** `N1` max 8 habits (unchanged) · `N2` quantity target 2–100 · `N3` timed habit 15–180 min, 5-min steps · `N4` flexible 1–6 per week · `N5` max 2 habits with a reminder · `N6` 1 skip per habit per ISO week · `N7`–`N10` Pomodoro 25 (10–60) / 5 (1–15) / 15 (5–30) / 4 rounds (2–6) · `N11` focus goal 120 min · `N12` focus goal 15–600 in 15s · `N13` crystal stages 0/20/40/60/80/100 %, stopwatch full at 90 min · `N14` rep range 8–12 (override 1–30) · `N15` increments +2.5 / +5 kg (override 0.5–20) · `N16` unlimited plates of each owned size · `N17` bars 20 kg / 45 lb and plate sets · `N18` history ranges Month / 3 months / Year / All · `N19` step goal 8,000 · `N20` step goal 1,000–30,000 in 500s · `N21` bedtime 23:00 → 06:30, ranges, 5–12 h window · `N22` night grace 5 min · `N23` breathing 4 s / 6 s × 12 · `N24` max 6 quit counters · `N25` milestones 1, 3, 7, 14, 30, 90, 180, 365 · `N26` doomscrolling clean ≤ 60 min · `N27` dungeons unlock at level 10 · `N28` dungeon 3/5/7 days for 100/200/300 gold · `N29` clear reward 1.5 × fee + 1 fragment · `N30` program content · `N31` the 15 achievements.
 
 **Resolved questions (2026-11-02, the recommendations):** Q1 H1 stays dropped · Q2 habit reminders are a separate allowance (max 2) · Q3 next Pomodoro round on a tap · Q4 negative habits need the evening tap · Q5 D4 ships without app lock, H3 to the backlog · Q6 PR achievements pay gold (one-time) · Q7 lb only in the plate calculator · Q8 program and campaign are mutually exclusive · Q9 a FINISHED program earns nothing · Q10 dungeon reward 1.5 × fee. Originally asked: Q1 H1 System mode back? · Q2 habit reminders outside the 2/day cap? · Q3 Pomodoro next round on tap (vs automatic)? · Q4 negative habits need the evening "Kept it" tap (vs auto-complete)? · Q5 D4 without app lock (H3 not in scope)? · Q6 PR achievements pay gold? · Q7 lb only in the plate calculator? · Q8 program and campaign mutually exclusive? · Q9 a FINISHED program earns nothing? · Q10 dungeon reward 1.5 × fee? Details and recommendations in `docs/BUILD_PLAN.md` §0.
+
+---
+
+## 17. Onboarding answers (approved 2026-11-05)
+
+Source: `docs/onboarding/PLAN.md` (§4, §5). The onboarding questions set starting values only. They award no XP and no gold, and write no ledger rows. Where a rule below names an existing number (`N11`, `N14`, `N19`, `N21`) it reuses it unchanged.
+
+| ID | Rule |
+|---|---|
+| **OB1 Focus stats** | Strength → STR · Fitness → STR · Focus → WIL · Discipline → WIL · Less screen time → WIL · Sleep → VIT · Learning → INT. The two stats with the most picks; ties go to the earliest selection. Fewer than two: fill from STR, INT, WIL, VIT, CHA in that order, skipping any already chosen. Step skipped: STR + INT. |
+| **OB2 Baseline tiers** | STR: Beginner Easy, Intermediate Normal, Advanced Hard. VIT from the sleep window: under 6 h Easy, 6 to under 7 h Normal, 7 h or more Hard. INT Normal. WIL and CHA Easy. Pace shifts every stat: Steady −1, Balanced 0, Push hard +1, clamped Easy–Hard. Skipped fitness or sleep: that stat Normal. |
+| **OB3 Step goal** | Beginner 6,000 · Intermediate 8,000 (`N19`) · Advanced 10,000; "Sitting all day" subtracts 2,000. Skipped: 8,000. Always a valid `N20` value. |
+| **OB4 Focus goal** | Steady 60 · Balanced 120 (`N11`) · Push hard 180 min; "Procrastination" halves it (30 / 60 / 90). Skipped: 120. Always a valid `N12` value. |
+| **OB5 App limit** | Daily screen time under 2 h: 30 min (§6.7) · 2–4 h: 45 · 4–6 h: 60 · 6 h+: 90. Applied to each seeded Distracting app. Written only when usage access is granted. |
+| **OB6 Gym rep range** | Beginner 10–15 · Intermediate 8–12 (`N14`) · Advanced 6–10. Per-exercise overrides still win. |
+| **OB7 BMI** | `kg / m²`, one decimal. Scale marks at 18.5, 25 and 30. The scale shows only at age 20 or more; under 20, or with no age, only the number and a neutral line. Labels: "Below the usual range" (< 18.5), "Within the usual range" (18.5 to < 25), "Above the usual range" (25 and over). Information only. |
+| **OB8 Equipment** | Bodyweight → none · Dumbbells → `dumbbells` · Gym → `gym_access`, `dumbbells`, `kettlebell`, `pullup_bar`, `resistance_band`. |
+| **OB9 Injury tags** | Shoulders, Wrist → `upper` · Back → `impact` · Knee, Hip → `legs`, `impact`. Any region turns Injury Mode on. |
+| **OB10 Picker starts** | Age 25 · Height 170 cm · Weight 70 kg · Bedtime 23:00 and wake 06:30 (`N21`), the same for every gender. Units default to ft/lb when the locale's country is US, else cm/kg. |
+| **OB11 Units** | 1 in = 2.54 cm; 1 lb = 0.45359237 kg. cm and kg are stored; display rounds. Toggling units back and forth never changes the stored value. Ranges: age 13–100, height 120–230 cm, weight 30–300 kg (the Diet ranges). Steps: 1 cm / 1 in; 0.5 kg / 1 lb. |
+| **OB12 Body map regions** | Shoulders → `SHOULDERS` · Back → `LOWER_BACK`, `MIDDLE_BACK` · Wrist → `FOREARMS` · Knee → `QUADRICEPS` · Hip → `GLUTES`. Display only. |
+| **OB13 Stage → Diet goal** | Body shape stages 1–2 → gain · 3 → maintain · 4–5 → lose. A target weight (OB17) overrides it: below the current weight is lose, above is gain. Prefills the Diet form only. |
+| **OB14 Reminder** | Reminder toggle on: `reminder_time` 07:00 (the existing default). |
+| **OB15 Plan ring** | Runs 3,000 ms in total, split evenly across the lines shown. |
+| **OB16 Summary quest line** | Quest count and titles come from a dry run of the directive generator with the new hunter's id. |
+| **OB17 Target guard** | Target date at least 4 weeks away. Target weight inside the 30–300 kg range and at or above BMI 18.5 for the entered height. Not offered under 18. |
+| **OB18 Goal chart** | A monotone curve between today's weight and the target, ending at the target date. Labelled "Estimate based on your target". No projection beyond the date. Never shown under 18. |
+
+### 17.1 Test vectors (continuing §16.17)
+
+| # | Input | Expected |
+|---|---|---|
+| 135 | Every tick of each ruler (cm, in, kg, lb) snapped, read back and snapped again | the same tick; no drift. Toggling units never rewrites the stored value |
+| 136 | 175 cm = 68.9 in; 80 kg = 176.4 lb | display rounds to 69 in (5′9″) and 176 lb |
+| 137 | BMI at 70 kg, 170 cm | 24.2, "Within the usual range" |
+| 138 | BMI of 18.4 / 18.5 / 24.9 / 25.0 / 29.9 / 30.0 | below / within / within / above / above / above |
+| 139 | Age 19 or no age | BMI value and neutral line, no scale |
+| 140 | Age 20 | scale shown |
+| 141 | Locale US / any other | ft and lb / cm and kg |
+| 142 | Sleep wheels: bedtime 19:45 or 02:15, wake 03:45 or 11:15, or a window under 5 h or over 12 h | all invalid (§16.12) |

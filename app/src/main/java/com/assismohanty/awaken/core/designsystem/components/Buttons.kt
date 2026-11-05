@@ -32,7 +32,7 @@ fun PrimaryButton(
     color: Color = AwakenTheme.colors.accent,
 ) {
     val colors = AwakenTheme.colors
-    val fill = if (color == colors.critical) colors.critical else colors.accent
+    val fill = if (color == colors.critical) colors.critical else colors.buttonPrimary
     val interaction = remember { MutableInteractionSource() }
     Button(
         onClick = onClick,
@@ -42,7 +42,7 @@ fun PrimaryButton(
         contentPadding = PaddingValues(horizontal = Spacing.lg, vertical = Spacing.sm),
         colors = ButtonDefaults.buttonColors(
             containerColor = fill,
-            contentColor = colors.onAccent,
+            contentColor = colors.onButtonPrimary,
             disabledContainerColor = colors.surfaceOverlay,
             disabledContentColor = colors.textMuted,
         ),

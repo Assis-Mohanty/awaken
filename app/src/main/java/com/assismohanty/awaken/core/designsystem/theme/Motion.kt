@@ -19,6 +19,8 @@ data class AwakenMotion(
     val quickMs: Int = 200,
     val standardMs: Int = 250,
     val revealMs: Int = 300,
+    /** Onboarding: a step sliding in or out (docs/onboarding/PLAN.md §7). */
+    val stepMs: Int = 280,
     /** Delay between consecutive items of a staggered entrance. */
     val staggerStepMs: Int = 30,
     /** A number counting up, a ring closing on the reward sheet. */

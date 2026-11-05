@@ -39,6 +39,11 @@ annotation class AiPrefsStore
 @Retention(AnnotationRetention.BINARY)
 annotation class ScreenTimeAlertPrefs
 
+/** The onboarding quiz draft, so the flow resumes after the app is killed (docs/onboarding/PLAN.md §3.2). Not backed up. */
+@Qualifier
+@Retention(AnnotationRetention.BINARY)
+annotation class OnboardingDraftPrefs
+
 @Module
 @InstallIn(SingletonComponent::class)
 object DataStoreModule {
@@ -90,5 +95,15 @@ object DataStoreModule {
         @ApplicationScope scope: CoroutineScope,
     ): DataStore<Preferences> = PreferenceDataStoreFactory.create(scope = scope) {
         context.preferencesDataStoreFile("screen_time_alerts")
+    }
+
+    @Provides
+    @Singleton
+    @OnboardingDraftPrefs
+    fun provideOnboardingDraftPrefs(
+        @ApplicationContext context: Context,
+        @ApplicationScope scope: CoroutineScope,
+    ): DataStore<Preferences> = PreferenceDataStoreFactory.create(scope = scope) {
+        context.preferencesDataStoreFile("onboarding_draft")
     }
 }

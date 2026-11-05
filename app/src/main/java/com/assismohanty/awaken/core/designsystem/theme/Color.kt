@@ -169,6 +169,9 @@ class AwakenColors(private val palette: AwakenPalette) {
     val textMuted: Color get() = palette.fog
     /** Primary button fill and checks: the primary ink. */
     val accent: Color get() = palette.system
+    /** The dark primary button: fill and the text on it. Today the same ink as [accent]; the redesign may split them. */
+    val buttonPrimary: Color get() = palette.system
+    val onButtonPrimary: Color get() = palette.onAccent
     /** Empty tracks and quiet outlines. */
     val accentMuted: Color get() = palette.edge
     /** Text on an [accent] fill. */

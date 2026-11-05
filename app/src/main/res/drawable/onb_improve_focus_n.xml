@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- PLACEHOLDER art for onboarding (docs/onboarding/ASSET_LIST.md): a grey silhouette crossed by a hatch band so it cannot pass for final art.
+     Replace by adding the WebP to drawable-nodpi and deleting this file. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="240dp"
+    android:height="240dp"
+    android:viewportWidth="240"
+    android:viewportHeight="240">
+    <path
+        android:fillColor="#FFC9CCD1"
+        android:pathData="M120,28a30,30 0,1 1,0 60a30,30 0,1 1,0 -60zM70,212c0,-52 18,-110 50,-110s50,58 50,110z" />
+    <path
+        android:fillColor="#99888B91"
+        android:pathData="M20,150L60,110L100,110L20,190zM100,230L180,150L220,150L140,230z" />
+</vector>

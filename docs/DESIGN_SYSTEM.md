@@ -388,3 +388,11 @@ Supportive, factual, never shaming. Yes: "Day 12", "Best run: 30 days. It's stil
 
 ### 4.9 Focus tab
 The home of everything about attention; new focus tools get a row here. Order: today's focus as the biggest number on the tab (`metricXL`) with progress to the daily goal, the 7-day total, the streak and **Start a session**; then *Block distractions* (Focus Lock, Allowed apps, Reel counter with today's count or its set-up, Daily limits); then *Reports* (the weekly focus report). Every row opens an existing screen; the tab holds no rules.
+
+### 4.10 Onboarding components (docs/onboarding/PLAN.md)
+Built on semantic tokens only, so the flow restyles with the app. All live in `core/designsystem/components`.
+- **`OnboardingShell`**: back, logo, `SegmentedProgressBar` (5 segments, 300 ms ease-out); heading (two lines at most) and subtitle; content; a Continue button pinned to the bottom. Steps slide left and fade over 280 ms (`AwakenMotion.stepMs`), reversed on Back; reduce motion crossfades.
+- **`WheelPicker`**: snapping list with a centred highlight band and fading neighbours; ticks on every new value; next / previous accessibility actions.
+- **`RulerPicker`** (+ `BigValue`): ticks under a fixed needle, horizontal or vertical (grows upwards); every `majorEvery`th tick is taller.
+- **`UnitToggle`**: a `SegmentedControl` that ticks. **`BmiCard`**: number, three-band scale with a badge from age 20, otherwise one neutral line; always information only.
+- **Tokens added:** `AwakenColors.buttonPrimary` / `onButtonPrimary` (the primary button; today the same ink as `accent`), `AwakenMotion.stepMs`, and the `onb*` entries in `AwakenDimens`.
