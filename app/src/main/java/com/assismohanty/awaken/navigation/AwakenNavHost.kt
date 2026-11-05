@@ -285,7 +285,13 @@ private fun MainScaffold(
                 composable<ReviewRoute> { ReviewEntry(onClose = { navController.popBackStack() }) }
                 composable<VaultRoute> { VaultEntry(onBack = { navController.popBackStack() }) }
                 if (DebugEntry.ENABLED) {
-                    composable<DebugRoute> { DebugEntry.Screen(onBack = { navController.popBackStack() }) }
+                    composable<DebugRoute> {
+                        DebugEntry.Screen(
+                            onBack = { navController.popBackStack() },
+                            onOpenOnboarding = { navController.navigate(OnboardingPreviewRoute) { launchSingleTop = true } },
+                        )
+                    }
+                    composable<OnboardingPreviewRoute> { OnboardingFlowEntry(onClose = { navController.popBackStack() }) }
                 }
             }
         }

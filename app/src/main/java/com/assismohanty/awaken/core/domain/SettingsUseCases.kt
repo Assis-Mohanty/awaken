@@ -26,6 +26,9 @@ data class SettingsModel(
     val healthEnabled: Boolean = false,
     /** Daily step goal for the Today ring (GD §16.11). */
     val stepGoal: Int = com.assismohanty.awaken.engine.StepGoalRules.DEFAULT_GOAL,
+    /** ISO days (1 = Monday) the person trains, and whether the morning reminder says so. */
+    val trainingDays: Set<Int> = emptySet(),
+    val trainingReminder: Boolean = false,
 )
 
 class ObserveSettingsUseCase @Inject constructor(
@@ -45,6 +48,8 @@ class ObserveSettingsUseCase @Inject constructor(
                 injuryTags = it.injuryTags,
                 healthEnabled = it.healthEnabled,
                 stepGoal = it.stepGoal,
+                trainingDays = com.assismohanty.awaken.engine.TrainingDays.days(it.trainingDays),
+                trainingReminder = it.trainingReminder,
             )
         }
     }
@@ -100,6 +105,11 @@ class UpdateSettingsUseCase @Inject constructor(
 
     suspend fun setInjury(enabled: Boolean, tags: Set<String>): SettingsResult =
         withProfile { hunterDao.setInjury(enabled, SettingsRules.normalizeInjuryTags(tags)) }
+
+    /** Training days and the reminder. A reminder needs days to remind about, so none means off. */
+    suspend fun setTraining(days: Set<Int>, reminder: Boolean): SettingsResult = withProfile {
+        hunterDao.setTrainingDays(com.assismohanty.awaken.engine.TrainingDays.mask(days), reminder && days.isNotEmpty())
+    }
 
     private suspend fun withProfile(write: suspend () -> Unit): SettingsResult {
         if (hunterDao.getProfile() == null) return SettingsResult.NoHunter

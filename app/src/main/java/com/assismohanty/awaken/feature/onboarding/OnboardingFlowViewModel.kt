@@ -207,6 +207,9 @@ class OnboardingFlowViewModel internal constructor(
 
     private var buildJob: Job? = null
 
+    /** Debug preview: fresh answers, nothing saved, so someone who already has a profile can look at the flow. */
+    private var previewOnly = false
+
     private val _uiState = MutableStateFlow(OnboardingFlowState())
     val uiState: StateFlow<OnboardingFlowState> = _uiState.asStateFlow()
 
@@ -223,12 +226,21 @@ class OnboardingFlowViewModel internal constructor(
                 Timber.e(e, "Reading the onboarding draft failed")
                 null
             }
+            if (previewOnly) return@launch
             _uiState.update { fromDraft(draft) }
             save()
             recheck()
             // A person who was building or looking at the plan when the app closed needs the plan again.
             if (_uiState.value.step == OnboardingStep.BUILDING || _uiState.value.step == OnboardingStep.PLAN) startBuild()
         }
+    }
+
+    /** Starts the flow from the first screen on fresh answers and stops saving the draft. Debug preview only. */
+    fun startPreview() {
+        previewOnly = true
+        buildJob?.cancel()
+        _uiState.value = fromDraft(null)
+        viewModelScope.launch { recheck() }
     }
 
     fun onEvent(event: OnboardingFlowEvent) {
@@ -477,7 +489,7 @@ class OnboardingFlowViewModel internal constructor(
 
     private fun save() {
         val state = _uiState.value
-        if (!state.loaded) return
+        if (!state.loaded || previewOnly) return
         viewModelScope.launch {
             try {
                 drafts.save(OnboardingDraft(step = state.step.ordinal, answers = state.answers))

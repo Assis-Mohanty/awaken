@@ -57,6 +57,10 @@ import com.assismohanty.awaken.core.data.health.HealthStatus
 import com.assismohanty.awaken.core.audio.ChimeChoice
 import com.assismohanty.awaken.core.data.repo.ThemeMode
 import com.assismohanty.awaken.core.designsystem.components.ChoiceChip
+import com.assismohanty.awaken.core.designsystem.components.DayChips
+import androidx.compose.ui.platform.LocalLocale
+import java.time.DayOfWeek
+import java.time.format.TextStyle
 import com.assismohanty.awaken.core.designsystem.components.LargeTitleScaffold
 import com.assismohanty.awaken.core.designsystem.components.PrimaryButton
 import com.assismohanty.awaken.core.designsystem.components.QuietButton
@@ -407,6 +411,7 @@ private fun HealthTrainingWindow(state: SettingsUiState, onEvent: (SettingsEvent
                 }
             }
         }
+        TrainingDaysRow(state, onEvent)
     }
 }
 
@@ -752,3 +757,31 @@ private fun PhoneFocusSection(onOpenScreenTime: () -> Unit, windows: @Composable
     }
     windows()
 }
+
+/** The days the person trains, and whether the morning reminder says so (docs/onboarding/PLAN.md §4, step 15). */
+@Composable
+private fun TrainingDaysRow(state: SettingsUiState, onEvent: (SettingsEvent) -> Unit) {
+    val colors = AwakenTheme.colors
+    val type = AwakenTheme.type
+    val locale = LocalLocale.current.platformLocale
+    Text(lexString(R.string.settings_training_title), style = type.label, color = colors.textPrimary)
+    DayChips(
+        selectedDays = state.trainingDays,
+        // No day is marked as today here: the screen has no clock, and the days are a weekly pattern.
+        today = NO_DAY,
+        onToggle = { onEvent(SettingsEvent.ToggleTrainingDay(it)) },
+        dayLetter = { DayOfWeek.of(it).getDisplayName(TextStyle.NARROW, locale) },
+        dayDescription = { day, _ -> DayOfWeek.of(day).getDisplayName(TextStyle.FULL, locale) },
+        todayLabel = lexString(R.string.onb_days_today),
+    )
+    if (state.trainingDays.isNotEmpty()) {
+        SwitchRow(
+            title = lexString(R.string.onb_days_remind),
+            note = lexString(if (state.reminder == null) R.string.settings_training_needs_reminder else R.string.settings_training_note),
+            checked = state.trainingReminder,
+            onChange = { onEvent(SettingsEvent.SetTrainingReminder(it)) },
+        )
+    }
+}
+
+private const val NO_DAY = 0

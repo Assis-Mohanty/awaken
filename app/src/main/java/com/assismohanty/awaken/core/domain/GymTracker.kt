@@ -15,6 +15,7 @@ import com.assismohanty.awaken.core.data.db.entity.RoutineExerciseEntity
 import com.assismohanty.awaken.core.data.db.entity.WorkoutEntity
 import com.assismohanty.awaken.core.data.db.entity.WorkoutSetEntity
 import com.assismohanty.awaken.core.data.repo.TransactionRunner
+import com.assismohanty.awaken.engine.TrainingDays
 import com.assismohanty.awaken.engine.GameDay
 import com.assismohanty.awaken.engine.body.Equipment
 import com.assismohanty.awaken.engine.body.LoggedSet
@@ -87,6 +88,8 @@ data class GymOverview(
     val history: List<WorkoutSummary>,
     val records: List<PersonalRecord>,
     val routines: List<RoutineSummary>,
+    /** Today is one of the training days chosen in onboarding or Settings. */
+    val trainingDay: Boolean = false,
 )
 
 /** A rest timer that ran out; [chime] is false when it ended long ago (the phone was away). */
@@ -417,7 +420,8 @@ class GymTracker @Inject constructor(
         gymDao.observeFinishedSets(),
         gymDao.observeRoutines(),
         gymDao.observeRoutineExercises(),
-    ) { workouts, sets, routines, routineRows -> overview(today(), workouts, sets, routines, routineRows) }
+        hunterDao.observeProfile(),
+    ) { workouts, sets, routines, routineRows, profile -> overview(today(), workouts, sets, routines, routineRows, profile?.trainingDays ?: TrainingDays.NONE) }
 
     private suspend fun overview(
         today: LocalDate,
@@ -425,6 +429,7 @@ class GymTracker @Inject constructor(
         sets: List<WorkoutSetEntity>,
         routines: List<RoutineEntity>,
         routineRows: List<RoutineExerciseEntity>,
+        trainingMask: Int,
     ): GymOverview {
         val weekStart = TrainingMath.weekStart(today)
         val weekEnd = weekStart.plusDays(6)
@@ -457,6 +462,7 @@ class GymTracker @Inject constructor(
                 val rows = routineRows.filter { it.routineId == r.id }
                 RoutineSummary(r.id, r.name, rows.map { names[it.exerciseId] ?: it.exerciseId }, rows.sumOf { it.setCount })
             },
+            trainingDay = TrainingDays.isTrainingDay(trainingMask, today),
         )
     }
 

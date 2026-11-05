@@ -162,6 +162,9 @@ private fun GymHome(overview: GymOverview, onEvent: (GymEvent) -> Unit) {
 private fun WeekWindow(overview: GymOverview, modifier: Modifier = Modifier) {
     val colors = AwakenTheme.colors
     SystemWindow(title = lexString(R.string.gym_window_week), accent = colors.accent, modifier = modifier) {
+        if (overview.trainingDay) {
+            Text(lexString(R.string.gym_training_day), style = AwakenTheme.type.label, color = colors.accent)
+        }
         Row(modifier = Modifier.fillMaxWidth()) {
             Stat(lexString(R.string.gym_week_workouts), formatCount(overview.weekWorkouts), Modifier.weight(1f))
             Stat(lexString(R.string.gym_week_sets), formatCount(overview.weekSets), Modifier.weight(1f))
@@ -628,6 +631,7 @@ internal fun previewGymState(active: Boolean = false): GymUiState {
             history = listOf(WorkoutSummary("w0", "Legs", LocalDate.of(2026, 10, 26), Duration.ofMinutes(52), 18, 6_240.0, listOf("Barbell Squat", "Leg Press"))),
             records = listOf(PersonalRecord("e0", "Barbell Bench Press", 80.0, 5, 93.3, LocalDate.of(2026, 10, 24))),
             routines = listOf(RoutineSummary("r1", "Push day", listOf("Barbell Bench Press", "Dips - Triceps Version"), 7)),
+            trainingDay = true,
         ),
     )
 }

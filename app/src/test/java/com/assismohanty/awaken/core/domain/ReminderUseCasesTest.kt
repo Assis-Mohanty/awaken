@@ -45,6 +45,21 @@ class ReminderUseCasesTest {
     }
 
     @Test
+    fun theDirectiveNotificationSaysItIsATrainingDayOnlyOnChosenDaysWhenAsked() = runTest {
+        hunterWithReminder()
+        val today = com.assismohanty.awaken.engine.TrainingDays.mask(setOf(graph.today().dayOfWeek.value))
+        graph.db.hunterDao().setTrainingDays(today, reminder = true)
+        assertThat((graph.buildReminder.directive() as ReminderContent.Directive).trainingDay).isTrue()
+
+        graph.db.hunterDao().setTrainingDays(today, reminder = false)
+        assertThat((graph.buildReminder.directive() as ReminderContent.Directive).trainingDay).isFalse()
+
+        val otherDay = com.assismohanty.awaken.engine.TrainingDays.mask(setOf(graph.today().plusDays(1).dayOfWeek.value))
+        graph.db.hunterDao().setTrainingDays(otherDay, reminder = true)
+        assertThat((graph.buildReminder.directive() as ReminderContent.Directive).trainingDay).isFalse()
+    }
+
+    @Test
     fun reminderOffSilencesBothNotifications() = runTest {
         hunterWithReminder(time = null)
         graph.fixtureQuest("a")

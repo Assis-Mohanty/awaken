@@ -302,4 +302,12 @@ Each batch: tests, previews, goldens named in the commit, full gate (`:engine:te
 - Permissions are re-read from the phone every time the app resumes. The Notifications screen is left out below Android 13 and when already allowed; Back from the plan skips it and the building screen.
 - `healthConnected` is the one permission result kept in the draft. Usage and notification state are always read live.
 - The training reminder switch appears only once a day is picked, and is cleared when the last day is removed.
-- Still to do in Batch 4: set `notifications_prompted` when the notification prompt was answered here, so the later prompt after a quest doesn't repeat.
+- `notifications_prompted` is set at Start when the prompt was answered here (Batch 4).
+
+**Batch 4 (plan, summary, wiring), built.**
+- `OnboardingPlanner` and `WeightTargetRules` are in `:engine`. The building screen waits for the real quests from `PreviewOnboardingPlanUseCase`, so its ring never claims more than is done; the plan screen lists those same quests.
+- `CompleteOnboardingUseCase` writes the whole plan in one transaction and runs the first rollover. It writes no ledger rows. `notifications_prompted` is set when the prompt was answered in the flow. The old `OnboardingScreen`, `OnboardingViewModel` and `Awakening.Answer` are gone; `AwakenNavHost` shows the new flow to new installs.
+- Room v28 (§3.4), `MIGRATION_27_28`, schema JSON and the export upgrade are in.
+- **Training days:** the morning reminder says "It's a training day." on those days (one notification, so the two-a-day cap holds). Gym shows "Today is a training day." Settings → Health and training has a Training days row; the reminder switch shows only with a day picked and says "Needs the daily reminder to be on." when the reminder is off.
+- **Checking it with an existing profile:** Debug → "Preview onboarding (saves nothing)". It starts on fresh answers, never touches the draft or the profile, and Start or Back from the first screen returns to Debug. New installs see the real flow.
+- Phone checklist: `docs/onboarding/PHONE_TEST_onboarding.md`.

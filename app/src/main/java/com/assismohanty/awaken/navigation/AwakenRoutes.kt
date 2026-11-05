@@ -105,3 +105,7 @@ data object QuitRoute
 @Serializable
 data object ProgramsRoute
 
+
+/** Debug builds only: the onboarding flow on fresh answers, saving nothing, for someone who already has a profile. */
+@Serializable
+data object OnboardingPreviewRoute

@@ -7,6 +7,7 @@ import com.assismohanty.awaken.core.data.db.dao.HunterDao
 import com.assismohanty.awaken.core.data.db.dao.QuestDao
 import com.assismohanty.awaken.core.data.db.dao.WeeklyReviewDao
 import com.assismohanty.awaken.engine.ReminderRules
+import com.assismohanty.awaken.engine.TrainingDays
 import com.assismohanty.awaken.engine.model.QuestStatus
 import com.assismohanty.awaken.engine.WeeklyReviewRules
 import com.assismohanty.awaken.engine.model.QuestType
@@ -19,8 +20,9 @@ sealed interface ReminderContent {
     /**
      * "Your directive is ready: [count] quests." [reviewOpen]: on game-day Sunday with no review for the week, the same
      * notification gains a second line and a review action (GD §14.4), so the 2-per-day cap is untouched.
+     * [trainingDay]: the person chose the training reminder and today is one of their days; the same notification says so.
      */
-    data class Directive(val count: Int, val reviewOpen: Boolean = false) : ReminderContent
+    data class Directive(val count: Int, val reviewOpen: Boolean = false, val trainingDay: Boolean = false) : ReminderContent
 
     /** "[remaining] quests from clearing the day." */
     data class LastCall(val remaining: Int) : ReminderContent
@@ -47,7 +49,8 @@ class BuildReminderUseCase @Inject constructor(
         val count = questDao.getForDate(today).count { !it.status.isHidden && it.status != QuestStatus.SKIPPED && it.type in DIRECTIVE_TYPES }
         val reviewOpen = today.dayOfWeek == DayOfWeek.SUNDAY &&
             WeeklyReviewRules.isOpen(today, weeklyReviewDao.submittedWeeks().toSet())
-        return if (count > 0) ReminderContent.Directive(count, reviewOpen) else null
+        val trainingDay = profile.trainingReminder && TrainingDays.isTrainingDay(profile.trainingDays, today)
+        return if (count > 0) ReminderContent.Directive(count, reviewOpen, trainingDay) else null
     }
 
     suspend fun lastCall(): ReminderContent? {

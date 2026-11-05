@@ -320,6 +320,9 @@
     <string name="equipment_bicycle">Bicycle</string>
     <string name="settings_injury_title">Injury mode</string>
     <string name="settings_injury_note">Skips quests that load the areas you pick. Applies from tomorrow\'s plan.</string>
+    <string name="settings_training_title">Training days</string>
+    <string name="settings_training_note">Your morning reminder says when it\'s a training day.</string>
+    <string name="settings_training_needs_reminder">Needs the daily reminder to be on.</string>
     <string name="injury_tag_impact">Impact</string>
     <string name="injury_tag_legs">Legs</string>
     <string name="injury_tag_upper">Upper body</string>

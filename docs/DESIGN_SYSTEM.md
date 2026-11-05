@@ -159,28 +159,18 @@ Off by default (toggle ready, assets later). Never ship a sound you didn't licen
 
 Navigation: bottom bar (§3) with 5 destinations — **Today**, **Focus**, **Gym**, **Diet**, **Progress** (the Status screen). **Gates** and **Vault** open from round icon buttons in Today's greeting header; **Paths** opens from the Progress header; Settings from Progress top-right. Every screen is on the v2 design (2026-10-27): a large title that collapses on scroll, an icon back button on pushed screens, flat cards; the sketches below show layout, not final copy.
 
-### 4.1 Awakening (onboarding) — target < 60 seconds without a Path, < 2 minutes with one; no account
+### 4.1 Awakening (onboarding): a 21-screen quiz that ends in a personal plan; no account
+
+The flow is a quiz of **21 screens** in five progress groups, always in the light palette (`OnboardingTheme`). Every screen but the first and the building screen can be left with Back; most can be skipped. The full step table, the answer-to-setting mapping and the numbers are in `docs/onboarding/PLAN.md` §4–§5 and GAME_DESIGN §17.
 
 ```
-[1] Black screen. System window types on:
-    "YOU HAVE BEEN CHOSEN."  → body: "Real effort becomes power here. Ready?"  [Accept]
-[2] Name your hunter            [text field]                       [Continue]
-[3] Pick two focus stats        (5 stat tiles, sigil + one-line meaning)  select 2
-[4] Calibration (3 taps)        "How often do you train?"  Rarely / Sometimes / Often
-                                "Hours of focused study on a normal day?" <1 / 1–3 / 3+
-                                "Sleep most nights?" <6h / 6–7h / 7h+
-                                → sets baseline tier per stat (GD §2)
-[5] Verified quests (optional)  "Let the System see your steps, workouts and sleep
-                                 from Health Connect. Verified quests earn 30% more XP.
-                                 Data never leaves this phone."   [Connect] [Not now]
-[6] Your first Path (optional) "What are you leveling toward?"  goal field with example chips
-                                ("Reach 1900 on Codeforces", "Run a 10K", "Read 12 books", "Learn Japanese")
-                                → current level field → [Continue] → AI consent sheet (§4.8) → [Enable] / [Not now]
-                                [Skip] is always visible and equal weight to Continue.
-[7] Daily directive time        time picker (default 07:00)
-[8] "AWAKENING COMPLETE" window → first directive slides in on Today. If a Path was created, its window on
-                                Paths shows "Charting your path…" and its quests join the Directive when ready.
+You       1 Welcome · 2 Name · 3 Gender · 4 Age · 5 Height · 6 Weight · 7 Body shape
+Goals     8 What to improve · 9 Obstacles · 10 Screen time
+Daily     11 Sleep · 12 Fitness · 13 Equipment · 14 Injuries · 15 Training days · 16 Pace
+Phone     17a Health Connect · 17b Usage access · 17c Notifications   (each explained first; "Not now" always moves on)
+Plan      18 Building (the ring waits for the real plan) · 19 Your plan (edit, then Start)
 ```
+Start saves the profile and everything the plan set in one transaction, then runs the first rollover. Answers are saved as they change, so a killed app resumes where it was. Nothing is rewarded for answering. Debug builds: Debug → "Preview onboarding" runs the flow on fresh answers and saves nothing.
 First quest is guaranteed Easy and doable now (e.g., "Drink a glass of water" VIT / "10 push-ups" STR by focus) → first level-up within 2 minutes of install. This never waits for the AI.
 
 ### 4.2 Today

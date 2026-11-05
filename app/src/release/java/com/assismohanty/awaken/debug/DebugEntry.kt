@@ -17,5 +17,5 @@ object DebugEntry {
 
     @Suppress("UNUSED_PARAMETER")
     @Composable
-    fun Screen(onBack: () -> Unit) = Unit
+    fun Screen(onBack: () -> Unit, onOpenOnboarding: () -> Unit) = Unit
 }

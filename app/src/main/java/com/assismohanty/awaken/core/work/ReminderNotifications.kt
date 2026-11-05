@@ -67,7 +67,10 @@ class ReminderNotifications @Inject constructor(
                 CHANNEL_DIRECTIVE,
                 DIRECTIVE_ID,
                 words.resources(context).getString(R.string.system_title_daily_directive),
-                words.resources(context).getQuantityString(R.plurals.reminder_directive, content.count, content.count),
+                words.resources(context).getQuantityString(R.plurals.reminder_directive, content.count, content.count).let { plan ->
+                    // A training day is said in the same notification, so the two-a-day cap holds.
+                    if (content.trainingDay) "${words.resources(context).getString(R.string.notification_training_line)} $plan" else plan
+                },
             )
             is ReminderContent.LastCall -> Parts(
                 CHANNEL_LAST_CALL,

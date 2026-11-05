@@ -64,13 +64,17 @@ import com.assismohanty.awaken.feature.settings.HealthActionEffect
 /** Wires the quiz flow to its ViewModel and to the system's permission screens. Always light, whatever the phone's theme says. */
 @Composable
 fun OnboardingFlowRoute(
+    /** Set only by the debug preview: the flow runs on fresh answers, saves nothing, and Start or Back from the first screen calls this. */
+    onClose: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
     viewModel: OnboardingFlowViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
     // Back steps through the questions; on the first screen it falls through and leaves the app.
+    LaunchedEffect(onClose != null) { if (onClose != null) viewModel.startPreview() }
     BackHandler(enabled = state.step.canGoBack && state.step != OnboardingStep.WELCOME) { viewModel.onEvent(OnboardingFlowEvent.Back) }
+    BackHandler(enabled = onClose != null && state.step == OnboardingStep.WELCOME) { onClose?.invoke() }
     HealthActionEffect(
         action = state.healthAction,
         permissions = state.healthPermissions,
@@ -101,7 +105,10 @@ fun OnboardingFlowRoute(
     }
     OnboardingTheme {
         ScreenBackground(modifier = modifier) {
-            OnboardingFlowScreen(state = state, onEvent = viewModel::onEvent)
+            OnboardingFlowScreen(
+                state = state,
+                onEvent = { event -> if (onClose != null && event == OnboardingFlowEvent.Start) onClose() else viewModel.onEvent(event) },
+            )
         }
     }
 }

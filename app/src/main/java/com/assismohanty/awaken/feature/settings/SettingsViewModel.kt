@@ -35,6 +35,7 @@ import com.assismohanty.awaken.core.domain.UserMessage
 import com.assismohanty.awaken.core.work.DayStartScheduler
 import com.assismohanty.awaken.core.work.NotificationAccess
 import com.assismohanty.awaken.engine.Awakening
+import com.assismohanty.awaken.engine.onboarding.OnboardingRules
 import com.assismohanty.awaken.engine.DirectiveGenerator
 import com.assismohanty.awaken.engine.SettingsRules
 import com.assismohanty.awaken.engine.model.Stat
@@ -68,6 +69,8 @@ data class SettingsUiState(
     val injuryMode: Boolean = false,
     val injuryTags: Set<String> = DirectiveGenerator.DEFAULT_INJURY_TAGS,
     val injuryOptions: List<String> = DirectiveGenerator.INJURY_TAGS,
+    val trainingDays: Set<Int> = emptySet(),
+    val trainingReminder: Boolean = false,
     val hapticsEnabled: Boolean = true,
     val reduceMotion: Boolean = false,
     val themeMode: ThemeMode = ThemeMode.SYSTEM,
@@ -114,6 +117,8 @@ sealed interface SettingsEvent {
     data class SetReminder(val time: LocalTime?) : SettingsEvent
     data class ToggleEquipment(val id: String) : SettingsEvent
     data class SetInjuryMode(val enabled: Boolean) : SettingsEvent
+    data class ToggleTrainingDay(val isoDay: Int) : SettingsEvent
+    data class SetTrainingReminder(val enabled: Boolean) : SettingsEvent
     data class ToggleInjuryTag(val tag: String) : SettingsEvent
     data class SetHaptics(val enabled: Boolean) : SettingsEvent
     data class SetReduceMotion(val enabled: Boolean) : SettingsEvent
@@ -224,6 +229,10 @@ class SettingsViewModel @Inject constructor(
                 val next = if (event.id in model.equipment) model.equipment - event.id else model.equipment + event.id
                 save { updateSettings.setEquipment(next) }
             }
+            is SettingsEvent.ToggleTrainingDay -> current?.let { model ->
+                save { updateSettings.setTraining(OnboardingRules.toggleDay(model.trainingDays, event.isoDay), model.trainingReminder) }
+            }
+            is SettingsEvent.SetTrainingReminder -> current?.let { model -> save { updateSettings.setTraining(model.trainingDays, event.enabled) } }
             is SettingsEvent.SetInjuryMode -> current?.let { model -> save { updateSettings.setInjury(event.enabled, model.injuryTags) } }
             is SettingsEvent.ToggleInjuryTag -> current?.let { model ->
                 val next = if (event.tag in model.injuryTags) model.injuryTags - event.tag else model.injuryTags + event.tag
@@ -421,6 +430,8 @@ private fun SettingsModel.toUiState(prefs: UiPrefs, drafts: Drafts, aiConsent: B
     equipmentOptions = equipmentOptions,
     injuryMode = injuryMode,
     injuryTags = injuryTags,
+    trainingDays = trainingDays,
+    trainingReminder = trainingReminder,
     hapticsEnabled = prefs.hapticsEnabled,
     reduceMotion = prefs.reduceMotion,
     themeMode = prefs.themeMode,

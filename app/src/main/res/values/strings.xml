@@ -159,6 +159,7 @@
     <string name="today_review_open">Your weekly review is open</string>
     <string name="today_review_open_body">Five quick steps. Nothing to earn, just a look back.</string>
     <string name="notification_review_line">Your weekly review is open.</string>
+    <string name="notification_training_line">It\'s a training day.</string>
     <string name="action_open_review">Review</string>
     <!-- Monthly and yearly recaps (GD §14.6): nothing is granted -->
     <!-- Step sources (Health screen) -->
