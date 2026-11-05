@@ -1020,3 +1020,11 @@ Source: `docs/onboarding/PLAN.md` (§4, §5). The onboarding questions set start
 | 140 | Age 20 | scale shown |
 | 141 | Locale US / any other | ft and lb / cm and kg |
 | 142 | Sleep wheels: bedtime 19:45 or 02:15, wake 03:45 or 11:15, or a window under 5 h or over 12 h | all invalid (§16.12) |
+| 143 | Improve: Sleep, Focus | focus stats VIT, WIL (OB1) |
+| 144 | Improve: Strength, Fitness / Learning alone | STR + INT / INT + STR (the second slot is filled in order) |
+| 145 | Improve skipped | STR, INT |
+| 146 | Learning, Focus, Discipline / Learning, Sleep, Focus | WIL, INT (most picks) / INT, VIT (earliest picks win a tie) |
+| 147 | Body shape stage 1–2 / 3 / 4–5 / none | gain / maintain / lose / no hint (OB13) |
+| 148 | Stage 5, current 70 kg, target 75 kg | gain: the target wins over the stage |
+| 149 | Obstacles: pick None after other picks, then pick another | None clears the others; another pick clears None |
+| 150 | Progress bar | 5 segments; the last screen of each group fills its segment; never moves back |

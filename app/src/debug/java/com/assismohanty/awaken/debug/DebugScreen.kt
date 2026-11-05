@@ -40,9 +40,9 @@ import java.time.Instant
 import java.time.LocalDate
 
 @Composable
-fun DebugRoute(onBack: () -> Unit, onOpenCatalog: () -> Unit, viewModel: DebugViewModel = hiltViewModel()) {
+fun DebugRoute(onBack: () -> Unit, onOpenCatalog: () -> Unit, onOpenOnboarding: () -> Unit, viewModel: DebugViewModel = hiltViewModel()) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
-    DebugScreen(state = state, onEvent = viewModel::onEvent, onBack = onBack, onOpenCatalog = onOpenCatalog)
+    DebugScreen(state = state, onEvent = viewModel::onEvent, onBack = onBack, onOpenCatalog = onOpenCatalog, onOpenOnboarding = onOpenOnboarding)
 }
 
 /** Developer tool (debug builds only). Deliberately plain: the real UI arrives with the design system in Phase 5. */
@@ -53,6 +53,7 @@ fun DebugScreen(
     onEvent: (DebugEvent) -> Unit,
     onBack: () -> Unit,
     onOpenCatalog: () -> Unit,
+    onOpenOnboarding: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     LazyColumn(
@@ -89,6 +90,7 @@ fun DebugScreen(
         item {
             FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
                 Button(onClick = onOpenCatalog) { Text(stringResource(R.string.debug_open_catalog)) }
+                Button(onClick = onOpenOnboarding) { Text(stringResource(R.string.debug_open_onboarding)) }
                 Button(onClick = { onEvent(DebugEvent.SeedHunter) }) { Text(stringResource(R.string.debug_seed_hunter)) }
                 Button(onClick = { onEvent(DebugEvent.AddDay) }) { Text(stringResource(R.string.debug_add_day)) }
                 Button(onClick = { onEvent(DebugEvent.ForceRollover) }) { Text(stringResource(R.string.debug_rollover)) }
@@ -202,6 +204,7 @@ private fun DebugScreenPreview() {
             onEvent = {},
             onBack = {},
             onOpenCatalog = {},
+            onOpenOnboarding = {},
         )
     }
 }

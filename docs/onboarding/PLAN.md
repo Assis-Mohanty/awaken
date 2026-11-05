@@ -18,7 +18,7 @@ The brief conflicts with the code in these places, or asks for something the app
 | **Q4** | **`accent` and `buttonPrimary`.** `accent` is the primary ink today, the same colour as the primary button, and `buttonPrimary` doesn't exist. | Add `buttonPrimary` / `onButtonPrimary` mapped to the current ink and move `PrimaryButton` onto them. Leave `accent`'s value alone. Onboarding will look monochrome until the redesign gives `accent` a colour, then pick it up automatically. |
 | **Q5** | **Light onboarding on a dark-mode phone.** The app otherwise follows the phone or the Appearance setting. | Force the light palette for this flow only, by wrapping it in `AwakenTheme(darkTheme = false)`, including status-bar icons. `@PhonePreviews` for these screens still render both palettes so tokens stay valid. |
 | **Q6** | **Steps removed from today's flow.** Your list has no AI Path step, no calibration questions and no daily reminder time. | Drop all three from onboarding. AI Paths stay reachable from Progress in debug builds. The reminder toggle in step 15 uses the existing 07:00 default (OB14), editable in Settings. |
-| **Q7** | **Length.** PRD F1 says ≤ 60 s and DS §4.1 says < 60 s. This flow has 22 screens, closer to 3–4 minutes. | Accept it and change F1 and §4.1. The per-step Skip is the fast path. |
+| **Q7** | **Length.** PRD F1 says ≤ 60 s and DS §4.1 says < 60 s. This flow has 21 screens, closer to 3–4 minutes. | Accept it and change F1 and §4.1. The per-step Skip is the fast path. |
 | **Q8** | **All numbers in §5 are new.** CLAUDE.md forbids inventing them, so all are marked PROPOSED. | Approve or edit the table. On approval they move to `GAME_DESIGN.md` §17 as the first commit of Batch 1 and the build uses them from there. |
 
 ---
@@ -276,8 +276,21 @@ Each batch: tests, previews, goldens named in the commit, full gate (`:engine:te
 
 ## 12. Risks
 
-- **Screen count vs drop-off.** A 22-screen flow is long for a free app with nothing behind a paywall. Skip is the mitigation. Worth watching in your own phone test.
+- **Screen count vs drop-off.** A 21-screen flow is long for a free app with nothing behind a paywall. Skip is the mitigation. Worth watching in your own phone test.
 - **Asset load.** 46 images at 40–60 KB is about 2.5 MB. The list in `ASSET_LIST.md` is already trimmed by using gendered art only where a body is shown.
 - **Sensitive data.** Age, height, weight and body stage sit on the device and in exports. Covered by §3.4. An export file carries these values, so sharing one shares them.
 - **Bedtime defaults on.** Phone-down nights creates a daily quest the user might not expect. It is listed on Your plan with an off switch.
 - **Wheel and ruler performance** on low-end minSdk 28 phones. If `LazyColumn` snapping stutters, the fallback is a `Canvas` picker driven by `Animatable` decay, behind the same component API.
+
+---
+
+## 13. Build notes
+
+**Batch 2 (steps 1–9), built.**
+- The flow has **21 screens** (steps 17a–c are three), not 22; "Step x of 21" is what the progress bar says.
+- `OnboardingStep` (engine) owns the order, the five progress groups and which steps can be skipped or backed out of. `OnboardingRules` owns OB1 and OB13, Continue gating, picker defaults and skip.
+- Every answer is saved as it changes, not only when a step ends, so a killed app resumes with what was typed.
+- The shell asks the caller for each step by its own number (`body(step)`), so the outgoing step slides out with its own words.
+- The flow is reachable in **debug builds only**: Debug → New onboarding. Steps 10 onward show a placeholder until Batch 3. The old flow is still what new installs see.
+- The flow forces the light palette (`OnboardingTheme`) and keeps the reduce-motion and haptics choices already in effect.
+- Rulers now show a number on each taller tick; the needle covers only the tick side so it never crosses a label.

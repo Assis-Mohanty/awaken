@@ -24,6 +24,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -167,12 +169,13 @@ fun OnboardingShell(
     }
 }
 
-/** One step's layout inside [OnboardingShell]: a big heading (two lines at most), an optional grey subtitle, then [content]. */
+/** One step's layout inside [OnboardingShell]: a big heading (two lines at most), an optional grey subtitle, then [content] (scrolling when [scrollable]). */
 @Composable
 fun OnboardingStepBody(
     title: String,
     modifier: Modifier = Modifier,
     subtitle: String? = null,
+    scrollable: Boolean = false,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val colors = AwakenTheme.colors
@@ -193,7 +196,14 @@ fun OnboardingStepBody(
                 modifier = Modifier.padding(top = Spacing.xs),
             )
         }
-        Column(modifier = Modifier.weight(1f).fillMaxWidth().padding(top = Spacing.lg), content = content)
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxWidth()
+                .padding(top = Spacing.lg)
+                .then(if (scrollable) Modifier.verticalScroll(rememberScrollState()) else Modifier),
+            content = content,
+        )
     }
 }
 

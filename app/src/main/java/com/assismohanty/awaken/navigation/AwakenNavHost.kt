@@ -37,6 +37,7 @@ import com.assismohanty.awaken.engine.model.Rank
 import com.assismohanty.awaken.feature.diet.DietRoute as DietEntry
 import com.assismohanty.awaken.feature.gate.GatesEntry
 import com.assismohanty.awaken.feature.gym.GymRoute as GymEntry
+import com.assismohanty.awaken.feature.onboarding.OnboardingFlowRoute as OnboardingFlowEntry
 import com.assismohanty.awaken.feature.onboarding.OnboardingRoute as OnboardingEntry
 import com.assismohanty.awaken.feature.paths.PathDetailRoute as PathDetailEntry
 import com.assismohanty.awaken.feature.paths.PathsRoute as PathsEntry
@@ -285,7 +286,13 @@ private fun MainScaffold(
                 composable<ReviewRoute> { ReviewEntry(onClose = { navController.popBackStack() }) }
                 composable<VaultRoute> { VaultEntry(onBack = { navController.popBackStack() }) }
                 if (DebugEntry.ENABLED) {
-                    composable<DebugRoute> { DebugEntry.Screen(onBack = { navController.popBackStack() }) }
+                    composable<DebugRoute> {
+                        DebugEntry.Screen(
+                            onBack = { navController.popBackStack() },
+                            onOpenOnboarding = { navController.navigate(OnboardingQuizRoute) { launchSingleTop = true } },
+                        )
+                    }
+                    composable<OnboardingQuizRoute> { OnboardingFlowEntry(onClose = { navController.popBackStack() }) }
                 }
             }
         }

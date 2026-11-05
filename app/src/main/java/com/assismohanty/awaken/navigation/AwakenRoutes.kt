@@ -104,3 +104,7 @@ data object QuitRoute
 /** Programs: 30 / 66 / 75 days of a few daily rules (GD §16.15), opened from Status. */
 @Serializable
 data object ProgramsRoute
+
+/** The quiz-style onboarding flow while it is built (docs/onboarding/PLAN.md). Registered in debug builds only until it replaces the old flow. */
+@Serializable
+data object OnboardingQuizRoute

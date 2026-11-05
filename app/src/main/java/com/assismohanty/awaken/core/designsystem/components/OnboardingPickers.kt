@@ -19,6 +19,8 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.LazyRow
@@ -176,7 +178,7 @@ fun <T> WheelPicker(
 /**
  * A ruler (height, weight): ticks in a list that snaps under a fixed needle at the middle. [tick] is the selected tick
  * number, from [first] to [last]; every [majorEvery]th tick is taller. Vertical rulers grow upwards, like a height chart;
- * horizontal ones grow to the right. TalkBack reads [description] with [valueText] and offers next and previous actions.
+ * horizontal ones grow to the right. [majorLabel] writes a number beside each taller tick. TalkBack reads [description] with [valueText] and offers next and previous actions.
  */
 @Composable
 fun RulerPicker(
@@ -189,6 +191,7 @@ fun RulerPicker(
     description: String,
     modifier: Modifier = Modifier,
     vertical: Boolean = false,
+    majorLabel: ((Int) -> String)? = null,
 ) {
     val colors = AwakenTheme.colors
     val dimens = AwakenTheme.dimens
@@ -230,7 +233,7 @@ fun RulerPicker(
                 contentPadding = PaddingValues(vertical = pad),
                 modifier = Modifier.fillMaxSize(),
             ) {
-                itemsIndexed(List(count) { first + it }) { _, value -> RulerTick(value, majorEvery, vertical = true, cell = cell) }
+                itemsIndexed(List(count) { first + it }) { _, value -> RulerTick(value, majorEvery, vertical = true, cell = cell, majorLabel = majorLabel) }
             }
         } else {
             LazyRow(
@@ -239,33 +242,44 @@ fun RulerPicker(
                 contentPadding = PaddingValues(horizontal = pad),
                 modifier = Modifier.fillMaxSize(),
             ) {
-                itemsIndexed(List(count) { first + it }) { _, value -> RulerTick(value, majorEvery, vertical = false, cell = cell) }
+                itemsIndexed(List(count) { first + it }) { _, value -> RulerTick(value, majorEvery, vertical = false, cell = cell, majorLabel = majorLabel) }
             }
         }
         // The needle: fixed in the middle, the tick under it is the value.
         if (vertical) {
-            Box(Modifier.fillMaxWidth().height(dimens.accentWidth).background(colors.accent))
+            Box(Modifier.align(Alignment.CenterEnd).width(dimens.onbRulerNeedle).height(dimens.accentWidth).background(colors.accent))
         } else {
-            Box(Modifier.fillMaxHeight().width(dimens.accentWidth).background(colors.accent))
+            Box(Modifier.align(Alignment.BottomCenter).height(dimens.onbRulerNeedle).width(dimens.accentWidth).background(colors.accent))
         }
     }
 }
 
 @Composable
-private fun RulerTick(value: Int, majorEvery: Int, vertical: Boolean, cell: Dp) {
+private fun RulerTick(value: Int, majorEvery: Int, vertical: Boolean, cell: Dp, majorLabel: ((Int) -> String)?) {
     val colors = AwakenTheme.colors
     val dimens = AwakenTheme.dimens
     val major = value % majorEvery == 0
     val length = if (major) dimens.onbRulerMajorTick else dimens.onbRulerTick
     val thickness = if (major) dimens.accentWidth else dimens.hairline
     val tone = if (major) colors.textSecondary else colors.textMuted
+    val label = if (major) majorLabel?.invoke(value) else null
     if (vertical) {
         Box(modifier = Modifier.fillMaxWidth().height(cell), contentAlignment = Alignment.CenterEnd) {
-            Box(Modifier.width(length).height(thickness).background(tone))
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(dimens.onbRulerLabelGap)) {
+                if (label != null) {
+                    Text(label, style = AwakenTheme.type.caption, color = colors.textSecondary, softWrap = false, modifier = Modifier.wrapContentHeight(unbounded = true))
+                }
+                Box(Modifier.width(length).height(thickness).background(tone))
+            }
         }
     } else {
         Box(modifier = Modifier.fillMaxHeight().width(cell), contentAlignment = Alignment.BottomCenter) {
-            Box(Modifier.height(length).width(thickness).background(tone))
+            Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(dimens.onbRulerLabelGap)) {
+                if (label != null) {
+                    Text(label, style = AwakenTheme.type.caption, color = colors.textSecondary, softWrap = false, modifier = Modifier.wrapContentWidth(unbounded = true))
+                }
+                Box(Modifier.height(length).width(thickness).background(tone))
+            }
         }
     }
 }
@@ -381,7 +395,7 @@ private fun RulerPickerHorizontalPreview() {
     AwakenTheme(reduceMotion = true) {
         Column(Modifier.padding(Spacing.gutter), verticalArrangement = Arrangement.spacedBy(Spacing.md)) {
             BigValue("70", "kg")
-            RulerPicker(first = 60, last = 600, tick = 140, onTick = {}, majorEvery = 10, valueText = { it.toString() }, description = "Weight")
+            RulerPicker(first = 60, last = 600, tick = 140, onTick = {}, majorEvery = 10, valueText = { it.toString() }, description = "Weight", majorLabel = { (it / 2).toString() })
         }
     }
 }
@@ -392,7 +406,7 @@ private fun RulerPickerVerticalPreview() {
     AwakenTheme(reduceMotion = true) {
         Row(Modifier.padding(Spacing.gutter).height(260.dp), horizontalArrangement = Arrangement.spacedBy(Spacing.lg)) {
             BigValue("170", "cm")
-            RulerPicker(first = 120, last = 230, tick = 170, onTick = {}, majorEvery = 10, valueText = { it.toString() }, description = "Height", vertical = true)
+            RulerPicker(first = 120, last = 230, tick = 170, onTick = {}, majorEvery = 10, valueText = { it.toString() }, description = "Height", vertical = true, majorLabel = { it.toString() })
         }
     }
 }

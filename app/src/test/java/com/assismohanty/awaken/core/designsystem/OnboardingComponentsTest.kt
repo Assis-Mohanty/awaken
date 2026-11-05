@@ -11,7 +11,11 @@ import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertIsNotSelected
+import androidx.compose.ui.test.assertIsOff
+import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -20,7 +24,12 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.assismohanty.awaken.R
 import com.assismohanty.awaken.core.designsystem.components.BmiCard
+import com.assismohanty.awaken.core.designsystem.components.ChoiceItem
+import com.assismohanty.awaken.core.designsystem.components.ImageChoiceCard
+import com.assismohanty.awaken.core.designsystem.components.ImageChoiceGrid
+import com.assismohanty.awaken.core.designsystem.components.StageSlider
 import com.assismohanty.awaken.core.designsystem.components.OnboardingShell
 import com.assismohanty.awaken.core.designsystem.components.OnboardingStepBody
 import com.assismohanty.awaken.core.designsystem.components.RulerPicker
@@ -209,6 +218,60 @@ class OnboardingComponentsTest {
         composeRule.setContent { AwakenTheme(reduceMotion = true) { BmiCard(BodyMath.bmi(170.0, 90.0, age = 16)) } }
         composeRule.onNode(hasContentDescription("BMI 31.1. A rough number from your height and weight.")).assertExists()
         composeRule.onAllNodesWithText("Above the usual range").assertCountEquals(0)
+    }
+
+    @Test
+    fun aMultiSelectCardIsACheckboxThatReportsClicks() {
+        var clicks = 0
+        composeRule.setContent {
+            AwakenTheme(reduceMotion = true) {
+                ImageChoiceCard(label = "Sleep", selected = true, onClick = { clicks++ }, multi = true)
+            }
+        }
+        val node = composeRule.onNodeWithText("Sleep")
+        node.assertIsOn()
+        node.performClick()
+        assertThat(clicks).isEqualTo(1)
+        assertThat(node.fetchSemanticsNode().config[SemanticsProperties.Role]).isEqualTo(Role.Checkbox)
+    }
+
+    @Test
+    fun aSingleSelectCardIsARadioButton() {
+        composeRule.setContent {
+            AwakenTheme(reduceMotion = true) {
+                ImageChoiceCard(label = "Female", selected = false, onClick = {}, multi = false)
+            }
+        }
+        val node = composeRule.onNodeWithText("Female")
+        node.assertIsNotSelected()
+        assertThat(node.fetchSemanticsNode().config[SemanticsProperties.Role]).isEqualTo(Role.RadioButton)
+    }
+
+    @Test
+    fun theGridMarksOnlyTheSelectedKeys() {
+        composeRule.setContent {
+            AwakenTheme(reduceMotion = true) {
+                ImageChoiceGrid(
+                    items = listOf(ChoiceItem("a", "Strength"), ChoiceItem("b", "Focus")),
+                    selectedKeys = setOf("b"), onToggle = {}, multi = true,
+                )
+            }
+        }
+        composeRule.onNodeWithText("Strength").assertIsOff()
+        composeRule.onNodeWithText("Focus").assertIsOn()
+    }
+
+    @Test
+    fun theStageSliderReadsItsStage() {
+        composeRule.setContent {
+            AwakenTheme(reduceMotion = true) {
+                StageSlider(
+                    stage = 3, onStage = {}, stages = 5, imageFor = { R.drawable.onb_shape_3_n },
+                    description = "Body shape", stageText = "Stage 3 of 5", modifier = Modifier.height(300.dp),
+                )
+            }
+        }
+        assertThat(stateDescription("Body shape")).isEqualTo("Stage 3 of 5")
     }
 
     private fun mutableStateOfBoolean(initial: Boolean) = androidx.compose.runtime.mutableStateOf(initial)
