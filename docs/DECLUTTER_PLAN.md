@@ -486,7 +486,7 @@ Plain sentence-case titles, no rank glow background, one section per topic:
 - [ ] **Light + dark:** every `@PhonePreviews` already renders both; add a test that each semantic token differs between schemes where contrast requires it (text on surface ≥ 4.5:1, from DESIGN_SYSTEM §6).
 - [ ] **Charts:** confirm all charts go through ChartKit (radar, heatmap, trend lines, rings) — `RadarChart`, `Heatmap` moved behind `Chart(ChartSpec)` if they are not yet.
 - [ ] **Screenshots:** Roborazzi goldens for each screen's main states (empty, typical, error/no-access, light + dark), re-recorded after the cleanup; stale goldens of deleted screens removed.
-- [ ] Docs: DESIGN_SYSTEM §2.1/§8.4 (one palette file, token test), ARCHITECTURE §1 (layering rule), CLAUDE.md conventions; final pass so PRD, GAME_DESIGN, DESIGN_SYSTEM and ARCHITECTURE describe the app that exists (removed sections deleted, not struck through).
+- [x] Docs: DESIGN_SYSTEM §2.1/§8.4 (one palette file, token test), ARCHITECTURE §1 (layering rule), CLAUDE.md conventions; final pass so PRD, GAME_DESIGN, DESIGN_SYSTEM and ARCHITECTURE describe the app that exists (removed sections deleted, not struck through).
 - [ ] Gate incl. `:app:verifyRoborazziDebug`. Commit `chore(designsystem): redesign readiness (layering, tokens, goldens)`.
 
 Each batch stops after its commit with a short summary; nothing is merged.

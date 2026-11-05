@@ -656,7 +656,7 @@ S(W)  = first 3 of rot(Q(W) \ S0(W−1), W)  followed by  rot(Q(W) ∩ S0(W−1)
   5. Intention: optional one line, **≤ 120 chars**.
   Text is cleaned like Path text (ENGINE_DECISIONS #59: control/format chars → space, collapse whitespace, trim, truncate by code points). It never leaves the phone.
 - **Focus stats** from step 4 are written to `hunter_profile` like a Settings change and apply from the **next generated directive** (today's is never regenerated). The generator uses its existing focus weighting (§6.3); no new numbers.
-- **Rewards:** none. Achievements for 1 / 4 / 12 submitted reviews (§14.8).
+- **Rewards:** none. No XP, no gold.
 - **Notification:** on game-day Sunday, if a reminder time is set and `W` has no review, the existing directive notification at the reminder time gains a second line ("Your weekly review is open.") and a review action. It stays one notification, so the 2-per-day cap (ARCH §3.5) is untouched.
 
 ### 14.5 Time-of-day blocks (PRD F31)
@@ -799,7 +799,7 @@ met(d)          = focusMinutes(d) ≥ goal(d)
 
 - Goal default **120 min** (`N11`), range **15–600 in 15-minute steps** (`N12`). Collapsed and abandoned runs never count. LOGGED runs (§8.1 short or over-cap runs) count, because this is time focused, not a reward.
 - **Focus streak** = consecutive game-days with `met`, counting back from today if today is met, else from yesterday. A finalized REST or RECOVERY day (§7.2) is skipped over: it neither extends nor breaks the focus streak. Any other day that is not met ends it. Derived, never stored (invariant 7).
-- **No XP.** Achievements `focus_streak7 / 30 / 100` (§16.16).
+- **No XP.** No gold either.
 
 ### 16.5 (removed)
 
@@ -833,7 +833,7 @@ Per exercise, compared with every **earlier** finished session of it (§13.2 dat
 | Best session volume | max §13.2 volume of the exercise in one session |
 
 - A set is a PR when it beats the record held **before this session** (ties are not PRs). An exercise's first session sets records but flags no PR. Ticking a set done that is a PR shows a small celebration (haptic + "New record" chip, reduce-motion respected); the finished-workout summary lists the session's PRs (one line per record type per exercise).
-- **Rewards:** no XP. Achievements `pr1 / pr25 / pr100` (§16.16) counted over PR events (one per record type per exercise per session; weights are self-logged, so gold is limited to these one-time unlocks; open question Q6).
+- **Rewards:** no XP and no gold (weights are self-logged). PR events are one per record type per exercise per session.
 
 ### 16.8 Plate calculator (C3)
 
@@ -877,7 +877,7 @@ Opt-in "Phone-down nights". Needs usage access.
 - **Money saved** = cost per day × whole days of the current run; **time reclaimed** = minutes per day × whole days. Both optional, entered by the hunter, display only (no real money is involved).
 - **Milestones** shown: 1, 3, 7, 14, 30, 90, 180, 365 days (`N25`).
 - **Doomscrolling (auto, fails closed):** day-based. A finalized game-day is **clean** when Screen Time reads `Tracked` and total Distracting-app minutes ≤ **60** (`N26`); **over** → a relapse is logged automatically for that day ("74 min on distracting apps"); `NoAccess`/`Unavailable` → the day is **paused** (neither counts nor breaks). Run = consecutive clean days.
-- **Rewards:** **no XP** for any counter, ever. Achievements `quit_7 / 30 / 90 / 365` (§16.16) unlock once each, over all counters, on the **in-app run**: time counted from `max(start, created_at)`, so a back-dated start never unlocks anything; for Doomscrolling, clean days.
+- **Rewards:** **no XP** for any counter, ever. No gold either. Milestones are display only and count the **in-app run**: time from `max(start, created_at)`, so a back-dated start never counts; for Doomscrolling, clean days.
 - **Privacy:** counters and relapse notes never leave the phone except in the hunter's own export. App lock is open question Q5.
 
 ### 16.14 (removed)
@@ -898,7 +898,7 @@ Long, fixed daily rule sets with a day counter. Original names only.
 - **Slots:** each rule is a habit counting toward the 8 active habits; a program can't start without enough free slots. **One long arc at a time:** a program and a 45-day Campaign can't run together (open question Q8).
 - **Day k** = game-days since the (re)start + 1. A day is **kept** when every program rule instance of that game-day was completed; a finalized REST/RECOVERY day is **rest** (not broken). Otherwise it is **broken**.
 - **After a broken day**, the next app open asks: **Restart** (a new run, day 1 = today) or **Continue** (the day stays marked broken, the counter goes on). No answer by the next rollover = Continue. Nothing is ever deducted.
-- **End:** after the last day is finalized: no broken day in the run → **COMPLETED** and the program's achievement (§16.16); otherwise **FINISHED** (shown with its marks, no achievement). Program habits are archived either way. Abandon anytime: habits archived, nothing deducted.
+- **End:** after the last day is finalized: no broken day in the run → **COMPLETED**; otherwise **FINISHED** (shown with its marks). Program habits are archived either way. Abandon anytime: habits archived, nothing deducted.
 
 ### 16.16 (removed)
 

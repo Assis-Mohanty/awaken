@@ -33,7 +33,7 @@ The existing `userService`/`questService` repo stays as a learning/portfolio pro
                    │ XpCalculator  LevelCurve  RankRules        │   │ Play Integrity verify → rate limit │
                    │ StreakRules   DailyCaps                      │   │ → budget check → LLM (structured   │
                    │ DirectiveGenerator  DifficultyAdapter      │   │ output) → zod validate → respond   │
-                   │ AchievementEvaluator                       │   │ Stores no user data.               │
+                   │                                          │   │ Stores no user data.               │
                    │ PathValidator  PathScheduler               │   └─────────────────┬──────────────────┘
                    │ ProgressionSignal  model/*                 │                     ▼
                    └────────────────────────────────────────────┘               Cloudflare Workers AI
@@ -51,7 +51,7 @@ awaken/
 │     ├─ model/  Stat, Difficulty, Verification, QuestTemplate, QuestDraft, Hunter, Rank, LedgerKind ...
 │     ├─ XpCalculator.kt  LevelCurve.kt  RankRules.kt  StatLevel.kt
 │     ├─ DailyCaps.kt  StreakRules.kt
-│     ├─ DirectiveGenerator.kt  DifficultyAdapter.kt  AchievementEvaluator.kt
+│     ├─ DirectiveGenerator.kt  DifficultyAdapter.kt
 │     ├─ path/  PathValidator.kt  PathPricing.kt  PathScheduler.kt  PathProgression.kt  Keywords.kt (StatSuggester,
 │     │         EquipmentKeywords)  PathText.kt  PathModels.kt  PathWire.kt (wire DTOs)
 │     └─ GameDay.kt  (Instant + zone + dayStartHour -> LocalDate)
@@ -105,7 +105,7 @@ quest_instance(id PK, game_date, type, template_id NULL, habit_id NULL, path_slo
                INDEX(game_date), INDEX(status))
 
 -- One row per completion attempt (GD §9.3). id = completionId = questInstanceId#attemptN. Not a ledger table:
--- undone_at is set on undo. Feeds the undo window, re-completion attempt numbers and achievement counts.
+-- undone_at is set on undo. Feeds the undo window, re-completion attempt numbers.
 completion(id PK, quest_instance_id, attempt INT, game_date, quest_type, stat, verification_source,  -- SELF|TIMER|HEALTH
            crit BOOL (historic, always false now), xp INT, completed_at, undone_at NULL,
            UNIQUE(quest_instance_id, attempt), INDEX(game_date))
@@ -223,7 +223,7 @@ focus_goal(effective_from TEXT PK, minutes INT)          -- versioned; the row �
 -- v21 (Batch 3, gym C1/C2/C3/C7)
 exercise_pref(exercise_id PK, rep_min INT NULL, rep_max INT NULL, increment_kg REAL NULL)   -- per-exercise overrides
 gym_settings(id PK = 1, bar_kg REAL, plates_kg TEXT, bar_lb REAL, plates_lb TEXT, unit TEXT, rep_min INT, rep_max INT)
--- PR events are derived from workout_set history (never stored); pr achievements count them by replay
+-- PR events are derived from workout_set history (never stored)
 
 -- v22 (Batch 4, screen & health D1/D2/D3)
 hunter_profile + step_goal INT NOT NULL DEFAULT 8000
@@ -270,10 +270,9 @@ QuestScreen ─onEvent(Complete)─▶ QuestViewModel
          ledger.insertAll(result.toLedgerRows(sourceType=QUEST, sourceId=completionId))   // id#attemptN; IGNORE on conflict
          balances.apply(rowsActuallyInserted)
          newLevel = LevelCurve.level(balances.xpTotal)
-         unlocks = AchievementEvaluator.evaluate(snapshot)  → insert unlocks + reward rows
        }
-   ◀ CompletionOutcome(reward, levelUp?, rankTrialUnlocked?, unlocks[])
-   UI: reward sheet → (level-up cinematic) → (achievement toasts)
+   ◀ CompletionOutcome(reward, levelUp?, rankTrialUnlocked?)
+   UI: reward sheet → (level-up cinematic)
 ```
 
 ### 3.2 Day rollover (deterministic, idempotent, catch-up safe)
