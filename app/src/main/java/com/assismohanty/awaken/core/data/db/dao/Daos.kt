@@ -286,7 +286,7 @@ interface HabitDao {
     @Upsert
     suspend fun upsert(habit: HabitEntity)
 
-    /** Archived by the hunter (campaign habits end with their campaign and never show here). */
+    /** Archived by the hunter (program habits end with their program and never show here). */
     @Query("SELECT * FROM habit WHERE active = 0 AND program_id IS NULL ORDER BY created_at")
     fun observeArchived(): Flow<List<HabitEntity>>
 
@@ -368,11 +368,11 @@ interface DayRecordDao {
     @Query("SELECT MAX(game_date) FROM day_record WHERE finalized_at IS NOT NULL")
     suspend fun lastFinalizedDate(): LocalDate?
 
-    /** Finalized cleared days in `[from, to]` (GD §6.8 campaign progress). */
+    /** Finalized cleared days in `[from, to]` (consistency over a date range). */
     @Query("SELECT COUNT(*) FROM day_record WHERE finalized_at IS NOT NULL AND cleared = 1 AND game_date BETWEEN :from AND :to")
     suspend fun countCleared(from: LocalDate, to: LocalDate): Int
 
-    /** Finalized cleared game-dates in `[from, to]`, for the campaign calendar. */
+    /** Finalized cleared game-dates in `[from, to]`, for the consistency calendar. */
     @Query("SELECT game_date FROM day_record WHERE finalized_at IS NOT NULL AND cleared = 1 AND game_date BETWEEN :from AND :to")
     fun observeClearedDates(from: LocalDate, to: LocalDate): Flow<List<LocalDate>>
 

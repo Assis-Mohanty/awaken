@@ -95,7 +95,7 @@ sealed interface ChartSpec {
     /** Bars filling a fixed height, each a base part with an optional highlighted part on top (e.g. total vs distracting minutes). */
     data class StackedColumns(val columns: List<StackedColumn>, val base: Color? = null, val highlight: Color? = null, val height: Dp? = null) : ChartSpec
 
-    /** A grid of day cells, [columns] to a row (e.g. the 45-day campaign). */
+    /** A grid of day cells, [columns] to a row (e.g. a program run). */
     data class CalendarGrid(val cells: List<CalendarCell>, val columns: Int, val description: String) : ChartSpec
 
     /** A smooth trend line with a soft gradient, dotted grid and the latest point marked; [labels] run under it. */

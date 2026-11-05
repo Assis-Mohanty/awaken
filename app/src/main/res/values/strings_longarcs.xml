@@ -1,10 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    Dungeons and programs (GAME_DESIGN §16.14-16.15). Neutral voice: "Dungeon" is the one System word and is reached through
-    the Lexicon term `dungeon` (Clean "Challenge") where it is shown as a name, so these strings avoid it.
+    Programs (GAME_DESIGN §16.15) and the kind label for old challenge-stage quests that may still sit in existing data.
 -->
 <resources>
-    <!-- Dungeon stage quest and kind -->
+    <!-- Kind label for old challenge-stage quests -->
     <string name="quest_kind_dungeon">Challenge stage</string>
 
 
@@ -20,8 +19,6 @@
     <string name="program_rule_steps_10k">10,000 steps</string>
     <string name="program_rule_steps_10k_plain">Walk 10,000 steps</string>
 
-
-    <!-- Challenge runs (Dungeon in System voice; the screen title comes from the Lexicon term) -->
 
     <!-- Programs -->
     <string name="programs_title">Programs</string>

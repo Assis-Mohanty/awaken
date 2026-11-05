@@ -408,7 +408,7 @@ private fun QuitRow(onOpenQuit: () -> Unit) {
     }
 }
 
-/** The way into the programs (GD §16.15), next to the Campaign and the quit counters. */
+/** The way into the programs (GD §16.15), next to the quit counters. */
 @Composable
 private fun ProgramsRow(onOpenPrograms: () -> Unit) {
     AwakenCard(reveal = false, contentPadding = Spacing.listCard, spacing = Spacing.zero, modifier = Modifier.fillMaxWidth()) {

@@ -78,5 +78,4 @@
     <string name="focus_tile_running">Focus running</string>
     <string name="focus_tile_break_left">Break · %1$s left</string>
     <string name="focus_tile_round">Round %1$d of %2$d</string>
-    <!-- Deep Work achievements (GD §16.16); neutral voice, no Clean twin needed -->
 </resources>

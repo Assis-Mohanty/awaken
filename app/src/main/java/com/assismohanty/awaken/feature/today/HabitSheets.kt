@@ -390,7 +390,7 @@ fun HabitEditor(editor: HabitEditorState, onEvent: (HabitsEvent) -> Unit, modifi
     }
 }
 
-/** Long-press options: Archive (restorable in Settings) or Delete; campaign habits only explain why they can't. */
+/** Long-press options: Archive (restorable in Settings) or Delete; program habits only explain why they can't. */
 @Composable
 fun HabitOptions(habit: HabitItem, onEvent: (HabitsEvent) -> Unit, modifier: Modifier = Modifier, skip: SkipState = SkipState.NONE) {
     val colors = AwakenTheme.colors

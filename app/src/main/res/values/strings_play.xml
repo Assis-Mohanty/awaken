@@ -155,8 +155,6 @@
     <string name="habit_error_days">Pick at least one day.</string>
     <string name="habit_error_target">Target must be at least 1.</string>
 
-    <!-- Achievement names (GAME_DESIGN §10) -->
-
     <!-- Days, streaks, penalty, trials (Phase 7; GAME_DESIGN §5, §6.4, §7; DESIGN_SYSTEM §5 voice) -->
     <string name="penalty_warning_detail">Your streak reset. Finish the comeback quest today to get back on track.</string>
     <string name="notice_shield_title">Streak freeze</string>

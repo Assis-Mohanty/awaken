@@ -59,7 +59,7 @@ data class TodayUiState(
     /** Today's Path quests that were not promoted to Main (GD §6.6.6). */
     val paths: List<QuestRowModel> = emptyList(),
     val habits: List<QuestRowModel> = emptyList(),
-    /** Habit quest instance → its habit, for the long-press Archive / Delete (campaign habits included; refused there). */
+    /** Habit quest instance → its habit, for the long-press Archive / Delete (program habits included; refused there). */
     val habitIdByQuest: Map<String, String> = emptyMap(),
     val completed: Int = 0,
     val total: Int = 0,
