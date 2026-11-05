@@ -6,7 +6,6 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Upsert
-import com.assismohanty.awaken.core.data.db.entity.AchievementUnlockEntity
 import com.assismohanty.awaken.core.data.db.entity.BalanceCacheEntity
 import com.assismohanty.awaken.core.data.db.entity.CompletionEntity
 import com.assismohanty.awaken.core.data.db.entity.DayRecordEntity
@@ -14,7 +13,6 @@ import com.assismohanty.awaken.core.data.db.entity.GateRunEntity
 import com.assismohanty.awaken.core.data.db.entity.HabitEntity
 import com.assismohanty.awaken.core.data.db.entity.HunterProfileEntity
 import com.assismohanty.awaken.core.data.db.entity.LedgerEntryEntity
-import com.assismohanty.awaken.core.data.db.entity.OwnedCosmeticEntity
 import com.assismohanty.awaken.core.data.db.entity.QuestInstanceEntity
 import com.assismohanty.awaken.core.data.db.entity.StatTierEntity
 import com.assismohanty.awaken.core.data.db.entity.TrialEntity
@@ -40,18 +38,6 @@ interface HunterDao {
     @Upsert
     suspend fun upsertProfile(profile: HunterProfileEntity)
 
-    @Query("UPDATE hunter_profile SET equipped_title_id = :titleId WHERE id = 'me'")
-    suspend fun setEquippedTitle(titleId: String?)
-
-    @Query("UPDATE hunter_profile SET theme_id = :themeId WHERE id = 'me'")
-    suspend fun setTheme(themeId: String)
-
-    @Query("UPDATE hunter_profile SET equipped_frame_id = :frameId WHERE id = 'me'")
-    suspend fun setEquippedFrame(frameId: String?)
-
-    @Query("UPDATE hunter_profile SET equipped_sigil_id = :sigilId WHERE id = 'me'")
-    suspend fun setEquippedSigil(sigilId: String?)
-
     @Query("UPDATE hunter_profile SET name = :name WHERE id = 'me'")
     suspend fun setName(name: String)
 
@@ -66,10 +52,6 @@ interface HunterDao {
 
     @Query("UPDATE hunter_profile SET owned_equipment = :equipment WHERE id = 'me'")
     suspend fun setOwnedEquipment(equipment: Set<String>)
-
-    /** Comma-separated identity ids in pick order (GD §14.7). */
-    @Query("UPDATE hunter_profile SET identities = :identities WHERE id = 'me'")
-    suspend fun setIdentities(identities: String)
 
     @Query("UPDATE hunter_profile SET health_enabled = :enabled WHERE id = 'me'")
     suspend fun setHealthEnabled(enabled: Boolean)
@@ -304,8 +286,8 @@ interface HabitDao {
     @Upsert
     suspend fun upsert(habit: HabitEntity)
 
-    /** Archived by the hunter (campaign habits end with their campaign and never show here). */
-    @Query("SELECT * FROM habit WHERE active = 0 AND campaign_id IS NULL AND program_id IS NULL ORDER BY created_at")
+    /** Archived by the hunter (program habits end with their program and never show here). */
+    @Query("SELECT * FROM habit WHERE active = 0 AND program_id IS NULL ORDER BY created_at")
     fun observeArchived(): Flow<List<HabitEntity>>
 
     /** The habit row only: its past quest instances, completions and ledger rows stay (invariant 1). */
@@ -350,9 +332,6 @@ interface LedgerDao {
     )
     fun observeXpPerDay(from: LocalDate, to: LocalDate): Flow<List<DayTotal>>
 
-    @Query("SELECT COUNT(DISTINCT source_id) FROM ledger_entry WHERE source_type = 'CACHE_OPEN'")
-    suspend fun cachesOpened(): Int
-
     @Query("SELECT * FROM balance_cache")
     suspend fun balances(): List<BalanceCacheEntity>
 
@@ -389,11 +368,11 @@ interface DayRecordDao {
     @Query("SELECT MAX(game_date) FROM day_record WHERE finalized_at IS NOT NULL")
     suspend fun lastFinalizedDate(): LocalDate?
 
-    /** Finalized cleared days in `[from, to]` (GD §6.8 campaign progress). */
+    /** Finalized cleared days in `[from, to]` (consistency over a date range). */
     @Query("SELECT COUNT(*) FROM day_record WHERE finalized_at IS NOT NULL AND cleared = 1 AND game_date BETWEEN :from AND :to")
     suspend fun countCleared(from: LocalDate, to: LocalDate): Int
 
-    /** Finalized cleared game-dates in `[from, to]`, for the campaign calendar. */
+    /** Finalized cleared game-dates in `[from, to]`, for the consistency calendar. */
     @Query("SELECT game_date FROM day_record WHERE finalized_at IS NOT NULL AND cleared = 1 AND game_date BETWEEN :from AND :to")
     fun observeClearedDates(from: LocalDate, to: LocalDate): Flow<List<LocalDate>>
 
@@ -491,27 +470,3 @@ interface TrialDao {
     suspend fun upsert(trial: TrialEntity)
 }
 
-@Dao
-interface AchievementDao {
-    @Query("SELECT achievement_id FROM achievement_unlock")
-    suspend fun unlockedIds(): List<String>
-
-    @Query("SELECT achievement_id FROM achievement_unlock")
-    fun observeUnlockedIds(): Flow<List<String>>
-
-    @Insert(onConflict = OnConflictStrategy.IGNORE)
-    suspend fun insert(unlock: AchievementUnlockEntity): Long
-}
-
-@Dao
-interface OwnedCosmeticDao {
-    /** Returns -1 when the cosmetic is already owned (a replayed purchase or cache open is a no-op). */
-    @Insert(onConflict = OnConflictStrategy.IGNORE)
-    suspend fun insert(cosmetic: OwnedCosmeticEntity): Long
-
-    @Query("SELECT cosmetic_id FROM owned_cosmetic")
-    suspend fun ownedIds(): List<String>
-
-    @Query("SELECT cosmetic_id FROM owned_cosmetic")
-    fun observeOwnedIds(): Flow<List<String>>
-}

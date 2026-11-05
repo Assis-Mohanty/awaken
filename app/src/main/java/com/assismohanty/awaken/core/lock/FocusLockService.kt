@@ -16,6 +16,8 @@ import com.assismohanty.awaken.core.data.repo.ThemeMode
 import com.assismohanty.awaken.core.work.ACTION_OPEN_GATES
 import com.assismohanty.awaken.core.work.GateCoordinator
 import com.assismohanty.awaken.engine.BlockDecision
+
+import com.assismohanty.awaken.engine.FocusLockRules
 import com.assismohanty.awaken.engine.GateMode
 import com.assismohanty.awaken.engine.GateRunMath
 import dagger.hilt.android.AndroidEntryPoint
@@ -36,7 +38,7 @@ import timber.log.Timber
  *
  * Privacy by construction: it listens to "a window opened" events only (see `focus_lock_service.xml`: no content
  * retrieval, no key events, no gestures), reads nothing from an event but the package name, stores nothing about it and
- * sends nothing anywhere.
+ * sends nothing anywhere. It is scoped too ([applyScope]): AWAKEN alone while no session runs, and never a payment app.
  */
 @AndroidEntryPoint
 class FocusLockService : AccessibilityService() {
@@ -45,6 +47,10 @@ class FocusLockService : AccessibilityService() {
     @Inject lateinit var clock: Clock
 
     @Inject lateinit var coordinator: GateCoordinator
+
+    @Inject lateinit var allowed: AlwaysAllowed
+
+    @Inject lateinit var coverable: CoverableApps
 
     private var scope: CoroutineScope? = null
     private var overlay: BlockOverlay? = null
@@ -58,6 +64,18 @@ class FocusLockService : AccessibilityService() {
             uncover()
         }
     }
+
+    /** An app was installed, removed or updated while a session runs: the apps to listen to are worked out again. */
+    private val packagesChanged = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            allowed.invalidate()
+            coverable.invalidate()
+            applyScope(force = true)
+        }
+    }
+    private var packageReceiverOn = false
+    private var scopeWide: Boolean? = null
+    private var scopePackages: Set<String> = emptySet()
 
     /** The app currently covered; null when nothing is. */
     private var blockedPackage: String? = null
@@ -76,6 +94,7 @@ class FocusLockService : AccessibilityService() {
         serviceScope.launch {
             state.snapshot.collect {
                 snapshot = it
+                applyScope()
                 refresh()
             }
         }
@@ -96,6 +115,47 @@ class FocusLockService : AccessibilityService() {
         if (state.decide(pkg, snapshot, clock.now()) == BlockDecision.BLOCK && pkg != null) cover(pkg) else uncover()
     }
 
+    /**
+     * Who the service listens to. With no session running it is AWAKEN alone, so UPI and bank apps see a service that
+     * watches one app. While a session runs it is every app but the payment apps (never an empty list: empty means every
+     * app to Android). Payment apps send no events, so they are never covered. FocusLockRules decides the rest.
+     */
+    private fun applyScope(force: Boolean = false) {
+        val wide = snapshot.enabled && state.gate(snapshot.run, clock.now()).let { it.running && !it.paused }
+        val target = if (wide) {
+            FocusLockRules.watchScope(allowed.watchCandidates(), allowed.paymentApps(), packageName)
+        } else {
+            setOf(packageName)
+        }
+        setPackageReceiver(wide)
+        if (!force && scopeWide == wide && scopePackages == target) return
+        val info = serviceInfo ?: return
+        info.packageNames = target.toTypedArray()
+        serviceInfo = info
+        scopeWide = wide
+        scopePackages = target
+        if (!wide) {
+            lastPackage = null
+            uncover()
+        }
+    }
+
+    private fun setPackageReceiver(on: Boolean) {
+        if (on == packageReceiverOn) return
+        packageReceiverOn = on
+        if (on) {
+            val filter = IntentFilter().apply {
+                addAction(Intent.ACTION_PACKAGE_ADDED)
+                addAction(Intent.ACTION_PACKAGE_REMOVED)
+                addAction(Intent.ACTION_PACKAGE_REPLACED)
+                addDataScheme("package")
+            }
+            registerReceiver(packagesChanged, filter)
+        } else {
+            runCatching { unregisterReceiver(packagesChanged) }
+        }
+    }
+
     override fun onInterrupt() = Unit
 
     override fun onUnbind(intent: Intent?): Boolean {
@@ -110,6 +170,7 @@ class FocusLockService : AccessibilityService() {
 
     private fun shutDown() {
         runCatching { unregisterReceiver(screenOff) }
+        setPackageReceiver(false)
         uncover()
         scope?.cancel()
         scope = null

@@ -55,25 +55,4 @@ class ConsistencyUseCasesTest {
         assertThat(model.missLine).isEqualTo(MissLine.MISSED_YESTERDAY)
     }
 
-    @Test
-    fun theFifthRecoveryUnlocksNeverTwiceAtRolloverOnce() = runTest {
-        graph.seedHunter()
-        // Four recoveries already, and yesterday was missed.
-        history(*Array(4) { listOf(DayOutcome.BROKEN, DayOutcome.CLEARED) }.flatMap { it }.toTypedArray(), DayOutcome.BROKEN)
-        graph.rollover()
-        val main = graph.db.questDao().getForDate(today).first { it.type == QuestType.MAIN }
-        graph.completeQuest(main.id)
-        assertThat(graph.db.achievementDao().unlockedIds()).doesNotContain("never_twice")
-
-        graph.clock.advance(Duration.ofDays(1))
-        graph.rollover()
-        graph.clock.advance(Duration.ofDays(1))
-        graph.rollover()
-
-        assertThat(graph.db.achievementDao().unlockedIds()).contains("never_twice")
-        val gold = graph.db.ledgerDao().all().filter {
-            it.kind == LedgerKind.GOLD && it.sourceType == SourceType.ACHIEVEMENT && it.sourceId == "never_twice"
-        }
-        assertThat(gold.map { it.delta }).containsExactly(50L)
-    }
 }

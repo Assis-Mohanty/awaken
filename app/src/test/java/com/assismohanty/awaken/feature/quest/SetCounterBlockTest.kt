@@ -1,6 +1,5 @@
 package com.assismohanty.awaken.feature.quest
 
-import com.assismohanty.awaken.core.designsystem.lexicon.PresentationMode
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -36,7 +35,7 @@ class SetCounterBlockTest {
 
     private fun show(state: QuestDetailUiState, events: MutableList<QuestDetailEvent> = mutableListOf()) {
         composeRule.setContent {
-            AwakenTheme(reduceMotion = true, presentation = PresentationMode.SYSTEM) { QuestDetailScreen(state = state, onEvent = { events += it }, onBack = {}) }
+            AwakenTheme(reduceMotion = true) { QuestDetailScreen(state = state, onEvent = { events += it }, onBack = {}) }
         }
     }
 

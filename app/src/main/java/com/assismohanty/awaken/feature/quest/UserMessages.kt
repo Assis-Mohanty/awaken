@@ -65,16 +65,13 @@ fun UserMessage.text(resources: LexResources): String = when (this) {
     UserMessage.RerollNone -> resources.getString(R.string.msg_reroll_none)
     UserMessage.ShareFailed -> resources.getString(R.string.msg_share_failed)
     is UserMessage.VaultBought -> resources.getString(R.string.msg_vault_bought, shopItemName(itemId, resources))
-    is UserMessage.VaultEquipped -> resources.getString(R.string.msg_vault_equipped, shopItemName(itemId, resources))
     UserMessage.VaultDuplicate -> resources.getString(R.string.msg_vault_duplicate)
     is UserMessage.VaultRejected -> when (val reason = check) {
         is BuyCheck.InsufficientGold -> resources.getString(R.string.vault_missing_gold, NumberFormat.getIntegerInstance(resources.configuration.locales[0]).format(reason.missing))
         BuyCheck.ShieldLimit -> resources.getString(R.string.vault_shield_limit)
-        is BuyCheck.RankRequired -> resources.getString(R.string.vault_requires_rank, reason.rank.name)
-        BuyCheck.AlreadyOwned, BuyCheck.Buyable -> resources.getString(R.string.msg_vault_already_owned)
+        BuyCheck.Buyable -> resources.getString(R.string.msg_vault_already_owned)
     }
-    UserMessage.VaultNoFragments -> resources.getString(R.string.msg_vault_no_fragments)
-    UserMessage.VaultPoolEmpty -> resources.getString(R.string.msg_vault_pool_empty)
+    UserMessage.PenaltyOpen -> resources.getString(R.string.penalty_warning_detail)
     UserMessage.DayStartBlocked -> resources.getString(R.string.msg_day_start_blocked)
     UserMessage.ExportDone -> resources.getString(R.string.msg_export_done)
     is UserMessage.HabitRestored -> resources.getString(R.string.habit_restored, title)

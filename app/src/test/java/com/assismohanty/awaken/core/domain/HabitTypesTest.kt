@@ -2,7 +2,6 @@ package com.assismohanty.awaken.core.domain
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.assismohanty.awaken.core.data.db.entity.GateRunStatus
-import com.assismohanty.awaken.engine.CritRoller
 import com.assismohanty.awaken.engine.HabitProblem
 import com.assismohanty.awaken.engine.model.Difficulty
 import com.assismohanty.awaken.engine.model.HabitFrequency
@@ -54,13 +53,8 @@ class HabitTypesTest {
 
     private suspend fun instance(habitId: String) = questDao.habitInstanceOn(habitId, graph.today())
 
-    /**
-     * A habit gets a random id, so its quest may roll the deterministic 8% crit (GD §4.2). The XP is the base price, doubled
-     * exactly when that quest rolled a crit; the roll itself is a pure function of the quest id.
-     */
     private fun assertXp(outcome: CompletionOutcome, base: Int) {
-        assertThat(outcome.reward.crit).isEqualTo(CritRoller.isCrit(outcome.questInstanceId))
-        assertThat(outcome.reward.xp).isEqualTo(if (outcome.reward.crit) base * 2 else base)
+        assertThat(outcome.reward.xp).isEqualTo(base)
     }
 
     private suspend fun xpRows() = graph.db.ledgerDao().all().filter { it.kind == LedgerKind.XP_TOTAL }

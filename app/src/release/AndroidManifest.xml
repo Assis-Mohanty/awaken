@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- Release has no network use: AI Paths is compiled out. This also strips INTERNET if a library ever adds it. -->
+    <uses-permission android:name="android.permission.INTERNET" tools:node="remove" />
+</manifest>

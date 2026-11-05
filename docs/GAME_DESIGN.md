@@ -12,7 +12,7 @@
 2. **Verified beats claimed.** Actions the phone can observe (Health Connect, in-app focus timer) earn more than self-reported ones. This is our moat — every competitor is honor-system only.
 3. **Hard, never cruel.** Failure creates a *comeback quest*, not a wipe. No XP loss, no level loss, no public shaming. (Habitica's biggest complaint is its punishment death-spiral.)
 4. **Every number is explainable.** The completion sheet shows the formula breakdown: `40 base × 1.5 Normal × 1.20 streak × 1.30 verified = 94 XP` (BASE is 40, §4.1).
-5. **The phone should feel like a System window**, not a to-do list with a skin.
+5. **Calm and clear.** Every screen shows what matters; nothing is decoration, and no screen speaks in story or game voice.
 
 ---
 
@@ -23,7 +23,6 @@
 | `hunterName` | 3–20 chars, set at Awakening (onboarding) |
 | `level` | Derived from total XP (§4). Never stored as source of truth. |
 | `rank` | E/D/C/B/A/S. Derived from level **and** passed Rank Trials (§5). |
-| `title` | One equipped title (§10). |
 | `stats` | Five stats, each with its own XP pool (§3). |
 | `gold` | Earned currency. Derived from gold ledger. |
 | `streak` | Consecutive "cleared days" (§7). |
@@ -62,32 +61,22 @@ A quest awards XP to one **primary** stat (100%) and optionally one **secondary*
 ### 4.1 Quest XP
 
 ```
-questXp = round( BASE × D × S × V × C )
+questXp = round( BASE × D × S × V )
 
 BASE = 40
 
 D (difficulty)        Easy 1.0 | Normal 1.5 | Hard 2.25 | Extreme 3.0
 S (streak)            1 + min(streakDays, 30) / 60          → 1.00 … 1.50
 V (verification)      SELF 1.00 | TIMER 1.15 | HEALTH 1.30
-C (critical)          2.0 if crit else 1.0  (§4.2)
 ```
 
 Rounding: `kotlin.math.round` on the final product only (half-even is NOT used; use `Math.round` semantics = half-up). Intermediate values are `Double`.
 
 **Why no level-scaling factor?** The old PRD applied `1/(1+0.05·level)` *and* an exponential level curve. That double-penalises long-term users — a level-60 hunter would earn a quarter of the XP for the same push-ups while needing 10× more per level. Effort should be worth the same at every level; the curve alone handles pacing.
 
-### 4.2 Critical hits (variable reward, deterministic)
+### 4.2 (removed)
 
-Crits are variable for the user but **reproducible** for the system:
-
-```
-seed = fnv1a64( questInstanceId )         // deterministic UUID derived from (hunterId, gameDate, slot) — §6.3
-crit = (seed mod 10_000) < 800            // 8.00 %
-```
-
-- Because the seed is the instance id (fixed at generation, never the per-attempt completionId), un-completing and re-completing cannot re-roll a crit.
-- Crit also grants +1 Loot Fragment (cosmetic progression, §9).
-- Penalty quests and Rank Trial stages cannot crit.
+Critical hits were removed on 2026-11-03 (see `docs/DECLUTTER_PLAN.md`). XP is always the formula in §4.1; there is no variable reward.
 
 ### 4.3 Daily anti-farm caps (self-reported only)
 
@@ -136,7 +125,7 @@ Day 1 must produce ≥1 level-up (it does: first 2–3 quests). Week 1 reaches ~
 | A | 50–69 | `rankA` violet |
 | S | 70–100 | `rankS` gold |
 
-Reaching the first level of a new band does **not** promote you. It unlocks the **Rank Trial**: a 3-day gate with one Hard quest per day in the hunter's two weakest stats + one focus stat. Clear all 3 stages (any order, within 5 days) → promotion cinematic + rank title + 500 gold.
+Reaching the first level of a new band does **not** promote you. It unlocks the **Rank Trial**: a 3-day gate with one Hard quest per day in the hunter's two weakest stats + one focus stat. Clear all 3 stages (any order, within 5 days) → promotion + 500 gold.
 
 - Fail (window expires) → trial can be retried after 48 h. Levels keep accruing; only the rank badge waits.
 - Rank never decays in v1 (no leaderboard yet = decay has no purpose and is pure anxiety).
@@ -169,7 +158,7 @@ Quests are generated from a **bundled JSON template library** (`assets/quests/te
   "id": "str_pushups",
   "stat": "STR",
   "secondaryStat": "WIL",
-  "titles": ["Do push-ups", "Practise push-ups"],
+  "title": "Do {n} push-ups",
   "description": "Complete {target} push-ups. Sets of any size.",
   "unit": "reps",
   "targets": { "EASY": 20, "NORMAL": 40, "HARD": 80, "EXTREME": 120 },
@@ -180,7 +169,7 @@ Quests are generated from a **bundled JSON template library** (`assets/quests/te
 }
 ```
 
-**Titles** say what to do, in plain words: action first, **2–5 words**, sentence case, **≤ 40 chars**, 1–3 variants per template. No numbers (the target line under the title shows them, and campaign habits keep their title while the target grows), no metaphors or fantasy words (forge, power, gate, realm, …: the full list is `TemplateLibrary.BANNED_TITLE_WORDS`). Good: "Do push-ups", "Walk your steps", "Eat protein-rich food". Bad: "Iron Arms", "Fuel the Forge". `TemplateLibrary.validate()` enforces this, so `ContentAssetsTest` fails on a bad title.
+**Titles** say what to do, in plain words, and carry the target: `title` is one pattern per template, rendered with the quest's target when it is generated ("Walk {n} steps" becomes "Walk 7,000 steps"), so the quest row has no separate target line. Action first, sentence case, at least 2 words, **≤ 44 chars once rendered at any difficulty**, no random variants. Tokens: `{n}` (the target, thousands separators), `{dur}` for `sec` targets ("30 seconds", "1 minute", "90 seconds", "3 minutes"), and `{one|many}` for a word that agrees with a target of 1 ("Compliment {n} {person|people}"). Exactly one of `{n}` / `{dur}` per pattern; no other digits. No metaphors or fantasy words (forge, power, gate, realm, …: the full list is `TemplateLibrary.BANNED_TITLE_WORDS`). Good: "Do 25 push-ups", "Walk 7,000 steps". Bad: "Iron Arms", "Fuel the Forge". `TemplateLibrary.validate()` enforces this, so `ContentAssetsTest` fails on a bad title. Already generated quests keep the title they were created with. Path (AI) titles are untouched; the proxy prompt already asks for plain titles.
 
 Verification options in templates: `SELF`, `TIMER` (completed by the Focus Gate engine), `HEALTH_STEPS`, `HEALTH_EXERCISE` (any exercise session ≥ target minutes), `HEALTH_SLEEP` (sleep session ≥ target hours), `HEALTH_DISTANCE` (walking + running distance for the game-day ≥ target km), `HEALTH_CALORIES` (active calories for the game-day ≥ target kcal).
 
@@ -374,19 +363,9 @@ The hunter tags apps **Distracting / Productive / Neutral** and sets a daily lim
 - **Usage access revoked** mid-day → the quest expires unpaid; nothing else changes.
 - **Notifications** use their own `screen_time` channel, outside the two-a-day reminder cap (ARCH §3.5), because the hunter opted in and each alert fires at most once per app per day.
 
-### 6.8 The 45-day Campaign (opt-in)
+### 6.8 (removed)
 
-A fixed-length program built from the hunter's own scan. Clean-room design: no content, art or code from any other app.
-
-- **Scan.** 10 questions, two per stat, answered 0 (never) … 3 (almost always). Score per stat = sum (0–6). The weakest stat (ties → stat order STR, INT, WIL, VIT, CHA) is "where we start" and names the **archetype**: STR *The Rebuilder*, INT *The Scholar*, WIL *The Iron Will*, VIT *The Restorer*, CHA *The Envoy*.
-- **Plan.** Up to **5 campaign habits** from the template library (SELF templates that support Easy, Normal and Hard; equipment and Injury Mode filters apply): weakest stat ×2 (daily + Mon/Wed/Fri), 2nd and 3rd weakest ×1 (Tue/Thu/Sat, Mon/Wed/Fri), 4th weakest ×1 (Tue/Thu/Sat). The strongest stat is left to the daily directive. Deterministic per hunter.
-- **Habit slots.** Campaign habits count toward the 8 active habits (§4.3). With fewer than **3** free slots the campaign can't start; with 3–4 free it takes that many.
-- **Length and acts.** **45 game-days**, day 1 = the day the oath is sealed. Acts of 15 days: **Foundation** (days 1–15, Easy), **Build** (16–30, Normal), **Ascend** (31–45, Hard). Each habit's difficulty is the act's tier, but never more than one step above that stat's adaptive tier (§6.4); its target is the template's target for that tier. Campaign habits are system quests from templates, so the custom-habit Normal cap (§4.3) does not apply to them; they are read-only in the habit editor and the SELF daily cap still applies.
-- **Oath.** The hunter seals a short commitment (their name and the end date) with a long press. Stored locally; no signature is kept.
-- **Progress.** A campaign day counts when the game-day is **cleared** (§7.1). Missed days never reset anything (pillar 3).
-- **Completion.** When day 45 has been finalized: **≥ 32 cleared days (70 %)** → status COMPLETED and the **Reforged** achievement (+1,000 gold, title *Reforged*, §10); otherwise ENDED. Either way the campaign habits are archived. One active campaign at a time; the hunter may abandon it anytime (habits archived, nothing deducted).
-
----
+The 45-day Campaign (scan, archetypes, oath, acts, Reforged) was removed on 2026-11-03 (see `docs/DECLUTTER_PLAN.md`). Programs (§16.15) cover fixed-length plans.
 
 ## 7. Streak, rest, and the Penalty Zone
 
@@ -429,7 +408,7 @@ The in-app-verified quest type. Turns study/deep-work into a dungeon run.
 - User picks a gate + stat (INT default, or WIL/CHA/STR for practice sessions) + optional label ("DSA – graphs").
 - Run = timestamps in Room + an ongoing notification with a system-drawn countdown (no foreground service; see ARCHITECTURE §3.3).
 - **Breach rule**: if the app is in background for > 90 seconds cumulative *(phone calls excluded via call state where available; otherwise just the 90 s budget)*, the gate collapses → no XP, a "Gate collapsed" record. Up to 1 pause of ≤ 5 min allowed per run.
-- Clear → `V = TIMER (1.15)`, quest XP via §4.1, + 1 Loot Fragment.
+- Clear → `V = TIMER (1.15)`, quest XP via §4.1.
 - **Gates launched from a GATE-mode Path quest** (§6.6.4) have their rank fixed by the quest and the stat fixed to the quest's stat. On clear, the reward is paid **once**, as the Path quest (`sourceType = QUEST`, `sourceId = questInstanceId`), never additionally as a standalone gate. A collapsed run leaves the Path quest open; the hunter may start the gate again the same day.
 ### 8.1 Custom and stopwatch gates, subjects
 
@@ -440,14 +419,13 @@ The in-app-verified quest type. Turns study/deep-work into a dungeon run.
 | P1 | Custom gate length | 10–180 min in 5-min steps (default 30) |
 | P2 | Reward tier of a cleared custom/stopwatch run | by **counted minutes**: <15 → no reward (logged only); 15–24 → E; 25–49 → D; 50–89 → C; ≥90 → B. Beyond 90 min no extra tier. Same §4.1 formula, `V = TIMER (1.15)` |
 | P3 | Stopwatch minimum to count | 15 min; stopping earlier records a "short run" with no XP and no collapse |
-| P4 | Loot Fragment | 1 per cleared run of ≥ 25 min (D tier or higher); 0 for E |
 | P5 | Daily cap | at most **4** custom + stopwatch runs per game-day pay XP (preset gates are unaffected); extras are logged |
 | P6 | Breach rule | unchanged from §8 (90 s cumulative background, 1 pause ≤ 5 min); applies to stopwatch too |
 | P7 | Subjects | max **12** active, name ≤ 24 chars; label only, no effect on rewards; archive instead of delete |
 | P8 | Weekly focus report | no new numbers: totals per subject over the game-week from cleared runs |
 | P9 | Stopwatch pauses (user request 2026-11-01) | unlimited, no 5-minute cap: tap to pause, tap to continue. Paused time is never counted. Presets and custom runs keep one pause of ≤ 5 min (§8). The breach budget is unchanged (time away while running counts, time away while paused does not) |
 
-Test vectors (add to §12 on approval): custom 30 min → D, 1 fragment; stopwatch 14 min → no XP; stopwatch 120 min → B (not higher); 5th custom run in a game-day → 0 XP.
+Test vectors (add to §12 on approval): custom 30 min → D; stopwatch 14 min → no XP; stopwatch 120 min → B (not higher); 5th custom run in a game-day → 0 XP.
 
 - Blocking other apps is the opt-in Focus Lock, §8.2 (an Accessibility Service the hunter switches on). Without it the breach budget alone applies. Screen Discipline, §6.7, only reads usage stats; it never blocks or interrupts an app.
 
@@ -463,7 +441,7 @@ While a Focus Gate is RUNNING (preset, custom or stopwatch) and Focus Lock is on
 | L1 | Cover decision: no cover if the gate is not running, is paused, or a timed gate is past its planned end; no cover for AWAKEN, launchers, the keyboard, the default dialer and messages app, system UI, Android settings, package installers, emergency and telecom apps (never-block list, in `:engine`); no cover for apps the hunter ticked in Allowed apps. Anything else is covered. |
 | L2 | **Lock replaces the breach budget.** Time away from AWAKEN while Focus Lock was on at the moment the app left, and its service is still connected on return, adds **0** to the 90 s breach budget (§8). Service down at either end: the 90 s rule applies as before. |
 | L3 | **Fallback.** When a stretch away was not covered (lock off or service down), usage data on return that shows any Distracting app (Screen Time category, §6.7) came to the front during it collapses the run with reason DISTRACTING_APP and no reward. Fails closed: no usage access or an unreadable log leaves only the 90 s rule. Time inside the pause, and after a timed gate planned end, is not looked at. |
-| L4 | [End session and open] collapses the run (reason ENDED_EARLY): no XP, gold or fragment, nothing deducted. |
+| L4 | [End session and open] collapses the run (reason ENDED_EARLY): no XP or gold, nothing deducted. |
 | L5 | Privacy: the service listens to window-change events only, reads only the package name, retrieves no screen content, stores nothing, and uses no overlay permission (accessibility overlay window). |
 
 Test vectors: lock on, 120 s away → still running; lock off, 91 s away → BREACH; lock off, 20 s away with a Distracting app opened → DISTRACTING_APP; same with no usage access → running; End session and open → ENDED_EARLY, ledger unchanged.
@@ -477,7 +455,6 @@ Test vectors: lock on, 120 s away → still running; lock off, 91 s away → BRE
 |---|---|
 | Quest completion | `round(questXp × 0.5)` (0 beyond daily cap) |
 | Rank Trial cleared | 500 |
-| Achievement unlocked | per achievement (10–200) |
 | Day cleared | 20 (awarded when the day is finalized at rollover) |
 
 ### 9.2 Sinks
@@ -486,15 +463,9 @@ Test vectors: lock on, 120 s away → still running; lock off, 91 s away → BRE
 |---|---|---|---|
 | Streak Shield | 300 | hold ≤ 2 | loss insurance |
 | Extra reroll | 40 | 3/day | autonomy |
-| Theme: *Crimson Gate* | 1,500 | once | identity |
-| Theme: *Abyssal Violet* | 1,500 | once | identity |
-| Theme: *Sovereign Gold* (requires rank S) | 3,000 | once | status |
-| Title frames (×4) | 600 / 800 / 1,000 / 1,200 | once | identity |
-| Hunter sigils (×8 icon badges) | 400 | once | identity |
 
-**No XP boosters for gold. No XP for gold. No real-money anything in v1.** A healthy economy needs sinks that don't touch progression; cosmetics + insurance do that.
+**No XP boosters for gold. No XP for gold. No real-money anything in v1.** The Store sells only items that change how you play. Themes, title frames, badges and the Relic Cache (with Loot Fragments) were removed on 2026-11-03; past purchases stay in the ledger (`sourceType = SHOP`, `CACHE_OPEN`, `ITEM`) and nothing writes new ones.
 
-**Loot Fragments** (from crits and Focus Gate clears): 10 fragments → open a **Relic Cache** containing a random cosmetic not yet owned (sigils/frames only). Earned only, never purchasable — keeps us clear of loot-box disclosure concerns.
 
 ### 9.3 Ledger rules (non-negotiable)
 
@@ -506,40 +477,19 @@ Test vectors: lock on, 120 s away → still running; lock off, 91 s away → BRE
 
 ---
 
-## 10. Achievements & titles (launch set: 32, plus Reforged)
+## 10. (removed)
 
-Each unlock: toast + haptic + gold reward. Titles are equippable; one shows under the hunter name.
-
-| ID | Name | Condition | Gold | Title? |
-|---|---|---|---|---|
-| first_blood | First Clear | Complete 1 quest | 10 | — |
-| awakened | Awakened | Finish onboarding | 10 | "The Awakened" |
-| lvl5 / lvl10 / lvl25 / lvl50 | Level milestones | reach level | 25/50/100/200 | L10 "Rising Hunter", L50 "Veteran" |
-| streak3/7/30/100 | Unbroken | streak days | 20/50/150/200 | 30 "Unbroken", 100 "The Relentless" |
-| crit1 / crit25 | Lucky Strike / Fortune's Edge | crits | 15/100 | 25 "Fortune's Favoured" |
-| gate_first / gate_hours10 / gate_hours100 | Gatebreaker | Focus Gate count / hours | 20/100/200 | 100h "Gate Sovereign" |
-| verified10 / verified100 | Witnessed | HEALTH-verified quests | 30/150 | 100 "Proven" |
-| redeemed | The Redeemed | Complete 3 penalty quests | 50 | "The Redeemed" |
-| balanced | Pentagon | Every stat ≥ level 5 | 100 | "Balanced" |
-| str20 … cha20 | Stat mastery | stat level 20 (×5) | 100 | e.g. "Ironborn", "Sage", "Stoic", "Evergreen", "Silver Tongue" |
-| rank_d … rank_s | Promotions | clear Rank Trial | (trial reward) | "D-Rank Hunter" … "S-Rank Hunter" |
-| early_bird | Dawn Raid | Complete a quest before 07:00 on 5 days | 50 | — |
-| night_owl | Midnight Gate | Clear a Focus Gate after 23:00 | 20 | — |
-| collector | Relic Hunter | Open 5 Relic Caches | 50 | — |
-| reforged | Reforged | Complete a 45-day campaign (§6.8) | 1,000 | "Reforged" |
-
-Achievements are evaluated by a pure function over ledger/state after each write — no ad-hoc counters scattered in UI code.
+Achievements and titles were removed on 2026-11-03 (see `docs/DECLUTTER_PLAN.md`). Past achievement gold stays in the ledger (`sourceType = ACHIEVEMENT`); nothing writes new rows.
 
 ---
 
-## 11. Narrative layer (cheap, high-impact)
+## 11. Copy voice and the Weekly Report
 
-- **System voice**: terse, second person, uppercase headers. *"QUEST CLEARED." "THE SYSTEM HAS NOTICED YOUR PERSISTENCE."* Store all strings in `strings.xml` (localisation-ready).
-- **Chapters**: 6 short chapters (≤ 120 words each) unlocked at L1, L5, L10, L20, L35, L50. Written once, bundled. Each unlock = full-screen reveal.
-- **Daily System Message**: picked from ~60 handwritten lines keyed by context (streak milestone, comeback, neglected stat, trial active). Deterministic by date.
+- **Voice**: plain, second person, sentence case. No story, no chapters, no daily messages, no game jargon.
 - **Weekly Report** (Sunday): stats gained, best day, most-neglected stat, next-week recalibration. Shareable as an image card (§ DESIGN_SYSTEM share card).
 
-Template quests, chapters and System lines stay hand-written and bundled. AI writes only Path content (§6.6), through the proxy. Never ship an API key in the APK.
+Template quests stay hand-written and bundled. AI writes only Path content (§6.6), through the proxy. Never ship an API key in the APK.
+
 
 ---
 
@@ -547,10 +497,8 @@ Template quests, chapters and System lines stay hand-written and bundled. AI wri
 
 | # | Input | Expected |
 |---|---|---|
-| 1 | NORMAL, streak 0, SELF, no crit | `round(40×1.5×1.0×1.0×1)` = **60** |
-| 2 | HARD, streak 12, HEALTH, no crit | `40×2.25×1.2×1.3` = 140.4 → **140** |
-| 3 | EASY, streak 45 (capped 30), TIMER, crit | `40×1.0×1.5×1.15×2` = **138** |
-| 4 | EXTREME, streak 30, HEALTH, crit | `40×3×1.5×1.3×2` = **468** |
+| 1 | NORMAL, streak 0, SELF | `round(40×1.5×1.0×1.0×1)` = **60** |
+| 2 | HARD, streak 12, HEALTH | `40×2.25×1.2×1.3` = 140.4 → **140** |
 | 5 | Gold for #2 | `round(140×0.5)` = **70** |
 | 6 | `xpToNext(1)` | **112** |
 | 7 | `xpToNext(10)` | `round(100+12×10^1.6)` = **578** |
@@ -567,7 +515,7 @@ Template quests, chapters and System lines stay hand-written and bundled. AI wri
 
 | # | Input | Expected |
 |---|---|---|
-| 16 | SELF blueprint, `effort = EXTREME`, streak 0, no crit | difficulty **NORMAL**, verification SELF → XP **60** (vector 1) |
+| 16 | SELF blueprint, `effort = EXTREME`, streak 0 | difficulty **NORMAL**, verification SELF → XP **60** (vector 1) |
 | 17 | GATE blueprint, `estMinutes = 40` | requires **C-Gate (50 min)**, difficulty **HARD**, verification **TIMER** |
 | 18 | GATE blueprint, `estMinutes = 5` / `= 120` (clamped from 300) | **E-Gate** / **B-Gate** |
 | 19 | `unit = "CALORIES"` | blueprint **dropped** (V1) |
@@ -584,7 +532,7 @@ Template quests, chapters and System lines stay hand-written and bundled. AI wri
 | 30 | Today has 2 Path quests (stats INT, WIL), today's focus stat INT | Main = the INT Path quest; Sides = **1**; total generated items = 3 |
 | 31 | Two Paths schedule 2 quests each on the same day | **3** shown (older Path first); the 4th moves to its Path's next active day |
 | 32 | Same week response applied twice | identical scheduled instances; no duplicates (UNIQUE `(pathId, isoWeek, blueprintIndex)`) |
-| 33 | Gate cleared from a GATE-mode Path quest (D-Gate, NORMAL, streak 0, no crit) | exactly **one** reward: `round(40×1.5×1.0×1.15)` = **69 XP**, `sourceType = QUEST`; no separate gate reward |
+| 33 | Gate cleared from a GATE-mode Path quest (D-Gate, NORMAL, streak 0) | exactly **one** reward: `round(40×1.5×1.0×1.15)` = **69 XP**, `sourceType = QUEST`; no separate gate reward |
 | 34 | `suggestAdvance = true`, 3 Path quests completed since milestone start | advance **not** offered (needs ≥ 4) |
 | 35 | SELF blueprint `estMinutes = 2` → clamped 5 / `estMinutes = 120` | `minDurationSec` = **75** / **900** (clamp(5×15, 60, 900) = 75; clamp(1800, 60, 900) = 900) |
 
@@ -592,21 +540,11 @@ Template quests, chapters and System lines stay hand-written and bundled. AI wri
 
 | # | Input | Expected |
 |---|---|---|
-| 36 | DISCIPLINE quest, streak 0 / streak 30, no crit, 10,000 SELF XP already today | **78** / **117** XP; no cap applies |
+| 36 | DISCIPLINE quest, streak 0 / streak 30, 10,000 SELF XP already today | **78** / **117** XP; no cap applies |
 | 37 | Instagram limit 30 min; used 30 min 59 s / 31 min | **held** / **crossed** |
 | 38 | Limit 30 since 3 days ago; today the hunter sets 120 | today **30**, tomorrow **120** |
 | 39 | 600 min each on a Productive app, a Neutral app and a Distracting app with no limit | nothing crossed; **no stake** (no quest) |
 | 40 | DISCIPLINE quest for the same (hunter, day) twice; next day | same instance id / different id; never rerollable; not "generated" |
-
-**45-day Campaign (§6.8)**
-
-| # | Input | Expected |
-|---|---|---|
-| 41 | Start 2026-10-25 | day 1 = start, day 45 = 2026-12-08, 2026-12-09 is past the end |
-| 42 | Day 15 / 16 / 30 / 31 | Foundation / Build / Build / Ascend |
-| 43 | Ascend with stat tier Normal / Easy | Hard / Normal (one above the adaptive tier at most) |
-| 44 | 32 / 31 cleared days at the end | COMPLETED / ENDED |
-| 45 | Campaign completed once | Reforged unlocks once: +1,000 gold, title "Reforged" |
 
 > Note on vector 7: the level table in §4.4 lists the *step into* each level (i.e. `xpToNext(L−1)`), so "L10 step 504" = `xpToNext(9)`. Vector 7 is `xpToNext(10)` = 578. Tests are authoritative.
 
@@ -718,8 +656,7 @@ S(W)  = first 3 of rot(Q(W) \ S0(W−1), W)  followed by  rot(Q(W) ∩ S0(W−1)
   5. Intention: optional one line, **≤ 120 chars**.
   Text is cleaned like Path text (ENGINE_DECISIONS #59: control/format chars → space, collapse whitespace, trim, truncate by code points). It never leaves the phone.
 - **Focus stats** from step 4 are written to `hunter_profile` like a Settings change and apply from the **next generated directive** (today's is never regenerated). The generator uses its existing focus weighting (§6.3); no new numbers.
-- **Identity line** (§14.7): if the hunter has identities, step 2 is headed "Did you act like someone who {identity}?", the identity picked by `fnv1a64("hunterId|W|identity") mod count`. Nothing is stored beyond the free text.
-- **Rewards:** none. Achievements for 1 / 4 / 12 submitted reviews (§14.8).
+- **Rewards:** none. No XP, no gold.
 - **Notification:** on game-day Sunday, if a reminder time is set and `W` has no review, the existing directive notification at the reminder time gains a second line ("Your weekly review is open.") and a review action. It stays one notification, so the 2-per-day cap (ARCH §3.5) is untouched.
 
 ### 14.5 Time-of-day blocks (PRD F31)
@@ -736,67 +673,21 @@ S(W)  = first 3 of rot(Q(W) \ S0(W−1), W)  followed by  rot(Q(W) ∩ S0(W−1)
 - **Today:** the Directive renders grouped Morning → Day → Evening → **Anytime last**. The block containing "now" is highlighted; earlier blocks collapse to a header ("Morning · 2 of 3 done") that expands on tap, and their open quests stay completable until the day ends. Empty blocks are hidden. The penalty quest stays pinned on top (§7.3).
 - No change to generation rules, counts, rewards, caps, rerolls or day clearing.
 
-### 14.6 Monthly and yearly recaps (PRD F32)
+### 14.6 (removed)
 
-- **Monthly:** period = the previous calendar month of game-dates. Offered on the first app open on or after the first game-day of the next month; only the immediately previous month is generated (an older month nobody opened the app after is skipped). Requires **≥ 7 finalized game-days** in the month.
-- **Yearly:** period = the previous calendar year. Auto-offered on first open during game-days **Jan 1–14**; requires **≥ 30 finalized game-days** in the year. When both are due, the yearly recap opens and December's waits in the list.
-- **Storage:** `recap(period_key PK 'M:2026-10' | 'Y:2026', generated_at, payload_version, payload_json)`. Generation is idempotent on `period_key`; the payload is a snapshot cache rebuildable from Room. Recaps stay reopenable from Status. Included in export/import.
-- **Contents** (all derived; a field with no data is left out, never shown as 0):
+Monthly and yearly recaps were removed on 2026-11-03 (see `docs/DECLUTTER_PLAN.md`). The weekly report, heatmap and insights cover the same ground.
 
-| Field | Rule |
-|---|---|
-| Quests completed | active completions with `game_date` in the period |
-| Focus Gate hours | Σ planned duration of cleared gates ÷ 60, one decimal (same basis as `gate_hours*`, §10) |
-| Best streak | highest streak reached on a day in the period (`StreakRules.replay`) |
-| Consistency | §14.2 formula over the **whole period** instead of 28 days |
-| Top stat + growth | stat with the most net `XP_STAT` in the period (ties: stat order); growth = its stat level at period end − at period start |
-| Levels gained | `level(XP at end) − level(XP at start)` |
-| Distance, steps, sleep (Health on only) | total km; mean daily steps over days with data; mean sleep hours over nights with data |
-| One insight | first result of `InsightEngine.evaluate` over the period's days with the §14.3 guardrails; omitted if none |
-| Achievements earned | unlocks whose `unlocked_at` falls in the period |
+### 14.7 (removed)
 
-- **Cards** (3–5, swipeable): ① the period, quests completed, levels gained · ② effort: gate hours, consistency, best streak · ③ growth: top stat and its growth · ④ body (only with Health data) · ⑤ summary with the insight and achievement count, exportable as a 1080×1350 share image through the existing `ShareCard` path (stays dark in every mode, DS §2.1b). Reduce motion: crossfade only, no auto-advance.
+Identities ("Who are you becoming?") were removed on 2026-11-03 (see `docs/DECLUTTER_PLAN.md`). The onboarding step, the Status line, the Settings row and the review line are gone; `hunter_profile.identities` was dropped in Room v27.
 
-### 14.7 Identities (PRD F33)
+### 14.8 (removed)
 
-- `assets/identities.json` = `{version, identities: [{id, stat}]}`; display text in `strings.xml` as `identity_<id>`. Launch list (12):
+The v1.1 achievements were removed on 2026-11-03 (see `docs/DECLUTTER_PLAN.md`).
 
-| id | "Someone who …" | Stat |
-|---|---|---|
-| trains | trains | STR |
-| runs | runs | STR |
-| reads | reads | INT |
-| ships | ships | INT |
-| learns | keeps learning | INT |
-| focuses | focuses deeply | WIL |
-| keeps_promises | keeps their promises | WIL |
-| meditates | meditates | WIL |
-| sleeps_well | sleeps well | VIT |
-| eats_well | eats well | VIT |
-| stays_in_touch | stays in touch | CHA |
-| speaks_up | speaks up | CHA |
+### 14.9 (removed)
 
-- Onboarding step "Who are you becoming?" before the focus-stat step: pick **1–3**, skippable. Stored as ordered ids in `hunter_profile.identities` (exported).
-- **Pre-selection:** the distinct stats of the picks, in pick order; the first two become the pre-selected focus stats; a single distinct stat pre-selects only that one. The hunter can still change both.
-- Shown under the name on Status ("Someone who trains · reads"), editable in Settings (0–3), used by the review line (§14.4). **No rewards.** Existing hunters have none until they set them.
-
-### 14.8 New achievements (gold via §10)
-
-| ID | Name | Condition | Gold | Title? |
-|---|---|---|---|---|
-| never_twice | Never Twice | 5 recoveries (§14.2) | 50 | — |
-| review1 | First Look | 1 weekly review | 10 | — |
-| review4 | Taking Stock | 4 weekly reviews | 50 | — |
-| review12 | The Reflective | 12 weekly reviews | 150 | "The Reflective" |
-
-All within the §10 range (10–200). Unlocks are permanent (§6.5). The set becomes 33 + 4 = 37. Insights, recaps, identities and opening the app grant nothing.
-
-### 14.9 Presentation mode (Clean / System) (PRD F34)
-
-- `presentationMode ∈ {CLEAN, SYSTEM}` in the UI DataStore (not exported, like other UI prefs, ENGINE_DECISIONS #48). **New installs: CLEAN. Installs upgrading from v1.0 (onboarding already done when the pref is first read): SYSTEM**, so nobody's app changes under them.
-- **Invite:** after the first level-up ceremony (end of the reward chain, after any chapter and rank-up) while in CLEAN and never answered: "Want the full System experience?" [Try it] [Keep clean]. Either button records the answer and it never shows again; dismissing without a choice shows it again at the next level-up.
-- **Same game in both modes:** ranks E–S, levels, XP, gold, streaks, caps and every number in this file are identical. Only labels, copy voice and the gate glow differ (term list in DESIGN_SYSTEM §8.3).
-- **Voice:** `assets/narrative/system_lines_clean.json` mirrors `system_lines.json` (same contexts and placeholders; line counts may differ). Selection is unchanged (`fnv1a64(hunterId|date|context) mod lines`, ENGINE_DECISIONS #29) over the active file.
+There is one vocabulary: plain words, no System voice, no presentation mode (see ENGINE_DECISIONS #109 and #156). The Lexicon survives only as the `lexString` / `lexPlural` entry point.
 
 ### 14.10 Test vectors (v1.1, continuing §12 numbering)
 
@@ -812,7 +703,6 @@ All within the §10 range (10–200). Unlocks are permanent (§6.5). The set bec
 | 55 | Yesterday BROKEN (day before CLEARED) / yesterday SHIELDED / yesterday REST | "Missed yesterday…" / same line / **no line** |
 | 56 | Yesterday and the day before both BROKEN | "A fresh start today." |
 | 57 | Outcomes C, B, C, S, C, B, B, C (C cleared, B broken, S shielded) | recoveries **3** (the C after B, after S, after the second B) |
-| 58 | 5th recovery finalized | `never_twice` unlocks once, +50 gold; a 6th changes nothing |
 
 **Insights (§14.3)**
 
@@ -836,40 +726,20 @@ All within the §10 range (10–200). Unlocks are permanent (§6.5). The set bec
 | # | Input | Expected |
 |---|---|---|
 | 71 | Game-day Fri / Sat / Sun of W, Mon / Tue of W+1 | review for W **closed / open / open / open / closed** |
-| 72 | Review for W submitted twice | one row; second is a no-op; review achievements counted once |
-| 73 | 4th review submitted | `review4` unlocks, +50 gold; **no XP** row exists for any review |
+| 72 | Review for W submitted twice | one row; second is a no-op |
+| 73 | Any review submitted | **no XP and no gold** row exists for any review |
 | 74 | dayStart 4, default blocks; "now" = 03:30, 11:59, 12:00, 16:59, 17:00 | Evening (of the previous game-day) / Morning / Day / Day / Evening |
 | 75 | Identity picks [reads, trains, ships] | pre-selected focus stats **INT, STR** |
 | 76 | Identity picks [reads, ships] | pre-selected **INT** only |
-| 77 | Previous month had 6 finalized game-days | **no** monthly recap |
-| 78 | Monthly recap `M:2026-10` generated twice | one row, same payload |
-| 79 | First open on game-day Jan 15; last year had 200 finalized days | yearly recap **not auto-offered**; reopenable from Status only if already generated |
 | 80 | Focus Lock on, covered at stop and on return, 120 s away | gate still RUNNING, breach 0 s (GD 8.2 L2) |
 | 81 | Focus Lock off, 91 s away | COLLAPSED, reason BREACH |
 | 82 | Lock not covering, 20 s away, a Distracting app came to the front | COLLAPSED, reason DISTRACTING_APP, no ledger rows |
 | 83 | Same as 82 with no usage access | still RUNNING (only the 90 s rule) |
 | 84 | End session and open | COLLAPSED, reason ENDED_EARLY, ledger unchanged |
 
-## 15. Reel Counter mascot: Lumi (PROPOSED, awaiting approval before release)
+## 15. (removed)
 
-Lumi is the Reel Counter's mascot. It only **shows** today's reel count; it grants no XP, gold or anything else. Code: `lumiStage` in `:reelcounter-core` (`core/lumi/Lumi.kt`); every number below lives in `LumiRules`.
-
-- **Input:** today's reels summed over every app (the existing game-day reset applies, so a new day starts at stage 1), and the daily limit, if any.
-- **Daily limit:** limits are set per app, so the limit Lumi follows is the **sum of the limits that are set** (`lumiDailyLimit`); no app with a limit means no limit.
-- **Stages:** 1 (radiant, "Fully charged") to 6 (dimmed, "Switched off"). `progressInStage` is how far the count is through the current stage, 0 ≤ p < 1, and 0 at stage 6.
-- **With a limit L:** stages 1–5 split 0…L into five equal parts, stage index = ⌊5 · reels / L⌋ + 1; stage 6 at reels ≥ L. Integer arithmetic, so a boundary is never early or late.
-- **Without a limit — PROPOSED thresholds:** stage 1 from 0, stage 2 from **10**, stage 3 from **25**, stage 4 from **50**, stage 5 from **80**, stage 6 from **120** reels.
-- **A limit changed mid-day** re-evaluates the same count; nothing is stored.
-- **Within a stage** the picture dims by up to 10% with `progressInStage` (presentation only).
-
-| # | Input | Expected |
-|---|---|---|
-| L1 | No limit; 0, 9, 10, 24, 25, 49, 50, 79, 80, 119, 120 reels | stage 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6 |
-| L2 | Limit 50; 0, 9, 10, 20, 30, 40, 49, 50, 80 reels | stage 1, 1, 2, 3, 4, 5, 5, 6, 6 |
-| L3 | Limit 12; 2, 3, 5, 8, 10, 12 reels | stage 1, 2, 3, 4, 5, 6 |
-| L4 | 30 reels; limit 100 → 50 → 30 → none | stage 2 → 4 → 6 → 3 |
-| L5 | 180 reels with limit 50, then a new game-day (0 reels) | stage 6 → stage 1, progress 0 |
-| L6 | Per-app limits Instagram 30, YouTube 20 | Lumi's limit 50 |
+The Reel Counter mascot (Lumi) was removed on 2026-11-03 (see `docs/DECLUTTER_PLAN.md`). Reels show as a plain count against the limit.
 
 ## 16. v1.2 feature batch (approved 2026-11-02)
 
@@ -929,13 +799,11 @@ met(d)          = focusMinutes(d) ≥ goal(d)
 
 - Goal default **120 min** (`N11`), range **15–600 in 15-minute steps** (`N12`). Collapsed and abandoned runs never count. LOGGED runs (§8.1 short or over-cap runs) count, because this is time focused, not a reward.
 - **Focus streak** = consecutive game-days with `met`, counting back from today if today is met, else from yesterday. A finalized REST or RECOVERY day (§7.2) is skipped over: it neither extends nor breaks the focus streak. Any other day that is not met ends it. Derived, never stored (invariant 7).
-- **No XP.** Achievements `focus_streak7 / 30 / 100` (§16.16).
+- **No XP.** No gold either.
 
-### 16.5 Gate crystal and gallery (B3)
+### 16.5 (removed)
 
-Presentation only, no economy.
-- **Growth:** the crystal has **6 stages** (0–5) at **0 / 20 / 40 / 60 / 80 / 100 %** of planned time (`N13`). A stopwatch run grows toward **90 min** (§8.1 P2's top tier) and stays at stage 5 beyond it. Paused time never grows it.
-- **Gallery:** one crystal per finished run, newest first: CLEARED → whole crystal sized by the run's tier (E/D/C/B, four sizes; P2 tier for custom/stopwatch), COLLAPSED → the stage reached, drawn cracked, LOGGED → a small "shard". Colour = the subject's colour (`chartSeries1…6` picked by `fnv1a64(subjectId) mod 6`), or the stat colour when there is no subject. Filters: subject, month. Nothing is stored beyond `gate_run`.
+The gate crystal and its gallery were removed on 2026-11-03 (see `docs/DECLUTTER_PLAN.md`). A running session shows the plain progress dial.
 
 ### 16.6 Progression hints, double progression (C1)
 
@@ -965,7 +833,7 @@ Per exercise, compared with every **earlier** finished session of it (§13.2 dat
 | Best session volume | max §13.2 volume of the exercise in one session |
 
 - A set is a PR when it beats the record held **before this session** (ties are not PRs). An exercise's first session sets records but flags no PR. Ticking a set done that is a PR shows a small celebration (haptic + "New record" chip, reduce-motion respected); the finished-workout summary lists the session's PRs (one line per record type per exercise).
-- **Rewards:** no XP. Achievements `pr1 / pr25 / pr100` (§16.16) counted over PR events (one per record type per exercise per session; weights are self-logged, so gold is limited to these one-time unlocks; open question Q6).
+- **Rewards:** no XP and no gold (weights are self-logged). PR events are one per record type per exercise per session.
 
 ### 16.8 Plate calculator (C3)
 
@@ -1009,17 +877,12 @@ Opt-in "Phone-down nights". Needs usage access.
 - **Money saved** = cost per day × whole days of the current run; **time reclaimed** = minutes per day × whole days. Both optional, entered by the hunter, display only (no real money is involved).
 - **Milestones** shown: 1, 3, 7, 14, 30, 90, 180, 365 days (`N25`).
 - **Doomscrolling (auto, fails closed):** day-based. A finalized game-day is **clean** when Screen Time reads `Tracked` and total Distracting-app minutes ≤ **60** (`N26`); **over** → a relapse is logged automatically for that day ("74 min on distracting apps"); `NoAccess`/`Unavailable` → the day is **paused** (neither counts nor breaks). Run = consecutive clean days.
-- **Rewards:** **no XP** for any counter, ever. Achievements `quit_7 / 30 / 90 / 365` (§16.16) unlock once each, over all counters, on the **in-app run**: time counted from `max(start, created_at)`, so a back-dated start never unlocks anything; for Doomscrolling, clean days.
+- **Rewards:** **no XP** for any counter, ever. No gold either. Milestones are display only and count the **in-app run**: time from `max(start, created_at)`, so a back-dated start never counts; for Doomscrolling, clean days.
 - **Privacy:** counters and relapse notes never leave the phone except in the hunter's own export. App lock is open question Q5.
 
-### 16.14 Dungeons (F3)
+### 16.14 (removed)
 
-A multi-day challenge built from Hard template quests, with a gold entry fee.
-- **Unlock:** level **10** (rank D band, `N27`), so new hunters don't burn their first gold.
-- **Entry:** pick a length and a stat. Lengths and fees (`N28`): **3 days · 100 gold**, **5 days · 200**, **7 days · 300**. Needs gold ≥ fee. The fee is a ledger row `GOLD −fee`, `sourceType = DUNGEON`, `sourceId = <dungeonId>:entry`. Stage 1 is the **next** game-day; one active dungeon at a time (a Rank Trial may run alongside).
-- **Stages:** one stage quest per game-day, type `DUNGEON`, **Hard**, in the chosen stat, from templates that offer HARD (equipment and Injury Mode filters apply), deterministic by `fnv1a64(hunterId|dungeonId|stage)`. Priced by §4.1 (SELF cap applies to SELF stages), can crit, can't be rerolled, counts as one directive item.
-- **Clear:** all stages completed → reward `GOLD +1.5 × fee` (`N29`: 150 / 300 / 450) and `FRAGMENT +1`, `sourceId = <dungeonId>:clear`, paid once.
-- **Fail:** a stage still open when its game-day ends → dungeon FAILED at that rollover; the fee is gone, **nothing else is deducted**, no penalty quest. Abandon = FAILED.
+Dungeons were removed on 2026-11-03 (see `docs/DECLUTTER_PLAN.md`). A dungeon that was running keeps its spent fee; its open stage quests expire like any other quest.
 
 ### 16.15 Programs: 30 / 66 / 75 days (F6)
 
@@ -1035,19 +898,11 @@ Long, fixed daily rule sets with a day counter. Original names only.
 - **Slots:** each rule is a habit counting toward the 8 active habits; a program can't start without enough free slots. **One long arc at a time:** a program and a 45-day Campaign can't run together (open question Q8).
 - **Day k** = game-days since the (re)start + 1. A day is **kept** when every program rule instance of that game-day was completed; a finalized REST/RECOVERY day is **rest** (not broken). Otherwise it is **broken**.
 - **After a broken day**, the next app open asks: **Restart** (a new run, day 1 = today) or **Continue** (the day stays marked broken, the counter goes on). No answer by the next rollover = Continue. Nothing is ever deducted.
-- **End:** after the last day is finalized: no broken day in the run → **COMPLETED** and the program's achievement (§16.16); otherwise **FINISHED** (shown with its marks, no achievement). Program habits are archived either way. Abandon anytime: habits archived, nothing deducted.
+- **End:** after the last day is finalized: no broken day in the run → **COMPLETED**; otherwise **FINISHED** (shown with its marks). Program habits are archived either way. Abandon anytime: habits archived, nothing deducted.
 
-### 16.16 New achievements (gold via §10)
+### 16.16 (removed)
 
-| ID | Name | Condition | Gold | Title? |
-|---|---|---|---|---|
-| focus_streak7 / 30 / 100 | Deep Work | focus streak (§16.4) of 7 / 30 / 100 days | 30 / 100 / 200 | 100 "Deep Worker" |
-| pr1 / pr25 / pr100 | New Record | 1 / 25 / 100 PR events (§16.7) | 10 / 50 / 150 | 100 "Record Breaker" |
-| quit_7 / 30 / 90 / 365 | Clean Run | in-app run of 7 / 30 / 90 / 365 days on any counter (§16.13) | 30 / 100 / 150 / 200 | 365 "Unshaken" |
-| dungeon_first / dungeon_7 | Delver | clear any dungeon / clear a 7-day dungeon | 20 / 100 | 7 "Delver" |
-| program_steady_30 / program_groundwork_66 / program_ironclad_75 | Programs | complete the program with no broken day | 150 / 200 / 200 | "Steady" / "Grounded" / "Ironclad" |
-
-(`N31`: every name, condition, gold amount and title in this table.) All within §10's 10–200 range. Unlocks are permanent (§6.5). The set grows from 37 to 52.
+The v1.2 achievements were removed on 2026-11-03 (see `docs/DECLUTTER_PLAN.md`).
 
 ### 16.17 Test vectors (continuing §12 / §14.10 numbering)
 
@@ -1055,9 +910,9 @@ Long, fixed daily rule sets with a day counter. Original names only.
 
 | # | Input | Expected |
 |---|---|---|
-| 85 | QUANTITY target 8, Normal, streak 0, no crit; progress 7 → +1 | at 7: ACTIVE, 0 XP; at 8: COMPLETED, **60 XP, 30 gold** (SELF) |
+| 85 | QUANTITY target 8, Normal, streak 0; progress 7 → +1 | at 7: ACTIVE, 0 XP; at 8: COMPLETED, **60 XP, 30 gold** (SELF) |
 | 86 | QUANTITY target 101 / 1 | rejected / rejected (2–100) |
-| 87 | TIMED 30 min, streak 0, no crit, run cleared | difficulty **Normal**; `round(40×1.5×1.0×1.15)` = **69 XP**, one QUEST reward, no GATE reward, P5 count unchanged |
+| 87 | TIMED 30 min, streak 0, run cleared | difficulty **Normal**; `round(40×1.5×1.0×1.15)` = **69 XP**, one QUEST reward, no GATE reward, P5 count unchanged |
 | 88 | TIMED 14 min / 95 min | rejected / difficulty **Extreme**, `40×3.0×1.15` = **138 XP** at streak 0 |
 | 89 | TIMED habit run collapses | habit instance still ACTIVE, no ledger rows; a new run may start the same game-day |
 | 90 | NEGATIVE, "Day ends" 17:00: Kept it at 16:59 / at 21:00 / never | refused / COMPLETED 60 XP / MISSED at rollover, 0 XP |
@@ -1071,13 +926,9 @@ Long, fixed daily rule sets with a day counter. Original names only.
 
 | # | Input | Expected |
 |---|---|---|
-| 96 | Pomodoro defaults, 4 rounds cleared, streak 0, no crits | each round D tier: **69 XP**, 1 fragment; a 5th custom run that day → LOGGED (P5) |
-| 97 | Round 2 of 4 collapses | session COLLAPSED; round 1's reward kept; no round 3 |
 | 98 | Cleared D preset (25), custom 40, stopwatch 47 min 30 s, collapsed C | focusMinutes **112**; goal 120 → not met; a cleared E (15) later → **127**, met |
 | 99 | Goal met Mon, Tue; Wed finalized REST, no focus; Thu met | focus streak **3** |
 | 100 | Thu: goal changed 120 → 60 at 15:00 with 70 min done | Thu **met**; Wed keeps goal 120 |
-| 101 | 7th consecutive met day | `focus_streak7` once, **+30 gold**; no XP row |
-| 102 | Run planned 50 min, 20 min elapsed | crystal stage **2** (40 % reached at 20 min) |
 
 **Gym (§16.6–16.9)**
 
@@ -1090,7 +941,6 @@ Long, fixed daily rule sets with a day counter. Original names only.
 | 107 | Exercise never finished before | no hint; no PR flags in this session |
 | 108 | History 100 × 3 (e1RM 110), 80 × 8; today 102.5 × 1 and 80 × 9 | heaviest-weight PR (102.5); e1RM **not** a PR (102.5 < 110); reps-at-80 PR (9) |
 | 109 | Ties: today 100 × 3 again | **no** PR |
-| 110 | First PR event ever | `pr1` once, **+10 gold** |
 | 111 | Plates kg, bar 20: 100 / 62.5 / 61 / 15 | 25 + 15 per side / 20 + 1.25 / **20** per side (60 kg, 1 kg short) / "Below the bar's 20 kg" |
 | 112 | Plates lb, bar 45: 225 / 135 | 45 + 45 per side / 45 |
 
@@ -1102,7 +952,7 @@ Long, fixed daily rule sets with a day counter. Original names only.
 | 114 | No keyguard events, 5 `SCREEN_INTERACTIVE` | **5**, labelled "Screen-ons" |
 | 115 | Usage `NoAccess` | no numbers; usage-access prompt |
 | 116 | Step goal 8,000; steps 6,200 / 9,100 | ring 0.775, "6,200 / 8,000" / full ring, "Goal reached"; no ledger rows |
-| 117 | Window 23:00–06:30, Instagram 3 min at 01:00, streak 0, no crit | kept → BEDTIME completed on the wake day, **78 XP** |
+| 117 | Window 23:00–06:30, Instagram 3 min at 01:00, streak 0 | kept → BEDTIME completed on the wake day, **78 XP** |
 | 118 | Same with Instagram 6 min | EXPIRED, 0 XP, nothing deducted |
 | 119 | Clock app 12 min at 06:00, nothing else | kept |
 | 120 | Usage `Unavailable` at settlement | EXPIRED unpaid |
@@ -1113,21 +963,15 @@ Long, fixed daily rule sets with a day counter. Original names only.
 | # | Input | Expected |
 |---|---|---|
 | 122 | Start 2026-11-01 08:00; relapse 2026-11-05 20:00; now 2026-11-08 09:00 | current run **2 days** (2 d 13 h); best run **4 days** (4 d 12 h) |
-| 123 | Start 2026-10-01 00:00, created 2026-11-01 12:00; now 2026-11-08 12:00 | shows **38 days**; achievement run **7 days** → `quit_7` |
 | 124 | Cost 150 per day, current run 2 d 13 h | money saved **300** |
 | 125 | Doomscrolling, limit 60: Mon 40, Tue NoAccess, Wed 55, Thu 75 | run Mon–Wed = **2** clean days (Tue paused); Thu auto-relapse, run 0, best 2 |
-| 126 | Two counters both reach 30 in-app days | `quit_30` unlocks **once** |
 
 **Dungeons and programs (§16.14–16.15)**
 
 | # | Input | Expected |
 |---|---|---|
-| 127 | Level 9 / level 10 with 80 gold / with 500 gold, 3-day on Mon | locked / refused / entered: ledger **GOLD −100** (`DUNGEON`, `<id>:entry`), stages Tue, Wed, Thu |
-| 128 | All 3 stages done | **+150 gold, +1 fragment** (`<id>:clear`); applying the clear twice → one row each |
-| 129 | Stage 2 open at the end of its game-day | dungeon FAILED; no further rows; no stage 3; no penalty quest |
-| 130 | Stage quest HARD, SELF, streak 0, no crit | **90 XP, 45 gold**; counts toward the SELF cap |
 | 131 | Steady 30 from Mon; day 5 broken; next open Restart / Continue | day 1 = that day / day 6 next, day 5 marked broken |
-| 132 | Last day finalized with 0 broken days / with 1 continued break | COMPLETED + achievement once / FINISHED, no achievement |
+| 132 | Last day finalized with 0 broken days / with 1 continued break | COMPLETED / FINISHED |
 | 133 | Break question unanswered by the next rollover | Continue recorded |
 | 134 | A REST day inside a program | rest (not broken); the counter advances |
 

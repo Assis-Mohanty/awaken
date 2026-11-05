@@ -1,14 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    Dungeons and programs (GAME_DESIGN §16.14-16.15). Neutral voice: "Dungeon" is the one System word and is reached through
-    the Lexicon term `dungeon` (Clean "Challenge") where it is shown as a name, so these strings avoid it.
+    Programs (GAME_DESIGN §16.15) and the kind label for old challenge-stage quests that may still sit in existing data.
 -->
 <resources>
-    <!-- Dungeon stage quest and kind -->
+    <!-- Kind label for old challenge-stage quests -->
     <string name="quest_kind_dungeon">Challenge stage</string>
-    <string name="dungeon_stage_title">Stage %1$d of %2$d · %3$s</string>
 
-    <string name="campaign_problem_program">A program is running. Finish or abandon it first: one long arc at a time.</string>
 
     <!-- Program rules (GD §16.15) -->
     <string name="program_rule_walk">Walk 7,000 steps</string>
@@ -23,48 +20,14 @@
     <string name="program_rule_steps_10k_plain">Walk 10,000 steps</string>
 
 
-    <!-- Challenge runs (Dungeon in System voice; the screen title comes from the Lexicon term) -->
-    <string name="dungeon_row_note">Several days of Hard quests for an entry fee.</string>
-    <string name="dungeon_locked_title">Unlocks at level %1$d</string>
-    <string name="dungeon_locked_body">You are level %1$d. Keep going: this opens up later.</string>
-    <string name="dungeon_picker_intro">Pick a length and a stat. Each day brings one Hard quest in that stat. Finish them all to get back more than the fee.</string>
-    <string name="dungeon_length_card">%1$d days · fee %2$d gold · reward %3$d gold</string>
-    <string name="dungeon_length_card_cd">%1$d days. Entry fee %2$d gold. Reward %3$d gold and a fragment.</string>
-    <string name="dungeon_stat_label">Stat</string>
-    <string name="dungeon_enter">Enter · %1$d gold</string>
-    <string name="dungeon_not_enough">Not enough gold. You have %1$s.</string>
-    <string name="dungeon_active_already">One run at a time.</string>
-    <string name="dungeon_confirm_title">Spend %1$d gold?</string>
-    <string name="dungeon_confirm_body">You will have %1$s gold left. The first stage is tomorrow. If a stage is missed, the fee is spent and nothing else is taken.</string>
-    <string name="dungeon_confirm_action">Enter</string>
-    <string name="dungeon_running_title">In progress</string>
-    <string name="dungeon_stage_of">Stage %1$d of %2$d</string>
-    <string name="dungeon_track_cd">Stage %1$d of %2$d. %3$d done.</string>
-    <string name="dungeon_open_today">Open today\'s stage</string>
-    <string name="dungeon_starts_tomorrow">The first stage starts tomorrow.</string>
-    <string name="dungeon_stage_waiting">Today\'s stage is on its way. Check Today.</string>
-    <string name="dungeon_abandon">Walk away</string>
-    <string name="dungeon_abandon_title">Walk away from this run?</string>
-    <string name="dungeon_abandon_body">The fee stays spent. Nothing else is taken.</string>
-    <string name="dungeon_cleared_title">Cleared</string>
-    <string name="dungeon_cleared_body">%1$d gold and a fragment, added to your vault.</string>
-    <string name="dungeon_failed_title">Not this time</string>
-    <string name="dungeon_failed_body">The fee is spent. Nothing else is taken.</string>
-    <string name="dungeon_again">Pick another</string>
-    <string name="achievement_dungeon_first">First Delve</string>
-    <string name="achievement_dungeon_7">Deep Delve</string>
-    <string name="title_delver">Delver</string>
-    <string name="condition_dungeon_first">Clear a challenge run.</string>
-    <string name="condition_dungeon_7">Clear a seven-day challenge run.</string>
-
     <!-- Programs -->
     <string name="programs_title">Programs</string>
     <string name="programs_row_title">Programs</string>
     <string name="programs_row_note">30, 66 or 75 days of a few daily rules.</string>
     <string name="programs_intro">A program is a fixed set of daily rules with a day counter. Nothing is ever taken from you: a missed day just changes how the run ends.</string>
-    <string name="program_name_steady_30">Steady 30</string>
-    <string name="program_name_groundwork_66">Groundwork 66</string>
-    <string name="program_name_ironclad_75">Ironclad 75</string>
+    <string name="program_name_steady_30">30-day program</string>
+    <string name="program_name_groundwork_66">66-day program</string>
+    <string name="program_name_ironclad_75">75-day program</string>
     <string name="program_days">%1$d days</string>
     <string name="program_card_note">%1$d daily rules</string>
     <string name="program_rules_title">Daily rules</string>
@@ -73,7 +36,6 @@
     <string name="program_start_title">Start %1$s?</string>
     <string name="program_start_body">Its rules join Today as habits you cannot edit. Day 1 is today.</string>
     <string name="program_refused_slots">Not enough free habit slots. Archive a habit first.</string>
-    <string name="program_refused_campaign">A campaign is running. One long arc at a time.</string>
     <string name="program_refused_program">A program is already running.</string>
     <string name="program_day_of">Day %1$d / %2$d</string>
     <string name="program_calendar_cd">Day %1$d of %2$d: %3$d kept, %4$d rest, %5$d broken</string>
@@ -88,18 +50,8 @@
     <string name="program_finished_body">You saw it through, with %1$d days marked. There is no blame here.</string>
     <string name="program_abandoned_title">Stopped</string>
     <string name="program_abandoned_body">You stopped at day %1$d. You can start again any time.</string>
-    <string name="program_back_to_list">Back to programs</string>
     <string name="program_break_title">Yesterday was not kept</string>
     <string name="program_break_body">Restart from day 1, or continue with the day marked? Either is fine. Nothing is taken.</string>
     <string name="program_break_restart">Restart</string>
     <string name="program_break_continue">Continue</string>
-    <string name="achievement_program_steady_30">Steady</string>
-    <string name="achievement_program_groundwork_66">Grounded</string>
-    <string name="achievement_program_ironclad_75">Ironclad</string>
-    <string name="title_steady">Steady</string>
-    <string name="title_grounded">Grounded</string>
-    <string name="title_ironclad">Ironclad</string>
-    <string name="condition_program_steady_30">Complete Steady 30 with no broken day.</string>
-    <string name="condition_program_groundwork_66">Complete Groundwork 66 with no broken day.</string>
-    <string name="condition_program_ironclad_75">Complete Ironclad 75 with no broken day.</string>
 </resources>

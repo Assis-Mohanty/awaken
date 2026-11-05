@@ -390,7 +390,7 @@ fun HabitEditor(editor: HabitEditorState, onEvent: (HabitsEvent) -> Unit, modifi
     }
 }
 
-/** Long-press options: Archive (restorable in Settings) or Delete; campaign habits only explain why they can't. */
+/** Long-press options: Archive (restorable in Settings) or Delete; program habits only explain why they can't. */
 @Composable
 fun HabitOptions(habit: HabitItem, onEvent: (HabitsEvent) -> Unit, modifier: Modifier = Modifier, skip: SkipState = SkipState.NONE) {
     val colors = AwakenTheme.colors
@@ -398,8 +398,8 @@ fun HabitOptions(habit: HabitItem, onEvent: (HabitsEvent) -> Unit, modifier: Mod
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
         Text(habit.title, style = type.windowTitle, color = colors.textPrimary, modifier = Modifier.semantics { heading() })
         SkipOffer(skip, onEvent)
-        if (habit.campaign) {
-            Text(lexString(R.string.habit_campaign_locked), style = type.body, color = colors.textSecondary)
+        if (habit.locked) {
+            Text(lexString(R.string.habit_program_locked), style = type.body, color = colors.textSecondary)
         } else {
             Text(lexString(R.string.habit_options_body), style = type.body, color = colors.textSecondary)
             SecondaryButton(
@@ -546,7 +546,7 @@ private fun HabitOptionsPreview() {
 @Composable
 private fun HabitOptionsCampaignPreview() {
     AwakenTheme {
-        HabitOptions(HabitItem("3", "Walk 6,000 steps", Stat.VIT, Difficulty.EASY, DayOfWeek.entries.toSet(), 6_000, "steps", campaign = true), onEvent = {})
+        HabitOptions(HabitItem("3", "Walk 6,000 steps", Stat.VIT, Difficulty.EASY, DayOfWeek.entries.toSet(), 6_000, "steps", locked = true), onEvent = {})
     }
 }
 

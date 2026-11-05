@@ -38,7 +38,7 @@ class WeeklyReviewUseCasesTest {
 
         val result = graph.submitReview(input)
 
-        assertThat((result as ReviewResult.Saved).unlocked).contains("review1")
+        assertThat(result).isEqualTo(ReviewResult.Saved)
         val profile = checkNotNull(graph.db.hunterDao().getProfile())
         assertThat(profile.focusStats).containsExactly(Stat.VIT, Stat.WIL).inOrder()
         assertThat(graph.db.weeklyReviewDao().submittedWeeks()).containsExactly("2026-W42")
@@ -56,12 +56,11 @@ class WeeklyReviewUseCasesTest {
         assertThat(second).isEqualTo(ReviewResult.AlreadySubmitted)
         assertThat(graph.db.weeklyReviewDao().count()).isEqualTo(1)
         assertThat(checkNotNull(graph.db.hunterDao().getProfile()).focusStats).containsExactly(Stat.VIT, Stat.WIL).inOrder()
-        val reviewGold = graph.db.ledgerDao().all().filter { it.sourceType == SourceType.ACHIEVEMENT && it.sourceId == "review1" }
-        assertThat(reviewGold).hasSize(1)
+        assertThat(graph.db.ledgerDao().all().filter { it.sourceType == SourceType.ACHIEVEMENT }).isEmpty()
     }
 
     @Test
-    fun vector73TheFourthReviewPaysFiftyGoldAndNoReviewEverWritesXp() = runTest {
+    fun vector73NoReviewEverWritesXpOrGold() = runTest {
         graph.seedHunter()
         listOf("2026-W39", "2026-W40", "2026-W41").forEach { week ->
             graph.db.weeklyReviewDao().insert(
@@ -71,9 +70,8 @@ class WeeklyReviewUseCasesTest {
 
         val result = graph.submitReview(input)
 
-        assertThat((result as ReviewResult.Saved).unlocked).containsAtLeast("review1", "review4")
+        assertThat(result).isEqualTo(ReviewResult.Saved)
         val rows = graph.db.ledgerDao().all()
-        assertThat(rows.filter { it.sourceType == SourceType.ACHIEVEMENT && it.sourceId == "review4" }.map { it.delta }).containsExactly(50L)
         assertThat(rows.filter { it.kind == LedgerKind.XP_TOTAL || it.kind == LedgerKind.XP_STAT }).isEmpty()
     }
 

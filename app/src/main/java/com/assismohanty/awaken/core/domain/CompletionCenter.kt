@@ -21,8 +21,6 @@ sealed interface CompletionEvent {
     /** A System notice from the day rollover (penalty warning, shield, recalibration, failed trial). */
     data class SystemNotice(override val id: Long, val notice: Notice) : CompletionEvent
 
-    /** Unlocks outside a quest completion (e.g. "Awakened" at the end of onboarding). */
-    data class Achievements(override val id: Long, val achievementIds: List<String>) : CompletionEvent
 
     /** A Focus Gate collapsed: the ember window (DESIGN_SYSTEM §4.4). */
     data class GateCollapsed(override val id: Long, val reason: GateCollapseReason, val backgroundMs: Long) : CompletionEvent
@@ -60,11 +58,10 @@ sealed interface UserMessage {
     data object RerollNone : UserMessage
     data object ShareFailed : UserMessage
     data class VaultBought(val itemId: String) : UserMessage
-    data class VaultEquipped(val itemId: String) : UserMessage
     data object VaultDuplicate : UserMessage
     data class VaultRejected(val check: BuyCheck) : UserMessage
-    data object VaultNoFragments : UserMessage
-    data object VaultPoolEmpty : UserMessage
+    /** After a missed day: the comeback quest is waiting on Today. */
+    data object PenaltyOpen : UserMessage
     data object DayStartBlocked : UserMessage
     data object ExportDone : UserMessage
     /** An archived habit is active again (Settings). */
@@ -134,10 +131,6 @@ class CompletionCenter @Inject constructor(
 
     fun gateCollapsed(reason: GateCollapseReason, backgroundMs: Long) =
         post { CompletionEvent.GateCollapsed(it, reason, backgroundMs) }
-
-    fun achievements(achievementIds: List<String>) {
-        if (achievementIds.isNotEmpty()) post { CompletionEvent.Achievements(it, achievementIds) }
-    }
 
     /** Called by the host once an event has been fully presented. */
     fun consume(eventId: Long) = queue.update { events -> events.filterNot { it.id == eventId } }

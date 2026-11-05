@@ -22,8 +22,8 @@ class ScreenTimeRulesTest {
 
     @Test
     fun `vector 36 - screen discipline pays 78 XP at streak 0 and 117 at streak 30, uncapped`() {
-        assertThat(XpCalculator.questXp(Difficulty.NORMAL, 0, VerificationSource.USAGE, crit = false)).isEqualTo(78)
-        assertThat(XpCalculator.questXp(Difficulty.NORMAL, 30, VerificationSource.USAGE, crit = false)).isEqualTo(117)
+        assertThat(XpCalculator.questXp(Difficulty.NORMAL, 0, VerificationSource.USAGE)).isEqualTo(78)
+        assertThat(XpCalculator.questXp(Difficulty.NORMAL, 30, VerificationSource.USAGE)).isEqualTo(117)
         assertThat(DailyCaps.capFor(VerificationSource.USAGE)).isNull()
         val context = HunterContext(hunterId = "h", focusStats = listOf(Stat.STR, Stat.INT), todaySelfXp = 10_000)
         assertThat(DailyCaps.earnedToday(VerificationSource.USAGE, context)).isEqualTo(0)

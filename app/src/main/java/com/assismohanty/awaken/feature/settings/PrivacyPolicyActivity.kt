@@ -22,7 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import com.assismohanty.awaken.R
-import com.assismohanty.awaken.core.designsystem.components.GateBackground
+import com.assismohanty.awaken.core.designsystem.components.ScreenBackground
 import com.assismohanty.awaken.core.designsystem.components.QuietButton
 import com.assismohanty.awaken.core.designsystem.preview.PhonePreviews
 import com.assismohanty.awaken.core.designsystem.theme.AwakenTheme
@@ -61,7 +61,7 @@ fun PrivacyPolicyScreen(onClose: () -> Unit, modifier: Modifier = Modifier) {
         R.string.privacy_children,
         R.string.privacy_changes,
     )
-    GateBackground(rank = Rank.E, modifier = modifier) {
+    ScreenBackground(modifier = modifier) {
         Column(
             modifier = Modifier
                 .fillMaxSize()

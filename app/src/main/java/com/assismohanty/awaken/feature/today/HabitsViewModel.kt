@@ -47,8 +47,8 @@ data class HabitItem(
     val target: Int,
     val unit: String,
     val timeOfDay: TimeOfDay? = null,
-    /** Planned by a campaign: read-only, ends with the campaign (GD §6.8). */
-    val campaign: Boolean = false,
+    /** Planned by a program: read-only, ends with the program (GD §16.15). */
+    val locked: Boolean = false,
     val type: HabitType = HabitType.CHECK,
     val frequency: HabitFrequency = HabitFrequency.DAYS_OF_WEEK,
     val timesPerWeek: Int? = null,
@@ -315,7 +315,7 @@ class HabitsViewModel @Inject constructor(
                 SaveHabitResult.InvalidDays -> R.string.habit_error_days
                 SaveHabitResult.InvalidTarget -> R.string.habit_error_target
                 SaveHabitResult.DifficultyTooHigh -> R.string.habit_difficulty_note
-                SaveHabitResult.CampaignHabit -> R.string.habit_campaign_locked
+                SaveHabitResult.ProgramHabit -> R.string.habit_program_locked
                 SaveHabitResult.ReminderLimit -> R.string.habit_reminder_limit
                 is SaveHabitResult.InvalidHabit -> when (result.problem) {
                     HabitProblem.QUANTITY_TARGET -> R.string.habit_error_quantity
@@ -338,7 +338,7 @@ class HabitsViewModel @Inject constructor(
 
 internal fun HabitEntity.toItem() = HabitItem(
     id, title, stat, difficulty, daysOfWeekMask.toDays(), target, unit, timeOfDay,
-    campaign = campaignId != null || programId != null, type = type, frequency = frequency, timesPerWeek = timesPerWeek, reminderMinutes = reminderTime,
+    locked = programId != null, type = type, frequency = frequency, timesPerWeek = timesPerWeek, reminderMinutes = reminderTime,
 )
 
 /** A new type resets what does not carry over: a count starts at 8, a timed habit at 25 minutes, an avoid habit at one a day. */

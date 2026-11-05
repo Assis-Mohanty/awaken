@@ -1,11 +1,15 @@
 package com.assismohanty.awaken.feature.settings
 
-import com.assismohanty.awaken.core.designsystem.lexicon.PresentationMode
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onFirst
+import androidx.compose.ui.test.onLast
+import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.test.printToString
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
@@ -32,7 +36,7 @@ class SettingsScreenTest {
         onOpenPrivacy: () -> Unit = {},
     ) {
         composeRule.setContent {
-            AwakenTheme(reduceMotion = true, presentation = PresentationMode.SYSTEM) {
+            AwakenTheme(reduceMotion = true) {
                 SettingsScreen(state = state, onEvent = { events += it }, onBack = onBack, onExport = {}, onImport = {}, onOpenPrivacy = onOpenPrivacy)
             }
         }
@@ -41,9 +45,19 @@ class SettingsScreenTest {
     @Test
     fun showsEveryGroup() {
         show(previewSettingsState())
-        listOf("PROFILE", "DAY", "TRAINING", "AI PATHS", "COMFORT", "YOUR DATA").forEach {
-            composeRule.onNodeWithText(it).performScrollTo().assertIsDisplayed()
+        listOf("Profile", "Day and reminders", "Goals", "Health and training", "Phone and focus", "Habits", "AI Paths", "Appearance and sound", "Your data").forEach {
+            composeRule.onAllNodesWithText(it).onFirst().performScrollTo().assertIsDisplayed()
         }
+    }
+
+    @Test
+    fun sectionsAreInThePlannedOrder() {
+        show(previewSettingsState())
+        val titles = listOf("Profile", "Day and reminders", "Goals", "Health and training", "Phone and focus", "Habits", "AI Paths", "Appearance and sound", "Your data")
+        val tree = composeRule.onRoot().printToString(Int.MAX_VALUE)
+        val indexes = titles.map { tree.indexOf(it) }
+        assertThat(indexes).doesNotContain(-1)
+        assertThat(indexes).isInOrder()
     }
 
     @Test
@@ -51,7 +65,7 @@ class SettingsScreenTest {
         val events = mutableListOf<SettingsEvent>()
         show(previewSettingsState(), events)
         composeRule.onNodeWithText("Off. Nothing is sent, and the app runs on its built-in quests.").performScrollTo()
-        composeRule.onNodeWithText("AI Paths").performScrollTo().performClick()
+        composeRule.onAllNodesWithText("AI Paths").onLast().performScrollTo().performClick()
         assertThat(events).containsExactly(SettingsEvent.SetAiPaths(true))
     }
 
@@ -59,7 +73,7 @@ class SettingsScreenTest {
     fun turningAiPathsOffIsOneTap() {
         val events = mutableListOf<SettingsEvent>()
         show(previewSettingsState().copy(aiPathsEnabled = true), events)
-        composeRule.onNodeWithText("AI Paths").performScrollTo().performClick()
+        composeRule.onAllNodesWithText("AI Paths").onLast().performScrollTo().performClick()
         assertThat(events).containsExactly(SettingsEvent.SetAiPaths(false))
     }
 
@@ -67,7 +81,7 @@ class SettingsScreenTest {
     fun theConsentSheetOpensOnlyWhenAsked() {
         val events = mutableListOf<SettingsEvent>()
         show(previewSettingsState().copy(showAiConsent = true), events)
-        composeRule.onNodeWithText("The System needs to consult the Oracle.").assertIsDisplayed()
+        composeRule.onNodeWithText("AI Paths uses an AI planner to write your quests.").assertIsDisplayed()
         composeRule.onNodeWithText("Not now").performClick()
         assertThat(events).containsExactly(SettingsEvent.DeclineAiPaths)
     }
@@ -146,7 +160,7 @@ class SettingsScreenTest {
     fun importAsksBeforeReplacingEverything() {
         val events = mutableListOf<SettingsEvent>()
         show(previewSettingsState().copy(importPending = true), events)
-        composeRule.onNodeWithText("Importing replaces your hunter, ledger and every setting on this device. This can't be undone.").assertIsDisplayed()
+        composeRule.onNodeWithText("Importing replaces your progress, history and every setting on this device. This can't be undone.").assertIsDisplayed()
         composeRule.onNodeWithText("Replace my data").performClick()
         assertThat(events).containsExactly(SettingsEvent.ConfirmImport)
     }
@@ -203,7 +217,7 @@ class SettingsScreenTest {
     fun blockedNotificationsSayWhyAndLinkToSystemSettings() {
         var opened = 0
         composeRule.setContent {
-            AwakenTheme(reduceMotion = true, presentation = PresentationMode.SYSTEM) {
+            AwakenTheme(reduceMotion = true) {
                 SettingsScreen(
                     state = previewSettingsState().copy(notificationsBlocked = true),
                     onEvent = {},

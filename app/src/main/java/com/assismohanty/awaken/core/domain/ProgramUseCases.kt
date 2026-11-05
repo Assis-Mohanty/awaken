@@ -4,7 +4,6 @@ import android.content.Context
 import com.assismohanty.awaken.R
 import com.assismohanty.awaken.core.data.clock.Clock
 import com.assismohanty.awaken.core.data.clock.gameDate
-import com.assismohanty.awaken.core.data.db.dao.CampaignDao
 import com.assismohanty.awaken.core.data.db.dao.DayRecordDao
 import com.assismohanty.awaken.core.data.db.dao.HabitDao
 import com.assismohanty.awaken.core.data.db.dao.HunterDao
@@ -80,13 +79,12 @@ sealed interface StartProgramResult {
 
 /**
  * Starts a program (GD §16.15): the run row and one read-only habit per rule, in one transaction, then today's directive is
- * regenerated so the rules appear at once. Needs enough free habit slots, and no other program or Campaign (Q8).
+ * regenerated so the rules appear at once. Needs enough free habit slots, and no other program.
  */
 class StartProgramUseCase @Inject constructor(
     private val hunterDao: HunterDao,
     private val habitDao: HabitDao,
     private val programDao: ProgramDao,
-    private val campaignDao: CampaignDao,
     private val generateDirective: GenerateDirectiveUseCase,
     private val text: ProgramText,
     private val transactions: TransactionRunner,
@@ -98,7 +96,7 @@ class StartProgramUseCase @Inject constructor(
         val today = clock.gameDate(profile.dayStartHour)
         val result = transactions.run {
             val free = QuestRules.MAX_ACTIVE_CUSTOM - habitDao.countActive()
-            val check = ProgramRules.canStart(spec, free, campaignDao.active() != null, programDao.active() != null)
+            val check = ProgramRules.canStart(spec, free, programDao.active() != null)
             if (check != ProgramStart.OK) return@run StartProgramResult.Refused(check)
             val now = clock.now()
             val id = UUID.randomUUID().toString()
@@ -195,15 +193,13 @@ class ProgramReader @Inject constructor(
 
 /**
  * At each finished day (GD §16.15): a break nobody answered becomes Continue, then the day is judged; the last day ends the run
- * as COMPLETED (no broken day) or FINISHED, archives the program's habits, and unlocks the program's achievement. Nothing is
+ * as COMPLETED (no broken day) or FINISHED, and archives the program's habits. Nothing is
  * ever deducted. Idempotent: a mark or an ended program is never written twice.
  */
 class ProgramRolloverUseCase @Inject constructor(
-    private val hunterDao: HunterDao,
     private val programDao: ProgramDao,
     private val habitDao: HabitDao,
     private val reader: ProgramReader,
-    private val achievements: AchievementUnlocker,
     private val transactions: TransactionRunner,
     private val clock: Clock,
 ) {
@@ -223,7 +219,6 @@ class ProgramRolloverUseCase @Inject constructor(
         val now = clock.now()
         programDao.upsert(program.copy(status = status, endedAt = now))
         programDao.habits(program.id).forEach { habitDao.upsert(it.copy(active = false)) }
-        if (status == ProgramStatus.COMPLETED) hunterDao.getProfile()?.let { achievements.unlockNew(it, date, now) }
     }
 }
 
@@ -311,13 +306,11 @@ class ObserveProgramUseCase @Inject constructor(
 /** For each program, whether it can start now and why not (GD §16.15). Read-only. */
 class ProgramAvailabilityUseCase @Inject constructor(
     private val habitDao: HabitDao,
-    private val campaignDao: CampaignDao,
     private val programDao: ProgramDao,
 ) {
     suspend operator fun invoke(): Map<String, ProgramStart> {
         val free = QuestRules.MAX_ACTIVE_CUSTOM - habitDao.countActive()
-        val campaign = campaignDao.active() != null
         val program = programDao.active() != null
-        return ProgramRules.CATALOG.associate { it.key to ProgramRules.canStart(it, free, campaign, program) }
+        return ProgramRules.CATALOG.associate { it.key to ProgramRules.canStart(it, free, program) }
     }
 }

@@ -93,28 +93,6 @@ class ObserveQuitCountersUseCase @Inject constructor(private val quitDao: QuitDa
         }
 }
 
-/**
- * The longest in-app run over every counter ever made, archived ones included (GD §16.13). A time-based counter counts from
- * `max(start, created)` so a back-dated start earns nothing; Doomscrolling counts clean days.
- */
-class QuitRunReader @Inject constructor(private val quitDao: QuitDao, private val clock: Clock) {
-    suspend fun bestInAppRunDays(): Int {
-        val counters = quitDao.counters()
-        if (counters.isEmpty()) return 0
-        val relapses = quitDao.relapses()
-        val days = quitDao.days()
-        val now = clock.now()
-        return counters.maxOf { counter ->
-            if (counter.kind.isTimeBased) {
-                val restarts = relapses.filter { it.counterId == counter.id && !it.auto }.map { it.at }
-                QuitRules.bestInAppRunDays(counter.startAt, counter.createdAt, restarts, now)
-            } else {
-                QuitRules.doomscrollRuns(days.filter { it.counterId == counter.id }.associate { it.gameDate to it.verdict }).second
-            }
-        }
-    }
-}
-
 sealed interface AddQuitResult {
     data class Added(val id: String) : AddQuitResult
     data object LimitReached : AddQuitResult
@@ -229,15 +207,14 @@ class DistractingMinutesReader @Inject constructor(
 }
 
 /**
- * At each day rollover (GD §16.13): gives every active Doomscrolling counter a verdict for the day that just ended, and
- * evaluates the Clean Run achievements, in one transaction. The first counted day is the day after the counter was made.
+ * At each day rollover (GD §16.13): gives every active Doomscrolling counter a verdict for the day that just ended,
+ * in one transaction. The first counted day is the day after the counter was made.
  * Writing a day twice is a no-op. Fail closed: unreadable usage pauses the day. Never writes XP.
  */
 class RecordQuitProgressUseCase @Inject constructor(
     private val hunterDao: HunterDao,
     private val quitDao: QuitDao,
     private val minutes: DistractingMinutesReader,
-    private val achievements: AchievementUnlocker,
     private val transactions: TransactionRunner,
     private val clock: Clock,
 ) {
@@ -260,7 +237,6 @@ class RecordQuitProgressUseCase @Inject constructor(
                     )
                 }
             }
-            achievements.unlockNew(profile, date, clock.now())
         }
     }
 }

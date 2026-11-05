@@ -1,5 +1,7 @@
 package com.assismohanty.awaken.core.data.export
 
+import kotlinx.serialization.json.JsonObject
+
 /**
  * Brings an export written by an earlier schema up to the current one before validation (ENGINE_DECISIONS #48: "add a
  * document-upgrade step beside the Room migration"). Each step mirrors one Room migration, so a backup taken before an
@@ -18,6 +20,16 @@ object ExportUpgrade {
     private const val BEDTIME_TABLE = "bedtime_rule"
     private val QUIT_V23_TABLES = listOf("quit_counter", "relapse", "quit_day")
     private val LONG_ARC_V24_TABLES = listOf("dungeon", "program", "program_mark")
+    /** v25 → v26: tables removed by the declutter, and the columns removed from three surviving tables. */
+    private val REMOVED_V26_TABLES = listOf("achievement_unlock", "owned_cosmetic", "campaign", "dungeon", "recap")
+    private val REMOVED_V26_COLUMNS = mapOf(
+        "hunter_profile" to listOf("equipped_title_id", "theme_id", "equipped_frame_id", "equipped_sigil_id"),
+        "habit" to listOf("campaign_id"),
+        "quest_instance" to listOf("dungeon_id", "dungeon_stage"),
+    )
+    /** v26 → v27: the identities column left the profile. */
+    private const val PROFILE_TABLE = "hunter_profile"
+    private const val IDENTITIES_COLUMN = "identities"
     private val BODY_TABLES = listOf(
         "custom_exercise", "routine", "routine_exercise", "workout", "workout_set", "custom_food", "food_log", "nutrition_profile",
     )
@@ -142,6 +154,26 @@ object ExportUpgrade {
         // v24 → v25: quest_instance gains a nullable night_verdict (= unknown, as before); no table changes.
         if (current.app == ExportDocument.APP_ID && current.schemaVersion == 24) {
             current = current.copy(schemaVersion = 25)
+        }
+        // v25 → v26 (declutter Batch 1): achievements, cosmetics, campaigns, dungeons and recaps are gone. Their tables and the
+        // removed columns are dropped from the file, so any older backup still imports; the ledger is carried over untouched.
+        if (current.app == ExportDocument.APP_ID && current.schemaVersion == 25) {
+            current = current.copy(
+                schemaVersion = 26,
+                tables = current.tables.filterKeys { it !in REMOVED_V26_TABLES }.mapValues { (table, rows) ->
+                    val dropped = REMOVED_V26_COLUMNS[table]
+                    if (dropped == null) rows else rows.map { row -> JsonObject(row.filterKeys { it !in dropped }) }
+                },
+            )
+        }
+        // v26 → v27 (declutter Batch 2): identities are gone, so the column is dropped from every profile row.
+        if (current.app == ExportDocument.APP_ID && current.schemaVersion == 26) {
+            current = current.copy(
+                schemaVersion = 27,
+                tables = current.tables.mapValues { (table, rows) ->
+                    if (table != PROFILE_TABLE) rows else rows.map { row -> JsonObject(row.filterKeys { it != IDENTITIES_COLUMN }) }
+                },
+            )
         }
         return current
     }

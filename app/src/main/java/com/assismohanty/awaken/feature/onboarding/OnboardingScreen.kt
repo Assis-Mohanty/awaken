@@ -47,22 +47,17 @@ import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.assismohanty.awaken.R
-import com.assismohanty.awaken.core.designsystem.components.IdentityChips
-import com.assismohanty.awaken.core.designsystem.components.IdentityOption
-import com.assismohanty.awaken.core.designsystem.components.identityPhraseRes
 import com.assismohanty.awaken.core.designsystem.components.AwakenGlyphs
 import com.assismohanty.awaken.core.designsystem.components.ChoiceChip
 import com.assismohanty.awaken.core.designsystem.components.PrimaryButton
 import com.assismohanty.awaken.core.designsystem.components.QuietButton
 import com.assismohanty.awaken.core.designsystem.components.SecondaryButton
 import com.assismohanty.awaken.core.designsystem.components.SystemWindow
-import com.assismohanty.awaken.core.designsystem.components.TypeOnText
 import com.assismohanty.awaken.core.designsystem.components.label
 import com.assismohanty.awaken.core.designsystem.preview.PhonePreviews
 import com.assismohanty.awaken.core.designsystem.theme.AwakenTheme
 import com.assismohanty.awaken.core.designsystem.theme.Spacing
 import com.assismohanty.awaken.engine.Awakening
-import com.assismohanty.awaken.engine.Identity
 import com.assismohanty.awaken.feature.settings.HealthActionEffect
 import com.assismohanty.awaken.engine.model.Stat
 import com.assismohanty.awaken.feature.paths.AiConsentSheet
@@ -110,14 +105,13 @@ fun OnboardingScreen(state: OnboardingUiState, onEvent: (OnboardingEvent) -> Uni
             ) {
                 SystemWindow(title = lexString(step.titleRes), accent = AwakenTheme.colors.accent) {
                     Text(
-                        text = lexString(R.string.onboarding_step, step.ordinal + 1, OnboardingStep.entries.size),
+                        text = lexString(R.string.onboarding_step, state.steps.indexOf(step) + 1, state.steps.size),
                         style = AwakenTheme.type.caption,
                         color = AwakenTheme.colors.textMuted,
                     )
                     when (step) {
                         OnboardingStep.WELCOME -> WelcomeStep(onEvent)
                         OnboardingStep.NAME -> NameStep(state, onEvent)
-                        OnboardingStep.IDENTITY -> IdentityStep(state, onEvent)
                         OnboardingStep.FOCUS -> FocusStep(state, onEvent)
                         OnboardingStep.CALIBRATION -> CalibrationStep(state, onEvent)
                         OnboardingStep.HEALTH -> HealthStep(state, onEvent)
@@ -135,7 +129,6 @@ private val OnboardingStep.titleRes: Int
     @StringRes get() = when (this) {
         OnboardingStep.WELCOME -> R.string.onboarding_welcome_title
         OnboardingStep.NAME -> R.string.onboarding_name_title
-        OnboardingStep.IDENTITY -> R.string.identity_title
         OnboardingStep.FOCUS -> R.string.onboarding_focus_title
         OnboardingStep.CALIBRATION -> R.string.onboarding_calibration_title
         OnboardingStep.HEALTH -> R.string.onboarding_health_title
@@ -146,7 +139,7 @@ private val OnboardingStep.titleRes: Int
 
 @Composable
 private fun WelcomeStep(onEvent: (OnboardingEvent) -> Unit) {
-    TypeOnText(
+    Text(
         text = lexString(R.string.onboarding_welcome_body),
         style = AwakenTheme.type.body,
         color = AwakenTheme.colors.textPrimary,
@@ -186,35 +179,6 @@ private fun NameStep(state: OnboardingUiState, onEvent: (OnboardingEvent) -> Uni
         modifier = Modifier.fillMaxWidth(),
     )
     StepButtons(onEvent, continueEnabled = state.name.isNotBlank())
-}
-
-@Composable
-private fun IdentityStep(state: OnboardingUiState, onEvent: (OnboardingEvent) -> Unit) {
-    Text(lexString(R.string.identity_body), style = AwakenTheme.type.body, color = AwakenTheme.colors.textSecondary)
-    IdentityChips(
-        options = state.identityOptions.mapNotNull { identity ->
-            identityPhraseRes(identity.id)?.let { IdentityOption(identity.id, identity.stat, lexString(it)) }
-        },
-        selected = state.identities,
-        onToggle = { onEvent(OnboardingEvent.IdentityToggled(it)) },
-        showLimit = state.identityLimitHit,
-    )
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(top = Spacing.md),
-        horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
-    ) {
-        SecondaryButton(
-            text = lexString(R.string.action_skip),
-            onClick = { onEvent(OnboardingEvent.SkipIdentity) },
-            modifier = Modifier.weight(1f),
-        )
-        PrimaryButton(
-            text = lexString(R.string.action_continue),
-            onClick = { onEvent(OnboardingEvent.Next) },
-            enabled = state.identities.isNotEmpty(),
-            modifier = Modifier.weight(1f),
-        )
-    }
 }
 
 @Composable
@@ -466,26 +430,6 @@ private fun OnboardingWelcomePreview() {
 @Composable
 private fun OnboardingNamePreview() {
     AwakenTheme { OnboardingScreen(OnboardingUiState(step = OnboardingStep.NAME, name = "Al", showNameError = true), onEvent = {}) }
-}
-
-@PhonePreviews
-@Composable
-private fun OnboardingIdentityPreview() {
-    AwakenTheme {
-        OnboardingScreen(
-            OnboardingUiState(
-                step = OnboardingStep.IDENTITY,
-                identityOptions = listOf(
-                    Identity("trains", Stat.STR), Identity("runs", Stat.STR), Identity("reads", Stat.INT), Identity("ships", Stat.INT),
-                    Identity("learns", Stat.INT), Identity("focuses", Stat.WIL), Identity("keeps_promises", Stat.WIL),
-                    Identity("meditates", Stat.WIL), Identity("sleeps_well", Stat.VIT), Identity("eats_well", Stat.VIT),
-                    Identity("stays_in_touch", Stat.CHA), Identity("speaks_up", Stat.CHA),
-                ),
-                identities = listOf("reads", "trains"),
-            ),
-            onEvent = {},
-        )
-    }
 }
 
 @PhonePreviews

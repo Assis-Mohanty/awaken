@@ -7,6 +7,7 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import com.assismohanty.awaken.core.data.di.AiPrefsStore
+import com.assismohanty.awaken.core.domain.AiFeature
 import java.time.Instant
 import java.util.UUID
 import javax.inject.Inject
@@ -26,7 +27,8 @@ data class AiConsent(val given: Boolean = false, val givenAt: Instant? = null)
 class AiPrefsRepository @Inject constructor(@AiPrefsStore private val store: DataStore<Preferences>) {
 
     val consent: Flow<AiConsent> = store.data.map {
-        AiConsent(given = it[CONSENT] ?: false, givenAt = it[CONSENT_AT]?.let(Instant::ofEpochMilli))
+        // No consent exists in a build without AI Paths, whatever an old data store says.
+        AiConsent(given = AiFeature.enabled && (it[CONSENT] ?: false), givenAt = it[CONSENT_AT]?.let(Instant::ofEpochMilli))
     }
 
     suspend fun hasConsent(): Boolean = consent.first().given

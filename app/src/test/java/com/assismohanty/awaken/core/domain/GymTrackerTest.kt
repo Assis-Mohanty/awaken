@@ -232,23 +232,17 @@ class GymTrackerTest {
     }
 
     @Test
-    fun theFirstSessionOfAnExerciseBreaksNoRecordAndAHeavierOneDoesWithOneTimeGold() = runTest {
+    fun theFirstSessionOfAnExerciseBreaksNoRecordAndAHeavierOneDoes() = runTest {
         graph.seedHunter()
         val first = logBench(60.0 to 10)
         assertThat(first.records).isEmpty()
-        assertThat(first.unlocked).doesNotContain("pr1")
 
         val second = logBench(65.0 to 10)
         val types = second.records.single().events.map { it.type }
         assertThat(types).containsAtLeast(RecordType.HEAVIEST_WEIGHT, RecordType.BEST_E1RM, RecordType.BEST_SESSION_VOLUME)
-        assertThat(second.unlocked).contains("pr1")
-        suspend fun prGold() = graph.db.ledgerDao().all().filter { it.sourceType == SourceType.ACHIEVEMENT && it.sourceId == "pr1" && it.kind == LedgerKind.GOLD }
-        assertThat(prGold().map { it.delta }).containsExactly(10L)
 
-        // Another record later pays nothing more for pr1 (an achievement unlocks once), and gym itself writes no XP row.
-        val third = logBench(70.0 to 10)
-        assertThat(third.unlocked).doesNotContain("pr1")
-        assertThat(prGold()).hasSize(1)
+        // A record pays nothing, and gym itself writes no XP row.
+        logBench(70.0 to 10)
         assertThat(graph.db.ledgerDao().all().filter { it.kind == LedgerKind.XP_TOTAL && it.sourceType != SourceType.QUEST }).isEmpty()
     }
 

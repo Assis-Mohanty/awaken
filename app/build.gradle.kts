@@ -85,12 +85,11 @@ android {
             buildConfigField("String", "ORACLE_BASE_URL", localProperty("oracle.stagingUrl").asBuildConfigString())
             buildConfigField("String", "ORACLE_DEBUG_KEY", localProperty("oracle.debugKey").asBuildConfigString())
             buildConfigField("long", "PLAY_CLOUD_PROJECT_NUMBER", (localProperty("oracle.cloudProjectNumber").ifEmpty { "0" }) + "L")
+            buildConfigField("boolean", "AI_PATHS_ENABLED", "true")
         }
         release {
-            buildConfigField("String", "ORACLE_BASE_URL", localProperty("oracle.productionUrl").asBuildConfigString())
-            // Never ship a debug key (Phase 16 re-checks the release BuildConfig).
-            buildConfigField("String", "ORACLE_DEBUG_KEY", "\"\"")
-            buildConfigField("long", "PLAY_CLOUD_PROJECT_NUMBER", (localProperty("oracle.cloudProjectNumber").ifEmpty { "0" }) + "L")
+            // AI Paths is compiled out of release: no Oracle URL, key or project number is read into this build.
+            buildConfigField("boolean", "AI_PATHS_ENABLED", "false")
             optimization {
                 enable = true
                 packageScope = setOf("androidx.**", "kotlin.**", "kotlinx.**")
@@ -179,12 +178,12 @@ dependencies {
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.timber)
 
-    // AI Paths: the only network code in the app lives in core/data/ai (CLAUDE.md invariant 8).
-    implementation(libs.ktor.client.core)
-    implementation(libs.ktor.client.okhttp)
-    implementation(libs.play.integrity)
+    // AI Paths: the only network code lives in core/data/ai and ships in debug builds only (CLAUDE.md invariant 8).
+    debugImplementation(libs.ktor.client.core)
+    debugImplementation(libs.ktor.client.okhttp)
+    debugImplementation(libs.play.integrity)
     implementation(libs.play.services.fitness)
-    testImplementation(libs.ktor.client.mock)
+    testDebugImplementation(libs.ktor.client.mock)
 
     testImplementation(libs.junit4)
     testImplementation(libs.truth)

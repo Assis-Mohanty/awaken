@@ -23,8 +23,8 @@ class RulesTest {
     @Nested
     inner class XpCalculatorTest {
         private val context = HunterContext(hunterId = "h", focusStats = listOf(Stat.STR, Stat.INT))
-        private val critId = generateSequence(0) { it + 1 }.map { "id-$it" }.first { CritRoller.isCrit(it) }
-        private val plainId = generateSequence(0) { it + 1 }.map { "id-$it" }.first { !CritRoller.isCrit(it) }
+
+        private val plainId = generateSequence(0) { it + 1 }.map { "id-$it" }.first { true }
 
         private fun quest(id: String, type: QuestType = QuestType.SIDE, verification: VerificationSource = VerificationSource.SELF) =
             CompletableQuest(id, type, Stat.STR, Stat.WIL, Difficulty.NORMAL, verification)
@@ -35,29 +35,6 @@ class RulesTest {
             assertThat(reward.xp).isEqualTo(60)
             assertThat(reward.statXp).containsExactly(Stat.STR, 60, Stat.WIL, 18)
             assertThat(reward.gold).isEqualTo(30)
-            assertThat(reward.fragments).isEqualTo(0)
-        }
-
-        @Test
-        fun `crit doubles XP and grants a fragment`() {
-            val reward = XpCalculator.forCompletion(quest(critId), context)
-            assertThat(reward.crit).isTrue()
-            assertThat(reward.xp).isEqualTo(120)
-            assertThat(reward.fragments).isEqualTo(1)
-            assertThat(reward.breakdown.map { it.kind }).contains(com.assismohanty.awaken.engine.model.BreakdownItem.Kind.CRIT)
-        }
-
-        @Test
-        fun `penalty and trial quests never crit`() {
-            assertThat(XpCalculator.forCompletion(quest(critId, QuestType.PENALTY), context).crit).isFalse()
-            assertThat(XpCalculator.forCompletion(quest(critId, QuestType.TRIAL), context).crit).isFalse()
-        }
-
-        @Test
-        fun `gate clear grants a fragment`() {
-            val reward = XpCalculator.forCompletion(quest(plainId, QuestType.GATE, VerificationSource.TIMER), context)
-            assertThat(reward.fragments).isEqualTo(1)
-            assertThat(reward.xp).isEqualTo(69) // 40 × 1.5 × 1.0 × 1.15
         }
 
         @Test
@@ -197,43 +174,6 @@ class RulesTest {
     }
 
     @Nested
-    inner class AchievementEvaluatorTest {
-        @Test
-        fun `the set has 52 unique ids - the launch 32, Reforged, the four v1_1 achievements, Deep Work, New Record, Clean Run, Delver and Programs`() {
-            assertThat(AchievementEvaluator.all.map { it.id }).containsNoDuplicates()
-            assertThat(AchievementEvaluator.all).hasSize(52)
-        }
-
-        @Test
-        fun `returns only newly unlocked ids`() {
-            val snapshot = AchievementSnapshot(questsCompleted = 1, onboardingDone = true, level = 10, alreadyUnlocked = setOf("awakened"))
-            assertThat(AchievementEvaluator.evaluate(snapshot)).containsExactly("first_blood", "lvl5", "lvl10").inOrder()
-            assertThat(AchievementEvaluator.evaluate(AchievementSnapshot())).isEmpty()
-        }
-
-        @Test
-        fun `stat, balance, gate hours and rank conditions`() {
-            val snapshot = AchievementSnapshot(
-                statXp = Stat.entries.associateWith { StatLevel.xpForLevel(5) } + (Stat.INT to StatLevel.xpForLevel(20)),
-                gateMinutesCleared = 600,
-                passedTrials = setOf(Rank.D),
-                alreadyUnlocked = emptySet(),
-            )
-            assertThat(AchievementEvaluator.evaluate(snapshot)).containsExactly("gate_hours10", "balanced", "int20", "rank_d").inOrder()
-        }
-
-        @Test
-        fun `dawn raid and midnight gate windows respect dayStartHour`() {
-            assertThat(AchievementEvaluator.isDawnRaid(LocalTime.of(6, 59))).isTrue()
-            assertThat(AchievementEvaluator.isDawnRaid(LocalTime.of(7, 0))).isFalse()
-            assertThat(AchievementEvaluator.isDawnRaid(LocalTime.of(2, 0))).isFalse()
-            assertThat(AchievementEvaluator.isMidnightGate(LocalTime.of(23, 0))).isTrue()
-            assertThat(AchievementEvaluator.isMidnightGate(LocalTime.of(3, 30))).isTrue()
-            assertThat(AchievementEvaluator.isMidnightGate(LocalTime.of(4, 0))).isFalse()
-        }
-    }
-
-    @Nested
     inner class QuestRulesTest {
         private val t0 = Instant.parse("2026-10-18T10:00:00Z")
 
@@ -271,7 +211,7 @@ class RulesTest {
         val json = """
             {
               "id": "str_pushups", "stat": "STR", "secondaryStat": "WIL",
-              "titles": ["Do push-ups", "Practise push-ups"],
+              "title": "Do {n} push-ups",
               "description": "Complete {target} push-ups. Sets of any size.", "unit": "reps",
               "targets": { "EASY": 20, "NORMAL": 40, "HARD": 80, "EXTREME": 120 },
               "verification": "SELF", "equipment": [], "tags": ["bodyweight", "indoor", "no_impact_false"],

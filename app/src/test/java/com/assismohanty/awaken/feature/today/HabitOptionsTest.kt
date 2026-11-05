@@ -61,8 +61,8 @@ class HabitOptionsTest {
     }
 
     @Test
-    fun campaignHabitsOfferNoRemoval() {
-        composeRule.setContent { AwakenTheme(reduceMotion = true) { HabitOptions(read.copy(campaign = true), onEvent = {}) } }
+    fun programHabitsOfferNoRemoval() {
+        composeRule.setContent { AwakenTheme(reduceMotion = true) { HabitOptions(read.copy(locked = true), onEvent = {}) } }
 
         composeRule.onNodeWithText("Delete habit").assertDoesNotExist()
         composeRule.onNodeWithText("Archive habit").assertDoesNotExist()

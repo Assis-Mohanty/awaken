@@ -86,20 +86,4 @@ class FocusGoalRulesTest {
         assertThat(FocusGoalRules.streak(monday, monday.minusDays(4), minutes, emptyList(), emptyMap())).isEqualTo(5)
     }
 
-    @Test
-    fun `vector 101 - the 7th consecutive met day unlocks focus_streak7 once for 30 gold, with no XP`() {
-        val unlocked = AchievementEvaluator.evaluate(AchievementSnapshot(focusStreak = 7))
-        assertThat(unlocked).containsExactly("focus_streak7")
-        assertThat(AchievementEvaluator.byId.getValue("focus_streak7").gold).isEqualTo(30)
-        assertThat(AchievementEvaluator.evaluate(AchievementSnapshot(focusStreak = 8, alreadyUnlocked = setOf("focus_streak7")))).isEmpty()
-        assertThat(AchievementEvaluator.evaluate(AchievementSnapshot(focusStreak = 6))).isEmpty()
-    }
-
-    @Test
-    fun `focus streak 30 and 100 pay 100 and 200 gold and 100 grants the Deep Worker title`() {
-        assertThat(AchievementEvaluator.evaluate(AchievementSnapshot(focusStreak = 30))).containsExactly("focus_streak7", "focus_streak30").inOrder()
-        assertThat(AchievementEvaluator.byId.getValue("focus_streak30").gold).isEqualTo(100)
-        assertThat(AchievementEvaluator.byId.getValue("focus_streak100").gold).isEqualTo(200)
-        assertThat(AchievementEvaluator.byId.getValue("focus_streak100").titleId).isEqualTo("deep_worker")
-    }
 }

@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Today in five sections and Settings in ten (DECLUTTER_PLAN §4, §5). -->
+<resources>
+    <string name="today_header_level">Level %1$d · Rank %2$s</string>
+    <plurals name="today_header_streak">
+        <item quantity="one">%1$d-day streak</item>
+        <item quantity="other">%1$d-day streak</item>
+    </plurals>
+    <string name="today_header_cd">Level %1$d, rank %2$s, %3$s of %4$s XP, %5$d-day streak. Opens Progress.</string>
+
+    <string name="today_plan_title">Today\'s plan · %1$d of %2$d done</string>
+    <string name="today_plan_title_empty">Today\'s plan</string>
+    <string name="action_plan_day">Plan day</string>
+    <string name="today_comeback_title">Comeback</string>
+
+    <string name="today_section_focus">Focus</string>
+    <string name="today_section_health">Health and screen</string>
+    <string name="today_section_quit">Quit counters</string>
+
+    <string name="today_limits_title">App limits</string>
+
+    <string name="today_quit_started_today">%1$s · started today</string>
+    <plurals name="today_quit_days">
+        <item quantity="one">%1$s · %2$d day clean</item>
+        <item quantity="other">%1$s · %2$d days clean</item>
+    </plurals>
+
+    <string name="focus_card_report">Weekly report</string>
+
+    <string name="settings_window_day_reminders">Day and reminders</string>
+    <string name="settings_window_goals">Goals</string>
+    <string name="settings_window_health_training">Health and training</string>
+    <string name="settings_window_phone_focus">Phone and focus</string>
+    <string name="settings_window_habits">Habits</string>
+    <string name="settings_window_appearance">Appearance and sound</string>
+
+    <string name="status_store_row">Store</string>
+    <string name="status_store_row_gold">%1$s gold to spend</string>
+</resources>

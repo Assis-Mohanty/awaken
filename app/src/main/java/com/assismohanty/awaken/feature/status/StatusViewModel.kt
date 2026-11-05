@@ -7,15 +7,11 @@ import androidx.lifecycle.viewModelScope
 import com.assismohanty.awaken.core.data.repo.ShareImageWriter
 import com.assismohanty.awaken.core.designsystem.components.HeatmapDay
 import com.assismohanty.awaken.core.designsystem.components.HunterHeaderModel
-import com.assismohanty.awaken.core.domain.AchievementEntry
-import com.assismohanty.awaken.core.domain.ChapterEntry
 import com.assismohanty.awaken.core.domain.CompletionCenter
 import com.assismohanty.awaken.core.domain.DayRefresher
-import com.assismohanty.awaken.core.domain.EquipTitleUseCase
 import com.assismohanty.awaken.core.domain.HeatmapEntry
 import com.assismohanty.awaken.core.domain.InsightsModel
 import com.assismohanty.awaken.core.domain.ObserveStatusUseCase
-import com.assismohanty.awaken.core.domain.RecapEntry
 import com.assismohanty.awaken.core.domain.RefreshHealthCacheUseCase
 import com.assismohanty.awaken.core.domain.StatProgress
 import com.assismohanty.awaken.core.domain.StatusModel
@@ -41,13 +37,12 @@ import timber.log.Timber
 
 data class StatusUiState(
     val loading: Boolean = true,
-    /** Title is filled in by the screen from [equippedTitleId] (display text lives in strings.xml). */
     val header: HunterHeaderModel? = null,
-    val equippedTitleId: String? = null,
     val rank: Rank = Rank.E,
     val name: String = "",
     val level: Int = 1,
     val streak: Int = 0,
+    val bestStreak: Int = 0,
     val radarNow: Map<Stat, Float> = emptyMap(),
     val radarLastWeek: Map<Stat, Float> = emptyMap(),
     val radarMax: Float = 1f,
@@ -55,13 +50,8 @@ data class StatusUiState(
     val heatmap: List<HeatmapDay> = emptyList(),
     val selectedDay: HeatmapEntry? = null,
     val consistency: ConsistencyScore = ConsistencyScore(0, 0),
-    val identityIds: List<String> = emptyList(),
     val insights: InsightsModel = InsightsModel(),
     val reviewOpen: Boolean = false,
-    val recaps: List<RecapEntry> = emptyList(),
-    val achievements: List<AchievementEntry> = emptyList(),
-    val chapters: List<ChapterEntry> = emptyList(),
-    val openChapter: ChapterEntry? = null,
     val weeklyReport: WeeklyReport? = null,
     /** Sunday (GD §11), or forced from the debug toggle. */
     val weeklyOpen: Boolean = false,
@@ -73,10 +63,7 @@ data class StatusUiState(
 )
 
 sealed interface StatusEvent {
-    data class EquipTitle(val titleId: String?) : StatusEvent
     data class SelectDay(val date: LocalDate) : StatusEvent
-    data class OpenChapter(val chapterId: String) : StatusEvent
-    data object CloseChapter : StatusEvent
     data object ToggleDebugWeekly : StatusEvent
     data object Share : StatusEvent
     data class ShareCaptured(val bitmap: Bitmap) : StatusEvent
@@ -86,7 +73,6 @@ sealed interface StatusEvent {
 
 private data class LocalState(
     val selectedDate: LocalDate? = null,
-    val openChapterId: String? = null,
     val debugWeekly: Boolean = false,
     val capturing: Boolean = false,
     val shareUri: Uri? = null,
@@ -96,7 +82,6 @@ private data class LocalState(
 class StatusViewModel @Inject constructor(
     observeStatus: ObserveStatusUseCase,
     dayRefresher: DayRefresher,
-    private val equipTitle: EquipTitleUseCase,
     private val shareImageWriter: ShareImageWriter,
     private val completionCenter: CompletionCenter,
     refreshHealthCache: RefreshHealthCacheUseCase,
@@ -123,19 +108,7 @@ class StatusViewModel @Inject constructor(
 
     fun onEvent(event: StatusEvent) {
         when (event) {
-            is StatusEvent.EquipTitle -> viewModelScope.launch {
-                try {
-                    equipTitle(event.titleId)
-                } catch (e: CancellationException) {
-                    throw e
-                } catch (e: Exception) {
-                    Timber.e(e, "Equipping a title failed")
-                    completionCenter.message(UserMessage.Error)
-                }
-            }
             is StatusEvent.SelectDay -> local.update { it.copy(selectedDate = event.date.takeUnless { d -> d == it.selectedDate }) }
-            is StatusEvent.OpenChapter -> local.update { it.copy(openChapterId = event.chapterId) }
-            StatusEvent.CloseChapter -> local.update { it.copy(openChapterId = null) }
             StatusEvent.ToggleDebugWeekly -> local.update { it.copy(debugWeekly = !it.debugWeekly) }
             StatusEvent.Share -> local.update { it.copy(capturing = true) }
             is StatusEvent.ShareCaptured -> viewModelScope.launch {
@@ -168,21 +141,18 @@ private fun StatusModel.toUiState(local: LocalState): StatusUiState = StatusUiSt
     loading = false,
     header = HunterHeaderModel(
         name = hunter.name,
-        title = null,
         level = hunter.level,
         rank = hunter.rank,
         xpIntoLevel = hunter.xpIntoLevel,
         xpForLevel = hunter.xpForLevel,
         streak = hunter.streak,
         gold = hunter.gold,
-        frameId = hunter.equippedFrameId,
-        sigilId = hunter.equippedSigilId,
     ),
-    equippedTitleId = hunter.equippedTitleId,
     rank = hunter.rank,
     name = hunter.name,
     level = hunter.level,
     streak = hunter.streak,
+    bestStreak = hunter.bestStreak,
     radarNow = hunter.statLevels.mapValues { it.value.toFloat() },
     radarLastWeek = lastWeekLevels.mapValues { it.value.toFloat() },
     radarMax = radarMax.toFloat(),
@@ -190,13 +160,8 @@ private fun StatusModel.toUiState(local: LocalState): StatusUiState = StatusUiSt
     heatmap = heatmap.map { HeatmapDay(it.date, it.intensity, it.restDay) },
     selectedDay = local.selectedDate?.let { date -> heatmap.firstOrNull { it.date == date } },
     consistency = consistency,
-    identityIds = identityIds,
     insights = insights,
     reviewOpen = reviewOpen,
-    recaps = recaps,
-    achievements = achievements,
-    chapters = chapters,
-    openChapter = local.openChapterId?.let { id -> chapters.firstOrNull { it.chapter.id == id && it.unlocked } },
     weeklyReport = weeklyReport,
     weeklyOpen = hunter.gameDate.dayOfWeek == DayOfWeek.SUNDAY || local.debugWeekly,
     projectedRecalibration = projectedRecalibration,

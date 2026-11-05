@@ -56,7 +56,7 @@ import com.assismohanty.awaken.core.designsystem.components.DifficultyChip
 import com.assismohanty.awaken.core.designsystem.components.IconCircle
 import com.assismohanty.awaken.core.designsystem.components.LargeTitleScaffold
 import com.assismohanty.awaken.core.designsystem.components.SkeletonCard
-import com.assismohanty.awaken.core.designsystem.components.GateBackground
+import com.assismohanty.awaken.core.designsystem.components.ScreenBackground
 import com.assismohanty.awaken.core.designsystem.components.GateDial
 import com.assismohanty.awaken.core.designsystem.components.StopwatchFace
 import com.assismohanty.awaken.core.designsystem.components.PrimaryButton
@@ -66,10 +66,6 @@ import com.assismohanty.awaken.core.designsystem.components.StatChip
 import com.assismohanty.awaken.core.designsystem.components.SystemWindow
 import com.assismohanty.awaken.core.designsystem.components.label
 import com.assismohanty.awaken.core.designsystem.components.AwakenCard
-import com.assismohanty.awaken.core.designsystem.lexicon.Term
-import com.assismohanty.awaken.core.designsystem.lexicon.termString
-import com.assismohanty.awaken.core.designsystem.components.GateCrystal
-import com.assismohanty.awaken.core.designsystem.components.crystalTint
 import com.assismohanty.awaken.core.designsystem.components.ListRow
 import androidx.compose.material3.Icon
 import androidx.compose.foundation.layout.size
@@ -86,7 +82,7 @@ import com.assismohanty.awaken.feature.quest.shortClock
 import java.time.Duration
 
 @Composable
-fun GatesEntry(onBack: () -> Unit, modifier: Modifier = Modifier, onFixFocusLock: () -> Unit = {}, onOpenCrystals: () -> Unit = {}, onOpenDungeons: () -> Unit = {}, viewModel: GatesViewModel = hiltViewModel()) {
+fun GatesEntry(onBack: () -> Unit, modifier: Modifier = Modifier, onFixFocusLock: () -> Unit = {}, viewModel: GatesViewModel = hiltViewModel()) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
     // The gate runs either way; the permission only adds the countdown outside the app (ARCH §3.3).
@@ -101,8 +97,6 @@ fun GatesEntry(onBack: () -> Unit, modifier: Modifier = Modifier, onFixFocusLock
             }
             when (event) {
                 GatesEvent.FixFocusLock -> onFixFocusLock()
-                GatesEvent.OpenCrystals -> onOpenCrystals()
-                GatesEvent.OpenDungeons -> onOpenDungeons()
                 else -> viewModel.onEvent(event)
             }
         },
@@ -173,8 +167,6 @@ private fun GatePicker(state: GatesUiState, onEvent: (GatesEvent) -> Unit) {
         }
     }
     state.setup?.let { GateSetupWindow(it, onEvent) }
-    DungeonsRow(onOpen = { onEvent(GatesEvent.OpenDungeons) })
-    CrystalsRow(onOpen = { onEvent(GatesEvent.OpenCrystals) })
 }
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -385,7 +377,7 @@ private fun StopwatchScreen(active: ActiveGate, confirmAbandon: Boolean, onEvent
         view.keepScreenOn = true
         onDispose { view.keepScreenOn = false }
     }
-    GateBackground(tint = colors.surface, modifier = modifier) {
+    ScreenBackground(modifier = modifier) {
         BoxWithConstraints(modifier = Modifier.fillMaxSize().systemBarsPadding().padding(horizontal = Spacing.gutter, vertical = Spacing.md)) {
             val landscape = maxWidth > maxHeight
             // Tap the face to pause; tap again to carry on. The run still has the one pause the rules allow (GD §8).
@@ -396,13 +388,6 @@ private fun StopwatchScreen(active: ActiveGate, confirmAbandon: Boolean, onEvent
                 Modifier
             }
             val controls: @Composable ColumnScope.() -> Unit = {
-                GateCrystal(
-                    stage = active.crystalStage,
-                    tint = crystalTint(active.crystalColour, active.stat),
-                    size = AwakenTheme.dimens.gateDialSize * STOPWATCH_CRYSTAL_SCALE,
-                    modifier = Modifier.align(Alignment.CenterHorizontally),
-                    description = lexString(R.string.crystal_dial_cd, active.crystalStage),
-                )
                 StopwatchControls(active, confirmAbandon, onEvent)
             }
             if (landscape) {
@@ -496,8 +481,6 @@ private fun GateRun(active: ActiveGate, confirmAbandon: Boolean, onEvent: (Gates
                 remaining = active.remaining,
                 total = active.total,
                 breachUsed = active.breachUsed,
-                crystalStage = active.crystalStage,
-                crystalTint = crystalTint(active.crystalColour, active.stat),
             )
         }
         active.subject?.let { Text(it, style = AwakenTheme.type.caption, color = colors.textSecondary) }
@@ -638,26 +621,6 @@ private fun GateRunPreview() {
                 active = ActiveGate(
                     rank = GateRank.C, stat = Stat.INT, label = "DSA – graphs", remaining = Duration.ofMinutes(31).plusSeconds(12),
                     total = Duration.ofMinutes(50), breachUsed = Duration.ofSeconds(25), paused = false, pauseLeft = Duration.ZERO, canPause = true,
-                ),
-            ),
-            onEvent = {},
-            onBack = {},
-        )
-    }
-}
-
-@PhonePreviews
-@Composable
-private fun GateRunCrystalPreview() {
-    AwakenTheme(reduceMotion = true) {
-        GatesScreen(
-            GatesUiState(
-                loading = false,
-                tiles = previewTiles,
-                active = ActiveGate(
-                    rank = GateRank.C, stat = Stat.INT, label = "DSA – graphs", subject = "DSA", remaining = Duration.ofMinutes(18).plusSeconds(30),
-                    total = Duration.ofMinutes(50), elapsed = Duration.ofMinutes(31).plusSeconds(30), breachUsed = Duration.ZERO, paused = false,
-                    pauseLeft = Duration.ZERO, canPause = true, crystalStage = 3, crystalColour = 1,
                 ),
             ),
             onEvent = {},
@@ -838,35 +801,4 @@ private fun GateStopwatchLandscapePreview() {
 private fun LockWarning(onEvent: (GatesEvent) -> Unit) {
     Text(lexString(R.string.focus_lock_warning), style = AwakenTheme.type.caption, color = AwakenTheme.colors.critical)
     SecondaryButton(lexString(R.string.focus_lock_warning_fix), onClick = { onEvent(GatesEvent.FixFocusLock) }, modifier = Modifier.fillMaxWidth())
-}
-
-/** The way into the crystal gallery (GD §16.5), at the bottom of the picker. */
-@Composable
-private fun CrystalsRow(onOpen: () -> Unit) {
-    AwakenCard(reveal = false, contentPadding = Spacing.listCard, spacing = Spacing.zero, modifier = Modifier.fillMaxWidth()) {
-        ListRow(
-            title = lexString(R.string.crystals_row_title),
-            secondary = lexString(R.string.crystals_row_note),
-            onClick = onOpen,
-            trailing = {
-                Icon(AwakenGlyphs.ChevronRight, contentDescription = null, tint = AwakenTheme.colors.textSecondary, modifier = Modifier.size(AwakenTheme.dimens.iconSmall))
-            },
-        )
-    }
-}
-private const val STOPWATCH_CRYSTAL_SCALE = 0.3f
-
-/** The way into the Dungeon screen (GD §16.14); its name is the Lexicon term, "Challenge" in Clean words. */
-@Composable
-private fun DungeonsRow(onOpen: () -> Unit) {
-    AwakenCard(reveal = false, contentPadding = Spacing.listCard, spacing = Spacing.zero, modifier = Modifier.fillMaxWidth()) {
-        ListRow(
-            title = termString(Term.DUNGEON),
-            secondary = lexString(R.string.dungeon_row_note),
-            onClick = onOpen,
-            trailing = {
-                Icon(AwakenGlyphs.ChevronRight, contentDescription = null, tint = AwakenTheme.colors.textSecondary, modifier = Modifier.size(AwakenTheme.dimens.iconSmall))
-            },
-        )
-    }
 }

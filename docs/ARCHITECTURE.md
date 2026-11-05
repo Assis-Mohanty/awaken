@@ -31,9 +31,9 @@ The existing `userService`/`questService` repo stays as a learning/portfolio pro
                                                        ▼             ▼
                    ┌──────── :engine (pure Kotlin/JVM) ────────┐   ┌──── /proxy (Cloudflare Worker) ────┐
                    │ XpCalculator  LevelCurve  RankRules        │   │ Play Integrity verify → rate limit │
-                   │ StreakRules   DailyCaps   CritRoller       │   │ → budget check → LLM (structured   │
+                   │ StreakRules   DailyCaps                      │   │ → budget check → LLM (structured   │
                    │ DirectiveGenerator  DifficultyAdapter      │   │ output) → zod validate → respond   │
-                   │ AchievementEvaluator                       │   │ Stores no user data.               │
+                   │                                          │   │ Stores no user data.               │
                    │ PathValidator  PathScheduler               │   └─────────────────┬──────────────────┘
                    │ ProgressionSignal  model/*                 │                     ▼
                    └────────────────────────────────────────────┘               Cloudflare Workers AI
@@ -50,8 +50,8 @@ awaken/
 │  └─ src/main/kotlin/com/assismohanty/awaken/engine/
 │     ├─ model/  Stat, Difficulty, Verification, QuestTemplate, QuestDraft, Hunter, Rank, LedgerKind ...
 │     ├─ XpCalculator.kt  LevelCurve.kt  RankRules.kt  StatLevel.kt
-│     ├─ DailyCaps.kt  CritRoller.kt (fnv1a64)  StreakRules.kt
-│     ├─ DirectiveGenerator.kt  DifficultyAdapter.kt  AchievementEvaluator.kt
+│     ├─ DailyCaps.kt  StreakRules.kt
+│     ├─ DirectiveGenerator.kt  DifficultyAdapter.kt
 │     ├─ path/  PathValidator.kt  PathPricing.kt  PathScheduler.kt  PathProgression.kt  Keywords.kt (StatSuggester,
 │     │         EquipmentKeywords)  PathText.kt  PathModels.kt  PathWire.kt (wire DTOs)
 │     └─ GameDay.kt  (Instant + zone + dayStartHour -> LocalDate)
@@ -67,7 +67,7 @@ awaken/
 │  └─ wrangler.toml  (envs: staging, production)
 └─ app/
    └─ src/main/
-      ├─ assets/quests/templates.json   assets/narrative/chapters.json, system_lines.json
+      ├─ assets/quests/templates.json
       ├─ res/font/  (Saira Condensed, IBM Plex Sans — OFL; see DESIGN_SYSTEM §2.2)
       └─ java/com/assismohanty/awaken/
          ├─ AwakenApp.kt (@HiltAndroidApp)  MainActivity.kt
@@ -89,7 +89,7 @@ All IDs are `String` UUIDs unless noted. Timestamps `Long` epoch millis UTC. `ga
 ```sql
 hunter_profile(id PK='me', hunter_id,                 -- hunter_id: random UUID, seeds generation (GD §6.3)
                name, created_at, first_game_date, focus_stat_1, focus_stat_2, day_start_hour,
-               reminder_time NULL, equipped_title_id NULL, theme_id, equipped_frame_id NULL, equipped_sigil_id NULL, onboarding_done,
+               reminder_time NULL, onboarding_done,
                owned_equipment TEXT,                 -- comma-separated equipment ids (GD §6.3 filter)
                injury_mode BOOL, injury_tags (default impact,legs), health_enabled BOOL, last_recalibrated_on NULL,
                screen_time_from NULL)              -- first game-day Screen Discipline runs (GD §6.7); NULL = off
@@ -105,19 +105,19 @@ quest_instance(id PK, game_date, type, template_id NULL, habit_id NULL, path_slo
                INDEX(game_date), INDEX(status))
 
 -- One row per completion attempt (GD §9.3). id = completionId = questInstanceId#attemptN. Not a ledger table:
--- undone_at is set on undo. Feeds the undo window, re-completion attempt numbers and achievement counts.
+-- undone_at is set on undo. Feeds the undo window, re-completion attempt numbers.
 completion(id PK, quest_instance_id, attempt INT, game_date, quest_type, stat, verification_source,  -- SELF|TIMER|HEALTH
-           crit BOOL, xp INT, completed_at, undone_at NULL,
+           crit BOOL (historic, always false now), xp INT, completed_at, undone_at NULL,
            UNIQUE(quest_instance_id, attempt), INDEX(game_date))
 
 habit(id PK, title, stat, difficulty, verification, days_of_week_mask INT, target, unit,
       active BOOL, created_at,
-      campaign_id NULL, template_id NULL,       -- set for campaign habits (GD §6.8): engine-planned, read-only in the editor
+      template_id NULL,                         -- set for program habits (GD §16.15): engine-planned, read-only in the editor
       time_of_day NULL)                          -- the habit's block on Today (GD §14.5); NULL = Anytime (v10)
 
 -- THE LEDGER (append-only). Every economy change is a row here.
 ledger_entry(id INTEGER PK AUTOINCREMENT,
-             kind TEXT,        -- XP_TOTAL | XP_STAT | GOLD | ITEM | FRAGMENT
+             kind TEXT,        -- XP_TOTAL | XP_STAT | GOLD | ITEM | FRAGMENT (FRAGMENT only in old rows)
              stat TEXT NULL,   -- for XP_STAT
              item_id TEXT NULL,-- for ITEM
              delta INTEGER,
@@ -129,7 +129,7 @@ ledger_entry(id INTEGER PK AUTOINCREMENT,
              breakdown_json TEXT NULL,               -- formula breakdown for the UI
              UNIQUE(source_type, source_id, kind, stat, item_id))
 
-balance_cache(key PK, value INTEGER)                  -- 'xp_total','gold','xp_STR',..., 'item_streak_shield', 'fragments'
+balance_cache(key PK, value INTEGER)                  -- 'xp_total','gold','xp_STR',..., 'item_streak_shield'
                                                        -- updated in same txn; rebuildable from ledger
 
 day_record(game_date PK, cleared BOOL, rest_day BOOL, recovery BOOL,
@@ -143,8 +143,6 @@ gate_run(id PK, quest_instance_id, gate_rank, stat, label NULL, planned_sec, sta
          status, collapse_reason NULL)   -- RUNNING|CLEARED|COLLAPSED|ABANDONED; BREACH|DEVICE_RESTARTED|DAY_RESET
 
 trial(id PK, target_rank, started_game_date, expires_game_date, status, ended_at NULL)   -- ACTIVE|PASSED|FAILED; ended_at drives the 48 h retry
-achievement_unlock(achievement_id PK, unlocked_at)
-owned_cosmetic(cosmetic_id PK, acquired_at, source)
 health_sync_state(record_type PK, last_change_token NULL, last_synced_at)
 
 -- AI PATHS (GAME_DESIGN §6.6). None of these tables affect balances directly;
@@ -180,11 +178,6 @@ ai_report(id PK, path_slot_id, reason, created_at, sent_at NULL)   -- outbox for
 app_rule(package_name, effective_from, category,      -- DISTRACTING|PRODUCTIVE|NEUTRAL
          daily_limit_minutes NULL,                     -- distracting apps only; NULL = tracked, no limit
          PRIMARY KEY(package_name, effective_from))
-
--- 45-DAY CAMPAIGN (GAME_DESIGN §6.8). One ACTIVE row at most. The reward is the `reforged` achievement, so no ledger rows here.
-campaign(id PK, start_date, focus_stat, archetype, scores TEXT,   -- scores "STR:3,INT:5,…" from the scan
-         oath_sealed_at, status,                                  -- ACTIVE|COMPLETED|ENDED|ABANDONED
-         current_act, cleared_days INT, ended_at NULL)            -- FOUNDATION|BUILD|ASCEND
 
 -- Gym and Diet (GD §13): trackers, not ledger tables; rows may be edited and deleted (ENGINE_DECISIONS #95)
 custom_exercise(id PK "custom:<uuid>", name, equipment, primary_muscles, secondary_muscles, created_at)
@@ -230,7 +223,7 @@ focus_goal(effective_from TEXT PK, minutes INT)          -- versioned; the row �
 -- v21 (Batch 3, gym C1/C2/C3/C7)
 exercise_pref(exercise_id PK, rep_min INT NULL, rep_max INT NULL, increment_kg REAL NULL)   -- per-exercise overrides
 gym_settings(id PK = 1, bar_kg REAL, plates_kg TEXT, bar_lb REAL, plates_lb TEXT, unit TEXT, rep_min INT, rep_max INT)
--- PR events are derived from workout_set history (never stored); pr achievements count them by replay
+-- PR events are derived from workout_set history (never stored)
 
 -- v22 (Batch 4, screen & health D1/D2/D3)
 hunter_profile + step_goal INT NOT NULL DEFAULT 8000
@@ -245,9 +238,7 @@ relapse(id PK, counter_id, at, game_date NULL, trigger TEXT NULL, note TEXT NULL
 
 quit_day(counter_id, game_date, verdict TEXT, minutes INT NULL, PK(counter_id, game_date))   -- doomscrolling day verdicts (ENGINE_DECISIONS #138)
 
--- v24 (Batch 8, dungeons F3, programs F6)
-dungeon(id PK, length_days INT, stat, fee INT, entered_game_date, first_stage_date, status, ended_at NULL)  -- ACTIVE|CLEARED|FAILED
--- stage quests: quest_instance(type DUNGEON) + dungeon_id NULL + dungeon_stage INT NULL
+-- v24 (Batch 8, programs F6)
 program(id PK, program_key, run_start_date, status, started_at, ended_at NULL)        -- ACTIVE|COMPLETED|FINISHED|ABANDONED
 program_mark(program_id, game_date, choice TEXT,                                       -- RESTART|CONTINUE
              PRIMARY KEY(program_id, game_date))
@@ -255,9 +246,13 @@ habit + program_id NULL                                                         
 
 -- v25 (Batch 9 review)
 quest_instance + night_verdict TEXT NULL     -- BROKEN|NO_DATA on an unpaid BEDTIME quest (ENGINE_DECISIONS #147)
+
+-- v26 (declutter Batch 1): dropped achievement_unlock, owned_cosmetic, campaign, dungeon, recap; rebuilt hunter_profile (no
+-- equipped_title_id / theme_id / equipped_frame_id / equipped_sigil_id), habit (no campaign_id), quest_instance (no dungeon_id / dungeon_stage).
+-- The ledger is never touched; ExportUpgrade drops the same tables and keys from any older backup.
 ```
 
-New ledger `sourceType` **DUNGEON** (`<dungeonId>:entry` fee, `<dungeonId>:clear` reward + fragment), QuestType **BEDTIME** and **DUNGEON**, QuestStatus **SKIPPED**. Every new table is added to `ExportDocument.TABLES` (none is a cache) and to `ExportUpgrade` for older files. Each version adds a `Migration` in `Migrations.kt` and a `MigrationTest` case from the previous exported schema.
+QuestType **BEDTIME**, QuestStatus **SKIPPED**. The enum values of removed features (`SourceType.ACHIEVEMENT`, `CACHE_OPEN`, `DUNGEON`, `LedgerKind.FRAGMENT`, `QuestType.DUNGEON`) stay so old rows and backups still read. Every new table is added to `ExportDocument.TABLES` (none is a cache) and to `ExportUpgrade` for older files. Each version adds a `Migration` in `Migrations.kt` and a `MigrationTest` case from the previous exported schema.
 
 ## 3. Core flows
 
@@ -269,16 +264,15 @@ QuestScreen ─onEvent(Complete)─▶ QuestViewModel
        db.withTransaction {
          q = questDao.get(id); require(q.status in ACTIVE|STARTED)
          ctx = loadContext(gameDate)         // streak, today's self/timer XP, tiers
-         result = engine.XpCalculator.forCompletion(q, ctx, CritRoller(q.id))
-                 → QuestReward(xp, statXp[], gold, crit, capped, fragments, breakdown)
+         result = engine.XpCalculator.forCompletion(q, ctx)
+                 → QuestReward(xp, statXp[], gold, capped, breakdown)
          questDao.markCompleted(id, now)
          ledger.insertAll(result.toLedgerRows(sourceType=QUEST, sourceId=completionId))   // id#attemptN; IGNORE on conflict
          balances.apply(rowsActuallyInserted)
          newLevel = LevelCurve.level(balances.xpTotal)
-         unlocks = AchievementEvaluator.evaluate(snapshot)  → insert unlocks + reward rows
        }
-   ◀ CompletionOutcome(reward, levelUp?, rankTrialUnlocked?, unlocks[])
-   UI: reward sheet → (level-up cinematic) → (achievement toasts)
+   ◀ CompletionOutcome(reward, levelUp?, rankTrialUnlocked?)
+   UI: reward sheet → (level-up cinematic)
 ```
 
 ### 3.2 Day rollover (deterministic, idempotent, catch-up safe)
@@ -412,10 +406,9 @@ Request pipeline, in order (cheap checks first, the model last):
 
 - **Fail closed (ENGINE_DECISIONS #111):** `UsageGateway.read` returns `UsageRead.NoAccess | Unavailable | Tracked`; nothing pays, forfeits or warns on anything but `Tracked`.
 
-### 3.12 The 45-day Campaign
-- `PreviewCampaignUseCase` turns scan answers into scores, archetype and up to 5 planned habits (engine `CampaignPlanner`) without writing. `StartCampaignUseCase` (the sealed oath) writes the campaign and its habits in one transaction and regenerates today's directive so the habits join it.
-- `AdvanceCampaignUseCase` runs in the rollover after finalization and before `GenerateDirective`: on a new act it re-prices each campaign habit from its template; after day 45 it records COMPLETED/ENDED, archives the habits and calls `AchievementUnlocker`, which pays `reforged` (+1,000 gold, title) once.
-- `ObserveCampaignUseCase` feeds the Campaign screen and the Today card (day N/45, act, cleared days, calendar).
+### 3.12 (removed)
+
+The 45-day Campaign was removed on 2026-11-03 (see `docs/DECLUTTER_PLAN.md`). Programs (GD §16.15) are the fixed-length plan.
 
 ### 3.13 Gym and Diet (trackers)
 - **Catalogs.** `core/data/catalog`: `ExerciseCatalog` (`assets/gym/exercises.json`, free-exercise-db, Unlicense) and `FoodCatalog` (`assets/nutrition/foods.json`, USDA SR Legacy + FNDDS, public domain), loaded once on the IO dispatcher like `TemplateRepository`. Built offline by `tools/catalog/*.mjs` (pinned sources in `tools/catalog/README.md`); ~1 MB compressed in the APK. No network: invariant 8 is unchanged. `CatalogSearch` ranks names (whole query at the start > first word > every word starts a word > anywhere; shorter names win ties).
@@ -423,24 +416,23 @@ Request pipeline, in order (cheap checks first, the model last):
 - **Navigation.** Gym and Diet are bottom tabs; Gates and Vault moved to icon buttons at the top of Today.
 
 ### 3.14 v1.1 growth layer (GD §14)
-- **Engine.** `Consistency` (score, never-miss-twice line, recoveries), `insight/InsightEngine` (rules I1–I6, exact-fraction guardrails, weekly rotation), `WeeklyReviewRules`, `RecapRules`, `IdentityCatalog`. All pure; nothing here writes XP.
-- **Data.** `hunter_profile.identities` (ordered ids); `weekly_review` (unique `iso_week`, exported); `recap` (period key PK, JSON snapshot of `RecapPayload`, exported); `health_day_cache` (per-day steps, longest sleep, distance; a rebuildable cache, never exported, cleared on import). Read-only aggregates live in `InsightDao` and `RecapDao`.
-- **Health.** Health Connect stays foreground-only: `RefreshHealthCacheUseCase` fills missing finalized days when Status opens; insights and recaps read only the cache.
-- **Flow.** Today derives consistency, the miss line and "review open" from `day_record` and `weekly_review`. `RunRolloverUseCase` also runs `GenerateRecapsUseCase` and records `Notice.RecapReady` for the first new recap, which `RewardHost` opens once. The rollover unlocks achievements after a cleared day so `never_twice` can unlock there.
-- **Navigation.** `ReviewRoute` (from the Today row, the Progress weekly card and the Sunday notification action `ACTION_OPEN_REVIEW`) and `RecapRoute(periodKey)` (auto-open, and Progress → Recaps).
+- **Engine.** `Consistency` (score, never-miss-twice line, recoveries), `insight/InsightEngine` (rules I1–I6, exact-fraction guardrails, weekly rotation), `WeeklyReviewRules`, `IdentityCatalog`. All pure; nothing here writes XP.
+- **Data.** `hunter_profile.identities` (ordered ids); `weekly_review` (unique `iso_week`, exported); `health_day_cache` (per-day steps, longest sleep, distance; a rebuildable cache, never exported, cleared on import). Read-only aggregates live in `InsightDao`.
+- **Health.** Health Connect stays foreground-only: `RefreshHealthCacheUseCase` fills missing finalized days when Status opens; insights read only the cache.
+- **Flow.** Today derives consistency, the miss line and "review open" from `day_record` and `weekly_review`.
+- **Navigation.** `ReviewRoute` (from the Today row, the Progress weekly card and the Sunday notification action `ACTION_OPEN_REVIEW`).
 
 ### 3.15 v1.2 feature batch (PROPOSED with GD §16)
-- **Engine (all pure, all tested from GD §16.17):** `HabitRules` (types, flexible weeks, skips, timed difficulty), `PomodoroRules` (phase machine), `FocusGoalRules` (minutes, met, focus streak), `CrystalRules` (stage), `body/ProgressionRules`, `body/RecordRules` (PR events), `body/PlateMath`, `body/ExerciseHistory` (series, weekly best), `PickupRules` (events → pickups, first, last, longest stretch), `BedtimeRules` (window, allowed apps, grace verdict), `QuitRules` (runs, best run, in-app run, doomscrolling days), `DungeonRules` (fee, stages, verdict, reward), `ProgramRules` (catalog, day k, kept/rest/broken, end status). Achievements extend `AchievementEvaluator`.
+- **Engine (all pure, all tested from GD §16.17):** `HabitRules` (types, flexible weeks, skips, timed difficulty), `PomodoroRules` (phase machine), `FocusGoalRules` (minutes, met, focus streak), `body/ProgressionRules`, `body/RecordRules` (PR events), `body/PlateMath`, `body/ExerciseHistory` (series, weekly best), `PickupRules` (events → pickups, first, last, longest stretch), `BedtimeRules` (window, allowed apps, grace verdict), `QuitRules` (runs, best run, in-app run, doomscrolling days), `ProgramRules` (catalog, day k, kept/rest/broken, end status).
 - **Habits.** `SaveHabitUseCase` validates through `HabitRules`; `GenerateDirectiveUseCase` asks `HabitRules.instancesFor(day)` (flexible weeks); `QuantityProgressUseCase` (+1/−1, completes at target through `CompleteQuestUseCase`); `SkipHabitUseCase` / `UndoSkipUseCase`; NEGATIVE confirm/slip use cases; TIMED start goes through `GateUseCases` with `habit_quest_id`, and `GateRunController` pays the quest exactly like `PathGateUseCase`.
 - **Habit reminders.** `HabitReminderScheduler` (WorkManager unique one-shot per habit, re-armed by `ReminderCoordinator` and at rollover) posts on the new `habit_reminder` channel only when the instance is still open. Separate from the 2-a-day cap (§3.5) pending Q2.
 - **Pomodoro.** `PomodoroController` (in `core/domain`) starts each round as a CUSTOM gate with `pomodoro_id`; `BreakEndWorker` (like `GateEndWorker`) posts the break-over notification on the `gate` channel and plays nothing in the background (the chime plays in the app or via the notification sound).
 - **Quick Settings tile (A4).** `core/widget/FocusTileService` (beside the widgets: both are surfaces outside the app; `TileService`, `BIND_QUICK_SETTINGS_TILE`), reads `LastFocusStore` (DataStore: last mode, minutes/rank, stat, subject; written whenever a session starts) and the running `gate_run`; tap → `startActivityAndCollapse(PendingIntent)` into `MainActivity` with `ACTION_START_FOCUS` (or `ACTION_OPEN_GATE` while running). No foreground service; the gate still runs on timestamps (§3.3).
 - **Start focus widget (A5).** `core/widget/StartFocusWidget` (Glance 2×1) + receiver, same `ACTION_START_FOCUS` intent; refreshed by `WidgetUpdater` when a gate starts/ends and when `LastFocusStore` changes.
-- **Gym.** `GymTracker` gains `hint(exerciseId)`, `recordsBefore(workoutId)`, `history(exerciseId, range)`; plate math is a pure call from the sheet's ViewModel; settings in `gym_settings`. PR achievements: `AchievementUnlocker` after `finish(workoutId)`, counted by replaying finished sessions (no stored counter).
+- **Gym.** `GymTracker` gains `hint(exerciseId)`, `recordsBefore(workoutId)`, `history(exerciseId, range)`; plate math is a pure call from the sheet's ViewModel; settings in `gym_settings`. Personal records are derived by replaying finished sessions (no stored counter).
 - **Screen & health.** `UsageGateway` gains `events(start, end): EventsRead` (keyguard, screen and foreground events; `NoAccess`/`Unavailable`/`Tracked` like #111) for D1 and D3. `BedtimePlanner` adds the BEDTIME quest in `GenerateDirective` when the rule is on and usage access is present; `SettleBedtimeUseCase` runs from app foreground and `ScreenTimeWorker` after wake time and completes via `completeVerified(id, USAGE)` or expires. Step goal on `hunter_profile`, read by the Health tile.
-- **Quit counters.** `QuitCounterRepository`; doomscrolling auto-relapses are written in `RunRolloverUseCase` per finalized day from the same usage read as Screen Discipline (`INSERT … IGNORE` on `(counter_id, game_date)`); quit achievements in the same rollover transaction.
-- **Dungeons.** `EnterDungeonUseCase` (one transaction: dungeon row + fee ledger row + balance cache), stage quests from `GenerateDirective`, verdict in `RunRolloverUseCase` (FAILED, or CLEARED with reward rows, `IGNORE` on the UNIQUE key).
-- **Programs.** `StartProgramUseCase` (program row + rule habits, one transaction, regenerates today), `ProgramRollover` in `RunRolloverUseCase` (day verdict, end status, archive habits, achievement), `ChooseProgramBreakUseCase` (writes `program_mark`), default CONTINUE at the next rollover.
+- **Quit counters.** `QuitCounterRepository`; doomscrolling auto-relapses are written in `RunRolloverUseCase` per finalized day from the same usage read as Screen Discipline (`INSERT … IGNORE` on `(counter_id, game_date)`).
+- **Programs.** `StartProgramUseCase` (program row + rule habits, one transaction, regenerates today), `ProgramRollover` in `RunRolloverUseCase` (day verdict, end status, archive habits), `ChooseProgramBreakUseCase` (writes `program_mark`), default CONTINUE at the next rollover.
 - **Export.** All new tables in `ExportDocument.TABLES`; `LastFocusStore` and the Pomodoro defaults are UI prefs (DataStore, not exported, ENGINE_DECISIONS #48); gym settings, goals and rules live in the tables above and are exported.
 
 ## 4. State & DI
@@ -449,7 +441,7 @@ Request pipeline, in order (cheap checks first, the model last):
 - Everything game-relevant lives in Room (single source of truth, transactional).
 
 ## 5. Security, privacy, abuse
-- `INTERNET` is used only by `PathOracleClient` (and Play services for Integrity). `network_security_config.xml`: cleartext disabled. No third-party SDKs that make network calls. Phase 16 verifies the merged manifest and dependency list.
+- `INTERNET` is used only by `PathOracleClient` (and Play services for Integrity), and only in debug/internal builds: the Ktor client, Play Integrity and `INTERNET` live in `app/src/debug` and the dependencies are `debugImplementation`. The release build for Play has no network code or permission (`DisabledPathOracleClient`, `BuildConfig.AI_PATHS_ENABLED = false`, every Path entry hidden). `network_security_config.xml`: cleartext disabled. No third-party SDKs that make network calls. Phase 16 verifies the merged manifest and dependency list.
 - The proxy is the only server. It reaches the model through the Worker's `AI` binding, so there is no LLM API key to leak; its secrets (Play Integrity service account, debug key) live only as Worker secrets, never in the repo, the APK, or CI logs.
 - Threat model for AI Paths, and the control for each: **key theft** → no LLM key exists (Workers AI binding), the app holds none; **cost abuse** → Play Integrity + per-install and per-IP limits + monthly budget cap; **prompt injection** via goal text → delimited data block + schema-constrained output + engine validator + rewards never derived from model output; **XP farming** via trivial goals → SELF Path quests capped at Normal and the daily self cap (GD §6.6.4); **harmful content** → prompt rules + unit enum without diet/weight units + in-app report; **data leak** → proxy stores no request data and logs no bodies.
 - `android:allowBackup="true"` with `dataExtractionRules` including the Room DB so users don't lose progress on a new phone (Google auto-backup). Plus manual **Export/Import JSON** of the ledger (Settings) — export is a full ledger dump; import validates with the engine and rebuilds caches.
@@ -485,3 +477,7 @@ App ledger events ──(batched, idempotent, signed session)──▶ Ingest AP
                                                Postgres ledger ─▶ Leaderboard (Redis ZSET, verified-XP only)
 ```
 Kotlin Multiplatform could share `:engine` with a Ktor backend; with a TS backend, port the engine and run the GD §12 vectors as a cross-language contract test.
+
+## Screen layering (rule)
+
+Every screen in `feature/**` is two functions: a `*Route` (also `*Entry` or `*Host` for overlays and sheet hosts) that takes the ViewModel with `hiltViewModel()` and collects its state, and a stateless `*Screen(state, onEvent)` that only lays out. Every `*Screen` has a `@PhonePreviews` preview. `ScreenLayeringTest` enforces both. Colours follow the same rule: hex values live only in `core/designsystem/theme/Color.kt` (`TokenSourceTest`).

@@ -11,7 +11,7 @@
 
     <!-- Setup -->
     <string name="diet_window_setup">Calorie budget</string>
-    <string name="diet_setup_intro">Answer once. The System works out your daily budget and nutrient targets; you can change any of them later.</string>
+    <string name="diet_setup_intro">Answer once. The app works out your daily budget and nutrient targets; you can change any of them later.</string>
     <string name="diet_setup_goal">What is your goal?</string>
     <string name="diet_goal_lose">Lose weight</string>
     <string name="diet_goal_maintain">Maintain weight</string>

@@ -58,39 +58,3 @@ class AwakeningTest {
     }
 }
 
-class SystemLinesTest {
-    private val date = LocalDate.of(2026, 10, 18)
-    private val lines = mapOf(
-        "generic" to listOf("g1", "g2", "g3"),
-        "comeback" to listOf("c1"),
-        "streak_milestone" to listOf("{streak} days."),
-        "neglected_int" to listOf("INT quiet"),
-    )
-
-    @Test
-    fun `context priority`() {
-        assertThat(SystemLines.contextKey(penaltyOpen = true, trialActive = true, streak = 7, todayCleared = true, neglected = Stat.INT)).isEqualTo("comeback")
-        assertThat(SystemLines.contextKey(false, trialActive = true, streak = 7, todayCleared = true, neglected = null)).isEqualTo("trial_active")
-        assertThat(SystemLines.contextKey(false, false, streak = 7, todayCleared = true, neglected = null)).isEqualTo("streak_milestone")
-        assertThat(SystemLines.contextKey(false, false, streak = 8, todayCleared = true, neglected = Stat.INT)).isEqualTo("cleared_day")
-        assertThat(SystemLines.contextKey(false, false, streak = 8, todayCleared = false, neglected = Stat.INT)).isEqualTo("neglected_int")
-        assertThat(SystemLines.contextKey(false, false, streak = 0, todayCleared = false, neglected = null)).isEqualTo("generic")
-    }
-
-    @Test
-    fun `pick is deterministic, fills the streak and falls back to generic`() {
-        val first = SystemLines.pick(lines, "generic", "h", date, streak = 0)
-        assertThat(SystemLines.pick(lines, "generic", "h", date, streak = 0)).isEqualTo(first)
-        assertThat(SystemLines.pick(lines, "streak_milestone", "h", date, streak = 7)).isEqualTo("7 days.")
-        assertThat(SystemLines.pick(lines, "cleared_day", "h", date, streak = 0)).isIn(lines.getValue("generic"))
-        assertThat(SystemLines.pick(emptyMap(), "generic", "h", date, streak = 0)).isNull()
-    }
-
-    @Test
-    fun `neglected stat ignores never-touched stats and picks the longest gap`() {
-        val lastActive = mapOf(Stat.STR to date.minusDays(2), Stat.INT to date.minusDays(5), Stat.WIL to date.minusDays(4))
-        assertThat(SystemLines.neglectedStat(lastActive, date)).isEqualTo(Stat.INT)
-        assertThat(SystemLines.neglectedStat(emptyMap(), date)).isNull()
-        assertThat(SystemLines.neglectedStat(mapOf(Stat.STR to date.minusDays(2)), date)).isNull()
-    }
-}

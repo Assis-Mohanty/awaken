@@ -36,8 +36,6 @@ import com.assismohanty.awaken.core.work.DayStartScheduler
 import com.assismohanty.awaken.core.work.NotificationAccess
 import com.assismohanty.awaken.engine.Awakening
 import com.assismohanty.awaken.engine.DirectiveGenerator
-import com.assismohanty.awaken.engine.Identity
-import com.assismohanty.awaken.engine.IdentityCatalog
 import com.assismohanty.awaken.engine.SettingsRules
 import com.assismohanty.awaken.engine.model.Stat
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -67,11 +65,6 @@ data class SettingsUiState(
     val showReminderPicker: Boolean = false,
     val equipment: Set<String> = emptySet(),
     val equipmentOptions: List<String> = emptyList(),
-    /** Identity ids in pick order (GD §14.7). */
-    val identities: List<String> = emptyList(),
-    val identityOptions: List<Identity> = emptyList(),
-    /** A 4th identity was tapped: "Pick up to 3" shows. */
-    val identityLimitHit: Boolean = false,
     val injuryMode: Boolean = false,
     val injuryTags: Set<String> = DirectiveGenerator.DEFAULT_INJURY_TAGS,
     val injuryOptions: List<String> = DirectiveGenerator.INJURY_TAGS,
@@ -120,7 +113,6 @@ sealed interface SettingsEvent {
     data object DismissReminderPicker : SettingsEvent
     data class SetReminder(val time: LocalTime?) : SettingsEvent
     data class ToggleEquipment(val id: String) : SettingsEvent
-    data class ToggleIdentity(val id: String) : SettingsEvent
     data class SetInjuryMode(val enabled: Boolean) : SettingsEvent
     data class ToggleInjuryTag(val tag: String) : SettingsEvent
     data class SetHaptics(val enabled: Boolean) : SettingsEvent
@@ -161,7 +153,6 @@ private data class Drafts(
     val healthPermissions: Set<String> = emptySet(),
     val notificationsBlocked: Boolean = false,
     val aiConsentSheet: Boolean = false,
-    val identityLimitHit: Boolean = false,
 )
 
 @HiltViewModel
@@ -228,17 +219,6 @@ class SettingsViewModel @Inject constructor(
             is SettingsEvent.SetReminder -> {
                 drafts.update { it.copy(reminderPicker = false) }
                 save { updateSettings.setReminder(event.time) }
-            }
-            is SettingsEvent.ToggleIdentity -> current?.let { model ->
-                val now = model.identities
-                when {
-                    event.id in now -> {
-                        drafts.update { it.copy(identityLimitHit = false) }
-                        save { updateSettings.setIdentities(now - event.id) }
-                    }
-                    now.size < IdentityCatalog.MAX_PICKS -> save { updateSettings.setIdentities(now + event.id) }
-                    else -> drafts.update { it.copy(identityLimitHit = true) }
-                }
             }
             is SettingsEvent.ToggleEquipment -> current?.let { model ->
                 val next = if (event.id in model.equipment) model.equipment - event.id else model.equipment + event.id
@@ -439,9 +419,6 @@ private fun SettingsModel.toUiState(prefs: UiPrefs, drafts: Drafts, aiConsent: B
     showReminderPicker = drafts.reminderPicker,
     equipment = equipment,
     equipmentOptions = equipmentOptions,
-    identities = identities,
-    identityOptions = identityOptions,
-    identityLimitHit = drafts.identityLimitHit,
     injuryMode = injuryMode,
     injuryTags = injuryTags,
     hapticsEnabled = prefs.hapticsEnabled,

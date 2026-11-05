@@ -76,7 +76,6 @@ sealed interface DebugEvent {
     data object RebuildBalances : DebugEvent
     data object GrantShield : DebugEvent
     data object GrantGold : DebugEvent
-    data object GrantFragments : DebugEvent
     data class SimulateSteps(val enabled: Boolean) : DebugEvent
     data object SyncHealth : DebugEvent
     data object AddUsage : DebugEvent
@@ -264,7 +263,6 @@ class DebugViewModel @Inject constructor(
         }
         DebugEvent.ScreenshotMode -> demoSeeder()
         DebugEvent.GrantGold -> grantCurrency(LedgerKind.GOLD, DEBUG_GOLD, "Granted $DEBUG_GOLD gold.")
-        DebugEvent.GrantFragments -> grantCurrency(LedgerKind.FRAGMENT, DEBUG_FRAGMENTS, "Granted $DEBUG_FRAGMENTS fragments.")
         DebugEvent.GrantLevel -> uiState.value.hunter?.let { hunter ->
             // Exactly enough XP for the next level; xp_source is empty so it never counts toward the daily caps.
             val needed = hunter.xpForLevel - hunter.xpIntoLevel
@@ -301,7 +299,7 @@ class DebugViewModel @Inject constructor(
                     LedgerEntryEntity(
                         kind = kind,
                         delta = amount,
-                        sourceType = SourceType.ACHIEVEMENT,
+                        sourceType = SourceType.SHOP,
                         sourceId = "debug:${UUID.randomUUID()}",
                         gameDate = today,
                         createdAt = clock.now(),
@@ -314,7 +312,6 @@ class DebugViewModel @Inject constructor(
     private companion object {
         const val LEDGER_ROWS = 100
         const val DEBUG_GOLD = 2_000L
-        const val DEBUG_FRAGMENTS = 10L
         const val SEED_PATH_MINUTES = 180
         const val SIMULATED_USAGE_STEP = 10
         const val STOP_TIMEOUT_MS = 5_000L

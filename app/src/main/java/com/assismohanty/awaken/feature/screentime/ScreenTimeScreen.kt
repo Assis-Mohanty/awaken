@@ -59,7 +59,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.assismohanty.awaken.R
 import com.assismohanty.awaken.core.designsystem.components.LargeTitleScaffold
 import com.assismohanty.awaken.core.designsystem.components.ChoiceChip
-import com.assismohanty.awaken.core.designsystem.components.GateBackground
+import com.assismohanty.awaken.core.designsystem.components.ScreenBackground
 import com.assismohanty.awaken.core.designsystem.components.Pill
 import com.assismohanty.awaken.core.designsystem.components.PrimaryButton
 import com.assismohanty.awaken.core.designsystem.components.QuietButton
@@ -149,7 +149,7 @@ fun ScreenTimeScreen(
     onOpenReelStats: () -> Unit = {},
 ) {
     val colors = AwakenTheme.colors
-    GateBackground(rank = Rank.E, modifier = modifier) {
+    ScreenBackground(modifier = modifier) {
         LargeTitleScaffold(title = lexString(R.string.screentime_title), onBack = onBack) {
             state.reels?.let { ReelsWindow(it, onOpenReelStats) }
             val overview = state.overview

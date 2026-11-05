@@ -95,14 +95,4 @@
     <string name="reel_screentime_title">Short video</string>
     <string name="reel_screentime_note">Reels and shorts counted by Reel counter</string>
     <!-- Lumi, the mascot: one status line per stage (1 radiant … 6 dimmed) -->
-    <string name="reel_lumi_status_1">Fully charged</string>
-    <string name="reel_lumi_status_2">Doing fine</string>
-    <string name="reel_lumi_status_3">Starting to fade</string>
-    <string name="reel_lumi_status_4">Getting tired</string>
-    <string name="reel_lumi_status_5">Running on empty</string>
-    <string name="reel_lumi_status_6">Switched off</string>
-    <plurals name="reel_lumi_cd">
-        <item quantity="one">Lumi, %1$s, %2$d reel today</item>
-        <item quantity="other">Lumi, %1$s, %2$d reels today</item>
-    </plurals>
 </resources>

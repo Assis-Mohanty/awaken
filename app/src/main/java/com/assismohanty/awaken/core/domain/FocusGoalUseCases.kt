@@ -43,34 +43,6 @@ private fun build(
 
 private fun List<FocusGoalEntity>.toVersions() = map { FocusGoalVersion(it.effectiveFrom, it.minutes) }
 
-/** One-shot read of the focus goal state, for achievements and the widget. */
-class FocusGoalReader @Inject constructor(
-    private val hunterDao: HunterDao,
-    private val focusDao: FocusDao,
-    private val dayRecordDao: DayRecordDao,
-    private val clock: Clock,
-) {
-    suspend fun state(today: LocalDate): FocusGoalState {
-        val firstDay = hunterDao.getProfile()?.firstGameDate ?: today
-        val from = today.minusDays(HISTORY_DAYS)
-        return build(
-            today = today,
-            firstDay = firstDay,
-            minutes = focusDao.focusMinutesByDay(from, today).associate { it.gameDate to it.minutes },
-            goals = focusDao.goals().toVersions(),
-            outcomes = dayRecordDao.datedOutcomesFrom(from).associate { it.gameDate to it.outcome },
-        )
-    }
-
-    suspend fun streak(today: LocalDate): Int = state(today).streak
-
-    suspend fun today(): LocalDate = hunterDao.getProfile()?.let { clock.gameDate(it.dayStartHour) } ?: clock.gameDate(DEFAULT_DAY_START)
-
-    private companion object {
-        const val DEFAULT_DAY_START = 4
-    }
-}
-
 /** The goal ring and streak as a live flow; [dayChanges] re-reads at each new game-day. */
 class ObserveFocusGoalUseCase @Inject constructor(
     private val hunterDao: HunterDao,

@@ -4,7 +4,6 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.assismohanty.awaken.core.data.db.entity.LedgerEntryEntity
 import com.assismohanty.awaken.core.data.repo.COMPLETION_SOURCE_TYPES
 import com.assismohanty.awaken.core.data.repo.LedgerRepository
-import com.assismohanty.awaken.engine.AchievementEvaluator
 import com.assismohanty.awaken.engine.DayOutcome
 import com.assismohanty.awaken.engine.model.Difficulty
 import com.assismohanty.awaken.engine.model.LedgerKind
@@ -35,9 +34,6 @@ class UseCasesTest {
         assertThat(this).isInstanceOf(CompleteQuestResult.Completed::class.java)
         return (this as CompleteQuestResult.Completed).outcome
     }
-
-    private fun CompletionOutcome.achievementGold(): Long =
-        unlockedAchievements.sumOf { AchievementEvaluator.byId.getValue(it).gold.toLong() }
 
     @Test
     fun generatingTwiceOnTheSameDayCreatesNoDuplicates() = runTest {
@@ -70,7 +66,7 @@ class UseCasesTest {
     }
 
     @Test
-    fun undoNetsQuestRewardToZeroButKeepsAchievements() = runTest {
+    fun undoNetsQuestRewardToZero() = runTest {
         graph.seedHunter()
         val quest = graph.fixtureQuest("pushups")
         val outcome = graph.completeQuest(quest.id).outcome()
@@ -80,28 +76,25 @@ class UseCasesTest {
         val balances = graph.ledger.balances()
         assertThat(balances.xpTotal).isEqualTo(0)
         assertThat(balances.statXp(quest.stat)).isEqualTo(0)
-        assertThat(balances.gold).isEqualTo(outcome.achievementGold()) // GD §6.5: unlocks are permanent
+        assertThat(balances.gold).isEqualTo(0)
         assertThat(ledgerDao.bySource(listOf(SourceType.UNDO), outcome.completionId)).hasSize(3)
         assertThat(questDao.get(quest.id)?.status).isEqualTo(QuestStatus.ACTIVE)
     }
 
     @Test
-    fun completeUndoCompleteGivesOneNetRewardWithTheSameCrit() = runTest {
+    fun completeUndoCompleteGivesOneNetReward() = runTest {
         graph.seedHunter()
-        val quest = graph.fixtureQuest("crit", crit = true)
+        val quest = graph.fixtureQuest("crit")
 
         val first = graph.completeQuest(quest.id).outcome()
         graph.undoCompletion(quest.id)
         val second = graph.completeQuest(quest.id).outcome()
 
-        assertThat(first.reward.crit).isTrue()
-        assertThat(second.reward.crit).isTrue()
         assertThat(second.reward.xp).isEqualTo(first.reward.xp)
         assertThat(second.completionId).isEqualTo("${quest.id}#2")
         val balances = graph.ledger.balances()
         assertThat(balances.xpTotal).isEqualTo(second.reward.xp.toLong())
-        assertThat(balances.fragments).isEqualTo(1)
-        assertThat(balances.gold).isEqualTo(second.reward.gold + first.achievementGold() + second.achievementGold())
+        assertThat(balances.gold).isEqualTo(second.reward.gold.toLong())
     }
 
     @Test

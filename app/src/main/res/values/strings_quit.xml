@@ -58,7 +58,7 @@
     <string name="quit_add_action">Add</string>
     <string name="quit_limit">You have 6 counters. Archive one to add another.</string>
     <string name="quit_exists">You already have a Doomscrolling counter.</string>
-    <string name="quit_back_dated_note">The days before today show on the counter. Achievements count from today.</string>
+    <string name="quit_back_dated_note">The days before today show on the counter.</string>
 
     <!-- Detail -->
     <string name="quit_restarts_title">Restarts</string>
@@ -75,20 +75,7 @@
     <string name="quit_trigger_other">Other</string>
     <string name="quit_note_label">Note (optional)</string>
     <string name="quit_restart_auto">%1$d min on distracting apps</string>
-    <string name="quit_restart_line">%1$s</string>
     <string name="quit_archive">Archive</string>
     <string name="quit_archive_title">Archive this counter?</string>
     <string name="quit_archive_body">It leaves your list and frees a slot. Your history is kept.</string>
-    <string name="quit_back">Back</string>
-
-    <!-- Achievements -->
-    <string name="achievement_quit_7">First Week Clean</string>
-    <string name="achievement_quit_30">A Month Clean</string>
-    <string name="achievement_quit_90">Ninety Days Clean</string>
-    <string name="achievement_quit_365">A Year Clean</string>
-    <string name="title_unshaken">Unshaken</string>
-    <string name="condition_quit_7">Keep a quit counter going for 7 days after you add it.</string>
-    <string name="condition_quit_30">Keep a quit counter going for 30 days after you add it.</string>
-    <string name="condition_quit_90">Keep a quit counter going for 90 days after you add it.</string>
-    <string name="condition_quit_365">Keep a quit counter going for 365 days after you add it.</string>
 </resources>

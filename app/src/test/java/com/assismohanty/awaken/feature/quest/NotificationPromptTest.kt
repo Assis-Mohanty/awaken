@@ -1,6 +1,5 @@
 package com.assismohanty.awaken.feature.quest
 
-import com.assismohanty.awaken.core.designsystem.lexicon.PresentationMode
 import android.Manifest
 import android.app.Application
 import androidx.compose.material3.SnackbarHost
@@ -43,9 +42,9 @@ class NotificationPromptTest {
     fun tearDown() = graph.close()
 
     private fun show() {
-        val viewModel = RewardHostViewModel(graph.completionCenter, graph.notices, graph.narrative, graph.notificationAccess, graph.uiPrefs, graph.submitFeedback)
+        val viewModel = RewardHostViewModel(graph.completionCenter, graph.notices, graph.notificationAccess, graph.uiPrefs, graph.submitFeedback)
         composeRule.setContent {
-            AwakenTheme(presentation = PresentationMode.SYSTEM) {
+            AwakenTheme {
                 val snackbarHostState = remember { SnackbarHostState() }
                 SnackbarHost(snackbarHostState)
                 RewardHost(snackbarHostState = snackbarHostState, viewModel = viewModel)
@@ -60,7 +59,7 @@ class NotificationPromptTest {
         composeRule.onNodeWithText("Done").performScrollTo().performClick()
     }
 
-    private fun promptVisible() = composeRule.onAllNodesWithText("REMINDERS").fetchSemanticsNodes().isNotEmpty()
+    private fun promptVisible() = composeRule.onAllNodesWithText("Reminders").fetchSemanticsNodes().isNotEmpty()
 
     @Test
     fun theFirstCompletionAsksOnceAndRemembersTheAnswer() {

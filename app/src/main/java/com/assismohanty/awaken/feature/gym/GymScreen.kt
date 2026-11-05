@@ -71,7 +71,6 @@ import com.assismohanty.awaken.core.domain.ActiveWorkout
 import com.assismohanty.awaken.core.domain.ExerciseRecords
 import com.assismohanty.awaken.core.designsystem.components.PrChip
 import com.assismohanty.awaken.core.designsystem.components.ProgressionHint
-import com.assismohanty.awaken.core.designsystem.components.achievementNameRes
 import com.assismohanty.awaken.engine.body.ProgressionHint as EngineHint
 import com.assismohanty.awaken.engine.body.RecordEvent
 import com.assismohanty.awaken.engine.body.RecordType
@@ -112,7 +111,7 @@ fun GymScreen(state: GymUiState, onEvent: (GymEvent) -> Unit, modifier: Modifier
             ActiveSession(active, state.now, state.previous, state.hints, state.prSetIds, onEvent)
         } else {
             state.summaryId?.let { id ->
-                state.overview?.history?.firstOrNull { it.workoutId == id }?.let { SessionSummary(it, state.summaryRecords, state.summaryUnlocked, onEvent) }
+                state.overview?.history?.firstOrNull { it.workoutId == id }?.let { SessionSummary(it, state.summaryRecords, onEvent) }
             }
             state.notice?.let { NoticeLine(it, onEvent) }
             PrimaryButton(
@@ -464,7 +463,7 @@ private fun RestStepper(exercise: WorkoutExercise, onEvent: (GymEvent) -> Unit) 
 
 /** The finished session: time, sets, volume and the exercises, until dismissed. */
 @Composable
-private fun SessionSummary(summary: WorkoutSummary, records: List<ExerciseRecords>, unlocked: List<String>, onEvent: (GymEvent) -> Unit) {
+private fun SessionSummary(summary: WorkoutSummary, records: List<ExerciseRecords>, onEvent: (GymEvent) -> Unit) {
     val colors = AwakenTheme.colors
     SystemWindow(title = lexString(R.string.gym_summary_title), accent = colors.accent, reveal = false) {
         Row(horizontalArrangement = Arrangement.spacedBy(Spacing.lg), modifier = Modifier.fillMaxWidth()) {
@@ -480,10 +479,6 @@ private fun SessionSummary(summary: WorkoutSummary, records: List<ExerciseRecord
                     Text(recordLine(exercise.name, event), style = AwakenTheme.type.caption, color = colors.textSecondary)
                 }
             }
-        }
-        if (unlocked.isNotEmpty()) {
-            val names = unlocked.map { id -> achievementNameRes(id)?.let { lexString(it) } ?: id }
-            Text(lexString(R.string.gym_summary_unlocked, names.joinToString()), style = AwakenTheme.type.label, color = colors.reward)
         }
         SecondaryButton(text = lexString(R.string.gym_summary_done), onClick = { onEvent(GymEvent.DismissSummary) }, modifier = Modifier.fillMaxWidth())
     }
@@ -695,7 +690,6 @@ private fun GymSummaryRecordsPreview() {
                         listOf(RecordEvent(RecordType.HEAVIEST_WEIGHT, 82.5), RecordEvent(RecordType.MOST_REPS_AT_WEIGHT, 9.0, 80.0)),
                     ),
                 ),
-                summaryUnlocked = listOf("pr1"),
             ),
             onEvent = {},
         )

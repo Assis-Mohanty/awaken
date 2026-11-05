@@ -50,7 +50,7 @@ private fun ShareCardContent(model: ShareCardModel, modifier: Modifier) {
     val colors = AwakenTheme.palette
     val type = AwakenTheme.type
     val dimens = AwakenTheme.dimens
-    GateBackground(rank = model.rank, modifier = modifier.size(dimens.shareCardWidth, dimens.shareCardHeight)) {
+    ScreenBackground(modifier = modifier.size(dimens.shareCardWidth, dimens.shareCardHeight)) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()

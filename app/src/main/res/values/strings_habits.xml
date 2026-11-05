@@ -22,7 +22,6 @@
     <string name="habit_times_note">Any days count. Once you reach it, the habit rests until Monday.</string>
     <string name="habit_timed_minutes">Minutes</string>
     <string name="habit_timed_difficulty">%1$s, from %2$d minutes</string>
-    <string name="habit_count_target">Target</string>
 
     <!-- Reminder (editor) -->
     <string name="habit_reminder_label">Reminder</string>
@@ -65,4 +64,5 @@
     <string name="habit_skip_left">1 skip left this week</string>
     <string name="habit_skip_none">No skips left this week</string>
     <string name="habit_no_skip_flexible">Not needed: any day counts</string>
+    <string name="habit_program_locked">This habit belongs to your program. The app sets it; you can archive it, not edit it.</string>
 </resources>

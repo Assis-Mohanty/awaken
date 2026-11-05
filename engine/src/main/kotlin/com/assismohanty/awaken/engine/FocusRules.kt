@@ -13,8 +13,8 @@ sealed interface FocusRunOutcome {
     /** Over the daily cap: logged only (P5). */
     data object OverCap : FocusRunOutcome
 
-    /** Pays quest XP at [rank]'s difficulty; [fragment] is the Loot Fragment (P4). */
-    data class Paid(val rank: GateRank, val fragment: Boolean) : FocusRunOutcome
+    /** Pays quest XP at [rank]'s difficulty. */
+    data class Paid(val rank: GateRank) : FocusRunOutcome
 }
 
 /** Pure rules for custom and stopwatch gates and subjects (GD §8.1, approved 2026-11-01). */
@@ -24,7 +24,6 @@ object FocusRules {
     const val CUSTOM_STEP_MINUTES = 5
     const val CUSTOM_DEFAULT_MINUTES = 30
     const val STOPWATCH_MIN_MINUTES = 15
-    const val FRAGMENT_MIN_MINUTES = 25
     const val DAILY_CAP = 4
     const val SUBJECT_MAX = 12
     const val SUBJECT_NAME_MAX = 24
@@ -47,7 +46,7 @@ object FocusRules {
     fun outcome(minutes: Int, paidToday: Int): FocusRunOutcome {
         val rank = tierFor(minutes) ?: return FocusRunOutcome.ShortRun
         if (paidToday >= DAILY_CAP) return FocusRunOutcome.OverCap
-        return FocusRunOutcome.Paid(rank, fragment = minutes >= FRAGMENT_MIN_MINUTES)
+        return FocusRunOutcome.Paid(rank)
     }
 
     fun cleanSubjectName(raw: String): String? = raw.trim().take(SUBJECT_NAME_MAX).takeIf { it.isNotEmpty() }

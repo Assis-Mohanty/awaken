@@ -121,13 +121,13 @@ class HabitRemovalTest {
     }
 
     @Test
-    fun campaignHabitsCannotBeRemovedByHand() = runTest {
+    fun programHabitsCannotBeRemovedByHand() = runTest {
         graph.seedHunter()
         graph.rollover()
         val id = habit()
-        graph.db.habitDao().upsert(checkNotNull(graph.db.habitDao().get(id)).copy(campaignId = "c1"))
+        graph.db.habitDao().upsert(checkNotNull(graph.db.habitDao().get(id)).copy(programId = "p1"))
 
-        assertThat(graph.removeHabit.delete(id)).isEqualTo(RemoveHabitResult.CampaignHabit)
+        assertThat(graph.removeHabit.delete(id)).isEqualTo(RemoveHabitResult.ProgramHabit)
         assertThat(graph.db.habitDao().get(id)).isNotNull()
         assertThat(graph.db.questDao().getForDate(graph.today()).count { it.type == QuestType.HABIT && it.habitId == id }).isEqualTo(1)
     }

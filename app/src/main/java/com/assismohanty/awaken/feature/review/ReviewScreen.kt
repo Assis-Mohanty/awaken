@@ -26,7 +26,6 @@ import com.assismohanty.awaken.core.designsystem.components.ReviewTextField
 import com.assismohanty.awaken.core.designsystem.components.SkeletonCard
 import com.assismohanty.awaken.core.designsystem.components.currentLocale
 import com.assismohanty.awaken.core.designsystem.components.formatCount
-import com.assismohanty.awaken.core.designsystem.components.identityPhraseRes
 import com.assismohanty.awaken.core.designsystem.components.label
 import com.assismohanty.awaken.core.designsystem.lexicon.lexString
 import com.assismohanty.awaken.core.designsystem.preview.PhonePreviews
@@ -65,9 +64,8 @@ fun ReviewScreen(state: ReviewUiState, onEvent: (ReviewEvent) -> Unit, onClose: 
                 when (state.step) {
                     ReviewStep.NUMBERS -> NumbersStep(model, onEvent)
                     ReviewStep.WENT_WELL -> {
-                        val identity = model.identity?.let(::identityPhraseRes)?.let { lexString(it) }
                         ReviewTextField(
-                            prompt = identity?.let { lexString(R.string.review_identity_prompt, it) } ?: lexString(R.string.review_went_well),
+                            prompt = lexString(R.string.review_went_well),
                             value = state.wentWell,
                             onValueChange = { onEvent(ReviewEvent.WentWellChanged(it)) },
                             maxChars = WeeklyReviewRules.TEXT_MAX,
@@ -158,7 +156,6 @@ private val previewModel = WeeklyReviewModel(
     ),
     consistency = ConsistencyScore(cleared = 22, eligible = 28),
     insights = InsightsModel(daysNeeded = 3),
-    identity = "reads",
     focus = listOf(Stat.STR, Stat.INT),
 )
 

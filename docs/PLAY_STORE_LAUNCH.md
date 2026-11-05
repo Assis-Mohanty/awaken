@@ -87,6 +87,8 @@ PRIVATE BY DESIGN
 
 ## 4. Data safety form (v1 — offline game + opt-in AI Paths)
 
+> **Release build for the Play listing (release prep, 2026-11-03):** AI Paths is compiled out. No `INTERNET` permission, no Play Integrity, no install ID. Nothing leaves the device, so §4 can be answered "No data collected" for this release; the rows below apply again only when AI Paths ships in a release build (see BACKLOG).
+
 Because AI Paths send user-entered text off the device, the answer is no longer "No data collected". Draft answers below; **re-read Play's current Data safety definitions when you fill the form** and make the answers match what the app actually does.
 
 | Data type (Play category) | Collected? | Shared? | Ephemeral? | Required/optional | Purpose |
@@ -128,6 +130,7 @@ Request nothing else. The privacy policy link shown inside Health Connect must b
 
 ## 5c. Accessibility Service (Focus Lock) — declaration text (adapt)
 - **Core feature:** "Focus Lock covers other apps with a full-screen reminder while the user own focus session is running, so the session is not broken by distracting apps." Opt-in; the user switches it on in Android Accessibility settings after an in-app explanation, and can switch it off any time.
+- **Scope:** the service is limited to AWAKEN itself while no session runs; while a user-started focus session runs it is limited to non-payment apps (UPI, bank and tap-to-pay apps are never watched or covered).
 - **What it does:** listens to window-change events only, reads only the package name of the app that came to the front, retrieves no screen content, typing, passwords or notifications, performs no gestures, stores nothing and sends nothing (the app has no network use apart from the optional AI Paths).
 - **Data safety:** no data collected or shared by this service.
 - **Demo video (about 30 s):** Settings → Focus Lock → explanation → Continue → Android Accessibility settings → switch on → start a 25-min Focus Gate → open another app → the cover shows → Back to focus.

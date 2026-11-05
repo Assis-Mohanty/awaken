@@ -36,19 +36,15 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.assismohanty.awaken.R
 import com.assismohanty.awaken.core.designsystem.components.HeaderIconButton
 import com.assismohanty.awaken.core.designsystem.components.LargeTitleScaffold
-import com.assismohanty.awaken.core.designsystem.components.identityLine
-import com.assismohanty.awaken.core.designsystem.components.identityPhraseRes
 import com.assismohanty.awaken.core.designsystem.components.LevelModule
 import com.assismohanty.awaken.core.designsystem.components.AwakenCard
 import com.assismohanty.awaken.core.designsystem.components.ListRow
-import com.assismohanty.awaken.core.designsystem.components.MetricCard
+import com.assismohanty.awaken.core.designsystem.components.StreakModule
 import com.assismohanty.awaken.core.designsystem.components.SkeletonCard
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.height
-import com.assismohanty.awaken.core.data.repo.Chapter
 import com.assismohanty.awaken.core.designsystem.components.AwakenGlyphs
-import com.assismohanty.awaken.core.designsystem.components.ChapterRevealDialog
 import com.assismohanty.awaken.core.designsystem.components.ConsistencyMeter
 import com.assismohanty.awaken.core.designsystem.components.Heatmap
 import com.assismohanty.awaken.core.designsystem.components.HeatmapDay
@@ -61,22 +57,15 @@ import com.assismohanty.awaken.core.designsystem.components.SecondaryButton
 import com.assismohanty.awaken.core.designsystem.components.ShareCardModel
 import com.assismohanty.awaken.core.designsystem.components.SystemWindow
 import com.assismohanty.awaken.core.designsystem.components.XpBar
-import com.assismohanty.awaken.core.designsystem.components.achievementConditionRes
-import com.assismohanty.awaken.core.designsystem.components.achievementNameRes
 import com.assismohanty.awaken.core.designsystem.components.formatCount
 import com.assismohanty.awaken.core.designsystem.components.label
-import com.assismohanty.awaken.core.designsystem.components.titleNameRes
 import com.assismohanty.awaken.core.designsystem.preview.PhonePreviews
 import com.assismohanty.awaken.core.designsystem.theme.AwakenTheme
 import com.assismohanty.awaken.core.designsystem.theme.Spacing
-import com.assismohanty.awaken.core.domain.AchievementEntry
-import com.assismohanty.awaken.core.domain.ChapterEntry
 import com.assismohanty.awaken.core.domain.HeatmapEntry
 import com.assismohanty.awaken.core.domain.InsightsModel
-import com.assismohanty.awaken.core.domain.RecapEntry
 import com.assismohanty.awaken.core.domain.StatProgress
 import com.assismohanty.awaken.debug.DebugEntry
-import com.assismohanty.awaken.engine.AchievementEvaluator
 import com.assismohanty.awaken.engine.ConsistencyScore
 import com.assismohanty.awaken.engine.DifficultyAdapter
 import com.assismohanty.awaken.engine.insight.BucketInsight
@@ -97,11 +86,11 @@ import java.time.format.FormatStyle
 fun StatusRoute(
     onOpenSettings: () -> Unit,
     modifier: Modifier = Modifier,
-    onOpenPaths: () -> Unit = {},
+    onOpenPaths: (() -> Unit)? = {},
     onOpenReview: () -> Unit = {},
-    onOpenRecap: (periodKey: String) -> Unit = {},
     onOpenQuit: () -> Unit = {},
     onOpenPrograms: () -> Unit = {},
+    onOpenStore: () -> Unit = {},
     viewModel: StatusViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -124,35 +113,35 @@ fun StatusRoute(
         onOpenSettings = onOpenSettings,
         onOpenPaths = onOpenPaths,
         onOpenReview = onOpenReview,
-        onOpenRecap = onOpenRecap,
         onOpenQuit = onOpenQuit,
         onOpenPrograms = onOpenPrograms,
+        onOpenStore = onOpenStore,
         modifier = modifier,
     )
 }
 
-/** Status (DESIGN_SYSTEM §4.5): header → radar → stats → heatmap → titles & achievements → chapters → weekly report. */
+/** Progress (DESIGN_SYSTEM §4.5): header → radar → stats → heatmap → weekly report. */
 @Composable
 fun StatusScreen(
     state: StatusUiState,
     onEvent: (StatusEvent) -> Unit,
     modifier: Modifier = Modifier,
     onOpenSettings: () -> Unit = {},
-    onOpenPaths: () -> Unit = {},
+    onOpenPaths: (() -> Unit)? = {},
     onOpenReview: () -> Unit = {},
-    onOpenRecap: (periodKey: String) -> Unit = {},
     onOpenQuit: () -> Unit = {},
     onOpenPrograms: () -> Unit = {},
+    onOpenStore: () -> Unit = {},
 ) {
     val header = state.header
-    val title = state.equippedTitleId?.let(::titleNameRes)?.let { lexString(it) }
     LargeTitleScaffold(
         title = lexString(R.string.nav_status),
-        subtitle = header?.let { listOfNotNull(it.name, title).joinToString(" · ") },
+        subtitle = header?.name,
         modifier = modifier,
         actions = {
             // Paths left the bottom bar in the v1.1 redesign; they open from here.
-            HeaderIconButton(AwakenGlyphs.Path, lexString(R.string.cd_open_paths), onOpenPaths)
+            // Null when the build has no AI Paths: the Paths entry is hidden, not just gated.
+            if (onOpenPaths != null) HeaderIconButton(AwakenGlyphs.Path, lexString(R.string.cd_open_paths), onOpenPaths)
             HeaderIconButton(AwakenGlyphs.Settings, lexString(R.string.cd_open_settings), onOpenSettings)
         },
     ) {
@@ -160,10 +149,7 @@ fun StatusScreen(
             SkeletonCard()
             return@LargeTitleScaffold
         }
-        identityLine(state.identityIds.mapNotNull { id -> identityPhraseRes(id)?.let { lexString(it) } })?.let { line ->
-            Text(line, style = AwakenTheme.type.body, color = AwakenTheme.colors.textSecondary)
-        }
-        // Level and gold side by side, equal heights.
+        // Level and streak (with the 28-day consistency) side by side, equal heights.
         Row(modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(Spacing.cardGap)) {
             LevelModule(
                 level = header.level,
@@ -172,13 +158,10 @@ fun StatusScreen(
                 xpForLevel = header.xpForLevel,
                 modifier = Modifier.weight(1f).fillMaxHeight(),
             )
-            MetricCard(
-                label = lexString(R.string.reward_gold),
-                value = formatCount(header.gold),
-                secondary = lexPlural(R.plurals.cd_streak, header.streak, header.streak),
-                icon = AwakenGlyphs.Coin,
-                iconTint = AwakenTheme.colors.reward,
-                description = lexString(R.string.cd_gold, formatCount(header.gold)),
+            StreakModule(
+                streak = header.streak,
+                best = state.bestStreak,
+                consistency = state.consistency,
                 modifier = Modifier.weight(1f).fillMaxHeight(),
             )
         }
@@ -186,20 +169,10 @@ fun StatusScreen(
         InsightsSection(state.insights)
         StatsWindow(state.rank, state.stats)
         ActivityWindow(state, onEvent)
-        AchievementsWindow(state.rank, state.achievements, state.equippedTitleId, onEvent)
-        ChaptersWindow(state.rank, state.chapters, onEvent)
         WeeklyWindow(state, onEvent, onOpenReview)
-        if (state.recaps.isNotEmpty()) RecapsSection(state.recaps, onOpenRecap)
+        StoreRow(gold = header.gold, onOpenStore = onOpenStore)
         QuitRow(onOpenQuit)
         ProgramsRow(onOpenPrograms)
-    }
-    state.openChapter?.let { entry ->
-        ChapterRevealDialog(
-            number = state.chapters.indexOf(entry) + 1,
-            title = entry.chapter.title,
-            body = entry.chapter.body,
-            onDismiss = { onEvent(StatusEvent.CloseChapter) },
-        )
     }
     if (state.capturing) {
         ShareCapture(
@@ -269,114 +242,6 @@ private fun daySummary(day: HeatmapEntry): String {
         lexString(R.string.status_heatmap_rest, date)
     } else {
         lexPlural(R.plurals.status_heatmap_day, day.completions, date, day.completions)
-    }
-}
-
-@Composable
-private fun AchievementsWindow(
-    rank: Rank,
-    achievements: List<AchievementEntry>,
-    equippedTitleId: String?,
-    onEvent: (StatusEvent) -> Unit,
-) {
-    val colors = AwakenTheme.colors
-    SystemWindow(
-        title = lexString(R.string.status_window_achievements),
-        accent = AwakenTheme.rankAccent(rank),
-        reveal = false,
-        headerTrailing = {
-            Text(
-                lexString(R.string.status_achievements_count, achievements.count { it.unlocked }, achievements.size),
-                style = AwakenTheme.type.caption,
-                color = colors.textSecondary,
-            )
-        },
-    ) {
-        Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-            achievements.chunked(GRID_COLUMNS).forEach { row ->
-                Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-                    row.forEach { entry ->
-                        AchievementCell(entry, equipped = entry.titleId != null && entry.titleId == equippedTitleId, onEvent, Modifier.weight(1f))
-                    }
-                    repeat(GRID_COLUMNS - row.size) { Box(Modifier.weight(1f)) }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun AchievementCell(entry: AchievementEntry, equipped: Boolean, onEvent: (StatusEvent) -> Unit, modifier: Modifier) {
-    val colors = AwakenTheme.colors
-    val type = AwakenTheme.type
-    val name = achievementNameRes(entry.id)?.let { lexString(it) } ?: entry.id
-    val titleName = entry.titleId?.let(::titleNameRes)?.let { lexString(it) }
-    val canEquip = entry.unlocked && entry.titleId != null
-    val actionLabel = lexString(if (equipped) R.string.action_unequip_title else R.string.action_equip_title)
-    Column(
-        modifier = modifier
-            .heightIn(min = AwakenTheme.dimens.touchTarget)
-            .then(
-                if (canEquip) {
-                    Modifier.clickable(onClickLabel = actionLabel, role = Role.Button) {
-                        onEvent(StatusEvent.EquipTitle(if (equipped) null else entry.titleId))
-                    }
-                } else {
-                    Modifier
-                },
-            )
-            .padding(vertical = Spacing.xxs),
-        verticalArrangement = Arrangement.spacedBy(Spacing.xxs),
-    ) {
-        // Locked entries are silhouetted: dimmed text plus an explicit "Locked" label (never colour alone).
-        Text(name, style = type.label, color = if (entry.unlocked) colors.textPrimary else colors.textMuted)
-        if (entry.unlocked) {
-            titleName?.let { Text(lexString(R.string.status_title_reward, it), style = type.caption, color = colors.textSecondary) }
-            if (equipped) Pill(text = lexString(R.string.status_title_equipped), color = colors.accent)
-        } else {
-            Text(lexString(R.string.status_achievement_locked), style = type.caption, color = colors.textMuted)
-            achievementConditionRes(entry.id)?.let { Text(lexString(it), style = type.caption, color = colors.textSecondary) }
-        }
-    }
-}
-
-@Composable
-private fun ChaptersWindow(rank: Rank, chapters: List<ChapterEntry>, onEvent: (StatusEvent) -> Unit) {
-    val colors = AwakenTheme.colors
-    val type = AwakenTheme.type
-    SystemWindow(title = lexString(R.string.status_window_chapters), accent = AwakenTheme.rankAccent(rank), reveal = false) {
-        chapters.forEachIndexed { index, entry ->
-            val number = lexString(R.string.status_chapter_number, index + 1)
-            val readLabel = lexString(R.string.action_read_chapter)
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(min = AwakenTheme.dimens.touchTarget)
-                    .then(
-                        if (entry.unlocked) {
-                            Modifier.clickable(onClickLabel = readLabel, role = Role.Button) {
-                                onEvent(StatusEvent.OpenChapter(entry.chapter.id))
-                            }
-                        } else {
-                            Modifier
-                        },
-                    ),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
-            ) {
-                Text(number, style = type.caption, color = colors.textSecondary)
-                if (entry.unlocked) {
-                    Text(entry.chapter.title, style = type.label, color = colors.textPrimary, modifier = Modifier.weight(1f))
-                } else {
-                    Text(
-                        lexString(R.string.status_chapter_locked, entry.chapter.unlockLevel),
-                        style = type.label,
-                        color = colors.textMuted,
-                        modifier = Modifier.weight(1f),
-                    )
-                }
-            }
-        }
     }
 }
 
@@ -477,14 +342,12 @@ internal fun previewStatusState(locked: Boolean = false): StatusUiState {
         val count = if (locked || date > today) 0 else (offset * 7 % 6)
         HeatmapEntry(date, count, StatusMath.heatmapIntensity(count), restDay = offset % 13 == 0)
     }
-    val unlocked = if (locked) setOf("awakened") else setOf("awakened", "first_blood", "lvl5", "lvl10", "streak3", "streak7", "crit1")
     return StatusUiState(
         loading = false,
         header = HunterHeaderModel(
-            name = "Assis", title = null, level = if (locked) 1 else 14, rank = Rank.D,
+            name = "Assis", level = if (locked) 1 else 14, rank = Rank.D,
             xpIntoLevel = 420, xpForLevel = 712, streak = 9, gold = 1_240,
         ),
-        equippedTitleId = if (locked) null else "rising_hunter",
         rank = Rank.D,
         name = "Assis",
         level = 14,
@@ -494,10 +357,6 @@ internal fun previewStatusState(locked: Boolean = false): StatusUiState {
         radarMax = StatusMath.radarMax(levels.values).toFloat(),
         stats = stats,
         heatmap = heatmap.map { HeatmapDay(it.date, it.intensity, it.restDay) },
-        achievements = AchievementEvaluator.all.map { AchievementEntry(it.id, it.gold, it.titleId, it.id in unlocked) },
-        chapters = listOf(1, 5, 10, 20, 35, 50).mapIndexed { i, level ->
-            ChapterEntry(Chapter("ch$i", level, "Chapter title $i", "Body"), unlocked = !locked && level <= 14 || level == 1)
-        },
         weeklyReport = StatusMath.weeklyReport(
             week,
             statXp.mapValues { it.value / 10 },
@@ -507,8 +366,6 @@ internal fun previewStatusState(locked: Boolean = false): StatusUiState {
         weeklyOpen = !locked,
         projectedRecalibration = if (locked) emptyMap() else mapOf(Stat.STR to DifficultyAdapter.Change.UP),
         consistency = if (locked) ConsistencyScore(0, 0) else ConsistencyScore(cleared = 22, eligible = 28),
-        identityIds = if (locked) emptyList() else listOf("trains", "reads"),
-        recaps = if (locked) emptyList() else listOfNotNull(RecapEntry.of("M:2026-09"), RecapEntry.of("Y:2025")),
         insights = if (locked) {
             InsightsModel(daysNeeded = 9)
         } else {
@@ -551,7 +408,7 @@ private fun QuitRow(onOpenQuit: () -> Unit) {
     }
 }
 
-/** The way into the programs (GD §16.15), next to the Campaign and the quit counters. */
+/** The way into the programs (GD §16.15), next to the quit counters. */
 @Composable
 private fun ProgramsRow(onOpenPrograms: () -> Unit) {
     AwakenCard(reveal = false, contentPadding = Spacing.listCard, spacing = Spacing.zero, modifier = Modifier.fillMaxWidth()) {
@@ -559,6 +416,23 @@ private fun ProgramsRow(onOpenPrograms: () -> Unit) {
             title = lexString(R.string.programs_row_title),
             secondary = lexString(R.string.programs_row_note),
             onClick = onOpenPrograms,
+            trailing = {
+                Icon(AwakenGlyphs.ChevronRight, contentDescription = null, tint = AwakenTheme.colors.textSecondary, modifier = Modifier.size(AwakenTheme.dimens.iconSmall))
+            },
+        )
+    }
+}
+
+/** Gold is spent in the Store: the balance sits on the row that opens it. */
+@Composable
+private fun StoreRow(gold: Long, onOpenStore: () -> Unit) {
+    AwakenCard(reveal = false, contentPadding = Spacing.listCard, spacing = Spacing.zero, modifier = Modifier.fillMaxWidth()) {
+        ListRow(
+            title = lexString(R.string.status_store_row),
+            icon = AwakenGlyphs.Coin,
+            iconTint = AwakenTheme.colors.reward,
+            secondary = lexString(R.string.status_store_row_gold, formatCount(gold)),
+            onClick = onOpenStore,
             trailing = {
                 Icon(AwakenGlyphs.ChevronRight, contentDescription = null, tint = AwakenTheme.colors.textSecondary, modifier = Modifier.size(AwakenTheme.dimens.iconSmall))
             },

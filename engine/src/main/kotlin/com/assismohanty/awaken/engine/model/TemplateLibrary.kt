@@ -27,8 +27,12 @@ data class TemplateLibrary(
         templates.groupBy { it.id }.filterValues { it.size > 1 }.keys.forEach { add("duplicate id: $it") }
         for (t in templates) {
             if (!ID_PATTERN.matches(t.id)) add("${t.id}: id must match ${ID_PATTERN.pattern}")
-            if (t.titles.size !in 1..3) add("${t.id}: needs 1–3 titles")
-            t.titles.forEach { title -> titleProblems(title).forEach { add("${t.id}: title \"$title\" $it") } }
+            titleProblems(t.title).forEach { add("${t.id}: title \"${t.title}\" $it") }
+            Difficulty.entries.forEach { d ->
+                val target = t.targets[d] ?: return@forEach
+                val rendered = TitlePattern.render(t.title, target)
+                if (rendered.length > MAX_TITLE_LENGTH) add("${t.id}: title renders to ${rendered.length} chars at $d (max $MAX_TITLE_LENGTH): \"$rendered\"")
+            }
             if (t.description.isBlank() || "{target}" !in t.description) add("${t.id}: description must contain {target}")
             if (t.secondaryStat == t.stat) add("${t.id}: secondaryStat equals stat")
             if (t.unit !in units) add("${t.id}: unknown unit ${t.unit}")
@@ -63,9 +67,12 @@ data class TemplateLibrary(
         const val MIN_PER_STAT = 25
         private val ID_PATTERN = Regex("^[a-z][a-z0-9_]*$")
 
-        /** GD §6.2 title rules: plain, action-first, sentence case, no numbers (the target line shows them). */
-        const val MAX_TITLE_LENGTH = 40
-        val TITLE_WORDS = 2..5
+        /**
+         * GD §6.2 title rules: plain, action-first, sentence case, the target in the title through [TitlePattern], and at most
+         * [MAX_TITLE_LENGTH] characters once rendered at any difficulty.
+         */
+        const val MAX_TITLE_LENGTH = 44
+        const val MIN_TITLE_WORDS = 2
 
         /** Fantasy words that crept into the first library ("Fuel the Forge", "Arch of Power"). Whole words, any case. */
         val BANNED_TITLE_WORDS = setOf(
@@ -76,20 +83,22 @@ data class TemplateLibrary(
             "ledger", "herald", "bard", "envoy", "missive",
         )
 
-        /** Problems with one title; empty means it follows the rules. */
-        fun titleProblems(title: String): List<String> = buildList {
-            if (title.isBlank()) {
+        /** Problems with one title pattern; empty means it follows the rules. Rendered length is checked in [validate]. */
+        fun titleProblems(pattern: String): List<String> = buildList {
+            if (pattern.isBlank()) {
                 add("is blank")
                 return@buildList
             }
-            if (title.length > MAX_TITLE_LENGTH) add("is longer than $MAX_TITLE_LENGTH chars")
-            val words = title.trim().split(Regex("\\s+"))
-            if (words.size !in TITLE_WORDS) add("must have ${TITLE_WORDS.first}–${TITLE_WORDS.last} words")
-            if (title.any { it.isDigit() } || "{" in title) add("must not contain numbers or placeholders")
-            if (!title.first().isUpperCase() || words.drop(1).any { it.first().isUpperCase() }) add("must be sentence case")
-            Regex("\\p{L}+").findAll(title.lowercase()).map { it.value }.filter { it in BANNED_TITLE_WORDS }
+            if (!TitlePattern.hasOneTargetToken(pattern)) add("must contain exactly one {n} or {dur}")
+            val literal = TitlePattern.literalText(pattern)
+            if (literal.any { it.isDigit() || it == '{' || it == '}' }) add("must not contain digits or stray braces")
+            val words = pattern.trim().split(Regex("\\s+"))
+            if (words.size < MIN_TITLE_WORDS) add("must have at least $MIN_TITLE_WORDS words")
+            if (!pattern.first().isUpperCase() || words.drop(1).any { it.first().isUpperCase() }) add("must be sentence case")
+            Regex("\\p{L}+").findAll(literal.lowercase()).map { it.value }.filter { it in BANNED_TITLE_WORDS }
                 .forEach { add("uses banned word \"$it\"") }
         }
+
         private val json = Json { ignoreUnknownKeys = false }
 
         fun parse(text: String): TemplateLibrary = json.decodeFromString(serializer(), text)

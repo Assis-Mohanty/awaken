@@ -21,7 +21,7 @@ class HabitRulesTest {
         assertThat(HabitRules.quantityComplete(progress = 7, target = 8)).isFalse()
         assertThat(HabitRules.quantityComplete(progress = 8, target = 8)).isTrue()
         // SELF, Normal, streak 0, no crit: 60 XP and 30 gold (§4.1, §9.1), the same as any self-reported quest.
-        val xp = XpCalculator.questXp(Difficulty.NORMAL, 0, VerificationSource.SELF, crit = false)
+        val xp = XpCalculator.questXp(Difficulty.NORMAL, 0, VerificationSource.SELF)
         assertThat(xp).isEqualTo(60)
         assertThat(XpCalculator.goldFor(xp)).isEqualTo(30)
     }
@@ -44,7 +44,7 @@ class HabitRulesTest {
     fun `vector 87 - a 30 minute timed habit is Normal and pays 69 XP as one TIMER quest`() {
         assertThat(HabitRules.timedDifficulty(30)).isEqualTo(Difficulty.NORMAL)
         assertThat(HabitRules.verificationFor(HabitType.TIMED)).isEqualTo(Verification.TIMER)
-        assertThat(XpCalculator.questXp(Difficulty.NORMAL, 0, VerificationSource.TIMER, crit = false)).isEqualTo(69)
+        assertThat(XpCalculator.questXp(Difficulty.NORMAL, 0, VerificationSource.TIMER)).isEqualTo(69)
     }
 
     @Test
@@ -52,7 +52,7 @@ class HabitRulesTest {
         assertThat(HabitRules.validate(HabitType.TIMED, daily, null, 14)).isEqualTo(HabitProblem.TIMED_MINUTES)
         assertThat(HabitRules.validate(HabitType.TIMED, daily, null, 95)).isNull()
         assertThat(HabitRules.timedDifficulty(95)).isEqualTo(Difficulty.EXTREME)
-        assertThat(XpCalculator.questXp(Difficulty.EXTREME, 0, VerificationSource.TIMER, crit = false)).isEqualTo(138)
+        assertThat(XpCalculator.questXp(Difficulty.EXTREME, 0, VerificationSource.TIMER)).isEqualTo(138)
     }
 
     @Test

@@ -13,7 +13,7 @@ import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import com.assismohanty.awaken.R
-import com.assismohanty.awaken.core.designsystem.components.GateBackground
+import com.assismohanty.awaken.core.designsystem.components.ScreenBackground
 import com.assismohanty.awaken.core.designsystem.components.LargeTitleScaffold
 import com.assismohanty.awaken.core.designsystem.components.PrimaryButton
 import com.assismohanty.awaken.core.designsystem.components.QuietButton
@@ -123,7 +123,7 @@ fun ReelCounterSetupScreen(
     val colors = AwakenTheme.colors
     val type = AwakenTheme.type
     val full = Modifier.fillMaxWidth()
-    GateBackground(tint = colors.accent, modifier = modifier) {
+    ScreenBackground(modifier = modifier) {
         LargeTitleScaffold(title = lexString(R.string.reel_title), onBack = onClose) {
             when (state.step) {
                 ReelSetupStep.EXPLAIN -> SystemWindow(title = lexString(R.string.reel_explain_title), accent = colors.accent, reveal = false) {

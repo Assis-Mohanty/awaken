@@ -18,7 +18,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -32,23 +31,16 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import com.assismohanty.awaken.R
-import com.assismohanty.awaken.core.data.repo.Chapter
-import com.assismohanty.awaken.core.data.repo.NarrativeRepository
 import com.assismohanty.awaken.core.data.repo.Notice
 import com.assismohanty.awaken.core.data.repo.NoticeStore
 import com.assismohanty.awaken.core.data.repo.UiPrefsRepository
 import com.assismohanty.awaken.core.work.NotificationAccess
-import com.assismohanty.awaken.core.designsystem.components.ChapterRevealDialog
-import com.assismohanty.awaken.core.designsystem.components.LevelUpDialog
-import com.assismohanty.awaken.core.designsystem.components.RankCrest
 import com.assismohanty.awaken.core.designsystem.components.PrimaryButton
 import com.assismohanty.awaken.core.designsystem.components.QuietButton
 import com.assismohanty.awaken.core.designsystem.components.SystemWindow
 import com.assismohanty.awaken.core.designsystem.components.RewardModel
 import com.assismohanty.awaken.core.designsystem.components.RewardSheet
 import com.assismohanty.awaken.core.designsystem.components.SystemToast
-import com.assismohanty.awaken.core.designsystem.components.SystemWarningDialog
-import com.assismohanty.awaken.core.designsystem.components.achievementNameRes
 import com.assismohanty.awaken.core.designsystem.components.nameRes
 import com.assismohanty.awaken.core.designsystem.theme.AwakenTheme
 import com.assismohanty.awaken.core.domain.CompletionCenter
@@ -56,7 +48,6 @@ import com.assismohanty.awaken.core.domain.CompletionEvent
 import com.assismohanty.awaken.core.domain.CompletionOutcome
 import com.assismohanty.awaken.core.domain.SubmitFeedbackUseCase
 import com.assismohanty.awaken.core.domain.UserMessage
-import com.assismohanty.awaken.engine.AchievementEvaluator
 import com.assismohanty.awaken.engine.DifficultyAdapter
 import com.assismohanty.awaken.engine.path.Feedback
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -67,7 +58,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -76,15 +66,10 @@ import kotlinx.coroutines.launch
 class RewardHostViewModel @Inject constructor(
     private val completionCenter: CompletionCenter,
     noticeStore: NoticeStore,
-    narrative: NarrativeRepository,
     private val notificationAccess: NotificationAccess,
     private val uiPrefs: UiPrefsRepository,
     private val submitFeedback: SubmitFeedbackUseCase,
 ) : ViewModel() {
-    /** Bundled chapters, for the reveal after a level-up that crosses an unlock level (GD §11). */
-    val chapters: StateFlow<List<Chapter>> = flow { emit(narrative.chapters()) }
-        .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
-
     /** The event being presented: the head of the queue. */
     val current: StateFlow<CompletionEvent?> = completionCenter.events
         .map { it.firstOrNull() }
@@ -141,25 +126,22 @@ class RewardHostViewModel @Inject constructor(
     }
 }
 
-private enum class ToastTone { ACHIEVEMENT, SYSTEM, WARNING }
+private enum class ToastTone { SYSTEM, WARNING }
 
 @Immutable
 private data class ToastItem(val key: Long, val title: String, val message: String, val tone: ToastTone)
 
 /**
- * Presents queued events app-wide (so the chain survives navigation): RewardSheet → level-up ceremony → chapter reveal → rank-up
- * ceremony → one SystemToast per unlocked achievement → "Quest cleared" snackbar with Undo. Messages become snackbars;
- * rollover notices become the Penalty Zone warning or System toasts.
+ * Presents queued events app-wide (so the chain survives navigation): the reward sheet (with a line for a new level or
+ * rank) → "Quest cleared" snackbar with Undo. Messages become snackbars; rollover notices become snackbars or toasts.
  */
 @Composable
 fun RewardHost(
     snackbarHostState: SnackbarHostState,
     modifier: Modifier = Modifier,
-    onOpenRecap: (periodKey: String) -> Unit = {},
     viewModel: RewardHostViewModel = hiltViewModel(),
 ) {
     val event by viewModel.current.collectAsStateWithLifecycle()
-    val chapters by viewModel.chapters.collectAsStateWithLifecycle()
     val resources = rememberLexResources()
     // Snackbars and toasts outlive the event that started them, so they run in the host's scope.
     val scope = rememberCoroutineScope()
@@ -179,22 +161,11 @@ fun RewardHost(
         }
     }
 
-    fun queueAchievements(achievementIds: List<String>, eventId: Long) {
-        achievementIds.forEachIndexed { index, id ->
-            val name = achievementNameRes(id)?.let { resources.getString(it) } ?: return@forEachIndexed
-            val gold = AchievementEvaluator.byId[id]?.gold ?: 0
-            val message = if (gold > 0) resources.getString(R.string.achievement_with_gold, name, gold) else name
-            toasts += ToastItem(eventId * TOAST_KEY_STRIDE + index, resources.getString(R.string.system_title_achievement), message, ToastTone.ACHIEVEMENT)
-        }
-    }
-
     when (val current = event) {
         is CompletionEvent.Completed -> CompletedPresentation(
             onFeedback = { viewModel.feedback(current.outcome.questInstanceId, it) },
             event = current,
-            chapters = chapters,
             onFinished = {
-                queueAchievements(current.outcome.unlockedAchievements, current.id)
                 showMessage(UserMessage.QuestCleared, undoQuestId = current.outcome.questInstanceId.takeIf { current.outcome.undoable })
                 viewModel.consume(current.id)
                 viewModel.onQuestCompleted()
@@ -204,21 +175,10 @@ fun RewardHost(
             showMessage(current.message, current.undoQuestId)
             viewModel.consume(current.id)
         }
-        is CompletionEvent.Achievements -> LaunchedEffect(current.id) {
-            queueAchievements(current.achievementIds, current.id)
-            viewModel.consume(current.id)
-        }
         is CompletionEvent.SystemNotice -> when (current.notice) {
-            // The Penalty Zone holds the queue until acknowledged (GD §7.3).
-            is Notice.PenaltyWarning -> SystemWarningDialog(
-                body = lexString(R.string.penalty_warning_body),
-                detail = lexString(R.string.penalty_warning_detail),
-                actionLabel = lexString(R.string.action_face_it),
-                onDismiss = { viewModel.consume(current.id) },
-            )
-            // A new recap opens once (GD §14.6); afterwards it is reopened from Status.
-            is Notice.RecapReady -> LaunchedEffect(current.id) {
-                onOpenRecap(current.notice.periodKey)
+            // After a missed day: one calm line; the comeback quest itself is on Today (GD §7.3).
+            is Notice.PenaltyWarning -> LaunchedEffect(current.id) {
+                showMessage(UserMessage.PenaltyOpen, undoQuestId = null)
                 viewModel.consume(current.id)
             }
             else -> LaunchedEffect(current.id) {
@@ -226,12 +186,10 @@ fun RewardHost(
                 viewModel.consume(current.id)
             }
         }
-        is CompletionEvent.GateCollapsed -> SystemWarningDialog(
-            body = lexString(R.string.gate_collapsed_body),
-            detail = collapseDetail(current.reason, current.backgroundMs, resources),
-            actionLabel = lexString(R.string.action_continue),
-            onDismiss = { viewModel.consume(current.id) },
-        )
+        is CompletionEvent.GateCollapsed -> LaunchedEffect(current.id) {
+            scope.launch { snackbarHostState.showSnackbar(collapseDetail(current.reason, current.backgroundMs, resources)) }
+            viewModel.consume(current.id)
+        }
         null -> Unit
     }
 
@@ -272,7 +230,7 @@ fun RewardHost(
             accent = when (toast?.tone) {
                 ToastTone.WARNING -> colors.critical
                 ToastTone.SYSTEM -> colors.accent
-                ToastTone.ACHIEVEMENT, null -> colors.reward
+                null -> colors.accent
             },
         )
     }
@@ -298,65 +256,22 @@ private fun Notice.toToasts(resources: LexResources, eventId: Long): List<ToastI
     is Notice.TrialFailed -> listOf(
         ToastItem(eventId * TOAST_KEY_STRIDE, resources.getString(R.string.notice_trial_failed_title), resources.getString(R.string.notice_trial_failed_body, rank.name), ToastTone.WARNING),
     )
-    is Notice.PenaltyWarning -> emptyList() // presented as a dialog, never a toast
-    is Notice.RecapReady -> emptyList() // opens the recap instead
+    is Notice.PenaltyWarning -> emptyList() // presented as a snackbar, never a toast
 }
-
-private enum class Phase { SHEET, LEVEL_UP, CHAPTER, RANK_UP }
-
-/** Chapters whose unlock level this level-up crossed: `unlockLevel` in `(before, after]`. */
-internal fun newlyUnlockedChapters(chapters: List<Chapter>, levelBefore: Int, levelAfter: Int): List<IndexedValue<Chapter>> =
-    chapters.withIndex().filter { (_, chapter) -> chapter.unlockLevel in (levelBefore + 1)..levelAfter }
 
 @Composable
 private fun CompletedPresentation(
     event: CompletionEvent.Completed,
-    chapters: List<Chapter>,
     onFinished: () -> Unit,
     onFeedback: (Feedback?) -> Unit,
 ) {
-    val outcome = event.outcome
-    val promotedTo = outcome.promotedTo
-    var phase by remember(event.id) { mutableStateOf(Phase.SHEET) }
-    val unlocked = remember(event.id, chapters) { newlyUnlockedChapters(chapters, outcome.levelBefore, outcome.levelAfter) }
-    var chapterIndex by remember(event.id) { mutableIntStateOf(0) }
     var feedback by remember(event.id) { mutableStateOf<Feedback?>(null) }
-    val afterChapters = { if (promotedTo != null) phase = Phase.RANK_UP else onFinished() }
-    val afterLevelUp = { if (unlocked.isNotEmpty()) phase = Phase.CHAPTER else afterChapters() }
-    when (phase) {
-        Phase.SHEET -> RewardSheet(
-            model = outcome.toRewardModel(),
-            onDone = { if (outcome.leveledUp) phase = Phase.LEVEL_UP else afterLevelUp() },
-            feedback = feedback,
-            onFeedback = { feedback = it; onFeedback(it) },
-        )
-        Phase.LEVEL_UP -> LevelUpDialog(
-            oldLevel = outcome.levelBefore,
-            newLevel = outcome.levelAfter,
-            statGains = outcome.reward.statXp,
-            onDismiss = afterLevelUp,
-        )
-        Phase.CHAPTER -> unlocked.getOrNull(chapterIndex)?.let { (index, chapter) ->
-            ChapterRevealDialog(
-                number = index + 1,
-                title = chapter.title,
-                body = chapter.body,
-                onDismiss = { if (chapterIndex + 1 < unlocked.size) chapterIndex++ else afterChapters() },
-            )
-        }
-        // GD §5 promotion cinematic: the level-up ceremony with the new rank's crest and colour.
-        Phase.RANK_UP -> if (promotedTo != null) {
-            LevelUpDialog(
-                oldLevel = outcome.levelAfter,
-                newLevel = outcome.levelAfter,
-                statGains = emptyMap(),
-                onDismiss = onFinished,
-                title = lexString(R.string.system_title_rank_up),
-                accent = AwakenTheme.colors.rank(promotedTo),
-                crest = { RankCrest(rank = promotedTo, size = AwakenTheme.dimens.crestLarge) },
-            )
-        }
-    }
+    RewardSheet(
+        model = event.outcome.toRewardModel(),
+        onDone = onFinished,
+        feedback = feedback,
+        onFeedback = { feedback = it; onFeedback(it) },
+    )
 }
 
 /** Straight from the engine's reward (invariant 4): nothing is recomputed here. */
@@ -364,13 +279,13 @@ internal fun CompletionOutcome.toRewardModel() = RewardModel(
     xp = reward.xp,
     statXp = reward.statXp,
     gold = reward.gold,
-    fragments = reward.fragments,
-    crit = reward.crit,
     capped = reward.cappedSource != null,
     difficulty = difficulty,
     verification = verification,
     breakdown = reward.breakdown,
     pathQuest = pathQuest,
+    levelReached = levelAfter.takeIf { leveledUp },
+    rankReached = promotedTo,
 )
 
 /** Toast keys are unique across events: event id × stride + index within the event. */

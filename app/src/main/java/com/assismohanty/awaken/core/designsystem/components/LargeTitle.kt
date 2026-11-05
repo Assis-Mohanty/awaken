@@ -111,7 +111,7 @@ fun LargeTitleScaffold(
 @Composable
 private fun LargeTitleScaffoldPreview() {
     AwakenTheme {
-        GateBackground(tint = AwakenTheme.colors.surface) {
+        ScreenBackground {
             LargeTitleScaffold(title = "Good morning, Assis", subtitle = "Tuesday, 27 October") {
                 SkeletonCard()
                 SkeletonCard(lines = 4)

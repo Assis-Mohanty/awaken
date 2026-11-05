@@ -75,7 +75,7 @@ fun DebugScreen(
                 Mono(
                     "${hunter.name}  LV ${hunter.level} (${hunter.xpIntoLevel}/${hunter.xpForLevel})  " +
                         "rank ${hunter.rank} band ${hunter.band}\n" +
-                        "XP ${hunter.totalXp}  gold ${hunter.gold}  fragments ${hunter.fragments}  shields ${hunter.shields}\n" +
+                        "XP ${hunter.totalXp}  gold ${hunter.gold}  shields ${hunter.shields}\n" +
                         "streak ${hunter.streak} (best ${hunter.bestStreak})  today cleared ${hunter.todayCleared}\n" +
                         hunter.statLevels.entries.joinToString("  ") { (stat, level) -> "$stat $level" },
                 )
@@ -96,7 +96,6 @@ fun DebugScreen(
                 OutlinedButton(onClick = { onEvent(DebugEvent.RebuildBalances) }) { Text(stringResource(R.string.debug_rebuild)) }
                 OutlinedButton(onClick = { onEvent(DebugEvent.GrantShield) }) { Text(stringResource(R.string.debug_grant_shield)) }
                 OutlinedButton(onClick = { onEvent(DebugEvent.GrantGold) }) { Text(stringResource(R.string.debug_grant_gold)) }
-                OutlinedButton(onClick = { onEvent(DebugEvent.GrantFragments) }) { Text(stringResource(R.string.debug_grant_fragments)) }
                 OutlinedButton(onClick = { onEvent(DebugEvent.SimulateSteps(!state.simulateSteps)) }) {
                     Text(stringResource(if (state.simulateSteps) R.string.debug_simulate_steps_off else R.string.debug_simulate_steps_on))
                 }
@@ -178,7 +177,7 @@ private fun DebugScreenPreview() {
             state = DebugUiState(
                 hunter = HunterState(
                     name = "Test Hunter", gameDate = today, totalXp = 150, level = 2, xpIntoLevel = 38, xpForLevel = 136,
-                    rank = Rank.E, band = Rank.E, gold = 75, fragments = 1, shields = 0,
+                    rank = Rank.E, band = Rank.E, gold = 75, shields = 0,
                     statXp = mapOf(Stat.STR to 150), statLevels = Stat.entries.associateWith { 1 },
                     streak = 1, bestStreak = 1, todayCleared = false,
                 ),

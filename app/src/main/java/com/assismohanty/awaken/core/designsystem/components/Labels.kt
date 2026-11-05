@@ -64,157 +64,6 @@ fun unitPluralRes(unit: String): Int? = when (unit) {
 @Composable
 fun unitLabel(unit: String, count: Int): String = unitPluralRes(unit)?.let { lexPlural(it, count) } ?: unit
 
-/** Display text for an engine title id (GD §10); null for an id this build doesn't know. */
-@StringRes
-fun titleNameRes(titleId: String): Int? = when (titleId) {
-    "the_awakened" -> R.string.title_the_awakened
-    "rising_hunter" -> R.string.title_rising_hunter
-    "veteran" -> R.string.title_veteran
-    "unbroken" -> R.string.title_unbroken
-    "the_relentless" -> R.string.title_the_relentless
-    "fortunes_favoured" -> R.string.title_fortunes_favoured
-    "gate_sovereign" -> R.string.title_gate_sovereign
-    "proven" -> R.string.title_proven
-    "the_redeemed" -> R.string.title_the_redeemed
-    "balanced" -> R.string.title_balanced
-    "ironborn" -> R.string.title_ironborn
-    "sage" -> R.string.title_sage
-    "stoic" -> R.string.title_stoic
-    "evergreen" -> R.string.title_evergreen
-    "silver_tongue" -> R.string.title_silver_tongue
-    "reforged" -> R.string.title_reforged
-    "the_reflective" -> R.string.title_the_reflective
-    "deep_worker" -> R.string.title_deep_worker
-    "record_breaker" -> R.string.title_record_breaker
-    "unshaken" -> R.string.title_unshaken
-    "delver" -> R.string.title_delver
-    "steady" -> R.string.title_steady
-    "grounded" -> R.string.title_grounded
-    "ironclad" -> R.string.title_ironclad
-    "d_rank_hunter" -> R.string.title_d_rank_hunter
-    "c_rank_hunter" -> R.string.title_c_rank_hunter
-    "b_rank_hunter" -> R.string.title_b_rank_hunter
-    "a_rank_hunter" -> R.string.title_a_rank_hunter
-    "s_rank_hunter" -> R.string.title_s_rank_hunter
-    else -> null
-}
-
-/** Unlock condition shown on a locked achievement (GD §10); null for an id this build doesn't know. */
-@StringRes
-fun achievementConditionRes(achievementId: String): Int? = when (achievementId) {
-    "first_blood" -> R.string.condition_first_blood
-    "awakened" -> R.string.condition_awakened
-    "lvl5" -> R.string.condition_lvl5
-    "lvl10" -> R.string.condition_lvl10
-    "lvl25" -> R.string.condition_lvl25
-    "lvl50" -> R.string.condition_lvl50
-    "streak3" -> R.string.condition_streak3
-    "streak7" -> R.string.condition_streak7
-    "streak30" -> R.string.condition_streak30
-    "streak100" -> R.string.condition_streak100
-    "crit1" -> R.string.condition_crit1
-    "crit25" -> R.string.condition_crit25
-    "gate_first" -> R.string.condition_gate_first
-    "gate_hours10" -> R.string.condition_gate_hours10
-    "gate_hours100" -> R.string.condition_gate_hours100
-    "verified10" -> R.string.condition_verified10
-    "verified100" -> R.string.condition_verified100
-    "redeemed" -> R.string.condition_redeemed
-    "balanced" -> R.string.condition_balanced
-    "str20" -> R.string.condition_str20
-    "int20" -> R.string.condition_int20
-    "wil20" -> R.string.condition_wil20
-    "vit20" -> R.string.condition_vit20
-    "cha20" -> R.string.condition_cha20
-    "rank_d" -> R.string.condition_rank_d
-    "rank_c" -> R.string.condition_rank_c
-    "rank_b" -> R.string.condition_rank_b
-    "rank_a" -> R.string.condition_rank_a
-    "rank_s" -> R.string.condition_rank_s
-    "early_bird" -> R.string.condition_early_bird
-    "night_owl" -> R.string.condition_night_owl
-    "collector" -> R.string.condition_collector
-    "reforged" -> R.string.condition_reforged
-    "never_twice" -> R.string.condition_never_twice
-    "review1" -> R.string.condition_review1
-    "review4" -> R.string.condition_review4
-    "review12" -> R.string.condition_review12
-    "focus_streak7" -> R.string.condition_focus_streak7
-    "focus_streak30" -> R.string.condition_focus_streak30
-    "focus_streak100" -> R.string.condition_focus_streak100
-    "pr1" -> R.string.condition_pr1
-    "pr25" -> R.string.condition_pr25
-    "pr100" -> R.string.condition_pr100
-    "quit_7" -> R.string.condition_quit_7
-    "quit_30" -> R.string.condition_quit_30
-    "quit_90" -> R.string.condition_quit_90
-    "quit_365" -> R.string.condition_quit_365
-    "dungeon_first" -> R.string.condition_dungeon_first
-    "dungeon_7" -> R.string.condition_dungeon_7
-    "program_steady_30" -> R.string.condition_program_steady_30
-    "program_groundwork_66" -> R.string.condition_program_groundwork_66
-    "program_ironclad_75" -> R.string.condition_program_ironclad_75
-    else -> null
-}
-
-/** Display name for an engine achievement id (GD §10); null for an id this build doesn't know. */
-@StringRes
-fun achievementNameRes(achievementId: String): Int? = when (achievementId) {
-    "first_blood" -> R.string.achievement_first_blood
-    "awakened" -> R.string.achievement_awakened
-    "lvl5" -> R.string.achievement_lvl5
-    "lvl10" -> R.string.achievement_lvl10
-    "lvl25" -> R.string.achievement_lvl25
-    "lvl50" -> R.string.achievement_lvl50
-    "streak3" -> R.string.achievement_streak3
-    "streak7" -> R.string.achievement_streak7
-    "streak30" -> R.string.achievement_streak30
-    "streak100" -> R.string.achievement_streak100
-    "crit1" -> R.string.achievement_crit1
-    "crit25" -> R.string.achievement_crit25
-    "gate_first" -> R.string.achievement_gate_first
-    "gate_hours10" -> R.string.achievement_gate_hours10
-    "gate_hours100" -> R.string.achievement_gate_hours100
-    "verified10" -> R.string.achievement_verified10
-    "verified100" -> R.string.achievement_verified100
-    "redeemed" -> R.string.achievement_redeemed
-    "balanced" -> R.string.achievement_balanced
-    "str20" -> R.string.achievement_str20
-    "int20" -> R.string.achievement_int20
-    "wil20" -> R.string.achievement_wil20
-    "vit20" -> R.string.achievement_vit20
-    "cha20" -> R.string.achievement_cha20
-    "rank_d" -> R.string.achievement_rank_d
-    "rank_c" -> R.string.achievement_rank_c
-    "rank_b" -> R.string.achievement_rank_b
-    "rank_a" -> R.string.achievement_rank_a
-    "rank_s" -> R.string.achievement_rank_s
-    "early_bird" -> R.string.achievement_early_bird
-    "night_owl" -> R.string.achievement_night_owl
-    "collector" -> R.string.achievement_collector
-    "reforged" -> R.string.achievement_reforged
-    "never_twice" -> R.string.achievement_never_twice
-    "review1" -> R.string.achievement_review1
-    "review4" -> R.string.achievement_review4
-    "review12" -> R.string.achievement_review12
-    "focus_streak7" -> R.string.achievement_focus_streak7
-    "focus_streak30" -> R.string.achievement_focus_streak30
-    "focus_streak100" -> R.string.achievement_focus_streak100
-    "pr1" -> R.string.achievement_pr1
-    "pr25" -> R.string.achievement_pr25
-    "pr100" -> R.string.achievement_pr100
-    "quit_7" -> R.string.achievement_quit_7
-    "quit_30" -> R.string.achievement_quit_30
-    "quit_90" -> R.string.achievement_quit_90
-    "quit_365" -> R.string.achievement_quit_365
-    "dungeon_first" -> R.string.achievement_dungeon_first
-    "dungeon_7" -> R.string.achievement_dungeon_7
-    "program_steady_30" -> R.string.achievement_program_steady_30
-    "program_groundwork_66" -> R.string.achievement_program_groundwork_66
-    "program_ironclad_75" -> R.string.achievement_program_ironclad_75
-    else -> null
-}
-
 @Composable
 @ReadOnlyComposable
 fun Stat.label(): String = lexString(nameRes())
@@ -267,25 +116,10 @@ fun formatMultiplier(value: Double, fixed: Boolean): String {
     return format.format(value)
 }
 
-/** Vault item display name (GD §9.2); null for an id this build doesn't know. */
+/** Store item display name (GD §9.2); null for an id this build doesn't know. */
 @StringRes
 fun shopItemNameRes(itemId: String): Int? = when (itemId) {
     "streak_shield" -> R.string.shop_streak_shield
-    "theme_crimson_gate" -> R.string.shop_theme_crimson_gate
-    "theme_abyssal_violet" -> R.string.shop_theme_abyssal_violet
-    "theme_sovereign_gold" -> R.string.shop_theme_sovereign_gold
-    "frame_iron" -> R.string.shop_frame_iron
-    "frame_ember" -> R.string.shop_frame_ember
-    "frame_umbral" -> R.string.shop_frame_umbral
-    "frame_regal" -> R.string.shop_frame_regal
-    "sigil_blade" -> R.string.shop_sigil_blade
-    "sigil_flame" -> R.string.shop_sigil_flame
-    "sigil_eye" -> R.string.shop_sigil_eye
-    "sigil_wolf" -> R.string.shop_sigil_wolf
-    "sigil_crown" -> R.string.shop_sigil_crown
-    "sigil_hourglass" -> R.string.shop_sigil_hourglass
-    "sigil_star" -> R.string.shop_sigil_star
-    "sigil_gate" -> R.string.shop_sigil_gate
     else -> null
 }
 
@@ -311,20 +145,3 @@ fun injuryTagNameRes(tag: String): Int? = when (tag) {
     else -> null
 }
 
-/** The words after "Someone who" for an identity id (GD §14.7); null for an id this build doesn't know. */
-@StringRes
-fun identityPhraseRes(id: String): Int? = when (id) {
-    "trains" -> R.string.identity_trains
-    "runs" -> R.string.identity_runs
-    "reads" -> R.string.identity_reads
-    "ships" -> R.string.identity_ships
-    "learns" -> R.string.identity_learns
-    "focuses" -> R.string.identity_focuses
-    "keeps_promises" -> R.string.identity_keeps_promises
-    "meditates" -> R.string.identity_meditates
-    "sleeps_well" -> R.string.identity_sleeps_well
-    "eats_well" -> R.string.identity_eats_well
-    "stays_in_touch" -> R.string.identity_stays_in_touch
-    "speaks_up" -> R.string.identity_speaks_up
-    else -> null
-}

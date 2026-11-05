@@ -38,7 +38,7 @@ object TemplateFixtures {
         id = id,
         stat = stat,
         secondaryStat = null,
-        titles = listOf("$id A", "$id B", "$id C"),
+        title = "Do {n} $id",
         description = "Do {target} things.",
         unit = "reps",
         targets = mapOf(Difficulty.EASY to 10, Difficulty.NORMAL to 20, Difficulty.HARD to 40, Difficulty.EXTREME to 60),

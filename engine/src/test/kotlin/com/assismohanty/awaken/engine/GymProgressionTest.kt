@@ -99,13 +99,6 @@ class GymProgressionTest {
     }
 
     @Test
-    fun `event count walks the sessions oldest first and the first session scores nothing`() {
-        val sessions = listOf(sets(50.0, 10), sets(55.0, 10), sets(55.0, 10))
-        // Session 2 beats session 1 on heaviest, e1RM and volume; session 3 only ties.
-        assertThat(RecordRules.eventCount(sessions)).isEqualTo(3)
-    }
-
-    @Test
     fun `vector 111 - kg plates`() {
         val setup = PlateMath.defaults(PlateUnit.KG)
         assertThat(PlateMath.plan(100.0, setup)).isEqualTo(PlatePlan.Exact(listOf(25.0, 15.0)))
@@ -153,13 +146,4 @@ class GymProgressionTest {
         assertThat(ExerciseHistory.series(sessions, HistoryMetric.TOP_WEIGHT, HistoryRange.ALL, today)).hasSize(3)
     }
 
-    @Test
-    fun `new achievements pay gold only and unlock at 1, 25 and 100 record events`() {
-        val byId = AchievementEvaluator.byId
-        assertThat(listOf("pr1", "pr25", "pr100").map { byId.getValue(it).gold }).containsExactly(10, 50, 150).inOrder()
-        val unlocked = { n: Int -> AchievementEvaluator.all.filter { it.id.startsWith("pr") && it.condition(AchievementSnapshot(prEvents = n)) }.map { it.id } }
-        assertThat(unlocked(0)).isEmpty()
-        assertThat(unlocked(1)).containsExactly("pr1")
-        assertThat(unlocked(100)).containsExactly("pr1", "pr25", "pr100")
-    }
 }

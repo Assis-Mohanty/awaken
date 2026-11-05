@@ -21,14 +21,12 @@ import com.assismohanty.awaken.core.data.repo.UiPrefs
 import com.assismohanty.awaken.core.data.repo.UiPrefsRepository
 import com.assismohanty.awaken.core.designsystem.components.ReelBubble
 import com.assismohanty.awaken.core.designsystem.components.ReelBubbleSize
-import com.assismohanty.awaken.core.designsystem.lexicon.PresentationMode
 import com.assismohanty.awaken.core.designsystem.theme.AwakenTheme
 import com.assismohanty.awaken.feature.reelcounter.ReelNudgeContent
 import com.assismohanty.awaken.feature.reelcounter.ReelPanelContent
 import com.assismohanty.awaken.feature.reelcounter.ReelPanelRow
 import com.assismohanty.awaken.reelcounter.core.ShortVideoApp
 import com.assismohanty.awaken.reelcounter.core.count.CounterConfig
-import com.assismohanty.awaken.reelcounter.core.lumi.lumiStage
 import com.assismohanty.awaken.reelcounter.core.stats.StatsCalculator
 import com.assismohanty.awaken.reelcounter.core.time.GameDay
 import com.assismohanty.awaken.reelcounter.core.time.ReelClock
@@ -72,7 +70,7 @@ class ReelOverlayWindows @Inject constructor(
 
     private data class Bubble(val app: ShortVideoApp, val sessionId: Long, val count: Int, val allowance: Int?)
     private data class Nudge(val app: ShortVideoApp, val count: Int, val allowance: Int?, val snoozesLeft: Int)
-    private data class Look(val dark: Boolean, val presentation: PresentationMode, val reduceMotion: Boolean)
+    private data class Look(val dark: Boolean, val reduceMotion: Boolean)
 
     private var service: AccessibilityService? = null
     private var actions: ReelOverlayActions? = null
@@ -85,9 +83,9 @@ class ReelOverlayWindows @Inject constructor(
     private var nudge by mutableStateOf<Nudge?>(null)
     private var panelRows by mutableStateOf<List<ReelPanelRow>>(emptyList())
 
-    /** Today's total across every app and the combined limit: what Lumi follows (the bubble's own count may run ahead of it). */
-    private var lumiToday by mutableStateOf<ReelLumi?>(null)
-    private var look by mutableStateOf(Look(dark = true, presentation = PresentationMode.CLEAN, reduceMotion = false))
+    /** Today's total across every app (the bubble's own count may run ahead of it). */
+    private var reelsToday by mutableStateOf<Int?>(null)
+    private var look by mutableStateOf(Look(dark = true, reduceMotion = false))
 
     private var placement = BubblePlacement(BubbleEdge.CENTER, SettingsStore.DEFAULT_BUBBLE_Y)
     private var bubbleEnabled = true
@@ -104,7 +102,7 @@ class ReelOverlayWindows @Inject constructor(
         val s = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
         scope = s
         prefsRepository.prefs.onEach { look = it.toLook(service) }.launchIn(s)
-        reelData.observeLumi().onEach { lumiToday = it }.launchIn(s)
+        reelData.observe().onEach { reelsToday = it }.launchIn(s)
         settings.bubbleEnabled.onEach {
             bubbleEnabled = it
             if (!it) closeBubbleAndPanel() else bubble?.let { _ -> ensureBubbleWindow() }
@@ -186,7 +184,7 @@ class ReelOverlayWindows @Inject constructor(
 
     @Composable
     private fun Themed(content: @Composable () -> Unit) {
-        AwakenTheme(darkTheme = look.dark, presentation = look.presentation, reduceMotion = look.reduceMotion, content = content)
+        AwakenTheme(darkTheme = look.dark, reduceMotion = look.reduceMotion, content = content)
     }
 
     // --- bubble ---
@@ -226,10 +224,9 @@ class ReelOverlayWindows @Inject constructor(
             if (current != null) {
                 Themed {
                     // The service counts first and the database follows, so never show less than the app's own count.
-                    val total = maxOf(lumiToday?.total ?: 0, current.count)
+                    val total = maxOf(reelsToday ?: 0, current.count)
                     ReelBubble(
                         count = total,
-                        lumi = lumiStage(total, lumiToday?.limit),
                         over = current.allowance != null && current.count >= current.allowance,
                         modifier = Modifier.bubbleGestures(),
                     )
@@ -350,7 +347,7 @@ class ReelOverlayWindows @Inject constructor(
             ThemeMode.SYSTEM ->
                 service.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK == Configuration.UI_MODE_NIGHT_YES
         }
-        return Look(dark, presentationMode ?: PresentationMode.CLEAN, reduceMotion)
+        return Look(dark, reduceMotion)
     }
 
     private companion object {

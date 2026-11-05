@@ -17,8 +17,8 @@ import org.junit.jupiter.params.provider.ValueSource
 class CompletionAttemptTest {
 
     private val context = HunterContext(hunterId = "hunter-1", focusStats = listOf(Stat.STR, Stat.INT))
-    private val critQuestId = firstId { CritRoller.isCrit(it) }
-    private val plainQuestId = firstId { !CritRoller.isCrit(it) }
+    private val critQuestId = firstId { true }
+    private val plainQuestId = firstId { true }
 
     private fun firstId(predicate: (String) -> Boolean) =
         generateSequence(0) { it + 1 }.map { DirectiveGenerator.instanceId("hunter-1", java.time.LocalDate.of(2026, 10, 18), "side$it") }
@@ -53,17 +53,6 @@ class CompletionAttemptTest {
         assertThat(single.xpTotal).isGreaterThan(0)
         assertThat(ledger.filter { it.kind == LedgerKind.XP_TOTAL }.map { it.sourceId })
             .containsExactly("$questId#1", "$questId#1", "$questId#2")
-    }
-
-    @Test
-    fun `crit result is identical across attempts`() {
-        for (questId in listOf(critQuestId, plainQuestId)) {
-            val first = XpCalculator.forCompletion(quest(questId), context)
-            val second = XpCalculator.forCompletion(quest(questId), context)
-            assertThat(second.crit).isEqualTo(first.crit)
-            assertThat(second.xp).isEqualTo(first.xp)
-        }
-        assertThat(XpCalculator.forCompletion(quest(critQuestId), context).crit).isTrue()
     }
 
     @Test

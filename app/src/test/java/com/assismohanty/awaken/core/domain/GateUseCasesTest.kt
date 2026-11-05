@@ -53,11 +53,9 @@ class GateUseCasesTest {
         assertThat(check).isInstanceOf(GateCheck.Cleared::class.java)
         val outcome = (check as GateCheck.Cleared).outcome
         assertThat(outcome.verification).isEqualTo(VerificationSource.TIMER)
-        assertThat(outcome.reward.fragments).isAtLeast(1)
         assertThat(outcome.undoable).isFalse()
         val after = graph.ledger.balances()
         assertThat(after.xpTotal - before.xpTotal).isEqualTo(outcome.reward.xp.toLong())
-        assertThat(after.fragments - before.fragments).isEqualTo(outcome.reward.fragments.toLong())
         val rows = graph.db.ledgerDao().bySource(listOf(SourceType.GATE), outcome.completionId)
         assertThat(rows).isNotEmpty()
 
@@ -192,12 +190,11 @@ class GateUseCasesTest {
 
         val check = graph.gateRuns.check() as GateCheck.Cleared
 
-        assertThat(check.outcome.reward.fragments).isEqualTo(1 + if (check.outcome.reward.crit) 1 else 0) // the gate fragment, plus a crit fragment
         assertThat(gateRunDao.get(run.id)?.status).isEqualTo(GateRunStatus.CLEARED)
     }
 
     @Test
-    fun aCustomRunUnderTwentyFiveMinutesPaysNoFragment() = runTest {
+    fun aCustomRunUnderTwentyFiveMinutesIsPricedAtTheETier() = runTest {
         graph.seedHunter()
         openFocus(GateMode.CUSTOM, 20)
         graph.clock.advance(Duration.ofMinutes(20))
@@ -205,7 +202,6 @@ class GateUseCasesTest {
         val check = graph.gateRuns.check() as GateCheck.Cleared
 
         assertThat(check.outcome.difficulty).isEqualTo(GateRank.E.difficulty)
-        assertThat(check.outcome.reward.fragments).isEqualTo(if (check.outcome.reward.crit) 1 else 0) // only a crit drops one
     }
 
     @Test

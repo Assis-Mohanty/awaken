@@ -9,7 +9,8 @@ data class QuestTemplate(
     val id: String,
     val stat: Stat,
     val secondaryStat: Stat? = null,
-    val titles: List<String>,
+    /** A [TitlePattern]: one title per template, rendered with the target at generation (GD §6.2). */
+    val title: String,
     val description: String,
     val unit: String,
     val targets: Map<Difficulty, Int>,
@@ -21,7 +22,7 @@ data class QuestTemplate(
     val timeOfDay: TimeOfDay? = null,
 ) {
     init {
-        require(titles.isNotEmpty()) { "template $id has no titles" }
+        require(title.isNotBlank()) { "template $id has no title" }
         require(targets.isNotEmpty()) { "template $id has no targets" }
     }
 }
@@ -105,7 +106,11 @@ data class HunterContext(
 /** One factor of the explainable XP formula (GD §1 pillar 4). The UI localises [kind]. */
 @Serializable
 data class BreakdownItem(val kind: Kind, val value: Double) {
-    enum class Kind { BASE, DIFFICULTY, STREAK, VERIFICATION, CRIT, DAILY_CAP }
+    enum class Kind { BASE, DIFFICULTY, STREAK, VERIFICATION, DAILY_CAP,
+
+        /** Historic: ledger rows written before critical hits were removed still carry this kind in `breakdown_json`. */
+        CRIT,
+    }
 }
 
 /** The full result of completing one quest (GD §4, §9.1). */
@@ -113,9 +118,7 @@ data class QuestReward(
     val xp: Int,
     val statXp: Map<Stat, Int>,
     val gold: Int,
-    val crit: Boolean,
     /** Non-null when the daily cap for this source reduced the reward. */
     val cappedSource: VerificationSource?,
-    val fragments: Int,
     val breakdown: List<BreakdownItem>,
 )

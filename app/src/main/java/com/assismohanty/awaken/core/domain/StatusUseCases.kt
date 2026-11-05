@@ -1,18 +1,13 @@
 package com.assismohanty.awaken.core.domain
 
-import com.assismohanty.awaken.core.data.db.dao.AchievementDao
 import com.assismohanty.awaken.core.data.db.dao.CompletionDao
 import com.assismohanty.awaken.core.data.db.dao.DayRecordDao
 import com.assismohanty.awaken.core.data.db.dao.HunterDao
 import com.assismohanty.awaken.core.data.db.dao.InsightDao
-import com.assismohanty.awaken.core.data.db.dao.RecapDao
 import com.assismohanty.awaken.core.data.db.dao.WeeklyReviewDao
 import com.assismohanty.awaken.core.data.db.dao.LedgerDao
 import com.assismohanty.awaken.core.data.db.dao.QuestDao
 import com.assismohanty.awaken.core.data.db.dao.StatTotal
-import com.assismohanty.awaken.core.data.repo.Chapter
-import com.assismohanty.awaken.core.data.repo.NarrativeRepository
-import com.assismohanty.awaken.engine.AchievementEvaluator
 import com.assismohanty.awaken.engine.Consistency
 import com.assismohanty.awaken.engine.ConsistencyScore
 import com.assismohanty.awaken.engine.DayOutcome
@@ -36,10 +31,6 @@ import kotlinx.coroutines.flow.map
 
 data class StatProgress(val stat: Stat, val level: Int, val xp: Long, val xpIntoLevel: Long, val xpForLevel: Long)
 
-data class AchievementEntry(val id: String, val gold: Int, val titleId: String?, val unlocked: Boolean)
-
-data class ChapterEntry(val chapter: Chapter, val unlocked: Boolean)
-
 data class HeatmapEntry(val date: LocalDate, val completions: Int, val intensity: Int, val restDay: Boolean)
 
 /** Everything Status shows (PRD F12, F16), derived from rows; the screen does no game math. */
@@ -50,21 +41,15 @@ data class StatusModel(
     val lastWeekLevels: Map<Stat, Int>,
     val radarMax: Int,
     val heatmap: List<HeatmapEntry>,
-    val achievements: List<AchievementEntry>,
-    val chapters: List<ChapterEntry>,
     val weeklyReport: WeeklyReport,
     /** What recalibration would do if the week ended now (GD §6.4): only changed stats. */
     val projectedRecalibration: Map<Stat, DifficultyAdapter.Change>,
     /** Cleared of eligible days over the last 28 (GD §14.2), next to the heatmap. */
     val consistency: ConsistencyScore = ConsistencyScore(0, 0),
-    /** Identity ids in pick order (GD §14.7), shown under the name. */
-    val identityIds: List<String> = emptyList(),
     /** This week's personal insights (GD §14.3). */
     val insights: InsightsModel = InsightsModel(),
     /** The weekly review can be done now (GD §14.4). */
     val reviewOpen: Boolean = false,
-    /** Stored recaps, newest first (GD §14.6: reopenable from Status). */
-    val recaps: List<RecapEntry> = emptyList(),
 )
 
 private data class WeekRows(
@@ -73,7 +58,6 @@ private data class WeekRows(
     val xpPerDay: Map<LocalDate, Long>,
     val completionsPerDay: Map<LocalDate, Int>,
     val restDays: Set<LocalDate>,
-    val unlocked: Set<String>,
     val outcomes: Map<LocalDate, DayOutcome>,
 )
 
@@ -82,14 +66,11 @@ class ObserveStatusUseCase @Inject constructor(
     private val ledgerDao: LedgerDao,
     private val completionDao: CompletionDao,
     private val dayRecordDao: DayRecordDao,
-    private val achievementDao: AchievementDao,
     private val questDao: QuestDao,
     private val hunterDao: HunterDao,
-    private val narrative: NarrativeRepository,
     private val insightDao: InsightDao,
     private val loadInsights: LoadInsightsUseCase,
     private val weeklyReviewDao: WeeklyReviewDao,
-    private val recapDao: RecapDao,
 ) {
     @OptIn(ExperimentalCoroutinesApi::class)
     operator fun invoke(dayChanges: Flow<Any> = flowOf(Unit)): Flow<StatusModel?> {
@@ -97,12 +78,8 @@ class ObserveStatusUseCase @Inject constructor(
         val rows = hunters.map { it?.gameDate }.distinctUntilChanged().flatMapLatest { today ->
             if (today == null) flowOf(null) else observeRows(today)
         }
-        return combine(hunters, rows, recapDao.observeAll()) { hunter, week, recaps ->
-            if (hunter == null || week == null) {
-                null
-            } else {
-                build(hunter, week).copy(recaps = recaps.mapNotNull { RecapEntry.of(it.periodKey) })
-            }
+        return combine(hunters, rows) { hunter, week ->
+            if (hunter == null || week == null) null else build(hunter, week)
         }
     }
 
@@ -118,20 +95,18 @@ class ObserveStatusUseCase @Inject constructor(
             ledgerRows,
             completionDao.observeCountsPerDay(heatmapStart, week.sunday),
             dayRecordDao.observeRestDays(heatmapStart, week.sunday),
-            achievementDao.observeUnlockedIds(),
             // The Health cache count re-derives insights once a foreground Health refresh lands.
             combine(
                 dayRecordDao.observeDatedOutcomesFrom(today.minusDays(Consistency.WINDOW_DAYS)),
                 insightDao.observeHealthDayCount(),
             ) { outcomes, _ -> outcomes },
-        ) { (before, inWeek, perDay), completions, rest, unlocked, outcomes ->
+        ) { (before, inWeek, perDay), completions, rest, outcomes ->
             WeekRows(
                 statXpBefore = before,
                 statXpWeek = inWeek,
                 xpPerDay = perDay.associate { it.gameDate to it.total },
                 completionsPerDay = completions.associate { it.gameDate to it.total.toInt() },
                 restDays = rest.toSet(),
-                unlocked = unlocked.toSet(),
                 outcomes = outcomes.associate { it.gameDate to it.outcome },
             )
         }
@@ -161,12 +136,9 @@ class ObserveStatusUseCase @Inject constructor(
             lastWeekLevels = lastWeekLevels,
             radarMax = StatusMath.radarMax(hunter.statLevels.values + lastWeekLevels.values),
             heatmap = heatmap,
-            achievements = AchievementEvaluator.all.map { AchievementEntry(it.id, it.gold, it.titleId, it.id in rows.unlocked) },
-            chapters = narrative.chapters().map { ChapterEntry(it, hunter.level >= it.unlockLevel) },
             weeklyReport = StatusMath.weeklyReport(week, rows.statXpWeek.byStat(), rows.xpPerDay, weekCompletions),
             projectedRecalibration = projectRecalibration(week),
             consistency = Consistency.score(rows.outcomes, today, hunterDao.getProfile()?.firstGameDate ?: today),
-            identityIds = hunterDao.getProfile()?.identityIds.orEmpty(),
             insights = hunterDao.getProfile()?.let { loadInsights(it, today) } ?: InsightsModel(),
             reviewOpen = WeeklyReviewRules.isOpen(today, weeklyReviewDao.submittedWeeks().toSet()),
         )
@@ -187,26 +159,3 @@ class ObserveStatusUseCase @Inject constructor(
     }
 }
 
-sealed interface EquipTitleResult {
-    data object Equipped : EquipTitleResult
-    data object Unequipped : EquipTitleResult
-    /** The title's achievement isn't unlocked, or the id is unknown. */
-    data object Locked : EquipTitleResult
-}
-
-/** Equips a title earned from an unlocked achievement (GD §10); null unequips. Profile state, not the ledger. */
-class EquipTitleUseCase @Inject constructor(
-    private val hunterDao: HunterDao,
-    private val achievementDao: AchievementDao,
-) {
-    suspend operator fun invoke(titleId: String?): EquipTitleResult {
-        if (titleId == null) {
-            hunterDao.setEquippedTitle(null)
-            return EquipTitleResult.Unequipped
-        }
-        val achievement = AchievementEvaluator.all.firstOrNull { it.titleId == titleId } ?: return EquipTitleResult.Locked
-        if (achievement.id !in achievementDao.unlockedIds()) return EquipTitleResult.Locked
-        hunterDao.setEquippedTitle(titleId)
-        return EquipTitleResult.Equipped
-    }
-}

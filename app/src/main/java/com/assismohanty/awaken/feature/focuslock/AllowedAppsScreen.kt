@@ -16,7 +16,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.assismohanty.awaken.R
-import com.assismohanty.awaken.core.designsystem.components.GateBackground
+import com.assismohanty.awaken.core.designsystem.components.ScreenBackground
 import com.assismohanty.awaken.core.designsystem.components.LargeTitleScaffold
 import com.assismohanty.awaken.core.designsystem.components.SystemWindow
 import com.assismohanty.awaken.core.designsystem.lexicon.lexString
@@ -36,7 +36,7 @@ fun AllowedAppsRoute(onBack: () -> Unit, modifier: Modifier = Modifier, viewMode
 fun AllowedAppsScreen(state: AllowedAppsUiState, onEvent: (AllowedAppsEvent) -> Unit, onBack: () -> Unit, modifier: Modifier = Modifier) {
     val colors = AwakenTheme.colors
     val type = AwakenTheme.type
-    GateBackground(rank = Rank.E, modifier = modifier) {
+    ScreenBackground(modifier = modifier) {
         LargeTitleScaffold(title = lexString(R.string.focus_lock_allowed_title), onBack = onBack) {
             Text(lexString(R.string.focus_lock_allowed_intro), style = type.caption, color = colors.textSecondary)
             OutlinedTextField(

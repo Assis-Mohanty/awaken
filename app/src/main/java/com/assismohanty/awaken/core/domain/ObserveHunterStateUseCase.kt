@@ -35,17 +35,12 @@ data class HunterState(
     /** The band the level is in; when above [rank], a Rank Trial is waiting. */
     val band: Rank,
     val gold: Long,
-    val fragments: Long,
     val shields: Long,
     val statXp: Map<Stat, Long>,
     val statLevels: Map<Stat, Int>,
     val streak: Int,
     val bestStreak: Int,
     val todayCleared: Boolean,
-    /** Equipped title id (GD §10); display text is resolved in the UI. */
-    val equippedTitleId: String? = null,
-    val equippedFrameId: String? = null,
-    val equippedSigilId: String? = null,
 )
 
 class ObserveHunterStateUseCase @Inject constructor(
@@ -87,16 +82,12 @@ class ObserveHunterStateUseCase @Inject constructor(
                     rank = RankRules.currentRank(passed.toSet()),
                     band = RankRules.bandFor(progress.level),
                     gold = balances.gold,
-                    fragments = balances.fragments,
                     shields = balances.item(LedgerRepository.STREAK_SHIELD_ITEM_ID),
                     statXp = statXp,
                     statLevels = statXp.mapValues { (_, xp) -> StatLevel.level(xp) },
                     streak = displayStreak,
                     bestStreak = maxOf(best, displayStreak),
                     todayCleared = todayCleared,
-                    equippedTitleId = profile.equippedTitleId,
-                    equippedFrameId = profile.equippedFrameId,
-                    equippedSigilId = profile.equippedSigilId,
                 )
             }
         }

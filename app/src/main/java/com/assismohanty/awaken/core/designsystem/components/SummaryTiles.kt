@@ -29,8 +29,6 @@ import com.assismohanty.awaken.core.designsystem.preview.PhonePreviews
 import com.assismohanty.awaken.core.designsystem.theme.AwakenTheme
 import com.assismohanty.awaken.core.designsystem.theme.Spacing
 import com.assismohanty.awaken.engine.model.Stat
-import com.assismohanty.awaken.reelcounter.core.lumi.LumiState
-import com.assismohanty.awaken.reelcounter.core.lumi.lumiStage
 import java.text.NumberFormat
 
 /** What the Today screen-time tile shows. Never 0 min for something it couldn't read. */
@@ -222,14 +220,11 @@ private fun SummaryTilesPreview() {
 
 /** Reel Counter's tile on Today: reels watched so far today. Only shown while the feature is switched on. */
 @Composable
-fun ReelsTile(total: Int, lumi: LumiState, onClick: () -> Unit, modifier: Modifier = Modifier) {
+fun ReelsTile(total: Int, onClick: () -> Unit, modifier: Modifier = Modifier) {
     val colors = AwakenTheme.colors
     AwakenCard(modifier = modifier, reveal = false, onClick = onClick) {
         CardLabel(lexString(R.string.tile_reels), AwakenGlyphs.Phone, colors.textPrimary)
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
-            Text(total.toString(), style = AwakenTheme.type.numeric, color = colors.textPrimary)
-            LumiView(state = lumi, size = LumiSizes.Tile, reelsToday = total)
-        }
+        Text(total.toString(), style = AwakenTheme.type.numeric, color = colors.textPrimary)
         TileNote(lexString(R.string.tile_reels_note))
     }
 }
@@ -237,5 +232,5 @@ fun ReelsTile(total: Int, lumi: LumiState, onClick: () -> Unit, modifier: Modifi
 @ComponentPreview
 @Composable
 private fun ReelsTilePreview() {
-    AwakenTheme(reduceMotion = true) { ReelsTile(total = 38, lumi = lumiStage(38, null), onClick = {}, modifier = Modifier.fillMaxWidth()) }
+    AwakenTheme(reduceMotion = true) { ReelsTile(total = 38, onClick = {}, modifier = Modifier.fillMaxWidth()) }
 }

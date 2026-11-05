@@ -64,11 +64,8 @@ enum class QuestType {
     /** Verified phone-down night (GD §16.12): belongs to the wake day, paid after the window if the phone stayed down. Not generated, no reroll. */
     BEDTIME,
 
-    /** One stage of an entered Dungeon (GD §16.14): Hard, in the chosen stat, one per game-day. Not generated, no reroll. */
+    /** Historic: Dungeon stages (removed 2026-11-03). Old quest rows keep this type; nothing creates it any more. */
     DUNGEON;
-
-    /** Penalty quests and Rank Trial stages cannot crit (GD §4.2). */
-    val canCrit: Boolean get() = this != PENALTY && this != TRIAL
 
     /** Main + side quests are "generated" (GD §6.4, §6.5). PATH is not: Path quests follow §6.6 (carry-over, own signal). */
     val isGenerated: Boolean get() = this == MAIN || this == SIDE

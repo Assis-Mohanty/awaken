@@ -1,6 +1,5 @@
 package com.assismohanty.awaken.feature.quest
 
-import com.assismohanty.awaken.core.designsystem.lexicon.PresentationMode
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -20,7 +19,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.shadows.ShadowLooper
 
-/** GD §7.3: the SYSTEM WARNING shows once for a failed day, and acknowledging it clears the notice. */
+/** GD §7.3: the missed-day notice is delivered once as a calm message, and delivering it clears the notice. */
 @RunWith(AndroidJUnit4::class)
 class PenaltyZoneTest {
     @get:Rule
@@ -32,24 +31,14 @@ class PenaltyZoneTest {
     fun tearDown() = graph.close()
 
     @Test
-    fun penaltyWarningShowsOnceAndIsAcknowledged() {
+    fun penaltyNoticeIsDeliveredOnce() {
         runBlocking { graph.notices.add(listOf(Notice.PenaltyWarning("2026-10-18"))) }
-        val viewModel = RewardHostViewModel(graph.completionCenter, graph.notices, graph.narrative, graph.notificationAccess, graph.uiPrefs, graph.submitFeedback)
+        val viewModel = RewardHostViewModel(graph.completionCenter, graph.notices, graph.notificationAccess, graph.uiPrefs, graph.submitFeedback)
         composeRule.setContent {
-            AwakenTheme(presentation = PresentationMode.SYSTEM) { RewardHost(snackbarHostState = remember { SnackbarHostState() }, viewModel = viewModel) }
+            AwakenTheme { RewardHost(snackbarHostState = remember { SnackbarHostState() }, viewModel = viewModel) }
         }
 
-        composeRule.waitUntil(timeoutMillis = 5_000) {
-            ShadowLooper.idleMainLooper()
-            composeRule.onAllNodesWithText("SYSTEM WARNING").fetchSemanticsNodes().isNotEmpty()
-        }
-        composeRule.onNodeWithText("Face it").performClick()
-
-        composeRule.waitUntil(timeoutMillis = 5_000) {
-            ShadowLooper.idleMainLooper()
-            composeRule.onAllNodesWithText("SYSTEM WARNING").fetchSemanticsNodes().isEmpty()
-        }
-        // The acknowledgement is written asynchronously; wait for it instead of racing it.
+        // The notice leaves the store asynchronously; wait for it instead of racing it.
         composeRule.waitUntil(timeoutMillis = 5_000) {
             ShadowLooper.idleMainLooper()
             runBlocking { graph.notices.pending.first() }.isEmpty()

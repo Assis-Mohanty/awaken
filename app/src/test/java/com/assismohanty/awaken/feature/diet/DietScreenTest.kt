@@ -1,6 +1,5 @@
 package com.assismohanty.awaken.feature.diet
 
-import com.assismohanty.awaken.core.designsystem.lexicon.PresentationMode
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -43,7 +42,7 @@ class DietScreenTest {
     fun setupThenLogAFood() {
         val viewModel = DietViewModel(graph.diet)
         composeRule.setContent {
-            AwakenTheme(reduceMotion = true, presentation = PresentationMode.SYSTEM) {
+            AwakenTheme(reduceMotion = true) {
                 val state by viewModel.uiState.collectAsState()
                 DietScreen(state = state, onEvent = viewModel::onEvent)
             }

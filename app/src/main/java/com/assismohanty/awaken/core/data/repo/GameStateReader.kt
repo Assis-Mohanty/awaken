@@ -1,31 +1,18 @@
 package com.assismohanty.awaken.core.data.repo
 
-import com.assismohanty.awaken.core.data.clock.Clock
-import com.assismohanty.awaken.core.data.db.dao.AchievementDao
-import com.assismohanty.awaken.core.data.db.dao.CampaignDao
 import com.assismohanty.awaken.core.data.db.dao.CompletionDao
 import com.assismohanty.awaken.core.data.db.dao.DayRecordDao
-import com.assismohanty.awaken.core.data.db.dao.GateRunDao
 import com.assismohanty.awaken.core.data.db.dao.HunterDao
 import com.assismohanty.awaken.core.data.db.dao.LedgerDao
 import com.assismohanty.awaken.core.data.db.dao.QuestDao
-import com.assismohanty.awaken.core.data.db.dao.TrialDao
-import com.assismohanty.awaken.core.data.db.dao.WeeklyReviewDao
 import com.assismohanty.awaken.core.data.db.entity.HunterProfileEntity
 import com.assismohanty.awaken.core.data.health.HealthGateway
-import com.assismohanty.awaken.engine.AchievementEvaluator
-import com.assismohanty.awaken.engine.AchievementSnapshot
-import com.assismohanty.awaken.engine.Consistency
 import com.assismohanty.awaken.engine.DirectiveGenerator
 import com.assismohanty.awaken.engine.StreakRules
-import com.assismohanty.awaken.engine.model.Balances
 import com.assismohanty.awaken.engine.model.HunterContext
-import com.assismohanty.awaken.engine.model.QuestType
 import com.assismohanty.awaken.engine.model.Stat
 import com.assismohanty.awaken.engine.model.VerificationSource
 import java.time.LocalDate
-import java.time.Instant
-import java.time.LocalTime
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -39,13 +26,7 @@ class GameStateReader @Inject constructor(
     private val completionDao: CompletionDao,
     private val ledgerDao: LedgerDao,
     private val dayRecordDao: DayRecordDao,
-    private val gateRunDao: GateRunDao,
-    private val trialDao: TrialDao,
-    private val achievementDao: AchievementDao,
-    private val clock: Clock,
     private val healthGateway: HealthGateway,
-    private val campaignDao: CampaignDao,
-    private val weeklyReviewDao: WeeklyReviewDao,
 ) {
     /** Streak over finalized days only (ENGINE_DECISIONS #2, #23). */
     suspend fun finalizedStreak(): StreakSummary {
@@ -76,45 +57,4 @@ class GameStateReader @Inject constructor(
     /** Last game-date each stat had a (non-undone) completion. */
     suspend fun lastActiveDates(): Map<Stat, LocalDate> = completionDao.lastActivePerStat().associate { it.stat to it.gameDate }
 
-    suspend fun achievementSnapshot(
-        profile: HunterProfileEntity,
-        level: Int,
-        balances: Balances,
-        bestStreak: Int,
-    ): AchievementSnapshot {
-        val completions = completionDao.allActive()
-        val gates = gateRunDao.cleared()
-        val zone = clock.zone()
-        fun Instant.localTime(): LocalTime = atZone(zone).toLocalTime()
-        return AchievementSnapshot(
-            questsCompleted = completions.size,
-            onboardingDone = profile.onboardingDone,
-            level = level,
-            bestStreak = bestStreak,
-            crits = completions.count { it.crit },
-            gatesCleared = gates.size,
-            gateMinutesCleared = gates.sumOf { it.plannedSec.toLong() } / SECONDS_PER_MINUTE,
-            healthVerifiedCompleted = completions.count { it.verificationSource == VerificationSource.HEALTH },
-            comebacks = completions.count { it.questType == QuestType.PENALTY },
-            statXp = Stat.entries.associateWith { balances.statXp(it) },
-            passedTrials = trialDao.passedRanks().toSet(),
-            dawnRaidDays = completions
-                .filter { AchievementEvaluator.isDawnRaid(it.completedAt.localTime(), profile.dayStartHour) }
-                .map { it.gameDate }
-                .distinct()
-                .size,
-            midnightGates = gates.count { gate ->
-                gate.endedAt?.let { AchievementEvaluator.isMidnightGate(it.localTime(), profile.dayStartHour) } == true
-            },
-            cachesOpened = ledgerDao.cachesOpened(),
-            campaignsCompleted = campaignDao.countCompleted(),
-            recoveries = Consistency.recoveries(dayRecordDao.finalizedOutcomes()),
-            reviewsSubmitted = weeklyReviewDao.count(),
-            alreadyUnlocked = achievementDao.unlockedIds().toSet(),
-        )
-    }
-
-    private companion object {
-        const val SECONDS_PER_MINUTE = 60L
-    }
 }

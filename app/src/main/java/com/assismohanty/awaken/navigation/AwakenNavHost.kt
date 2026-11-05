@@ -1,6 +1,7 @@
 package com.assismohanty.awaken.navigation
 
 import com.assismohanty.awaken.core.designsystem.lexicon.lexString
+import com.assismohanty.awaken.core.domain.AiFeature
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -28,14 +29,13 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.assismohanty.awaken.core.designsystem.components.FloatingNavBar
-import com.assismohanty.awaken.core.designsystem.components.GateBackground
+import com.assismohanty.awaken.core.designsystem.components.ScreenBackground
 import com.assismohanty.awaken.core.designsystem.components.NavBarItem
 import com.assismohanty.awaken.core.designsystem.theme.AwakenTheme
 import com.assismohanty.awaken.debug.DebugEntry
 import com.assismohanty.awaken.engine.model.Rank
 import com.assismohanty.awaken.feature.diet.DietRoute as DietEntry
 import com.assismohanty.awaken.feature.gate.GatesEntry
-import com.assismohanty.awaken.feature.gate.CrystalGalleryRoute as CrystalGalleryEntry
 import com.assismohanty.awaken.feature.gym.GymRoute as GymEntry
 import com.assismohanty.awaken.feature.onboarding.OnboardingRoute as OnboardingEntry
 import com.assismohanty.awaken.feature.paths.PathDetailRoute as PathDetailEntry
@@ -43,7 +43,6 @@ import com.assismohanty.awaken.feature.paths.PathsRoute as PathsEntry
 import com.assismohanty.awaken.feature.quest.QuestDetailRoute as QuestDetailEntry
 import com.assismohanty.awaken.feature.quest.RewardHost
 import com.assismohanty.awaken.feature.health.HealthRoute as HealthEntry
-import com.assismohanty.awaken.feature.campaign.CampaignRoute as CampaignEntry
 import com.assismohanty.awaken.feature.focus.FocusReportRoute as FocusReportEntry
 import com.assismohanty.awaken.feature.focuslock.AllowedAppsRoute as AllowedAppsEntry
 import com.assismohanty.awaken.feature.focuslock.FocusLockSetupRoute as FocusLockSetupEntry
@@ -54,14 +53,12 @@ import com.assismohanty.awaken.feature.reelcounter.ReelLimitsRoute as ReelLimits
 import com.assismohanty.awaken.feature.reelcounter.ReelStatsRoute as ReelStatsEntry
 import com.assismohanty.awaken.feature.screentime.ScreenTimeRoute as ScreenTimeEntry
 import com.assismohanty.awaken.feature.quit.QuitRoute as QuitEntry
-import com.assismohanty.awaken.feature.dungeon.DungeonRoute as DungeonEntry
 import com.assismohanty.awaken.feature.program.ProgramsRoute as ProgramsEntry
 import com.assismohanty.awaken.feature.today.WindDownRoute as WindDownEntry
 import com.assismohanty.awaken.feature.settings.SettingsRoute as SettingsEntry
 import com.assismohanty.awaken.feature.status.StatusRoute as StatusEntry
 import com.assismohanty.awaken.feature.today.TodayRoute as TodayEntry
 import com.assismohanty.awaken.feature.review.ReviewRoute as ReviewEntry
-import com.assismohanty.awaken.feature.recap.RecapRoute as RecapEntry
 import com.assismohanty.awaken.feature.trial.TrialDetailRoute as TrialDetailEntry
 import com.assismohanty.awaken.feature.vault.VaultRoute as VaultEntry
 
@@ -84,7 +81,7 @@ fun AwakenNavHost(
     when (val state = launch) {
         // One frame of void while Room answers; no spinner for a local read.
         LaunchState.Loading -> Box(modifier = modifier.fillMaxSize().background(AwakenTheme.palette.void))
-        LaunchState.NeedsOnboarding -> GateBackground(rank = Rank.E, modifier = modifier) { OnboardingEntry() }
+        LaunchState.NeedsOnboarding -> ScreenBackground(modifier = modifier) { OnboardingEntry() }
         is LaunchState.Ready -> MainScaffold(
             rank = state.rank,
             openTodayRequests = openTodayRequests,
@@ -128,7 +125,7 @@ private fun MainScaffold(
         currentDestination?.hierarchy?.any { it.hasRoute(destination.route::class) } == true
     }
 
-    GateBackground(rank = rank, modifier = modifier) {
+    ScreenBackground(modifier = modifier) {
         Scaffold(
             modifier = Modifier.fillMaxSize(),
             containerColor = Color.Transparent,
@@ -179,14 +176,20 @@ private fun MainScaffold(
                         onOpenWindDown = { navController.navigate(WindDownRoute) { launchSingleTop = true } },
                         onOpenFocusReport = { navController.navigate(FocusReportRoute) },
                         onOpenReelStats = { navController.navigate(ReelStatsRoute) { launchSingleTop = true } },
-                        onOpenCampaign = { navController.navigate(CampaignRoute) },
                         onOpenReview = { navController.navigate(ReviewRoute) { launchSingleTop = true } },
                         snackbarHostState = snackbarHostState,
                         onOpenHealth = { navController.navigate(HealthRoute) },
                         onOpenSettings = { navController.navigate(SettingsRoute) { launchSingleTop = true } },
                         onOpenTrial = { navController.navigate(TrialRoute) },
                         onOpenGates = { navController.navigate(GatesRoute) { launchSingleTop = true } },
-                        onOpenVault = { navController.navigate(VaultRoute) { launchSingleTop = true } },
+                        onOpenProgress = {
+                            navController.navigate(StatusRoute) {
+                                popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                                launchSingleTop = true
+                                restoreState = true
+                            }
+                        },
+                        onOpenQuit = { navController.navigate(QuitRoute) { launchSingleTop = true } },
                     )
                 }
                 composable<QuestDetailRoute> {
@@ -201,23 +204,17 @@ private fun MainScaffold(
                         onOpenQuest = { navController.navigate(QuestDetailRoute(it)) },
                     )
                 }
-                composable<PathsRoute> {
-                    PathsEntry(onOpenPath = { navController.navigate(PathDetailRoute(it)) }, onBack = { navController.popBackStack() })
+                // AI Paths screens exist only in builds that have AI Paths (debug); the release build compiles them out of the graph.
+                if (AiFeature.enabled) {
+                    composable<PathsRoute> {
+                        PathsEntry(onOpenPath = { navController.navigate(PathDetailRoute(it)) }, onBack = { navController.popBackStack() })
+                    }
+                    composable<PathDetailRoute> { PathDetailEntry(onBack = { navController.popBackStack() }) }
                 }
-                composable<PathDetailRoute> { PathDetailEntry(onBack = { navController.popBackStack() }) }
                 composable<GatesRoute> {
                     GatesEntry(
                         onBack = { navController.popBackStack() },
                         onFixFocusLock = { navController.navigate(FocusLockSetupRoute) { launchSingleTop = true } },
-                        onOpenCrystals = { navController.navigate(CrystalsRoute) { launchSingleTop = true } },
-                        onOpenDungeons = { navController.navigate(DungeonsRoute) { launchSingleTop = true } },
-                    )
-                }
-                composable<CrystalsRoute> { CrystalGalleryEntry(onBack = { navController.popBackStack() }) }
-                composable<DungeonsRoute> {
-                    DungeonEntry(
-                        onBack = { navController.popBackStack() },
-                        onOpenQuest = { navController.navigate(QuestDetailRoute(it)) },
                     )
                 }
                 composable<ProgramsRoute> { ProgramsEntry(onBack = { navController.popBackStack() }) }
@@ -225,12 +222,12 @@ private fun MainScaffold(
                 composable<DietRoute> { DietEntry() }
                 composable<StatusRoute> {
                     StatusEntry(
+                        onOpenStore = { navController.navigate(VaultRoute) { launchSingleTop = true } },
                         onOpenQuit = { navController.navigate(QuitRoute) { launchSingleTop = true } },
                         onOpenPrograms = { navController.navigate(ProgramsRoute) { launchSingleTop = true } },
                         onOpenSettings = { navController.navigate(SettingsRoute) },
-                        onOpenPaths = { navController.navigate(PathsRoute) { launchSingleTop = true } },
+                        onOpenPaths = if (AiFeature.enabled) {{ navController.navigate(PathsRoute) { launchSingleTop = true } }} else null,
                         onOpenReview = { navController.navigate(ReviewRoute) { launchSingleTop = true } },
-                        onOpenRecap = { navController.navigate(RecapRoute(it)) { launchSingleTop = true } },
                     )
                 }
                 composable<SettingsRoute> {
@@ -272,8 +269,6 @@ private fun MainScaffold(
                     )
                 }
                 composable<ReviewRoute> { ReviewEntry(onClose = { navController.popBackStack() }) }
-                composable<RecapRoute> { RecapEntry(onBack = { navController.popBackStack() }) }
-                composable<CampaignRoute> { CampaignEntry(onBack = { navController.popBackStack() }) }
                 composable<VaultRoute> { VaultEntry(onBack = { navController.popBackStack() }) }
                 if (DebugEntry.ENABLED) {
                     composable<DebugRoute> { DebugEntry.Screen(onBack = { navController.popBackStack() }) }
@@ -281,9 +276,6 @@ private fun MainScaffold(
             }
         }
         // Above the scaffold so reward sheets and toasts cover every tab and Quest detail.
-        RewardHost(
-            snackbarHostState = snackbarHostState,
-            onOpenRecap = { navController.navigate(RecapRoute(it)) { launchSingleTop = true } },
-        )
+        RewardHost(snackbarHostState = snackbarHostState)
     }
 }

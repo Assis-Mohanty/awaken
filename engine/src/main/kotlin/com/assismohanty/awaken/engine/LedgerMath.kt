@@ -26,7 +26,6 @@ object LedgerMath {
             if (xp != 0) add(LedgerEntry(LedgerKind.XP_STAT, xp.toLong(), sourceType, sourceId, stat = stat.name))
         }
         if (reward.gold != 0) add(LedgerEntry(LedgerKind.GOLD, reward.gold.toLong(), sourceType, sourceId))
-        if (reward.fragments != 0) add(LedgerEntry(LedgerKind.FRAGMENT, reward.fragments.toLong(), sourceType, sourceId))
     }
 
     /**
@@ -54,7 +53,7 @@ object LedgerMath {
         LedgerKind.XP_STAT -> "xp_$stat"
         LedgerKind.GOLD -> Balances.GOLD
         LedgerKind.ITEM -> Balances.itemKey(itemId)
-        LedgerKind.FRAGMENT -> Balances.FRAGMENTS
+        LedgerKind.FRAGMENT -> "fragments" // historic rows only; nothing writes fragments any more
     }
 
     /** Balances = SUM(delta) per balance key. Duplicate keys are counted once, matching the UNIQUE constraint. */

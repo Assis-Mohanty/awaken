@@ -1,6 +1,5 @@
 package com.assismohanty.awaken.feature.gate
 
-import com.assismohanty.awaken.core.designsystem.lexicon.PresentationMode
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -46,7 +45,7 @@ class GatesScreenTest {
         val events = mutableListOf<GatesEvent>()
         composeRule.setContent {
             var state by remember { mutableStateOf(GatesUiState(loading = false, tiles = tiles)) }
-            AwakenTheme(presentation = PresentationMode.SYSTEM) {
+            AwakenTheme {
                 GatesScreen(
                     state = state,
                     onEvent = { event ->
@@ -69,30 +68,12 @@ class GatesScreenTest {
             }
         }
 
-        composeRule.onNodeWithContentDescription("D-Gate, 25 min").performClick()
-        composeRule.onNodeWithText("Start gate").performScrollTo().performClick()
+        composeRule.onNodeWithContentDescription("D session, 25 min").performClick()
+        composeRule.onNodeWithText("Start session").performScrollTo().performClick()
 
         assertThat(events).containsExactly(GatesEvent.Pick(GateRank.D), GatesEvent.Enter).inOrder()
         composeRule.onNodeWithContentDescription("25:00 remaining", substring = true).assertExists()
         composeRule.onNodeWithText("Pause (5:00)").assertExists()
     }
 
-    @Test
-    fun aCollapseShowsTheEmberWindowWithTheBackgroundTime() {
-        graph.completionCenter.gateCollapsed(GateCollapseReason.BREACH, backgroundMs = 102_000)
-        val viewModel = RewardHostViewModel(graph.completionCenter, graph.notices, graph.narrative, graph.notificationAccess, graph.uiPrefs, graph.submitFeedback)
-        composeRule.setContent {
-            AwakenTheme(presentation = PresentationMode.SYSTEM) { RewardHost(snackbarHostState = remember { SnackbarHostState() }, viewModel = viewModel) }
-        }
-
-        composeRule.waitUntil(timeoutMillis = 5_000) {
-            ShadowLooper.idleMainLooper()
-            composeRule.onAllNodesWithText("Background time 1:42 exceeded the 1:30 limit.").fetchSemanticsNodes().isNotEmpty()
-        }
-        composeRule.onNodeWithText("Continue").performClick()
-        composeRule.waitUntil(timeoutMillis = 5_000) {
-            ShadowLooper.idleMainLooper()
-            graph.completionCenter.events.value.isEmpty()
-        }
-    }
 }

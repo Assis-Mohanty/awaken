@@ -21,7 +21,7 @@ What we are explicitly not: Habitica's pixel-art toybox, a generic Material app,
 
 ### 2.1 Colour — two looks, one set of tokens
 
-Only `core/designsystem/theme/Color.kt` holds hex values. `AwakenPalette` has two instances, **Light** and **Dark**. Feature code reads the semantic `AwakenColors` (§8.4), never a palette.
+Only `core/designsystem/theme/Color.kt` holds hex values, and `TokenSourceTest` fails the build if a `Color(0x…)` appears anywhere else. `AwakenPalette` has two instances, **Light** and **Dark**. Feature code reads the semantic `AwakenColors` (§8.4), never a palette. Every screen sits on `ScreenBackground`, a flat page-colour fill with no glow.
 
 | Role (semantic token) | Light | Dark |
 |---|---|---|
@@ -42,7 +42,6 @@ How the accents are used:
 - **Stat icon wash:** `statTint` is the accent at 15 %, the circle behind a stat icon.
 - **Reward:** reward gold = STR.
 - **Ranks:** E is secondary ink; D, C, B, A and S take VIT, WIL, INT, CHA and STR.
-- **Vault themes and frames:** they re-tint small marks only.
 - **Fixed looks:** the share image uses Dark. The widget follows the phone setting (Glance day/night colours from the Light and Dark palettes).
 
 `PaletteContrastTest` keeps these floors on cards:
@@ -141,12 +140,11 @@ Off by default (toggle ready, assets later). Never ship a sound you didn't licen
 | `TimeBlockHeader` | A block as a section heading: name (22sp), "Now" chip on the current block, "2 of 3 done", chevron. |
 | `XpBar`, `RankCrest` | §2.3; rank letter in ink on a 15 % disc of its colour. |
 | `RewardSheet` | Ring closing around a check, "Quest complete", **+94 XP** counting up, gains as list rows, the formula as label / value rows (Base, difficulty, Streak ×1.20, Verified ×1.30 … Total 94 XP), Done. |
-| `LevelUpCeremony` | §2.5. |
 | `BodyMap` | §4.11. |
 | `ScreenTimeTile`, `HealthTile` | Today's half-width summary cards above the quests (equal height in one row). Screen time: `ChartSpec.SegmentedRing` (calorie-ring style, `tileRing`) by category + a minutes-first legend; Health: steps / distance / active / last night as a 2×2 `FlowRow` that drops to one column under `tileFigureMinWidth`. Empty states offer their fix ("Grant access", "Set up a source"); unknown is "—", never 0. |
 | `ConfirmDialog` | Yes/no before a regrettable action: title, one plain sentence, the action (critical red when destructive) and Cancel; on the card colour. Used by habit Archive/Delete (an Undo snackbar follows). |
 | `QuestRow(onLongPress)` | Optional long-press action that replaces long-press-to-open, also offered to TalkBack (habits: "Habit options"). |
-| `SystemToast`, `SystemWarning`, `ChapterReveal`, `GateDial`, `PathLadder`, `PathQuestBadge`, `FeedbackChips`, `OracleStatus`, `ShareCard` | Wear the tokens; restyled with their screens (step 3). |
+| `SystemToast`, `GateDial`, `PathLadder`, `PathQuestBadge`, `FeedbackChips`, `OracleStatus`, `ShareCard` | Wear the tokens; restyled with their screens (step 3). |
 | ChartKit (`core/designsystem/charts`) | §8.5. Trend charts get a Week / Month / Year control, clean axes, a callout on tap and a dashed average line in step 3. |
 
 **Quality bar for every screen:**
@@ -188,36 +186,34 @@ First quest is guaranteed Easy and doable now (e.g., "Drink a glass of water" VI
 ### 4.2 Today
 ```
 ┌──────────────────────────────────┐
-│ Tuesday, 27 October       (◎)(▣) │  date over the large title; Gates / Vault actions
-│ Good morning, Assis              │  34sp; collapses to a 17sp pinned title on scroll
-│ ┌ Today ───────────────── ╭──╮ ┐ │  RingCard: one green ring
-│ │ 3 of 10                 │  │ │ │
-│ │ done today              ╰──╯ │ │
+│ Tuesday 3 November               │  the date is the title; no greeting, no header icons
+│ ┌ Level 12 · Rank D   14-day … ┐ │  1. Header: thin XP bar; tap → Progress
+│ │ ▬▬▬▬▬▬░░░  1,240 / 1,800 XP  │ │
 │ └──────────────────────────────┘ │
-│ ┌ ⚡ Level ────┐ ┌ 🔥 Streak ───┐ │  LevelModule + StreakModule (metric cards)
-│ │ 24 rank C   │ │ 12 days      │ │
-│ │ ▬▬▬▬▬░░     │ │ Best 30      │ │
-│ └─────────────┘ └──────────────┘ │
-│ ┌ ✦ INT is falling behind…   › ┐ │  InsightCard (one sentence)
+│ Today's plan · 3 of 7 done  Plan day  Habits │  2. Today's plan
+│ ┌ Comeback ────────────────────┐ │  only after a missed day: quest + "never miss twice" line
 │ Morning            1 of 1 done › │  past block: collapsed
 │ Day  [Now]         0 of 2 done ⌄ │
-│ ┌ (♥) Take a short walk  ◯ ┐    │  penalty quest: normal row + coral "Comeback" chip
-│ │ (♥) Call your family   ◯ │    │  list rows, hollow check
-│ └──────────────────────────┘    │
-│ Evening / Anytime …              │
-│ ┌ (▦) Day plan              › ┐ │  quiet rows: plan, habits, campaign, screen limits
-│ │ (☰) Habits                › │ │
-│ └──────────────────────────────┘ │
+│ ┌ (♥) Call your family      ◯ ┐  │  list rows, hollow check
+│ Evening: … + Phone-down night row│
+│ Anytime: … + App limits row      │
+│ Your weekly review is open     › │  Sat–Mon only
+│ Focus                            │  3. Focus: 42 of 60 min, streak, [Start a session]
+│ Health and screen                │  4. Steps + sleep tile, screen-time tile, reels
+│ Quit counters                    │  5. only if any exist: "Smoking · 12 days clean"
 └──────────────────────────────────┘
 ```
+- **At most five sections:** Header, Today's plan, Focus, Health and screen, Quit counters. Each section has a `SectionHeader`; the plan's carries the two quiet actions *Plan day* and *Habits*.
 - **The plan:** every directive item and habit, grouped by time-of-day block (GD §14.5) in the order Morning → Day → Evening → Anytime.
   - Each block is a section title over a card of rows; empty blocks are hidden.
   - The current block is marked "Now"; earlier blocks start collapsed (tap to expand; open quests stay completable).
   - The current block is recomputed whenever Today re-derives, not on a timer.
-- **The penalty quest** (GD §7.3) leads the current block as a normal row with a coral "Comeback" chip. No red tint, no glow.
-- **Rank Trial:** its card follows the insight.
-- **Day cleared:** the ring card's label reads "Plan complete".
-- **Closing rows:** Day plan, Habits (with "Add habit" when empty), Campaign and Screen limits close the screen as quiet rows with chevrons.
+- **Comeback row** (GD §7.3): after a missed day the comeback quest and the calm "never miss twice" line share one card at the top of the plan. No red tint, no glow.
+- **Rank-up test:** while one is available or running, its group follows the comeback row.
+- **Phone-down night** is a plan row: tonight's window in Evening (with a *Wind down* link from 30 minutes before bedtime), last night's result in Morning. **App limits** is a row in Anytime.
+- **Empty habits:** the "Add habit" empty state stays inside the plan.
+- **Focus:** minutes against the daily goal, the focus streak, [Start a session] and a link to the weekly report.
+- **Health and screen:** each tile opens its detail; missing access shows the existing grant or set-up prompt, never a 0.
 - **Debug:** the Debug entry lives in Settings → Developer (debug builds only), never floating over content.
 
 ### 4.3 Quest detail (long-press / tap title)
@@ -227,13 +223,23 @@ Description, target, stat split, verification method with explanation, [Begin] (
 Grid of 4 gate ranks (E/D/C/B) as portal tiles with duration; pick stat + optional label → `GateDial` full screen. Leaving the app shows the breach budget in the ongoing notification. Clear → RewardSheet. Collapse → `ember` window "GATE COLLAPSED" + "Background time 1:42 exceeded the 1:30 limit."
 
 ### 4.5 Status
-HunterHeader (large) → RadarChart (this week vs last) → stat list (level + XP to next) → Heatmap → titles & achievements grid (locked ones silhouetted with condition text) → chapters list → Weekly Report card with [Share].
+HunterHeader (large) → RadarChart (this week vs last) → stat list (level + XP to next) → Heatmap → Weekly Report card with [Share].
 
 ### 4.6 Vault
-Gold balance, Streak Shields (owned/2), themes, frames, sigils; Relic Cache (fragments 7/10). Purchase = confirm sheet showing price and resulting balance. Owned items show "Equipped"/"Equip".
+Gold balance and Streak Shields (owned/2), one streak freeze item and a note on rerolls. Purchase = confirm sheet showing price and resulting balance.
 
 ### 4.7 Settings
-Profile (name, focus stats), Day starts at, Reminder times, Rest day (pick next), Recovery mode, Health Connect, **AI Paths** (on/off, "What we send", revoke), Equipment I own (jump rope, dumbbells, pull-up bar, gym access), Injury mode (excludes impact/legs/upper tags), Haptics, Reduce motion, Export/Import data, Privacy policy, About, (debug) Debug screen.
+Plain sentence-case section titles on the page colour, in this order:
+1. **Profile:** name, focus stats.
+2. **Day and reminders:** day starts at, morning ends, evening starts, daily reminder, notifications-blocked notice.
+3. **Goals:** daily focus goal, daily step goal.
+4. **Health and training:** Health Connect (connect, view, disconnect), equipment, injury mode.
+5. **Phone and focus:** screen time and app limits, Focus Lock (setup, allowed apps), phone-down nights, Reel counter (setup, limits, stats, permissions; the inspector row only in debug builds).
+6. **Habits:** archived habits.
+7. **AI Paths:** debug and internal builds only.
+8. **Appearance and sound:** theme, timer sound, haptics, reduce motion.
+9. **Your data:** export, import, privacy policy, licences, version.
+10. **Developer:** debug builds only.
 
 ### 4.8 Paths
 - **Paths tab:** up to 3 Path windows, each: goal as window title, primary-stat sigil, `PathLadder` (collapsed to the current milestone), this week's quests with outcomes, `OracleStatus`. Empty state: "Name what you're leveling toward. The System will chart the way." [Create path]. Create is disabled with a reason at 3 active Paths.
@@ -248,23 +254,17 @@ Profile (name, focus stats), Day starts at, Reminder times, Rest day (pick next)
 - **Report flow:** bottom sheet with reasons (Unsafe · Not relevant · Impossible for me · Offensive · Other) → "Reported. This quest has been removed." The slot leaves today's Directive immediately.
 
 ### 4.9 Screen time (GD §6.7)
-Opened from Settings → Training → "Screen time" and from the Today card. No tab.
+Opened from Settings → Phone and focus → "Screen time" and from the Today screen. No tab.
 - **No usage access:** a USAGE ACCESS window explains what is read (app times, on this phone, never sent, nothing blocked), then [Allow usage access] opens `Settings.ACTION_USAGE_ACCESS_SETTINGS`. Returning to the screen re-reads.
 - **TODAY:** total time as `displayXL`, a 6dp segmented bar (Distracting `ember` · Productive `verified` · Neutral `mist`; meaning, not decoration) and a legend with minutes per category.
 - **SCREEN DISCIPLINE:** `+N XP` (`crit`) in the header; one status line (off / starts tomorrow / no limits / every limit holds / forfeited, "Your earned XP is untouched"); up to 4 limit bars (bar turns `ember` from 84 % of the limit); [Turn on] (with "Starts tomorrow" rules caption) or a quiet [Turn off].
 - **APPS:** filter chips (All + 3 categories), rows with launcher icon, label, category · limit, minutes and a category pill; a `crit` caption "From tomorrow: …" when an edit is pending. Unused apps fold behind "Show N more apps". Tap → rule sheet: category chips, −5 / +5 min stepper (5–240), [Track without a limit], the caption "Applies from tomorrow, so today's limits stay fair.", [Save].
 - **LAST 7 DAYS:** bars of total time (`edge`) with the distracting part (`ember`); each bar has a content description.
-- **Today card:** a SCREEN DISCIPLINE window under the directive (`verified` accent while holding, `ember` once forfeited) with "Limits holding · +N XP at day end" or "Limit crossed · stake forfeited" and a [Screen time] link. The DISCIPLINE quest is never a quest row.
+- **Today row:** an "App limits" row in the Anytime group (`positive` icon while holding, `critical` once forfeited) with "Limits holding · +N XP at day end" or "Limit crossed · stake forfeited". The DISCIPLINE quest is never a quest row.
 
-### 4.10 The 45-day Campaign (GD §6.8)
-Opened from the Today card ("CAMPAIGN · Day 12 / 45 · Build" while one runs, otherwise a quiet "Begin a 45-day campaign" offer). One route, steps inside it:
-- **Intro:** what it is, the three acts (Roman numerals in `system`), the rule "Clear 32 of the 45 days… Missed days never reset anything" in `crit`, [Begin the scan].
-- **Scan:** one question per window, accent = the question's stat colour, "3 / 10" in the header, four full-width answers (the chosen one filled), [Back].
-- **Forge:** "SYSTEM · FORGE", a `displayXL` percentage, a thin bar and three checks; ~2.4 s, instant under reduce-motion; moves on only once the plan is ready.
-- **Result:** "CHALLENGER DETECTED" in the weakest stat's colour, the archetype as `display`, one line, the scan on the existing `RadarChart`, "Strength · weakest. We start here."; then YOUR CAMPAIGN with dates and the planned habits (stat chip, title, target, days). A problem (no room, already running) replaces [Take the oath] with the reason in `ember`.
-- **Oath:** "THE OATH" in `crit`, the commitment with the hunter's name, "Day 45: <date>", and a ring the hunter holds for 1.5 s to seal (haptic confirm); TalkBack's tap action seals too. Caption: nothing is signed or saved but the start date.
-- **Progress:** "Day N / 45" as `displayXL`, act name, cleared vs needed, an on-course / out-of-reach line, and a 45-cell calendar (9 per row): cleared = `system`, today = `crit` outline, missed = `fog` outline, upcoming = `edge`. CAMPAIGN HABITS lists the habits and offers a quiet [Abandon campaign] behind a confirm dialog. Finished: REFORGED (`crit`) / CAMPAIGN ENDED / ABANDONED with [Start a new campaign].
-- Campaign habits appear as ordinary habit rows on Today; their editor refuses edits with "This habit belongs to your campaign…".
+### 4.10 (removed)
+
+The 45-day Campaign screen was removed on 2026-11-03 (see `docs/DECLUTTER_PLAN.md`).
 
 ### 4.11 Gym (GD §13.2)
 Bottom tab. No session: [Start workout], THIS WEEK (workouts · sets · volume in `numeric`, then the **body map** (v2): one stylised V-taper figure from the MIT react-native-body-highlighter paths (`core/designsystem/body`, regenerate with `tools/body`; the generator widens shoulders and lats and narrows the waist), front / back via a segmented control, body in the divider tone with a 1.25dp muted-ink outline and 0.75dp seams so it reads on any card, no face, no skin tone; trained muscles fill in the STR accent at the heat steps for their weekly band (GD §13.2: Mon–Sun, four lit steps), animating in 300ms; each muscle is its own TalkBack node; tapping one opens a sheet with its sets and volume this week (ENGINE_DECISIONS #101), caption "Brighter = more work"), ROUTINES ([Start], remove), PERSONAL RECORDS (`crit` accent; "80 kg × 5 · e1RM 93.3 kg"), HISTORY. Running session: a window with the name and an "elapsed" timer, one window per exercise with columns Set · Previous · kg · Reps · ✓ (compact `NumberField`s; ✓ disabled at 0 reps), [Add set] / [Remove last set], then [Add exercise], [Finish], [Save as routine], [Discard] behind a confirm. Exercise library sheet: search, equipment chips, the body map as a tap-to-filter control plus the same choice as chips, result rows with [Add to workout]; detail sheet with primary (full) and secondary (40 %) muscles lit, pills for equipment/level/mechanic and numbered how-to steps. A quiet caption says the tracker grants no XP yet.
@@ -273,10 +273,10 @@ Bottom tab. No session: [Start workout], THIS WEEK (workouts · sets · volume i
 Bottom tab. First open: CALORIE BUDGET window (goal, sex, birth year/height/weight, activity as full-width choices) with a live engine preview ("2,749 kcal / day", BMR and maintenance, macros); [Save budget] is enabled only when every field is valid. Then: a date stepper (no future days), DAILY ENERGY with a `ProgressRing` (remaining kcal in the middle; `ember` once over) beside Eaten / Goal and bars for protein, carbs, fat and fiber; one window per meal with its kcal, rows "2 × 1 piece · 404 kcal" (tap to edit) and [Add food]; NUTRIENTS with a bar per target, limits turning `ember` with "Over limit". Sheets: food search (recent foods when empty; "kcal · P · C · F per 100 g"), amount (grams or a household portion × count, live macro line, meal chips), targets (grouped like a label, defaults shown, empty = default), custom food (per-100 g values and an optional serving).
 
 ## 5. Copy voice
-- System lines: terse, second person, present tense. "Quest cleared." "The System has recalibrated your STR trials." "You missed yesterday. One quest stands between you and redemption."
-- Human UI text: plain verbs, sentence case. Button labels name the action: "Complete quest", "Start gate", "Buy shield". A button that says "Start gate" leads to a notification "Gate in progress".
+- Plain, second person, sentence case. No story, no game jargon (hunter, gate, directive, trial, dungeon, oath, realm, sigil, relic, shard, chapter), no capitals for emphasis. `LexiconResourcesTest` scans every string for the jargon list.
+- Button labels name the action: "Complete quest", "Start focus session", "Buy streak freeze".
 - Errors say what happened + what to do: "Health Connect isn't installed. Install it from Play Store to verify steps automatically." No apologies, no jokes.
-- Never shame. Penalty copy is stern, never insulting.
+- Never shame. A missed day is stated plainly ("Your streak reset. Finish the comeback quest today."), never insulted.
 
 ## 6. Accessibility floor (release blockers)
 TalkBack labels on every interactive element and chart (radar exposes "Strength level 12, Intelligence level 9…"); 48dp targets; font scale 200% doesn't clip; reduce-motion honoured; contrast table above respected; no information conveyed by colour alone.
@@ -298,7 +298,6 @@ Rules for everything below: semantic tokens only (§8.4), charts only through Ch
 | `NeverMissTwiceLine` | Replaces the daily System line on Today the day after a missed day: `textSecondary`, no icon, no `ember`. |
 | `TimeBlockHeader(block, done, total, state)` | Section header inside the Directive window: block name, "2 of 3 done", chevron. States: current (accent rule on the left, expanded), past (collapsed, `textMuted`, tap to expand), upcoming (expanded, `textSecondary`). 48dp row; state announced to TalkBack ("Morning, past, 2 of 3 done, collapsed"). |
 | `ReviewFlow` steps | `ReviewStepNumbers`, `ReviewTextStep(prompt, maxChars=280)` with a live counter, `ReviewFocusStep` (5 stat tiles, exactly 2 selected), `ReviewIntentionStep(maxChars=120)`; a step indicator "2 / 5"; [Skip] on every optional step with the same weight as [Next]. |
-| `RecapCard(page)` | Full-bleed story card: period kicker, one `metricXL` hero number, 1–3 supporting rows, page dots; swipe or tap edges to move; reduce-motion = crossfade, never auto-advance. The last card hosts [Share] (ShareCard path, dark in every mode). |
 | `IdentityChips(selected, max=3)` | Wrapping selectable pills "Someone who reads" with the stat sigil; a 4th tap shows "Pick up to 3"; read-only variant under the name on Status. |
 | ~~`ModeSwitch(mode)`~~ | **Not built (F34 superseded by the v2 redesign).** Two-segment control Clean / System with one line of explanation each ("Plain words, calm look." / "The full System: Gates, Hunters, glow."). Also used inside the one-time invite sheet. |
 
@@ -307,43 +306,31 @@ Rules for everything below: semantic tokens only (§8.4), charts only through Ch
 - **Today:** `ConsistencyMeter` beside the streak; the Directive window grouped by `TimeBlockHeader` (Morning → Day → Evening → Anytime), penalty still pinned on top; `NeverMissTwiceLine` when applicable; a "Weekly review is open" row between Saturday and Monday until done.
 - **Status:** identities under the name; INSIGHTS section (up to 3 `InsightCard`s) after the radar; consistency next to the heatmap; a RECAPS list (month/year rows) after the Weekly Report.
 - **Weekly Review** (new route, from the Today row, the Sunday notification and Status): five steps in one window; finishing shows "Review saved" and any achievement toast. No XP anywhere on these screens.
-- **Recap** (new route): auto-opens once per GD §14.6, else from Status → Recaps.
 - **Onboarding:** new step "Who are you becoming?" (`IdentityChips`, [Skip]) before focus stats; the focus-stat step arrives pre-selected.
 - **Settings:** Identities, Time blocks ("Morning ends", "Day ends" hour pickers), Light/Dark debug toggle stays debug-only (Part 2).
 - **Habit editor:** a block picker (Morning / Day / Evening / Anytime).
 - ~~**System invite sheet**~~: not built (F34 superseded).
 
-### 8.3 Lexicon (Clean ↔ System)
+### 8.3 Words (one vocabulary)
 
-`Lexicon` (interface in `core/designsystem/lexicon`) exposes one function per term key; `CleanLexicon` and `SystemLexicon` read string resources `term_<key>_clean` / `term_<key>_system`. Provided by `LocalLexicon` from the `presentationMode` DataStore pref. Whole sentences that speak *as* the System ("THE SYSTEM HAS RECALIBRATED") get a full Clean string rather than term substitution, because word-swapping breaks grammar. Window titles are UPPERCASE in System mode and sentence case in Clean mode (the case is copy, not the type style).
+There is one set of strings (`res/values/strings*.xml`) in plain words. `core/designsystem/lexicon/Lexicon.kt` keeps only the entry points `lexString` / `lexPlural` (composition) and `LexResources` (snackbars, notifications via `LexiconSource`); `FeatureBoundaryTest` makes feature code use them instead of `stringResource`. There is no presentation mode, no `_clean` twin and no `term_*` resource.
 
-| Key | Clean | System |
-|---|---|---|
-| `hunter` | Profile | Hunter |
-| `gate` / `gates` | Focus session / Focus sessions | Gate / Gates |
-| `gate_collapsed` | Session ended early | Gate collapsed |
-| `breach` | Time away | Breach |
-| `dungeon` | Challenge | Dungeon *(reserved; no UI uses it yet)* |
-| `directive` | Today's plan | Daily Directive |
-| `directive_cleared` | Plan complete | Directive cleared |
-| `penalty_zone` | Comeback | Penalty Zone |
-| `penalty_quest` | Comeback quest | Penalty quest |
-| `rank_trial` | Promotion challenge | Rank Trial |
-| `relic_cache` | Reward chest | Relic Cache |
-| `fragments` | Shards | Loot Fragments |
-| `system_message` | Daily focus | System message |
-| `awakening` | Getting started | Awakening |
-| `vault` | Shop | Vault |
-| `status` | Progress | Status |
-| `sigil` | Badge | Sigil |
-| `chapter` | Story | Chapter |
-| `oath` | Commitment | Oath |
-| `streak_shield` | Streak freeze | Streak Shield |
-| `crit` | Bonus | Critical |
-| `recalibrated` | Adjusted | Recalibrated |
-| `oracle` | AI planner | Oracle |
+| Old game word | Plain word |
+|---|---|
+| Hunter | Profile |
+| Gate | Focus session |
+| Gate collapsed / Breach | Session ended early / Time away |
+| Daily Directive / Directive cleared | Today's plan / Plan done |
+| Penalty Zone / Penalty quest | Comeback / Comeback quest |
+| Rank Trial | Rank-up test |
+| Awakening | Getting started |
+| Vault | Store |
+| Status | Progress |
+| Streak Shield | Streak freeze |
+| Recalibrated | Difficulty adjusted |
+| Oracle | AI planner (debug and internal builds only) |
 
-Unchanged in both: ranks E–S, level, XP, gold, streak, stats, quest, title, Path, campaign. Gate tiles keep their rank letter and duration in both modes ("C · 50 min" Clean, "C-Gate · 50 min" System). Clean mode turns off the gate glow (`GateBackground`); nothing else visual changes in v1.1.
+Ranks E–S, level, XP, gold, streak, stats, quest and Path keep their names.
 
 ### 8.4 Token architecture (Part 2 refactor; no visual change)
 
@@ -361,7 +348,7 @@ Enforcement: a unit test scans `feature/**` and fails on raw palette names, `Col
 
 ## 9. v1.2 feature batch: components, screens and states (PROPOSED with GD §16)
 
-Same rules as §8: semantic tokens only, drawing only inside `core/designsystem` (ChartKit for charts), every word through the Lexicon (`lexString` / `lexPlural`; a System-voice string needs a `_clean` twin), `@PhonePreviews` (or `@ComponentPreview` for components) for **every state listed below**, dark + light, 48dp targets, a TalkBack description on every ring, crystal, chart and counter, reduce motion = no growth/celebration animation (instant state). No screen shows an XP number that GD §16 does not pay.
+Same rules as §8: semantic tokens only, drawing only inside `core/designsystem` (ChartKit for charts), every word through the Lexicon (`lexString` / `lexPlural`; plain words only (`LexiconResourcesTest`)), `@PhonePreviews` (or `@ComponentPreview` for components) for **every state listed below**, dark + light, 48dp targets, a TalkBack description on every ring, crystal, chart and counter, reduce motion = no growth/celebration animation (instant state). No screen shows an XP number that GD §16 does not pay.
 
 ### 9.1 New components (`core/designsystem/components`)
 
@@ -372,15 +359,12 @@ Same rules as §8: semantic tokens only, drawing only inside `core/designsystem`
 | `NegativeHabitRow` | row with "Holding" in `textSecondary`, [I slipped] text button, [Kept it today] button enabled only in the evening window; slip shows "Slipped today. Tomorrow is a new day." | holding (before evening) / ready to confirm / kept / slipped |
 | `PomodoroTrack(round, rounds, phase)` | row of R dots (done = filled accent, current = ring, upcoming = divider) and "Round 2 of 4 · Break" | focus / short break / long break / finished / collapsed |
 | `FocusGoalRing(minutes, goal, streak)` | `ChartSpec.Ring` in `accent`, "80 / 120 min" inside, "Focus streak 4" under it; full ring at or over the goal | 0 / partial / met / no goal history |
-| `GateCrystal(stage, cracked, tint, size)` | vector crystal (6 stages, facets in `tint`, outline in `textPrimary` at low alpha); cracked variant adds two fracture lines; no image assets | stages 0–5 / cracked / shard, at 4 sizes |
-| `CrystalGalleryGrid` | 3-column (phone) / 4-column (wide) grid of `GateCrystal`s, each labelled for TalkBack "Maths, 50 minutes, cleared, 3 November" | empty / filled / filtered |
 | `ProgressionHint(text)` | one `caption` line with an up-arrow glyph above set 1: "Last: 50 kg × 12, 12, 12 → try 52.5 kg × 8" | weight up / reps up / add-load hint / none |
 | `PrChip` | "New record" pill in `reward` with a short scale-in (none under reduce motion) and a light haptic | shown / hidden |
 | `PlateDiagram(platesPerSide, unit)` | one bar with plate blocks sized by weight (both sides mirrored), labels under each plate | exact / short by N / below bar |
 | `StepGoalRing(steps, goal)` | `ChartSpec.Ring` on the Health tile: "6,200 / 8,000"; "Goal reached" at ≥ goal | none / partial / reached |
 | `QuitCounterCard(counter)` | name, "12 days" as `metricL`, "Best 30 days" `caption`, next milestone bar, optional "₹1,800 saved · 6 h back"; neutral colours only (no red, no `critical`) | running / day 0 (hours) / paused (doomscrolling, no data) / archived |
 | `MilestoneLadder(milestones, reached)` | horizontal row 1·3·7·14·30·90·180·365, reached ones filled | none / some / all |
-| `DungeonStageTrack(stages)` | N cells: done / today / upcoming / failed | running / cleared / failed |
 | `ProgramCalendar(days)` | `ChartSpec.CalendarGrid`: kept = accent, rest = muted, broken = outlined `warning`, today = outline, upcoming = divider | early / mid with marks / completed / finished with marks |
 | `BreathingGuide(phase, secondsLeft)` | a circle that grows over 4 s and shrinks over 6 s; under reduce motion only the words "Breathe in" / "Breathe out" change | in / out / done |
 
@@ -395,13 +379,11 @@ Supportive, factual, never shaming. Yes: "Day 12", "Best run: 30 days. It's stil
 - **Habit editor (A1/A2):** a type picker (Check · Count · Timed · Avoid) as a segmented control; Count shows target + unit, Timed a minutes stepper (15–180, 5s) and the derived difficulty as read-only text ("Normal, from 30 minutes"), Avoid hides target. Frequency: "On these days" (weekday chips) or "Times per week" (1–6 stepper). Reminder: off / time picker; disabled with the reason when two habits already have one. States: each type, limit reached, campaign/program habit (read-only).
 - **Today habit rows:** CHECK unchanged; QUANTITY uses `QuantityStepper` inline; TIMED shows [Start · 20 min] (opens the focus session); NEGATIVE uses `NegativeHabitRow`; flexible rows show "2 of 3 this week". Long-press menu gains **Skip today** (with "1 skip left this week") and, when skipped, **Undo skip**. States: each type × active / done / skipped / missed.
 - **Gates screen (B1/B2/B3):** `FocusGoalRing` at the top; a fourth tile **Pomodoro** next to presets/custom/stopwatch opening a setup sheet (four steppers, subject, stat, [Start]); a **Crystals** row opening the gallery screen. The running gate screen (`GateDial`) shows the `GateCrystal` growing behind the dial and, in Pomodoro, `PomodoroTrack`. Break screen: big countdown, [Skip break], [End session]. States: no goal history / goal met / Pomodoro focus / break / long break / session finished / collapsed.
-- **Crystal gallery (B3):** new route; filter chips (subjects) and a month header per section. Empty state: "Finish a focus session and its crystal appears here."
 - **Gym (C1/C2/C3/C7):** running session: `ProgressionHint` above set 1 of each exercise; `PrChip` on a set row that is a record; the finish summary lists records. Exercise row → **Exercise history** route: segmented range (Month · 3 months · Year · All), three `TrendLine` cards (Top weight, Best e1RM, Volume), then a session list; states: none / one session (no chart) / many. A plate icon on the weight field opens the **Plate calculator** sheet (`PlateDiagram`, kg/lb switch, [Edit bar & plates] → Gym settings). Gym settings add: bar weight, owned plates (chips), default rep range, per-exercise overrides (from the history screen's overflow).
 - **Screen time (D1):** a PICKUPS card under TODAY: pickups (or "Screen-ons"), first pickup, last use yesterday, longest stretch; states: data / no access / unavailable.
 - **Today Health tile (D2):** `StepGoalRing` replaces the steps number; Settings → Health gets "Daily step goal".
-- **Phone-down nights (D3):** Settings → Focus → "Phone-down nights" window (explanation, bedtime/wake pickers, "Changes apply from tomorrow night", allowed apps listed in words). Today card: evening "Phone down tonight 23:00–06:30 · +78 XP if kept" with [Wind down] from 30 minutes before; morning "Kept · +78 XP" / "Phone used at night · no XP" / "No usage data · no XP". Wind-down screen with `BreathingGuide` and [Done]. States: off / no access / evening / kept / broken / no data.
+- **Phone-down nights (D3):** Settings → Phone and focus → "Phone-down nights" window (explanation, bedtime/wake pickers, "Changes apply from tomorrow night", allowed apps listed in words). Today plan row: Evening group "Phone down tonight 23:00–06:30 · +78 XP if kept" with [Wind down] from 30 minutes before; Morning group "Kept · +78 XP" / "Phone used at night · no XP" / "No usage data · no XP". Wind-down screen with `BreathingGuide` and [Done]. States: off / no access / evening / kept / broken / no data.
 - **Quit counters (D4):** new route from Progress ("Quit counters" row) and the habits sheet. List of `QuitCounterCard`s, [Add counter] (preset chips, start date "Today / Earlier…", optional cost and minutes per day); counter detail: big day count, `MilestoneLadder`, money and time, **Restarts** log (date, trigger chip, note), [Log a restart] behind a calm confirm ("Restart the count? Your best run stays."). States: empty / one / several / detail with and without restarts / doomscrolling paused / no usage access.
-- **Dungeons (F3):** entry from the Gates screen header ("Dungeons", Lexicon term `dungeon`: Clean "Challenge"). Picker: three length cards (days, fee, reward), stat chips, [Enter · 100 gold] behind a confirm showing the balance after; locked state below level 10 ("Unlocks at level 10"). Running: `DungeonStageTrack`, today's stage quest also appears on Today with a "Stage 2 of 3" chip. Result windows: cleared (reward, fragment) / failed ("The fee is spent. Nothing else is taken."). States: locked / not enough gold / picker / running / cleared / failed.
 - **Programs (F6):** entry from Progress ("Programs" row) next to Campaign. List of three programs (name, days, rules); detail with [Start] (reason shown when slots are short or a campaign runs); running: "Day 12 / 66", `ProgramCalendar`, today's rules; the break choice is a sheet on next open: "Yesterday wasn't kept. Restart from day 1, or continue with the day marked?" [Restart] [Continue] (equal weight). Finished: COMPLETED (achievement) / FINISHED (marks shown, no blame). States: list / detail / running / break choice / completed / finished / abandoned.
 - **Quick Settings tile (A4):** label "Start focus"; subtitle the last-used session ("D · 25 min · Maths"); while running "18:24 left" (stopwatch: "32 min"); inactive look when nothing was ever started (tap opens Gates). Icon = the existing focus glyph as a monochrome vector.
 - **Start focus widget (A5):** Glance 2×1: "Start focus" + last-used session line; running: "Running · ends 18:55" (stopwatch "since 18:30"); tap starts the last-used session in the app (or opens the running one); empty: "Pick a session" → Gates. Widget colours via `AwakenPalette` like the existing widgets (allowed for widgets, CLAUDE.md).

@@ -17,11 +17,9 @@ data class CompletableQuest(
     val secondaryStat: Stat?,
     val difficulty: Difficulty,
     val verification: VerificationSource,
-    /** Whether a cleared Focus Gate drops its Loot Fragment; custom and stopwatch runs under 25 min do not (GD §8.1 P4). */
-    val gateFragment: Boolean = true,
 )
 
-/** Quest XP, stat split, gold and fragments (GD §3, §4.1–4.3, §8, §9.1). */
+/** Quest XP, stat split and gold (GD §3, §4.1–4.3, §8, §9.1). */
 object XpCalculator {
     const val BASE = 40
     const val STREAK_CAP_DAYS = 30
@@ -33,17 +31,15 @@ object XpCalculator {
     fun streakMultiplier(streakDays: Int): Double = 1.0 + minOf(maxOf(streakDays, 0), STREAK_CAP_DAYS) / STREAK_DIVISOR
 
     /** `round(BASE × D × S × V × C)`, half-up on the final product only. */
-    fun questXp(difficulty: Difficulty, streakDays: Int, verification: VerificationSource, crit: Boolean): Int {
-        val c = if (crit) CritRoller.CRIT_MULTIPLIER else 1.0
-        return roundHalfUp(BASE * difficulty.multiplier * streakMultiplier(streakDays) * verification.multiplier * c)
+    fun questXp(difficulty: Difficulty, streakDays: Int, verification: VerificationSource): Int {
+        return roundHalfUp(BASE * difficulty.multiplier * streakMultiplier(streakDays) * verification.multiplier)
     }
 
     /** `round(questXp × 0.5)`; callers pass 0 gold for capped quests. */
     fun goldFor(questXp: Int): Int = roundHalfUp(questXp * GOLD_PER_XP)
 
     fun forCompletion(quest: CompletableQuest, context: HunterContext): QuestReward {
-        val crit = quest.type.canCrit && CritRoller.isCrit(quest.questInstanceId)
-        val fullXp = questXp(quest.difficulty, context.streak, quest.verification, crit)
+        val fullXp = questXp(quest.difficulty, context.streak, quest.verification)
         val capped = DailyCaps.exceeds(quest.verification, DailyCaps.earnedToday(quest.verification, context), fullXp)
         val xp = if (capped) roundHalfUp(fullXp * DailyCaps.BEYOND_CAP_FACTOR) else fullXp
         val gold = if (capped) 0 else goldFor(xp)
@@ -53,23 +49,19 @@ object XpCalculator {
             val secondary = quest.secondaryStat
             if (secondary != null && secondary != quest.stat) put(secondary, roundHalfUp(xp * SECONDARY_SHARE))
         }
-        val fragments = (if (crit) 1 else 0) + (if (quest.type == QuestType.GATE && quest.gateFragment) 1 else 0)
 
         val breakdown = buildList {
             add(BreakdownItem(Kind.BASE, BASE.toDouble()))
             add(BreakdownItem(Kind.DIFFICULTY, quest.difficulty.multiplier))
             add(BreakdownItem(Kind.STREAK, streakMultiplier(context.streak)))
             add(BreakdownItem(Kind.VERIFICATION, quest.verification.multiplier))
-            if (crit) add(BreakdownItem(Kind.CRIT, CritRoller.CRIT_MULTIPLIER))
             if (capped) add(BreakdownItem(Kind.DAILY_CAP, DailyCaps.BEYOND_CAP_FACTOR))
         }
         return QuestReward(
             xp = xp,
             statXp = statXp,
             gold = gold,
-            crit = crit,
             cappedSource = if (capped) quest.verification else null,
-            fragments = fragments,
             breakdown = breakdown,
         )
     }

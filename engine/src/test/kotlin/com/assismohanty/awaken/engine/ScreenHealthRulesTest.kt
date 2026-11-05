@@ -111,8 +111,7 @@ class ScreenHealthRulesTest {
         assertThat(quest.difficulty).isEqualTo(Difficulty.NORMAL)
         assertThat(quest.verification).isEqualTo(Verification.DEVICE_USAGE)
         assertThat(quest.type.isGenerated).isFalse()
-        assertThat(quest.type.canCrit).isTrue()
-        assertThat(XpCalculator.questXp(quest.difficulty, 0, VerificationSource.USAGE, crit = false)).isEqualTo(78)
+        assertThat(XpCalculator.questXp(quest.difficulty, 0, VerificationSource.USAGE)).isEqualTo(78)
         assertThat(quest.questInstanceId).isEqualTo(BedtimeRules.bedtimeQuest("h1", day, "x", "y").questInstanceId)
     }
 

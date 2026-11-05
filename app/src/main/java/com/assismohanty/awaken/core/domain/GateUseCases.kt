@@ -349,9 +349,9 @@ class GateRunController @Inject constructor(
     }
 
     private suspend fun claim(run: GateRunEntity): GateCheck {
-        if (run.mode == GateMode.PRESET) return claimPaid(run, fragment = true)
-        // A Timed habit's run pays its own quest at the habit's tier, outside the custom-run cap (GD §16.1); P4 still decides the fragment.
-        if (run.habitQuestId != null) return claimPaid(run, fragment = run.plannedSec / 60 >= FocusRules.FRAGMENT_MIN_MINUTES)
+        if (run.mode == GateMode.PRESET) return claimPaid(run)
+        // A Timed habit's run pays its own quest at the habit's tier, outside the custom-run cap (GD §16.1).
+        if (run.habitQuestId != null) return claimPaid(run)
         val quest = questDao.get(run.questInstanceId)
         val today = quest?.gameDate
         val paidToday = if (today == null) 0 else focusDao.paidCustomRuns(today)
@@ -359,7 +359,7 @@ class GateRunController @Inject constructor(
             is FocusRunOutcome.Paid -> {
                 // A stopwatch is priced now; a custom run keeps the tier it opened with (the same function of its length).
                 questDao.setGateTier(run.questInstanceId, outcome.rank.difficulty, run.plannedSec / 60)
-                claimPaid(run.copy(gateRank = outcome.rank), outcome.fragment)
+                claimPaid(run.copy(gateRank = outcome.rank))
             }
             FocusRunOutcome.ShortRun, FocusRunOutcome.OverCap -> {
                 val logged = run.copy(status = GateRunStatus.LOGGED, endedAt = clock.now(), lastStopAt = null, lastStopElapsedMs = null)
@@ -370,11 +370,11 @@ class GateRunController @Inject constructor(
         }
     }
 
-    private suspend fun claimPaid(run: GateRunEntity, fragment: Boolean): GateCheck {
-        // The run counts as cleared before the reward is written, so the achievement check that follows it (a focus streak, hours
-        // cleared) already sees it. If the reward is refused, the run is closed as collapsed below, which replaces this row.
+    private suspend fun claimPaid(run: GateRunEntity): GateCheck {
+        // The run counts as cleared before the reward is written. If the reward is refused, the run is closed as collapsed
+        // below, which replaces this row.
         gateRunDao.upsert(run.copy(status = GateRunStatus.CLEARED, endedAt = clock.now()))
-        return when (val result = completeQuest.completeVerified(run.questInstanceId, VerificationSource.TIMER, gateFragment = fragment)) {
+        return when (val result = completeQuest.completeVerified(run.questInstanceId, VerificationSource.TIMER)) {
             is CompleteQuestResult.Completed -> GateCheck.Cleared(result.outcome)
             // The quest's game-day closed before the claim (rollover expired it): no XP (ENGINE_DECISIONS #35).
             else -> close(run, GateRunStatus.COLLAPSED, GateCollapseReason.DAY_RESET)

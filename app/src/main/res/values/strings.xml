@@ -3,20 +3,15 @@
 
     <!-- Bottom navigation -->
     <string name="nav_today">Today</string>
-    <string name="nav_status">Status</string>
-    <string name="nav_vault">Vault</string>
-    <string name="action_open_gates">Open Gates</string>
-    <string name="action_open_vault">Open Vault</string>
+    <string name="nav_status">Progress</string>
+    <string name="nav_vault">Store</string>
 
     <!-- Placeholders (Phase 1 only) -->
 
     <!-- System window titles: UPPERCASE is reserved for the System speaking (DESIGN_SYSTEM §2.2) -->
-    <string name="system_title_daily_directive">DAILY DIRECTIVE</string>
-    <string name="system_title_quest_cleared">QUEST CLEARED</string>
-    <string name="system_title_critical_clear">CRITICAL CLEAR</string>
-    <string name="system_title_level_up">LEVEL UP</string>
-    <string name="system_title_system_warning">SYSTEM WARNING</string>
-    <string name="system_title_title_unlocked">TITLE UNLOCKED</string>
+    <string name="system_title_daily_directive">Today\'s plan</string>
+    <string name="system_title_quest_cleared">Quest complete</string>
+    <string name="system_title_system_warning">You missed a day</string>
 
     <!-- Stats and difficulty -->
     <string name="stat_str">Strength</string>
@@ -37,11 +32,6 @@
     <string name="level_short">LV %1$d</string>
     <string name="xp_progress">%1$s / %2$s XP</string>
     <string name="xp_gain">+%1$s XP</string>
-    <string name="stat_gain">%1$s +%2$s</string>
-    <plurals name="fragment_gain">
-        <item quantity="one">+%1$d loot fragment</item>
-        <item quantity="other">+%1$d loot fragments</item>
-    </plurals>
     <string name="cd_rank_crest">Rank %1$s</string>
     <plurals name="cd_streak">
         <item quantity="one">Streak, %1$d day</item>
@@ -58,15 +48,15 @@
     <string name="action_open_quest">Open quest details</string>
 
     <!-- Reward sheet: formula breakdown (GAME_DESIGN §1 pillar 4) -->
-    <string name="breakdown_crit">%1$s crit</string>
     <string name="reward_xp_unit">XP</string>
     <string name="reward_gold">Gold</string>
+    <string name="reward_level_reached">Level %1$d reached</string>
+    <string name="reward_rank_reached">Rank %1$s reached</string>
     <string name="unit_gold">gold</string>
     <string name="reward_row_base">Base</string>
     <string name="reward_row_streak">Streak</string>
     <string name="reward_row_verified">Verified</string>
     <string name="reward_row_timed">Timed</string>
-    <string name="reward_row_crit">Bonus</string>
     <string name="reward_row_cap">Self-report limit</string>
     <string name="reward_row_total">Total</string>
     <string name="reward_total_value">%1$s XP</string>
@@ -82,7 +72,6 @@
     <string name="cd_gate_dial">%1$s remaining. Background time %2$s of %3$s allowed.</string>
 
     <!-- Level-up ceremony -->
-    <string name="level_up_continue">Tap to continue</string>
 
     <!-- Design-system modules (v1.1 redesign) -->
     <string name="time_block_morning">Morning</string>
@@ -93,7 +82,6 @@
     <string name="time_block_now">Now</string>
     <string name="state_expanded">Expanded</string>
     <string name="state_collapsed">Collapsed</string>
-    <string name="level_word">Level</string>
     <string name="level_long">Level %1$d</string>
     <string name="best_streak_label">Best %1$d</string>
     <string name="cd_streak_module">%1$d day streak, best %2$d</string>
@@ -115,25 +103,6 @@
     <string name="consistency_none_cd">No consistency score yet.</string>
     <string name="miss_line_yesterday">Missed yesterday. Don\'t miss twice.</string>
     <string name="miss_line_fresh_start">A fresh start today.</string>
-    <!-- Identities (GD §14.7): the words after "Someone who" -->
-    <string name="identity_trains">trains</string>
-    <string name="identity_runs">runs</string>
-    <string name="identity_reads">reads</string>
-    <string name="identity_ships">ships</string>
-    <string name="identity_learns">keeps learning</string>
-    <string name="identity_focuses">focuses deeply</string>
-    <string name="identity_keeps_promises">keeps their promises</string>
-    <string name="identity_meditates">meditates</string>
-    <string name="identity_sleeps_well">sleeps well</string>
-    <string name="identity_eats_well">eats well</string>
-    <string name="identity_stays_in_touch">stays in touch</string>
-    <string name="identity_speaks_up">speaks up</string>
-    <string name="identity_statement">Someone who %1$s</string>
-    <string name="identity_separator">" · "</string>
-    <string name="identity_title">Who are you becoming?</string>
-    <string name="identity_body">Pick up to three. They set your starting focus; you can change them any time.</string>
-    <string name="identity_limit">Pick up to 3</string>
-    <string name="identity_settings_title">Identities</string>
     <!-- Personal insights (GD §14.3): correlational only, never causal, never medical, never shaming -->
     <string name="insights_title">Insights</string>
     <string name="insights_caption">Based on your last 84 days. A pattern, not a cause.</string>
@@ -150,10 +119,10 @@
     <string name="insight_steps_less">On days under 7,000 steps, you complete %1$d%% more quests.</string>
     <string name="insight_steps_more_abs">On days you walk 7,000 steps or more, you complete %1$s quests a day, against %2$s otherwise.</string>
     <string name="insight_steps_less_abs">On days under 7,000 steps, you complete %1$s quests a day, against %2$s otherwise.</string>
-    <string name="insight_momentum_more">In the 3 days after a promotion challenge stage, you complete %1$d%% more quests.</string>
-    <string name="insight_momentum_less">Outside the 3 days after a promotion challenge stage, you complete %1$d%% more quests.</string>
-    <string name="insight_momentum_more_abs">In the 3 days after a promotion challenge stage, you complete %1$s quests a day, against %2$s otherwise.</string>
-    <string name="insight_momentum_less_abs">Outside the 3 days after a promotion challenge stage, you complete %1$s quests a day, against %2$s.</string>
+    <string name="insight_momentum_more">In the 3 days after a rank-up test stage, you complete %1$d%% more quests.</string>
+    <string name="insight_momentum_less">Outside the 3 days after a rank-up test stage, you complete %1$d%% more quests.</string>
+    <string name="insight_momentum_more_abs">In the 3 days after a rank-up test stage, you complete %1$s quests a day, against %2$s otherwise.</string>
+    <string name="insight_momentum_less_abs">Outside the 3 days after a rank-up test stage, you complete %1$s quests a day, against %2$s.</string>
     <string name="insight_weekday">You complete %1$d%% more quests on %2$s than on %3$s.</string>
     <string name="insight_weekday_abs">You complete %1$s quests on %2$s, against %3$s on %4$s.</string>
     <string name="insight_block">You finish %1$d%% more of your %2$s quests than your %3$s ones.</string>
@@ -179,7 +148,6 @@
     <string name="review_xp">XP earned</string>
     <string name="review_best_day">Best day</string>
     <string name="review_went_well">What went well?</string>
-    <string name="review_identity_prompt">Did you act like someone who %1$s?</string>
     <string name="review_slipped">What slipped?</string>
     <string name="review_focus_title">Next week\'s focus</string>
     <string name="review_focus_body">Pick two. They shape your plans from the next one on.</string>
@@ -193,32 +161,6 @@
     <string name="notification_review_line">Your weekly review is open.</string>
     <string name="action_open_review">Review</string>
     <!-- Monthly and yearly recaps (GD §14.6): nothing is granted -->
-    <string name="recap_title">Recap</string>
-    <string name="recaps_title">Recaps</string>
-    <string name="recap_page_cd">Page %1$d of %2$d</string>
-    <string name="recap_quests">quests completed</string>
-    <string name="recap_levels">Levels gained</string>
-    <string name="recap_effort">Effort</string>
-    <string name="recap_best_streak">best streak, in days</string>
-    <string name="recap_focus_hours">Focus hours</string>
-    <string name="recap_consistency">Consistency</string>
-    <plurals name="recap_consistency_value">
-        <item quantity="one">%1$d of %2$d day</item>
-        <item quantity="other">%1$d of %2$d days</item>
-    </plurals>
-    <string name="recap_growth">Growth</string>
-    <string name="recap_top_stat">your most trained stat</string>
-    <string name="recap_stat_levels">Levels gained in it</string>
-    <string name="recap_body">Body</string>
-    <string name="recap_distance">Distance</string>
-    <string name="recap_distance_value">%1$s km</string>
-    <string name="recap_steps">Daily steps</string>
-    <string name="recap_sleep">Sleep a night</string>
-    <string name="recap_sleep_value">%1$s h</string>
-    <string name="recap_summary">In short</string>
-    <string name="recap_achievements">achievements earned</string>
-    <string name="recap_missing">This recap is no longer available.</string>
-    <string name="recap_open_cd">Open the recap for %1$s</string>
     <!-- Step sources (Health screen) -->
     <string name="health_no_steps_title">No step data yet</string>
     <string name="health_no_steps_body">Connect a step source: an app or watch that records steps (for example Samsung Health or Fitbit) and shares them with Health Connect.</string>

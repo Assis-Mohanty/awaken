@@ -11,9 +11,6 @@ import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.ui.graphics.Color
-import com.assismohanty.awaken.core.designsystem.lexicon.Lexicon
-import com.assismohanty.awaken.core.designsystem.lexicon.LocalLexicon
-import com.assismohanty.awaken.core.designsystem.lexicon.PresentationMode
 import com.assismohanty.awaken.engine.model.Rank
 
 /**
@@ -23,16 +20,12 @@ import com.assismohanty.awaken.engine.model.Rank
  * @param darkTheme the resolved Appearance choice; the default follows the device.
  * @param reduceMotion the in-app toggle; the system "Remove animations" setting is OR-ed in (§2.5).
  * @param hapticsEnabled the in-app toggle (§2.6).
- * @param themeId the equipped Vault theme (GD §9.2); re-tints small rank-coloured accents ([AwakenTheme.rankAccent]) only.
- * @param presentation the words, provided as [LocalLexicon]. The app always passes Clean; tests may pin System words.
  */
 @Composable
 fun AwakenTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     reduceMotion: Boolean = false,
     hapticsEnabled: Boolean = true,
-    themeId: String = "default",
-    presentation: PresentationMode = PresentationMode.CLEAN,
     content: @Composable () -> Unit,
 ) {
     val palette = if (darkTheme) AwakenPalette.Dark else AwakenPalette.Light
@@ -51,8 +44,6 @@ fun AwakenTheme(
         LocalAwakenShapes provides shapes,
         LocalAwakenDimens provides dimens,
         LocalHaptics provides rememberHaptics(hapticsEnabled),
-        LocalThemeTint provides palette.theme(themeId),
-        LocalLexicon provides Lexicon.of(presentation),
     ) {
         MaterialTheme(
             colorScheme = colorScheme,
@@ -105,13 +96,9 @@ object AwakenTheme {
     val shapes: AwakenShapes @Composable @ReadOnlyComposable get() = LocalAwakenShapes.current
     val dimens: AwakenDimens @Composable @ReadOnlyComposable get() = LocalAwakenDimens.current
     val haptics: Haptics @Composable @ReadOnlyComposable get() = LocalHaptics.current
-    /** The equipped theme accent, or null on the default theme. */
-    val themeTint: Color? @Composable @ReadOnlyComposable get() = LocalThemeTint.current
-
-    /** Accent for a rank-coloured window: the equipped theme tint (GD §9.2), else the rank colour. Never for the crest. */
+    /** Accent for a rank-coloured window: the rank colour. Never for the crest. */
     @Composable
     @ReadOnlyComposable
-    fun rankAccent(rank: Rank): Color = LocalThemeTint.current ?: LocalAwakenPalette.current.rank(rank)
+    fun rankAccent(rank: Rank): Color = LocalAwakenPalette.current.rank(rank)
 }
 
-val LocalThemeTint = compositionLocalOf<Color?> { null }

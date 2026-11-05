@@ -172,7 +172,7 @@ class DisciplineSyncUseCase @Inject constructor(
         val tracked = read is UsageRead.Tracked
         val state = ScreenTimeRules.evaluate(usageMillis, reader.rulesInForce(today))
         val streak = gameState.hunterContext(profile, today).streak
-        val xp = XpCalculator.questXp(ScreenTimeRules.DISCIPLINE_DIFFICULTY, streak, VerificationSource.USAGE, crit = false)
+        val xp = XpCalculator.questXp(ScreenTimeRules.DISCIPLINE_DIFFICULTY, streak, VerificationSource.USAGE)
         var forfeited = false
         val quest = transactions.run {
             val open = reader.disciplineQuest(today)
