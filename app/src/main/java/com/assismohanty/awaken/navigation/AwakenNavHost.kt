@@ -29,7 +29,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.assismohanty.awaken.core.designsystem.components.FloatingNavBar
-import com.assismohanty.awaken.core.designsystem.components.GateBackground
+import com.assismohanty.awaken.core.designsystem.components.ScreenBackground
 import com.assismohanty.awaken.core.designsystem.components.NavBarItem
 import com.assismohanty.awaken.core.designsystem.theme.AwakenTheme
 import com.assismohanty.awaken.debug.DebugEntry
@@ -81,7 +81,7 @@ fun AwakenNavHost(
     when (val state = launch) {
         // One frame of void while Room answers; no spinner for a local read.
         LaunchState.Loading -> Box(modifier = modifier.fillMaxSize().background(AwakenTheme.palette.void))
-        LaunchState.NeedsOnboarding -> GateBackground(rank = Rank.E, modifier = modifier) { OnboardingEntry() }
+        LaunchState.NeedsOnboarding -> ScreenBackground(modifier = modifier) { OnboardingEntry() }
         is LaunchState.Ready -> MainScaffold(
             rank = state.rank,
             openTodayRequests = openTodayRequests,
@@ -125,7 +125,7 @@ private fun MainScaffold(
         currentDestination?.hierarchy?.any { it.hasRoute(destination.route::class) } == true
     }
 
-    GateBackground(rank = rank, modifier = modifier) {
+    ScreenBackground(modifier = modifier) {
         Scaffold(
             modifier = Modifier.fillMaxSize(),
             containerColor = Color.Transparent,

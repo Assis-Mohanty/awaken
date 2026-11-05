@@ -32,7 +32,7 @@ import java.util.Locale
 
 /** The Focus card on Today: focus time for today and the week, with the way into the weekly report. */
 @Composable
-fun FocusCard(
+fun FocusCardRoute(
     onStart: () -> Unit,
     onOpenReport: () -> Unit,
     modifier: Modifier = Modifier,

@@ -69,8 +69,8 @@ import com.assismohanty.awaken.core.designsystem.preview.PhonePreviews
 import com.assismohanty.awaken.core.designsystem.theme.AwakenTheme
 import com.assismohanty.awaken.core.designsystem.theme.Spacing
 import com.assismohanty.awaken.engine.model.Stat
-import com.assismohanty.awaken.feature.focuslock.FocusLockWindow
-import com.assismohanty.awaken.feature.reelcounter.ReelCounterWindow
+import com.assismohanty.awaken.feature.focuslock.FocusLockWindowRoute
+import com.assismohanty.awaken.feature.reelcounter.ReelCounterWindowRoute
 import com.assismohanty.awaken.feature.focuslock.FocusLockSettingsUiState
 import com.assismohanty.awaken.feature.focuslock.FocusLockWindowContent
 import com.assismohanty.awaken.feature.paths.AiConsentSheet
@@ -126,9 +126,9 @@ fun SettingsRoute(
         onOpenHealth = onOpenHealth,
         onOpenScreenTime = onOpenScreenTime,
         focusWindow = {
-            FocusLockWindow(onOpenSetup = onOpenFocusSetup, onOpenAllowedApps = onOpenAllowedApps, onOpenScreenTime = onOpenScreenTime)
+            FocusLockWindowRoute(onOpenSetup = onOpenFocusSetup, onOpenAllowedApps = onOpenAllowedApps, onOpenScreenTime = onOpenScreenTime)
             BedtimeSettingsRoute(onGrantAccess = { com.assismohanty.awaken.feature.screentime.openUsageAccessSettings(context) })
-            ReelCounterWindow(
+            ReelCounterWindowRoute(
                 onOpenSetup = onOpenReelSetup,
                 onOpenLimits = onOpenReelLimits,
                 onOpenStats = onOpenReelStats,

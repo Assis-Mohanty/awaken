@@ -63,7 +63,7 @@ import com.assismohanty.awaken.R
 import com.assismohanty.awaken.core.designsystem.components.AwakenGlyphs
 import com.assismohanty.awaken.core.designsystem.components.DifficultyChip
 import com.assismohanty.awaken.core.designsystem.components.EmptyState
-import com.assismohanty.awaken.core.designsystem.components.GateBackground
+import com.assismohanty.awaken.core.designsystem.components.ScreenBackground
 import com.assismohanty.awaken.core.designsystem.components.GateDial
 import com.assismohanty.awaken.core.designsystem.components.Heatmap
 import com.assismohanty.awaken.core.designsystem.components.HeatmapDay
@@ -160,7 +160,7 @@ private fun CatalogContent(
         }
     }
 
-    GateBackground(rank = rank) {
+    ScreenBackground() {
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()

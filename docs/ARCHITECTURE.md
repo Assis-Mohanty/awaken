@@ -478,3 +478,7 @@ App ledger events ──(batched, idempotent, signed session)──▶ Ingest AP
                                                Postgres ledger ─▶ Leaderboard (Redis ZSET, verified-XP only)
 ```
 Kotlin Multiplatform could share `:engine` with a Ktor backend; with a TS backend, port the engine and run the GD §12 vectors as a cross-language contract test.
+
+## Screen layering (rule)
+
+Every screen in `feature/**` is two functions: a `*Route` (also `*Entry` or `*Host` for overlays and sheet hosts) that takes the ViewModel with `hiltViewModel()` and collects its state, and a stateless `*Screen(state, onEvent)` that only lays out. Every `*Screen` has a `@PhonePreviews` preview. `ScreenLayeringTest` enforces both. Colours follow the same rule: hex values live only in `core/designsystem/theme/Color.kt` (`TokenSourceTest`).

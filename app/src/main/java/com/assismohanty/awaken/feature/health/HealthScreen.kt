@@ -39,7 +39,7 @@ import androidx.health.connect.client.HealthConnectClient
 import com.assismohanty.awaken.BuildConfig
 import com.assismohanty.awaken.R
 import com.assismohanty.awaken.core.designsystem.components.LargeTitleScaffold
-import com.assismohanty.awaken.core.designsystem.components.GateBackground
+import com.assismohanty.awaken.core.designsystem.components.ScreenBackground
 import com.assismohanty.awaken.core.designsystem.components.Pill
 import com.assismohanty.awaken.core.designsystem.components.PrimaryButton
 import com.assismohanty.awaken.core.designsystem.components.QuietButton
@@ -121,7 +121,7 @@ fun HealthScreen(
     showSource: Boolean = BuildConfig.DEBUG,
 ) {
     val colors = AwakenTheme.colors
-    GateBackground(rank = Rank.E, modifier = modifier) {
+    ScreenBackground(modifier = modifier) {
         LargeTitleScaffold(title = lexString(R.string.health_title), onBack = onBack) {
             val overview = state.overview
             when {

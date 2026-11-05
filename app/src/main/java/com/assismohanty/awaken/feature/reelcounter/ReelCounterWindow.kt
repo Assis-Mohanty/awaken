@@ -101,7 +101,7 @@ class ReelCounterWindowViewModel @Inject constructor(
 
 /** Settings → Focus → Reel counter: the switch, what Android still needs, the bubble, limits and stats. */
 @Composable
-fun ReelCounterWindow(
+fun ReelCounterWindowRoute(
     onOpenSetup: () -> Unit,
     onOpenLimits: () -> Unit,
     onOpenStats: () -> Unit,

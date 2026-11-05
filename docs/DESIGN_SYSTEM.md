@@ -21,7 +21,7 @@ What we are explicitly not: Habitica's pixel-art toybox, a generic Material app,
 
 ### 2.1 Colour — two looks, one set of tokens
 
-Only `core/designsystem/theme/Color.kt` holds hex values. `AwakenPalette` has two instances, **Light** and **Dark**. Feature code reads the semantic `AwakenColors` (§8.4), never a palette.
+Only `core/designsystem/theme/Color.kt` holds hex values, and `TokenSourceTest` fails the build if a `Color(0x…)` appears anywhere else. `AwakenPalette` has two instances, **Light** and **Dark**. Feature code reads the semantic `AwakenColors` (§8.4), never a palette. Every screen sits on `ScreenBackground`, a flat page-colour fill with no glow.
 
 | Role (semantic token) | Light | Dark |
 |---|---|---|

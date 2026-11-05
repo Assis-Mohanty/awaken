@@ -29,7 +29,7 @@ import com.assismohanty.awaken.core.designsystem.components.AwakenCard
 import com.assismohanty.awaken.core.designsystem.components.ChoiceChip
 import com.assismohanty.awaken.core.designsystem.components.ConfirmDialog
 import com.assismohanty.awaken.core.designsystem.components.EmptyState
-import com.assismohanty.awaken.core.designsystem.components.GateBackground
+import com.assismohanty.awaken.core.designsystem.components.ScreenBackground
 import com.assismohanty.awaken.core.designsystem.components.LargeTitleScaffold
 import com.assismohanty.awaken.core.designsystem.components.MilestoneLadder
 import com.assismohanty.awaken.core.designsystem.components.NumberField
@@ -86,7 +86,7 @@ fun QuitScreen(
 ) {
     val colors = AwakenTheme.colors
     val selected = state.selected
-    GateBackground(rank = Rank.E, modifier = modifier) {
+    ScreenBackground(modifier = modifier) {
         LargeTitleScaffold(title = selected?.counter?.name ?: lexString(R.string.quit_title), onBack = onBack) {
             when {
                 state.loading -> Unit

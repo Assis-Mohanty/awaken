@@ -56,7 +56,7 @@ import com.assismohanty.awaken.core.designsystem.components.DifficultyChip
 import com.assismohanty.awaken.core.designsystem.components.IconCircle
 import com.assismohanty.awaken.core.designsystem.components.LargeTitleScaffold
 import com.assismohanty.awaken.core.designsystem.components.SkeletonCard
-import com.assismohanty.awaken.core.designsystem.components.GateBackground
+import com.assismohanty.awaken.core.designsystem.components.ScreenBackground
 import com.assismohanty.awaken.core.designsystem.components.GateDial
 import com.assismohanty.awaken.core.designsystem.components.StopwatchFace
 import com.assismohanty.awaken.core.designsystem.components.PrimaryButton
@@ -377,7 +377,7 @@ private fun StopwatchScreen(active: ActiveGate, confirmAbandon: Boolean, onEvent
         view.keepScreenOn = true
         onDispose { view.keepScreenOn = false }
     }
-    GateBackground(tint = colors.surface, modifier = modifier) {
+    ScreenBackground(modifier = modifier) {
         BoxWithConstraints(modifier = Modifier.fillMaxSize().systemBarsPadding().padding(horizontal = Spacing.gutter, vertical = Spacing.md)) {
             val landscape = maxWidth > maxHeight
             // Tap the face to pause; tap again to carry on. The run still has the one pause the rules allow (GD §8).

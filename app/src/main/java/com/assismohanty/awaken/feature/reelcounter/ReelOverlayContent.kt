@@ -14,7 +14,7 @@ import androidx.compose.ui.text.style.TextAlign
 import com.assismohanty.awaken.R
 import com.assismohanty.awaken.core.designsystem.components.AwakenCard
 import com.assismohanty.awaken.core.designsystem.components.BigValue
-import com.assismohanty.awaken.core.designsystem.components.GateBackground
+import com.assismohanty.awaken.core.designsystem.components.ScreenBackground
 import com.assismohanty.awaken.core.designsystem.components.PrimaryButton
 import com.assismohanty.awaken.core.designsystem.components.SecondaryButton
 import com.assismohanty.awaken.core.designsystem.components.ValueRow
@@ -63,7 +63,7 @@ fun ReelNudgeContent(
     val colors = AwakenTheme.colors
     val type = AwakenTheme.type
     val full = Modifier.fillMaxWidth()
-    GateBackground(tint = colors.accent, modifier = modifier) {
+    ScreenBackground(modifier = modifier) {
         Column(
             modifier = Modifier.align(Alignment.Center).padding(horizontal = Spacing.lg),
             horizontalAlignment = Alignment.CenterHorizontally,

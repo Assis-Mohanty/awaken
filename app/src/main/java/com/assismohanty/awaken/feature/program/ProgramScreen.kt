@@ -20,7 +20,7 @@ import com.assismohanty.awaken.core.data.db.entity.ProgramEntity
 import com.assismohanty.awaken.core.designsystem.components.AwakenBottomSheet
 import com.assismohanty.awaken.core.designsystem.components.AwakenCard
 import com.assismohanty.awaken.core.designsystem.components.ConfirmDialog
-import com.assismohanty.awaken.core.designsystem.components.GateBackground
+import com.assismohanty.awaken.core.designsystem.components.ScreenBackground
 import com.assismohanty.awaken.core.designsystem.components.LargeTitleScaffold
 import com.assismohanty.awaken.core.designsystem.components.PrimaryButton
 import com.assismohanty.awaken.core.designsystem.components.ProgramCalendar
@@ -146,7 +146,7 @@ fun ProgramsRoute(onBack: () -> Unit, modifier: Modifier = Modifier, viewModel: 
 fun ProgramsScreen(state: ProgramsUiState, onEvent: (ProgramsEvent) -> Unit, onBack: () -> Unit, modifier: Modifier = Modifier) {
     val view = state.view
     val selected = state.selected
-    GateBackground(rank = Rank.E, modifier = modifier) {
+    ScreenBackground(modifier = modifier) {
         LargeTitleScaffold(title = selected?.let { lexString(programNameRes(it.key)) } ?: lexString(R.string.programs_title), onBack = onBack) {
             when {
                 state.loading -> Unit

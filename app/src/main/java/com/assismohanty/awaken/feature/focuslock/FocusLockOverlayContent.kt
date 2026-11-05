@@ -18,7 +18,7 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.text.style.TextAlign
 import com.assismohanty.awaken.R
 import com.assismohanty.awaken.core.designsystem.components.AwakenGlyphs
-import com.assismohanty.awaken.core.designsystem.components.GateBackground
+import com.assismohanty.awaken.core.designsystem.components.ScreenBackground
 import com.assismohanty.awaken.core.designsystem.components.IconCircle
 import com.assismohanty.awaken.core.designsystem.components.PrimaryButton
 import com.assismohanty.awaken.core.designsystem.components.QuietButton
@@ -45,7 +45,7 @@ fun FocusLockOverlayContent(
 ) {
     val colors = AwakenTheme.colors
     val type = AwakenTheme.type
-    GateBackground(tint = colors.surface, modifier = modifier) {
+    ScreenBackground(modifier = modifier) {
         Column(
             modifier = Modifier
                 .safeDrawingPadding()

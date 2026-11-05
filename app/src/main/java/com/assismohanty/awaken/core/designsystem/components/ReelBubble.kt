@@ -88,7 +88,7 @@ fun ReelBubble(count: Int, over: Boolean, modifier: Modifier = Modifier) {
 private fun GlassBackdrop(content: @Composable () -> Unit) {
     Box(
         modifier = Modifier
-            .background(Brush.linearGradient(listOf(Color(0xFF3B82C4), Color(0xFFE0689A), Color(0xFFF4B942))))
+            .background(Brush.linearGradient(listOf(AwakenTheme.colors.chartSeries3, AwakenTheme.colors.chartSeries5, AwakenTheme.colors.chartSeries1)))
             .padding(Spacing.md),
     ) { content() }
 }

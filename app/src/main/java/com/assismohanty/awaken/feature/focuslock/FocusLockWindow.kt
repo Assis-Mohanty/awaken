@@ -29,7 +29,7 @@ import com.assismohanty.awaken.core.lock.FocusLockSettingsLauncher
 
 /** Settings → Focus (GD 8.2): the switch, what Android still needs, the allowed apps and the Distracting-apps pointer. */
 @Composable
-fun FocusLockWindow(
+fun FocusLockWindowRoute(
     onOpenSetup: () -> Unit,
     onOpenAllowedApps: () -> Unit,
     onOpenScreenTime: () -> Unit,
