@@ -157,7 +157,7 @@ Off by default (toggle ready, assets later). Never ship a sound you didn't licen
 
 ## 4. Screens & flows
 
-Navigation: bottom bar (§3) with 4 destinations — **Today**, **Gym**, **Diet**, **Progress** (the Status screen). **Gates** and **Vault** open from round icon buttons in Today's greeting header; **Paths** opens from the Progress header; Settings from Progress top-right. Every screen is on the v2 design (2026-10-27): a large title that collapses on scroll, an icon back button on pushed screens, flat cards; the sketches below show layout, not final copy.
+Navigation: bottom bar (§3) with 5 destinations — **Today**, **Focus**, **Gym**, **Diet**, **Progress** (the Status screen). **Gates** and **Vault** open from round icon buttons in Today's greeting header; **Paths** opens from the Progress header; Settings from Progress top-right. Every screen is on the v2 design (2026-10-27): a large title that collapses on scroll, an icon back button on pushed screens, flat cards; the sketches below show layout, not final copy.
 
 ### 4.1 Awakening (onboarding) — target < 60 seconds without a Path, < 2 minutes with one; no account
 
@@ -187,10 +187,11 @@ First quest is guaranteed Easy and doable now (e.g., "Drink a glass of water" VI
 ```
 ┌──────────────────────────────────┐
 │ Tuesday 3 November               │  the date is the title; no greeting, no header icons
-│ ┌ Level 12 · Rank D   14-day … ┐ │  1. Header: thin XP bar; tap → Progress
+│ [Screen time ◔] [Steps ◔ · sleep]│  metrics first: screen-time and health tiles, reels under them
+│ ┌ Level 12 · Rank D   14-day … ┐ │  2. Header: thin XP bar; tap → Progress
 │ │ ▬▬▬▬▬▬░░░  1,240 / 1,800 XP  │ │
 │ └──────────────────────────────┘ │
-│ Today's plan · 3 of 7 done  Plan day  Habits │  2. Today's plan
+│ Today's plan · 3 of 7 done  Plan day  Habits │  3. Today's plan
 │ ┌ Comeback ────────────────────┐ │  only after a missed day: quest + "never miss twice" line
 │ Morning            1 of 1 done › │  past block: collapsed
 │ Day  [Now]         0 of 2 done ⌄ │
@@ -198,12 +199,10 @@ First quest is guaranteed Easy and doable now (e.g., "Drink a glass of water" VI
 │ Evening: … + Phone-down night row│
 │ Anytime: … + App limits row      │
 │ Your weekly review is open     › │  Sat–Mon only
-│ Focus                            │  3. Focus: 42 of 60 min, streak, [Start a session]
-│ Health and screen                │  4. Steps + sleep tile, screen-time tile, reels
-│ Quit counters                    │  5. only if any exist: "Smoking · 12 days clean"
+│ Quit counters                    │  4. only if any exist: "Smoking · 12 days clean"
 └──────────────────────────────────┘
 ```
-- **At most five sections:** Header, Today's plan, Focus, Health and screen, Quit counters. Each section has a `SectionHeader`; the plan's carries the two quiet actions *Plan day* and *Habits*.
+- **Metrics first, then at most four sections:** the live metrics (screen time, steps and health, reels) sit directly under the title and load before the plan; then Header, Today's plan, Quit counters. Focus is its own tab (§4.9). The plan's header carries the two quiet actions *Plan day* and *Habits*.
 - **The plan:** every directive item and habit, grouped by time-of-day block (GD §14.5) in the order Morning → Day → Evening → Anytime.
   - Each block is a section title over a card of rows; empty blocks are hidden.
   - The current block is marked "Now"; earlier blocks start collapsed (tap to expand; open quests stay completable).
@@ -212,8 +211,7 @@ First quest is guaranteed Easy and doable now (e.g., "Drink a glass of water" VI
 - **Rank-up test:** while one is available or running, its group follows the comeback row.
 - **Phone-down night** is a plan row: tonight's window in Evening (with a *Wind down* link from 30 minutes before bedtime), last night's result in Morning. **App limits** is a row in Anytime.
 - **Empty habits:** the "Add habit" empty state stays inside the plan.
-- **Focus:** minutes against the daily goal, the focus streak, [Start a session] and a link to the weekly report.
-- **Health and screen:** each tile opens its detail; missing access shows the existing grant or set-up prompt, never a 0.
+- **Metrics:** each tile opens its detail; missing access shows the existing grant or set-up prompt, never a 0.
 - **Debug:** the Debug entry lives in Settings → Developer (debug builds only), never floating over content.
 
 ### 4.3 Quest detail (long-press / tap title)
@@ -387,3 +385,6 @@ Supportive, factual, never shaming. Yes: "Day 12", "Best run: 30 days. It's stil
 - **Programs (F6):** entry from Progress ("Programs" row) next to Campaign. List of three programs (name, days, rules); detail with [Start] (reason shown when slots are short or a campaign runs); running: "Day 12 / 66", `ProgramCalendar`, today's rules; the break choice is a sheet on next open: "Yesterday wasn't kept. Restart from day 1, or continue with the day marked?" [Restart] [Continue] (equal weight). Finished: COMPLETED (achievement) / FINISHED (marks shown, no blame). States: list / detail / running / break choice / completed / finished / abandoned.
 - **Quick Settings tile (A4):** label "Start focus"; subtitle the last-used session ("D · 25 min · Maths"); while running "18:24 left" (stopwatch: "32 min"); inactive look when nothing was ever started (tap opens Gates). Icon = the existing focus glyph as a monochrome vector.
 - **Start focus widget (A5):** Glance 2×1: "Start focus" + last-used session line; running: "Running · ends 18:55" (stopwatch "since 18:30"); tap starts the last-used session in the app (or opens the running one); empty: "Pick a session" → Gates. Widget colours via `AwakenPalette` like the existing widgets (allowed for widgets, CLAUDE.md).
+
+### 4.9 Focus tab
+The home of everything about attention; new focus tools get a row here. Order: today's focus as the biggest number on the tab (`metricXL`) with progress to the daily goal, the 7-day total, the streak and **Start a session**; then *Block distractions* (Focus Lock, Allowed apps, Reel counter with today's count or its set-up, Daily limits); then *Reports* (the weekly focus report). Every row opens an existing screen; the tab holds no rules.

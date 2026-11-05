@@ -59,9 +59,6 @@ import com.assismohanty.awaken.engine.model.Rank
 import com.assismohanty.awaken.engine.model.Stat
 import com.assismohanty.awaken.engine.model.TimeOfDay
 import com.assismohanty.awaken.engine.model.VerificationSource
-import com.assismohanty.awaken.feature.focus.FocusCard
-import com.assismohanty.awaken.feature.focus.FocusCardState
-import com.assismohanty.awaken.feature.focus.FocusCardViewModel
 import com.assismohanty.awaken.feature.health.openHealthConnectSettings
 import com.assismohanty.awaken.feature.program.ProgramBreakHost
 import com.assismohanty.awaken.feature.screentime.openUsageAccessSettings
@@ -78,7 +75,6 @@ fun TodayRoute(
     onOpenScreenTime: () -> Unit = {},
     onOpenReelStats: () -> Unit = {},
     onOpenGates: () -> Unit = {},
-    onOpenFocusReport: () -> Unit = {},
     onOpenQuit: () -> Unit = {},
     onOpenReview: () -> Unit = {},
     onOpenHealth: () -> Unit = {},
@@ -89,10 +85,8 @@ fun TodayRoute(
     habitsViewModel: HabitsViewModel = hiltViewModel(),
     dayPlanViewModel: DayPlanViewModel = hiltViewModel(),
     summaryViewModel: TodaySummaryViewModel = hiltViewModel(),
-    focusViewModel: FocusCardViewModel = hiltViewModel(),
     bedtimeViewModel: BedtimeCardViewModel = hiltViewModel(),
 ) {
-    val focus by focusViewModel.uiState.collectAsStateWithLifecycle()
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val summary by summaryViewModel.uiState.collectAsStateWithLifecycle()
     val bedtime by bedtimeViewModel.uiState.collectAsStateWithLifecycle()
@@ -118,11 +112,8 @@ fun TodayRoute(
         onOpenScreenTime = onOpenScreenTime,
         onOpenReelStats = onOpenReelStats,
         onOpenReview = onOpenReview,
-        onOpenGates = onOpenGates,
-        onOpenFocusReport = onOpenFocusReport,
         onOpenQuit = onOpenQuit,
         summary = summary,
-        focus = focus,
         bedtime = bedtime,
         onOpenWindDown = onOpenWindDown,
         onOpenHealth = onOpenHealth,
@@ -152,9 +143,9 @@ private fun HabitUndoSnackbar(undo: HabitUndo?, host: SnackbarHostState?, onEven
 }
 
 /**
- * Today (DECLUTTER_PLAN §4): the date as the title, then at most five sections. Header (level, XP, streak; opens
- * Progress) → Today's plan (comeback, rank-up test, Morning / Day / Evening / Anytime, weekly review) → Focus →
- * Health and screen → Quit counters (only when one exists).
+ * Today (DECLUTTER_PLAN §4): the date as the title, then the live metrics (screen time, steps and health, reels) the
+ * moment the tab opens, then Header (level, XP, streak; opens Progress) → Today's plan (comeback, rank-up test,
+ * Morning / Day / Evening / Anytime, weekly review) → Quit counters (only when one exists). Focus has its own tab.
  */
 @Composable
 fun TodayScreen(
@@ -168,10 +159,7 @@ fun TodayScreen(
     onOpenProgress: () -> Unit = {},
     onOpenScreenTime: () -> Unit = {},
     onOpenReelStats: () -> Unit = {},
-    onOpenGates: () -> Unit = {},
-    onOpenFocusReport: () -> Unit = {},
     onOpenQuit: () -> Unit = {},
-    focus: FocusCardState = FocusCardState(),
     onOpenReview: () -> Unit = {},
     summary: TodaySummaryUiState = TodaySummaryUiState(),
     bedtime: BedtimeToday? = null,
@@ -185,6 +173,15 @@ fun TodayScreen(
         title = state.gameDate?.let(::formatDay) ?: lexString(R.string.nav_today),
         modifier = modifier,
     ) {
+        // Steps, screen time and reels lead the tab: they don't wait for the plan to load.
+        TodayMetrics(
+            summary = summary,
+            onOpenScreenTime = onOpenScreenTime,
+            onOpenHealth = onOpenHealth,
+            onOpenReelStats = onOpenReelStats,
+            onGrantUsageAccess = onGrantUsageAccess,
+            onSetUpHealth = onSetUpHealth,
+        )
         if (state.loading || header == null) {
             SkeletonCard()
             SkeletonCard(lines = 4)
@@ -213,29 +210,6 @@ fun TodayScreen(
             onGrantUsageAccess = onGrantUsageAccess,
         )
 
-        SectionHeader(title = lexString(R.string.today_section_focus))
-        FocusCard(state = focus, onStart = onOpenGates, onOpenReport = onOpenFocusReport)
-
-        SectionHeader(title = lexString(R.string.today_section_health))
-        // Equal heights: the taller tile (at large font sizes) sets both.
-        Row(
-            modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min),
-            horizontalArrangement = Arrangement.spacedBy(Spacing.cardGap),
-        ) {
-            ScreenTimeTile(
-                model = summary.screenTime,
-                onClick = onOpenScreenTime,
-                onGrantAccess = onGrantUsageAccess,
-                modifier = Modifier.weight(1f).fillMaxHeight(),
-            )
-            HealthTile(
-                model = summary.health,
-                onClick = onOpenHealth,
-                onSetUp = onSetUpHealth,
-                modifier = Modifier.weight(1f).fillMaxHeight(),
-            )
-        }
-        summary.reelsToday?.let { ReelsTile(total = it, onClick = onOpenReelStats, modifier = Modifier.fillMaxWidth()) }
 
         if (summary.quit.isNotEmpty()) {
             SectionHeader(title = lexString(R.string.today_section_quit))
@@ -246,6 +220,36 @@ fun TodayScreen(
             }
         }
     }
+}
+
+/** Screen time and health side by side (equal heights: the taller tile sets both), and the reel count under them when it is on. */
+@Composable
+private fun TodayMetrics(
+    summary: TodaySummaryUiState,
+    onOpenScreenTime: () -> Unit,
+    onOpenHealth: () -> Unit,
+    onOpenReelStats: () -> Unit,
+    onGrantUsageAccess: () -> Unit,
+    onSetUpHealth: () -> Unit,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min),
+        horizontalArrangement = Arrangement.spacedBy(Spacing.cardGap),
+    ) {
+        ScreenTimeTile(
+            model = summary.screenTime,
+            onClick = onOpenScreenTime,
+            onGrantAccess = onGrantUsageAccess,
+            modifier = Modifier.weight(1f).fillMaxHeight(),
+        )
+        HealthTile(
+            model = summary.health,
+            onClick = onOpenHealth,
+            onSetUp = onSetUpHealth,
+            modifier = Modifier.weight(1f).fillMaxHeight(),
+        )
+    }
+    summary.reelsToday?.let { ReelsTile(total = it, onClick = onOpenReelStats, modifier = Modifier.fillMaxWidth()) }
 }
 
 /**
@@ -513,13 +517,12 @@ internal val previewSummary = TodaySummaryUiState(
     health = HealthTileModel.Ready(steps = 8_412, distanceKm = 6.2, activeKcal = 412, sleepMinutes = 452),
 )
 
-private val previewFocus = FocusCardState(todayMinutes = 42, weekMinutes = 310, goal = 60, streak = 5)
 
 @PhonePreviews
 @Composable
 private fun TodayScreenPreview() {
     AwakenTheme {
-        TodayScreen(previewTodayState, onEvent = {}, onOpenQuest = {}, onOpenTrial = {}, onHabitsEvent = {}, onDayPlanEvent = {}, summary = previewSummary, focus = previewFocus)
+        TodayScreen(previewTodayState, onEvent = {}, onOpenQuest = {}, onOpenTrial = {}, onHabitsEvent = {}, onDayPlanEvent = {}, summary = previewSummary)
     }
 }
 
@@ -560,7 +563,6 @@ private fun TodayScreenEveningPreview() {
             onHabitsEvent = {},
             onDayPlanEvent = {},
             summary = previewSummary.copy(quit = listOf(QuitSummaryLine("q1", "Smoking", 12))),
-            focus = previewFocus,
         )
     }
 }

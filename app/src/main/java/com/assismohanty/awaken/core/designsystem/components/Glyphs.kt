@@ -142,6 +142,12 @@ object AwakenGlyphs {
     val Home: ImageVector by lazy { line("Home") { house() } }
     val HomeSolid: ImageVector by lazy { solid("HomeSolid", evenOdd = true) { house(); roundRect(10.25f, 14.5f, 3.5f, 5.5f, 1f) } }
 
+    /** Focus tab: a target, one ring and a dot. */
+    val Focus: ImageVector by lazy { line("Focus") { circle(12f, 12f, 8.5f); circle(12f, 12f, 3.5f) } }
+    val FocusSolid: ImageVector by lazy {
+        solid("FocusSolid", rounded = false, evenOdd = true) { circle(12f, 12f, 9.25f); circle(12f, 12f, 6.25f); circle(12f, 12f, 3.5f) }
+    }
+
     /** Gym tab. */
     val Dumbbell: ImageVector by lazy {
         line("Dumbbell") {

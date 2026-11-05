@@ -57,6 +57,10 @@ data object GymRoute
 @Serializable
 data object DietRoute
 
+/** Focus: the dedicated tab. Start a session, today's focus, distraction blockers, reel counter and reports. */
+@Serializable
+data object FocusRoute
+
 /** Weekly focus report (GD §8.1 P8), opened from the Focus card on Today. */
 @Serializable
 data object FocusReportRoute

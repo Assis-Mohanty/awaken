@@ -7,6 +7,7 @@ import com.assismohanty.awaken.core.data.clock.gameDate
 import com.assismohanty.awaken.core.data.db.dao.FocusDao
 import com.assismohanty.awaken.core.data.db.dao.HunterDao
 import com.assismohanty.awaken.core.domain.DayRefresher
+import com.assismohanty.awaken.core.reelcounter.ReelWidgetData
 import com.assismohanty.awaken.core.domain.ObserveFocusGoalUseCase
 import com.assismohanty.awaken.engine.GameDay
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -24,7 +25,7 @@ private const val STOP_TIMEOUT_MS = 5_000L
 private const val WEEK_DAYS = 7L
 private const val SECONDS_PER_MINUTE = 60L
 
-/** The Focus section on Today: today's focus against the daily goal, the focus streak, and the last 7 game-days. */
+/** Today's focus (the Focus tab): today's focus against the daily goal, the focus streak, and the last 7 game-days. */
 data class FocusCardState(
     val todayMinutes: Int = 0,
     val weekMinutes: Int = 0,
@@ -103,4 +104,17 @@ class FocusReportViewModel @Inject constructor(
             }
         }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), FocusReportUiState())
+}
+
+/** What the Focus tab shows beyond [FocusCardState]. Grows as focus tools are added. */
+data class FocusHubUiState(
+    /** Reels watched today; null while the Reel counter is off. */
+    val reelsToday: Int? = null,
+)
+
+@HiltViewModel
+class FocusHubViewModel @Inject constructor(reelData: ReelWidgetData) : ViewModel() {
+    val uiState: StateFlow<FocusHubUiState> = reelData.observe()
+        .map { FocusHubUiState(reelsToday = it) }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), FocusHubUiState())
 }

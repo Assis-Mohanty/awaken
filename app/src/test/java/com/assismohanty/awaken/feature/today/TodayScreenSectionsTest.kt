@@ -20,14 +20,13 @@ import com.assismohanty.awaken.core.domain.TonightNight
 import com.assismohanty.awaken.engine.BedtimeWindow
 import com.assismohanty.awaken.engine.MissLine
 import com.assismohanty.awaken.engine.model.TimeOfDay
-import com.assismohanty.awaken.feature.focus.FocusCardState
 import com.google.common.truth.Truth.assertThat
 import java.time.Instant
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
-/** DECLUTTER_PLAN §4: Today is a date title and at most five sections, each opening its detail. */
+/** Today: a date title, the live metrics first, then at most four sections, each opening its detail. Focus has its own tab. */
 @RunWith(AndroidJUnit4::class)
 class TodayScreenSectionsTest {
     @get:Rule
@@ -46,7 +45,6 @@ class TodayScreenSectionsTest {
         summary: TodaySummaryUiState = this.summary,
         bedtime: BedtimeToday? = null,
         onOpenProgress: () -> Unit = {},
-        onOpenGates: () -> Unit = {},
         onOpenQuit: () -> Unit = {},
         habits: MutableList<HabitsEvent> = mutableListOf(),
     ) {
@@ -60,9 +58,7 @@ class TodayScreenSectionsTest {
                     onHabitsEvent = { habits += it },
                     onDayPlanEvent = {},
                     onOpenProgress = onOpenProgress,
-                    onOpenGates = onOpenGates,
                     onOpenQuit = onOpenQuit,
-                    focus = FocusCardState(todayMinutes = 42, goal = 60, streak = 3),
                     summary = summary,
                     bedtime = bedtime,
                 )
@@ -80,7 +76,7 @@ class TodayScreenSectionsTest {
     @Test
     fun theSectionsAppearInOrder() {
         show()
-        val titles = listOf("Today's plan · 2 of 6 done", "Start a session", "Health and screen")
+        val titles = listOf("Screen time", "Today's plan · 2 of 6 done")
         val tree = composeRule.onRoot().printToString(Int.MAX_VALUE)
         val indexes = titles.map { tree.indexOf(it) }
         assertThat(indexes).doesNotContain(-1)
@@ -92,14 +88,6 @@ class TodayScreenSectionsTest {
         var opened = 0
         show(onOpenProgress = { opened++ })
         composeRule.onNodeWithContentDescription("Level 24, rank C", substring = true).performClick()
-        assertThat(opened).isEqualTo(1)
-    }
-
-    @Test
-    fun startASessionOpensFocus() {
-        var opened = 0
-        show(onOpenGates = { opened++ })
-        composeRule.onNodeWithText("Start a session").performScrollTo().performClick()
         assertThat(opened).isEqualTo(1)
     }
 
@@ -128,8 +116,8 @@ class TodayScreenSectionsTest {
     @Test
     fun theComebackRowShowsTheNeverMissTwiceLine() {
         show(previewTodayState.copy(missLine = MissLine.MISSED_YESTERDAY))
-        composeRule.onNodeWithText("Comeback").assertIsDisplayed()
-        composeRule.onNodeWithText("Missed yesterday. Don't miss twice.").assertIsDisplayed()
+        composeRule.onNodeWithText("Comeback").performScrollTo().assertIsDisplayed()
+        composeRule.onNodeWithText("Missed yesterday. Don't miss twice.").performScrollTo().assertIsDisplayed()
     }
 
     @Test

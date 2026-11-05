@@ -43,6 +43,8 @@ import com.assismohanty.awaken.feature.paths.PathsRoute as PathsEntry
 import com.assismohanty.awaken.feature.quest.QuestDetailRoute as QuestDetailEntry
 import com.assismohanty.awaken.feature.quest.RewardHost
 import com.assismohanty.awaken.feature.health.HealthRoute as HealthEntry
+import com.assismohanty.awaken.feature.focus.FocusHubActions
+import com.assismohanty.awaken.feature.focus.FocusHubRoute as FocusHubEntry
 import com.assismohanty.awaken.feature.focus.FocusReportRoute as FocusReportEntry
 import com.assismohanty.awaken.feature.focuslock.AllowedAppsRoute as AllowedAppsEntry
 import com.assismohanty.awaken.feature.focuslock.FocusLockSetupRoute as FocusLockSetupEntry
@@ -174,7 +176,6 @@ private fun MainScaffold(
                         onOpenQuest = { navController.navigate(QuestDetailRoute(it)) },
                         onOpenScreenTime = { navController.navigate(ScreenTimeRoute) },
                         onOpenWindDown = { navController.navigate(WindDownRoute) { launchSingleTop = true } },
-                        onOpenFocusReport = { navController.navigate(FocusReportRoute) },
                         onOpenReelStats = { navController.navigate(ReelStatsRoute) { launchSingleTop = true } },
                         onOpenReview = { navController.navigate(ReviewRoute) { launchSingleTop = true } },
                         snackbarHostState = snackbarHostState,
@@ -218,6 +219,19 @@ private fun MainScaffold(
                     )
                 }
                 composable<ProgramsRoute> { ProgramsEntry(onBack = { navController.popBackStack() }) }
+                composable<FocusRoute> {
+                    FocusHubEntry(
+                        actions = FocusHubActions(
+                            onStart = { navController.navigate(GatesRoute) { launchSingleTop = true } },
+                            onOpenReport = { navController.navigate(FocusReportRoute) },
+                            onOpenFocusLock = { navController.navigate(FocusLockSetupRoute) { launchSingleTop = true } },
+                            onOpenAllowedApps = { navController.navigate(AllowedAppsRoute) { launchSingleTop = true } },
+                            onOpenReelSetup = { navController.navigate(ReelCounterSetupRoute) { launchSingleTop = true } },
+                            onOpenReelCounter = { navController.navigate(ReelStatsRoute) { launchSingleTop = true } },
+                            onOpenReelLimits = { navController.navigate(ReelLimitsRoute) { launchSingleTop = true } },
+                        ),
+                    )
+                }
                 composable<GymRoute> { GymEntry() }
                 composable<DietRoute> { DietEntry() }
                 composable<StatusRoute> {

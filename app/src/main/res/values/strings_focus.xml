@@ -22,10 +22,24 @@
     <string name="focus_subject_limit">Up to 12 subjects. Archive one to add another.</string>
     <string name="action_stop_stopwatch">Stop and count</string>
     <string name="focus_elapsed_caption">Time counted</string>
+    <string name="nav_focus">Focus</string>
+    <string name="focus_hub_today_caption">Focused today</string>
+    <string name="focus_hub_minutes_unit">min</string>
+    <string name="focus_hub_week_label">Last 7 days</string>
+    <string name="focus_hub_streak_label">Day streak</string>
+    <string name="focus_hub_no_goal">Set a daily goal in Settings to track your streak.</string>
+    <string name="focus_hub_section_blockers">Block distractions</string>
+    <string name="focus_hub_section_reports">Reports</string>
+    <string name="focus_hub_lock_note">Keeps distracting apps closed during a session.</string>
+    <string name="focus_hub_allowed_note">Apps that stay open during a session.</string>
+    <string name="focus_hub_reel_note">Counts short videos and warns you at your daily limit.</string>
+    <plurals name="focus_hub_reels_today">
+        <item quantity="one">%1$d watched today</item>
+        <item quantity="other">%1$d watched today</item>
+    </plurals>
+    <string name="focus_hub_limits_note">A daily cap for each app.</string>
+    <string name="focus_hub_report_note">Minutes per day and per subject.</string>
     <string name="focus_card_title">Focus</string>
-    <string name="focus_card_today">Today</string>
-    <string name="focus_card_week">7 days</string>
-    <string name="focus_card_note">Timer, custom or stopwatch. Tap for the weekly report.</string>
     <string name="focus_card_start">Start a session</string>
     <string name="focus_report_title">Focus report</string>
     <string name="focus_report_days">Minutes per day</string>

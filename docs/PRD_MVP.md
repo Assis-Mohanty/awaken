@@ -39,7 +39,7 @@ Habit/RPG apps are a crowded but low-quality niche on Play: Habitica (aging, pun
 |---|---|---|
 | F1 | Awakening onboarding (≤ 60 s, no account) | DESIGN_SYSTEM §4.1 |
 | F2 | Profile: level, 5 stats, rank, gold, streak | GAME_DESIGN §2–5 |
-| F3 | Today in five sections (header, plan, focus, health and screen, quit counters; DS §4.2) with the daily plan: 1 main + Path quests + 1–3 side quests (template library), deterministic per day, novelty window, equipment/injury filters, 1 free reroll | GD §6 |
+| F3 | Today (live metrics first, then header, plan, quit counters; DS §4.2) and a Focus tab (DS §4.9) with the daily plan: 1 main + Path quests + 1–3 side quests (template library), deterministic per day, novelty window, equipment/injury filters, 1 free reroll | GD §6 |
 | F4 | Custom habits (max 8, days-of-week) | GD §6.1 |
 | F5 | Quest completion pipeline w/ ledger, caps, crits, undo (10 min), reward sheet with formula breakdown | GD §4, §9.3; ARCH §3.1 |
 | F6 | Level and rank-up lines in the reward sheet; rank-up test unlock | GD §4.4, §5 |

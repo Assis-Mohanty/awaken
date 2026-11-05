@@ -17,11 +17,8 @@ import com.assismohanty.awaken.core.designsystem.charts.StackedColumn
 import com.assismohanty.awaken.core.designsystem.components.AwakenCard
 import com.assismohanty.awaken.core.designsystem.components.EmptyState
 import com.assismohanty.awaken.core.designsystem.components.LargeTitleScaffold
-import com.assismohanty.awaken.core.designsystem.components.PrimaryButton
-import com.assismohanty.awaken.core.designsystem.components.QuietButton
 import com.assismohanty.awaken.core.designsystem.components.SkeletonCard
 import com.assismohanty.awaken.core.designsystem.components.formatMinutes
-import com.assismohanty.awaken.core.designsystem.lexicon.lexPlural
 import com.assismohanty.awaken.core.designsystem.lexicon.lexString
 import com.assismohanty.awaken.core.designsystem.preview.PhonePreviews
 import com.assismohanty.awaken.core.designsystem.theme.AwakenTheme
@@ -29,54 +26,6 @@ import com.assismohanty.awaken.core.designsystem.theme.Spacing
 import java.time.LocalDate
 import java.time.format.TextStyle
 import java.util.Locale
-
-/** The Focus card on Today: focus time for today and the week, with the way into the weekly report. */
-@Composable
-fun FocusCardRoute(
-    onStart: () -> Unit,
-    onOpenReport: () -> Unit,
-    modifier: Modifier = Modifier,
-    viewModel: FocusCardViewModel = hiltViewModel(),
-) {
-    val state by viewModel.uiState.collectAsStateWithLifecycle()
-    FocusCard(state = state, onStart = onStart, onOpenReport = onOpenReport, modifier = modifier)
-}
-
-@Composable
-fun FocusCard(state: FocusCardState, onStart: () -> Unit, onOpenReport: () -> Unit, modifier: Modifier = Modifier) {
-    val colors = AwakenTheme.colors
-    val type = AwakenTheme.type
-    AwakenCard(modifier = modifier, reveal = false) {
-        if (state.goal > 0) {
-            Text(
-                lexString(R.string.focus_goal_of, state.todayMinutes, state.goal),
-                style = type.label,
-                color = colors.textPrimary,
-            )
-            Chart(ChartSpec.Progress(progress = state.progress, color = colors.accent))
-            Text(
-                lexPlural(R.plurals.focus_goal_streak, state.streak, state.streak),
-                style = type.caption,
-                color = colors.textSecondary,
-            )
-        } else {
-            Row(horizontalArrangement = Arrangement.spacedBy(Spacing.lg), modifier = Modifier.fillMaxWidth()) {
-                Stat(formatMinutes(state.todayMinutes), lexString(R.string.focus_card_today))
-                Stat(formatMinutes(state.weekMinutes), lexString(R.string.focus_card_week))
-            }
-        }
-        PrimaryButton(text = lexString(R.string.focus_card_start), onClick = onStart, modifier = Modifier.fillMaxWidth())
-        QuietButton(text = lexString(R.string.focus_card_report), onClick = onOpenReport, modifier = Modifier.fillMaxWidth())
-    }
-}
-
-@Composable
-private fun Stat(value: String, label: String) {
-    androidx.compose.foundation.layout.Column(verticalArrangement = Arrangement.spacedBy(Spacing.xxs)) {
-        Text(value, style = AwakenTheme.type.numericSmall, color = AwakenTheme.colors.textPrimary)
-        Text(label, style = AwakenTheme.type.caption, color = AwakenTheme.colors.textSecondary)
-    }
-}
 
 @Composable
 fun FocusReportRoute(onBack: () -> Unit, modifier: Modifier = Modifier, viewModel: FocusReportViewModel = hiltViewModel()) {
@@ -163,10 +112,4 @@ private fun FocusReportPreview() {
 @Composable
 private fun FocusReportEmptyPreview() {
     AwakenTheme { FocusReportScreen(FocusReportUiState(loading = false, days = previewDays.map { it.copy(minutes = 0) }), onBack = {}) }
-}
-
-@PhonePreviews
-@Composable
-private fun FocusCardPreview() {
-    AwakenTheme { FocusCard(FocusCardState(todayMinutes = 42, weekMinutes = 370, goal = 60, streak = 5), onStart = {}, onOpenReport = {}) }
 }

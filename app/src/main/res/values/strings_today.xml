@@ -13,8 +13,6 @@
     <string name="action_plan_day">Plan day</string>
     <string name="today_comeback_title">Comeback</string>
 
-    <string name="today_section_focus">Focus</string>
-    <string name="today_section_health">Health and screen</string>
     <string name="today_section_quit">Quit counters</string>
 
     <string name="today_limits_title">App limits</string>
@@ -25,7 +23,6 @@
         <item quantity="other">%1$s · %2$d days clean</item>
     </plurals>
 
-    <string name="focus_card_report">Weekly report</string>
 
     <string name="settings_window_day_reminders">Day and reminders</string>
     <string name="settings_window_goals">Goals</string>
