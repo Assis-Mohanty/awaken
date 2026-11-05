@@ -105,6 +105,8 @@ fun OnboardingShell(
     onSkip: (() -> Unit)? = null,
     skipText: String = lexString(R.string.action_skip),
     primaryEnabled: Boolean = true,
+    /** False on the building screen, which has nothing to press. */
+    showPrimary: Boolean = true,
     body: @Composable (step: Int) -> Unit,
 ) {
     val colors = AwakenTheme.colors
@@ -160,12 +162,14 @@ fun OnboardingShell(
                 },
                 label = "onboardingStep",
             ) { step -> body(step) }
-            PrimaryButton(
-                text = primaryText,
-                onClick = onPrimary,
-                enabled = primaryEnabled,
-                modifier = Modifier.fillMaxWidth().padding(top = Spacing.sm, bottom = Spacing.md),
-            )
+            if (showPrimary) {
+                PrimaryButton(
+                    text = primaryText,
+                    onClick = onPrimary,
+                    enabled = primaryEnabled,
+                    modifier = Modifier.fillMaxWidth().padding(top = Spacing.sm, bottom = Spacing.md),
+                )
+            }
         }
     }
 }

@@ -1,6 +1,5 @@
 package com.assismohanty.awaken.engine
 
-import com.assismohanty.awaken.engine.Awakening.Answer
 import com.assismohanty.awaken.engine.model.Difficulty
 import com.assismohanty.awaken.engine.model.HunterContext
 import com.assismohanty.awaken.engine.model.QuestType
@@ -15,14 +14,6 @@ class AwakeningTest {
 
     private val date = LocalDate.of(2026, 10, 18)
     private val library = TemplateLibrary.parse(requireNotNull(javaClass.classLoader.getResource("quests/templates.json")).readText())
-
-    @Test
-    fun `calibration maps answers to baseline tiers, WIL and CHA start easy`() {
-        assertThat(Awakening.baselineTiers(Answer.LOW, Answer.MID, Answer.HIGH)).containsExactly(
-            Stat.STR, Difficulty.EASY, Stat.INT, Difficulty.NORMAL, Stat.WIL, Difficulty.EASY,
-            Stat.VIT, Difficulty.HARD, Stat.CHA, Difficulty.EASY,
-        )
-    }
 
     @Test
     fun `hunter name is 3 to 20 characters after trimming`() {

@@ -85,6 +85,8 @@ data class AwakenDimens(
     val onbDayChip: Dp = 40.dp,
     /** The picture on a permission screen. */
     val onbPermissionImage: Dp = 180.dp,
+    /** The building screen's ring. */
+    val onbPlanRing: Dp = 200.dp,
     /** An image option card: the picture and two lines of label, so a row of cards stays level. */
     val onbCardMinHeight: Dp = 176.dp,
     val onbRulerLabelGap: Dp = 4.dp,

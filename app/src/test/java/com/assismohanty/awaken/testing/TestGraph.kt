@@ -225,7 +225,13 @@ class TestGraph(
     val notificationAccess = NotificationAccess(context)
     val runRollover = RunRolloverUseCase(rollover, notices)
     val completionCenter = CompletionCenter(completeQuest, undoCompletion)
-    val completeOnboarding = CompleteOnboardingUseCase(createHunter, rollover, transactions)
+    val onboardingDrafts = com.assismohanty.awaken.core.data.repo.OnboardingDraftStore(
+        PreferenceDataStoreFactory.create(scope = noticeScope) { File(context.filesDir, "onboarding-draft-${UUID.randomUUID()}.preferences_pb") },
+    )
+    val completeOnboarding = CompleteOnboardingUseCase(
+        db.hunterDao(), db.focusDao(), db.screenTimeDao(), db.gymDao(), usage, rollover, transactions, onboardingDrafts, uiPrefs, clock,
+    )
+    val previewOnboarding = com.assismohanty.awaken.core.domain.PreviewOnboardingPlanUseCase(reader, templates, clock)
     val observeHunterState = ObserveHunterStateUseCase(
         db.hunterDao(), db.questDao(), db.dayRecordDao(), db.trialDao(), ledger, clock,
     )

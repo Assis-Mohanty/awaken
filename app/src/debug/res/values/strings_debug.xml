@@ -1,7 +1,6 @@
 <resources>
     <!-- Debug screen (debug builds only, Phase 4) -->
     <string name="debug_open">Debug</string>
-    <string name="debug_open_onboarding">New onboarding</string>
     <string name="debug_open_description">Open debug tools</string>
     <string name="debug_back">Back</string>
     <string name="debug_title">Debug</string>

@@ -175,6 +175,10 @@ object ExportUpgrade {
                 },
             )
         }
+        // v27 → v28 (quiz onboarding): the new profile columns are nullable or default to none, so an older file simply leaves them out.
+        if (current.app == ExportDocument.APP_ID && current.schemaVersion == 27) {
+            current = current.copy(schemaVersion = 28)
+        }
         return current
     }
 }

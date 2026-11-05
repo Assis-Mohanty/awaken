@@ -59,6 +59,9 @@ interface HunterDao {
     @Query("UPDATE hunter_profile SET injury_mode = :enabled, injury_tags = :tags WHERE id = 'me'")
     suspend fun setInjury(enabled: Boolean, tags: Set<String>)
 
+    @Query("UPDATE hunter_profile SET training_days = :mask, training_reminder = :reminder WHERE id = 'me'")
+    suspend fun setTrainingDays(mask: Int, reminder: Boolean)
+
     @Query("UPDATE hunter_profile SET step_goal = :goal WHERE id = 'me'")
     suspend fun setStepGoal(goal: Int)
 

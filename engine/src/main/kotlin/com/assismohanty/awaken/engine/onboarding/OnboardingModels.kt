@@ -70,6 +70,18 @@ data class OnboardingAnswers(
     val trainingReminder: Boolean = false,
     val pace: Pace? = null,
     val target: WeightTarget? = null,
+    /** Changes the person made on the plan screen. They win over what the answers would have set. */
+    val edits: PlanEdits = PlanEdits(),
     /** Health Connect was allowed on the permission screen (re-checked on resume, so never stale). */
     val healthConnected: Boolean = false,
+)
+
+/** What the plan screen's Edit buttons change. Null leaves the value the answers set (GD §17). */
+@Serializable
+data class PlanEdits(
+    val focusStats: List<com.assismohanty.awaken.engine.model.Stat>? = null,
+    val stepGoal: Int? = null,
+    val focusGoalMinutes: Int? = null,
+    val appLimitMinutes: Int? = null,
+    val trainingDays: Set<Int>? = null,
 )

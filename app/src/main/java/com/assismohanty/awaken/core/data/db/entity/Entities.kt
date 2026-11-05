@@ -64,6 +64,15 @@ data class HunterProfileEntity(
     @ColumnInfo(name = "screen_time_from") val screenTimeFrom: LocalDate? = null,
     /** Daily step goal for the Today ring (GD §16.11); display only. */
     @ColumnInfo(name = "step_goal", defaultValue = "8000") val stepGoal: Int = 8000,
+    /** Body values from onboarding (nullable: skipped or older profiles). They only prefill the Diet setup; nothing else reads them. */
+    @ColumnInfo(name = "birth_year") val birthYear: Int? = null,
+    @ColumnInfo(name = "height_cm") val heightCm: Double? = null,
+    @ColumnInfo(name = "weight_kg") val weightKg: Double? = null,
+    @ColumnInfo(name = "diet_goal_hint") val dietGoalHint: com.assismohanty.awaken.engine.body.WeightGoal? = null,
+    /** Training days as a Monday-first bit mask (`TrainingDays`); 0 = none. */
+    @ColumnInfo(name = "training_days", defaultValue = "0") val trainingDays: Int = 0,
+    /** The morning reminder says so on a training day. */
+    @ColumnInfo(name = "training_reminder", defaultValue = "0") val trainingReminder: Boolean = false,
 ) {
     val focusStats: List<Stat> get() = listOf(focusStat1, focusStat2)
 

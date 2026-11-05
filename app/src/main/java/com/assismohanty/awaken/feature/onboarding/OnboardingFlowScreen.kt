@@ -64,15 +64,13 @@ import com.assismohanty.awaken.feature.settings.HealthActionEffect
 /** Wires the quiz flow to its ViewModel and to the system's permission screens. Always light, whatever the phone's theme says. */
 @Composable
 fun OnboardingFlowRoute(
-    onClose: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: OnboardingFlowViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
-    BackHandler {
-        if (state.step.canGoBack) viewModel.onEvent(OnboardingFlowEvent.Back) else onClose()
-    }
+    // Back steps through the questions; on the first screen it falls through and leaves the app.
+    BackHandler(enabled = state.step.canGoBack && state.step != OnboardingStep.WELCOME) { viewModel.onEvent(OnboardingFlowEvent.Back) }
     HealthActionEffect(
         action = state.healthAction,
         permissions = state.healthPermissions,
@@ -135,6 +133,7 @@ fun OnboardingFlowScreen(
                 step == OnboardingStep.HEALTH && asking -> R.string.action_connect
                 step == OnboardingStep.USAGE && asking -> R.string.screentime_access_action
                 step == OnboardingStep.NOTIFICATIONS && asking -> R.string.onb_notifications_allow
+                step == OnboardingStep.PLAN -> R.string.onb_plan_start
                 else -> R.string.action_continue
             },
         ),
@@ -144,6 +143,7 @@ fun OnboardingFlowScreen(
                     step == OnboardingStep.HEALTH && asking -> OnboardingFlowEvent.ConnectHealth
                     step == OnboardingStep.USAGE && asking -> OnboardingFlowEvent.OpenUsageSettings
                     step == OnboardingStep.NOTIFICATIONS && asking -> OnboardingFlowEvent.RequestNotifications
+                    step == OnboardingStep.PLAN -> OnboardingFlowEvent.Start
                     else -> OnboardingFlowEvent.Next
                 },
             )
@@ -152,7 +152,8 @@ fun OnboardingFlowScreen(
         onBack = if (step.canGoBack) ({ onEvent(OnboardingFlowEvent.Back) }) else null,
         onSkip = if (step.skippable) ({ onEvent(OnboardingFlowEvent.Skip) }) else null,
         skipText = lexString(if (permissionStep) R.string.action_not_now else R.string.action_skip),
-        primaryEnabled = state.canContinue,
+        primaryEnabled = if (step == OnboardingStep.PLAN) !state.committing && state.build != PlanBuild.Running else state.canContinue,
+        showPrimary = step != OnboardingStep.BUILDING,
     ) { key ->
         StepBody(OnboardingStep.entries[key], state, onEvent)
     }
@@ -179,7 +180,8 @@ private fun StepBody(step: OnboardingStep, state: OnboardingFlowState, onEvent: 
         OnboardingStep.TRAINING_DAYS -> TrainingDaysStep(answers, state.today, onEvent)
         OnboardingStep.PACE -> PaceStep(answers, onEvent)
         OnboardingStep.HEALTH, OnboardingStep.USAGE, OnboardingStep.NOTIFICATIONS -> PermissionStep(step, state.permissions)
-        else -> LaterStep()
+        OnboardingStep.BUILDING -> BuildingStep(state, onEvent)
+        OnboardingStep.PLAN -> PlanStep(state, onEvent)
     }
 }
 
@@ -392,12 +394,6 @@ private fun ObstaclesStep(answers: OnboardingAnswers, onEvent: (OnboardingFlowEv
     }
 }
 
-/** Steps after the first nine arrive in the next batch. */
-@Composable
-private fun LaterStep() {
-    OnboardingStepBody(title = lexString(R.string.onb_later_title), subtitle = lexString(R.string.onb_later_body)) {}
-}
-
 private const val CM_MAJOR = 10
 private const val KG_MAJOR_TICKS = 10
 private const val LB_MAJOR = 10
@@ -405,7 +401,7 @@ private const val LB_MAJOR = 10
 // region previews
 
 internal fun previewFlowState(step: OnboardingStep, answers: OnboardingAnswers = OnboardingAnswers(), permissions: OnboardingPermissionState = OnboardingPermissionState()) =
-    OnboardingFlowState(loaded = true, step = step, answers = answers, permissions = permissions, today = java.time.DayOfWeek.TUESDAY)
+    OnboardingFlowState(loaded = true, step = step, answers = answers, permissions = permissions, todayDate = java.time.LocalDate.of(2026, 11, 3))
 
 internal val previewAnswers = OnboardingAnswers(
     name = "Sam", illustrationSet = IllustrationSet.NEUTRAL, age = 30, heightCm = 170.0, weightKg = 70.0,

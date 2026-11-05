@@ -99,6 +99,13 @@ object OnboardingRules {
         }
     }
 
+    /**
+     * The plan screen's focus pair: tapping a stat that is not in the pair replaces the older one, so there are always two
+     * different stats. Tapping one already in the pair changes nothing.
+     */
+    fun swapFocusStat(current: List<Stat>, tapped: Stat): List<Stat> =
+        if (tapped in current || current.size != 2) current else listOf(current[1], tapped)
+
     /** "None" stands alone: picking it clears the others, and picking anything else clears it. */
     fun toggleObstacle(current: Set<Obstacle>, obstacle: Obstacle): Set<Obstacle> = when {
         obstacle in current -> current - obstacle

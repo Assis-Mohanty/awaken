@@ -2,7 +2,9 @@ package com.assismohanty.awaken.core.domain
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.assismohanty.awaken.core.data.health.HealthStatus
-import com.assismohanty.awaken.engine.Awakening
+import com.assismohanty.awaken.engine.onboarding.ImproveGoal
+import com.assismohanty.awaken.engine.onboarding.OnboardingAnswers
+import com.assismohanty.awaken.engine.onboarding.OnboardingGrants
 import com.assismohanty.awaken.engine.HealthDay
 import com.assismohanty.awaken.engine.HealthSession
 import com.assismohanty.awaken.engine.model.QuestStatus
@@ -316,13 +318,8 @@ class HealthUseCasesTest {
     @Test
     fun onboardingWithHealthGrantedOffersVerifiedQuestsFromDayOne() = runTest {
         graph.completeOnboarding(
-            name = "Kael",
-            focusStats = setOf(Stat.STR, Stat.VIT),
-            training = Awakening.Answer.MID,
-            study = Awakening.Answer.MID,
-            sleep = Awakening.Answer.MID,
-            reminderTime = LocalTime.of(7, 0),
-            healthEnabled = true,
+            OnboardingAnswers(hunterId = "h-health", name = "Kael", improve = listOf(ImproveGoal.STRENGTH, ImproveGoal.SLEEP)),
+            OnboardingGrants(healthConnected = true),
         )
 
         assertThat(profile().healthEnabled).isTrue()

@@ -1040,3 +1040,18 @@ Source: `docs/onboarding/PLAN.md` (§4, §5). The onboarding questions set start
 | 160 | Body map regions | Shoulders → shoulders · Back → lower and middle back · Wrist → forearms · Knee → quadriceps · Hip → glutes (OB12) |
 | 161 | Injuries: pick No injuries after other picks, then another | No injuries clears the others; another pick clears it |
 | 162 | Sleep step passed untouched / bedtime 02:00 with wake 06:30 | 23:00 and 06:30 recorded / wake moves to 07:00 (the window must be at least 5 h) |
+| 163 | All onboarding questions skipped | focus stats STR + INT; step goal 8,000; focus goal 120; no equipment, injuries, training days, limits or phone-down night; daily reminder 07:00; all tiers Normal or the default |
+| 164 | Screen time answered with / without usage access / never answered | Screen Discipline on with the band's limit / off / off |
+| 165 | Screen time or Poor sleep chosen, usage access missing | the plan says usage access is needed |
+| 166 | Poor sleep with usage access / without / Procrastination only | phone-down nights on with the chosen window (default 23:00–06:30) / off / off |
+| 167 | Too much scrolling | Reel counter suggested; never switched on |
+| 168 | Health Connect allowed / not | verified quests on / off |
+| 169 | Age 30 in 2026 | birth year 1996 |
+| 170 | A full set of answers | every setting in OB1–OB9 follows; Beginner + Push hard + Sitting gives step goal 4,000, Procrastination halves the focus goal to 90 |
+| 171 | Edits on the plan screen | edits win: focus stats, step goal, focus goal, app limit, training days |
+| 172 | Edited step goal 12,345 / focus goal 47 / limit 3 / two identical focus stats | 12,000 / 45 / 5; the identical pair is ignored |
+| 173 | Target offered at 18+ with a height and weight; at 17, or with one missing | offered; not offered |
+| 174 | Target date 4 weeks away / 3 weeks away / not a date | allowed / too soon / too soon |
+| 175 | Target 53.5 kg / 53.4 kg at 170 cm; 20 kg and 400 kg | allowed / below BMI 18.5; out of range |
+| 176 | The estimate curve, losing and gaining | starts at today's weight, ends on the target, never overshoots or reverses |
+| 177 | Plan screen focus pair VIT, WIL; tap INT / tap WIL / tap VIT | WIL, INT (the older one is replaced) / unchanged / unchanged |

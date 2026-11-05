@@ -105,6 +105,3 @@ data object QuitRoute
 @Serializable
 data object ProgramsRoute
 
-/** The quiz-style onboarding flow while it is built (docs/onboarding/PLAN.md). Registered in debug builds only until it replaces the old flow. */
-@Serializable
-data object OnboardingQuizRoute

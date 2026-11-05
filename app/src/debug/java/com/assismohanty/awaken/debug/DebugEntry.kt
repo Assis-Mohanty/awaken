@@ -55,13 +55,13 @@ object DebugEntry {
     }
 
     @Composable
-    fun Screen(onBack: () -> Unit, onOpenOnboarding: () -> Unit) {
+    fun Screen(onBack: () -> Unit) {
         var showCatalog by rememberSaveable { mutableStateOf(false) }
         if (showCatalog) {
             BackHandler { showCatalog = false }
             DesignSystemCatalog(onBack = { showCatalog = false })
         } else {
-            DebugRoute(onBack = onBack, onOpenCatalog = { showCatalog = true }, onOpenOnboarding = onOpenOnboarding)
+            DebugRoute(onBack = onBack, onOpenCatalog = { showCatalog = true })
         }
     }
 }

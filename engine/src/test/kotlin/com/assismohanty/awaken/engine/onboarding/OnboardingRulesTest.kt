@@ -149,4 +149,17 @@ class OnboardingRulesTest {
         assertThat(OnboardingRules.skipped(OnboardingStep.OBSTACLES, answers).obstacles).isEmpty()
         assertThat(OnboardingRules.skipped(OnboardingStep.NAME, answers)).isEqualTo(answers)
     }
+
+    @Test
+    fun `vector 177 tapping a new focus stat replaces the older one and keeps two different stats`() {
+        val pair = listOf(Stat.VIT, Stat.WIL)
+        assertThat(OnboardingRules.swapFocusStat(pair, Stat.INT)).containsExactly(Stat.WIL, Stat.INT).inOrder()
+        assertThat(OnboardingRules.swapFocusStat(pair, Stat.WIL)).isEqualTo(pair)
+        assertThat(OnboardingRules.swapFocusStat(pair, Stat.VIT)).isEqualTo(pair)
+        var current = pair
+        for (stat in Stat.entries) {
+            current = OnboardingRules.swapFocusStat(current, stat)
+            assertThat(current.toSet()).hasSize(2)
+        }
+    }
 }

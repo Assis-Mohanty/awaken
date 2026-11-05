@@ -7,6 +7,11 @@ import com.assismohanty.awaken.core.data.clock.gameDate
 import com.assismohanty.awaken.core.data.health.HealthStatus
 import com.assismohanty.awaken.core.data.repo.OnboardingDraft
 import com.assismohanty.awaken.core.data.repo.OnboardingDraftStore
+import com.assismohanty.awaken.core.domain.CompleteOnboardingUseCase
+import com.assismohanty.awaken.core.domain.OnboardingPlanPreview
+import com.assismohanty.awaken.core.domain.OnboardingQuestLine
+import com.assismohanty.awaken.core.domain.OnboardingResult
+import com.assismohanty.awaken.core.domain.PreviewOnboardingPlanUseCase
 import com.assismohanty.awaken.engine.BedtimeRules
 import com.assismohanty.awaken.engine.GameDay
 import com.assismohanty.awaken.engine.onboarding.BodyMath
@@ -18,24 +23,32 @@ import com.assismohanty.awaken.engine.onboarding.InjuryRegion
 import com.assismohanty.awaken.engine.onboarding.LengthUnit
 import com.assismohanty.awaken.engine.onboarding.MassUnit
 import com.assismohanty.awaken.engine.onboarding.Obstacle
+import com.assismohanty.awaken.engine.model.Stat
 import com.assismohanty.awaken.engine.onboarding.OnboardingAnswers
+import com.assismohanty.awaken.engine.onboarding.OnboardingGrants
+import com.assismohanty.awaken.engine.onboarding.OnboardingPlan
+import com.assismohanty.awaken.engine.onboarding.OnboardingPlanner
 import com.assismohanty.awaken.engine.onboarding.OnboardingRules
 import com.assismohanty.awaken.engine.onboarding.OnboardingStep
 import com.assismohanty.awaken.engine.onboarding.Pace
 import com.assismohanty.awaken.engine.onboarding.ScreenTimeBand
-import com.assismohanty.awaken.engine.onboarding.SleepWheels
+import com.assismohanty.awaken.engine.onboarding.WeightTargetRules
 import com.assismohanty.awaken.feature.settings.HealthAction
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.DayOfWeek
+import java.time.LocalDate
 import java.util.Locale
 import java.util.UUID
 import javax.inject.Inject
 import kotlin.coroutines.cancellation.CancellationException
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import timber.log.Timber
 
 /** What the phone currently allows. Re-read whenever the app comes back from a system screen. */
@@ -51,6 +64,14 @@ data class OnboardingPermissionState(
     val notificationsAskable: Boolean = true,
 )
 
+/** The first plan's quests, which come from the generator and so take a moment. */
+sealed interface PlanBuild {
+    data object Idle : PlanBuild
+    data object Running : PlanBuild
+    data class Ready(val quests: List<OnboardingQuestLine>) : PlanBuild
+    data object Failed : PlanBuild
+}
+
 /**
  * The quiz flow (docs/onboarding/PLAN.md). [loaded] turns true once a saved draft has been read or a fresh one made, so the
  * first frame never shows step 1 for someone who was further along. The `*Action` / `open*` / `request*` flags are one-shot
@@ -63,12 +84,27 @@ data class OnboardingFlowState(
     val forward: Boolean = true,
     val answers: OnboardingAnswers = OnboardingAnswers(),
     val permissions: OnboardingPermissionState = OnboardingPermissionState(),
-    val today: DayOfWeek = DayOfWeek.MONDAY,
+    val todayDate: LocalDate = LocalDate.of(2000, 1, 3),
     val healthAction: HealthAction? = null,
     val healthPermissions: Set<String> = emptySet(),
     val openUsageSettings: Boolean = false,
     val requestNotifications: Boolean = false,
+    /** The notification prompt was answered on its screen, so the later prompt after a first quest must not repeat it. */
+    val notificationsAsked: Boolean = false,
+    /** The first plan's quests, worked out in the background; the plan's numbers do not wait for it. */
+    val build: PlanBuild = PlanBuild.Idle,
+    /** Start was pressed and the profile is being saved. */
+    val committing: Boolean = false,
+    val commitFailed: Boolean = false,
 ) {
+    val today: DayOfWeek get() = todayDate.dayOfWeek
+
+    /** What Android allows now: the plan depends on it (limits and phone-down nights need usage access). */
+    val grants: OnboardingGrants get() = OnboardingGrants(usageAccess = permissions.usage, healthConnected = answers.healthConnected)
+
+    /** The plan for the answers so far. Pure and cheap, so edits show at once. */
+    val plan: OnboardingPlan get() = OnboardingPlanner.plan(answers, grants, todayDate)
+
     val canContinue: Boolean get() = OnboardingRules.canContinue(step, answers)
 
     /** The screens this person will see: Notifications is left out when there is nothing to ask. */
@@ -124,6 +160,21 @@ sealed interface OnboardingFlowEvent {
 
     /** The app came back to the foreground, possibly from a system screen: read the permissions again. */
     data object RecheckPermissions : OnboardingFlowEvent
+
+    // Building and the plan
+    /** The building ring reached 100% and the plan is ready: show it. */
+    data object BuildFinished : OnboardingFlowEvent
+    data object RetryBuild : OnboardingFlowEvent
+    data class PlanFocusStatTapped(val stat: Stat) : OnboardingFlowEvent
+    data class PlanStepGoalChanged(val goal: Int) : OnboardingFlowEvent
+    data class PlanFocusGoalChanged(val minutes: Int) : OnboardingFlowEvent
+    data class PlanAppLimitChanged(val minutes: Int) : OnboardingFlowEvent
+    data class PlanTrainingDayToggled(val isoDay: Int) : OnboardingFlowEvent
+    data class TargetChosen(val weightKg: Double, val weeks: Int) : OnboardingFlowEvent
+    data object TargetCleared : OnboardingFlowEvent
+
+    /** Start: saves everything and enters the app. */
+    data object Start : OnboardingFlowEvent
 }
 
 @HiltViewModel
@@ -132,17 +183,29 @@ class OnboardingFlowViewModel internal constructor(
     private val country: String?,
     private val newId: () -> String,
     private val permissions: OnboardingPermissions,
-    private val today: () -> DayOfWeek,
+    private val today: () -> LocalDate,
+    private val previewPlan: suspend (OnboardingAnswers, OnboardingGrants) -> OnboardingPlanPreview,
+    private val completeOnboarding: suspend (OnboardingAnswers, OnboardingGrants, Boolean) -> OnboardingResult,
 ) : ViewModel() {
 
     @Inject
-    constructor(drafts: OnboardingDraftStore, permissions: AndroidOnboardingPermissions, clock: Clock) : this(
+    constructor(
+        drafts: OnboardingDraftStore,
+        permissions: AndroidOnboardingPermissions,
+        clock: Clock,
+        preview: PreviewOnboardingPlanUseCase,
+        complete: CompleteOnboardingUseCase,
+    ) : this(
         drafts = drafts,
         country = Locale.getDefault().country,
         newId = { UUID.randomUUID().toString() },
         permissions = permissions,
-        today = { clock.gameDate(GameDay.DEFAULT_DAY_START_HOUR).dayOfWeek },
+        today = { clock.gameDate(GameDay.DEFAULT_DAY_START_HOUR) },
+        previewPlan = { answers, grants -> preview(answers, grants) },
+        completeOnboarding = { answers, grants, asked -> complete(answers, grants, asked) },
     )
+
+    private var buildJob: Job? = null
 
     private val _uiState = MutableStateFlow(OnboardingFlowState())
     val uiState: StateFlow<OnboardingFlowState> = _uiState.asStateFlow()
@@ -163,13 +226,15 @@ class OnboardingFlowViewModel internal constructor(
             _uiState.update { fromDraft(draft) }
             save()
             recheck()
+            // A person who was building or looking at the plan when the app closed needs the plan again.
+            if (_uiState.value.step == OnboardingStep.BUILDING || _uiState.value.step == OnboardingStep.PLAN) startBuild()
         }
     }
 
     fun onEvent(event: OnboardingFlowEvent) {
         if (!_uiState.value.loaded) return
         when (event) {
-            OnboardingFlowEvent.Next -> next(skip = false)
+            OnboardingFlowEvent.Next -> if (_uiState.value.step == OnboardingStep.PLAN) start() else next(skip = false)
             OnboardingFlowEvent.Skip -> next(skip = true)
             OnboardingFlowEvent.Back -> change { state ->
                 if (!state.step.canGoBack) state else state.copy(step = previousStep(state), forward = false)
@@ -217,11 +282,83 @@ class OnboardingFlowViewModel internal constructor(
             OnboardingFlowEvent.RequestNotifications -> _uiState.update { it.copy(requestNotifications = true) }
             OnboardingFlowEvent.NotificationsHandled -> _uiState.update { it.copy(requestNotifications = false) }
             is OnboardingFlowEvent.NotificationsResult -> {
-                _uiState.update { it.copy(permissions = it.permissions.copy(notifications = event.granted)) }
+                _uiState.update { it.copy(permissions = it.permissions.copy(notifications = event.granted), notificationsAsked = true) }
                 // Allowed or not, the question has been asked: move on.
                 next(skip = false)
             }
             OnboardingFlowEvent.RecheckPermissions -> viewModelScope.launch { recheck() }
+
+            OnboardingFlowEvent.BuildFinished -> change { state ->
+                if (state.step == OnboardingStep.BUILDING && state.build is PlanBuild.Ready) {
+                    state.copy(step = OnboardingStep.PLAN, forward = true)
+                } else {
+                    state
+                }
+            }
+            OnboardingFlowEvent.RetryBuild -> startBuild()
+            is OnboardingFlowEvent.PlanFocusStatTapped -> {
+                answer { it.copy(edits = it.edits.copy(focusStats = OnboardingRules.swapFocusStat(_uiState.value.plan.focusStats, event.stat))) }
+                refreshQuests()
+            }
+            is OnboardingFlowEvent.PlanStepGoalChanged -> answer { it.copy(edits = it.edits.copy(stepGoal = event.goal)) }
+            is OnboardingFlowEvent.PlanFocusGoalChanged -> answer { it.copy(edits = it.edits.copy(focusGoalMinutes = event.minutes)) }
+            is OnboardingFlowEvent.PlanAppLimitChanged -> answer { it.copy(edits = it.edits.copy(appLimitMinutes = event.minutes)) }
+            is OnboardingFlowEvent.PlanTrainingDayToggled -> answer {
+                val days = OnboardingRules.toggleDay(_uiState.value.plan.trainingDays, event.isoDay)
+                it.copy(edits = it.edits.copy(trainingDays = days))
+            }
+            is OnboardingFlowEvent.TargetChosen -> answer {
+                val target = WeightTargetRules.target(event.weightKg, event.weeks, _uiState.value.todayDate)
+                // A target that breaks the rules is not kept (the screen only offers valid ones; this is the guard).
+                if (WeightTargetRules.problems(target, it, _uiState.value.todayDate).isEmpty()) it.copy(target = target) else it
+            }
+            OnboardingFlowEvent.TargetCleared -> answer { it.copy(target = null) }
+            OnboardingFlowEvent.Start -> start()
+        }
+    }
+
+    /** Works out the first plan's quests. The ring on the building screen waits for this, so what it says is real. */
+    private fun startBuild() {
+        buildJob?.cancel()
+        _uiState.update { it.copy(build = PlanBuild.Running) }
+        buildJob = viewModelScope.launch { _uiState.update { it.copy(build = computeQuests(it)) } }
+    }
+
+    /** After an edit that changes the quests: the old list stays up until the new one is ready. */
+    private fun refreshQuests() {
+        buildJob?.cancel()
+        buildJob = viewModelScope.launch { _uiState.update { it.copy(build = computeQuests(it)) } }
+    }
+
+    private suspend fun computeQuests(state: OnboardingFlowState): PlanBuild = try {
+        PlanBuild.Ready(previewPlan(state.answers, state.grants).quests)
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: Exception) {
+        Timber.e(e, "Working out the first plan failed")
+        PlanBuild.Failed
+    }
+
+    private fun start() {
+        val state = _uiState.value
+        if (state.step != OnboardingStep.PLAN || state.committing || state.build == PlanBuild.Running) return
+        _uiState.update { it.copy(committing = true, commitFailed = false) }
+        viewModelScope.launch {
+            val result = try {
+                // The profile row closes this screen, so the rest of the save must not be cancelled with the ViewModel.
+                withContext(NonCancellable) { completeOnboarding(state.answers, state.grants, state.notificationsAsked) }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Timber.e(e, "Saving the plan failed")
+                null
+            }
+            when (result) {
+                // The app switches to Today as soon as the profile exists; the screen stays disabled until it does.
+                OnboardingResult.Done -> Unit
+                OnboardingResult.InvalidName -> change { it.copy(committing = false, step = OnboardingStep.NAME, forward = false) }
+                OnboardingResult.InvalidHunterId, null -> _uiState.update { it.copy(committing = false, commitFailed = true) }
+            }
         }
     }
 
@@ -230,18 +367,23 @@ class OnboardingFlowViewModel internal constructor(
         val saved = draft?.answers ?: OnboardingAnswers(heightUnit = lengthUnit, weightUnit = massUnit)
         val answers = if (saved.hunterId.isBlank()) saved.copy(hunterId = newId()) else saved
         val step = draft?.let { OnboardingStep.entries.getOrNull(it.step) } ?: OnboardingStep.WELCOME
-        return OnboardingFlowState(loaded = true, step = step, forward = true, answers = answers, today = today())
+        return OnboardingFlowState(loaded = true, step = step, forward = true, answers = answers, todayDate = today())
     }
 
-    private fun next(skip: Boolean) = change { state ->
-        when {
-            skip && !state.step.skippable -> state
-            !skip && !state.canContinue -> state
-            else -> {
-                val answers = if (skip) OnboardingRules.skipped(state.step, state.answers) else OnboardingRules.withShownDefaults(state.step, state.answers)
-                state.copy(step = nextStep(state), forward = true, answers = answers)
+    private fun next(skip: Boolean) {
+        val before = _uiState.value.step
+        change { state ->
+            when {
+                skip && !state.step.skippable -> state
+                !skip && !state.canContinue -> state
+                else -> {
+                    val answers = if (skip) OnboardingRules.skipped(state.step, state.answers) else OnboardingRules.withShownDefaults(state.step, state.answers)
+                    state.copy(step = nextStep(state), forward = true, answers = answers)
+                }
             }
         }
+        // Arriving on the building screen is what starts the work it shows.
+        if (before != OnboardingStep.BUILDING && _uiState.value.step == OnboardingStep.BUILDING) startBuild()
     }
 
     /** The step after the current one, leaving out screens that have nothing to ask. */

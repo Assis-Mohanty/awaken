@@ -38,7 +38,6 @@ import com.assismohanty.awaken.feature.diet.DietRoute as DietEntry
 import com.assismohanty.awaken.feature.gate.GatesEntry
 import com.assismohanty.awaken.feature.gym.GymRoute as GymEntry
 import com.assismohanty.awaken.feature.onboarding.OnboardingFlowRoute as OnboardingFlowEntry
-import com.assismohanty.awaken.feature.onboarding.OnboardingRoute as OnboardingEntry
 import com.assismohanty.awaken.feature.paths.PathDetailRoute as PathDetailEntry
 import com.assismohanty.awaken.feature.paths.PathsRoute as PathsEntry
 import com.assismohanty.awaken.feature.quest.QuestDetailRoute as QuestDetailEntry
@@ -84,7 +83,7 @@ fun AwakenNavHost(
     when (val state = launch) {
         // One frame of void while Room answers; no spinner for a local read.
         LaunchState.Loading -> Box(modifier = modifier.fillMaxSize().background(AwakenTheme.palette.void))
-        LaunchState.NeedsOnboarding -> ScreenBackground(modifier = modifier) { OnboardingEntry() }
+        LaunchState.NeedsOnboarding -> OnboardingFlowEntry(modifier = modifier)
         is LaunchState.Ready -> MainScaffold(
             rank = state.rank,
             openTodayRequests = openTodayRequests,
@@ -286,13 +285,7 @@ private fun MainScaffold(
                 composable<ReviewRoute> { ReviewEntry(onClose = { navController.popBackStack() }) }
                 composable<VaultRoute> { VaultEntry(onBack = { navController.popBackStack() }) }
                 if (DebugEntry.ENABLED) {
-                    composable<DebugRoute> {
-                        DebugEntry.Screen(
-                            onBack = { navController.popBackStack() },
-                            onOpenOnboarding = { navController.navigate(OnboardingQuizRoute) { launchSingleTop = true } },
-                        )
-                    }
-                    composable<OnboardingQuizRoute> { OnboardingFlowEntry(onClose = { navController.popBackStack() }) }
+                    composable<DebugRoute> { DebugEntry.Screen(onBack = { navController.popBackStack() }) }
                 }
             }
         }
