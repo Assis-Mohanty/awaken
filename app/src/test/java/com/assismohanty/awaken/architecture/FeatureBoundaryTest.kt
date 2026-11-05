@@ -39,4 +39,22 @@ class FeatureBoundaryTest {
         }
         assertWithMessage(violations.joinToString("\n")).that(violations).isEmpty()
     }
+
+    /** Widgets (Glance) and overlay windows draw outside Compose theming, but still take colours only from the palette file. */
+    @Test
+    fun widgetAndOverlayHostCodeHasNoRawColours() {
+        val dirs = listOf("core/widget", "core/reelcounter").map { File("src/main/java/com/assismohanty/awaken/$it") }
+        val colourRules = rules.filter { it.fix.contains("hex") || it.fix == "use a semantic token" }
+        val sources = dirs.flatMap { dir -> dir.walkTopDown().filter { it.isFile && it.extension == "kt" }.toList() }
+        assertWithMessage("no widget/overlay sources found").that(sources).isNotEmpty()
+        val violations = sources.flatMap { file ->
+            file.readLines().mapIndexedNotNull { index, line ->
+                if (line.trimStart().startsWith("//") || line.trimStart().startsWith("*")) return@mapIndexedNotNull null
+                colourRules.firstOrNull { it.pattern.containsMatchIn(line) }?.let { rule ->
+                    "${file.name}:${index + 1}: ${line.trim()}  → ${rule.fix}"
+                }
+            }
+        }
+        assertWithMessage(violations.joinToString("\n")).that(violations).isEmpty()
+    }
 }
