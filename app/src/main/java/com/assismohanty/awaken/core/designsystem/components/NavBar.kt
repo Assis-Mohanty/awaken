@@ -102,7 +102,7 @@ private fun NavPill(item: NavBarItem, selected: Boolean, onClick: () -> Unit, mo
 }
 
 /** The selected pill is wider so its label fits. */
-private const val SELECTED_WEIGHT = 1.9f
+private const val SELECTED_WEIGHT = 2.6f
 
 @ComponentPreview
 @Composable
@@ -111,6 +111,7 @@ private fun FloatingNavBarPreview() {
         FloatingNavBar(
             items = listOf(
                 NavBarItem("Today", AwakenGlyphs.Home, AwakenGlyphs.HomeSolid),
+                NavBarItem("Focus", AwakenGlyphs.Focus, AwakenGlyphs.FocusSolid),
                 NavBarItem("Gym", AwakenGlyphs.Dumbbell, AwakenGlyphs.DumbbellSolid),
                 NavBarItem("Diet", AwakenGlyphs.Bowl, AwakenGlyphs.BowlSolid),
                 NavBarItem("Progress", AwakenGlyphs.Bars, AwakenGlyphs.BarsSolid),
