@@ -8,6 +8,7 @@ import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.hasScrollAction
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
@@ -19,7 +20,14 @@ import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.assismohanty.awaken.core.data.repo.OnboardingDraftStore
 import com.assismohanty.awaken.core.designsystem.theme.AwakenTheme
+import com.assismohanty.awaken.engine.onboarding.EquipmentChoice
+import com.assismohanty.awaken.engine.onboarding.FitnessLevel
 import com.assismohanty.awaken.engine.onboarding.IllustrationSet
+import com.assismohanty.awaken.engine.onboarding.InjuryRegion
+import com.assismohanty.awaken.engine.onboarding.Pace
+import com.assismohanty.awaken.engine.onboarding.ScreenTimeBand
+import com.assismohanty.awaken.testing.FakeOnboardingPermissions
+import java.time.DayOfWeek
 import com.assismohanty.awaken.engine.onboarding.ImproveGoal
 import com.assismohanty.awaken.engine.onboarding.Obstacle
 import com.assismohanty.awaken.engine.onboarding.OnboardingStep
@@ -35,7 +43,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
-/** The quiz flow's first nine screens, through the real screen and ViewModel (docs/onboarding/PLAN.md §4). */
+/** The quiz flow's questions and permission screens (steps 1 to 17), through the real screen and ViewModel (docs/onboarding/PLAN.md §4). */
 @RunWith(AndroidJUnit4::class)
 class OnboardingQuizFlowTest {
     @get:Rule
@@ -52,7 +60,7 @@ class OnboardingQuizFlowTest {
                 File(Files.createTempDirectory("onboarding-quiz").toFile(), "draft.preferences_pb")
             },
         )
-        return OnboardingFlowViewModel(store, "IN") { "hunter-1" }
+        return OnboardingFlowViewModel(store, "IN", { "hunter-1" }, FakeOnboardingPermissions(), { DayOfWeek.TUESDAY })
     }
 
     private fun show(vm: OnboardingFlowViewModel) {
@@ -60,7 +68,7 @@ class OnboardingQuizFlowTest {
             val state by vm.uiState.collectAsState()
             AwakenTheme(reduceMotion = true) { OnboardingFlowScreen(state = state, onEvent = vm::onEvent) }
         }
-        composeRule.waitUntil(5_000) { vm.uiState.value.loaded }
+        composeRule.waitUntil(30_000) { vm.uiState.value.loaded }
         composeRule.waitForIdle()
     }
 
@@ -70,7 +78,7 @@ class OnboardingQuizFlowTest {
     }
 
     @Test
-    fun theFirstNineScreensCanBeWalkedAndEveryAnswerIsRecorded() {
+    fun theWholeQuestionFlowCanBeWalkedAndEveryAnswerIsRecorded() {
         val vm = newViewModel()
         show(vm)
 
@@ -121,6 +129,55 @@ class OnboardingQuizFlowTest {
         tap("None of these")
         tap("Continue")
 
+        // Screen time: a card, then Continue.
+        composeRule.onNodeWithText("How long are you on your phone each day?").assertExists()
+        composeRule.onNodeWithText("Continue").assertIsNotEnabled()
+        tap("2 to 4 hours")
+        tap("Continue")
+
+        // Sleep: the wheels start on the usual window, so Continue takes it as it is.
+        composeRule.onNodeWithText("When do you sleep?").assertExists()
+        tap("Continue")
+
+        // Fitness, equipment and injuries each need a pick.
+        composeRule.onNodeWithText("What's your fitness level?").assertExists()
+        tap("Beginner")
+        tap("Continue")
+        composeRule.onNodeWithText("What can you train with?").assertExists()
+        tap("Dumbbells")
+        tap("Continue")
+        composeRule.onNodeWithText("Any injuries?").assertExists()
+        composeRule.onNodeWithText("Continue").assertIsNotEnabled()
+        // The injury cards sit below the fold on a small screen: scroll to the one to tap.
+        composeRule.onNodeWithText("Knee").performScrollTo().performClick()
+        composeRule.waitForIdle()
+        tap("Continue")
+
+        // Training days: a day chip makes the reminder switch appear.
+        composeRule.onNodeWithText("Which days do you train?").assertExists()
+        composeRule.onAllNodesWithText("Remind me on training days").assertCountEquals(0)
+        composeRule.onNodeWithContentDescription("Monday").performClick()
+        composeRule.onNodeWithContentDescription("Tuesday, today").assertExists()
+        tap("Remind me on training days")
+        tap("Continue")
+
+        // Pace: the chosen card opens its explanation.
+        composeRule.onNodeWithText("What pace suits you?").assertExists()
+        composeRule.onNodeWithText("Continue").assertIsNotEnabled()
+        tap("Balanced")
+        composeRule.onNodeWithText("A mix of easier and tougher days.").assertExists()
+        tap("Continue")
+
+        // Permissions: each is explained first, and "Not now" always moves on.
+        composeRule.onNodeWithText("Count your steps and sleep for you").assertExists()
+        composeRule.onNodeWithText("Connect").assertExists()
+        tap("Not now")
+        composeRule.onNodeWithText("See your phone time").assertExists()
+        composeRule.onNodeWithText("Grant usage access").assertExists()
+        tap("Not now")
+        composeRule.onNodeWithText("A nudge when it counts").assertExists()
+        tap("Not now")
+
         composeRule.onNodeWithText("More questions are coming").assertExists()
 
         val answers = vm.uiState.value.answers
@@ -132,7 +189,18 @@ class OnboardingQuizFlowTest {
         assertThat(answers.bodyStage).isEqualTo(3)
         assertThat(answers.improve).containsExactly(ImproveGoal.SLEEP, ImproveGoal.FOCUS).inOrder()
         assertThat(answers.obstacles).containsExactly(Obstacle.NONE)
-        assertThat(vm.uiState.value.step).isEqualTo(OnboardingStep.SCREEN_TIME)
+        assertThat(answers.screenTime).isEqualTo(ScreenTimeBand.H2_TO_4)
+        assertThat(answers.bedtimeMinute).isEqualTo(23 * 60)
+        assertThat(answers.wakeMinute).isEqualTo(6 * 60 + 30)
+        assertThat(answers.fitness).isEqualTo(FitnessLevel.BEGINNER)
+        assertThat(answers.equipment).isEqualTo(EquipmentChoice.DUMBBELLS)
+        assertThat(answers.injuries).containsExactly(InjuryRegion.KNEE)
+        assertThat(answers.trainingDays).containsExactly(1)
+        assertThat(answers.trainingReminder).isTrue()
+        assertThat(answers.pace).isEqualTo(Pace.BALANCED)
+        // Permissions were put off, so nothing is switched on for them.
+        assertThat(answers.healthConnected).isFalse()
+        assertThat(vm.uiState.value.step).isEqualTo(OnboardingStep.BUILDING)
     }
 
     @Test

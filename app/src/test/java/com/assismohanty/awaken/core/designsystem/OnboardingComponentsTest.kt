@@ -26,6 +26,10 @@ import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.assismohanty.awaken.R
 import com.assismohanty.awaken.core.designsystem.components.BmiCard
+import com.assismohanty.awaken.core.designsystem.components.BodyMapGrid
+import com.assismohanty.awaken.core.designsystem.components.DayChips
+import com.assismohanty.awaken.core.designsystem.components.OnboardingToggleRow
+import com.assismohanty.awaken.engine.body.Muscle
 import com.assismohanty.awaken.core.designsystem.components.ChoiceItem
 import com.assismohanty.awaken.core.designsystem.components.ImageChoiceCard
 import com.assismohanty.awaken.core.designsystem.components.ImageChoiceGrid
@@ -272,6 +276,75 @@ class OnboardingComponentsTest {
             }
         }
         assertThat(stateDescription("Body shape")).isEqualTo("Stage 3 of 5")
+    }
+
+    @Test
+    fun aSelectedCardOpensItsDetailAndAnUnselectedOneDoesNot() {
+        composeRule.setContent {
+            AwakenTheme(reduceMotion = true) {
+                ImageChoiceGrid(
+                    items = listOf(
+                        ChoiceItem("a", "Steady", detail = "Smaller goals"),
+                        ChoiceItem("b", "Push hard", detail = "Bigger goals"),
+                    ),
+                    selectedKeys = setOf("b"), onToggle = {}, multi = false, columns = 1,
+                )
+            }
+        }
+        composeRule.onNodeWithText("Bigger goals").assertExists()
+        composeRule.onAllNodesWithText("Smaller goals").assertCountEquals(0)
+    }
+
+    @Test
+    fun theDayChipsReportIsoDaysAndMarkToday() {
+        val toggled = mutableListOf<Int>()
+        val names = listOf("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday")
+        composeRule.setContent {
+            AwakenTheme(reduceMotion = true) {
+                DayChips(
+                    selectedDays = setOf(3), today = 2, onToggle = { toggled += it },
+                    dayLetter = { names[it - 1].take(1) },
+                    dayDescription = { day, isToday -> names[day - 1] + if (isToday) ", today" else "" },
+                    todayLabel = "Today",
+                )
+            }
+        }
+        composeRule.onNodeWithContentDescription("Monday").performClick()
+        composeRule.onNodeWithContentDescription("Sunday").performClick()
+        assertThat(toggled).containsExactly(1, 7).inOrder()
+        composeRule.onNodeWithContentDescription("Tuesday, today").assertExists()
+        composeRule.onNodeWithContentDescription("Wednesday").assertIsOn()
+        composeRule.onNodeWithContentDescription("Monday").assertIsOff()
+        // Only today carries the visible label.
+        composeRule.onAllNodesWithText("Today").assertCountEquals(1)
+    }
+
+    @Test
+    fun theToggleRowIsASwitchThatReportsTheNewValue() {
+        var on by mutableStateOfBoolean(false)
+        composeRule.setContent {
+            AwakenTheme(reduceMotion = true) { OnboardingToggleRow(title = "Remind me", checked = on, onChange = { on = it }) }
+        }
+        val node = composeRule.onNodeWithText("Remind me")
+        assertThat(node.fetchSemanticsNode().config[SemanticsProperties.Role]).isEqualTo(Role.Switch)
+        node.assertIsOff().performClick()
+        composeRule.waitForIdle()
+        node.assertIsOn()
+    }
+
+    @Test
+    fun theBodyMapGridMarksTheSelectedRegions() {
+        composeRule.setContent {
+            AwakenTheme(reduceMotion = true) {
+                BodyMapGrid(
+                    options = listOf(ChoiceItem("none", "No injuries"), ChoiceItem("knee", "Knee")),
+                    selectedKeys = setOf("knee"), onToggle = {}, highlighted = mapOf(Muscle.QUADRICEPS to 1f),
+                    description = "Body map",
+                )
+            }
+        }
+        composeRule.onNodeWithText("Knee").assertIsOn()
+        composeRule.onNodeWithText("No injuries").assertIsOff()
     }
 
     private fun mutableStateOfBoolean(initial: Boolean) = androidx.compose.runtime.mutableStateOf(initial)

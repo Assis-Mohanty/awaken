@@ -294,3 +294,12 @@ Each batch: tests, previews, goldens named in the commit, full gate (`:engine:te
 - The flow is reachable in **debug builds only**: Debug → New onboarding. Steps 10 onward show a placeholder until Batch 3. The old flow is still what new installs see.
 - The flow forces the light palette (`OnboardingTheme`) and keeps the reduce-motion and haptics choices already in effect.
 - Rulers now show a number on each taller tick; the needle covers only the tick side so it never crosses a label.
+
+**Batch 3 (steps 10–17), built.**
+- Steps: daily screen time, sleep (two wheels; the wake wheel only offers times that make a valid phone-down window with the bedtime), fitness level, equipment, injuries (body map plus option cards), training days, pace, and the Health Connect, usage access and notification screens.
+- `OnboardingMapping` (engine) holds OB2–OB6, OB8, OB9 and OB12 as pure functions; vectors #151–#162. Nothing is written to settings yet: Batch 4 reads these functions to build the plan and write the settings at Start.
+- Permission screens: the primary button asks, "Not now" (the shell's Skip) always moves on, and once Android already allows the permission the same button just continues. Allowing Health or answering the notification prompt moves on by itself; coming back from Android's usage-access page with access moves on only if that page was opened from this screen, so going Back onto an allowed screen is never undone.
+- Permissions are re-read from the phone every time the app resumes. The Notifications screen is left out below Android 13 and when already allowed; Back from the plan skips it and the building screen.
+- `healthConnected` is the one permission result kept in the draft. Usage and notification state are always read live.
+- The training reminder switch appears only once a day is picked, and is cleared when the last day is removed.
+- Still to do in Batch 4: set `notifications_prompted` when the notification prompt was answered here, so the later prompt after a quest doesn't repeat.

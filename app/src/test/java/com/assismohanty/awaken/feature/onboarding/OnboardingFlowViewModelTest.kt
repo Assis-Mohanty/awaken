@@ -2,7 +2,17 @@ package com.assismohanty.awaken.feature.onboarding
 
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import com.assismohanty.awaken.core.data.repo.OnboardingDraftStore
+import com.assismohanty.awaken.core.data.health.HealthStatus
+import com.assismohanty.awaken.core.data.repo.OnboardingDraft
+import com.assismohanty.awaken.engine.onboarding.EquipmentChoice
+import com.assismohanty.awaken.engine.onboarding.FitnessLevel
 import com.assismohanty.awaken.engine.onboarding.IllustrationSet
+import com.assismohanty.awaken.engine.onboarding.InjuryRegion
+import com.assismohanty.awaken.engine.onboarding.Pace
+import com.assismohanty.awaken.engine.onboarding.ScreenTimeBand
+import com.assismohanty.awaken.feature.settings.HealthAction
+import com.assismohanty.awaken.testing.FakeOnboardingPermissions
+import java.time.DayOfWeek
 import com.assismohanty.awaken.engine.onboarding.ImproveGoal
 import com.assismohanty.awaken.engine.onboarding.LengthUnit
 import com.assismohanty.awaken.engine.onboarding.MassUnit
@@ -36,6 +46,7 @@ class OnboardingFlowViewModelTest {
         },
     )
     private val store = newStore()
+    private val perms = FakeOnboardingPermissions()
     private var ids = 0
 
     @Before
@@ -48,9 +59,13 @@ class OnboardingFlowViewModelTest {
     }
 
     /** The draft is read from disk, so the flow is not usable until `loaded`; wait for it as the screen does. */
-    private fun viewModel(country: String? = "IN", drafts: OnboardingDraftStore = store): OnboardingFlowViewModel {
-        val vm = OnboardingFlowViewModel(drafts, country) { "hunter-${++ids}" }
-        runBlocking { withTimeout(5_000) { while (!vm.state().loaded) delay(10) } }
+    private fun viewModel(
+        country: String? = "IN",
+        drafts: OnboardingDraftStore = store,
+        permissions: FakeOnboardingPermissions = perms,
+    ): OnboardingFlowViewModel {
+        val vm = OnboardingFlowViewModel(drafts, country, { "hunter-${++ids}" }, permissions, { DayOfWeek.TUESDAY })
+        runBlocking { withTimeout(30_000) { while (!vm.state().loaded) delay(10) } }
         return vm
     }
 
@@ -58,7 +73,7 @@ class OnboardingFlowViewModelTest {
 
     /** The draft is written from a background coroutine, so wait for it instead of assuming it is there. */
     private fun awaitDraft(check: (com.assismohanty.awaken.core.data.repo.OnboardingDraft) -> Boolean) = runBlocking {
-        withTimeout(5_000) {
+        withTimeout(30_000) {
             while (store.load()?.let(check) != true) delay(10)
         }
     }
@@ -72,6 +87,11 @@ class OnboardingFlowViewModelTest {
             when (state().step) {
                 OnboardingStep.IMPROVE -> onEvent(OnboardingFlowEvent.ImproveToggled(ImproveGoal.SLEEP))
                 OnboardingStep.OBSTACLES -> onEvent(OnboardingFlowEvent.ObstacleToggled(Obstacle.NONE))
+                OnboardingStep.SCREEN_TIME -> onEvent(OnboardingFlowEvent.ScreenTimeSelected(ScreenTimeBand.H2_TO_4))
+                OnboardingStep.FITNESS -> onEvent(OnboardingFlowEvent.FitnessSelected(FitnessLevel.BEGINNER))
+                OnboardingStep.EQUIPMENT -> onEvent(OnboardingFlowEvent.EquipmentSelected(EquipmentChoice.BODYWEIGHT))
+                OnboardingStep.INJURIES -> onEvent(OnboardingFlowEvent.InjuryToggled(InjuryRegion.NO_INJURIES))
+                OnboardingStep.PACE -> onEvent(OnboardingFlowEvent.PaceSelected(Pace.BALANCED))
                 else -> Unit
             }
             onEvent(OnboardingFlowEvent.Next)
@@ -252,6 +272,214 @@ class OnboardingFlowViewModelTest {
         vm.onEvent(OnboardingFlowEvent.Next)
         vm.onEvent(OnboardingFlowEvent.NameChanged("Sam"))
         awaitDraft { it.step == OnboardingStep.NAME.ordinal && it.answers.name == "Sam" }
+    }
+
+    private fun await(check: () -> Boolean) = runBlocking { withTimeout(30_000) { while (!check()) delay(10) } }
+
+    @Test
+    fun theLaterQuestionsRecordTheirAnswers() {
+        val vm = viewModel()
+        vm.goTo(OnboardingStep.SCREEN_TIME)
+        vm.onEvent(OnboardingFlowEvent.ScreenTimeSelected(ScreenTimeBand.OVER_6H))
+        vm.onEvent(OnboardingFlowEvent.Next)
+        assertThat(vm.state().answers.screenTime).isEqualTo(ScreenTimeBand.OVER_6H)
+        assertThat(vm.state().step).isEqualTo(OnboardingStep.SLEEP)
+        vm.onEvent(OnboardingFlowEvent.Next)
+        // Sleep passed untouched records the starting window.
+        assertThat(vm.state().answers.bedtimeMinute).isEqualTo(23 * 60)
+        assertThat(vm.state().answers.wakeMinute).isEqualTo(6 * 60 + 30)
+        assertThat(vm.state().step).isEqualTo(OnboardingStep.FITNESS)
+        assertThat(vm.state().canContinue).isFalse()
+        vm.onEvent(OnboardingFlowEvent.FitnessSelected(FitnessLevel.ADVANCED))
+        vm.onEvent(OnboardingFlowEvent.Next)
+        vm.onEvent(OnboardingFlowEvent.EquipmentSelected(EquipmentChoice.GYM))
+        vm.onEvent(OnboardingFlowEvent.Next)
+        assertThat(vm.state().step).isEqualTo(OnboardingStep.INJURIES)
+        assertThat(vm.state().canContinue).isFalse()
+        vm.onEvent(OnboardingFlowEvent.InjuryToggled(InjuryRegion.KNEE))
+        vm.onEvent(OnboardingFlowEvent.InjuryToggled(InjuryRegion.NO_INJURIES))
+        assertThat(vm.state().answers.injuries).containsExactly(InjuryRegion.NO_INJURIES)
+        vm.onEvent(OnboardingFlowEvent.InjuryToggled(InjuryRegion.HIP))
+        assertThat(vm.state().answers.injuries).containsExactly(InjuryRegion.HIP)
+        vm.onEvent(OnboardingFlowEvent.Next)
+        assertThat(vm.state().step).isEqualTo(OnboardingStep.TRAINING_DAYS)
+        // Training days can be left empty: Continue is always on.
+        assertThat(vm.state().canContinue).isTrue()
+        vm.onEvent(OnboardingFlowEvent.Next)
+        assertThat(vm.state().step).isEqualTo(OnboardingStep.PACE)
+        assertThat(vm.state().canContinue).isFalse()
+        vm.onEvent(OnboardingFlowEvent.PaceSelected(Pace.PUSH_HARD))
+        assertThat(vm.state().canContinue).isTrue()
+    }
+
+    @Test
+    fun movingTheBedtimeMovesAWakeTimeThatNoLongerFits() {
+        val vm = viewModel()
+        vm.onEvent(OnboardingFlowEvent.WakeChanged(6 * 60 + 30))
+        // WakeChanged alone supplies the default bedtime.
+        assertThat(vm.state().answers.bedtimeMinute).isEqualTo(23 * 60)
+        vm.onEvent(OnboardingFlowEvent.BedtimeChanged(2 * 60))
+        // 02:00 to 06:30 is 4.5 hours, under the 5-hour minimum.
+        assertThat(vm.state().answers.bedtimeMinute).isEqualTo(2 * 60)
+        assertThat(vm.state().answers.wakeMinute).isEqualTo(7 * 60)
+    }
+
+    @Test
+    fun skippingSleepForgetsTheWindow() {
+        val vm = viewModel()
+        vm.goTo(OnboardingStep.SLEEP)
+        vm.onEvent(OnboardingFlowEvent.BedtimeChanged(22 * 60))
+        vm.onEvent(OnboardingFlowEvent.Skip)
+        assertThat(vm.state().answers.bedtimeMinute).isNull()
+        assertThat(vm.state().answers.wakeMinute).isNull()
+        assertThat(vm.state().step).isEqualTo(OnboardingStep.FITNESS)
+    }
+
+    @Test
+    fun theTrainingReminderGoesWhenTheLastDayIsRemoved() {
+        val vm = viewModel()
+        vm.onEvent(OnboardingFlowEvent.TrainingDayToggled(1))
+        vm.onEvent(OnboardingFlowEvent.TrainingReminderChanged(true))
+        assertThat(vm.state().answers.trainingReminder).isTrue()
+        vm.onEvent(OnboardingFlowEvent.TrainingDayToggled(1))
+        assertThat(vm.state().answers.trainingDays).isEmpty()
+        assertThat(vm.state().answers.trainingReminder).isFalse()
+    }
+
+    @Test
+    fun todayIsKnownForTheDayChips() {
+        assertThat(viewModel().state().today).isEqualTo(DayOfWeek.TUESDAY)
+    }
+
+    // --- Permission screens ---
+
+    @Test
+    fun healthConnectAsksForItsPermissionsWhenAvailable() {
+        val vm = viewModel()
+        vm.goTo(OnboardingStep.HEALTH)
+        vm.onEvent(OnboardingFlowEvent.ConnectHealth)
+        await { vm.state().healthAction != null }
+        assertThat(vm.state().healthAction).isEqualTo(HealthAction.REQUEST_PERMISSIONS)
+        assertThat(vm.state().healthPermissions).isEqualTo(perms.healthPermissions)
+        vm.onEvent(OnboardingFlowEvent.HealthActionHandled)
+        assertThat(vm.state().healthAction).isNull()
+    }
+
+    @Test
+    fun healthConnectNotInstalledOpensTheStoreAndSaysSo() {
+        perms.status = HealthStatus.NOT_INSTALLED
+        val vm = viewModel()
+        vm.goTo(OnboardingStep.HEALTH)
+        vm.onEvent(OnboardingFlowEvent.ConnectHealth)
+        await { vm.state().healthAction != null }
+        assertThat(vm.state().healthAction).isEqualTo(HealthAction.OPEN_STORE)
+        assertThat(vm.state().permissions.healthNotInstalled).isTrue()
+        assertThat(vm.state().step).isEqualTo(OnboardingStep.HEALTH)
+    }
+
+    @Test
+    fun allowingHealthMovesOnAndRecordsIt() {
+        val vm = viewModel()
+        vm.goTo(OnboardingStep.HEALTH)
+        vm.onEvent(OnboardingFlowEvent.HealthPermissionsResult(perms.healthPermissions))
+        assertThat(vm.state().answers.healthConnected).isTrue()
+        assertThat(vm.state().permissions.health).isTrue()
+        assertThat(vm.state().step).isEqualTo(OnboardingStep.USAGE)
+    }
+
+    @Test
+    fun decliningHealthStaysAndNotNowStillMovesOn() {
+        val vm = viewModel()
+        vm.goTo(OnboardingStep.HEALTH)
+        // Only some of the core permissions were granted.
+        vm.onEvent(OnboardingFlowEvent.HealthPermissionsResult(setOf("read.steps")))
+        assertThat(vm.state().answers.healthConnected).isFalse()
+        assertThat(vm.state().permissions.healthDeclined).isTrue()
+        assertThat(vm.state().step).isEqualTo(OnboardingStep.HEALTH)
+        vm.onEvent(OnboardingFlowEvent.Skip)
+        assertThat(vm.state().step).isEqualTo(OnboardingStep.USAGE)
+    }
+
+    @Test
+    fun comingBackFromUsageSettingsWithAccessCarriesOn() {
+        val vm = viewModel()
+        vm.goTo(OnboardingStep.USAGE)
+        vm.onEvent(OnboardingFlowEvent.OpenUsageSettings)
+        assertThat(vm.state().openUsageSettings).isTrue()
+        vm.onEvent(OnboardingFlowEvent.UsageSettingsHandled)
+        assertThat(vm.state().openUsageSettings).isFalse()
+        perms.usage = true
+        vm.onEvent(OnboardingFlowEvent.RecheckPermissions)
+        await { vm.state().step == OnboardingStep.NOTIFICATIONS }
+        assertThat(vm.state().permissions.usage).isTrue()
+    }
+
+    @Test
+    fun comingBackFromUsageSettingsWithoutAccessStaysPut() {
+        val vm = viewModel()
+        vm.goTo(OnboardingStep.USAGE)
+        vm.onEvent(OnboardingFlowEvent.OpenUsageSettings)
+        vm.onEvent(OnboardingFlowEvent.RecheckPermissions)
+        Thread.sleep(150)
+        assertThat(vm.state().step).isEqualTo(OnboardingStep.USAGE)
+        assertThat(vm.state().permissions.usage).isFalse()
+    }
+
+    @Test
+    fun aRecheckNeverPushesSomeoneWhoWentBackToAnAllowedScreen() {
+        perms.usage = true
+        val vm = viewModel()
+        vm.goTo(OnboardingStep.USAGE)
+        vm.onEvent(OnboardingFlowEvent.RecheckPermissions)
+        await { vm.state().permissions.usage }
+        // Access was already there and the person never went to settings from this screen: no automatic move.
+        assertThat(vm.state().step).isEqualTo(OnboardingStep.USAGE)
+        assertThat(vm.state().stepPermissionGranted).isTrue()
+    }
+
+    @Test
+    fun notificationsAreAskedForAndTheFlowMovesOnWhateverTheAnswer() {
+        val vm = viewModel()
+        vm.goTo(OnboardingStep.NOTIFICATIONS)
+        vm.onEvent(OnboardingFlowEvent.RequestNotifications)
+        assertThat(vm.state().requestNotifications).isTrue()
+        vm.onEvent(OnboardingFlowEvent.NotificationsHandled)
+        assertThat(vm.state().requestNotifications).isFalse()
+        vm.onEvent(OnboardingFlowEvent.NotificationsResult(granted = false))
+        assertThat(vm.state().permissions.notifications).isFalse()
+        assertThat(vm.state().step).isEqualTo(OnboardingStep.BUILDING)
+    }
+
+    @Test
+    fun theNotificationsScreenIsLeftOutWhenThereIsNothingToAsk() {
+        perms.askable = false
+        perms.notifications = true
+        val vm = viewModel()
+        await { !vm.state().permissions.notificationsAskable }
+        assertThat(vm.state().visibleSteps).doesNotContain(OnboardingStep.NOTIFICATIONS)
+        vm.goTo(OnboardingStep.USAGE)
+        vm.onEvent(OnboardingFlowEvent.Skip)
+        assertThat(vm.state().step).isEqualTo(OnboardingStep.BUILDING)
+    }
+
+    @Test
+    fun backFromThePlanSkipsTheBuildingScreenAndAnyHiddenPermissionScreen() {
+        perms.askable = false
+        runBlocking { store.save(OnboardingDraft(step = OnboardingStep.PLAN.ordinal)) }
+        val vm = viewModel()
+        await { !vm.state().permissions.notificationsAskable }
+        vm.onEvent(OnboardingFlowEvent.Back)
+        assertThat(vm.state().step).isEqualTo(OnboardingStep.USAGE)
+        assertThat(vm.state().forward).isFalse()
+    }
+
+    @Test
+    fun allowedHealthIsReadFromThePhoneOnResume() {
+        perms.health = true
+        val vm = viewModel()
+        vm.onEvent(OnboardingFlowEvent.RecheckPermissions)
+        await { vm.state().permissions.health }
+        assertThat(vm.state().answers.healthConnected).isTrue()
     }
 
     @Test

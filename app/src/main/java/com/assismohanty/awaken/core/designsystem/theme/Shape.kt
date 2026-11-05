@@ -80,6 +80,11 @@ data class AwakenDimens(
     val onbLogo: Dp = 40.dp,
     val onbCardImage: Dp = 96.dp,
     val onbCheck: Dp = 24.dp,
+    /** The body map beside the injury options, and one day chip. */
+    val onbBodyMapHeight: Dp = 232.dp,
+    val onbDayChip: Dp = 40.dp,
+    /** The picture on a permission screen. */
+    val onbPermissionImage: Dp = 180.dp,
     /** An image option card: the picture and two lines of label, so a row of cards stays level. */
     val onbCardMinHeight: Dp = 176.dp,
     val onbRulerLabelGap: Dp = 4.dp,

@@ -1,6 +1,8 @@
 package com.assismohanty.awaken.engine.onboarding
 
 import com.assismohanty.awaken.engine.Awakening
+import com.assismohanty.awaken.engine.BedtimeRules
+import com.assismohanty.awaken.engine.GameDay
 import com.assismohanty.awaken.engine.body.WeightGoal
 import com.assismohanty.awaken.engine.model.Stat
 
@@ -104,6 +106,29 @@ object OnboardingRules {
         else -> current - Obstacle.NONE + obstacle
     }
 
+    /** "No injuries" stands alone, like "None" in [toggleObstacle]. */
+    fun toggleInjury(current: Set<InjuryRegion>, region: InjuryRegion): Set<InjuryRegion> = when {
+        region in current -> current - region
+        region == InjuryRegion.NO_INJURIES -> setOf(InjuryRegion.NO_INJURIES)
+        else -> current - InjuryRegion.NO_INJURIES + region
+    }
+
+    /** ISO day numbers, 1 = Monday ... 7 = Sunday. */
+    fun toggleDay(current: Set<Int>, isoDay: Int): Set<Int> {
+        require(isoDay in 1..7) { "not an ISO day: $isoDay" }
+        return if (isoDay in current) current - isoDay else current + isoDay
+    }
+
+    /**
+     * The bedtime and wake time to show, and to record when the sleep step is passed untouched (OB10). A wake time that no
+     * longer makes a valid window with the bedtime moves to the nearest one that does.
+     */
+    fun sleepShown(bedtimeMinute: Int?, wakeMinute: Int?, dayStartHour: Int): Pair<Int, Int> {
+        val bed = bedtimeMinute ?: BedtimeRules.DEFAULT_BEDTIME
+        val wake = wakeMinute ?: BedtimeRules.DEFAULT_WAKE
+        return bed to (SleepWheels.fitWake(bed, wake, dayStartHour) ?: wake)
+    }
+
     /** Selection order is kept: it breaks ties in [focusStats]. */
     fun toggleImprove(current: List<ImproveGoal>, goal: ImproveGoal): List<ImproveGoal> =
         if (goal in current) current - goal else current + goal
@@ -132,6 +157,8 @@ object OnboardingRules {
         OnboardingStep.HEIGHT -> answers.copy(heightCm = answers.heightCm ?: BodyMath.DEFAULT_HEIGHT_CM)
         OnboardingStep.WEIGHT -> answers.copy(weightKg = answers.weightKg ?: BodyMath.DEFAULT_WEIGHT_KG)
         OnboardingStep.BODY_SHAPE -> answers.copy(bodyStage = answers.bodyStage ?: DEFAULT_BODY_STAGE)
+        OnboardingStep.SLEEP -> sleepShown(answers.bedtimeMinute, answers.wakeMinute, GameDay.DEFAULT_DAY_START_HOUR)
+            .let { (bed, wake) -> answers.copy(bedtimeMinute = bed, wakeMinute = wake) }
         else -> answers
     }
 

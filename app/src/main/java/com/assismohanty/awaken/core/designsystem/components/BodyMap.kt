@@ -37,6 +37,7 @@ import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import com.assismohanty.awaken.R
@@ -68,6 +69,8 @@ fun BodyMap(
     accent: Color = AwakenTheme.colors.stat(Stat.STR),
     onMuscleClick: ((Muscle) -> Unit)? = null,
     initialSide: BodySide = BodySide.FRONT,
+    /** The figure's height; smaller where it shares the screen with other controls. */
+    figureHeight: Dp = AwakenTheme.dimens.bodyMapHeight,
 ) {
     var side by rememberSaveable { mutableStateOf(initialSide) }
     Column(
@@ -81,12 +84,12 @@ fun BodyMap(
             onSelect = { side = BodySide.entries[it] },
             modifier = Modifier.fillMaxWidth(),
         )
-        BodyFigure(side, intensity, accent, onMuscleClick)
+        BodyFigure(side, intensity, accent, onMuscleClick, figureHeight)
     }
 }
 
 @Composable
-private fun BodyFigure(side: BodySide, intensity: Map<Muscle, Float>, accent: Color, onMuscleClick: ((Muscle) -> Unit)?) {
+private fun BodyFigure(side: BodySide, intensity: Map<Muscle, Float>, accent: Color, onMuscleClick: ((Muscle) -> Unit)?, height: Dp) {
     val colors = AwakenTheme.colors
     val motion = AwakenTheme.motion
     val figure = BodyGeometry.figure(side)
@@ -94,7 +97,6 @@ private fun BodyFigure(side: BodySide, intensity: Map<Muscle, Float>, accent: Co
     LaunchedEffect(intensity, side) { fill.animateTo(1f, tween(motion.duration(FILL_MS), easing = motion.standardEasing)) }
     // Both sides share one frame, cropped to the figures, so switching never rescales.
     val frame = FRAME
-    val height = AwakenTheme.dimens.bodyMapHeight
     val width = height * (frame.width / frame.height)
     val trained = lexString(R.string.body_muscle_trained)
     val untrained = lexString(R.string.body_muscle_untrained)

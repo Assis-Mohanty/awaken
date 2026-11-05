@@ -1028,3 +1028,15 @@ Source: `docs/onboarding/PLAN.md` (§4, §5). The onboarding questions set start
 | 148 | Stage 5, current 70 kg, target 75 kg | gain: the target wins over the stage |
 | 149 | Obstacles: pick None after other picks, then pick another | None clears the others; another pick clears None |
 | 150 | Progress bar | 5 segments; the last screen of each group fills its segment; never moves back |
+| 151 | Fitness Beginner, sleep 23:00 to 07:00, Balanced | STR Easy · INT Normal · WIL Easy · VIT Hard · CHA Easy (OB2) |
+| 152 | Same answers with Push hard / Intermediate with Steady | +1 on every stat, capped at Hard / −1, floored at Easy |
+| 153 | Fitness and sleep skipped | STR and VIT Normal |
+| 154 | Fitness Beginner / Intermediate / Advanced; Advanced + Sitting all day; Beginner + Sitting | step goal 6,000 / 8,000 / 10,000; 8,000; 4,000 (OB3) |
+| 155 | Pace Steady / Balanced / Push hard; with Procrastination | focus goal 60 / 120 / 180; 30 / 60 / 90 (OB4) |
+| 156 | Screen time under 2 h / 2–4 h / 4–6 h / 6 h+ / skipped | app limit 30 / 45 / 60 / 90 / 30 min (OB5) |
+| 157 | Fitness Beginner / Intermediate / Advanced / skipped | rep range 10–15 / 8–12 / 6–10 / 8–12 (OB6) |
+| 158 | Equipment Bodyweight / Dumbbells / Gym | none / `dumbbells` / `gym_access`, `dumbbells`, `kettlebell`, `pullup_bar`, `resistance_band` (OB8) |
+| 159 | Injuries Shoulders + Knee; Wrist; Back; Hip; No injuries | tags `upper`, `legs`, `impact`; `upper`; `impact`; `legs`, `impact`; none and Injury Mode off (OB9) |
+| 160 | Body map regions | Shoulders → shoulders · Back → lower and middle back · Wrist → forearms · Knee → quadriceps · Hip → glutes (OB12) |
+| 161 | Injuries: pick No injuries after other picks, then another | No injuries clears the others; another pick clears it |
+| 162 | Sleep step passed untouched / bedtime 02:00 with wake 06:30 | 23:00 and 06:30 recorded / wake moves to 07:00 (the window must be at least 5 h) |

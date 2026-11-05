@@ -2,6 +2,7 @@ package com.assismohanty.awaken.core.designsystem.components
 
 import androidx.annotation.DrawableRes
 import androidx.compose.animation.Crossfade
+import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -44,8 +45,8 @@ import com.assismohanty.awaken.core.designsystem.preview.ComponentPreview
 import com.assismohanty.awaken.core.designsystem.theme.AwakenTheme
 import com.assismohanty.awaken.core.designsystem.theme.Spacing
 
-/** One option of an [ImageChoiceGrid]: a stable [key], the words and an optional picture. */
-data class ChoiceItem(val key: String, val label: String, @DrawableRes val image: Int? = null)
+/** One option of an [ImageChoiceGrid]: a stable [key], the words, an optional picture and an optional [detail] line that opens under the label when selected. */
+data class ChoiceItem(val key: String, val label: String, @DrawableRes val image: Int? = null, val detail: String? = null)
 
 /**
  * An option card for the quiz steps: a picture over a label, or just the label. The selected card gets an accent outline and
@@ -60,6 +61,7 @@ fun ImageChoiceCard(
     multi: Boolean,
     modifier: Modifier = Modifier,
     @DrawableRes image: Int? = null,
+    detail: String? = null,
 ) {
     val colors = AwakenTheme.colors
     val dimens = AwakenTheme.dimens
@@ -82,7 +84,10 @@ fun ImageChoiceCard(
             .then(selection),
     ) {
         Column(
-            modifier = Modifier.fillMaxWidth().padding(Spacing.sm),
+            modifier = Modifier
+                .fillMaxWidth()
+                .animateContentSize(tween(AwakenTheme.motion.duration(AwakenTheme.motion.standardMs), easing = AwakenTheme.motion.standardEasing))
+                .padding(Spacing.sm),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(Spacing.xs),
         ) {
@@ -101,6 +106,15 @@ fun ImageChoiceCard(
                 textAlign = TextAlign.Center,
                 modifier = Modifier.padding(horizontal = if (image == null) Spacing.lg else Spacing.xxs, vertical = if (image == null) Spacing.xxs else Spacing.zero),
             )
+            if (selected && detail != null) {
+                Text(
+                    text = detail,
+                    style = AwakenTheme.type.caption,
+                    color = colors.textSecondary,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(horizontal = Spacing.sm),
+                )
+            }
         }
         Box(
             modifier = Modifier
@@ -144,6 +158,7 @@ fun ImageChoiceGrid(
                 onClick = { onToggle(item.key) },
                 multi = multi,
                 image = item.image,
+                detail = item.detail,
                 modifier = Modifier.fillMaxWidth(),
             )
         }

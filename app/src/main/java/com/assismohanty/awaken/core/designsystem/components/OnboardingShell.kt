@@ -103,6 +103,7 @@ fun OnboardingShell(
     modifier: Modifier = Modifier,
     onBack: (() -> Unit)? = null,
     onSkip: (() -> Unit)? = null,
+    skipText: String = lexString(R.string.action_skip),
     primaryEnabled: Boolean = true,
     body: @Composable (step: Int) -> Unit,
 ) {
@@ -137,7 +138,7 @@ fun OnboardingShell(
                     )
                 }
                 if (onSkip != null) {
-                    QuietButton(text = lexString(R.string.action_skip), onClick = onSkip)
+                    QuietButton(text = skipText, onClick = onSkip)
                 } else {
                     Box(Modifier.size(AwakenTheme.dimens.touchTarget))
                 }

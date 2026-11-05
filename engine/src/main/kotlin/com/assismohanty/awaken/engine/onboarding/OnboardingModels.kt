@@ -70,4 +70,6 @@ data class OnboardingAnswers(
     val trainingReminder: Boolean = false,
     val pace: Pace? = null,
     val target: WeightTarget? = null,
+    /** Health Connect was allowed on the permission screen (re-checked on resume, so never stale). */
+    val healthConnected: Boolean = false,
 )

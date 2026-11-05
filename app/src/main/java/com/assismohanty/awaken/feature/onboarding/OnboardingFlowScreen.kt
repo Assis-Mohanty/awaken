@@ -1,6 +1,10 @@
 package com.assismohanty.awaken.feature.onboarding
 
+import android.Manifest
+import android.os.Build
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -15,12 +19,15 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.assismohanty.awaken.R
 import com.assismohanty.awaken.core.designsystem.components.BigValue
@@ -51,8 +58,10 @@ import com.assismohanty.awaken.engine.onboarding.Obstacle
 import com.assismohanty.awaken.engine.onboarding.OnboardingAnswers
 import com.assismohanty.awaken.engine.onboarding.OnboardingRules
 import com.assismohanty.awaken.engine.onboarding.OnboardingStep
+import com.assismohanty.awaken.feature.screentime.openUsageAccessSettings
+import com.assismohanty.awaken.feature.settings.HealthActionEffect
 
-/** Wires the quiz flow to its ViewModel. Always light, whatever the phone's theme says. */
+/** Wires the quiz flow to its ViewModel and to the system's permission screens. Always light, whatever the phone's theme says. */
 @Composable
 fun OnboardingFlowRoute(
     onClose: () -> Unit,
@@ -60,8 +69,37 @@ fun OnboardingFlowRoute(
     viewModel: OnboardingFlowViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val context = LocalContext.current
     BackHandler {
         if (state.step.canGoBack) viewModel.onEvent(OnboardingFlowEvent.Back) else onClose()
+    }
+    HealthActionEffect(
+        action = state.healthAction,
+        permissions = state.healthPermissions,
+        onPermissionsResult = { viewModel.onEvent(OnboardingFlowEvent.HealthPermissionsResult(it)) },
+        onHandled = { viewModel.onEvent(OnboardingFlowEvent.HealthActionHandled) },
+    )
+    val notificationLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
+        viewModel.onEvent(OnboardingFlowEvent.NotificationsResult(it))
+    }
+    LaunchedEffect(state.requestNotifications) {
+        if (!state.requestNotifications) return@LaunchedEffect
+        viewModel.onEvent(OnboardingFlowEvent.NotificationsHandled)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            notificationLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+        } else {
+            viewModel.onEvent(OnboardingFlowEvent.NotificationsResult(true))
+        }
+    }
+    LaunchedEffect(state.openUsageSettings) {
+        if (!state.openUsageSettings) return@LaunchedEffect
+        openUsageAccessSettings(context)
+        viewModel.onEvent(OnboardingFlowEvent.UsageSettingsHandled)
+    }
+    // Permissions change on Android's own screens: read them again every time the app comes back.
+    LifecycleResumeEffect(viewModel) {
+        viewModel.onEvent(OnboardingFlowEvent.RecheckPermissions)
+        onPauseOrDispose { }
     }
     OnboardingTheme {
         ScreenBackground(modifier = modifier) {
@@ -82,25 +120,47 @@ fun OnboardingFlowScreen(
         return
     }
     val step = state.step
+    val visible = state.visibleSteps
+    // A permission screen's button asks for the permission; once it is allowed the same button just continues.
+    val asking = !state.stepPermissionGranted
+    val permissionStep = step == OnboardingStep.HEALTH || step == OnboardingStep.USAGE || step == OnboardingStep.NOTIFICATIONS
     OnboardingShell(
         stepKey = step.ordinal,
         forward = state.forward,
         segments = OnboardingStep.SEGMENTS,
         progress = step.progress,
-        progressDescription = lexString(R.string.onboarding_step, step.ordinal + 1, OnboardingStep.entries.size),
-        primaryText = lexString(R.string.action_continue),
-        onPrimary = { onEvent(OnboardingFlowEvent.Next) },
+        progressDescription = lexString(R.string.onboarding_step, visible.indexOf(step) + 1, visible.size),
+        primaryText = lexString(
+            when {
+                step == OnboardingStep.HEALTH && asking -> R.string.action_connect
+                step == OnboardingStep.USAGE && asking -> R.string.screentime_access_action
+                step == OnboardingStep.NOTIFICATIONS && asking -> R.string.onb_notifications_allow
+                else -> R.string.action_continue
+            },
+        ),
+        onPrimary = {
+            onEvent(
+                when {
+                    step == OnboardingStep.HEALTH && asking -> OnboardingFlowEvent.ConnectHealth
+                    step == OnboardingStep.USAGE && asking -> OnboardingFlowEvent.OpenUsageSettings
+                    step == OnboardingStep.NOTIFICATIONS && asking -> OnboardingFlowEvent.RequestNotifications
+                    else -> OnboardingFlowEvent.Next
+                },
+            )
+        },
         modifier = modifier,
         onBack = if (step.canGoBack) ({ onEvent(OnboardingFlowEvent.Back) }) else null,
         onSkip = if (step.skippable) ({ onEvent(OnboardingFlowEvent.Skip) }) else null,
+        skipText = lexString(if (permissionStep) R.string.action_not_now else R.string.action_skip),
         primaryEnabled = state.canContinue,
     ) { key ->
-        StepBody(OnboardingStep.entries[key], state.answers, onEvent)
+        StepBody(OnboardingStep.entries[key], state, onEvent)
     }
 }
 
 @Composable
-private fun StepBody(step: OnboardingStep, answers: OnboardingAnswers, onEvent: (OnboardingFlowEvent) -> Unit) {
+private fun StepBody(step: OnboardingStep, state: OnboardingFlowState, onEvent: (OnboardingFlowEvent) -> Unit) {
+    val answers = state.answers
     when (step) {
         OnboardingStep.WELCOME -> WelcomeStep()
         OnboardingStep.NAME -> NameStep(answers, onEvent)
@@ -111,6 +171,14 @@ private fun StepBody(step: OnboardingStep, answers: OnboardingAnswers, onEvent: 
         OnboardingStep.BODY_SHAPE -> BodyShapeStep(answers, onEvent)
         OnboardingStep.IMPROVE -> ImproveStep(answers, onEvent)
         OnboardingStep.OBSTACLES -> ObstaclesStep(answers, onEvent)
+        OnboardingStep.SCREEN_TIME -> ScreenTimeStep(answers, onEvent)
+        OnboardingStep.SLEEP -> SleepStep(answers, onEvent)
+        OnboardingStep.FITNESS -> FitnessStep(answers, onEvent)
+        OnboardingStep.EQUIPMENT -> EquipmentStep(answers, onEvent)
+        OnboardingStep.INJURIES -> InjuriesStep(answers, onEvent)
+        OnboardingStep.TRAINING_DAYS -> TrainingDaysStep(answers, state.today, onEvent)
+        OnboardingStep.PACE -> PaceStep(answers, onEvent)
+        OnboardingStep.HEALTH, OnboardingStep.USAGE, OnboardingStep.NOTIFICATIONS -> PermissionStep(step, state.permissions)
         else -> LaterStep()
     }
 }
@@ -336,72 +404,72 @@ private const val LB_MAJOR = 10
 
 // region previews
 
-private fun preview(step: OnboardingStep, answers: OnboardingAnswers = OnboardingAnswers()) =
-    OnboardingFlowState(loaded = true, step = step, answers = answers)
+internal fun previewFlowState(step: OnboardingStep, answers: OnboardingAnswers = OnboardingAnswers(), permissions: OnboardingPermissionState = OnboardingPermissionState()) =
+    OnboardingFlowState(loaded = true, step = step, answers = answers, permissions = permissions, today = java.time.DayOfWeek.TUESDAY)
 
-private val sample = OnboardingAnswers(
+internal val previewAnswers = OnboardingAnswers(
     name = "Sam", illustrationSet = IllustrationSet.NEUTRAL, age = 30, heightCm = 170.0, weightKg = 70.0,
     heightUnit = LengthUnit.CM, weightUnit = MassUnit.KG, bodyStage = 3,
 )
 
 @Composable
-private fun PreviewFlow(state: OnboardingFlowState) {
+internal fun PreviewFlow(state: OnboardingFlowState) {
     AwakenTheme(reduceMotion = true) { ScreenBackground { OnboardingFlowScreen(state, onEvent = {}) } }
 }
 
 @PhonePreviews
 @Composable
 private fun OnboardingWelcomePreview() {
-    AwakenTheme(reduceMotion = true) { ScreenBackground { OnboardingFlowScreen(preview(OnboardingStep.WELCOME), onEvent = {}) } }
+    AwakenTheme(reduceMotion = true) { ScreenBackground { OnboardingFlowScreen(previewFlowState(OnboardingStep.WELCOME), onEvent = {}) } }
 }
 
 @PhonePreviews
 @Composable
-private fun OnboardingNamePreview() = PreviewFlow(preview(OnboardingStep.NAME, sample))
+private fun OnboardingNamePreview() = PreviewFlow(previewFlowState(OnboardingStep.NAME, previewAnswers))
 
 /** Nothing typed yet: Continue is off and there is no Skip on this step. */
 @PhonePreviews
 @Composable
-private fun OnboardingNameEmptyPreview() = PreviewFlow(preview(OnboardingStep.NAME))
+private fun OnboardingNameEmptyPreview() = PreviewFlow(previewFlowState(OnboardingStep.NAME))
 
 @PhonePreviews
 @Composable
-private fun OnboardingGenderPreview() = PreviewFlow(preview(OnboardingStep.GENDER, sample.copy(illustrationSet = IllustrationSet.FEMALE)))
+private fun OnboardingGenderPreview() = PreviewFlow(previewFlowState(OnboardingStep.GENDER, previewAnswers.copy(illustrationSet = IllustrationSet.FEMALE)))
 
 @PhonePreviews
 @Composable
-private fun OnboardingAgePreview() = PreviewFlow(preview(OnboardingStep.AGE, sample))
+private fun OnboardingAgePreview() = PreviewFlow(previewFlowState(OnboardingStep.AGE, previewAnswers))
 
 @PhonePreviews
 @Composable
-private fun OnboardingHeightPreview() = PreviewFlow(preview(OnboardingStep.HEIGHT, sample))
+private fun OnboardingHeightPreview() = PreviewFlow(previewFlowState(OnboardingStep.HEIGHT, previewAnswers))
 
 @PhonePreviews
 @Composable
 private fun OnboardingHeightFeetPreview() =
-    PreviewFlow(preview(OnboardingStep.HEIGHT, sample.copy(heightUnit = LengthUnit.FEET_INCHES, heightCm = 175.26)))
+    PreviewFlow(previewFlowState(OnboardingStep.HEIGHT, previewAnswers.copy(heightUnit = LengthUnit.FEET_INCHES, heightCm = 175.26)))
 
 @PhonePreviews
 @Composable
-private fun OnboardingWeightPreview() = PreviewFlow(preview(OnboardingStep.WEIGHT, sample))
+private fun OnboardingWeightPreview() = PreviewFlow(previewFlowState(OnboardingStep.WEIGHT, previewAnswers))
 
 /** Under 20: the BMI card shows the number and one neutral line, no scale. */
 @PhonePreviews
 @Composable
-private fun OnboardingWeightYoungPreview() = PreviewFlow(preview(OnboardingStep.WEIGHT, sample.copy(age = 16, weightUnit = MassUnit.LB)))
+private fun OnboardingWeightYoungPreview() = PreviewFlow(previewFlowState(OnboardingStep.WEIGHT, previewAnswers.copy(age = 16, weightUnit = MassUnit.LB)))
 
 @PhonePreviews
 @Composable
-private fun OnboardingBodyShapePreview() = PreviewFlow(preview(OnboardingStep.BODY_SHAPE, sample))
+private fun OnboardingBodyShapePreview() = PreviewFlow(previewFlowState(OnboardingStep.BODY_SHAPE, previewAnswers))
 
 @PhonePreviews
 @Composable
 private fun OnboardingImprovePreview() =
-    PreviewFlow(preview(OnboardingStep.IMPROVE, sample.copy(improve = listOf(ImproveGoal.SLEEP, ImproveGoal.FOCUS))))
+    PreviewFlow(previewFlowState(OnboardingStep.IMPROVE, previewAnswers.copy(improve = listOf(ImproveGoal.SLEEP, ImproveGoal.FOCUS))))
 
 @PhonePreviews
 @Composable
 private fun OnboardingObstaclesPreview() =
-    PreviewFlow(preview(OnboardingStep.OBSTACLES, sample.copy(obstacles = setOf(Obstacle.TOO_MUCH_SCROLLING))))
+    PreviewFlow(previewFlowState(OnboardingStep.OBSTACLES, previewAnswers.copy(obstacles = setOf(Obstacle.TOO_MUCH_SCROLLING))))
 
 // endregion
