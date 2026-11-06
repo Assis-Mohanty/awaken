@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Mirrors the light `void` token in core/designsystem/theme/Color.kt for pre-Compose window drawing (values-night: dark). -->
-    <color name="void_background">#FFF5F4F1</color>
+    <color name="void_background">#FFF2F2ED</color>
     <!-- Splash is brand-black in both modes. -->
     <color name="splash_background">#FF000000</color>
     <!-- Mirrors the `panel` token: the widget's first frame before Glance renders (values-night: dark). -->
-    <color name="panel_background">#FFFFFFFF</color>
+    <color name="panel_background">#FFFDFDFB</color>
 </resources>

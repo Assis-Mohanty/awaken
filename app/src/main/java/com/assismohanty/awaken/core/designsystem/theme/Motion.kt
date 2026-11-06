@@ -10,15 +10,20 @@ import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.platform.LocalContext
 
 /**
- * Motion tokens (DESIGN_SYSTEM §2.5): 200–300ms ease-out, nothing pulses or bounces. [reduceMotion] turns every
- * animation into a crossfade or a static state.
+ * Motion tokens (DESIGN_SYSTEM §2.5, Plates): 90-320ms, one signature move (a plate seating on the bar), nothing pulses
+ * or bounces. [reduceMotion] turns every animation into a crossfade or a static state.
  */
 @Immutable
 data class AwakenMotion(
     val reduceMotion: Boolean = false,
-    val quickMs: Int = 200,
-    val standardMs: Int = 250,
-    val revealMs: Int = 300,
+    /** Press feedback. */
+    val pressMs: Int = 90,
+    val quickMs: Int = 150,
+    val standardMs: Int = 240,
+    /** A sheet rising or leaving. */
+    val sheetMs: Int = 280,
+    /** A plate seating on the day bar: fast, then settling, with one haptic. */
+    val revealMs: Int = 320,
     /** Onboarding: a step sliding in or out (docs/onboarding/PLAN.md §7). */
     val stepMs: Int = 280,
     /** Delay between consecutive items of a staggered entrance. */
@@ -31,7 +36,8 @@ data class AwakenMotion(
     val toastHoldMs: Long = 3_000,
     val quickEasing: Easing = EaseOut,
     val standardEasing: Easing = EaseOut,
-    val revealEasing: Easing = EaseOut,
+    val revealEasing: Easing = PlateSeat,
+    val exitEasing: Easing = EaseIn,
 ) {
     /** Duration to use for an animation of [ms], or 0 when motion is reduced. */
     fun duration(ms: Int): Int = if (reduceMotion) 0 else ms
@@ -39,6 +45,8 @@ data class AwakenMotion(
 
 /** iOS-like ease-out: quick start, long gentle settle. */
 private val EaseOut: Easing = CubicBezierEasing(0.2f, 0f, 0f, 1f)
+private val EaseIn: Easing = CubicBezierEasing(0.3f, 0f, 1f, 1f)
+private val PlateSeat: Easing = CubicBezierEasing(0.16f, 1f, 0.3f, 1f)
 
 val LocalAwakenMotion =staticCompositionLocalOf { AwakenMotion() }
 

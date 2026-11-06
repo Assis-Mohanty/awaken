@@ -13,24 +13,45 @@ import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import com.assismohanty.awaken.R
 
-/**
- * Inter (SIL OFL, `res/font/inter.ttf`, variable `wght` 100–900, licence in `assets/licenses/OFL_Inter.txt`): one family
- * for everything (DESIGN_SYSTEM §2.2). Each weight pins the axis.
+/*
+ * Archivo (SIL OFL, `res/font/archivo.ttf`, variable `wght` 100-900 and `wdth` 62-125, licence in
+ * `assets/licenses/OFL_Archivo.txt`): one family for everything (design/DESIGN.md). A font family ignores the width
+ * axis when it matches a style, so text at normal width and big numerals at width 104 are two families, each pinning
+ * both axes per weight.
  */
+private const val WIDTH_NORMAL = 100f
+private const val WIDTH_METRIC = 104f
+private val Weights = listOf(400, 500, 600, 650)
+
 @OptIn(ExperimentalTextApi::class)
-val Inter = FontFamily(
-    Font(R.font.inter, FontWeight.Normal, variationSettings = FontVariation.Settings(FontVariation.weight(400))),
-    Font(R.font.inter, FontWeight.Medium, variationSettings = FontVariation.Settings(FontVariation.weight(500))),
-    Font(R.font.inter, FontWeight.SemiBold, variationSettings = FontVariation.Settings(FontVariation.weight(600))),
-    Font(R.font.inter, FontWeight.Bold, variationSettings = FontVariation.Settings(FontVariation.weight(700))),
+private fun archivo(width: Float) = FontFamily(
+    Weights.map { weight ->
+        Font(
+            R.font.archivo,
+            FontWeight(weight),
+            variationSettings = FontVariation.Settings(FontVariation.weight(weight), FontVariation.width(width)),
+        )
+    },
 )
 
-/** Tabular figures everywhere, so numbers never jitter while they count up; Inter's open digits read well at size. */
-private const val FEATURES = "tnum, cv05"
+/** Text, titles and buttons. */
+val Archivo: FontFamily = archivo(WIDTH_NORMAL)
 
-private fun style(weight: FontWeight, size: Int, line: Int, tracking: Double = 0.0) = TextStyle(
-    fontFamily = Inter,
-    fontWeight = weight,
+/** Big numbers: slightly wider, so a large numeral stays steady. */
+val ArchivoMetric: FontFamily = archivo(WIDTH_METRIC)
+
+/** Tabular, lining figures everywhere, so numbers never jitter while they change. */
+private const val FEATURES = "tnum, lnum"
+
+private fun style(
+    weight: Int,
+    size: Float,
+    line: Float,
+    tracking: Double = 0.0,
+    family: FontFamily = Archivo,
+) = TextStyle(
+    fontFamily = family,
+    fontWeight = FontWeight(weight),
     fontSize = size.sp,
     lineHeight = line.sp,
     letterSpacing = tracking.em,
@@ -38,32 +59,36 @@ private fun style(weight: FontWeight, size: Int, line: Int, tracking: Double = 0
 )
 
 /**
- * Type roles (DESIGN_SYSTEM §2.2). Hierarchy comes from size and weight, never colour; everything is sentence case.
- * Inter is tuned for small sizes, so large roles tighten their tracking.
+ * Type roles (design/DESIGN.md). Hierarchy comes from size and weight, never colour; everything is sentence case.
+ * Large numerals are tight (negative tracking) and medium weight, never chunky.
  */
 @Immutable
 data class AwakenType(
+    /** A clock: the session dial. */
+    val display: TextStyle = style(600, 76f, 76f, tracking = -0.04),
     /** The one big number on a screen ("61", "2,503"). */
-    val metricXL: TextStyle = style(FontWeight.SemiBold, 56, 60, tracking = -0.02),
+    val metricXL: TextStyle = style(600, 54f, 56f, tracking = -0.045, family = ArchivoMetric),
     /** The unit next to a big number ("kg", "of 10"). */
-    val metricUnit: TextStyle = style(FontWeight.Medium, 20, 24, tracking = -0.01),
+    val metricUnit: TextStyle = style(500, 20f, 24f, tracking = -0.01),
     /** A value in a metric card. */
-    val metricL: TextStyle = style(FontWeight.SemiBold, 34, 40, tracking = -0.02),
-    /** Large screen titles ("Good morning, Sam"); collapses to [title] on scroll. */
-    val headline: TextStyle = style(FontWeight.Bold, 34, 41, tracking = -0.02),
+    val metricL: TextStyle = style(600, 34f, 38f, tracking = -0.04, family = ArchivoMetric),
+    /** Tab titles ("Today", "Gym"). */
+    val headline: TextStyle = style(650, 24f, 28f, tracking = -0.022),
     /** Section headings on a screen ("Morning"). */
-    val section: TextStyle = style(FontWeight.SemiBold, 22, 28, tracking = -0.015),
-    /** Card titles. */
-    val windowTitle: TextStyle = style(FontWeight.Medium, 17, 22, tracking = -0.01),
+    val section: TextStyle = style(650, 19f, 24f, tracking = -0.015),
+    /** Card and sheet titles. */
+    val windowTitle: TextStyle = style(650, 17f, 22f, tracking = -0.01),
     /** A small label over a value ("Result", "Trend"). Sentence case. */
-    val overline: TextStyle = style(FontWeight.Medium, 13, 18),
-    val numeric: TextStyle = style(FontWeight.SemiBold, 20, 24, tracking = -0.01),
-    val numericSmall: TextStyle = style(FontWeight.Medium, 15, 20),
-    /** Collapsed screen titles, row titles, buttons. */
-    val title: TextStyle = style(FontWeight.SemiBold, 17, 22, tracking = -0.01),
-    val body: TextStyle = style(FontWeight.Normal, 15, 21),
-    val label: TextStyle = style(FontWeight.Medium, 13, 18),
-    val caption: TextStyle = style(FontWeight.Normal, 13, 18),
+    val overline: TextStyle = style(400, 13.5f, 18f),
+    val numeric: TextStyle = style(650, 20f, 24f, tracking = -0.02),
+    val numericSmall: TextStyle = style(600, 15f, 20f),
+    /** Pushed screen titles, row titles, buttons. */
+    val title: TextStyle = style(600, 17f, 22f, tracking = -0.005),
+    val body: TextStyle = style(400, 16f, 22f),
+    val label: TextStyle = style(600, 15f, 20f),
+    val caption: TextStyle = style(400, 13.5f, 18f),
+    /** Nav labels and chart axes: the floor, never smaller. */
+    val micro: TextStyle = style(500, 12f, 16f),
 )
 
 val LocalAwakenType = staticCompositionLocalOf { AwakenType() }
@@ -81,5 +106,5 @@ internal fun AwakenType.toMaterialTypography(): Typography = Typography(
     bodySmall = caption,
     labelLarge = title,
     labelMedium = label,
-    labelSmall = caption,
+    labelSmall = micro,
 )

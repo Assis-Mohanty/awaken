@@ -11,32 +11,38 @@ import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.ui.graphics.Color
+import com.assismohanty.awaken.core.designsystem.look.Look
+import com.assismohanty.awaken.core.designsystem.look.LocalLook
+import com.assismohanty.awaken.core.designsystem.look.PlatesLook
 import com.assismohanty.awaken.engine.model.Rank
 
 /**
- * Two palettes, one set of tokens (DESIGN_SYSTEM §2.1). No dynamic colour. Light or Dark follows the phone unless the
+ * Two palettes per look, one set of tokens (DESIGN_SYSTEM §2.1). No dynamic colour. Light or Dark follows the phone unless the
  * user picked one in Appearance.
  *
+ * @param look the installed look; Plates is the only one at launch.
  * @param darkTheme the resolved Appearance choice; the default follows the device.
  * @param reduceMotion the in-app toggle; the system "Remove animations" setting is OR-ed in (§2.5).
  * @param hapticsEnabled the in-app toggle (§2.6).
  */
 @Composable
 fun AwakenTheme(
+    look: Look = PlatesLook,
     darkTheme: Boolean = isSystemInDarkTheme(),
     reduceMotion: Boolean = false,
     hapticsEnabled: Boolean = true,
     content: @Composable () -> Unit,
 ) {
-    val palette = if (darkTheme) AwakenPalette.Dark else AwakenPalette.Light
+    val palette = if (darkTheme) look.dark else look.light
     val colors = remember(palette) { AwakenColors(palette) }
-    val type = remember { AwakenType() }
+    val type = look.type
     val reduce = reduceMotion || systemReduceMotion()
     val motion = remember(reduce) { AwakenMotion(reduceMotion = reduce) }
-    val shapes = remember { AwakenShapes() }
-    val dimens = remember { AwakenDimens() }
+    val shapes = look.shapes
+    val dimens = look.dimens
     val colorScheme = remember(palette) { palette.toColorScheme(palette.isDark) }
     CompositionLocalProvider(
+        LocalLook provides look,
         LocalAwakenPalette provides palette,
         LocalAwakenColors provides colors,
         LocalAwakenType provides type,
@@ -65,8 +71,8 @@ private fun AwakenPalette.toColorScheme(dark: Boolean): ColorScheme {
         onSecondary = onAccent,
         secondaryContainer = panelRaised, // nav-bar indicator: neutral, not Material tint
         onSecondaryContainer = bone,
-        tertiary = crit,
-        onTertiary = bone,
+        tertiary = system,
+        onTertiary = onAccent,
         background = void,
         onBackground = bone,
         surface = void,
@@ -81,7 +87,8 @@ private fun AwakenPalette.toColorScheme(dark: Boolean): ColorScheme {
         outline = edge,
         outlineVariant = fog,
         error = ember,
-        onError = void,
+        onError = onAccent,
+        scrim = scrim,
     )
 }
 
@@ -96,7 +103,7 @@ object AwakenTheme {
     val shapes: AwakenShapes @Composable @ReadOnlyComposable get() = LocalAwakenShapes.current
     val dimens: AwakenDimens @Composable @ReadOnlyComposable get() = LocalAwakenDimens.current
     val haptics: Haptics @Composable @ReadOnlyComposable get() = LocalHaptics.current
-    /** Accent for a rank-coloured window: the rank colour. Never for the crest. */
+    /** Ranks carry no colour in Plates: ink. */
     @Composable
     @ReadOnlyComposable
     fun rankAccent(rank: Rank): Color = LocalAwakenPalette.current.rank(rank)

@@ -22,6 +22,7 @@ class FeatureBoundaryTest {
         Rule(Regex("""\bCanvas\(|\bdrawBehind\b|\bdrawWithContent\b|\bdrawWithCache\b"""), "ask ChartKit or a design-system component to draw it"),
         Rule(Regex("""\.(background|border|clip|shadow)\("""), "move the styling into a core/designsystem component"),
         Rule(Regex("""\bAwakenAlpha\b"""), "alpha steps belong to design-system components"),
+        Rule(Regex("""designsystem\.look\b|\bPlatesLook\b|\bLocalLook\b|\bLookId\b"""), "feature code never names a look; use tokens and design-system components"),
         Rule(Regex("""\bstringResource\(|\bpluralStringResource\(|\bLocalResources\b|context\.getString\(|import android\.content\.res\.Resources\b"""), "use lexString / lexPlural / LexResources"),
     )
 

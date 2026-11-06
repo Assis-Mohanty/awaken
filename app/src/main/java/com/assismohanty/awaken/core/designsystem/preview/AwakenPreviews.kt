@@ -8,15 +8,15 @@ import androidx.compose.ui.tooling.preview.Preview
  * quality bar). `AwakenTheme`'s default follows the preview's night mode, so every screen preview renders dark and light
  * without passing a mode.
  */
-@Preview(name = "Phone", device = "spec:width=411dp,height=891dp", showBackground = true, backgroundColor = 0xFF0F0F0F, uiMode = Configuration.UI_MODE_NIGHT_YES)
-@Preview(name = "Small phone", device = "spec:width=360dp,height=640dp", showBackground = true, backgroundColor = 0xFF0F0F0F, uiMode = Configuration.UI_MODE_NIGHT_YES)
-@Preview(name = "Phone · light", device = "spec:width=411dp,height=891dp", showBackground = true, backgroundColor = 0xFFF5F4F1, uiMode = Configuration.UI_MODE_NIGHT_NO)
-@Preview(name = "Small phone · light", device = "spec:width=360dp,height=640dp", showBackground = true, backgroundColor = 0xFFF5F4F1, uiMode = Configuration.UI_MODE_NIGHT_NO)
-@Preview(name = "Phone · light · font 200%", device = "spec:width=411dp,height=891dp", showBackground = true, backgroundColor = 0xFFF5F4F1, fontScale = 2f, uiMode = Configuration.UI_MODE_NIGHT_NO)
+@Preview(name = "Phone", device = "spec:width=411dp,height=891dp", showBackground = true, backgroundColor = 0xFF131417, uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Preview(name = "Small phone", device = "spec:width=360dp,height=640dp", showBackground = true, backgroundColor = 0xFF131417, uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Preview(name = "Phone · light", device = "spec:width=411dp,height=891dp", showBackground = true, backgroundColor = 0xFFF2F2ED, uiMode = Configuration.UI_MODE_NIGHT_NO)
+@Preview(name = "Small phone · light", device = "spec:width=360dp,height=640dp", showBackground = true, backgroundColor = 0xFFF2F2ED, uiMode = Configuration.UI_MODE_NIGHT_NO)
+@Preview(name = "Phone · light · font 200%", device = "spec:width=411dp,height=891dp", showBackground = true, backgroundColor = 0xFFF2F2ED, fontScale = 2f, uiMode = Configuration.UI_MODE_NIGHT_NO)
 annotation class PhonePreviews
 
 /** Single component on the page colour, plus a 200 % font-scale variant (DESIGN_SYSTEM §6) and a light variant. */
-@Preview(name = "Component", showBackground = true, backgroundColor = 0xFF0F0F0F, widthDp = 380, uiMode = Configuration.UI_MODE_NIGHT_YES)
-@Preview(name = "Component · font 200%", showBackground = true, backgroundColor = 0xFF0F0F0F, widthDp = 380, fontScale = 2f, uiMode = Configuration.UI_MODE_NIGHT_YES)
-@Preview(name = "Component · light", showBackground = true, backgroundColor = 0xFFF5F4F1, widthDp = 380, uiMode = Configuration.UI_MODE_NIGHT_NO)
+@Preview(name = "Component", showBackground = true, backgroundColor = 0xFF131417, widthDp = 380, uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Preview(name = "Component · font 200%", showBackground = true, backgroundColor = 0xFF131417, widthDp = 380, fontScale = 2f, uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Preview(name = "Component · light", showBackground = true, backgroundColor = 0xFFF2F2ED, widthDp = 380, uiMode = Configuration.UI_MODE_NIGHT_NO)
 annotation class ComponentPreview

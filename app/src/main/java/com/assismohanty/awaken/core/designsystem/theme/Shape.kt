@@ -8,10 +8,10 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
-/** Shapes (DESIGN_SYSTEM §2.3): 24dp cards with no border or shadow, fully rounded pills and buttons. Screens never hard-code dp. */
+/** Shapes (DESIGN_SYSTEM §2.3, Plates): 22dp cards with no border, 20dp tiles, 28dp sheets, fully rounded pills and buttons. Screens never hard-code dp. */
 @Immutable
 data class AwakenShapes(
-    val cardRadius: Dp = 24.dp,
+    val cardRadius: Dp = 22.dp,
     /** Cards. */
     val window: Shape = RoundedCornerShape(cardRadius),
     /** Wells and tiles inside a card. */
@@ -22,6 +22,10 @@ data class AwakenShapes(
     /** Small squares: swatches, icon wells, calendar cells. */
     val tile: Shape = RoundedCornerShape(10.dp),
     val xpBar: Shape = CircleShape,
+    /** A summary tile on Today and Focus. */
+    val summaryTile: Shape = RoundedCornerShape(20.dp),
+    /** A barbell plate on the day bar. */
+    val plate: Shape = RoundedCornerShape(9.dp),
 )
 
 @Immutable
@@ -31,7 +35,7 @@ data class AwakenDimens(
     val accentWidth: Dp = 1.5.dp,
     val hairline: Dp = 1.dp,
     val touchTarget: Dp = 48.dp,
-    val buttonHeight: Dp = 52.dp,
+    val buttonHeight: Dp = 56.dp,
     val xpBarHeight: Dp = 8.dp,
     /** The consistency meter track (DESIGN_SYSTEM §8.1). */
     val meterHeight: Dp = 6.dp,
