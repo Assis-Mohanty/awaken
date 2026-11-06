@@ -1,0 +1,100 @@
+/* Refinement after review: softer, rounder, lighter type, gentle depth. Loaded last. */
+
+/* Type: confident, not chunky */
+.plates h1{font:650 24px/1.12 var(--disp);font-stretch:100%;letter-spacing:-.022em}
+.plates h1.s{font-size:21px}.plates .ob h1{font-size:28px;letter-spacing:-.026em}
+.plates h2{font:650 19px/1.15 var(--disp);font-stretch:100%;letter-spacing:-.015em}
+.plates .sheet h3,.plates .lvup h3{font:650 16px/1.25 var(--disp);font-stretch:100%}
+.plates .num,.plates .dial strong,.plates .wheel .cur{font-weight:600;font-stretch:104%;letter-spacing:-.045em}
+.plates .num{font-size:54px}.plates .dial strong{font-size:72px}
+.plates .n{font:650 26px/1 var(--disp);font-stretch:100%;letter-spacing:-.03em}.plates .n.xl{font-size:48px;font-weight:600}.plates .n.xl2{font-size:40px;font-weight:600}
+.plates .xp b,.plates .tile strong,.plates .stcard strong,.plates .tri strong,.plates .pick strong,.plates .statl b,.plates .loaded b,.plates .st b{font-weight:650;font-stretch:100%;letter-spacing:-.025em}
+.plates .wheel{font-weight:600;font-stretch:100%}.plates .qxp{font-weight:600;font-size:15px;color:var(--ink2)}
+.plates .cta,.plates .nextup b{font-weight:600;font-stretch:100%;letter-spacing:-.005em}
+.plates .bh b{font-weight:650}
+
+/* Controls: round */
+.plates .cta{height:56px;border-radius:28px}.plates .cta.sm{height:48px;border-radius:24px}
+.plates .btn2{border-radius:25px}.plates .btn2.sm{border-radius:22px}
+.plates .chip{border-radius:22px;padding:0 15px}.plates .seg{border-radius:24px}.plates .seg button{border-radius:21px}
+.plates .tick{border-radius:50%}
+.plates .rk b{border-radius:50%;width:28px;height:28px;font-size:15px;font-weight:650}.plates .rk.big b{width:36px;height:36px;font-size:19px}
+.plates .rankb{border-radius:50%;font-weight:600}
+.plates .sw{border-radius:16px;box-shadow:inset 0 0 0 2px var(--ink2)}.plates .sw i{border-radius:50%}.plates .sw.on{box-shadow:none}.plates .sw.on i{border-radius:50%}
+.plates .bh em{border-radius:10px;padding:2px 8px;font-weight:600}
+.plates .st2 button{border-radius:26px;background:var(--s1);box-shadow:var(--shadow)}
+.plates .icb{border-radius:50%}
+.plates .nav a.on .ind{border-radius:16px}
+.plates .nav{box-shadow:0 -1px 0 var(--line)}
+
+/* Surfaces: one soft card per group */
+.plates .lvl,.plates .hero2,.plates .stcard,.plates .note,.plates .come,.plates .buy,.plates .kvs,.plates .meal,.plates .qc,.plates .fld{border-radius:22px;box-shadow:var(--shadow)}
+.plates .fld{padding:10px 18px 11px}
+.plates .qs,.plates .setl,.plates .nxt{gap:0;background:var(--s1);border-radius:22px;box-shadow:var(--shadow);overflow:hidden;padding:4px 0}
+.plates .q,.plates .setl li,.plates .nxt li{background:none;border-radius:0}
+.plates .come .qs{background:var(--bg);box-shadow:none}.plates .come .q{background:none}
+.plates .lvl{padding:16px}.plates .kvs{padding:5px 18px}.plates .q{padding-left:16px;padding-right:18px}
+.plates .tiles{gap:8px}.plates .tile{border-radius:20px;box-shadow:var(--shadow);padding:14px 12px 15px}
+.plates .links{gap:8px}.plates .links li{border-radius:20px;box-shadow:var(--shadow);padding:10px 13px}
+.plates .grid2{gap:8px}.plates .pick{border-radius:20px;box-shadow:var(--shadow)}.plates .pick.on{box-shadow:none}
+.plates .sheet{border-radius:28px 28px 0 0;background:var(--s1);padding-top:12px}
+.plates .sheet .kvs,.plates .sheet .fld,.plates .sheet .setl{background:var(--bg);box-shadow:none}
+.plates .sheet .chip,.plates .sheet .btn2{background:var(--s2)}.plates .sheet .chip.on{background:var(--pri)}
+.plates .wheel .cur{border-radius:22px;box-shadow:var(--shadow)}
+.plates .sk,.plates .map{border-radius:22px}
+
+/* Bars: smooth */
+.plates .kn{height:8px;border-radius:4px}.plates .kn i{border-radius:4px;background-image:none;background-color:var(--ink)}
+.plates .sb2,.plates .sb2 i{border-radius:4px}.plates .segs i{height:6px;border-radius:3px;overflow:hidden}
+.plates .split{height:10px;gap:3px}.plates .split i{border-radius:5px}
+.plates .bars7 i{border-radius:7px}
+.plates .pips{gap:6px}.plates .pips i{width:12px;height:12px;border-radius:50%}.plates .pips.big i{width:18px;height:18px}
+.plates .cal{gap:6px}.plates .cal i{height:auto;aspect-ratio:1;border-radius:50%}
+.plates .sp{width:10px;height:10px;border-radius:50%}.plates .s-cha{box-shadow:inset 0 0 0 1px var(--chal)}
+.plates .statl li{grid-template-columns:10px 96px 1fr 30px}
+.plates .tagp .sp{height:10px}
+
+/* The loaded bar */
+.plates .ghost{fill:var(--s2);stroke:none;opacity:.75}.plates .sl,.plates .sh{fill:var(--s2)}.plates .col{fill:var(--ink)}
+.plates .rim{fill:#fff;opacity:.2}
+.plates .f-cha{stroke:var(--chal);stroke-width:1}
+.plates .pn{font:600 14px var(--disp)}
+
+/* Session screens: one deep colour and a round plate dial */
+.plates .field,.plates .fieldc{min-height:844px}
+.plates .c-int{background:var(--ctri)}.plates .c-str{background:var(--ctrs)}.plates .c-vit{background:var(--ctrv)}
+.plates .dial2{display:flex;justify-content:center;padding-top:40px}
+.plates .dial2 .ring-t{stroke:rgba(255,255,255,.16)}.plates .dial2 .ring-v{stroke:#fff}
+.plates .dial2 b{font:600 76px/1 var(--disp);font-stretch:100%;letter-spacing:-.04em}.plates .dial2 p{font-size:15px;color:#E9ECF4;margin-top:6px}
+.plates .facts{margin-top:36px}.plates .nextup{margin-top:26px}.plates .adj{margin-top:24px}
+.plates .adj button{background:rgba(255,255,255,.14);border-radius:24px}
+.plates .ghostbar{border-radius:6px}.plates .ghostbar:before{border-radius:9px;background:var(--s2);box-shadow:none}
+
+/* Flat inside a container: no card in a card */
+.plates .sheet .kvs,.plates .sheet .setl{background:none;padding:0;border-radius:0;overflow:visible}
+.plates .sheet .kvs .kv+.kv{box-shadow:inset 0 1px 0 var(--line)}
+.plates .sheet .setl li{padding-left:0;padding-right:0}
+.plates .sheet .wheel .cur,.plates .sheet .st2 button{box-shadow:none;background:var(--bg)}
+.plates .come .qs{background:none;padding:0;border-radius:0;overflow:visible}.plates .come .q{padding-left:0;padding-right:0}
+.plates .hero2 .cta,.plates .note .btn2{box-shadow:none}
+.plates .sheet .fld{border-radius:18px}
+
+/* Finish pass, 2026-11-06: small phones and large text.
+   Layout follows the screen height instead of a fixed 844. Remove this block to undo. */
+.plates.phone{container-type:size}.tall .plates.phone{container-type:normal}
+.plates .ob{min-height:100%;padding-bottom:0}
+.plates .ob .dock{position:sticky;bottom:0;z-index:2;background:var(--bg);padding-bottom:30px}
+.plates .obw{margin-top:min(150px,17.7cqh)}
+.plates .field{min-height:100%;display:flex;flex-direction:column}.plates .fieldc{min-height:0;flex:1}
+.plates .dial2{padding-top:min(40px,3cqh)}
+.plates .dial2 .ring{width:min(296px,35cqh)!important;height:min(296px,35cqh)!important}
+.plates .dial2 .ring svg{width:100%;height:100%}
+.plates .dial2 b{font-size:min(76px,9cqh)}
+.plates .facts{margin-top:min(36px,2.5cqh)}.plates .nextup{margin-top:min(26px,2cqh)}.plates .adj{margin-top:min(24px,2cqh)}
+.plates .bar.c{align-items:flex-start}.plates .bar.c .icb{margin-top:-8px}
+.plates .chips.nw{overflow-x:auto;scrollbar-width:none;margin-left:-20px;margin-right:-20px;padding-left:20px;padding-right:20px}
+.plates .chips.nw::-webkit-scrollbar{display:none}.plates .chips.nw .chip{flex:none}
+.plates .lv-t,.plates .lv-b{flex-wrap:wrap;gap:0 10px}.plates .lv-t>*,.plates .lv-b>*{white-space:nowrap}
+.plates .bh,.plates .lk,.plates .btn2.sm{min-height:48px}.plates .txt.sm{min-width:48px}
+.plates .wrap>.dock{position:sticky;bottom:0;z-index:2;background:var(--bg);padding-bottom:12px}
+.plates .mh button{width:48px;height:48px}

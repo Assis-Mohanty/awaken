@@ -20,3 +20,5 @@ Ideas that are **not** in `PRD_MVP.md`. Nothing here gets built in v1 without up
 ## Removed in the declutter on 2026-11-03 (see `docs/DECLUTTER_PLAN.md`)
 
 Ideas that were built and removed, kept here in case a calmer version is wanted later: achievements and titles, cosmetic Store items (themes, frames, badges) and the Relic Cache, the story chapters and daily System lines, critical hits, the 45-day Campaign, Dungeons, the focus crystal gallery, monthly/yearly recaps, and the Lumi mascot. More Store items that change how you play (not how it looks) are an open idea.
+
+- **More looks after launch:** Innings, then Magnitude, as free Appearance choices. See `to_build_next.md`.

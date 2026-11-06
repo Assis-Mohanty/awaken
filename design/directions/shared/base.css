@@ -1,0 +1,36 @@
+/* Frame and presentation page only. Every direction brings its own component styles. */
+*{box-sizing:border-box;margin:0;padding:0}
+button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
+a{color:inherit;text-decoration:none}
+ul{list-style:none}
+
+body.page{background:#26272b;color:#ececee;font:15px/1.45 system-ui,sans-serif;padding:20px 16px 60px}
+.pg{display:flex;flex-wrap:wrap;align-items:center;gap:12px 24px;margin-bottom:12px}
+.pg h1{font-size:20px;font-weight:600}
+.tabs{display:flex;flex-wrap:wrap;gap:6px}
+.tabs a{padding:9px 15px;border-radius:99px;background:#3a3b40;color:#dcdce0;min-height:40px}
+.tabs a.on{background:#fff;color:#111}
+.pgd{margin-top:30px}.pgd h2{font-size:24px;font-weight:650}.pgd>p{max-width:64ch;color:#c0c0c6;margin:4px 0 8px}
+.pgd h3{font-size:14px;font-weight:600;color:#c0c0c6;margin:20px 0 10px}
+.row-x{display:flex;gap:22px;overflow-x:auto;padding-bottom:14px;scroll-snap-type:x proximity}
+figure{flex:none;scroll-snap-align:start}figcaption{font-size:13px;color:#b5b5bb;margin-top:8px;text-align:center}
+body.solo{background:transparent}
+
+.phone{position:relative;width:390px;height:844px;overflow:hidden;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.35;-webkit-font-smoothing:antialiased;font-feature-settings:"tnum" 1,"lnum" 1}
+.page .phone{border-radius:36px}
+.sb{position:absolute;top:0;left:0;right:0;height:40px;padding:0 24px;display:flex;align-items:center;justify-content:space-between;font-size:14px;font-weight:600;z-index:5;color:var(--ink);pointer-events:none}
+.sbi{display:flex;gap:6px;align-items:center}
+.scroll{position:absolute;inset:0 0 80px;overflow-y:auto;scrollbar-width:none}
+.scroll::-webkit-scrollbar{display:none}
+.scroll.nonav{bottom:0}
+.gesture{position:absolute;left:50%;bottom:8px;width:120px;height:4px;margin-left:-60px;border-radius:2px;background:var(--ink);opacity:.8;z-index:6}
+.tall .phone{height:auto;min-height:844px;overflow:visible}
+.tall .scroll{position:static;overflow:visible}
+.tall .sb{position:absolute}
+.tall .nav{position:relative}.tall .gesture{display:none}
+.ic{display:block;flex:none}
+.nav{position:absolute;left:0;right:0;bottom:0;height:80px;display:flex;padding:8px 4px 16px;z-index:4}
+.nav a{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:12px;font-weight:500;min-width:0}
+.ind{display:grid;place-items:center;width:60px;height:32px;border-radius:16px}
+.ring{position:relative;flex:none}.ring svg{display:block}.ring-in{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
