@@ -28,7 +28,6 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.compose.ui.graphics.Color
 import com.assismohanty.awaken.R
 import com.assismohanty.awaken.core.designsystem.components.LargeTitleScaffold
 import com.assismohanty.awaken.core.designsystem.components.SkeletonCard
@@ -290,7 +289,7 @@ private fun NutrientLine(nutrient: Nutrient, amount: Double, target: Double?, ki
             )
         }
         if (target != null && target > 0.0) {
-            Chart(ChartSpec.Progress(progress = (amount / target).toFloat(), color = if (over) colors.critical else nutrient.fillColor()))
+            Chart(ChartSpec.Progress(progress = (amount / target).toFloat(), color = if (over) colors.critical else colors.accent))
         }
     }
 }
@@ -430,12 +429,3 @@ private fun DietSetupPreview() {
     AwakenTheme(reduceMotion = true) { DietScreen(previewDietState(setup = true), onEvent = {}) }
 }
 
-/** Macro fills in the stat accents (DESIGN_SYSTEM §2.1): one hue per macro, everything else neutral ink. */
-@Composable
-private fun Nutrient.fillColor(): Color = when (this) {
-    Nutrient.PROTEIN -> AwakenTheme.colors.chartSeries1
-    Nutrient.CARBS -> AwakenTheme.colors.chartSeries3
-    Nutrient.FAT -> AwakenTheme.colors.chartSeries5
-    Nutrient.FIBER -> AwakenTheme.colors.chartSeries4
-    else -> AwakenTheme.colors.textSecondary
-}
