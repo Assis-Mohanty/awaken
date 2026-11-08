@@ -48,7 +48,6 @@ import com.assismohanty.awaken.core.designsystem.preview.ComponentPreview
 import com.assismohanty.awaken.core.designsystem.theme.AwakenTheme
 import com.assismohanty.awaken.core.designsystem.theme.Spacing
 import com.assismohanty.awaken.engine.body.Muscle
-import com.assismohanty.awaken.engine.model.Stat
 import kotlin.math.roundToInt
 
 /**
@@ -66,7 +65,7 @@ fun BodyMap(
     intensity: Map<Muscle, Float>,
     description: String,
     modifier: Modifier = Modifier,
-    accent: Color = AwakenTheme.colors.stat(Stat.STR),
+    accent: Color = AwakenTheme.colors.accent,
     onMuscleClick: ((Muscle) -> Unit)? = null,
     initialSide: BodySide = BodySide.FRONT,
     /** The figure's height; smaller where it shares the screen with other controls. */
