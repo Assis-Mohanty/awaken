@@ -37,4 +37,9 @@
 
     <string name="status_store_row">Store</string>
     <string name="status_store_row_gold">%1$s gold to spend</string>
+    <string name="status_tile_review_open">Open now</string>
+    <string name="status_tile_review_closed">Last week\'s report</string>
+    <string name="status_tile_programs">Daily rules, 30 to 75 days</string>
+    <string name="status_tile_quit">Days clean</string>
+    <string name="status_tile_health">Steps, sleep, workouts</string>
 </resources>

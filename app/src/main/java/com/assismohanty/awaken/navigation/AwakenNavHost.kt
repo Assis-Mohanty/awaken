@@ -246,7 +246,7 @@ private fun MainScaffold(
                         onOpenStore = { navController.navigate(VaultRoute) { launchSingleTop = true } },
                         onOpenQuit = { navController.navigate(QuitRoute) { launchSingleTop = true } },
                         onOpenPrograms = { navController.navigate(ProgramsRoute) { launchSingleTop = true } },
-                        onOpenSettings = { navController.navigate(SettingsRoute) },
+                        onOpenHealth = { navController.navigate(HealthRoute) },
                         onOpenPaths = if (AiFeature.enabled) {{ navController.navigate(PathsRoute) { launchSingleTop = true } }} else null,
                         onOpenReview = { navController.navigate(ReviewRoute) { launchSingleTop = true } },
                     )

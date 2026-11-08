@@ -92,6 +92,8 @@
     <string name="rank_line">Rank %1$s</string>
     <string name="rank_word">Rank</string>
     <string name="level_line">Level %1$d</string>
+    <string name="level_word">Level</string>
+    <string name="xp_of_total">of %1$s XP</string>
     <string name="xp_progress_of">%1$s of %2$s XP</string>
     <plurals name="streak_days_inline">
         <item quantity="one">%1$d day</item>

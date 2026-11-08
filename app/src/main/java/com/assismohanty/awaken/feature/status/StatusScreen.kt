@@ -9,6 +9,8 @@ import android.content.ClipData
 import android.content.Intent
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -36,10 +38,12 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.assismohanty.awaken.R
 import com.assismohanty.awaken.core.designsystem.components.HeaderIconButton
 import com.assismohanty.awaken.core.designsystem.components.LargeTitleScaffold
-import com.assismohanty.awaken.core.designsystem.components.LevelModule
+import com.assismohanty.awaken.core.designsystem.components.LevelHero
+import com.assismohanty.awaken.core.designsystem.components.ShortcutTile
+import com.assismohanty.awaken.core.designsystem.components.isLargeText
+import com.assismohanty.awaken.core.designsystem.components.StatLegend
 import com.assismohanty.awaken.core.designsystem.components.AwakenCard
 import com.assismohanty.awaken.core.designsystem.components.ListRow
-import com.assismohanty.awaken.core.designsystem.components.StreakModule
 import com.assismohanty.awaken.core.designsystem.components.SkeletonCard
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -84,13 +88,13 @@ import java.time.format.FormatStyle
 
 @Composable
 fun StatusRoute(
-    onOpenSettings: () -> Unit,
     modifier: Modifier = Modifier,
     onOpenPaths: (() -> Unit)? = {},
     onOpenReview: () -> Unit = {},
     onOpenQuit: () -> Unit = {},
     onOpenPrograms: () -> Unit = {},
     onOpenStore: () -> Unit = {},
+    onOpenHealth: () -> Unit = {},
     viewModel: StatusViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -110,8 +114,8 @@ fun StatusRoute(
     StatusScreen(
         state = state,
         onEvent = viewModel::onEvent,
-        onOpenSettings = onOpenSettings,
         onOpenPaths = onOpenPaths,
+        onOpenHealth = onOpenHealth,
         onOpenReview = onOpenReview,
         onOpenQuit = onOpenQuit,
         onOpenPrograms = onOpenPrograms,
@@ -126,12 +130,12 @@ fun StatusScreen(
     state: StatusUiState,
     onEvent: (StatusEvent) -> Unit,
     modifier: Modifier = Modifier,
-    onOpenSettings: () -> Unit = {},
     onOpenPaths: (() -> Unit)? = {},
     onOpenReview: () -> Unit = {},
     onOpenQuit: () -> Unit = {},
     onOpenPrograms: () -> Unit = {},
     onOpenStore: () -> Unit = {},
+    onOpenHealth: () -> Unit = {},
 ) {
     val header = state.header
     LargeTitleScaffold(
@@ -142,37 +146,27 @@ fun StatusScreen(
             // Paths left the bottom bar in the v1.1 redesign; they open from here.
             // Null when the build has no AI Paths: the Paths entry is hidden, not just gated.
             if (onOpenPaths != null) HeaderIconButton(AwakenGlyphs.Path, lexString(R.string.cd_open_paths), onOpenPaths)
-            HeaderIconButton(AwakenGlyphs.Settings, lexString(R.string.cd_open_settings), onOpenSettings)
         },
     ) {
         if (header == null) {
             SkeletonCard()
             return@LargeTitleScaffold
         }
-        // Level and streak (with the 28-day consistency) side by side, equal heights.
-        Row(modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(Spacing.cardGap)) {
-            LevelModule(
-                level = header.level,
-                rank = header.rank,
-                xpIntoLevel = header.xpIntoLevel,
-                xpForLevel = header.xpForLevel,
-                modifier = Modifier.weight(1f).fillMaxHeight(),
-            )
-            StreakModule(
-                streak = header.streak,
-                best = state.bestStreak,
-                consistency = state.consistency,
-                modifier = Modifier.weight(1f).fillMaxHeight(),
-            )
-        }
+        LevelHero(
+            level = header.level,
+            rank = header.rank,
+            xpIntoLevel = header.xpIntoLevel,
+            xpForLevel = header.xpForLevel,
+            streak = header.streak,
+            best = state.bestStreak,
+            consistency = state.consistency,
+        )
+        ShortcutGrid(state, header.gold, onOpenReview, onOpenPrograms, onOpenQuit, onOpenStore, onOpenHealth)
         RadarWindow(state)
         InsightsSection(state.insights)
         StatsWindow(state.rank, state.stats)
         ActivityWindow(state, onEvent)
         WeeklyWindow(state, onEvent, onOpenReview)
-        StoreRow(gold = header.gold, onOpenStore = onOpenStore)
-        QuitRow(onOpenQuit)
-        ProgramsRow(onOpenPrograms)
     }
     if (state.capturing) {
         ShareCapture(
@@ -190,6 +184,7 @@ private fun RadarWindow(state: StatusUiState) {
         Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
             Chart(ChartSpec.Radar(values = state.radarNow, maxValue = state.radarMax, previous = state.radarLastWeek))
         }
+        StatLegend()
         Text(lexString(R.string.status_radar_legend), style = AwakenTheme.type.caption, color = colors.textSecondary)
     }
 }
@@ -393,49 +388,34 @@ private fun StatusScreenNewHunterPreview() {
     AwakenTheme(reduceMotion = true) { StatusScreen(state = previewStatusState(locked = true), onEvent = {}) }
 }
 
-/** The way into the quit counters (GD §16.13). */
+/** Where the rest of Progress lives: the weekly review, programs, quit counters, the store and health, two to a row. */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun QuitRow(onOpenQuit: () -> Unit) {
-    AwakenCard(reveal = false, contentPadding = Spacing.listCard, spacing = Spacing.zero, modifier = Modifier.fillMaxWidth()) {
-        ListRow(
-            title = lexString(R.string.quit_row_title),
-            secondary = lexString(R.string.quit_row_note),
-            onClick = onOpenQuit,
-            trailing = {
-                Icon(AwakenGlyphs.ChevronRight, contentDescription = null, tint = AwakenTheme.colors.textSecondary, modifier = Modifier.size(AwakenTheme.dimens.iconSmall))
-            },
+private fun ShortcutGrid(
+    state: StatusUiState,
+    gold: Long,
+    onOpenReview: () -> Unit,
+    onOpenPrograms: () -> Unit,
+    onOpenQuit: () -> Unit,
+    onOpenStore: () -> Unit,
+    onOpenHealth: () -> Unit,
+) {
+    FlowRow(
+        modifier = Modifier.fillMaxWidth(),
+        maxItemsInEachRow = if (isLargeText()) 1 else 2,
+        horizontalArrangement = Arrangement.spacedBy(Spacing.cardGap),
+        verticalArrangement = Arrangement.spacedBy(Spacing.cardGap),
+    ) {
+        ShortcutTile(
+            icon = AwakenGlyphs.Calendar,
+            title = lexString(R.string.review_title),
+            note = lexString(if (state.weeklyOpen) R.string.status_tile_review_open else R.string.status_tile_review_closed),
+            onClick = onOpenReview,
+            modifier = Modifier.weight(1f),
         )
-    }
-}
-
-/** The way into the programs (GD §16.15), next to the quit counters. */
-@Composable
-private fun ProgramsRow(onOpenPrograms: () -> Unit) {
-    AwakenCard(reveal = false, contentPadding = Spacing.listCard, spacing = Spacing.zero, modifier = Modifier.fillMaxWidth()) {
-        ListRow(
-            title = lexString(R.string.programs_row_title),
-            secondary = lexString(R.string.programs_row_note),
-            onClick = onOpenPrograms,
-            trailing = {
-                Icon(AwakenGlyphs.ChevronRight, contentDescription = null, tint = AwakenTheme.colors.textSecondary, modifier = Modifier.size(AwakenTheme.dimens.iconSmall))
-            },
-        )
-    }
-}
-
-/** Gold is spent in the Store: the balance sits on the row that opens it. */
-@Composable
-private fun StoreRow(gold: Long, onOpenStore: () -> Unit) {
-    AwakenCard(reveal = false, contentPadding = Spacing.listCard, spacing = Spacing.zero, modifier = Modifier.fillMaxWidth()) {
-        ListRow(
-            title = lexString(R.string.status_store_row),
-            icon = AwakenGlyphs.Coin,
-            iconTint = AwakenTheme.colors.reward,
-            secondary = lexString(R.string.status_store_row_gold, formatCount(gold)),
-            onClick = onOpenStore,
-            trailing = {
-                Icon(AwakenGlyphs.ChevronRight, contentDescription = null, tint = AwakenTheme.colors.textSecondary, modifier = Modifier.size(AwakenTheme.dimens.iconSmall))
-            },
-        )
+        ShortcutTile(AwakenGlyphs.Level, lexString(R.string.programs_row_title), lexString(R.string.status_tile_programs), onOpenPrograms, Modifier.weight(1f))
+        ShortcutTile(AwakenGlyphs.Shield, lexString(R.string.quit_row_title), lexString(R.string.status_tile_quit), onOpenQuit, Modifier.weight(1f))
+        ShortcutTile(AwakenGlyphs.Coin, lexString(R.string.status_store_row), lexString(R.string.status_store_row_gold, formatCount(gold)), onOpenStore, Modifier.weight(1f))
+        ShortcutTile(AwakenGlyphs.Vitality, lexString(R.string.health_title), lexString(R.string.status_tile_health), onOpenHealth, Modifier.weight(1f))
     }
 }

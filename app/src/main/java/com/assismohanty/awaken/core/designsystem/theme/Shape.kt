@@ -62,6 +62,9 @@ data class AwakenDimens(
     /** The level ring (Today, Progress) and its stroke. */
     val levelRing: Dp = 76.dp,
     val levelRingStroke: Dp = 7.dp,
+    /** The large ring at the top of Progress. */
+    val levelRingHero: Dp = 136.dp,
+    val levelRingHeroStroke: Dp = 10.dp,
     /** The round stat marker beside a stat's name. */
     val statMarker: Dp = 10.dp,
     /** Today's vertical timeline. */
