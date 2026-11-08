@@ -121,7 +121,7 @@ fun GatesScreen(state: GatesUiState, onEvent: (GatesEvent) -> Unit, onBack: () -
             active == null && state.pomodoro != null -> lexString(R.string.pomodoro_title)
             active == null -> lexString(R.string.gates_title)
             active.mode == GateMode.STOPWATCH -> lexString(R.string.focus_stopwatch_title)
-            else -> lexString(R.string.gate_name, active.rank.name)
+            else -> active.subject?.takeIf { it.isNotBlank() } ?: lexString(R.string.focus_session_title)
         },
         onBack = if (active == null) onBack else null,
         modifier = modifier,
@@ -299,12 +299,13 @@ private fun StatAndSubjectPickers(stat: Stat, subjectId: String?, state: GatesUi
 private fun GatePortal(tile: GateTile, selected: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
     val colors = AwakenTheme.colors
     val gateColor = if (tile.available) colors.gate(tile.rank) else colors.textMuted
-    val name = lexString(R.string.gate_name, tile.rank.name)
+    val name = lexString(R.string.gate_name, tile.minutes)
     val minutes = lexString(R.string.gate_minutes, tile.minutes)
+    val difficulty = tile.rank.difficulty.label()
     val description = if (tile.available) {
-        lexString(R.string.cd_gate_tile, name, minutes)
+        lexString(R.string.cd_gate_tile, name, difficulty)
     } else {
-        lexString(R.string.cd_gate_tile_late, name, minutes)
+        lexString(R.string.cd_gate_tile_late, name, difficulty)
     }
     SelectableTile(
         accent = gateColor,
@@ -315,7 +316,6 @@ private fun GatePortal(tile: GateTile, selected: Boolean, onClick: () -> Unit, m
         modifier = modifier,
     ) {
         IconCircle(AwakenGlyphs.Portal, gateColor)
-        Text(name, style = AwakenTheme.type.windowTitle, color = if (tile.available) colors.textPrimary else colors.textMuted)
         Text(minutes, style = AwakenTheme.type.metricL, color = if (tile.available) colors.textPrimary else colors.textMuted)
         if (tile.available) {
             DifficultyChip(tile.rank.difficulty)
@@ -329,7 +329,7 @@ private fun GatePortal(tile: GateTile, selected: Boolean, onClick: () -> Unit, m
 @Composable
 private fun GateSetupWindow(setup: GateSetup, onEvent: (GatesEvent) -> Unit) {
     val colors = AwakenTheme.colors
-    SystemWindow(title = lexString(R.string.gate_name, setup.rank.name), accent = colors.gate(setup.rank)) {
+    SystemWindow(title = lexString(R.string.gate_name, setup.rank.durationMinutes), accent = colors.gate(setup.rank)) {
         Text(lexString(R.string.gate_stat_label), style = AwakenTheme.type.label, color = colors.textSecondary)
         FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.xs), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
             GATE_STATS.forEach { stat ->
