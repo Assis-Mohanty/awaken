@@ -77,6 +77,14 @@ fun SectionHeader(
     modifier: Modifier = Modifier,
     actions: @Composable RowScope.() -> Unit = {},
 ) {
+    if (isLargeText()) {
+        // Big text: the title gets the full width and its actions sit on a row of their own.
+        Column(modifier = modifier.fillMaxWidth().padding(top = Spacing.md)) {
+            Text(title, style = AwakenTheme.type.windowTitle, color = AwakenTheme.colors.textPrimary, modifier = Modifier.semantics { heading() })
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.xxs)) { actions() }
+        }
+        return
+    }
     Row(
         modifier = modifier.fillMaxWidth().padding(top = Spacing.md),
         verticalAlignment = Alignment.CenterVertically,

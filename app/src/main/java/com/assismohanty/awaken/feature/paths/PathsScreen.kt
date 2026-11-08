@@ -119,7 +119,7 @@ private fun CreateAction(state: PathsUiState, onEvent: (PathsEvent) -> Unit) {
 private fun PathWindow(path: PathCardUi, onEvent: (PathsEvent) -> Unit, onOpen: () -> Unit) {
     val colors = AwakenTheme.colors
     val type = AwakenTheme.type
-    val accent = colors.stat(path.primaryStat)
+    val accent = colors.statGlyph(path.primaryStat)
     val openDescription = lexString(R.string.path_open_description, path.goal)
     SystemWindow(
         title = path.goal,

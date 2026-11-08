@@ -141,7 +141,7 @@ private fun QuestDetailContent(state: QuestDetailUiState, onEvent: (QuestDetailE
         } else {
             lexString(R.string.quest_started)
         }
-        InsightCard(text = text, icon = AwakenGlyphs.Hourglass, tint = colors.stat(state.stat))
+        InsightCard(text = text, icon = AwakenGlyphs.Hourglass, tint = colors.statGlyph(state.stat))
     }
 
     // What it trains (ENGINE_DECISIONS #5: primary full XP, secondary 30 %) and how it is checked.
@@ -149,13 +149,13 @@ private fun QuestDetailContent(state: QuestDetailUiState, onEvent: (QuestDetailE
         ListRow(
             title = lexString(R.string.quest_split_primary, state.stat.label()),
             icon = AwakenGlyphs.stat(state.stat),
-            iconTint = colors.stat(state.stat),
+            iconTint = colors.statGlyph(state.stat),
         )
         state.secondaryStat?.let { secondary ->
             ListRow(
                 title = lexString(R.string.quest_split_secondary, secondary.label()),
                 icon = AwakenGlyphs.stat(secondary),
-                iconTint = colors.stat(secondary),
+                iconTint = colors.statGlyph(secondary),
             )
         }
         ListRow(

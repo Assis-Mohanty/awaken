@@ -31,6 +31,8 @@ import com.assismohanty.awaken.core.designsystem.components.EmptyState
 import com.assismohanty.awaken.core.designsystem.components.HabitRowActions
 import com.assismohanty.awaken.core.designsystem.components.HealthTile
 import com.assismohanty.awaken.core.designsystem.components.HealthTileModel
+import com.assismohanty.awaken.core.designsystem.components.isLargeText
+import com.assismohanty.awaken.core.designsystem.components.isSmallPhone
 import com.assismohanty.awaken.core.designsystem.components.HunterHeaderModel
 import com.assismohanty.awaken.core.designsystem.components.LargeTitleScaffold
 import com.assismohanty.awaken.core.designsystem.components.ListRow
@@ -232,22 +234,28 @@ private fun TodayMetrics(
     onGrantUsageAccess: () -> Unit,
     onSetUpHealth: () -> Unit,
 ) {
-    Row(
-        modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min),
-        horizontalArrangement = Arrangement.spacedBy(Spacing.cardGap),
-    ) {
-        ScreenTimeTile(
-            model = summary.screenTime,
-            onClick = onOpenScreenTime,
-            onGrantAccess = onGrantUsageAccess,
-            modifier = Modifier.weight(1f).fillMaxHeight(),
-        )
-        HealthTile(
-            model = summary.health,
-            onClick = onOpenHealth,
-            onSetUp = onSetUpHealth,
-            modifier = Modifier.weight(1f).fillMaxHeight(),
-        )
+    if (isLargeText() || isSmallPhone()) {
+        // Big text or a small phone: one full-width tile under the other, so nothing truncates.
+        ScreenTimeTile(model = summary.screenTime, onClick = onOpenScreenTime, onGrantAccess = onGrantUsageAccess, modifier = Modifier.fillMaxWidth())
+        HealthTile(model = summary.health, onClick = onOpenHealth, onSetUp = onSetUpHealth, modifier = Modifier.fillMaxWidth())
+    } else {
+        Row(
+            modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min),
+            horizontalArrangement = Arrangement.spacedBy(Spacing.cardGap),
+        ) {
+            ScreenTimeTile(
+                model = summary.screenTime,
+                onClick = onOpenScreenTime,
+                onGrantAccess = onGrantUsageAccess,
+                modifier = Modifier.weight(1f).fillMaxHeight(),
+            )
+            HealthTile(
+                model = summary.health,
+                onClick = onOpenHealth,
+                onSetUp = onSetUpHealth,
+                modifier = Modifier.weight(1f).fillMaxHeight(),
+            )
+        }
     }
     summary.reelsToday?.let { ReelsTile(total = it, onClick = onOpenReelStats, modifier = Modifier.fillMaxWidth()) }
 }

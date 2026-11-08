@@ -77,7 +77,7 @@ fun RadarChart(
         Stat.entries.forEachIndexed { i, stat ->
             val p = point(i, 1f + SIGIL_MARGIN * sigilPx / radius * SIGIL_PUSH)
             translate(p.x - sigilPx / 2f, p.y - sigilPx / 2f) {
-                with(sigils.getValue(stat)) { draw(Size(sigilPx, sigilPx), colorFilter = ColorFilter.tint(colors.statEdge(stat))) }
+                with(sigils.getValue(stat)) { draw(Size(sigilPx, sigilPx), colorFilter = ColorFilter.tint(colors.statGlyph(stat))) }
             }
         }
     }

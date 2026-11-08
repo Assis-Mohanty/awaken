@@ -119,7 +119,7 @@ private fun TrialContent(state: TrialDetailUiState, onEvent: (TrialDetailEvent) 
 @Composable
 private fun StageRow(stat: Stat, status: String, done: Boolean) {
     val colors = AwakenTheme.colors
-    ListRow(title = stat.label(), icon = AwakenGlyphs.stat(stat), iconTint = colors.stat(stat), secondary = status) {
+    ListRow(title = stat.label(), icon = AwakenGlyphs.stat(stat), iconTint = colors.statGlyph(stat), secondary = status) {
         if (done) Icon(AwakenGlyphs.Check, contentDescription = null, tint = colors.positive, modifier = Modifier.size(AwakenTheme.dimens.icon))
     }
 }

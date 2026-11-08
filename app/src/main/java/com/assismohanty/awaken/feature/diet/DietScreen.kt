@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
@@ -38,6 +37,7 @@ import com.assismohanty.awaken.core.designsystem.components.ChoiceChip
 import com.assismohanty.awaken.core.designsystem.components.NumberField
 import com.assismohanty.awaken.core.designsystem.components.PrimaryButton
 import com.assismohanty.awaken.core.designsystem.components.QuietButton
+import com.assismohanty.awaken.core.designsystem.components.SecondaryButton
 import com.assismohanty.awaken.core.designsystem.components.SystemWindow
 import com.assismohanty.awaken.core.designsystem.components.currentLocale
 import com.assismohanty.awaken.core.designsystem.components.formatCount
@@ -306,11 +306,10 @@ private fun MealWindow(meal: Meal, entries: List<DiaryEntry>, onEvent: (DietEven
         headerTrailing = { Text(lexString(R.string.diet_meal_kcal, formatCount(kcal)), style = AwakenTheme.type.label, color = colors.textSecondary) },
     ) {
         if (entries.isEmpty()) Text(lexString(R.string.diet_meal_empty), style = AwakenTheme.type.caption, color = colors.textMuted)
-        entries.forEachIndexed { i, entry ->
-            if (i > 0) HorizontalDivider(color = colors.divider, thickness = AwakenTheme.dimens.hairline)
+        entries.forEach { entry ->
             EntryRow(entry.row, entry.amounts, onEvent)
         }
-        QuietButton(text = lexString(R.string.diet_add_food), onClick = { onEvent(DietEvent.OpenSearch(meal)) })
+        SecondaryButton(text = lexString(R.string.diet_add_food), onClick = { onEvent(DietEvent.OpenSearch(meal)) }, modifier = Modifier.fillMaxWidth())
     }
 }
 
@@ -322,7 +321,7 @@ private fun EntryRow(row: FoodLogEntity, amounts: Nutrients, onEvent: (DietEvent
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClickLabel = lexString(R.string.diet_entry_edit, row.name)) { onEvent(DietEvent.EditEntry(row)) }
-            .padding(vertical = Spacing.xs),
+            .padding(vertical = Spacing.sm),
     ) {
         Text(row.name, style = AwakenTheme.type.label, color = colors.textPrimary, maxLines = 2)
         Text(

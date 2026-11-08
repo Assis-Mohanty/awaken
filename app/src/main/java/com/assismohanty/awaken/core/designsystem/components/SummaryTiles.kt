@@ -101,7 +101,7 @@ fun ScreenTimeTile(model: ScreenTimeTileModel, onClick: () -> Unit, onGrantAcces
                     ChartSpec.SegmentedRing(
                         segments = parts.map { (_, minutes, color) -> Segment(minutes.toFloat(), color) },
                         description = description,
-                        size = AwakenTheme.dimens.tileRing,
+                        size = AwakenTheme.dimens.tileRing * textGraphicScale(),
                         stroke = AwakenTheme.dimens.tileRingStroke,
                     ),
                     modifier = Modifier.align(Alignment.CenterHorizontally),
@@ -130,7 +130,7 @@ fun ScreenTimeTile(model: ScreenTimeTileModel, onClick: () -> Unit, onGrantAcces
 fun HealthTile(model: HealthTileModel, onClick: () -> Unit, onSetUp: () -> Unit, modifier: Modifier = Modifier) {
     val colors = AwakenTheme.colors
     AwakenCard(modifier = modifier, reveal = false, onClick = onClick) {
-        CardLabel(lexString(R.string.tile_health), AwakenGlyphs.Vitality, colors.stat(Stat.VIT))
+        CardLabel(lexString(R.string.tile_health), AwakenGlyphs.Vitality, colors.accent)
         when (model) {
             HealthTileModel.Loading -> TileNote(lexString(R.string.tile_loading))
             HealthTileModel.NoData -> {

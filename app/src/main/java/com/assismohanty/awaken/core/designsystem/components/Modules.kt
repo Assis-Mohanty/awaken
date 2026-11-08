@@ -438,7 +438,7 @@ fun SegmentedControl(options: List<String>, selected: Int, onSelect: (Int) -> Un
 fun StatTintCard(stat: Stat, title: String, value: String, modifier: Modifier = Modifier, onClick: (() -> Unit)? = null) {
     val colors = AwakenTheme.colors
     AwakenCard(modifier = modifier.semantics(mergeDescendants = true) {}, reveal = false, onClick = onClick) {
-        IconCircle(AwakenGlyphs.stat(stat), colors.stat(stat))
+        IconCircle(AwakenGlyphs.stat(stat), colors.statGlyph(stat))
         Text(title, style = AwakenTheme.type.windowTitle, color = colors.textPrimary)
         Text(value, style = AwakenTheme.type.caption, color = colors.textSecondary)
     }
@@ -613,7 +613,7 @@ fun StreakModule(
     val colors = AwakenTheme.colors
     val description = lexString(R.string.cd_streak_module, streak, best)
     AwakenCard(modifier = modifier.clearAndSetSemantics { contentDescription = description }, reveal = false, onClick = onClick) {
-        CardLabel(lexString(R.string.metric_streak), AwakenGlyphs.Flame, colors.statEdge(Stat.CHA))
+        CardLabel(lexString(R.string.metric_streak), AwakenGlyphs.Flame, colors.accent)
         BigValue(formatCount(streak), unit = null)
         Text(lexString(R.string.unit_days_line), style = AwakenTheme.type.caption, color = colors.textSecondary)
         Spacer(Modifier.weight(1f))

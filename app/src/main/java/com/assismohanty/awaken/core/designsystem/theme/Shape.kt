@@ -22,6 +22,8 @@ data class AwakenShapes(
     /** Small squares: swatches, icon wells, calendar cells. */
     val tile: Shape = RoundedCornerShape(10.dp),
     val xpBar: Shape = CircleShape,
+    /** A column in a bar chart: 4dp rounded tops, flat on the baseline. */
+    val columnBar: Shape = RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp),
     /** A summary tile on Today and Focus. */
     val summaryTile: Shape = RoundedCornerShape(20.dp),
     /** A barbell plate on the day bar. */

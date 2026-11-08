@@ -40,6 +40,7 @@ import com.assismohanty.awaken.BuildConfig
 import com.assismohanty.awaken.R
 import com.assismohanty.awaken.core.designsystem.components.LargeTitleScaffold
 import com.assismohanty.awaken.core.designsystem.components.ScreenBackground
+import com.assismohanty.awaken.core.designsystem.components.LegendSwatch
 import com.assismohanty.awaken.core.designsystem.components.Pill
 import com.assismohanty.awaken.core.designsystem.components.PrimaryButton
 import com.assismohanty.awaken.core.designsystem.components.QuietButton
@@ -334,20 +335,24 @@ private fun StageTimeline(session: HealthSession) {
         Duration.ofMillis(session.stages.filter { it.type == stage }.sumOf { Duration.between(it.start, it.end).toMillis() })
     }.filterValues { !it.isZero }
     // The bar is a picture of the same numbers listed below it, so a screen reader skips it and reads the list once.
+    val stageInk = { stage: SleepStageType -> stageColor(stage, colors.critical, colors.chartInkLight, colors.accent, colors.chartInkMid, colors.surfaceOverlay) }
     val segments = session.stages.sortedBy(SleepStage::start).map { segment ->
         Segment(
             weight = (Duration.between(segment.start, segment.end).toMillis() / totalMillis).coerceAtLeast(MIN_SEGMENT_WEIGHT),
-            color = stageColor(segment.type, colors.critical, colors.accent.copy(alpha = SLEEP_LIGHT_ALPHA), colors.accent, colors.accent.copy(alpha = SLEEP_REM_ALPHA), colors.surfaceOverlay),
+            color = stageInk(segment.type),
         )
     }
-    Chart(ChartSpec.Segmented(segments = segments, shape = null, height = AwakenTheme.dimens.stageBarHeight))
+    Chart(ChartSpec.Segmented(segments = segments, height = AwakenTheme.dimens.stageBarHeight))
     FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.sm), verticalArrangement = Arrangement.spacedBy(Spacing.xxs)) {
         totals.forEach { (stage, duration) ->
-            Text(
-                lexString(R.string.health_stage_line, stageName(stage), formatDuration(duration)),
-                style = AwakenTheme.type.caption,
-                color = colors.textSecondary,
-            )
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+                LegendSwatch(stageInk(stage))
+                Text(
+                    lexString(R.string.health_stage_line, stageName(stage), formatDuration(duration)),
+                    style = AwakenTheme.type.caption,
+                    color = colors.textSecondary,
+                )
+            }
         }
     }
 }
@@ -484,9 +489,6 @@ private fun formatDuration(duration: Duration): String {
 private const val METERS_PER_KM = 1_000.0
 private const val MINUTES_PER_HOUR = 60L
 private const val MIN_SEGMENT_WEIGHT = 0.004f
-/** Sleep stages are strengths of one ink (light, REM, deep), so they differ without a second hue. */
-private const val SLEEP_LIGHT_ALPHA = 0.3f
-private const val SLEEP_REM_ALPHA = 0.6f
 private const val MIN_BAR_FRACTION = 0.04f
 
 // region previews

@@ -19,8 +19,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Checkbox
-import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -52,6 +50,7 @@ import com.assismohanty.awaken.core.designsystem.components.BodyMap
 import com.assismohanty.awaken.core.designsystem.components.NumberField
 import com.assismohanty.awaken.core.designsystem.components.PrimaryButton
 import com.assismohanty.awaken.core.designsystem.components.QuietButton
+import com.assismohanty.awaken.core.designsystem.components.RoundCheck
 import com.assismohanty.awaken.core.designsystem.components.SecondaryButton
 import com.assismohanty.awaken.core.designsystem.components.SystemWindow
 import com.assismohanty.awaken.core.designsystem.components.awakenTextFieldColors
@@ -543,14 +542,11 @@ private fun SetRow(number: Int, set: WorkoutSetEntity, previous: WorkoutSetEntit
                 decimals = false,
             )
             val doneLabel = lexString(R.string.cd_gym_set_done, number)
-            Checkbox(
+            RoundCheck(
                 checked = set.done,
                 onCheckedChange = { onEvent(GymEvent.UpdateSet(set, weight, reps, it)) },
                 enabled = reps > 0,
-                colors = CheckboxDefaults.colors(checkedColor = colors.accent, uncheckedColor = colors.divider, checkmarkColor = colors.surface),
-                modifier = Modifier
-                    .size(AwakenTheme.dimens.touchTarget)
-                    .semantics { this.contentDescription = doneLabel },
+                contentDescription = doneLabel,
             )
         }
     }

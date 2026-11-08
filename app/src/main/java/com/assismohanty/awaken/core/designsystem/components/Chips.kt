@@ -134,7 +134,7 @@ fun StatMarker(stat: Stat, modifier: Modifier = Modifier, size: Dp = AwakenTheme
 fun StatChip(stat: Stat, modifier: Modifier = Modifier) {
     Pill(
         text = stat.label(),
-        color = AwakenTheme.colors.statEdge(stat),
+        color = AwakenTheme.colors.statGlyph(stat),
         leading = { StatMarker(stat) },
         modifier = modifier,
     )

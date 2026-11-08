@@ -67,10 +67,10 @@ fun PathDetailScreen(
         subtitle = lexString(R.string.path_detail_title),
         onBack = onBack,
         modifier = modifier,
-        actions = { path?.let { IconCircle(AwakenGlyphs.stat(it.primaryStat), colors.stat(it.primaryStat)) } },
+        actions = { path?.let { IconCircle(AwakenGlyphs.stat(it.primaryStat), colors.statGlyph(it.primaryStat)) } },
     ) {
         if (path == null) return@LargeTitleScaffold
-        val accent = colors.stat(path.primaryStat)
+        val accent = colors.statGlyph(path.primaryStat)
         SystemWindow(title = null, accent = accent, reveal = false) {
             StatusPills(path)
             path.recalibration?.let { Text(lexString(it.lineRes()), style = AwakenTheme.type.label, color = colors.accent) }

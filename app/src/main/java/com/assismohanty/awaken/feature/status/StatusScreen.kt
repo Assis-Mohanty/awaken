@@ -205,7 +205,7 @@ private fun StatsWindow(rank: Rank, stats: List<StatProgress>) {
                     ListRow(
                         title = stat.stat.label(),
                         icon = AwakenGlyphs.stat(stat.stat),
-                        iconTint = colors.stat(stat.stat),
+                        iconTint = colors.statGlyph(stat.stat),
                         secondary = lexString(R.string.xp_progress, formatCount(stat.xpIntoLevel), formatCount(stat.xpForLevel)),
                     ) {
                         Text(lexString(R.string.level_long, stat.level), style = type.numericSmall, color = colors.textPrimary)

@@ -231,6 +231,7 @@ private fun ColumnsChart(spec: ChartSpec.Columns, modifier: Modifier) {
                     Modifier
                         .fillMaxWidth()
                         .height(area * fraction)
+                        .clip(AwakenTheme.shapes.columnBar)
                         .background(spec.color),
                 )
                 Text(spec.labels.getOrElse(index) { "" }, style = AwakenTheme.type.caption, color = AwakenTheme.palette.mist)
@@ -261,7 +262,7 @@ private fun StackedColumnsChart(spec: ChartSpec.StackedColumns, modifier: Modifi
             ) {
                 // Empty space on top, so every bar rises from the baseline with the highlighted part at its foot.
                 Spacer(modifier = Modifier.weight((1f - column.total).coerceAtLeast(MIN_WEIGHT)))
-                Box(modifier = Modifier.fillMaxWidth().weight((column.total - column.highlight).coerceAtLeast(MIN_WEIGHT), fill = true).background(base))
+                Box(modifier = Modifier.fillMaxWidth().weight((column.total - column.highlight).coerceAtLeast(MIN_WEIGHT), fill = true).clip(AwakenTheme.shapes.columnBar).background(base))
                 if (column.highlight > 0f) {
                     Box(modifier = Modifier.fillMaxWidth().weight(column.highlight, fill = true).background(highlight))
                 }

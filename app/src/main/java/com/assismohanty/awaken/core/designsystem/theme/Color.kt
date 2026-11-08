@@ -54,6 +54,8 @@ data class AwakenPalette(
     /** Charisma is the white plate: it needs [statChaEdge] to show on chalk. */
     val statCha: Color,
     val statChaEdge: Color,
+    /** Charisma as an icon or text-weight mark: darker than [statChaEdge] so a glyph keeps 3:1 on chalk. */
+    val statChaGlyph: Color,
     /** Deep stat colours for full-screen sessions. */
     val fieldStr: Color,
     val fieldInt: Color,
@@ -84,6 +86,9 @@ data class AwakenPalette(
     /** The stat colour as a stroke: Charisma gets its edge so the white plate shows on chalk. */
     fun statEdge(stat: Stat): Color = if (stat == Stat.CHA) statChaEdge else stat(stat)
 
+    /** The stat colour for a glyph or an icon: Charisma uses its darker glyph tone so it stays visible on chalk. */
+    fun statGlyph(stat: Stat): Color = if (stat == Stat.CHA) statChaGlyph else stat(stat)
+
     /** The full-screen session colour for a stat. */
     fun field(stat: Stat): Color = when (stat) {
         Stat.STR -> fieldStr
@@ -94,7 +99,7 @@ data class AwakenPalette(
     }
 
     /** The 15% wash behind a stat icon in a list row or chip. */
-    fun statTint(stat: Stat): Color = stat(stat).copy(alpha = AwakenAlpha.TINT)
+    fun statTint(stat: Stat): Color = statGlyph(stat).copy(alpha = AwakenAlpha.TINT)
 
     /** Rings, bars and chart lines: the plate colour itself. */
     fun statFill(stat: Stat): Color = stat(stat)
@@ -131,6 +136,7 @@ data class AwakenPalette(
             statVit = Color(0xFF2A8E66),
             statCha = Color(0xFFFFFFFF),
             statChaEdge = Color(0xFFC9CBC4),
+            statChaGlyph = Color(0xFF7D8078),
             fieldStr = Color(0xFF8E2A25),
             fieldInt = Color(0xFF1B3F86),
             // Willpower and Charisma have no deep colour in the mocks; these are derived from their plates.
@@ -160,6 +166,7 @@ data class AwakenPalette(
             statVit = Color(0xFF57BF90),
             statCha = Color(0xFFE9E8E0),
             statChaEdge = Color(0xFFE9E8E0),
+            statChaGlyph = Color(0xFFE9E8E0),
             fieldStr = Color(0xFF5E1C19),
             fieldInt = Color(0xFF142D5F),
             fieldWil = Color(0xFF4A3608),
@@ -217,6 +224,9 @@ class AwakenColors(private val palette: AwakenPalette) {
     val chartSeries4: Color get() = palette.statVit
     val chartSeries5: Color get() = palette.statChaEdge
     val chartSeries6: Color get() = palette.mist
+    /** One ink at three strengths for ordered chart categories (light, mid, full): sleep stages. */
+    val chartInkLight: Color get() = palette.system.copy(alpha = CHART_INK_LIGHT)
+    val chartInkMid: Color get() = palette.system.copy(alpha = CHART_INK_MID)
     val chartGrid: Color get() = palette.edge
     /** Dim behind sheets. */
     val scrim: Color get() = palette.scrim
@@ -234,6 +244,8 @@ class AwakenColors(private val palette: AwakenPalette) {
     fun stat(stat: Stat): Color = palette.stat(stat)
     /** A stat's colour as a stroke; Charisma gets its edge. */
     fun statEdge(stat: Stat): Color = palette.statEdge(stat)
+    /** A stat's colour for a glyph or icon tint; Charisma gets a darker tone that stays visible on chalk. */
+    fun statGlyph(stat: Stat): Color = palette.statGlyph(stat)
     /** A stat's deep colour for a full-screen session. */
     fun field(stat: Stat): Color = palette.field(stat)
     /** A stat's 15% wash behind its icon. */
@@ -270,6 +282,8 @@ class AwakenColors(private val palette: AwakenPalette) {
 }
 
 private const val HALF = 0.5f
+private const val CHART_INK_LIGHT = 0.3f
+private const val CHART_INK_MID = 0.6f
 
 /** Alpha steps used repeatedly across components (DESIGN_SYSTEM §2.3, §3). */
 object AwakenAlpha {

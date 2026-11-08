@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.selection.toggleable
-import androidx.compose.material3.Checkbox
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -16,6 +15,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.assismohanty.awaken.R
+import com.assismohanty.awaken.core.designsystem.components.RoundCheck
 import com.assismohanty.awaken.core.designsystem.components.ScreenBackground
 import com.assismohanty.awaken.core.designsystem.components.LargeTitleScaffold
 import com.assismohanty.awaken.core.designsystem.components.SystemWindow
@@ -64,7 +64,7 @@ fun AllowedAppsScreen(state: AllowedAppsUiState, onEvent: (AllowedAppsEvent) -> 
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
                     ) {
-                        Checkbox(checked = row.allowed, onCheckedChange = null, enabled = !row.locked)
+                        RoundCheck(checked = row.allowed, onCheckedChange = null, enabled = !row.locked)
                         Text(row.label, style = type.label, color = colors.textPrimary, modifier = Modifier.weight(1f))
                         if (row.locked) Text(lexString(R.string.focus_lock_allowed_always), style = type.caption, color = colors.textSecondary)
                     }

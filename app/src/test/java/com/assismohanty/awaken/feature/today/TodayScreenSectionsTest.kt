@@ -87,7 +87,7 @@ class TodayScreenSectionsTest {
     fun tappingTheHeaderOpensProgress() {
         var opened = 0
         show(onOpenProgress = { opened++ })
-        composeRule.onNodeWithContentDescription("Level 24, rank C", substring = true).performClick()
+        composeRule.onNodeWithContentDescription("Level 24, rank C", substring = true).performScrollTo().performClick()
         assertThat(opened).isEqualTo(1)
     }
 

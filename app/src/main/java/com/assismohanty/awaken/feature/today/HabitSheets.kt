@@ -138,7 +138,7 @@ fun HabitOverview(state: HabitsUiState, onEvent: (HabitsEvent) -> Unit, modifier
                 Icon(
                     AwakenGlyphs.stat(habit.stat),
                     contentDescription = habit.stat.label(),
-                    tint = colors.stat(habit.stat),
+                    tint = colors.statGlyph(habit.stat),
                     modifier = Modifier.size(AwakenTheme.dimens.sigil),
                 )
                 Column(modifier = Modifier.weight(1f)) {
