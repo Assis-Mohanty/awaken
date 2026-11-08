@@ -33,10 +33,10 @@ import com.assismohanty.awaken.core.domain.TrialSummary
 import com.assismohanty.awaken.core.domain.isOpen
 import com.assismohanty.awaken.core.domain.UserMessage
 import com.assismohanty.awaken.engine.SetCounter
+import com.assismohanty.awaken.engine.XpCalculator
 import com.assismohanty.awaken.engine.model.QuestStatus
 import com.assismohanty.awaken.engine.model.QuestType
 import com.assismohanty.awaken.engine.model.VerificationSource
-import com.assismohanty.awaken.engine.XpCalculator
 import com.assismohanty.awaken.engine.model.Rank
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -209,11 +209,11 @@ internal fun TodayModel.toUiState(): TodayUiState {
             gold = hunter.gold,
         ),
         rank = hunter.rank,
-        penalty = quests.firstOrNull { it.type == QuestType.PENALTY }?.toRowModel(),
-        main = directive.firstOrNull { it.type == QuestType.MAIN }?.let { it.toRowModel(pathBadges[it.id]) },
-        sides = directive.filter { it.type == QuestType.SIDE }.map { it.toRowModel() },
-        paths = pathQuests.map { it.toRowModel(pathBadges[it.id]) },
-        habits = habits.map { it.toRowModel(habit = habitInfo[it.id]?.let { info -> it.toHabitRow(info, currentBlock) }) },
+        penalty = quests.firstOrNull { it.type == QuestType.PENALTY }?.toRowModel(streak = hunter.streak),
+        main = directive.firstOrNull { it.type == QuestType.MAIN }?.let { it.toRowModel(pathBadges[it.id], streak = hunter.streak) },
+        sides = directive.filter { it.type == QuestType.SIDE }.map { it.toRowModel(streak = hunter.streak) },
+        paths = pathQuests.map { it.toRowModel(pathBadges[it.id], streak = hunter.streak) },
+        habits = habits.map { it.toRowModel(habit = habitInfo[it.id]?.let { info -> it.toHabitRow(info, currentBlock) }, streak = hunter.streak) },
         habitIdByQuest = habits.mapNotNull { quest -> quest.habitId?.let { quest.id to it } }.toMap(),
         completed = counted.count { it.status == QuestStatus.COMPLETED },
         // A skipped habit is neither done nor owed today (GD §16.2).
@@ -224,7 +224,7 @@ internal fun TodayModel.toUiState(): TodayUiState {
         missLine = missLine,
         reviewOpen = reviewOpen,
         trial = trial,
-        trialStages = quests.filter { it.type == QuestType.TRIAL }.map { it.toRowModel() },
+        trialStages = quests.filter { it.type == QuestType.TRIAL }.map { it.toRowModel(streak = hunter.streak) },
         discipline = quests.firstOrNull { it.type == QuestType.DISCIPLINE }?.let { quest ->
             DisciplineCard(
                 held = quest.status != QuestStatus.EXPIRED,
@@ -245,7 +245,7 @@ internal fun QuestInstanceEntity.toHabitRow(info: HabitTodayInfo, currentBlock: 
     keptWindowOpen = currentBlock == TimeOfDay.EVENING,
 )
 
-internal fun QuestInstanceEntity.toRowModel(badge: PathBadgeInfo? = null, habit: HabitRowModel? = null) = QuestRowModel(
+internal fun QuestInstanceEntity.toRowModel(badge: PathBadgeInfo? = null, habit: HabitRowModel? = null, streak: Int? = null) = QuestRowModel(
     id = id,
     title = title,
     stat = stat,
@@ -263,6 +263,7 @@ internal fun QuestInstanceEntity.toRowModel(badge: PathBadgeInfo? = null, habit:
     progress = if (SetCounter.appliesTo(unit, verification) && status in OPEN_STATUSES) SetCounter.total(SetCounter.parse(setReps)).takeIf { it > 0 } else null,
     timeOfDay = timeOfDay,
     habit = habit,
+    xp = streak?.let { XpCalculator.questXp(difficulty, it, verification.source) },
 )
 
 private val OPEN_STATUSES = setOf(QuestStatus.ACTIVE, QuestStatus.STARTED)

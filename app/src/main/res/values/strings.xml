@@ -42,6 +42,7 @@
 
     <!-- Quest row -->
     <string name="quest_target_line">%1$s %2$s · %3$s</string>
+    <string name="quest_xp_gain">+%1$d</string>
     <string name="cd_complete_quest">Complete %1$s</string>
     <string name="cd_quest_done">%1$s, completed</string>
     <string name="action_complete_quest">Complete quest</string>

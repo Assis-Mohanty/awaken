@@ -575,15 +575,15 @@ fun LevelModule(
     modifier: Modifier = Modifier,
     onClick: (() -> Unit)? = null,
     streak: Int? = null,
+    /** True on the half-width Status card (ring above the details); false for a full-width card (ring beside them). */
+    stacked: Boolean = true,
 ) {
     val colors = AwakenTheme.colors
     val description = lexString(R.string.cd_level_module, level, rank.name, formatCount(xpIntoLevel), formatCount(xpForLevel))
     val fraction = if (xpForLevel <= 0) 1f else (xpIntoLevel.toFloat() / xpForLevel).coerceIn(0f, 1f)
     AwakenCard(modifier = modifier.clearAndSetSemantics { contentDescription = description }, reveal = false, onClick = onClick) {
-        // The card is half width (beside the streak card), so the ring sits above the details, not beside them.
-        Column(verticalArrangement = Arrangement.spacedBy(Spacing.md)) {
-            LevelRing(level = level, progress = fraction)
-            Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+        val details: @Composable (Modifier) -> Unit = { detailsModifier ->
+            Column(modifier = detailsModifier, verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
                     Text(lexString(R.string.rank_word), style = AwakenTheme.type.caption, color = colors.textSecondary)
                     RankBadge(rank, AwakenTheme.dimens.crestInline)
@@ -594,8 +594,29 @@ fun LevelModule(
                     }
                 }
                 ProgressBar(progress = fraction)
-                Text(lexString(R.string.level_line, level), style = AwakenTheme.type.caption, color = colors.textSecondary)
-                Text(lexString(R.string.xp_progress_of, formatCount(xpIntoLevel), formatCount(xpForLevel)), style = AwakenTheme.type.caption, color = colors.textSecondary)
+                val levelLine = lexString(R.string.level_line, level)
+                val xpLine = lexString(R.string.xp_progress_of, formatCount(xpIntoLevel), formatCount(xpForLevel))
+                if (stacked || isLargeText()) {
+                    Text(levelLine, style = AwakenTheme.type.caption, color = colors.textSecondary)
+                    Text(xpLine, style = AwakenTheme.type.caption, color = colors.textSecondary)
+                } else {
+                    Row(modifier = Modifier.fillMaxWidth()) {
+                        Text(levelLine, style = AwakenTheme.type.caption, color = colors.textSecondary, modifier = Modifier.weight(1f))
+                        Text(xpLine, style = AwakenTheme.type.caption, color = colors.textSecondary)
+                    }
+                }
+            }
+        }
+        if (stacked) {
+            // Half width (beside the streak card): the ring sits above the details, not beside them.
+            Column(verticalArrangement = Arrangement.spacedBy(Spacing.md)) {
+                LevelRing(level = level, progress = fraction)
+                details(Modifier.fillMaxWidth())
+            }
+        } else {
+            Row(horizontalArrangement = Arrangement.spacedBy(Spacing.md), verticalAlignment = Alignment.CenterVertically) {
+                LevelRing(level = level, progress = fraction)
+                details(Modifier.weight(1f))
             }
         }
     }

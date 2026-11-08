@@ -191,6 +191,13 @@ private fun MainScaffold(
                             }
                         },
                         onOpenQuit = { navController.navigate(QuitRoute) { launchSingleTop = true } },
+                        onOpenFocus = {
+                            navController.navigate(FocusRoute) {
+                                popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                                launchSingleTop = true
+                                restoreState = true
+                            }
+                        },
                     )
                 }
                 composable<QuestDetailRoute> {

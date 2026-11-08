@@ -1,12 +1,17 @@
 package com.assismohanty.awaken.feature.today
 
+import androidx.compose.ui.text.style.TextAlign
+import com.assismohanty.awaken.core.designsystem.components.DayBar
+import com.assismohanty.awaken.core.designsystem.components.DayBarPlate
+import com.assismohanty.awaken.core.designsystem.components.FocusTileModel
+import com.assismohanty.awaken.core.designsystem.components.HeaderIconButton
+import com.assismohanty.awaken.core.designsystem.components.LevelModule
+import com.assismohanty.awaken.core.designsystem.components.TodayTiles
+import com.assismohanty.awaken.feature.focus.FocusCardViewModel
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Icon
 import androidx.compose.material3.SnackbarDuration
@@ -29,10 +34,7 @@ import com.assismohanty.awaken.core.designsystem.components.AwakenGlyphs
 import com.assismohanty.awaken.core.designsystem.components.BlockState
 import com.assismohanty.awaken.core.designsystem.components.EmptyState
 import com.assismohanty.awaken.core.designsystem.components.HabitRowActions
-import com.assismohanty.awaken.core.designsystem.components.HealthTile
 import com.assismohanty.awaken.core.designsystem.components.HealthTileModel
-import com.assismohanty.awaken.core.designsystem.components.isLargeText
-import com.assismohanty.awaken.core.designsystem.components.isSmallPhone
 import com.assismohanty.awaken.core.designsystem.components.HunterHeaderModel
 import com.assismohanty.awaken.core.designsystem.components.LargeTitleScaffold
 import com.assismohanty.awaken.core.designsystem.components.ListRow
@@ -40,13 +42,10 @@ import com.assismohanty.awaken.core.designsystem.components.QuestRow
 import com.assismohanty.awaken.core.designsystem.components.QuestRowModel
 import com.assismohanty.awaken.core.designsystem.components.QuestRowState
 import com.assismohanty.awaken.core.designsystem.components.QuietButton
-import com.assismohanty.awaken.core.designsystem.components.ReelsTile
-import com.assismohanty.awaken.core.designsystem.components.ScreenTimeTile
 import com.assismohanty.awaken.core.designsystem.components.ScreenTimeTileModel
 import com.assismohanty.awaken.core.designsystem.components.SectionHeader
 import com.assismohanty.awaken.core.designsystem.components.SkeletonCard
 import com.assismohanty.awaken.core.designsystem.components.TimeBlockHeader
-import com.assismohanty.awaken.core.designsystem.components.TodayHeaderRow
 import com.assismohanty.awaken.core.designsystem.components.staggeredEntrance
 import com.assismohanty.awaken.core.designsystem.lexicon.lexPlural
 import com.assismohanty.awaken.core.designsystem.lexicon.lexString
@@ -55,6 +54,7 @@ import com.assismohanty.awaken.core.designsystem.theme.AwakenTheme
 import com.assismohanty.awaken.core.designsystem.theme.Spacing
 import com.assismohanty.awaken.core.domain.BedtimeToday
 import com.assismohanty.awaken.engine.MissLine
+import com.assismohanty.awaken.engine.XpCalculator
 import com.assismohanty.awaken.engine.TimeBlocks
 import com.assismohanty.awaken.engine.model.Difficulty
 import com.assismohanty.awaken.engine.model.Rank
@@ -82,8 +82,10 @@ fun TodayRoute(
     onOpenHealth: () -> Unit = {},
     onOpenWindDown: () -> Unit = {},
     onOpenSettings: () -> Unit = {},
+    onOpenFocus: () -> Unit = {},
     snackbarHostState: SnackbarHostState? = null,
     viewModel: TodayViewModel = hiltViewModel(),
+    focusViewModel: FocusCardViewModel = hiltViewModel(),
     habitsViewModel: HabitsViewModel = hiltViewModel(),
     dayPlanViewModel: DayPlanViewModel = hiltViewModel(),
     summaryViewModel: TodaySummaryViewModel = hiltViewModel(),
@@ -91,6 +93,7 @@ fun TodayRoute(
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val summary by summaryViewModel.uiState.collectAsStateWithLifecycle()
+    val focusCard by focusViewModel.uiState.collectAsStateWithLifecycle()
     val bedtime by bedtimeViewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
     // Usage and Health Connect change outside the app (and after granting access in Settings): re-read on every return.
@@ -115,6 +118,9 @@ fun TodayRoute(
         onOpenReelStats = onOpenReelStats,
         onOpenReview = onOpenReview,
         onOpenQuit = onOpenQuit,
+        onOpenSettings = onOpenSettings,
+        onOpenFocus = onOpenFocus,
+        focusTile = FocusTileModel(todayMinutes = focusCard.todayMinutes, goal = focusCard.goal),
         summary = summary,
         bedtime = bedtime,
         onOpenWindDown = onOpenWindDown,
@@ -163,6 +169,9 @@ fun TodayScreen(
     onOpenReelStats: () -> Unit = {},
     onOpenQuit: () -> Unit = {},
     onOpenReview: () -> Unit = {},
+    onOpenSettings: () -> Unit = {},
+    onOpenFocus: () -> Unit = {},
+    focusTile: FocusTileModel = FocusTileModel(),
     summary: TodaySummaryUiState = TodaySummaryUiState(),
     bedtime: BedtimeToday? = null,
     onOpenWindDown: () -> Unit = {},
@@ -171,32 +180,27 @@ fun TodayScreen(
     onSetUpHealth: () -> Unit = {},
 ) {
     val header = state.header
+    val greeting = header?.let { greeting(it.name, state.currentBlock) }
     LargeTitleScaffold(
-        title = state.gameDate?.let(::formatDay) ?: lexString(R.string.nav_today),
+        title = greeting ?: state.gameDate?.let(::formatDay) ?: lexString(R.string.nav_today),
+        subtitle = if (greeting != null) state.gameDate?.let(::formatDay) else null,
         modifier = modifier,
+        actions = { HeaderIconButton(AwakenGlyphs.Settings, lexString(R.string.cd_open_settings), onOpenSettings) },
     ) {
-        // Steps, screen time and reels lead the tab: they don't wait for the plan to load.
-        TodayMetrics(
-            summary = summary,
-            onOpenScreenTime = onOpenScreenTime,
-            onOpenHealth = onOpenHealth,
-            onOpenReelStats = onOpenReelStats,
-            onGrantUsageAccess = onGrantUsageAccess,
-            onSetUpHealth = onSetUpHealth,
-        )
         if (state.loading || header == null) {
             SkeletonCard()
             SkeletonCard(lines = 4)
             return@LargeTitleScaffold
         }
-        TodayHeaderRow(
+        LevelModule(
             level = header.level,
             rank = header.rank,
             xpIntoLevel = header.xpIntoLevel,
             xpForLevel = header.xpForLevel,
             streak = header.streak,
+            stacked = false,
             onClick = onOpenProgress,
-            modifier = Modifier.staggeredEntrance(0),
+            modifier = Modifier.fillMaxWidth().staggeredEntrance(0),
         )
         TodayPlan(
             state = state,
@@ -211,54 +215,29 @@ fun TodayScreen(
             onOpenWindDown = onOpenWindDown,
             onGrantUsageAccess = onGrantUsageAccess,
         )
-
-
-        if (summary.quit.isNotEmpty()) {
-            SectionHeader(title = lexString(R.string.today_section_quit))
-            AwakenCard(reveal = false, contentPadding = Spacing.listCard, spacing = Spacing.zero, modifier = Modifier.fillMaxWidth()) {
-                summary.quit.forEach { line ->
-                    ListRow(title = quitLine(line), onClick = onOpenQuit, trailing = { Chevron() })
-                }
-            }
-        }
+        TodayTiles(
+            focus = focusTile,
+            screenTime = summary.screenTime,
+            health = summary.health,
+            onOpenFocus = onOpenFocus,
+            onOpenScreenTime = onOpenScreenTime,
+            onOpenSteps = onOpenHealth,
+            onGrantUsageAccess = onGrantUsageAccess,
+            onSetUpHealth = onSetUpHealth,
+        )
     }
 }
 
-/** Screen time and health side by side (equal heights: the taller tile sets both), and the reel count under them when it is on. */
+/** "Good afternoon, Assis": the greeting follows the block of the day the clock is in (morning, day, evening). */
 @Composable
-private fun TodayMetrics(
-    summary: TodaySummaryUiState,
-    onOpenScreenTime: () -> Unit,
-    onOpenHealth: () -> Unit,
-    onOpenReelStats: () -> Unit,
-    onGrantUsageAccess: () -> Unit,
-    onSetUpHealth: () -> Unit,
-) {
-    if (isLargeText() || isSmallPhone()) {
-        // Big text or a small phone: one full-width tile under the other, so nothing truncates.
-        ScreenTimeTile(model = summary.screenTime, onClick = onOpenScreenTime, onGrantAccess = onGrantUsageAccess, modifier = Modifier.fillMaxWidth())
-        HealthTile(model = summary.health, onClick = onOpenHealth, onSetUp = onSetUpHealth, modifier = Modifier.fillMaxWidth())
-    } else {
-        Row(
-            modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min),
-            horizontalArrangement = Arrangement.spacedBy(Spacing.cardGap),
-        ) {
-            ScreenTimeTile(
-                model = summary.screenTime,
-                onClick = onOpenScreenTime,
-                onGrantAccess = onGrantUsageAccess,
-                modifier = Modifier.weight(1f).fillMaxHeight(),
-            )
-            HealthTile(
-                model = summary.health,
-                onClick = onOpenHealth,
-                onSetUp = onSetUpHealth,
-                modifier = Modifier.weight(1f).fillMaxHeight(),
-            )
-        }
-    }
-    summary.reelsToday?.let { ReelsTile(total = it, onClick = onOpenReelStats, modifier = Modifier.fillMaxWidth()) }
-}
+private fun greeting(name: String, block: TimeOfDay): String = lexString(
+    when (block) {
+        TimeOfDay.MORNING -> R.string.today_greeting_morning
+        TimeOfDay.DAY -> R.string.today_greeting_afternoon
+        TimeOfDay.EVENING -> R.string.today_greeting_evening
+    },
+    name,
+)
 
 /**
  * Today's plan: the section header with its two actions, a comeback row after a missed day, the rank-up test while one is
@@ -280,12 +259,11 @@ private fun TodayPlan(
     onOpenWindDown: () -> Unit,
     onGrantUsageAccess: () -> Unit,
 ) {
-    SectionHeader(
-        title = if (state.total > 0) lexString(R.string.today_plan_title, state.completed, state.total) else lexString(R.string.today_plan_title_empty),
-    ) {
+    SectionHeader(title = lexString(R.string.today_plan_title_empty)) {
         QuietButton(text = lexString(R.string.action_plan_day), onClick = { onDayPlanEvent(DayPlanEvent.Open) })
         QuietButton(text = lexString(R.string.today_habits), onClick = { onHabitsEvent(HabitsEvent.OpenList) })
     }
+    PlanBar(state)
 
     ComebackRow(state, onEvent, onOpenQuest)
 
@@ -312,6 +290,25 @@ private fun TodayPlan(
         }
     }
     if (state.reviewOpen) ReviewRow(onOpenReview)
+}
+
+/** The day as a loaded bar with "2 of 6 done" above it: one plate per quest, sized by reward and coloured by stat. */
+@Composable
+private fun PlanBar(state: TodayUiState) {
+    val rows = (listOfNotNull(state.main) + state.paths + state.sides + state.habits).filter { it.state != QuestRowState.CLOSED }
+    if (rows.isEmpty()) return
+    val progress = lexString(R.string.today_plan_progress, state.completed, state.total)
+    Text(
+        progress,
+        style = AwakenTheme.type.label,
+        color = AwakenTheme.colors.textSecondary,
+        modifier = Modifier.fillMaxWidth(),
+        textAlign = TextAlign.End,
+    )
+    DayBar(
+        plates = rows.map { DayBarPlate(stat = it.stat, weight = it.xp ?: 1, done = it.state == QuestRowState.DONE) },
+        description = progress,
+    )
 }
 
 /** After a missed day: the comeback quest with the calm "never miss twice" line, as one card. Nothing when neither exists. */
@@ -378,7 +375,7 @@ private fun Timeline(
                                 model = row,
                                 onComplete = { onEvent(TodayEvent.Complete(row.id)) },
                                 onOpen = { onOpenQuest(row.id) },
-                                showDivider = index > 0,
+                                showDivider = false,
                                 onLongPress = habitId?.let { { onHabitsEvent(HabitsEvent.Options(it)) } },
                                 longPressLabel = habitId?.let { lexString(R.string.action_habit_options) },
                                 habitActions = HabitRowActions(
@@ -438,14 +435,6 @@ private fun LimitsRow(card: DisciplineCard, onOpenScreenTime: () -> Unit) {
 }
 
 @Composable
-private fun quitLine(line: QuitSummaryLine): String =
-    if (line.days <= 0) {
-        lexString(R.string.today_quit_started_today, line.name)
-    } else {
-        lexPlural(R.plurals.today_quit_days, line.days, line.name, line.days)
-    }
-
-@Composable
 private fun Chevron() {
     Icon(AwakenGlyphs.ChevronRight, contentDescription = null, tint = AwakenTheme.colors.textSecondary, modifier = Modifier.size(AwakenTheme.dimens.iconSmall))
 }
@@ -491,7 +480,10 @@ private fun previewRow(
     isMain = isMain,
     state = if (done) QuestRowState.DONE else QuestRowState.OPEN,
     timeOfDay = block,
+    xp = XpCalculator.questXp(if (isMain) Difficulty.HARD else Difficulty.NORMAL, PREVIEW_STREAK, verification),
 )
+
+private const val PREVIEW_STREAK = 12
 
 internal val previewTodayState = TodayUiState(
     loading = false,
@@ -570,7 +562,7 @@ private fun TodayScreenEveningPreview() {
             onOpenTrial = {},
             onHabitsEvent = {},
             onDayPlanEvent = {},
-            summary = previewSummary.copy(quit = listOf(QuitSummaryLine("q1", "Smoking", 12))),
+            summary = previewSummary,
         )
     }
 }

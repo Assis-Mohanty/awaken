@@ -10,6 +10,10 @@
 
     <string name="today_plan_title">Today\'s plan · %1$d of %2$d done</string>
     <string name="today_plan_title_empty">Today\'s plan</string>
+    <string name="today_plan_progress">%1$d of %2$d done</string>
+    <string name="today_greeting_morning">Good morning, %1$s</string>
+    <string name="today_greeting_afternoon">Good afternoon, %1$s</string>
+    <string name="today_greeting_evening">Good evening, %1$s</string>
     <string name="action_plan_day">Plan day</string>
     <string name="today_comeback_title">Comeback</string>
 

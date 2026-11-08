@@ -176,23 +176,28 @@ First quest is guaranteed Easy and doable now (e.g., "Drink a glass of water" VI
 ### 4.2 Today
 ```
 ┌──────────────────────────────────┐
-│ Tuesday 3 November               │  the date is the title; no greeting, no header icons
-│ [Screen time ◔] [Steps ◔ · sleep]│  metrics first: screen-time and health tiles, reels under them
-│ ┌ Level 12 · Rank D   14-day … ┐ │  2. Header: thin XP bar; tap → Progress
-│ │ ▬▬▬▬▬▬░░░  1,240 / 1,800 XP  │ │
+│ Good afternoon, Assis        (⚙) │  greeting + date; the gear opens Settings
+│ Tuesday 3 November               │
+│ ┌ (24)  Rank (C)      🔥 12 days ┐│  level ring, rank badge, streak, thin XP bar; tap → Progress
+│ │       ▬▬▬▬▬▬░░░               ││
+│ │       Level 24   1,240 of 1,434 XP│
 │ └──────────────────────────────┘ │
-│ Today's plan · 3 of 7 done  Plan day  Habits │  3. Today's plan
+│ Today's plan          Plan day  Habits │  the plan
+│                       2 of 6 done│
+│ ▮ [▇][▇][ ][ ][ ][ ]             │  DayBar: a plate per quest, width = reward, colour = stat
 │ ┌ Comeback ────────────────────┐ │  only after a missed day: quest + "never miss twice" line
 │ Morning            1 of 1 done › │  past block: collapsed
 │ Day  [Now]         0 of 2 done ⌄ │
-│ ┌ (♥) Call your family      ◯ ┐  │  list rows, hollow check
+│ ┌ ◯ Call your family   (♥) +72 ┐ │  round check, title, subtitle, stat glyph, worth
 │ Evening: … + Phone-down night row│
 │ Anytime: … + App limits row      │
 │ Your weekly review is open     › │  Sat–Mon only
-│ Quit counters                    │  4. only if any exist: "Smoking · 12 days clean"
+│ [Focus today] [Screen time] [Steps] │  three metric tiles, each opens where it lives
 └──────────────────────────────────┘
 ```
-- **Metrics first, then at most four sections:** the live metrics (screen time, steps and health, reels) sit directly under the title and load before the plan; then Header, Today's plan, Quit counters. Focus is its own tab (§4.9). The plan's header carries the two quiet actions *Plan day* and *Habits*.
+- **Order (design/IA.md §3):** greeting header, level card, plan, then three tiles (Focus today, Screen time, Steps). The reels tile and quit counters no longer sit on Today: reel stats open from the Focus tab, quit counters from Progress. Focus is its own tab (§4.9). The plan's header carries the two quiet actions *Plan day* and *Habits*.
+- **DayBar:** finished quests sit against the collar in their stat colour, open ones wait as faint plates. A plate's width is the quest's XP at the current streak (`XpCalculator.questXp`, an estimate: daily caps can lower it at completion). Closed (expired or missed) quests are left off.
+- **Large text and small phones:** from 130% text or below 380dp the tiles stack full width and the plan header puts its actions on their own row.
 - **The plan:** every directive item and habit, grouped by time-of-day block (GD §14.5) in the order Morning → Day → Evening → Anytime.
   - Each block is a section title over a card of rows; empty blocks are hidden.
   - The current block is marked "Now"; earlier blocks start collapsed (tap to expand; open quests stay completable).

@@ -77,6 +77,8 @@ data class QuestRowModel(
     val comeback: Boolean = false,
     /** Set for habit quests (GD §16.1-16.2): the type's own controls and chips. */
     val habit: HabitRowModel? = null,
+    /** What the quest is worth today at the current streak (engine `XpCalculator`); null where a list does not show it. */
+    val xp: Int? = null,
 )
 
 /**
@@ -112,9 +114,9 @@ fun QuestRow(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
             ) {
-                StatWell(model.stat, dimmed = model.state == QuestRowState.CLOSED)
-                QuestText(model, modifier = Modifier.weight(1f))
                 CheckControl(model, onComplete)
+                QuestText(model, modifier = Modifier.weight(1f))
+                StatXp(model)
             }
         }
         model.habit?.let { habit ->
@@ -122,7 +124,30 @@ fun QuestRow(
                 row = model,
                 habit = habit,
                 actions = habitActions,
-                modifier = Modifier.padding(start = dimens.iconWell + Spacing.sm),
+                modifier = Modifier.padding(start = dimens.touchTarget + Spacing.sm),
+            )
+        }
+    }
+}
+
+/** The stat's glyph (its colour never stands alone) and what the quest is worth, on the right of a row. */
+@Composable
+private fun StatXp(model: QuestRowModel) {
+    val colors = AwakenTheme.colors
+    val dimmed = model.state == QuestRowState.CLOSED
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+        Icon(
+            AwakenGlyphs.stat(model.stat),
+            contentDescription = model.stat.label(),
+            tint = if (dimmed) colors.textMuted else colors.statGlyph(model.stat),
+            modifier = Modifier.size(AwakenTheme.dimens.iconSmall),
+        )
+        model.xp?.let { xp ->
+            Text(
+                lexString(R.string.quest_xp_gain, xp),
+                style = AwakenTheme.type.label,
+                color = if (dimmed) colors.textMuted else colors.textSecondary,
+                maxLines = 1,
             )
         }
     }
@@ -319,7 +344,14 @@ private fun CheckControl(model: QuestRowModel, onComplete: () -> Unit) {
                 )
             }
         }
-        else -> Unit
+        // Finished by its verifier (steps, a timer) or closed: the ring waits, and does nothing when touched.
+        else -> Box(modifier = Modifier.size(dimens.touchTarget), contentAlignment = Alignment.Center) {
+            Box(
+                modifier = Modifier
+                    .size(dimens.sigil - Spacing.xxs)
+                    .border(dimens.accentWidth, colors.divider, AwakenTheme.shapes.pill),
+            )
+        }
     }
 }
 

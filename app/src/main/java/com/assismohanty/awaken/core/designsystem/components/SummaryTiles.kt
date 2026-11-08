@@ -184,7 +184,7 @@ private fun TileFigure(label: String, value: String, modifier: Modifier = Modifi
 
 /** "54m", "2h", "2h 57m": durations sized for a half-width tile. */
 @Composable
-private fun formatMinutesShort(minutes: Int): String {
+internal fun formatMinutesShort(minutes: Int): String {
     val hours = minutes / MINUTES_PER_HOUR
     val rest = minutes % MINUTES_PER_HOUR
     return when {

@@ -26,7 +26,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
-/** Today: a date title, the live metrics first, then at most four sections, each opening its detail. Focus has its own tab. */
+/** Today: a greeting with the date and a settings gear, the level card, the plan, then three metric tiles. Focus has its own tab. */
 @RunWith(AndroidJUnit4::class)
 class TodayScreenSectionsTest {
     @get:Rule
@@ -45,7 +45,7 @@ class TodayScreenSectionsTest {
         summary: TodaySummaryUiState = this.summary,
         bedtime: BedtimeToday? = null,
         onOpenProgress: () -> Unit = {},
-        onOpenQuit: () -> Unit = {},
+        onOpenSettings: () -> Unit = {},
         habits: MutableList<HabitsEvent> = mutableListOf(),
     ) {
         composeRule.setContent {
@@ -58,7 +58,7 @@ class TodayScreenSectionsTest {
                     onHabitsEvent = { habits += it },
                     onDayPlanEvent = {},
                     onOpenProgress = onOpenProgress,
-                    onOpenQuit = onOpenQuit,
+                    onOpenSettings = onOpenSettings,
                     summary = summary,
                     bedtime = bedtime,
                 )
@@ -67,16 +67,25 @@ class TodayScreenSectionsTest {
     }
 
     @Test
-    fun theTitleIsTheDateAndThereIsNoGreeting() {
+    fun theHeaderIsAGreetingWithTheDateAndASettingsGear() {
         show()
+        composeRule.onNodeWithText("Good afternoon, Assis").assertIsDisplayed()
         composeRule.onNodeWithText("Tuesday 27 October").assertIsDisplayed()
-        composeRule.onAllNodesWithText("Good", substring = true).assertCountEquals(0)
+        composeRule.onNodeWithContentDescription("Open settings").assertIsDisplayed()
+    }
+
+    @Test
+    fun theGearOpensSettings() {
+        var opened = 0
+        show(onOpenSettings = { opened++ })
+        composeRule.onNodeWithContentDescription("Open settings").performClick()
+        assertThat(opened).isEqualTo(1)
     }
 
     @Test
     fun theSectionsAppearInOrder() {
         show()
-        val titles = listOf("Screen time", "Today's plan · 2 of 6 done")
+        val titles = listOf("Good afternoon, Assis", "Today's plan", "2 of 6 done", "Focus today")
         val tree = composeRule.onRoot().printToString(Int.MAX_VALUE)
         val indexes = titles.map { tree.indexOf(it) }
         assertThat(indexes).doesNotContain(-1)
@@ -100,17 +109,10 @@ class TodayScreenSectionsTest {
     }
 
     @Test
-    fun quitCountersAreHiddenWhenThereAreNone() {
-        show()
+    fun quitCountersLiveOnProgressNotOnToday() {
+        show(summary = summary.copy(quit = listOf(QuitSummaryLine("q", "Smoking", 12))))
         composeRule.onAllNodesWithText("Quit counters").assertCountEquals(0)
-    }
-
-    @Test
-    fun aQuitCounterShowsItsDaysAndOpensTheCounters() {
-        var opened = 0
-        show(summary = summary.copy(quit = listOf(QuitSummaryLine("q", "Smoking", 12))), onOpenQuit = { opened++ })
-        composeRule.onNodeWithText("Smoking · 12 days clean").performScrollTo().performClick()
-        assertThat(opened).isEqualTo(1)
+        composeRule.onAllNodesWithText("Smoking", substring = true).assertCountEquals(0)
     }
 
     @Test

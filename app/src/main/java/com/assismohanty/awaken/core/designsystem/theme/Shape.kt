@@ -130,6 +130,13 @@ data class AwakenDimens(
     val stageBarHeight: Dp = 18.dp,
     /** Gym body map: one figure, front or back (DS §3). */
     val bodyMapHeight: Dp = 420.dp,
+    /** The plan plate bar on Today: overall height, the rail it sits on, the collar at its end, and a plate's corner. */
+    val dayBarHeight: Dp = 64.dp,
+    val dayBarRail: Dp = 8.dp,
+    val dayBarCollar: Dp = 14.dp,
+    val dayBarPlateRadius: Dp = 9.dp,
+    val dayBarPlateGap: Dp = 4.dp,
+    val dayBarPlateMin: Dp = 10.dp,
     /** Diet calorie ring and its stroke. */
     val calorieRing: Dp = 148.dp,
     val calorieRingStroke: Dp = 10.dp,
