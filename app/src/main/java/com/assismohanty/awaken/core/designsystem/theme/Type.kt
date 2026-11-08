@@ -70,6 +70,8 @@ data class AwakenType(
     val metricXL: TextStyle = style(600, 54f, 56f, tracking = -0.045, family = ArchivoMetric),
     /** The unit next to a big number ("kg", "of 10"). */
     val metricUnit: TextStyle = style(500, 20f, 24f, tracking = -0.01),
+    /** The level inside the level ring. */
+    val metricS: TextStyle = style(650, 26f, 28f, tracking = -0.03),
     /** A value in a metric card. */
     val metricL: TextStyle = style(600, 34f, 38f, tracking = -0.04, family = ArchivoMetric),
     /** Tab titles ("Today", "Gym"). */

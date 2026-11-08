@@ -32,10 +32,13 @@ import androidx.compose.ui.unit.Dp
 import com.assismohanty.awaken.core.designsystem.preview.ComponentPreview
 import com.assismohanty.awaken.core.designsystem.theme.AwakenTheme
 import com.assismohanty.awaken.core.designsystem.theme.Spacing
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.unit.dp
 
 /**
- * The card (DESIGN_SYSTEM §3): a flat 24dp surface in the card colour, separated from the page by colour alone (no
- * border, no shadow), 20dp padding and an optional title row in 17sp medium. When [onClick] is set the whole card is the
+ * The card (DESIGN_SYSTEM §3): a 22dp surface in the card colour with no border. Light cards carry one soft shadow, dark
+ * cards tone only. 16dp padding and an optional title row in 17sp. A [flat] card (inside a sheet or another card) never
+ * has a shadow. When [onClick] is set the whole card is the
  * target and turns the pressed colour while held. On first composition it fades in and rises 8dp; reduce-motion shows it.
  *
  * [accent] and [tint] are kept for callers written before v2 and are ignored: colour never fills a card.
@@ -47,6 +50,7 @@ fun AwakenCard(
     @Suppress("UNUSED_PARAMETER") accent: Color = Color.Unspecified,
     @Suppress("UNUSED_PARAMETER") tint: Color? = null,
     reveal: Boolean = true,
+    flat: Boolean = false,
     onClick: (() -> Unit)? = null,
     contentPadding: PaddingValues = PaddingValues(Spacing.card),
     /** Gap between children; list cards pass [Spacing.zero] because rows carry their own padding. */
@@ -76,6 +80,7 @@ fun AwakenCard(
                 alpha = if (animate) progress.value.coerceAtLeast(MIN_REVEAL_ALPHA) else 1f
                 translationY = (1f - progress.value) * rise
             }
+            .then(if (flat || colors.isDark) Modifier else Modifier.shadow(CARD_ELEVATION, shape, ambientColor = colors.textPrimary.copy(alpha = AMBIENT), spotColor = colors.textPrimary.copy(alpha = SPOT)))
             .clip(shape)
             .background(fill)
             .then(if (onClick != null) Modifier.clickable(interactionSource = interaction, indication = null, onClick = onClick) else Modifier)
@@ -113,6 +118,9 @@ fun SystemWindow(
 ) = AwakenCard(modifier = modifier, title = title, accent = accent, reveal = reveal, headerTrailing = headerTrailing, content = content)
 
 private const val MIN_REVEAL_ALPHA = 0.001f
+private val CARD_ELEVATION = 6.dp
+private const val AMBIENT = 0.04f
+private const val SPOT = 0.16f
 
 @ComponentPreview
 @Composable

@@ -31,11 +31,14 @@ import com.assismohanty.awaken.core.designsystem.theme.Spacing
 import com.assismohanty.awaken.engine.model.Difficulty
 import com.assismohanty.awaken.engine.model.Stat
 import com.assismohanty.awaken.engine.model.VerificationSource
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Box
+import androidx.compose.ui.unit.Dp
 
 /**
- * Chip (DESIGN_SYSTEM §3): ink text on a 15% wash of [color], with an optional icon in [color]. The accent marks the
- * chip; the words stay ink so they read in both themes. [background] overrides the wash (a neutral chip). Colour is
- * never the only signal: every chip carries text.
+ * Chip (DESIGN_SYSTEM §3): ink text on a sunken pill, with an optional [icon] in [color] or a [leading] marker. Colour
+ * lives only on the marker, never on the pill. [background] overrides the pill colour. Every chip carries text, so
+ * colour is never the only signal.
  */
 @Composable
 fun Pill(
@@ -45,6 +48,7 @@ fun Pill(
     icon: ImageVector? = null,
     description: String? = null,
     background: Color? = null,
+    leading: (@Composable () -> Unit)? = null,
 ) {
     val colors = AwakenTheme.colors
     val dimens = AwakenTheme.dimens
@@ -52,12 +56,13 @@ fun Pill(
         modifier = modifier
             .defaultMinSize(minHeight = dimens.chipHeight)
             .clip(AwakenTheme.shapes.pill)
-            .background(background ?: color.copy(alpha = AwakenAlpha.TINT))
+            .background(background ?: colors.surfaceOverlay)
             .padding(horizontal = Spacing.xs + Spacing.xxs / 2, vertical = Spacing.xxs / 2)
             .then(if (description != null) Modifier.semantics(mergeDescendants = true) { contentDescription = description } else Modifier),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.xxs),
     ) {
+        leading?.invoke()
         if (icon != null) Icon(icon, contentDescription = null, tint = color, modifier = Modifier.size(dimens.iconSmall - Spacing.xxs / 2))
         Text(text = text, style = AwakenTheme.type.label, color = colors.textPrimary)
     }
@@ -110,14 +115,27 @@ fun ChoiceChip(
     }
 }
 
-/** Stat chip: the stat's glyph in its accent on a 15% wash, and its 3-letter code; TalkBack reads the full name. */
+/** The round plate-coloured marker that stands for a stat. Charisma is the white plate, so it gets an edge. */
+@Composable
+fun StatMarker(stat: Stat, modifier: Modifier = Modifier, size: Dp = AwakenTheme.dimens.statMarker) {
+    val colors = AwakenTheme.colors
+    val shape = AwakenTheme.shapes.pill
+    Box(
+        modifier = modifier
+            .size(size)
+            .clip(shape)
+            .background(colors.stat(stat))
+            .then(if (stat == Stat.CHA) Modifier.border(AwakenTheme.dimens.hairline, colors.statEdge(stat), shape) else Modifier),
+    )
+}
+
+/** Stat chip: a round plate-coloured marker and the stat's name on a sunken pill. */
 @Composable
 fun StatChip(stat: Stat, modifier: Modifier = Modifier) {
     Pill(
-        text = stat.name,
-        color = AwakenTheme.colors.stat(stat),
-        icon = AwakenGlyphs.stat(stat),
-        description = stat.label(),
+        text = stat.label(),
+        color = AwakenTheme.colors.statEdge(stat),
+        leading = { StatMarker(stat) },
         modifier = modifier,
     )
 }

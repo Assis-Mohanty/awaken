@@ -25,7 +25,7 @@ fun Modifier.pressScale(interactionSource: InteractionSource): Modifier {
     val pressed by interactionSource.collectIsPressedAsState()
     val scale by animateFloatAsState(
         targetValue = if (pressed && !motion.reduceMotion) PRESSED_SCALE else 1f,
-        animationSpec = tween(motion.quickMs, easing = motion.quickEasing),
+        animationSpec = tween(motion.pressMs, easing = motion.quickEasing),
         label = "pressScale",
     )
     return graphicsLayer {

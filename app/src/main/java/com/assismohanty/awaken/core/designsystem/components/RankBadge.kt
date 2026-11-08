@@ -13,41 +13,44 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.TextUnit
+import androidx.compose.ui.unit.sp
 import com.assismohanty.awaken.R
 import com.assismohanty.awaken.core.designsystem.lexicon.lexString
 import com.assismohanty.awaken.core.designsystem.preview.ComponentPreview
-import com.assismohanty.awaken.core.designsystem.theme.AwakenAlpha
 import com.assismohanty.awaken.core.designsystem.theme.AwakenTheme
 import com.assismohanty.awaken.core.designsystem.theme.Spacing
 import com.assismohanty.awaken.engine.model.Rank
 
-/** Rank crest (DESIGN_SYSTEM §2.4): the rank letter in ink on a 15% disc of the rank colour. */
+/** Rank badge (design/components.md): the rank letter in a round ink badge. Ranks carry no colour of their own. */
 @Composable
-fun RankCrest(rank: Rank, size: Dp, modifier: Modifier = Modifier) {
+fun RankBadge(rank: Rank, size: Dp, modifier: Modifier = Modifier) {
     val colors = AwakenTheme.colors
     val description = lexString(R.string.cd_rank_crest, rank.name)
     Box(
         modifier = modifier
             .size(size)
             .clip(AwakenTheme.shapes.pill)
-            .background(colors.rank(rank).copy(alpha = AwakenAlpha.TINT))
+            .background(colors.accent)
             .semantics { contentDescription = description },
         contentAlignment = Alignment.Center,
     ) {
         Text(
             text = rank.name,
-            style = AwakenTheme.type.metricL.copy(fontSize = AwakenTheme.type.metricL.fontSize * (size / AwakenTheme.dimens.crestLarge)),
-            color = colors.textPrimary,
+            style = AwakenTheme.type.numeric.copy(fontSize = (size.value * LETTER_RATIO).sp, lineHeight = TextUnit.Unspecified),
+            color = colors.onAccent,
         )
     }
 }
 
+private const val LETTER_RATIO = 0.55f
+
 @ComponentPreview
 @Composable
-private fun RankCrestPreview() {
+private fun RankBadgePreview() {
     AwakenTheme {
         Row(horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
-            Rank.entries.forEach { RankCrest(it, AwakenTheme.dimens.crestSmall) }
+            Rank.entries.forEach { RankBadge(it, AwakenTheme.dimens.crestSmall) }
         }
     }
 }

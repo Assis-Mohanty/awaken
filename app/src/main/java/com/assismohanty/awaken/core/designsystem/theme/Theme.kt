@@ -15,6 +15,9 @@ import com.assismohanty.awaken.core.designsystem.look.Look
 import com.assismohanty.awaken.core.designsystem.look.LocalLook
 import com.assismohanty.awaken.core.designsystem.look.PlatesLook
 import com.assismohanty.awaken.engine.model.Rank
+import androidx.compose.material3.Shapes
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.unit.dp
 
 /**
  * Two palettes per look, one set of tokens (DESIGN_SYSTEM §2.1). No dynamic colour. Light or Dark follows the phone unless the
@@ -54,10 +57,20 @@ fun AwakenTheme(
         MaterialTheme(
             colorScheme = colorScheme,
             typography = remember(type) { type.toMaterialTypography() },
+            shapes = MaterialShapes,
             content = content,
         )
     }
 }
+
+/** Fields, menus and dialogs that fall back to Material's shape scale get the Plates radii. */
+private val MaterialShapes = Shapes(
+    extraSmall = RoundedCornerShape(16.dp),
+    small = RoundedCornerShape(16.dp),
+    medium = RoundedCornerShape(20.dp),
+    large = RoundedCornerShape(22.dp),
+    extraLarge = RoundedCornerShape(28.dp),
+)
 
 /** Material slots mapped onto our tokens; identical mapping for both palettes so components never branch on mode. */
 private fun AwakenPalette.toColorScheme(dark: Boolean): ColorScheme {

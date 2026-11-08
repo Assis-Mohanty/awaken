@@ -16,8 +16,7 @@ import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.Switch
-import androidx.compose.material3.SwitchDefaults
+import com.assismohanty.awaken.core.designsystem.components.AwakenSwitch
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -193,12 +192,7 @@ fun DayPlanContent(state: DayPlanUiState, plan: DayPlan, onEvent: (DayPlanEvent)
                 )
             }
             // The row is the toggle target; the switch only shows state.
-            Switch(
-                checked = plan.recoveryToday,
-                onCheckedChange = null,
-                enabled = !state.busy,
-                colors = SwitchDefaults.colors(checkedTrackColor = colors.accent, checkedThumbColor = colors.surface),
-            )
+            AwakenSwitch(checked = plan.recoveryToday, enabled = !state.busy)
         }
 
         state.error?.let { Text(lexString(it), style = type.label, color = colors.critical) }

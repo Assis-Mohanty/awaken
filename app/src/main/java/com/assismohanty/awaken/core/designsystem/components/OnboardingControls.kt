@@ -9,8 +9,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.selection.toggleable
-import androidx.compose.material3.Switch
-import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
@@ -143,17 +141,7 @@ fun OnboardingToggleRow(title: String, checked: Boolean, onChange: (Boolean) -> 
             horizontalArrangement = Arrangement.spacedBy(Spacing.md),
         ) {
             Text(title, style = AwakenTheme.type.title, color = colors.textPrimary, modifier = Modifier.weight(1f))
-            Switch(
-                checked = checked,
-                onCheckedChange = null,
-                colors = SwitchDefaults.colors(
-                    checkedThumbColor = colors.onAccent,
-                    checkedTrackColor = colors.accent,
-                    uncheckedThumbColor = colors.textSecondary,
-                    uncheckedTrackColor = colors.surfaceOverlay,
-                    uncheckedBorderColor = colors.divider,
-                ),
-            )
+            AwakenSwitch(checked = checked)
         }
     }
 }

@@ -89,6 +89,13 @@
     <string name="metric_level">Level</string>
     <string name="metric_streak">Streak</string>
     <string name="rank_line">Rank %1$s</string>
+    <string name="rank_word">Rank</string>
+    <string name="level_line">Level %1$d</string>
+    <string name="xp_progress_of">%1$s of %2$s XP</string>
+    <plurals name="streak_days_inline">
+        <item quantity="one">%1$d day</item>
+        <item quantity="other">%1$d days</item>
+    </plurals>
     <string name="unit_days_line">days in a row</string>
     <!-- Consistency and "never miss twice" (GD §14.2) -->
     <plurals name="consistency_line">

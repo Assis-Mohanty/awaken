@@ -19,7 +19,7 @@ import com.assismohanty.awaken.core.designsystem.components.RingSpec
 import com.assismohanty.awaken.core.designsystem.components.MetricCard
 import com.assismohanty.awaken.core.designsystem.components.Spark
 import com.assismohanty.awaken.core.designsystem.components.DeltaPill
-import com.assismohanty.awaken.core.designsystem.components.FloatingNavBar
+import com.assismohanty.awaken.core.designsystem.components.NavBar
 import com.assismohanty.awaken.core.designsystem.components.NavBarItem
 import com.assismohanty.awaken.core.designsystem.components.SkeletonCard
 import com.assismohanty.awaken.core.designsystem.components.SegmentedControl
@@ -74,7 +74,7 @@ import com.assismohanty.awaken.core.designsystem.components.QuestRow
 import com.assismohanty.awaken.core.designsystem.components.QuestRowState
 import com.assismohanty.awaken.core.designsystem.components.QuietButton
 import com.assismohanty.awaken.core.designsystem.components.RadarChart
-import com.assismohanty.awaken.core.designsystem.components.RankCrest
+import com.assismohanty.awaken.core.designsystem.components.RankBadge
 import com.assismohanty.awaken.core.designsystem.components.RewardModel
 import com.assismohanty.awaken.core.designsystem.components.RewardSheet
 import com.assismohanty.awaken.core.designsystem.components.SecondaryButton
@@ -232,7 +232,7 @@ private fun CatalogContent(
                         delta = { DeltaPill("+0.0 kg", Trend.FLAT) }, spark = Spark(listOf(82.4f, 82.1f, 82.3f, 82f, 82f)),
                         description = "Body weight 82.0 kg", onClick = {},
                     )
-                    FloatingNavBar(
+                    NavBar(
                         items = listOf(
                             NavBarItem("Today", AwakenGlyphs.Home, AwakenGlyphs.HomeSolid),
                             NavBarItem("Gym", AwakenGlyphs.Dumbbell, AwakenGlyphs.DumbbellSolid),
@@ -350,7 +350,7 @@ private fun CatalogContent(
                         AwakenGlyphs.all.forEach { Icon(it, it.name, tint = colors.bone, modifier = Modifier.size(AwakenTheme.dimens.icon)) }
                     }
                     Row(horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) { Stat.entries.forEach { IconCircle(AwakenGlyphs.stat(it), colors.stat(it)) } }
-                    Row(horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) { Rank.entries.forEach { RankCrest(it, AwakenTheme.dimens.crestSmall) } }
+                    Row(horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) { Rank.entries.forEach { RankBadge(it, AwakenTheme.dimens.crestSmall) } }
                 }
             }
 

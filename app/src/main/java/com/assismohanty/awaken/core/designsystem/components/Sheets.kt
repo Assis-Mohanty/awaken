@@ -25,8 +25,8 @@ import com.assismohanty.awaken.core.designsystem.theme.AwakenTheme
 import com.assismohanty.awaken.core.designsystem.theme.Spacing
 
 /**
- * Bottom sheet (DESIGN_SYSTEM §3): the card colour, 28dp top corners, a short divider-coloured handle, a 22sp title and
- * 24dp side padding. Opens fully expanded.
+ * Bottom sheet (DESIGN_SYSTEM §3): the card colour, 28dp top corners over a scrim, a short handle, a 19sp title and 20dp
+ * side padding. Opens fully expanded.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -36,6 +36,7 @@ fun AwakenBottomSheet(onDismiss: () -> Unit, title: String? = null, content: @Co
         onDismissRequest = onDismiss,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
         containerColor = colors.surfaceElevated,
+        scrimColor = colors.scrim,
         shape = AwakenTheme.shapes.sheet,
         dragHandle = { SheetHandle() },
     ) {
@@ -43,14 +44,16 @@ fun AwakenBottomSheet(onDismiss: () -> Unit, title: String? = null, content: @Co
     }
 }
 
+private const val HANDLE_ALPHA = 0.6f
+
 @Composable
 private fun SheetHandle() {
     Box(
         modifier = Modifier
             .padding(vertical = Spacing.sm)
-            .size(width = Spacing.xl + Spacing.xs, height = Spacing.xxs)
+            .size(width = Spacing.xl + Spacing.xxs, height = Spacing.xxs)
             .clip(AwakenTheme.shapes.pill)
-            .background(AwakenTheme.colors.divider),
+            .background(AwakenTheme.colors.textSecondary.copy(alpha = HANDLE_ALPHA)),
     )
 }
 
@@ -60,7 +63,7 @@ private fun SheetContent(title: String?, content: @Composable ColumnScope.() -> 
         modifier = Modifier
             .fillMaxWidth()
             .navigationBarsPadding()
-            .padding(start = Spacing.lg, end = Spacing.lg, bottom = Spacing.lg),
+            .padding(start = Spacing.gutter, end = Spacing.gutter, bottom = Spacing.lg),
         verticalArrangement = Arrangement.spacedBy(Spacing.md),
     ) {
         title?.let { Text(it, style = AwakenTheme.type.section, color = AwakenTheme.colors.textPrimary, modifier = Modifier.semantics { heading() }) }

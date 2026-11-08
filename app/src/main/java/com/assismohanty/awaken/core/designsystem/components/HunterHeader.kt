@@ -54,7 +54,7 @@ fun HunterHeader(model: HunterHeaderModel, modifier: Modifier = Modifier, large:
     val gold by animateIntAsState(model.gold.coerceAtMost(Int.MAX_VALUE.toLong()).toInt(), countUp, label = "gold")
     Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-            RankCrest(model.rank, if (large) dimens.crestLarge else dimens.crestSmall)
+            RankBadge(model.rank, if (large) dimens.crestLarge else dimens.crestSmall)
             Text(
                 model.name,
                 style = if (large) type.headline else type.title,

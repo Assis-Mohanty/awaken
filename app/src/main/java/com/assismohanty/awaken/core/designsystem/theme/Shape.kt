@@ -49,12 +49,19 @@ data class AwakenDimens(
     val iconWell: Dp = 36.dp,
     val sigil: Dp = 28.dp,
     val avatar: Dp = 44.dp,
-    val crestSmall: Dp = 40.dp,
-    val crestLarge: Dp = 64.dp,
+    val crestSmall: Dp = 36.dp,
+    val crestLarge: Dp = 96.dp,
+    /** The rank badge beside "Rank" in the level module. */
+    val crestInline: Dp = 28.dp,
     /** Ring cards (Apple Fitness style): thin rings, round caps, divider-coloured track (DESIGN_SYSTEM §3). */
     val heroRing: Dp = 132.dp,
     val heroRingStroke: Dp = 10.dp,
     val heroDot: Dp = 7.dp,
+    /** The level ring (Today, Progress) and its stroke. */
+    val levelRing: Dp = 76.dp,
+    val levelRingStroke: Dp = 7.dp,
+    /** The round stat marker beside a stat's name. */
+    val statMarker: Dp = 10.dp,
     /** Today's vertical timeline. */
     val timelineRail: Dp = 2.dp,
     val timelineNode: Dp = 26.dp,
@@ -99,9 +106,9 @@ data class AwakenDimens(
     val shareCardHeight: Dp = 450.dp,
     /** How far a staggered item rises while it fades in (DS §2.5). */
     val staggerRise: Dp = 8.dp,
-    /** Floating pill nav bar: its height, and the lighter inner pill of the selected item. */
-    val navBarHeight: Dp = 64.dp,
-    val navIndicatorHeight: Dp = 48.dp,
+    /** The nav bar's selected-tab pill. */
+    val navIndicatorWidth: Dp = 60.dp,
+    val navIndicatorHeight: Dp = 32.dp,
     /** Large title → collapsed title (DS §3, LargeTitleScaffold). */
     val topBarHeight: Dp = 56.dp,
     /** Skeleton loader line height. */
@@ -110,7 +117,7 @@ data class AwakenDimens(
     val sparkWidth: Dp = 96.dp,
     val sparkHeight: Dp = 40.dp,
     /** Segmented control track. */
-    val segmentedHeight: Dp = 36.dp,
+    val segmentedHeight: Dp = 42.dp,
     /** Screen Time 7-day bars (DS §4.9). */
     val trendBarHeight: Dp = 96.dp,
     /** Health 7-day columns: the area the tallest bar fills. */

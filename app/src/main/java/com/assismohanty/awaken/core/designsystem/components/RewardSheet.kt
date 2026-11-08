@@ -134,7 +134,7 @@ fun RewardSheetContent(
         }
         Column(modifier = Modifier.fillMaxWidth()) {
             model.statXp.forEach { (stat, xp) ->
-                GainRow(AwakenGlyphs.stat(stat), colors.stat(stat), stat.label(), "+" + formatCount(xp))
+                GainRow(AwakenGlyphs.stat(stat), colors.statEdge(stat), stat.label(), "+" + formatCount(xp))
             }
             if (model.gold > 0) {
                 GainRow(AwakenGlyphs.Coin, colors.reward, lexString(R.string.reward_gold), "+" + formatCount(model.gold))

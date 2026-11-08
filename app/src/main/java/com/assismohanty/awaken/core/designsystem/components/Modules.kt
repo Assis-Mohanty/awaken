@@ -62,6 +62,7 @@ import com.assismohanty.awaken.core.designsystem.theme.Spacing
 import com.assismohanty.awaken.engine.ConsistencyScore
 import com.assismohanty.awaken.engine.model.Rank
 import com.assismohanty.awaken.engine.model.Stat
+import androidx.compose.ui.unit.dp
 
 /*
  * The v2 modules (DESIGN_SYSTEM §3): Apple-style metric cards, ring cards, insight cards, list rows, segmented
@@ -393,8 +394,8 @@ fun TrendPill(text: String, trend: Trend, modifier: Modifier = Modifier) {
 fun DeltaPill(text: String, trend: Trend, modifier: Modifier = Modifier) = TrendPill(text, trend, modifier)
 
 /**
- * Segmented control (Week / Month / Year, Front / Back): a pressed-colour track with the selected segment in the card
- * colour. Each segment is a 48dp tab.
+ * Segmented control (Week / Month / Year, Front / Back): a sunken pill track with the selected segment in ink. Each
+ * segment is a 42dp tab in a 48dp track.
  */
 @Composable
 fun SegmentedTabs(options: List<String>, selected: Int, onSelect: (Int) -> Unit, modifier: Modifier = Modifier) {
@@ -404,7 +405,7 @@ fun SegmentedTabs(options: List<String>, selected: Int, onSelect: (Int) -> Unit,
         modifier = modifier
             .clip(shape)
             .background(colors.surfaceOverlay)
-            .padding(Spacing.xxs / 2)
+            .padding(SEGMENT_TRACK_PADDING)
             .selectableGroup(),
     ) {
         options.forEachIndexed { index, option ->
@@ -414,16 +415,18 @@ fun SegmentedTabs(options: List<String>, selected: Int, onSelect: (Int) -> Unit,
                     .weight(1f)
                     .defaultMinSize(minHeight = AwakenTheme.dimens.segmentedHeight)
                     .clip(shape)
-                    .background(if (isSelected) colors.surfaceSelected else Color.Transparent)
+                    .background(if (isSelected) colors.accent else Color.Transparent)
                     .selectable(selected = isSelected, role = Role.Tab, onClick = { onSelect(index) })
                     .padding(horizontal = Spacing.sm),
                 contentAlignment = Alignment.Center,
             ) {
-                Text(option, style = AwakenTheme.type.label, color = if (isSelected) colors.textPrimary else colors.textSecondary, maxLines = 1)
+                Text(option, style = AwakenTheme.type.label, color = if (isSelected) colors.onAccent else colors.textSecondary, maxLines = 1)
             }
         }
     }
 }
+
+private val SEGMENT_TRACK_PADDING = 3.dp
 
 /** The v2 name for [SegmentedTabs]. */
 @Composable
@@ -442,8 +445,8 @@ fun StatTintCard(stat: Stat, title: String, value: String, modifier: Modifier = 
 }
 
 /**
- * The large title ("Good morning, Sam", 34sp bold) at full width, under a row with the quiet [subtitle] (the date) on
- * the left and the header [actions] on the right, so the title never shares its line.
+ * The screen title ("Good morning, Sam", 24sp) with the quiet [subtitle] (the date) under it, and the header [actions]
+ * (settings) at the right. With [onBack] a Back arrow leads the row.
  */
 @Composable
 fun GreetingHeader(
@@ -454,45 +457,30 @@ fun GreetingHeader(
     actions: @Composable RowScope.() -> Unit = {},
 ) {
     val colors = AwakenTheme.colors
-    Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(Spacing.xxs)) {
-        Row(
-            modifier = Modifier.fillMaxWidth().defaultMinSize(minHeight = AwakenTheme.dimens.touchTarget),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            if (onBack != null) {
-                BackButton(onBack)
-                Spacer(Modifier.weight(1f))
-            } else {
-                Text(subtitle.orEmpty(), style = AwakenTheme.type.label, color = colors.textSecondary, modifier = Modifier.weight(1f))
-            }
-            Row(horizontalArrangement = Arrangement.spacedBy(Spacing.xs), content = actions)
+    Row(
+        modifier = modifier.fillMaxWidth().defaultMinSize(minHeight = AwakenTheme.dimens.touchTarget),
+        verticalAlignment = Alignment.Top,
+    ) {
+        if (onBack != null) BackButton(onBack)
+        Column(modifier = Modifier.weight(1f).padding(vertical = Spacing.xs), verticalArrangement = Arrangement.spacedBy(Spacing.xxs / 2)) {
+            Text(greeting, style = AwakenTheme.type.headline, color = colors.textPrimary, modifier = Modifier.semantics { heading() })
+            subtitle?.let { Text(it, style = AwakenTheme.type.body, color = colors.textSecondary) }
         }
-        if (onBack != null && subtitle != null) {
-            Text(subtitle, style = AwakenTheme.type.label, color = colors.textSecondary, modifier = Modifier.padding(top = Spacing.xs))
-        }
-        Text(greeting, style = AwakenTheme.type.headline, color = colors.textPrimary, modifier = Modifier.semantics { heading() })
+        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.xs), content = actions)
     }
 }
 
-/** Back: an arrow on a card-coloured circle, top-left of every pushed screen. */
+/** Back: an ink arrow, top-left of every pushed screen. */
 @Composable
 fun BackButton(onBack: () -> Unit, modifier: Modifier = Modifier) =
     HeaderIconButton(AwakenGlyphs.ArrowLeft, lexString(R.string.action_back), onBack, modifier)
 
-/** A round header action (Gates, Vault, settings): an ink icon on a card-coloured circle, 48dp target. */
+/** A header action (settings, back): an ink icon with a 48dp target. */
 @Composable
 fun HeaderIconButton(icon: ImageVector, description: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
     val colors = AwakenTheme.colors
     IconButton(onClick = onClick, modifier = modifier.size(AwakenTheme.dimens.touchTarget)) {
-        Box(
-            modifier = Modifier
-                .size(AwakenTheme.dimens.touchTarget - Spacing.xxs)
-                .clip(AwakenTheme.shapes.pill)
-                .background(colors.surfaceElevated),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(icon, contentDescription = description, tint = colors.textPrimary, modifier = Modifier.size(AwakenTheme.dimens.icon * ICON_IN_BUTTON))
-        }
+        Icon(icon, contentDescription = description, tint = colors.textPrimary, modifier = Modifier.size(AwakenTheme.dimens.icon))
     }
 }
 
@@ -574,18 +562,42 @@ val TimeBlock.glyph: ImageVector
 
 // ---- Level and streak ----
 
-/** Level as a metric card: the number large, XP toward the next level and a slim bar. */
+/**
+ * Level, rank and streak in one card: the level ring, the rank badge, the streak when [streak] is set, and an XP bar with
+ * "Level 24 / 1,240 of 1,434 XP" under it.
+ */
 @Composable
-fun LevelModule(level: Int, rank: Rank, xpIntoLevel: Long, xpForLevel: Long, modifier: Modifier = Modifier, onClick: (() -> Unit)? = null) {
+fun LevelModule(
+    level: Int,
+    rank: Rank,
+    xpIntoLevel: Long,
+    xpForLevel: Long,
+    modifier: Modifier = Modifier,
+    onClick: (() -> Unit)? = null,
+    streak: Int? = null,
+) {
     val colors = AwakenTheme.colors
     val description = lexString(R.string.cd_level_module, level, rank.name, formatCount(xpIntoLevel), formatCount(xpForLevel))
+    val fraction = if (xpForLevel <= 0) 1f else (xpIntoLevel.toFloat() / xpForLevel).coerceIn(0f, 1f)
     AwakenCard(modifier = modifier.clearAndSetSemantics { contentDescription = description }, reveal = false, onClick = onClick) {
-        CardLabel(lexString(R.string.metric_level), AwakenGlyphs.Level, colors.reward)
-        BigValue(formatCount(level), unit = null)
-        Text(lexString(R.string.rank_line, rank.name), style = AwakenTheme.type.caption, color = colors.textSecondary)
-        Spacer(Modifier.weight(1f))
-        XpBar(level = level, xpIntoLevel = xpIntoLevel, xpForLevel = xpForLevel, showLabel = false)
-        Text(lexString(R.string.xp_progress, formatCount(xpIntoLevel), formatCount(xpForLevel)), style = AwakenTheme.type.caption, color = colors.textSecondary)
+        // The card is half width (beside the streak card), so the ring sits above the details, not beside them.
+        Column(verticalArrangement = Arrangement.spacedBy(Spacing.md)) {
+            LevelRing(level = level, progress = fraction)
+            Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+                    Text(lexString(R.string.rank_word), style = AwakenTheme.type.caption, color = colors.textSecondary)
+                    RankBadge(rank, AwakenTheme.dimens.crestInline)
+                    Spacer(Modifier.weight(1f))
+                    streak?.let {
+                        Icon(AwakenGlyphs.Flame, contentDescription = null, tint = colors.textPrimary, modifier = Modifier.size(AwakenTheme.dimens.iconSmall))
+                        Text(lexPlural(R.plurals.streak_days_inline, it, it), style = AwakenTheme.type.label, color = colors.textPrimary)
+                    }
+                }
+                ProgressBar(progress = fraction)
+                Text(lexString(R.string.level_line, level), style = AwakenTheme.type.caption, color = colors.textSecondary)
+                Text(lexString(R.string.xp_progress_of, formatCount(xpIntoLevel), formatCount(xpForLevel)), style = AwakenTheme.type.caption, color = colors.textSecondary)
+            }
+        }
     }
 }
 
@@ -601,7 +613,7 @@ fun StreakModule(
     val colors = AwakenTheme.colors
     val description = lexString(R.string.cd_streak_module, streak, best)
     AwakenCard(modifier = modifier.clearAndSetSemantics { contentDescription = description }, reveal = false, onClick = onClick) {
-        CardLabel(lexString(R.string.metric_streak), AwakenGlyphs.Flame, colors.stat(Stat.CHA))
+        CardLabel(lexString(R.string.metric_streak), AwakenGlyphs.Flame, colors.statEdge(Stat.CHA))
         BigValue(formatCount(streak), unit = null)
         Text(lexString(R.string.unit_days_line), style = AwakenTheme.type.caption, color = colors.textSecondary)
         Spacer(Modifier.weight(1f))

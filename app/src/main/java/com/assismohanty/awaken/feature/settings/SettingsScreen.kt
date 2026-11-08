@@ -27,8 +27,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
-import androidx.compose.material3.Switch
-import androidx.compose.material3.SwitchDefaults
+import com.assismohanty.awaken.core.designsystem.components.AwakenSwitch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TimeInput
 import androidx.compose.material3.rememberTimePickerState
@@ -558,11 +557,7 @@ internal fun SwitchRow(title: String, note: String?, checked: Boolean, onChange:
             Text(title, style = AwakenTheme.type.label, color = colors.textPrimary)
             note?.let { Text(it, style = AwakenTheme.type.caption, color = colors.textSecondary) }
         }
-        Switch(
-            checked = checked,
-            onCheckedChange = null,
-            colors = SwitchDefaults.colors(checkedTrackColor = colors.accent, checkedThumbColor = colors.surface),
-        )
+        AwakenSwitch(checked = checked)
     }
 }
 

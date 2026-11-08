@@ -28,7 +28,7 @@ import com.assismohanty.awaken.core.designsystem.theme.AwakenTheme
 import com.assismohanty.awaken.core.designsystem.theme.Spacing
 
 /**
- * XP bar (DESIGN_SYSTEM §3): a slim pill, divider-coloured track, a solid reward-gold fill rounded at both ends.
+ * XP bar (DESIGN_SYSTEM §3): a slim pill, sunken track, a solid ink fill rounded at both ends.
  * Animates changes with the `standard` motion; shows "1,240 / 1,434 XP" underneath.
  */
 @Composable
@@ -61,7 +61,7 @@ fun XpBar(
                 .height(dimens.xpBarHeight)
                 .clip(AwakenTheme.shapes.xpBar)
                 .drawBehind {
-                    drawRect(colors.edge)
+                    drawRect(colors.depth)
                     val fillWidth = size.width * fraction
                     if (fillWidth > 0f) {
                         drawRoundRect(

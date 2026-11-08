@@ -28,13 +28,20 @@ import com.assismohanty.awaken.core.designsystem.theme.Spacing
 import java.text.DecimalFormat
 import java.text.DecimalFormatSymbols
 import java.util.Locale
+import androidx.compose.ui.graphics.Color
 
-/** Outlined field colours for the System palette (works on both themes). */
+/** Field colours: a sunken well with no outline until it has focus, then an ink outline (works on both themes). */
 @Composable
 fun awakenTextFieldColors(): TextFieldColors = OutlinedTextFieldDefaults.colors(
     focusedBorderColor = AwakenTheme.palette.system,
-    unfocusedBorderColor = AwakenTheme.palette.edge,
-    focusedLabelColor = AwakenTheme.palette.system,
+    unfocusedBorderColor = Color.Transparent,
+    errorBorderColor = AwakenTheme.palette.ember,
+    focusedContainerColor = AwakenTheme.palette.depth,
+    unfocusedContainerColor = AwakenTheme.palette.depth,
+    focusedLabelColor = AwakenTheme.palette.mist,
+    unfocusedLabelColor = AwakenTheme.palette.mist,
+    unfocusedPlaceholderColor = AwakenTheme.palette.mist,
+    focusedPlaceholderColor = AwakenTheme.palette.mist,
     cursorColor = AwakenTheme.palette.system,
     focusedTextColor = AwakenTheme.palette.bone,
     unfocusedTextColor = AwakenTheme.palette.bone,

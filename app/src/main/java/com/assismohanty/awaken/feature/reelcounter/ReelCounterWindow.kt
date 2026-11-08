@@ -6,8 +6,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.selection.toggleable
-import androidx.compose.material3.Switch
-import androidx.compose.material3.SwitchDefaults
+import com.assismohanty.awaken.core.designsystem.components.AwakenSwitch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -177,11 +176,7 @@ private fun SwitchRow(title: Int, note: Int?, checked: Boolean, onChange: (Boole
             Text(lexString(title), style = AwakenTheme.type.label, color = colors.textPrimary)
             note?.let { Text(lexString(it), style = AwakenTheme.type.caption, color = colors.textSecondary) }
         }
-        Switch(
-            checked = checked,
-            onCheckedChange = null,
-            colors = SwitchDefaults.colors(checkedTrackColor = colors.accent, checkedThumbColor = colors.surface),
-        )
+        AwakenSwitch(checked = checked)
     }
 }
 

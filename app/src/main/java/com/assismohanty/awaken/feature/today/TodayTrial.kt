@@ -24,7 +24,7 @@ import com.assismohanty.awaken.core.designsystem.components.PrimaryButton
 import com.assismohanty.awaken.core.designsystem.components.QuestRow
 import com.assismohanty.awaken.core.designsystem.components.QuestRowModel
 import com.assismohanty.awaken.core.designsystem.components.QuietButton
-import com.assismohanty.awaken.core.designsystem.components.RankCrest
+import com.assismohanty.awaken.core.designsystem.components.RankBadge
 import com.assismohanty.awaken.core.designsystem.components.SystemWindow
 import com.assismohanty.awaken.core.designsystem.theme.AwakenTheme
 import com.assismohanty.awaken.core.designsystem.theme.Spacing
@@ -51,7 +51,7 @@ fun TrialWindow(
         title = lexString(R.string.trial_available, rank.name),
         accent = AwakenTheme.rankAccent(rank),
         modifier = modifier,
-        headerTrailing = { RankCrest(rank = rank, size = AwakenTheme.dimens.icon) },
+        headerTrailing = { RankBadge(rank = rank, size = AwakenTheme.dimens.icon) },
     ) {
         when (trial) {
             is TrialSummary.Available -> {

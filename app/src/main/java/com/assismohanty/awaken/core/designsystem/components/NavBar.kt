@@ -6,17 +6,20 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -25,59 +28,60 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.dp
 import com.assismohanty.awaken.core.designsystem.preview.ComponentPreview
 import com.assismohanty.awaken.core.designsystem.theme.AwakenTheme
 import com.assismohanty.awaken.core.designsystem.theme.Spacing
 
-/** One destination of the [FloatingNavBar]: line icon at rest, solid icon when selected. */
+/** One destination of the [NavBar]: line icon at rest, solid icon when selected. */
 @Immutable
 data class NavBarItem(val label: String, val icon: ImageVector, val selectedIcon: ImageVector)
 
 /**
- * The bottom navigation (DESIGN_SYSTEM §3): a floating pill on the card colour, 16dp from the screen edges. The selected
- * destination sits in a lighter inner pill with its solid icon and label; the others show their line icon only, so the
- * bar stays calm. Every item is a 48dp tab; the label is always in the semantics.
+ * The bottom navigation (design/components.md): five tabs on the page colour with a hairline above. Every tab shows its
+ * icon and label; the selected one fills a pill indicator in ink behind its solid icon. Each tab is a 48dp target and the
+ * label is always in the semantics. Labels stop growing at 130% so five of them always fit on a small phone.
  */
 @Composable
-fun FloatingNavBar(items: List<NavBarItem>, selectedIndex: Int, onSelect: (Int) -> Unit, modifier: Modifier = Modifier) {
+fun NavBar(items: List<NavBarItem>, selectedIndex: Int, onSelect: (Int) -> Unit, modifier: Modifier = Modifier) {
     val colors = AwakenTheme.colors
-    val dimens = AwakenTheme.dimens
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .navigationBarsPadding()
-            .padding(start = Spacing.gutter, end = Spacing.gutter, bottom = Spacing.xs)
-            .height(dimens.navBarHeight)
-            .clip(AwakenTheme.shapes.pill)
-            .background(colors.surfaceElevated)
-            .padding(Spacing.xs)
-            .selectableGroup(),
-        horizontalArrangement = Arrangement.spacedBy(Spacing.xxs),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        items.forEachIndexed { index, item ->
-            val selected = index == selectedIndex
-            NavPill(item, selected, onClick = { onSelect(index) }, modifier = Modifier.weight(if (selected) SELECTED_WEIGHT else 1f))
+    val density = LocalDensity.current
+    CompositionLocalProvider(LocalDensity provides Density(density.density, fontScale = density.fontScale.coerceAtMost(MAX_FONT_SCALE))) {
+        Column(modifier = modifier.fillMaxWidth().background(colors.surface)) {
+            HorizontalDivider(thickness = AwakenTheme.dimens.hairline, color = colors.divider)
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .navigationBarsPadding()
+                    .padding(horizontal = Spacing.xxs, vertical = Spacing.xs)
+                    .selectableGroup(),
+                verticalAlignment = Alignment.Top,
+            ) {
+                items.forEachIndexed { index, item ->
+                    NavTab(item, index == selectedIndex, onClick = { onSelect(index) }, modifier = Modifier.weight(1f))
+                }
+            }
         }
     }
 }
 
 @Composable
-private fun NavPill(item: NavBarItem, selected: Boolean, onClick: () -> Unit, modifier: Modifier) {
+private fun NavTab(item: NavBarItem, selected: Boolean, onClick: () -> Unit, modifier: Modifier) {
     val colors = AwakenTheme.colors
     val motion = AwakenTheme.motion
+    val dimens = AwakenTheme.dimens
     val fill by animateColorAsState(
-        if (selected) colors.surfaceOverlay else Color.Transparent,
+        if (selected) colors.accent else Color.Transparent,
         tween(motion.duration(motion.quickMs), easing = motion.standardEasing),
         label = "navPill",
     )
-    Box(
+    Column(
         modifier = modifier
-            .height(AwakenTheme.dimens.navIndicatorHeight)
-            .clip(AwakenTheme.shapes.pill)
-            .background(fill)
+            .defaultMinSize(minHeight = dimens.touchTarget)
             .selectable(
                 selected = selected,
                 role = Role.Tab,
@@ -85,30 +89,40 @@ private fun NavPill(item: NavBarItem, selected: Boolean, onClick: () -> Unit, mo
                 indication = null,
                 onClick = onClick,
             ),
-        contentAlignment = Alignment.Center,
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(Spacing.xxs - 1.dp),
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+        Box(
+            modifier = Modifier
+                .size(width = dimens.navIndicatorWidth, height = dimens.navIndicatorHeight)
+                .clip(AwakenTheme.shapes.pill)
+                .background(fill),
+            contentAlignment = Alignment.Center,
+        ) {
             Icon(
                 if (selected) item.selectedIcon else item.icon,
-                contentDescription = if (selected) null else item.label,
-                tint = if (selected) colors.textPrimary else colors.textSecondary,
-                modifier = Modifier.size(AwakenTheme.dimens.icon),
+                contentDescription = null,
+                tint = if (selected) colors.onAccent else colors.textSecondary,
+                modifier = Modifier.size(dimens.icon - Spacing.xxs / 2),
             )
-            if (selected) {
-                Text(item.label, style = AwakenTheme.type.label, color = colors.textPrimary, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            }
         }
+        Text(
+            item.label,
+            style = AwakenTheme.type.micro,
+            color = if (selected) colors.textPrimary else colors.textSecondary,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
     }
 }
 
-/** The selected pill is wider so its label fits. */
-private const val SELECTED_WEIGHT = 2.6f
+private const val MAX_FONT_SCALE = 1.3f
 
 @ComponentPreview
 @Composable
-private fun FloatingNavBarPreview() {
+private fun NavBarPreview() {
     AwakenTheme {
-        FloatingNavBar(
+        NavBar(
             items = listOf(
                 NavBarItem("Today", AwakenGlyphs.Home, AwakenGlyphs.HomeSolid),
                 NavBarItem("Focus", AwakenGlyphs.Focus, AwakenGlyphs.FocusSolid),

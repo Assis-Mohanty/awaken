@@ -59,7 +59,7 @@ private fun ShareCardContent(model: ShareCardModel, modifier: Modifier) {
             verticalArrangement = Arrangement.spacedBy(Spacing.sm),
         ) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-                RankCrest(model.rank, dimens.crestSmall)
+                RankBadge(model.rank, dimens.crestSmall)
                 Column {
                     Text(model.name, style = type.title, color = colors.bone)
                     Text(lexString(R.string.level_short, model.level), style = type.numeric, color = colors.system)

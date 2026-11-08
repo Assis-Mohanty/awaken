@@ -176,6 +176,8 @@ data class AwakenPalette(
  */
 @Immutable
 class AwakenColors(private val palette: AwakenPalette) {
+    /** True for the dark look: components drop shadows there and rely on tone. */
+    val isDark: Boolean get() = palette.isDark
     /** The page. */
     val surface: Color get() = palette.void
     /** Recessed wells, tracks, chips and secondary buttons. */

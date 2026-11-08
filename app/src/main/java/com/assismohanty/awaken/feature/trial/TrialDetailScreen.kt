@@ -20,7 +20,7 @@ import com.assismohanty.awaken.core.designsystem.components.ListRow
 import com.assismohanty.awaken.core.designsystem.components.QuestRow
 import com.assismohanty.awaken.core.designsystem.components.QuestRowModel
 import com.assismohanty.awaken.core.designsystem.components.QuestRowState
-import com.assismohanty.awaken.core.designsystem.components.RankCrest
+import com.assismohanty.awaken.core.designsystem.components.RankBadge
 import com.assismohanty.awaken.core.designsystem.components.RingCard
 import com.assismohanty.awaken.core.designsystem.components.RingSpec
 import com.assismohanty.awaken.core.designsystem.components.SkeletonCard
@@ -67,7 +67,7 @@ fun TrialDetailScreen(
         title = if (loaded) lexString(R.string.trial_available, state.rank.name) else "",
         onBack = onBack,
         modifier = modifier,
-        actions = { if (loaded) RankCrest(rank = state.rank, size = AwakenTheme.dimens.crestSmall) },
+        actions = { if (loaded) RankBadge(rank = state.rank, size = AwakenTheme.dimens.crestSmall) },
     ) {
         when {
             state.loading -> SkeletonCard()

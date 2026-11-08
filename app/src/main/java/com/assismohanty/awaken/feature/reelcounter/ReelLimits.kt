@@ -6,8 +6,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.selection.toggleable
-import androidx.compose.material3.Switch
-import androidx.compose.material3.SwitchDefaults
+import com.assismohanty.awaken.core.designsystem.components.AwakenSwitch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -101,11 +100,7 @@ fun ReelLimitsScreen(state: ReelLimitsUiState, onEvent: (ReelLimitsEvent) -> Uni
                             color = colors.textSecondary,
                         )
                     }
-                    Switch(
-                        checked = row.limit != null,
-                        onCheckedChange = null,
-                        colors = SwitchDefaults.colors(checkedTrackColor = colors.accent, checkedThumbColor = colors.surface),
-                    )
+                    AwakenSwitch(checked = row.limit != null)
                 }
                 if (row.limit != null) {
                     Row(horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {

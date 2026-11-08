@@ -28,7 +28,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.assismohanty.awaken.core.designsystem.components.FloatingNavBar
+import com.assismohanty.awaken.core.designsystem.components.NavBar
 import com.assismohanty.awaken.core.designsystem.components.ScreenBackground
 import com.assismohanty.awaken.core.designsystem.components.NavBarItem
 import com.assismohanty.awaken.core.designsystem.theme.AwakenTheme
@@ -150,7 +150,7 @@ private fun MainScaffold(
                     val selected = destinations.indexOfFirst { destination ->
                         currentDestination?.hierarchy?.any { it.hasRoute(destination.route::class) } == true
                     }
-                    FloatingNavBar(
+                    NavBar(
                         items = destinations.map { NavBarItem(lexString(it.labelRes), it.icon, it.selectedIcon) },
                         selectedIndex = selected,
                         onSelect = { index ->

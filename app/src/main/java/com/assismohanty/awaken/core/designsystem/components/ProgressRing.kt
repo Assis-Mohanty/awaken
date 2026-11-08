@@ -27,7 +27,7 @@ import com.assismohanty.awaken.core.designsystem.theme.AwakenTheme
 import androidx.compose.material3.Text
 
 /**
- * A ring filled to [progress] (0..1, clamped) in [color] over an `edge` track, with [content] in the middle. One TalkBack
+ * A ring filled to [progress] (0..1, clamped) in [color] over a sunken track, with [content] in the middle. One TalkBack
  * node described by [description].
  */
 @Composable
@@ -40,7 +40,7 @@ fun ProgressRing(
     stroke: Dp = AwakenTheme.dimens.calorieRingStroke,
     content: @Composable () -> Unit,
 ) {
-    val track = AwakenTheme.palette.edge
+    val track = AwakenTheme.palette.depth
     Box(modifier = modifier.size(size).clearAndSetSemantics { contentDescription = description }, contentAlignment = Alignment.Center) {
         Canvas(modifier = Modifier.fillMaxSize()) {
             val width = stroke.toPx()
@@ -75,7 +75,7 @@ fun SegmentedRing(
     stroke: Dp = AwakenTheme.dimens.calorieRingStroke,
     content: @Composable () -> Unit,
 ) {
-    val track = AwakenTheme.palette.edge
+    val track = AwakenTheme.palette.depth
     val total = segments.sumOf { it.weight.toDouble() }.toFloat()
     Box(modifier = modifier.size(size).clearAndSetSemantics { contentDescription = description }, contentAlignment = Alignment.Center) {
         Canvas(modifier = Modifier.fillMaxSize()) {
@@ -107,7 +107,7 @@ fun SegmentedRing(
     }
 }
 
-/** A thin horizontal bar filled to [progress] (0..1, clamped) in [color] over an `edge` track. Decorative. */
+/** A smooth pill bar filled to [progress] (0..1, clamped) in [color] over a sunken track. Decorative. */
 @Composable
 fun ProgressBar(progress: Float, modifier: Modifier = Modifier, color: Color = AwakenTheme.palette.system) {
     val height = AwakenTheme.dimens.xpBarHeight
@@ -116,14 +116,29 @@ fun ProgressBar(progress: Float, modifier: Modifier = Modifier, color: Color = A
             .fillMaxWidth()
             .height(height)
             .clip(AwakenTheme.shapes.pill)
-            .background(AwakenTheme.palette.edge),
+            .background(AwakenTheme.palette.depth),
     ) {
         Box(
             modifier = Modifier
                 .fillMaxWidth(progress.coerceIn(0f, 1f))
                 .height(height)
+                .clip(AwakenTheme.shapes.pill)
                 .background(color),
         )
+    }
+}
+
+/** The level ring (Today, Progress): the level in the middle of an ink arc. The card that holds it carries the description. */
+@Composable
+fun LevelRing(
+    level: Int,
+    progress: Float,
+    modifier: Modifier = Modifier,
+    size: Dp = AwakenTheme.dimens.levelRing,
+    stroke: Dp = AwakenTheme.dimens.levelRingStroke,
+) {
+    ProgressRing(progress = progress, description = level.toString(), modifier = modifier, color = AwakenTheme.colors.accent, size = size, stroke = stroke) {
+        Text(level.toString(), style = AwakenTheme.type.metricS, color = AwakenTheme.colors.textPrimary)
     }
 }
 

@@ -6,8 +6,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.selection.toggleable
-import androidx.compose.material3.Switch
-import androidx.compose.material3.SwitchDefaults
+import com.assismohanty.awaken.core.designsystem.components.AwakenSwitch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -82,11 +81,7 @@ fun FocusLockWindowContent(
                 Text(lexString(R.string.focus_lock_setting_title), style = type.label, color = colors.textPrimary)
                 Text(lexString(R.string.focus_lock_setting_note), style = type.caption, color = colors.textSecondary)
             }
-            Switch(
-                checked = state.enabled,
-                onCheckedChange = null,
-                colors = SwitchDefaults.colors(checkedTrackColor = colors.accent, checkedThumbColor = colors.surface),
-            )
+            AwakenSwitch(checked = state.enabled)
         }
         if (state.enabled) {
             StatusRow(R.string.focus_lock_status_accessibility, state.accessibilityEnabled, onFixAccessibility)

@@ -225,7 +225,7 @@ fun StatWell(stat: Stat, modifier: Modifier = Modifier, dimmed: Boolean = false)
         Icon(
             AwakenGlyphs.stat(stat),
             contentDescription = stat.label(),
-            tint = if (dimmed) colors.textMuted else colors.stat(stat),
+            tint = if (dimmed) colors.textMuted else colors.statEdge(stat),
             modifier = Modifier.size(dimens.icon * WELL_GLYPH),
         )
     }
