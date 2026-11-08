@@ -170,33 +170,48 @@ private fun WeekWindow(overview: GymOverview, modifier: Modifier = Modifier) {
             Stat(lexString(R.string.gym_week_sets), formatCount(overview.weekSets), Modifier.weight(1f))
             Stat(lexString(R.string.gym_week_volume), lexString(R.string.gym_kg_value, formatCount(overview.weekVolumeKg.roundToLong())), Modifier.weight(1f))
         }
-        val trained = overview.weekMuscleLoad.filterValues { it > 0.0 }.keys.sortedBy { it.ordinal }
-        val names = trained.map { lexString(it.nameRes()) }
-        var opened by rememberSaveable { mutableStateOf<Muscle?>(null) }
-        BodyMap(
-            intensity = loadIntensity(overview.weekMuscleLoad),
-            description = if (names.isEmpty()) {
-                lexString(R.string.cd_gym_week_map_empty)
-            } else {
-                lexString(R.string.cd_gym_week_map, names.joinToString())
-            },
-            onMuscleClick = { opened = it },
-        )
-        Text(lexString(R.string.gym_week_map_caption), style = AwakenTheme.type.caption, color = colors.textSecondary)
-        opened?.let { muscle -> MuscleSheet(muscle, overview, onDismiss = { opened = null }) }
+        var mapOpen by rememberSaveable { mutableStateOf(false) }
+        SecondaryButton(text = lexString(R.string.gym_muscle_map_open), onClick = { mapOpen = true }, modifier = Modifier.fillMaxWidth())
+        if (mapOpen) MuscleMapSheet(overview, onDismiss = { mapOpen = false })
     }
+}
+
+/** The muscle map in a sheet from the "This week" card, so the routines stay near the top of Gym. */
+@Composable
+private fun MuscleMapSheet(overview: GymOverview, onDismiss: () -> Unit) {
+    AwakenBottomSheet(onDismiss = onDismiss, title = lexString(R.string.gym_muscle_map_title)) {
+        MuscleMapContent(overview)
+    }
+}
+
+/** The map, its caption, and, once a muscle is tapped, that muscle's week underneath. */
+@Composable
+private fun MuscleMapContent(overview: GymOverview) {
+    val trained = overview.weekMuscleLoad.filterValues { it > 0.0 }.keys.sortedBy { it.ordinal }
+    val names = trained.map { lexString(it.nameRes()) }
+    var opened by rememberSaveable { mutableStateOf<Muscle?>(null) }
+    BodyMap(
+        intensity = loadIntensity(overview.weekMuscleLoad),
+        description = if (names.isEmpty()) {
+            lexString(R.string.cd_gym_week_map_empty)
+        } else {
+            lexString(R.string.cd_gym_week_map, names.joinToString())
+        },
+        onMuscleClick = { opened = it },
+    )
+    Text(lexString(R.string.gym_week_map_caption), style = AwakenTheme.type.caption, color = AwakenTheme.colors.textSecondary)
+    opened?.let { muscle -> MuscleDetail(muscle, overview) }
 }
 
 /** A muscle's week (DESIGN_SYSTEM §3, Gym): sets and volume since Monday, for every catalog group its region covers. */
 @Composable
-private fun MuscleSheet(muscle: Muscle, overview: GymOverview, onDismiss: () -> Unit) {
+private fun MuscleDetail(muscle: Muscle, overview: GymOverview) {
     val muscles = BodyGeometry.regionMuscles(muscle)
-    val names = muscles.map { lexString(it.nameRes()) }
-    AwakenBottomSheet(onDismiss = onDismiss, title = names.joinToString()) {
+    Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
         muscles.forEach { m ->
             val sets = overview.weekMuscleLoad[m] ?: 0.0
             AwakenCard(reveal = false, contentPadding = PaddingValues(Spacing.md), modifier = Modifier.fillMaxWidth()) {
-                if (muscles.size > 1) Text(lexString(m.nameRes()), style = AwakenTheme.type.windowTitle, color = AwakenTheme.colors.textPrimary)
+                Text(lexString(m.nameRes()), style = AwakenTheme.type.windowTitle, color = AwakenTheme.colors.textPrimary)
                 if (sets <= 0.0) {
                     Text(lexString(R.string.gym_muscle_sheet_empty), style = AwakenTheme.type.body, color = AwakenTheme.colors.textSecondary)
                 } else {
@@ -640,6 +655,15 @@ internal fun previewGymState(active: Boolean = false): GymUiState {
 @Composable
 private fun GymHomePreview() {
     AwakenTheme(reduceMotion = true) { GymScreen(previewGymState(), onEvent = {}) }
+}
+
+@PhonePreviews
+@Composable
+private fun GymMuscleMapPreview() {
+    val overview = previewGymState().overview
+    AwakenTheme(reduceMotion = true) {
+        if (overview != null) Column(modifier = Modifier.padding(Spacing.md), verticalArrangement = Arrangement.spacedBy(Spacing.md)) { MuscleMapContent(overview) }
+    }
 }
 
 @PhonePreviews

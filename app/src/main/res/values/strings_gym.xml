@@ -11,7 +11,9 @@
     <string name="gym_week_workouts">Workouts</string>
     <string name="gym_week_sets">Sets</string>
     <string name="gym_week_volume">Volume</string>
-    <string name="gym_week_map_caption">Sets per muscle since Monday. Brighter = more work.</string>
+    <string name="gym_muscle_map_open">Muscle map</string>
+    <string name="gym_muscle_map_title">Muscle map</string>
+    <string name="gym_week_map_caption">Sets per muscle since Monday. A stronger shade means more work.</string>
     <string name="cd_gym_week_map">Muscles trained this week: %1$s</string>
     <string name="cd_gym_week_map_empty">No muscles trained this week</string>
     <string name="gym_window_routines">Routines</string>
