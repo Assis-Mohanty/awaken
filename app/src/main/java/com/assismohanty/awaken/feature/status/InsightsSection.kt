@@ -115,7 +115,7 @@ private fun insightChart(insight: Insight): ChartSpec? {
     return ChartSpec.Columns(
         fractions = values.map { (it / top).toFloat() },
         labels = labels,
-        color = AwakenTheme.colors.chartSeries3,
+        color = AwakenTheme.colors.accent,
         description = lexString(R.string.insight_chart_cd, labels[0], shown[0], labels[1], shown[1]),
         areaHeight = AwakenTheme.dimens.insightChartHeight,
     )

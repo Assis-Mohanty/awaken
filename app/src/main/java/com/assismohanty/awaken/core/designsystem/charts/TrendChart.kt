@@ -188,7 +188,7 @@ private fun TrendChartPreview() {
             selected = period,
             onSelect = { period = it },
             description = "Quests per day this week, average 3.5",
-            color = AwakenTheme.colors.chartSeries2,
+            color = AwakenTheme.colors.accent,
             modifier = Modifier.padding(Spacing.gutter),
         )
     }

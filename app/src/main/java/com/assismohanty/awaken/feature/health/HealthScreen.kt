@@ -306,7 +306,7 @@ private fun WorkoutsWindow(sessions: List<HealthSession>, zone: ZoneId) {
 private fun SleepWindow(session: HealthSession?, zone: ZoneId) {
     val colors = AwakenTheme.colors
     val type = AwakenTheme.type
-    SystemWindow(title = lexString(R.string.health_window_sleep), accent = colors.chartSeries3, reveal = false) {
+    SystemWindow(title = lexString(R.string.health_window_sleep), accent = colors.accent, reveal = false) {
         if (session == null) {
             Text(lexString(R.string.health_no_sleep), style = type.body, color = colors.textSecondary)
             return@SystemWindow
@@ -337,7 +337,7 @@ private fun StageTimeline(session: HealthSession) {
     val segments = session.stages.sortedBy(SleepStage::start).map { segment ->
         Segment(
             weight = (Duration.between(segment.start, segment.end).toMillis() / totalMillis).coerceAtLeast(MIN_SEGMENT_WEIGHT),
-            color = stageColor(segment.type, colors.critical, colors.textSecondary, colors.chartSeries2, colors.chartSeries3, colors.textMuted),
+            color = stageColor(segment.type, colors.critical, colors.accent.copy(alpha = SLEEP_LIGHT_ALPHA), colors.accent, colors.accent.copy(alpha = SLEEP_REM_ALPHA), colors.surfaceOverlay),
         )
     }
     Chart(ChartSpec.Segmented(segments = segments, shape = null, height = AwakenTheme.dimens.stageBarHeight))
@@ -346,7 +346,7 @@ private fun StageTimeline(session: HealthSession) {
             Text(
                 lexString(R.string.health_stage_line, stageName(stage), formatDuration(duration)),
                 style = AwakenTheme.type.caption,
-                color = stageColor(stage, colors.critical, colors.textSecondary, colors.chartSeries2, colors.chartSeries3, colors.textMuted),
+                color = colors.textSecondary,
             )
         }
     }
@@ -382,7 +382,7 @@ private fun TrendWindow(overview: HealthOverview) {
                 title = lexString(R.string.health_metric_steps),
                 days = overview.trend,
                 value = { it.steps.toDouble() },
-                color = colors.chartSeries4,
+                color = colors.accent,
                 average = { numbers.format(it.toLong()) },
             )
         }
@@ -391,7 +391,7 @@ private fun TrendWindow(overview: HealthOverview) {
                 title = lexString(R.string.health_metric_distance),
                 days = overview.trend,
                 value = { it.distanceMeters / METERS_PER_KM },
-                color = colors.chartSeries2,
+                color = colors.accent,
                 average = { lexString(R.string.health_value_distance, oneDecimal.format(it)) },
             )
         }
@@ -400,7 +400,7 @@ private fun TrendWindow(overview: HealthOverview) {
                 title = lexString(R.string.health_metric_calories),
                 days = overview.trend,
                 value = { it.activeKcal },
-                color = colors.chartSeries1,
+                color = colors.accent,
                 average = { lexString(R.string.health_value_kcal, numbers.format(it.toLong())) },
             )
         }
@@ -409,7 +409,7 @@ private fun TrendWindow(overview: HealthOverview) {
                 title = lexString(R.string.tile_sleep_week),
                 days = overview.trend,
                 value = { (it.sleepMinutes ?: 0).toDouble() },
-                color = colors.chartSeries3,
+                color = colors.accent,
                 average = { formatDuration(Duration.ofMinutes(it.toLong())) },
             )
         }
@@ -484,6 +484,9 @@ private fun formatDuration(duration: Duration): String {
 private const val METERS_PER_KM = 1_000.0
 private const val MINUTES_PER_HOUR = 60L
 private const val MIN_SEGMENT_WEIGHT = 0.004f
+/** Sleep stages are strengths of one ink (light, REM, deep), so they differ without a second hue. */
+private const val SLEEP_LIGHT_ALPHA = 0.3f
+private const val SLEEP_REM_ALPHA = 0.6f
 private const val MIN_BAR_FRACTION = 0.04f
 
 // region previews
