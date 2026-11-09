@@ -150,6 +150,7 @@ fun GymScreen(state: GymUiState, onEvent: (GymEvent) -> Unit, modifier: Modifier
     state.plates?.let { PlatesSheet(it, onEvent) }
     if (state.settingsOpen) GymSettingsSheet(state.prefs, state.home?.answers ?: GymAnswers(), onEvent)
     state.history?.let { HistorySheet(it, onEvent) }
+    state.strength?.let { StrengthSheet(it, onEvent) }
     if (state.confirmDiscard) DiscardDialog(onEvent)
     val workoutSets = state.active?.exercises.orEmpty().flatMap { it.sets }
     state.numberPad?.let { pad -> NumberPadSheet(pad, workoutSets.firstOrNull { it.id == pad.setId }, onEvent) }
@@ -334,6 +335,12 @@ private fun MoreSection(onEvent: (GymEvent) -> Unit, modifier: Modifier = Modifi
                 Icon(AwakenGlyphs.ChevronRight, contentDescription = null, tint = colors.textSecondary, modifier = Modifier.size(AwakenTheme.dimens.iconSmall))
             }
             ListRow(
+                title = lexString(R.string.gym_strength_open),
+                secondary = lexString(R.string.gym_strength_open_note),
+                onClick = { onEvent(GymEvent.OpenStrength) },
+                trailing = chevron,
+            )
+            ListRow(
                 title = lexString(R.string.gym_more_exercises),
                 secondary = lexString(R.string.gym_more_exercises_note),
                 onClick = { onEvent(GymEvent.OpenBrowse) },
@@ -424,7 +431,7 @@ internal fun formatElapsed(duration: Duration): String {
     return if (h > 0) "%d:%02d:%02d".format(h, m, s) else "%d:%02d".format(m, s)
 }
 
-private fun Double.roundTo1(): Double = Math.round(this * 10.0) / 10.0
+internal fun Double.roundTo1(): Double = Math.round(this * 10.0) / 10.0
 
 @Composable
 internal fun formatDate(date: LocalDate): String =

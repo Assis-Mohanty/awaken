@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="gym_strength_open">Strength</string>
+    <string name="gym_strength_open_note">Your best lifts and where they stand</string>
+    <string name="gym_strength_title">Strength</string>
+    <string name="gym_strength_empty">Finish a workout with weights and your best lifts will show here.</string>
+    <string name="gym_strength_group_other">Other</string>
+    <string name="gym_strength_row">%1$s kg × %2$d · %3$s</string>
+
+    <string name="gym_best_title">Best</string>
+    <string name="gym_best_set">%1$s kg × %2$d</string>
+    <string name="gym_best_reps">%1$d reps</string>
+    <string name="gym_best_e1rm">Estimated max %1$s kg</string>
+
+    <string name="gym_stand_title">Where do I stand?</string>
+    <string name="gym_stand_percentile_caption">Estimated against %1$s. Your max is estimated from your best set.</string>
+    <string name="gym_stand_standard_caption">Level against the US Army test standard.</string>
+    <string name="gym_stand_age_not_set">Age not set, so the 22 to 26 band is used.</string>
+    <string name="gym_stand_needs_profile">Add your body weight and sex in Gym settings to compare.</string>
+    <string name="gym_stand_needs_profile_action">Open Gym settings</string>
+    <string name="gym_stand_gauge_cd">%1$s level, from %2$s to %3$s</string>
+    <string name="gym_stand_curve_cd">Distribution of lifts against the population. Your mark is at percentile %1$d. Drag to compare.</string>
+    <string name="gym_stand_pointer">At %1$s kg: about percentile %2$d</string>
+    <string name="gym_stand_pointer_value">%1$s kg, percentile %2$d</string>
+
+    <string name="gym_standing_level_beginner">Beginner</string>
+    <string name="gym_standing_level_novice">Novice</string>
+    <string name="gym_standing_level_intermediate">Intermediate</string>
+    <string name="gym_standing_level_advanced">Advanced</string>
+    <string name="gym_standing_level_elite">Elite</string>
+</resources>

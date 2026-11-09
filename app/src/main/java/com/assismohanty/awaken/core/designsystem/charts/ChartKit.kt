@@ -112,6 +112,23 @@ sealed interface ChartSpec {
 
     /** Labelled bars side by side for comparing a few values (insights: "7 h+ sleep vs less"). */
     data class Comparison(val rows: List<ComparisonRow>, val description: String) : ChartSpec
+
+    /** A semicircle in equal bands (one per [labels] entry, lowest first) with a marker at [position] (0..1). One TalkBack node. */
+    data class LevelGauge(val position: Float, val labels: List<String>, val description: String, val height: Dp? = null) : ChartSpec
+
+    /**
+     * A smooth density ([density], 0..1, evenly spaced) with the hunter's [marker] and a draggable [selected] pointer, both 0..1
+     * along the curve. No y-axis and no peak value. TalkBack gets a slider: [selectedText] is its value, [onSelect] its setter.
+     */
+    data class DistributionCurve(
+        val density: List<Float>,
+        val marker: Float,
+        val selected: Float,
+        val selectedText: String,
+        val description: String,
+        val onSelect: (Float) -> Unit,
+        val height: Dp? = null,
+    ) : ChartSpec
 }
 
 enum class BarShape { SQUARE, CHAMFER, PILL }
@@ -162,6 +179,8 @@ fun Chart(spec: ChartSpec, modifier: Modifier = Modifier, content: @Composable (
         is ChartSpec.TrendLine -> TrendLineChart(spec, modifier)
         is ChartSpec.Sparkline -> SparklineChart(spec, modifier)
         is ChartSpec.Comparison -> ComparisonChart(spec, modifier)
+        is ChartSpec.LevelGauge -> LevelGaugeChart(spec, modifier)
+        is ChartSpec.DistributionCurve -> DistributionCurveChart(spec, modifier)
     }
 }
 

@@ -11,6 +11,7 @@ import com.assismohanty.awaken.core.domain.ActiveWorkout
 import com.assismohanty.awaken.core.domain.ExerciseProgression
 import com.assismohanty.awaken.core.domain.ExerciseRecords
 import com.assismohanty.awaken.core.domain.GymPrefs
+import com.assismohanty.awaken.core.domain.PersonalRecord
 import com.assismohanty.awaken.core.domain.toLogged
 import com.assismohanty.awaken.engine.body.ExerciseHistory
 import com.assismohanty.awaken.engine.body.ExerciseSession
@@ -42,6 +43,10 @@ import com.assismohanty.awaken.core.domain.CompleteResult
 import com.assismohanty.awaken.core.data.db.entity.WorkoutEntity
 import com.assismohanty.awaken.engine.body.PlanFit
 import com.assismohanty.awaken.engine.body.TrainingMath
+import com.assismohanty.awaken.engine.body.BenchmarkData
+import com.assismohanty.awaken.engine.body.Standing
+import com.assismohanty.awaken.engine.body.StandingRules
+import com.assismohanty.awaken.engine.body.StrengthLevel
 import com.assismohanty.awaken.engine.body.WeekSchedule
 import java.time.LocalDate
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -101,6 +106,7 @@ data class GymFlow(
     val plates: PlatesFlow? = null,
     val settingsOpen: Boolean = false,
     val history: HistoryFlow? = null,
+    val strength: StrengthUi? = null,
     // Gym home (GD §18.1): which day is open and which sheet is showing.
     val selectedDate: LocalDate? = null,
     val planDetailId: String? = null,
@@ -188,6 +194,9 @@ data class HistoryFlow(
     val range: HistoryRange,
     val progression: ExerciseProgression,
     val today: java.time.LocalDate,
+    val benchmarks: BenchmarkData? = null,
+    /** The pointer on the distribution curve, 0..1; null until it is touched (it then rests on the hunter's own mark). */
+    val pointer: Float? = null,
 )
 
 /** One trend card of the history screen. */
@@ -202,7 +211,26 @@ data class HistoryUi(
     val sessions: List<ExerciseSession>,
     val progression: ExerciseProgression,
     val defaultRange: RepRange,
+    val standing: StandingUi? = null,
 )
+
+/** The best result of an exercise and where it stands (GD §18.3). [standing] is null when the exercise has no credible source. */
+data class StandingUi(
+    val bestSet: LoggedSet?,
+    val bestE1rmKg: Double?,
+    val standing: Standing?,
+    /** Where the pointer sits along the curve, 0..1, and what it reads there. */
+    val pointer: Float = 0f,
+    val marker: Float = 0f,
+    val pointerKg: Double? = null,
+    val pointerPercentile: Double? = null,
+)
+
+/** One row of the strength tracker: the best set of an exercise, and its level when it is benchmarked. */
+data class StrengthRow(val record: PersonalRecord, val level: StrengthLevel?)
+
+/** The strength tracker: rows grouped by primary muscle (null = no muscle known), in the order muscles were first met. */
+data class StrengthUi(val groups: List<Pair<Muscle?, List<StrengthRow>>>)
 
 enum class GymNotice { FINISHED, DISCARDED_EMPTY, ROUTINE_SAVED, PLAN_ADDED }
 
@@ -226,6 +254,7 @@ data class GymUiState(
     val plates: PlatesUi? = null,
     val settingsOpen: Boolean = false,
     val history: HistoryUi? = null,
+    val strength: StrengthUi? = null,
     val home: GymHomeUi? = null,
     val labels: Map<String, ExerciseLabel> = emptyMap(),
     val numberPad: NumberPadUi? = null,
@@ -279,6 +308,10 @@ sealed interface GymEvent {
     data class SetDefaultRepRange(val range: RepRange) : GymEvent
     data class OpenHistory(val exerciseId: String, val name: String) : GymEvent
     data object CloseHistory : GymEvent
+    data object OpenStrength : GymEvent
+    data object CloseStrength : GymEvent
+    /** The pointer on the distribution curve moved to [fraction] (0..1) along it. */
+    data class MovePointer(val fraction: Float) : GymEvent
     data class PickHistoryRange(val range: HistoryRange) : GymEvent
     data class SetExerciseRange(val range: RepRange?) : GymEvent
     data class SetExerciseIncrement(val kg: Double?) : GymEvent
@@ -367,8 +400,8 @@ class GymViewModel @Inject constructor(
         gym.observeActive(),
         ticks,
         flow,
-        gym.observePrefs(),
-    ) { overview, active, now, f, prefs ->
+        combine(gym.observePrefs(), planner.observeAnswers(), ::Pair),
+    ) { overview, active, now, f, (prefs, answers) ->
         val prSetIds = active?.exercises.orEmpty().flatMap { exercise ->
             val flags = RecordRules.setFlags(f.recordHistory[exercise.exerciseId].orEmpty(), exercise.sets.map { it.toLogged() })
             exercise.sets.zip(flags).filter { (_, types) -> types.isNotEmpty() }.map { (set, _) -> set.id }
@@ -391,7 +424,8 @@ class GymViewModel @Inject constructor(
             prefs = prefs,
             plates = f.plates?.let { PlatesUi(it.target, it.unit, prefs.setup(it.unit), if (it.target > 0.0) PlateMath.plan(it.target, prefs.setup(it.unit)) else null) },
             settingsOpen = f.settingsOpen,
-            history = f.history?.toUi(prefs),
+            history = f.history?.toUi(prefs, answers),
+            strength = f.strength,
             labels = f.labels,
             numberPad = f.numberPad,
             workoutMenu = f.workoutMenu,
@@ -502,8 +536,24 @@ class GymViewModel @Inject constructor(
         flow.update { it.copy(hints = hints) }
     }
 
-    private fun HistoryFlow.toUi(prefs: GymPrefs): HistoryUi {
+    private fun HistoryFlow.standingUi(answers: GymAnswers): StandingUi? {
+        val logged = sessions.flatMap { it.sets }.filter { it.done }
+        val bestSet = TrainingMath.bestSet(logged)
+        val e1rm = bestSet?.let(TrainingMath::estimatedOneRepMax)
+        val bestReps = logged.filter { it.weightKg <= 0.0 }.maxOfOrNull { it.reps }
+        val age = answers.birthYear?.let { today.year - it }
+        val standing = benchmarks?.let { StandingRules.standing(it, exerciseId, e1rm, bestReps, null, answers.sex, answers.bodyWeightKg, age) }
+        if (bestSet == null && standing == null) return null
+        val percentile = standing as? Standing.Percentile ?: return StandingUi(bestSet, e1rm, standing)
+        val marker = StandingRules.markerFraction(percentile)
+        val at = pointer ?: marker
+        val (kg, p) = StandingRules.atPointer(percentile, at)
+        return StandingUi(bestSet, e1rm, standing, pointer = at, marker = marker, pointerKg = kg, pointerPercentile = p)
+    }
+
+    private fun HistoryFlow.toUi(prefs: GymPrefs, answers: GymAnswers): HistoryUi {
         return HistoryUi(
+            standing = standingUi(answers),
             exerciseId = exerciseId,
             name = name,
             range = range,
@@ -710,11 +760,26 @@ class GymViewModel @Inject constructor(
                     it.copy(
                         history = HistoryFlow(
                             event.exerciseId, event.name, gym.history(event.exerciseId), HistoryRange.ALL, gym.progression(event.exerciseId, primary), gym.today(),
+                            benchmarks = planner.benchmarks(),
                         ),
                     )
                 }
             }
             GymEvent.CloseHistory -> flow.update { it.copy(history = null) }
+            GymEvent.CloseStrength -> flow.update { it.copy(strength = null) }
+            is GymEvent.MovePointer -> flow.update { f -> f.history?.let { f.copy(history = it.copy(pointer = event.fraction.coerceIn(0f, 1f))) } ?: f }
+            GymEvent.OpenStrength -> launch {
+                val data = planner.benchmarks()
+                val answers = planner.observeAnswers().first()
+                val age = answers.birthYear?.let { gym.today().year - it }
+                val records = uiState.value.overview?.records.orEmpty()
+                val rows = records.map { record ->
+                    val level = (StandingRules.standing(data, record.exerciseId, record.estimatedMaxKg, null, null, answers.sex, answers.bodyWeightKg, age) as? Standing.Percentile)?.level
+                    StrengthRow(record, level) to gym.exercise(record.exerciseId)?.primary?.firstOrNull()
+                }
+                val groups = rows.groupBy({ it.second }, { it.first }).map { (muscle, list) -> muscle to list.sortedByDescending { it.record.estimatedMaxKg } }
+                flow.update { it.copy(strength = StrengthUi(groups)) }
+            }
             is GymEvent.PickHistoryRange -> flow.update { f -> f.history?.let { f.copy(history = it.copy(range = event.range)) } ?: f }
             is GymEvent.SetExerciseRange -> launch {
                 val open = flow.value.history ?: return@launch

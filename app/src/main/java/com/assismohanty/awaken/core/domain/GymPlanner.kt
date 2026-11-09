@@ -82,6 +82,8 @@ data class GymAnswers(
     /** `M` or `F`; only for comparing lifts with published data. */
     val sex: String? = null,
     val bodyWeightKg: Double? = null,
+    /** For the age band of a published standard; null uses the default band (G10). */
+    val birthYear: Int? = null,
     /** ISO weekdays. */
     val trainingDays: Set<Int> = emptySet(),
     val restCompoundSec: Int = DEFAULT_REST_COMPOUND_SEC,
@@ -119,6 +121,8 @@ class GymPlanner @Inject constructor(
     // Library
 
     /** Every exercise as the engine reads it: the catalog and the hunter's own, joined with the overlay. */
+    suspend fun benchmarks() = content.benchmarks()
+
     suspend fun infos(): Map<String, ExerciseInfo> {
         val overlay = content.overlay().exercises
         return tracker.exercises().associate { it.id to it.toInfo(overlay[it.id]) }
@@ -150,6 +154,7 @@ class GymPlanner @Inject constructor(
             injuries = settings?.injuries.orEmpty().split(",").mapNotNull { n -> InjuryRegion.entries.firstOrNull { it.name == n } }.toSet(),
             sex = settings?.sex,
             bodyWeightKg = profile?.weightKg,
+            birthYear = profile?.birthYear,
             trainingDays = TrainingDays.days(profile?.trainingDays ?: TrainingDays.NONE),
             restCompoundSec = settings?.restCompoundSec ?: GymAnswers.DEFAULT_REST_COMPOUND_SEC,
             restIsolationSec = settings?.restIsolationSec ?: GymAnswers.DEFAULT_REST_ISOLATION_SEC,

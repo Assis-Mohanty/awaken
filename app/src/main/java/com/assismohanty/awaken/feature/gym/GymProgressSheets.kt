@@ -206,6 +206,7 @@ internal fun HistorySheet(history: HistoryUi, onEvent: (GymEvent) -> Unit) {
 @Composable
 internal fun HistoryContent(history: HistoryUi, onEvent: (GymEvent) -> Unit) {
 val colors = AwakenTheme.colors
+    history.standing?.let { StandingSection(it, onEvent) }
     FlowRowChips(history.range, onEvent)
     if (history.sessions.isEmpty()) {
         Text(lexString(R.string.gym_history_none), style = AwakenTheme.type.body, color = colors.textSecondary)
