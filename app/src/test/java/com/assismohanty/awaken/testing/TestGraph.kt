@@ -268,6 +268,8 @@ class TestGraph(
     val exerciseCatalog = ExerciseCatalog(context, Dispatchers.Unconfined)
     val foodCatalog = FoodCatalog(context, Dispatchers.Unconfined)
     val gym = GymTracker(db.gymDao(), db.hunterDao(), exerciseCatalog, transactions, clock)
+    val gymContent = com.assismohanty.awaken.core.data.catalog.GymContentRepository(context, Dispatchers.Unconfined)
+    val planner = com.assismohanty.awaken.core.domain.GymPlanner(db.gymDao(), db.hunterDao(), db.dietDao(), gymContent, gym, transactions, clock)
     val diet = DietTracker(db.dietDao(), db.hunterDao(), foodCatalog, clock)
 
     // AI Paths. `oracle` records calls, so tests can assert "no network request was made".

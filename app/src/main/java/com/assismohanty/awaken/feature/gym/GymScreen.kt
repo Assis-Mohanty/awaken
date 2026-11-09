@@ -48,6 +48,7 @@ import com.assismohanty.awaken.core.designsystem.components.SkeletonCard
 import com.assismohanty.awaken.core.data.db.entity.WorkoutEntity
 import com.assismohanty.awaken.core.data.db.entity.WorkoutSetEntity
 import com.assismohanty.awaken.core.designsystem.components.AwakenGlyphs
+import com.assismohanty.awaken.core.designsystem.components.HeaderIconButton
 import com.assismohanty.awaken.core.designsystem.components.BodyMap
 import com.assismohanty.awaken.core.designsystem.components.NumberField
 import com.assismohanty.awaken.core.designsystem.components.PrimaryButton
@@ -75,6 +76,7 @@ import com.assismohanty.awaken.core.designsystem.components.ProgressionHint
 import com.assismohanty.awaken.engine.body.ProgressionHint as EngineHint
 import com.assismohanty.awaken.engine.body.RecordEvent
 import com.assismohanty.awaken.engine.body.RecordType
+import com.assismohanty.awaken.core.domain.GymAnswers
 import com.assismohanty.awaken.core.domain.GymOverview
 import com.assismohanty.awaken.core.domain.PersonalRecord
 import com.assismohanty.awaken.core.domain.RoutineSummary
@@ -103,7 +105,14 @@ fun GymRoute(modifier: Modifier = Modifier, viewModel: GymViewModel = hiltViewMo
 fun GymScreen(state: GymUiState, onEvent: (GymEvent) -> Unit, modifier: Modifier = Modifier) {
     val colors = AwakenTheme.colors
     val subtitle = if (state.active == null && state.overview?.trainingDay == true) lexString(R.string.gym_training_day) else null
-    LargeTitleScaffold(title = lexString(R.string.gym_title), subtitle = subtitle, modifier = modifier) {
+    LargeTitleScaffold(
+        title = lexString(R.string.gym_title),
+        subtitle = subtitle,
+        modifier = modifier,
+        actions = {
+            if (state.active == null) HeaderIconButton(AwakenGlyphs.Settings, lexString(R.string.gym_settings_icon_cd), { onEvent(GymEvent.OpenGymSettings) })
+        },
+    ) {
         if (state.loading) {
             SkeletonCard()
             return@LargeTitleScaffold
@@ -116,19 +125,29 @@ fun GymScreen(state: GymUiState, onEvent: (GymEvent) -> Unit, modifier: Modifier
                 state.overview?.history?.firstOrNull { it.workoutId == id }?.let { SessionSummary(it, state.summaryRecords, onEvent) }
             }
             state.notice?.let { NoticeLine(it, onEvent) }
-            PrimaryButton(
-                text = lexString(R.string.gym_start_empty),
-                onClick = { onEvent(GymEvent.StartEmpty) },
-                modifier = Modifier.fillMaxWidth(),
-            )
+            state.home?.let { home ->
+                GymWeekSection(home, onEvent)
+                PlansSection(home, onEvent, Modifier.staggeredEntrance(0))
+                MyRoutinesSection(home, onEvent, Modifier.staggeredEntrance(1))
+            }
             state.overview?.let { GymHome(it, onEvent) }
         }
         Text(lexString(R.string.gym_tracker_note), style = AwakenTheme.type.caption, color = colors.textMuted)
     }
+    state.home?.let { home ->
+        home.planDetail?.let { PlanDetailSheet(it, onEvent) }
+        home.editor?.let { RoutineEditorSheet(it, onEvent) }
+        home.menu?.let { menu ->
+            val index = home.routines.indexOfFirst { it.id == menu.id }
+            RoutineMenuSheet(menu, canMoveUp = index > 0, canMoveDown = index in 0 until home.routines.lastIndex, onEvent = onEvent)
+        }
+        home.assign?.let { AssignDaysSheet(it, onEvent) }
+        home.delete?.let { DeleteRoutineDialog(it, onEvent) }
+    }
     state.picker?.let { ExercisePickerSheet(it, onEvent) }
     state.detail?.let { ExerciseDetailSheet(it, canAdd = state.picker?.browse != true, onEvent = onEvent) }
     state.plates?.let { PlatesSheet(it, onEvent) }
-    if (state.settingsOpen) GymSettingsSheet(state.prefs, onEvent)
+    if (state.settingsOpen) GymSettingsSheet(state.prefs, state.home?.answers ?: GymAnswers(), onEvent)
     state.history?.let { HistorySheet(it, onEvent) }
     if (state.confirmDiscard) DiscardDialog(onEvent)
     if (state.routinePrompt) RoutineNameDialog(onEvent)
@@ -140,6 +159,7 @@ private fun NoticeLine(notice: GymNotice, onEvent: (GymEvent) -> Unit) {
         GymNotice.FINISHED -> R.string.gym_notice_finished
         GymNotice.DISCARDED_EMPTY -> R.string.gym_notice_discarded_empty
         GymNotice.ROUTINE_SAVED -> R.string.gym_notice_routine_saved
+        GymNotice.PLAN_ADDED -> R.string.gym_notice_plan_added
     }
     Row(verticalAlignment = Alignment.CenterVertically) {
         Text(lexString(text), style = AwakenTheme.type.body, color = AwakenTheme.colors.accent, modifier = Modifier.weight(1f))
@@ -153,11 +173,10 @@ private fun NoticeLine(notice: GymNotice, onEvent: (GymEvent) -> Unit) {
 
 @Composable
 private fun GymHome(overview: GymOverview, onEvent: (GymEvent) -> Unit) {
-    RoutinesSection(overview.routines, onEvent, Modifier.staggeredEntrance(0))
-    WeekCard(overview, Modifier.staggeredEntrance(1))
-    RecordsSection(overview.records, onEvent, Modifier.staggeredEntrance(2))
-    HistorySection(overview.history, onEvent, Modifier.staggeredEntrance(3))
-    MoreSection(onEvent, Modifier.staggeredEntrance(4))
+    WeekCard(overview, Modifier.staggeredEntrance(2))
+    RecordsSection(overview.records, onEvent, Modifier.staggeredEntrance(3))
+    HistorySection(overview.history, onEvent, Modifier.staggeredEntrance(4))
+    MoreSection(onEvent, Modifier.staggeredEntrance(5))
 }
 
 /** This week: the three totals, and a link that opens the muscle map in a sheet. */
@@ -247,34 +266,6 @@ private fun Stat(label: String, value: String, modifier: Modifier = Modifier) {
     Column(modifier = modifier) {
         Text(value, style = AwakenTheme.type.numeric, color = AwakenTheme.colors.textPrimary)
         Text(label, style = AwakenTheme.type.caption, color = AwakenTheme.colors.textSecondary)
-    }
-}
-
-@Composable
-private fun RoutinesSection(routines: List<RoutineSummary>, onEvent: (GymEvent) -> Unit, modifier: Modifier = Modifier) {
-    val colors = AwakenTheme.colors
-    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
-        SectionHeader(title = lexString(R.string.gym_window_routines))
-        AwakenCard(reveal = false, contentPadding = Spacing.listCard, spacing = Spacing.zero, modifier = Modifier.fillMaxWidth()) {
-            if (routines.isEmpty()) {
-                Text(lexString(R.string.gym_routines_empty), style = AwakenTheme.type.body, color = colors.textSecondary)
-            }
-            routines.forEach { routine ->
-                ListRow(
-                    title = routine.name,
-                    secondary = lexString(R.string.gym_routine_line, routine.exerciseNames.joinToString(), routine.sets),
-                    trailing = {
-                        SecondaryButton(
-                            text = lexString(R.string.gym_routine_start),
-                            onClick = { onEvent(GymEvent.StartRoutine(routine.routineId, routine.name)) },
-                        )
-                        IconButton(onClick = { onEvent(GymEvent.DeleteRoutine(routine.routineId)) }) {
-                            Icon(AwakenGlyphs.Close, contentDescription = lexString(R.string.gym_routine_delete, routine.name), tint = colors.textSecondary)
-                        }
-                    },
-                )
-            }
-        }
     }
 }
 
@@ -642,7 +633,7 @@ private const val MAX_NAME = 60
 
 // Previews
 
-internal fun previewGymState(active: Boolean = false): GymUiState {
+internal fun previewGymState(active: Boolean = false, home: GymHomeUi? = previewHome()): GymUiState {
     val start = Instant.parse("2026-10-27T07:00:00Z")
     val workout = WorkoutEntity("w1", "Push day", LocalDate.of(2026, 10, 27), start)
     fun set(i: Int, kg: Double, reps: Int, done: Boolean, pos: Int = 0, name: String = "Barbell Bench Press") = WorkoutSetEntity(
@@ -652,6 +643,7 @@ internal fun previewGymState(active: Boolean = false): GymUiState {
     )
     return GymUiState(
         loading = false,
+        home = home,
         now = start.plusSeconds(1_745),
         active = if (active) {
             ActiveWorkout(

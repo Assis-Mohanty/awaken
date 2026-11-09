@@ -16,7 +16,7 @@
     <string name="gym_week_map_caption">Sets per muscle since Monday. A stronger shade means more work.</string>
     <string name="cd_gym_week_map">Muscles trained this week: %1$s</string>
     <string name="cd_gym_week_map_empty">No muscles trained this week</string>
-    <string name="gym_window_routines">Routines</string>
+    <string name="gym_window_routines">My routines</string>
     <string name="gym_window_more">More</string>
     <string name="gym_more_exercises">Exercises</string>
     <string name="gym_more_exercises_note">Browse the exercise library</string>
@@ -24,7 +24,7 @@
     <string name="gym_more_settings_note">Rep range, bar and plates</string>
     <string name="gym_browse_title">Exercises</string>
     <string name="gym_routine_line">%1$s · %2$d sets</string>
-    <string name="gym_routines_empty">Finish a workout, then save it as a routine to repeat it in one tap.</string>
+    <string name="gym_routines_empty">Make a routine or add a plan. It repeats every week on the days you choose.</string>
     <string name="gym_routine_meta">%1$d exercises · %2$d sets</string>
     <string name="gym_routine_start">Start</string>
     <string name="gym_routine_delete">Delete routine %1$s</string>

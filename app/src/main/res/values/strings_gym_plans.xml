@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Gym home: week, plans, routines and settings (GAME_DESIGN §18.1) -->
+    <string name="gym_settings_icon_cd">Gym settings</string>
+
+    <string name="gym_day_cd">%1$s %2$s</string>
+    <string name="gym_day_today">today</string>
+    <string name="gym_day_workout">workout</string>
+    <string name="gym_day_rest">rest day</string>
+    <string name="gym_day_done">workout done</string>
+
+    <string name="gym_rest_day_title">Rest day</string>
+    <string name="gym_rest_day_body">Recovery is part of training. Sleep well and drink water.</string>
+    <string name="gym_day_swap">Swap with today</string>
+    <string name="gym_day_swap_note">Today becomes a rest day and this day takes today’s workout.</string>
+    <string name="gym_day_past_none">No workout was logged on this day.</string>
+    <string name="gym_week_empty_title">Nothing planned this week</string>
+    <string name="gym_week_empty_body">Add a plan or make a routine. It repeats every week on the days you choose.</string>
+    <string name="gym_new_routine">New routine</string>
+
+    <string name="gym_section_warmup">Warm-up</string>
+    <string name="gym_section_workout">Workout</string>
+    <string name="gym_section_minutes">%1$d min</string>
+    <string name="gym_section_show">Show %1$s</string>
+    <string name="gym_section_hide">Hide %1$s</string>
+    <string name="gym_edit">Edit</string>
+    <string name="gym_start">Start</string>
+    <string name="gym_superset_label">Superset: do these back to back</string>
+    <string name="gym_unilateral_label">Left and right</string>
+    <string name="gym_target_reps">%1$d × %2$d–%3$d</string>
+    <string name="gym_target_reps_single">%1$d × %2$d</string>
+    <string name="gym_target_time">%1$d × %2$d–%3$d s</string>
+    <string name="gym_target_rest">rest %1$s</string>
+    <string name="gym_routine_meta_full">%1$s · %2$s · about %3$d min</string>
+
+    <plurals name="gym_exercises_count">
+        <item quantity="one">%d exercise</item>
+        <item quantity="other">%d exercises</item>
+    </plurals>
+    <plurals name="gym_sets_count">
+        <item quantity="one">%d set</item>
+        <item quantity="other">%d sets</item>
+    </plurals>
+    <plurals name="gym_plan_days">
+        <item quantity="one">%d day a week</item>
+        <item quantity="other">%d days a week</item>
+    </plurals>
+    <plurals name="gym_plan_swapped">
+        <item quantity="one">%d exercise was swapped to fit your equipment or injuries.</item>
+        <item quantity="other">%d exercises were swapped to fit your equipment or injuries.</item>
+    </plurals>
+    <plurals name="gym_plan_dropped">
+        <item quantity="one">%d exercise was left out.</item>
+        <item quantity="other">%d exercises were left out.</item>
+    </plurals>
+
+    <!-- Plans -->
+    <string name="gym_plans_title">Plans</string>
+    <string name="gym_plans_note">Ready-made weeks. Adding one copies it into your routines, so you can change it freely.</string>
+    <string name="gym_plans_empty">No plans fit your equipment and injuries. Change them in Gym settings.</string>
+    <string name="gym_plans_gear_ask">Tell us what equipment you have so the plans fit.</string>
+    <string name="gym_plan_level_any">Any level</string>
+    <string name="gym_plan_level_beginner">Beginner</string>
+    <string name="gym_plan_level_intermediate">Intermediate</string>
+    <string name="gym_plan_level_advanced">Advanced</string>
+    <string name="gym_plan_meta">%1$s · %2$s</string>
+    <string name="gym_plan_open_cd">Open plan %1$s</string>
+    <string name="gym_plan_add">Add to my week</string>
+    <string name="gym_plan_pick_day">Which day?</string>
+    <string name="gym_plan_days_note">Each day of this plan becomes a routine on the day shown.</string>
+    <string name="gym_plan_day_header">%1$s · %2$s</string>
+    <string name="gym_notice_plan_added">Plan added. Find it under My routines.</string>
+
+    <!-- My routines -->
+    <string name="gym_routines_title">My routines</string>
+    <string name="gym_routine_none">Not on a day yet</string>
+    <string name="gym_routine_menu_cd">More for %1$s</string>
+    <string name="gym_routine_edit">Edit</string>
+    <string name="gym_routine_duplicate">Duplicate</string>
+    <string name="gym_routine_assign">Choose days</string>
+    <string name="gym_routine_delete_action">Delete</string>
+    <string name="gym_routine_copy_name">%1$s copy</string>
+    <string name="gym_routine_delete_title">Delete this routine?</string>
+    <string name="gym_routine_delete_body">It stops repeating. Workouts you finished stay in your history.</string>
+    <string name="gym_routine_up">Move up</string>
+    <string name="gym_routine_down">Move down</string>
+    <string name="gym_assign_title">Repeat on</string>
+    <string name="gym_assign_note">One routine per day. Choosing a day takes it from another routine.</string>
+
+    <!-- Routine editor -->
+    <string name="gym_editor_title">Edit routine</string>
+    <string name="gym_editor_name">Routine name</string>
+    <string name="gym_editor_days">Repeats on</string>
+    <string name="gym_editor_empty">No exercises yet. Add one to begin.</string>
+    <string name="gym_editor_add">Add exercise</string>
+    <string name="gym_editor_sets">Sets</string>
+    <string name="gym_editor_reps_from">Reps from</string>
+    <string name="gym_editor_reps_to">Reps to</string>
+    <string name="gym_editor_rest">Rest</string>
+    <string name="gym_editor_remove">Remove %1$s</string>
+    <string name="gym_editor_up">Move %1$s up</string>
+    <string name="gym_editor_down">Move %1$s down</string>
+    <string name="gym_editor_superset">Superset with next</string>
+    <string name="gym_editor_less">Less %1$s</string>
+    <string name="gym_editor_more">More %1$s</string>
+    <string name="gym_editor_done">Done</string>
+
+    <!-- Gym settings: your answers -->
+    <string name="gym_set_you">You</string>
+    <string name="gym_set_level">Fitness level</string>
+    <string name="gym_level_beginner">Beginner</string>
+    <string name="gym_level_intermediate">Intermediate</string>
+    <string name="gym_level_advanced">Advanced</string>
+    <string name="gym_set_goal">Goal</string>
+    <string name="gym_goal_strength">Get stronger</string>
+    <string name="gym_goal_muscle">Build muscle</string>
+    <string name="gym_goal_general">General fitness</string>
+    <string name="gym_set_gear">Equipment</string>
+    <string name="gym_set_gear_note">Plans and swaps only use what you choose.</string>
+    <string name="gym_gear_pull_up_bar">Pull-up bar</string>
+    <string name="gym_gear_dip_bars">Dip bars</string>
+    <string name="gym_gear_bench">Bench</string>
+    <string name="gym_gear_dumbbells">Dumbbells</string>
+    <string name="gym_gear_barbell">Barbell and rack</string>
+    <string name="gym_gear_cables">Cables</string>
+    <string name="gym_gear_machines">Machines</string>
+    <string name="gym_gear_kettlebells">Kettlebells</string>
+    <string name="gym_gear_bands">Bands</string>
+    <string name="gym_set_injuries">Injuries</string>
+    <string name="gym_set_injuries_note">Exercises that load these areas are left out. This isn’t medical advice.</string>
+    <string name="gym_injury_shoulders">Shoulders</string>
+    <string name="gym_injury_back">Back</string>
+    <string name="gym_injury_wrist">Wrist</string>
+    <string name="gym_injury_knee">Knee</string>
+    <string name="gym_injury_hip">Hip</string>
+    <string name="gym_set_days">Training days</string>
+    <string name="gym_set_body">Body</string>
+    <string name="gym_set_weight">Body weight</string>
+    <string name="gym_set_sex">Sex</string>
+    <string name="gym_sex_m">Male</string>
+    <string name="gym_sex_f">Female</string>
+    <string name="gym_set_sex_note">Only used to compare your lifts with published data. Optional.</string>
+    <string name="gym_set_units">Units</string>
+    <string name="gym_set_rest">Rest between sets</string>
+    <string name="gym_set_rest_compound">Compound lifts</string>
+    <string name="gym_set_rest_isolation">Single-joint lifts</string>
+    <string name="gym_set_rest_sound">Sound when rest ends</string>
+    <string name="gym_set_rest_vibrate">Vibrate when rest ends</string>
+    <string name="gym_set_logging">Logging</string>
+    <string name="gym_log_coached">One exercise at a time</string>
+    <string name="gym_log_list">All sets in a list</string>
+    <string name="gym_set_plates_section">Bar and plates</string>
+</resources>

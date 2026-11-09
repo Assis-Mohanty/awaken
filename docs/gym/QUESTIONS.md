@@ -26,3 +26,16 @@ were not available from an official source in this session.
 The percentile is against raw powerlifting competitors (median bench about 1.44 x body weight for men). An 80 kg man benching
 60 kg lands near the 1st percentile. That is honest to the data and the caption says so, but the Beginner band will be common.
 Approved as Q2; noting the consequence so the copy in Batch 4 stays encouraging (show progress to the next level, not just the band).
+
+## Q14. Routine duration needs one number (new `G20`, display only)
+
+The Gym home and plan sheets show "about 32 min" and each section's minutes. That needs a time per set, which the approved list does
+not have. Built meanwhile: `RoutineMath.SET_WORK_SEC = 40` seconds per set plus the exercise's rest (a superset partner followed by
+another does not rest). It feeds no XP, cap or rule. **Please approve 40 s or give another value**; it moves to GD §18.1 once approved.
+
+## Q15. Shortcuts taken in Batch 2
+
+- **Week strip** shows the current week only (no swiping back to earlier weeks). History still lists every workout.
+- **Reordering** routines and routine exercises uses move up / move down buttons, not drag handles.
+- **Timed exercises** (plank) show their target but their hold time is edited by removing and re-adding the exercise, not in the editor.
+- **Plan weekdays:** a multi-day plan keeps its own weekdays (for example Mon/Wed/Fri); it does not remap to your training days. Change them under "Choose days".

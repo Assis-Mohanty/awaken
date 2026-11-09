@@ -6,6 +6,8 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -30,6 +32,7 @@ import com.assismohanty.awaken.core.designsystem.components.formatNumber
 import com.assismohanty.awaken.core.designsystem.lexicon.lexString
 import com.assismohanty.awaken.core.designsystem.theme.AwakenTheme
 import com.assismohanty.awaken.core.designsystem.theme.Spacing
+import com.assismohanty.awaken.core.domain.GymAnswers
 import com.assismohanty.awaken.core.domain.GymPrefs
 import com.assismohanty.awaken.engine.body.ExerciseHistory
 import com.assismohanty.awaken.engine.body.HistoryMetric
@@ -110,14 +113,19 @@ private fun unitText(unit: PlateUnit) = lexString(if (unit == PlateUnit.KG) R.st
 /** Gym settings (GD §16.6, §16.8): bar weight and owned plates per unit, and the default rep range. */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-internal fun GymSettingsSheet(prefs: GymPrefs, onEvent: (GymEvent) -> Unit) {
-    AwakenBottomSheet(onDismiss = { onEvent(GymEvent.CloseGymSettings) }, title = lexString(R.string.gym_settings_title)) { GymSettingsContent(prefs, onEvent) }
+internal fun GymSettingsSheet(prefs: GymPrefs, answers: GymAnswers, onEvent: (GymEvent) -> Unit) {
+    AwakenBottomSheet(onDismiss = { onEvent(GymEvent.CloseGymSettings) }, title = lexString(R.string.gym_settings_title)) {
+        Column(modifier = Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+            GymSettingsContent(prefs, answers, onEvent)
+        }
+    }
 }
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-internal fun GymSettingsContent(prefs: GymPrefs, onEvent: (GymEvent) -> Unit) {
+internal fun GymSettingsContent(prefs: GymPrefs, answers: GymAnswers, onEvent: (GymEvent) -> Unit) {
     val colors = AwakenTheme.colors
+    GymAnswersContent(answers, prefs.unit, onEvent)
     PlateUnit.entries.forEach { unit ->
         val label = unitText(unit)
         val setup = prefs.setup(unit)
@@ -348,7 +356,7 @@ private fun PlatesEmptyPreview() = SheetPreview { PlatesContent(PlatesUi(0.0, Pl
 @PhonePreviews
 @Composable
 private fun GymSettingsPreview() = SheetPreview {
-    GymSettingsContent(GymPrefs(kg = PlateSetup(20.0, listOf(20.0, 10.0, 5.0, 2.5, 1.25)), repRange = com.assismohanty.awaken.engine.body.RepRange(6, 10)), {})
+    GymSettingsContent(GymPrefs(kg = PlateSetup(20.0, listOf(20.0, 10.0, 5.0, 2.5, 1.25)), repRange = com.assismohanty.awaken.engine.body.RepRange(6, 10)), previewAnswers(), {})
 }
 
 private fun previewHistory(sessions: List<ExerciseSession>, customRange: Boolean = false) = HistoryUi(

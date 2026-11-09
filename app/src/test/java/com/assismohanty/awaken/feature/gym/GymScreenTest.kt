@@ -40,7 +40,7 @@ class GymScreenTest {
 
     @Test
     fun aLoggedSetIsSavedWithTheWorkout() {
-        val viewModel = GymViewModel(graph.gym, graph.clock, NoRestScheduler, SilentChimePlayer, graph.uiPrefs)
+        val viewModel = GymViewModel(graph.gym, graph.clock, NoRestScheduler, SilentChimePlayer, graph.uiPrefs, graph.planner)
         val benchId = runBlocking { graph.gym.searchExercises("barbell bench press medium grip", setOf(Equipment.BARBELL), Muscle.CHEST).first().id }
         composeRule.setContent {
             AwakenTheme(reduceMotion = true) {
@@ -50,7 +50,8 @@ class GymScreenTest {
         }
 
         waitForText("Start workout")
-        composeRule.onNodeWithText("Start workout").performClick()
+        // The empty workout sits below the week, plans and routines now.
+        composeRule.onNodeWithText("Start workout").performScrollTo().performClick()
         waitForText("Add exercise")
         viewModel.onEvent(GymEvent.AddExercise(benchId))
         waitForText("Barbell Bench Press - Medium Grip")

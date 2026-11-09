@@ -30,6 +30,21 @@ import com.assismohanty.awaken.engine.body.WorkingSets
 import com.assismohanty.awaken.core.domain.FinishResult
 import com.assismohanty.awaken.core.domain.GymOverview
 import com.assismohanty.awaken.core.domain.GymTracker
+import com.assismohanty.awaken.core.domain.GymAnswers
+import com.assismohanty.awaken.core.domain.GymPlanner
+import com.assismohanty.awaken.core.domain.RoutineDetail
+import com.assismohanty.awaken.core.domain.WorkoutSummary
+import com.assismohanty.awaken.core.domain.WeekDay
+import com.assismohanty.awaken.engine.body.DayPlan
+import com.assismohanty.awaken.engine.body.PlanFit
+import com.assismohanty.awaken.engine.body.TrainingMath
+import com.assismohanty.awaken.engine.body.WeekSchedule
+import java.time.LocalDate
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.mapLatest
 import com.assismohanty.awaken.engine.body.Equipment
 import com.assismohanty.awaken.core.work.RestScheduler
 import com.assismohanty.awaken.engine.body.Muscle
@@ -38,6 +53,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.Instant
 import javax.inject.Inject
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -45,6 +61,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -79,6 +96,43 @@ data class GymFlow(
     val plates: PlatesFlow? = null,
     val settingsOpen: Boolean = false,
     val history: HistoryFlow? = null,
+    // Gym home (GD §18.1): which day is open and which sheet is showing.
+    val selectedDate: LocalDate? = null,
+    val planDetailId: String? = null,
+    val planWeekdays: Set<Int> = emptySet(),
+    val editorId: String? = null,
+    val menuId: String? = null,
+    val assignId: String? = null,
+    val deleteId: String? = null,
+    /** The picker adds to this routine instead of the running workout. */
+    val pickerRoutineId: String? = null,
+)
+
+/** The plans that fit the hunter and the exercise names they refer to. */
+data class PlansData(val fits: List<PlanFit>, val names: Map<String, String>, val loaded: Boolean = true)
+
+/** A plan open in its detail sheet; [weekdays] is the choice for a single-day plan. */
+data class PlanDetailUi(val fit: PlanFit, val weekdays: Set<Int>, val names: Map<String, String>)
+
+/** Everything the Gym home shows (GD §18.1). */
+data class GymHomeUi(
+    val week: List<WeekDay>,
+    val selected: LocalDate,
+    val selectedRoutine: RoutineDetail?,
+    val selectedFinished: List<WorkoutSummary> = emptyList(),
+    /** The selected day is later this week, so it can trade places with today. */
+    val canSwap: Boolean = false,
+    val routines: List<RoutineDetail> = emptyList(),
+    val plans: List<PlanFit> = emptyList(),
+    val answers: GymAnswers = GymAnswers(),
+    val planDetail: PlanDetailUi? = null,
+    val editor: RoutineDetail? = null,
+    val menu: RoutineDetail? = null,
+    val assign: RoutineDetail? = null,
+    val delete: RoutineDetail? = null,
+    val names: Map<String, String> = emptyMap(),
+    /** False while the plans are still being worked out, so the empty message does not flash. */
+    val plansLoaded: Boolean = true,
 )
 
 /** What the last session did and what to try now. */
@@ -114,7 +168,7 @@ data class HistoryUi(
     val defaultRange: RepRange,
 )
 
-enum class GymNotice { FINISHED, DISCARDED_EMPTY, ROUTINE_SAVED }
+enum class GymNotice { FINISHED, DISCARDED_EMPTY, ROUTINE_SAVED, PLAN_ADDED }
 
 data class GymUiState(
     val loading: Boolean = true,
@@ -136,9 +190,37 @@ data class GymUiState(
     val plates: PlatesUi? = null,
     val settingsOpen: Boolean = false,
     val history: HistoryUi? = null,
+    val home: GymHomeUi? = null,
 )
 
 sealed interface GymEvent {
+    // Gym home: week, plans, routines, settings answers (GD §18.1)
+    data class SelectDay(val date: LocalDate) : GymEvent
+    data object SwapWithToday : GymEvent
+    data class OpenPlan(val planId: String) : GymEvent
+    data object ClosePlan : GymEvent
+    data class TogglePlanDay(val weekday: Int) : GymEvent
+    data class AddPlan(val planId: String) : GymEvent
+    data object NewRoutine : GymEvent
+    data class OpenEditor(val routineId: String) : GymEvent
+    data object CloseEditor : GymEvent
+    data class RenameRoutine(val routineId: String, val name: String) : GymEvent
+    data class OpenRoutineMenu(val routineId: String) : GymEvent
+    data object CloseRoutineMenu : GymEvent
+    data class DuplicateRoutine(val routineId: String, val copyName: String) : GymEvent
+    data class MoveRoutine(val routineId: String, val delta: Int) : GymEvent
+    data class OpenAssign(val routineId: String) : GymEvent
+    data object CloseAssign : GymEvent
+    data class SetRoutineDay(val routineId: String, val weekday: Int, val on: Boolean) : GymEvent
+    data class AskDeleteRoutine(val routineId: String) : GymEvent
+    data object DismissDeleteRoutine : GymEvent
+    data class EditorAddExercise(val routineId: String) : GymEvent
+    data class EditorRemove(val routineId: String, val position: Int) : GymEvent
+    data class EditorMove(val routineId: String, val position: Int, val delta: Int) : GymEvent
+    data class EditorUpdate(val routineId: String, val position: Int, val sets: Int, val repMin: Int?, val repMax: Int?, val restSec: Int?) : GymEvent
+    data class EditorSuperset(val routineId: String, val position: Int) : GymEvent
+    data class UpdateAnswers(val change: (GymAnswers) -> GymAnswers) : GymEvent
+
     // Plate calculator (GD §16.8), Gym settings, exercise history (GD §16.9)
     /** Opens the calculator; [initialKg] prefills the target when the unit is kg. */
     data class OpenPlates(val initialKg: Double?) : GymEvent
@@ -202,6 +284,7 @@ class GymViewModel @Inject constructor(
     private val restScheduler: RestScheduler,
     private val chimePlayer: ChimePlayer,
     private val uiPrefs: UiPrefsRepository,
+    private val planner: GymPlanner,
 ) : ViewModel() {
 
     private val flow = MutableStateFlow(GymFlow())
@@ -214,7 +297,7 @@ class GymViewModel @Inject constructor(
         }
     }
 
-    val uiState: StateFlow<GymUiState> = combine(
+    private val core: Flow<GymUiState> = combine(
         gym.observeOverview(),
         gym.observeActive(),
         ticks,
@@ -245,6 +328,46 @@ class GymViewModel @Inject constructor(
             settingsOpen = f.settingsOpen,
             history = f.history?.toUi(prefs),
         )
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private val week: Flow<List<WeekDay>> = ticks.map { TrainingMath.weekStart(gym.today()) }.distinctUntilChanged().flatMapLatest { planner.observeWeek(it) }
+
+    private val answers: Flow<GymAnswers> = planner.observeAnswers()
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    // The plans take a moment the first time (the catalog has to load); the home shows without them meanwhile.
+    private val plans: Flow<PlansData> = answers.mapLatest { a ->
+        PlansData(planner.availablePlans(a), planner.infos().mapValues { it.value.name })
+    }.onStart { emit(PlansData(emptyList(), emptyMap(), loaded = false)) }
+
+    private val home: Flow<GymHomeUi?> = combine(week, planner.observeRoutines(), answers, plans, flow) { days, routines, a, planData, f ->
+        val today = days.firstOrNull { it.today }?.date ?: days.firstOrNull()?.date ?: return@combine null
+        val selected = f.selectedDate?.takeIf { d -> days.any { it.date == d } } ?: today
+        val day = days.first { it.date == selected }
+        val routineId = (day.plan as? DayPlan.Workout)?.routineId
+        val todayHolds = days.first { it.date == today }.plan
+        GymHomeUi(
+            week = days,
+            selected = selected,
+            selectedRoutine = routines.firstOrNull { it.id == routineId },
+            canSwap = selected.isAfter(today) && WeekSchedule.sameWeek(selected, today) && (day.plan != DayPlan.Rest || todayHolds != DayPlan.Rest),
+            routines = routines,
+            plans = planData.fits,
+            answers = a,
+            planDetail = f.planDetailId?.let { id -> planData.fits.firstOrNull { it.plan.id == id } }?.let { PlanDetailUi(it, f.planWeekdays, planData.names) },
+            editor = routines.firstOrNull { it.id == f.editorId },
+            menu = routines.firstOrNull { it.id == f.menuId },
+            assign = routines.firstOrNull { it.id == f.assignId },
+            delete = routines.firstOrNull { it.id == f.deleteId },
+            names = planData.names,
+            plansLoaded = planData.loaded,
+        )
+    }
+
+    val uiState: StateFlow<GymUiState> = combine(core, home) { state, h ->
+        // A finished workout on the selected day shows under it; the overview already holds every summary.
+        state.copy(home = h?.copy(selectedFinished = state.overview?.history.orEmpty().filter { it.gameDate == h.selected }))
     }.onEach { state ->
         val workout = state.active?.workout
         val endsAt = workout?.restEndsAt
@@ -306,9 +429,62 @@ class GymViewModel @Inject constructor(
 
     fun onEvent(event: GymEvent) {
         when (event) {
+            is GymEvent.SelectDay -> flow.update { it.copy(selectedDate = event.date) }
+            GymEvent.SwapWithToday -> launch {
+                val selected = uiState.value.home?.selected ?: return@launch
+                planner.swapWithToday(selected)
+                flow.update { it.copy(selectedDate = null) }
+            }
+            is GymEvent.OpenPlan -> launch {
+                val a = answers.first()
+                flow.update { it.copy(planDetailId = event.planId, planWeekdays = com.assismohanty.awaken.core.domain.defaultPlanWeekdays(a.trainingDays)) }
+            }
+            GymEvent.ClosePlan -> flow.update { it.copy(planDetailId = null) }
+            is GymEvent.TogglePlanDay -> flow.update { f ->
+                f.copy(planWeekdays = if (event.weekday in f.planWeekdays) f.planWeekdays - event.weekday else f.planWeekdays + event.weekday)
+            }
+            is GymEvent.AddPlan -> launch {
+                planner.addPlan(event.planId, answers.first(), flow.value.planWeekdays)
+                flow.update { it.copy(planDetailId = null, notice = GymNotice.PLAN_ADDED) }
+            }
+            GymEvent.NewRoutine -> launch {
+                val id = planner.createRoutine("")
+                flow.update { it.copy(editorId = id) }
+            }
+            is GymEvent.OpenEditor -> flow.update { it.copy(editorId = event.routineId, menuId = null) }
+            GymEvent.CloseEditor -> flow.update { it.copy(editorId = null) }
+            is GymEvent.RenameRoutine -> launch { planner.renameRoutine(event.routineId, event.name) }
+            is GymEvent.OpenRoutineMenu -> flow.update { it.copy(menuId = event.routineId) }
+            GymEvent.CloseRoutineMenu -> flow.update { it.copy(menuId = null) }
+            is GymEvent.DuplicateRoutine -> launch {
+                planner.duplicateRoutine(event.routineId, event.copyName)
+                flow.update { it.copy(menuId = null) }
+            }
+            is GymEvent.MoveRoutine -> launch { planner.moveRoutine(event.routineId, event.delta) }
+            is GymEvent.OpenAssign -> flow.update { it.copy(assignId = event.routineId, menuId = null) }
+            GymEvent.CloseAssign -> flow.update { it.copy(assignId = null) }
+            is GymEvent.SetRoutineDay -> launch {
+                val current = uiState.value.home?.routines?.firstOrNull { it.id == event.routineId }?.weekdays.orEmpty()
+                planner.setWeekdays(event.routineId, if (event.on) current + event.weekday else current - event.weekday)
+            }
+            is GymEvent.AskDeleteRoutine -> flow.update { it.copy(deleteId = event.routineId, menuId = null) }
+            GymEvent.DismissDeleteRoutine -> flow.update { it.copy(deleteId = null) }
+            is GymEvent.EditorAddExercise -> {
+                flow.update { it.copy(picker = ExercisePicker(), pickerRoutineId = event.routineId) }
+                refreshPicker()
+            }
+            is GymEvent.EditorRemove -> launch { planner.removeExercise(event.routineId, event.position) }
+            is GymEvent.EditorMove -> launch { planner.moveExercise(event.routineId, event.position, event.delta) }
+            is GymEvent.EditorUpdate -> launch { planner.updateExercise(event.routineId, event.position, event.sets, event.repMin, event.repMax, event.restSec) }
+            is GymEvent.EditorSuperset -> launch { planner.toggleSuperset(event.routineId, event.position) }
+            is GymEvent.UpdateAnswers -> launch { planner.saveAnswers(event.change(answers.first())) }
+
             GymEvent.StartEmpty -> launch { gym.start(name = "") }
             is GymEvent.StartRoutine -> launch { gym.start(event.name, event.routineId) }
-            is GymEvent.DeleteRoutine -> launch { gym.deleteRoutine(event.routineId) }
+            is GymEvent.DeleteRoutine -> launch {
+                planner.deleteRoutine(event.routineId)
+                flow.update { it.copy(deleteId = null, editorId = if (it.editorId == event.routineId) null else it.editorId) }
+            }
             is GymEvent.DeleteWorkout -> launch { gym.deleteWorkout(event.workoutId) }
 
             GymEvent.OpenPicker -> {
@@ -319,13 +495,19 @@ class GymViewModel @Inject constructor(
                 flow.update { it.copy(picker = ExercisePicker(browse = true)) }
                 refreshPicker()
             }
-            GymEvent.ClosePicker -> flow.update { it.copy(picker = null) }
+            GymEvent.ClosePicker -> flow.update { it.copy(picker = null, pickerRoutineId = null) }
             is GymEvent.Query -> updatePicker { it.copy(query = event.text) }
             is GymEvent.ToggleEquipment -> updatePicker { p ->
                 p.copy(equipment = if (event.equipment in p.equipment) p.equipment - event.equipment else p.equipment + event.equipment)
             }
             is GymEvent.PickMuscle -> updatePicker { p -> p.copy(muscle = if (p.muscle == event.muscle) null else event.muscle) }
             is GymEvent.AddExercise -> launch {
+                val routineId = flow.value.pickerRoutineId
+                if (routineId != null) {
+                    planner.addExercise(routineId, event.exerciseId, answers.first())
+                    flow.update { it.copy(picker = null, detail = null, pickerRoutineId = null) }
+                    return@launch
+                }
                 val workoutId = gym.activeWorkoutId() ?: gym.start(name = "")
                 gym.addExercise(workoutId, event.exerciseId)
                 flow.update { it.copy(picker = null, detail = null) }
@@ -337,6 +519,12 @@ class GymViewModel @Inject constructor(
             is GymEvent.CreateCustom -> launch {
                 if (event.name.isBlank() || event.primary.isEmpty()) return@launch
                 val exercise = gym.createCustomExercise(event.name, event.equipment, event.primary, event.secondary)
+                val routineId = flow.value.pickerRoutineId
+                if (routineId != null) {
+                    planner.addExercise(routineId, exercise.id, answers.first())
+                    flow.update { it.copy(picker = null, pickerRoutineId = null) }
+                    return@launch
+                }
                 val workoutId = gym.activeWorkoutId() ?: gym.start(name = "")
                 gym.addExercise(workoutId, exercise.id)
                 flow.update { it.copy(picker = null) }

@@ -62,6 +62,9 @@ interface HunterDao {
     @Query("UPDATE hunter_profile SET training_days = :mask, training_reminder = :reminder WHERE id = 'me'")
     suspend fun setTrainingDays(mask: Int, reminder: Boolean)
 
+    @Query("UPDATE hunter_profile SET weight_kg = :kg WHERE id = 'me'")
+    suspend fun setWeightKg(kg: Double?)
+
     @Query("UPDATE hunter_profile SET step_goal = :goal WHERE id = 'me'")
     suspend fun setStepGoal(goal: Int)
 

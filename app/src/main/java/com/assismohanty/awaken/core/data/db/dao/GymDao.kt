@@ -34,8 +34,14 @@ interface GymDao {
 
     // Routines
 
-    @Query("SELECT * FROM routine ORDER BY updated_at DESC")
+    @Query("SELECT * FROM routine ORDER BY sort_order, updated_at DESC")
     fun observeRoutines(): Flow<List<RoutineEntity>>
+
+    @Query("SELECT * FROM routine ORDER BY sort_order, updated_at DESC")
+    suspend fun routines(): List<RoutineEntity>
+
+    @Query("SELECT * FROM routine WHERE id = :id")
+    suspend fun routine(id: String): RoutineEntity?
 
     @Query("SELECT * FROM routine_exercise ORDER BY routine_id, position")
     fun observeRoutineExercises(): Flow<List<RoutineExerciseEntity>>
@@ -74,6 +80,9 @@ interface GymDao {
 
     @Query("SELECT * FROM day_override WHERE game_date >= :from AND game_date <= :to ORDER BY game_date")
     fun observeDayOverrides(from: LocalDate, to: LocalDate): Flow<List<DayOverrideEntity>>
+
+    @Query("SELECT * FROM day_override WHERE game_date >= :from AND game_date <= :to ORDER BY game_date")
+    suspend fun dayOverrides(from: LocalDate, to: LocalDate): List<DayOverrideEntity>
 
     @Upsert
     suspend fun upsertDayOverrides(rows: List<DayOverrideEntity>)

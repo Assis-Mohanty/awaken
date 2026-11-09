@@ -191,12 +191,16 @@ class GymTracker @Inject constructor(
     /** Starts a session (or returns the one already running), optionally filled from [routineId]. */
     suspend fun start(name: String, routineId: String? = null): String = transactions.run {
         gymDao.activeWorkout()?.let { return@run it.id }
-        val workout = WorkoutEntity(id = UUID.randomUUID().toString(), name = name.trim().take(MAX_NAME), gameDate = today(), startedAt = clock.now())
+        val coached = gymDao.gymSettings()?.coached ?: true
+        val workout = WorkoutEntity(
+            id = UUID.randomUUID().toString(), name = name.trim().take(MAX_NAME), gameDate = today(), startedAt = clock.now(),
+            routineId = routineId, mode = if (coached) WorkoutEntity.MODE_COACHED else WorkoutEntity.MODE_LIST,
+        )
         gymDao.upsertWorkout(workout)
         if (routineId != null) {
             val byId = exercises().associateBy { it.id }
             gymDao.routineExercises(routineId).forEach { row ->
-                byId[row.exerciseId]?.let { addExerciseRows(workout.id, it, row.position, row.setCount, row.restSec) }
+                byId[row.exerciseId]?.let { addExerciseRows(workout.id, it, row.position, row.setCount, row.restSec, row) }
             }
         }
         workout.id
@@ -209,7 +213,15 @@ class GymTracker @Inject constructor(
     }
 
     /** Set rows prefilled from the last session with this exercise; [setCount] null = as many as last time (at least 1). */
-    private suspend fun addExerciseRows(workoutId: String, exercise: Exercise, position: Int, setCount: Int?, restSec: Int? = null) {
+    private suspend fun addExerciseRows(
+        workoutId: String,
+        exercise: Exercise,
+        position: Int,
+        setCount: Int?,
+        restSec: Int? = null,
+        /** The routine row this exercise comes from: its section, superset and target range are copied onto each set. */
+        planned: RoutineExerciseEntity? = null,
+    ) {
         val previous = gymDao.previousSets(exercise.id)
         val count = (setCount ?: previous.size).coerceIn(1, MAX_SETS_PER_EXERCISE)
         val rows = (0 until count).map { i ->
@@ -224,9 +236,14 @@ class GymTracker @Inject constructor(
                 position = position,
                 setIndex = i,
                 weightKg = template?.weightKg ?: 0.0,
-                reps = template?.reps ?: 0,
+                reps = template?.reps ?: planned?.repMin?.takeIf { planned.measure == RoutineExerciseEntity.MEASURE_REPS } ?: 0,
                 done = false,
                 restSec = RestRules.clamp(restSec ?: previous.lastOrNull()?.restSec),
+                section = planned?.section ?: RoutineExerciseEntity.SECTION_WORK,
+                superset = planned?.superset,
+                repMin = planned?.repMin,
+                repMax = planned?.repMax,
+                durationSec = null,
             )
         }
         gymDao.upsertSets(rows)
