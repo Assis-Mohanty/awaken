@@ -26,6 +26,7 @@ import com.assismohanty.awaken.core.designsystem.components.LargeTitleScaffold
 import com.assismohanty.awaken.core.designsystem.components.SecondaryButton
 import com.assismohanty.awaken.core.designsystem.components.SystemWindow
 import com.assismohanty.awaken.core.designsystem.lexicon.lexString
+import com.assismohanty.awaken.core.designsystem.preview.LandscapePreviews
 import com.assismohanty.awaken.core.designsystem.preview.PhonePreviews
 import com.assismohanty.awaken.core.designsystem.theme.AwakenTheme
 import com.assismohanty.awaken.core.lock.FocusLockSettingsLauncher
@@ -131,6 +132,7 @@ private fun AccessRow(title: String, ok: Boolean, onFix: () -> Unit) {
 }
 
 @PhonePreviews
+@LandscapePreviews
 @Composable
 private fun FocusAccessPreview() {
     AwakenTheme(reduceMotion = true) {

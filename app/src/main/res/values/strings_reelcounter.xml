@@ -71,7 +71,7 @@
     <string name="reel_limit_raise">Raise the limit</string>
 
     <!-- Stats -->
-    <string name="reel_stats_title">Reel stats</string>
+    <string name="reel_stats_title">Reel counter</string>
     <plurals name="reel_stats_today">
         <item quantity="one">reel today</item>
         <item quantity="other">reels today</item>

@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -121,8 +122,8 @@ fun GatesEntry(onBack: () -> Unit, modifier: Modifier = Modifier, onFixFocusLock
 }
 
 /**
- * Focus Gates (DESIGN_SYSTEM §4.4): the large title over the E/D/C/B gates as a 2 × 2 grid of cards, then the setup
- * card; while a gate is open, the dial is the one big thing on the screen.
+ * Focus sessions: the picker (the four modes, the preset lengths, then the setup) under a large title. A running session,
+ * a Pomodoro break and the stopwatch each take over the whole screen instead.
  */
 @Composable
 fun GatesScreen(state: GatesUiState, onEvent: (GatesEvent) -> Unit, onBack: () -> Unit, modifier: Modifier = Modifier) {
@@ -140,16 +141,8 @@ fun GatesScreen(state: GatesUiState, onEvent: (GatesEvent) -> Unit, onBack: () -
         PomodoroBreakScreen(it, onEvent, modifier)
         return
     }
-    LargeTitleScaffold(
-        title = when {
-            active == null && state.pomodoro != null -> lexString(R.string.pomodoro_title)
-            active == null -> lexString(R.string.gates_title)
-            active.mode == GateMode.STOPWATCH -> lexString(R.string.focus_stopwatch_title)
-            else -> active.subject?.takeIf { it.isNotBlank() } ?: lexString(R.string.focus_session_title)
-        },
-        onBack = if (active == null) onBack else null,
-        modifier = modifier,
-    ) {
+    // Only the picker is left here: a running session or a break has returned above.
+    LargeTitleScaffold(title = lexString(R.string.gates_title), onBack = onBack, modifier = modifier) {
         when {
             state.loading -> SkeletonCard()
             else -> GatePicker(state, onEvent)
@@ -170,7 +163,9 @@ private fun GatePicker(state: GatesUiState, onEvent: (GatesEvent) -> Unit) {
         FocusSetupWindow(setup, state, onEvent)
         return
     }
-    state.tiles.chunked(2).forEach { row ->
+    // Four across when the phone is on its side; two by two otherwise.
+    val perRow = if (LocalConfiguration.current.screenWidthDp > LocalConfiguration.current.screenHeightDp) 4 else 2
+    state.tiles.chunked(perRow).forEach { row ->
         Row(horizontalArrangement = Arrangement.spacedBy(Spacing.cardGap)) {
             row.forEach { tile ->
                 GatePortal(
@@ -178,6 +173,7 @@ private fun GatePicker(state: GatesUiState, onEvent: (GatesEvent) -> Unit) {
                     selected = state.setup?.rank == tile.rank,
                     onClick = { onEvent(GatesEvent.Pick(tile.rank)) },
                     modifier = Modifier.weight(1f),
+                    compact = perRow > 2,
                 )
             }
         }
@@ -311,7 +307,7 @@ private fun StatAndSubjectPickers(stat: Stat, subjectId: String?, state: GatesUi
 }
 
 @Composable
-private fun GatePortal(tile: GateTile, selected: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
+private fun GatePortal(tile: GateTile, selected: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier, compact: Boolean = false) {
     val colors = AwakenTheme.colors
     val gateColor = if (tile.available) colors.gate(tile.rank) else colors.textMuted
     val name = lexString(R.string.gate_name, tile.minutes)
@@ -329,7 +325,13 @@ private fun GatePortal(tile: GateTile, selected: Boolean, onClick: () -> Unit, m
         onClick = onClick,
         modifier = modifier,
     ) {
-        BigValue(tile.minutes.toString(), lexString(R.string.focus_hub_minutes_unit))
+        if (compact) {
+            // Four tiles across leave no room for "25 min" on one line: the unit goes under the number.
+            Text(tile.minutes.toString(), style = AwakenTheme.type.metricL, color = colors.textPrimary)
+            Text(lexString(R.string.focus_hub_minutes_unit), style = AwakenTheme.type.caption, color = colors.textSecondary)
+        } else {
+            BigValue(tile.minutes.toString(), lexString(R.string.focus_hub_minutes_unit))
+        }
         if (tile.available) {
             Text(difficulty, style = AwakenTheme.type.caption, color = colors.textSecondary)
         } else {
@@ -669,6 +671,7 @@ private const val MILLIS_PER_MINUTE = 60_000L
 private val previewTiles = GateRank.entries.map { GateTile(it, it.durationMinutes, available = it != GateRank.B) }
 
 @PhonePreviews
+@LandscapePreviews
 @Composable
 private fun GatesPickerPreview() {
     AwakenTheme {
@@ -718,6 +721,7 @@ private fun GatePausedPreview() {
 }
 
 @PhonePreviews
+@LandscapePreviews
 @Composable
 private fun GatesCustomPreview() {
     AwakenTheme {
@@ -772,6 +776,7 @@ private fun GatesGoalRingPreview() {
 }
 
 @PhonePreviews
+@LandscapePreviews
 @Composable
 private fun GatesPomodoroSetupPreview() {
     AwakenTheme {

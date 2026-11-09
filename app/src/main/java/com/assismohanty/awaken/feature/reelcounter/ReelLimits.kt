@@ -24,6 +24,7 @@ import com.assismohanty.awaken.core.designsystem.components.LargeTitleScaffold
 import com.assismohanty.awaken.core.designsystem.components.SecondaryButton
 import com.assismohanty.awaken.core.designsystem.components.SystemWindow
 import com.assismohanty.awaken.core.designsystem.lexicon.lexString
+import com.assismohanty.awaken.core.designsystem.preview.LandscapePreviews
 import com.assismohanty.awaken.core.designsystem.preview.PhonePreviews
 import com.assismohanty.awaken.core.designsystem.theme.AwakenTheme
 import com.assismohanty.awaken.core.designsystem.theme.Spacing
@@ -137,6 +138,7 @@ private fun ReelLimitsAllOffPreview() {
 }
 
 @PhonePreviews
+@LandscapePreviews
 @Composable
 private fun ReelLimitsSomeOnPreview() {
     AwakenTheme(reduceMotion = true) {

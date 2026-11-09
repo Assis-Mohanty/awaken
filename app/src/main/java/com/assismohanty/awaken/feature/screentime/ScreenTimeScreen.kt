@@ -69,6 +69,7 @@ import com.assismohanty.awaken.core.designsystem.components.SecondaryButton
 import com.assismohanty.awaken.core.designsystem.components.SystemWindow
 import com.assismohanty.awaken.core.designsystem.components.formatCount
 import com.assismohanty.awaken.core.designsystem.components.staggeredEntrance
+import com.assismohanty.awaken.core.designsystem.preview.LandscapePreviews
 import com.assismohanty.awaken.core.designsystem.preview.PhonePreviews
 import com.assismohanty.awaken.core.designsystem.theme.AwakenTheme
 import com.assismohanty.awaken.core.designsystem.theme.Spacing
@@ -561,6 +562,7 @@ internal fun previewScreenTimeState(): ScreenTimeUiState {
 }
 
 @PhonePreviews
+@LandscapePreviews
 @Composable
 private fun ScreenTimeScreenPreview() {
     AwakenTheme(reduceMotion = true) {

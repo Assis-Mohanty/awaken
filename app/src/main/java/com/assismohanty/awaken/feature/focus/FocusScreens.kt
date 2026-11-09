@@ -22,6 +22,7 @@ import com.assismohanty.awaken.core.designsystem.components.SectionHeader
 import com.assismohanty.awaken.core.designsystem.components.SkeletonCard
 import com.assismohanty.awaken.core.designsystem.components.formatMinutes
 import com.assismohanty.awaken.core.designsystem.lexicon.lexString
+import com.assismohanty.awaken.core.designsystem.preview.LandscapePreviews
 import com.assismohanty.awaken.core.designsystem.preview.PhonePreviews
 import com.assismohanty.awaken.core.designsystem.theme.AwakenTheme
 import com.assismohanty.awaken.core.designsystem.theme.Spacing
@@ -96,6 +97,7 @@ private fun dayName(date: LocalDate): String = date.dayOfWeek.getDisplayName(Tex
 private val previewDays = (0L until 7L).map { FocusDayUi(LocalDate.of(2026, 11, 2).plusDays(it), listOf(50, 0, 95, 25, 140, 0, 60)[it.toInt()]) }
 
 @PhonePreviews
+@LandscapePreviews
 @Composable
 private fun FocusReportPreview() {
     AwakenTheme {

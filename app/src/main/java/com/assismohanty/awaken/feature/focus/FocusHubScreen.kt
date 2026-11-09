@@ -30,6 +30,7 @@ import com.assismohanty.awaken.core.designsystem.components.formatMinutes
 import com.assismohanty.awaken.core.designsystem.components.staggeredEntrance
 import com.assismohanty.awaken.core.designsystem.lexicon.lexPlural
 import com.assismohanty.awaken.core.designsystem.lexicon.lexString
+import com.assismohanty.awaken.core.designsystem.preview.LandscapePreviews
 import com.assismohanty.awaken.core.designsystem.preview.PhonePreviews
 import com.assismohanty.awaken.core.designsystem.theme.AwakenTheme
 import com.assismohanty.awaken.core.designsystem.theme.Spacing
@@ -237,6 +238,7 @@ private const val MINUTES_PER_HOUR = 60
 private const val SECONDS_PER_MINUTE = 60L
 
 @PhonePreviews
+@LandscapePreviews
 @Composable
 private fun FocusHubPreview() {
     AwakenTheme {
