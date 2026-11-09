@@ -29,7 +29,6 @@ import com.assismohanty.awaken.R
 import com.assismohanty.awaken.core.designsystem.components.AwakenCard
 import com.assismohanty.awaken.core.designsystem.components.AwakenGlyphs
 import com.assismohanty.awaken.core.designsystem.components.BigValue
-import com.assismohanty.awaken.core.designsystem.components.DifficultyChip
 import com.assismohanty.awaken.core.designsystem.components.EmptyState
 import com.assismohanty.awaken.core.designsystem.components.InsightCard
 import com.assismohanty.awaken.core.designsystem.components.LargeTitleScaffold
@@ -87,7 +86,7 @@ fun QuestDetailScreen(
     val loaded = !state.loading && !state.notFound
     LargeTitleScaffold(
         title = if (loaded) state.title else "",
-        subtitle = if (loaded) lexString(state.type.kindRes) else null,
+        subtitle = if (loaded) lexString(R.string.quest_kind_difficulty, lexString(state.type.kindRes), state.difficulty.label()) else null,
         onBack = onBack,
         modifier = modifier,
     ) {
@@ -115,15 +114,14 @@ private fun QuestDetailContent(state: QuestDetailUiState, onEvent: (QuestDetailE
         )
     }
 
-    // The target is the one big number.
-    AwakenCard(reveal = false, modifier = Modifier.fillMaxWidth()) {
+    // The target is the one big number, straight on the page; difficulty is in the subtitle.
+    Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
         BigValue(formatCount(state.target), unitLabel(state.unit, state.target), large = true)
         FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.xs), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
             if (state.type == QuestType.PENALTY) {
                 Pill(lexString(R.string.chip_comeback), colors.critical)
             }
             StatChip(state.stat)
-            DifficultyChip(state.difficulty)
             VerifiedBadge(state.verification)
         }
         state.pathName?.let { name ->
@@ -180,9 +178,11 @@ private fun QuestDetailContent(state: QuestDetailUiState, onEvent: (QuestDetailE
         }
     }
     state.reason?.takeIf { state.rationale == null }?.let { reason ->
-        AwakenCard(title = lexString(R.string.quest_reason_label), reveal = false, modifier = Modifier.fillMaxWidth()) {
-            Text(reasonText(reason), style = type.body, color = colors.textPrimary)
-        }
+        Text(
+            lexString(R.string.quest_reason_line, lexString(R.string.quest_reason_label), reasonText(reason)),
+            style = type.caption,
+            color = colors.textSecondary,
+        )
     }
 
     Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
@@ -200,24 +200,30 @@ private fun QuestDetailContent(state: QuestDetailUiState, onEvent: (QuestDetailE
         if (state.canBegin) {
             PrimaryButton(lexString(R.string.action_begin), onClick = { onEvent(QuestDetailEvent.Begin) }, enabled = !state.busy, modifier = Modifier.fillMaxWidth())
         }
-        if (state.verification == VerificationSource.SELF && (state.status == QuestStatus.ACTIVE || state.status == QuestStatus.STARTED)) {
-            val complete = lexString(R.string.action_complete_quest)
-            if (state.canBegin) {
-                SecondaryButton(complete, onClick = { onEvent(QuestDetailEvent.Complete) }, enabled = state.canComplete && !state.busy, modifier = Modifier.fillMaxWidth())
-            } else {
-                PrimaryButton(complete, onClick = { onEvent(QuestDetailEvent.Complete) }, enabled = state.canComplete && !state.busy, modifier = Modifier.fillMaxWidth())
+        val canComplete = state.verification == VerificationSource.SELF &&
+            (state.status == QuestStatus.ACTIVE || state.status == QuestStatus.STARTED)
+        val completeLabel = lexString(R.string.action_complete_quest)
+        val rerollLabel = if (state.rerollCost == 0) {
+            lexString(R.string.action_reroll)
+        } else {
+            lexString(R.string.action_reroll_paid, state.rerollCost)
+        }
+        if (canComplete && !state.canBegin) {
+            PrimaryButton(completeLabel, onClick = { onEvent(QuestDetailEvent.Complete) }, enabled = state.canComplete && !state.busy, modifier = Modifier.fillMaxWidth())
+        }
+        // Complete and Reroll share a row under Begin, like the approved layout.
+        if ((canComplete && state.canBegin) || state.canReroll) {
+            Row(horizontalArrangement = Arrangement.spacedBy(Spacing.xs), modifier = Modifier.fillMaxWidth()) {
+                if (canComplete && state.canBegin) {
+                    SecondaryButton(completeLabel, onClick = { onEvent(QuestDetailEvent.Complete) }, enabled = state.canComplete && !state.busy, modifier = Modifier.weight(1f))
+                }
+                if (state.canReroll) {
+                    SecondaryButton(rerollLabel, onClick = { onEvent(QuestDetailEvent.Reroll) }, enabled = !state.busy, modifier = Modifier.weight(1f))
+                }
             }
         }
         if (state.canUndo) {
             SecondaryButton(lexString(R.string.action_undo), onClick = { onEvent(QuestDetailEvent.Undo) }, enabled = !state.busy, modifier = Modifier.fillMaxWidth())
-        }
-        if (state.canReroll) {
-            val label = if (state.rerollCost == 0) {
-                lexString(R.string.action_reroll)
-            } else {
-                lexString(R.string.action_reroll_paid, state.rerollCost)
-            }
-            SecondaryButton(label, onClick = { onEvent(QuestDetailEvent.Reroll) }, enabled = !state.busy, modifier = Modifier.fillMaxWidth())
         }
         if (state.reportable) {
             QuietButton(lexString(R.string.action_report_quest), onClick = { showReport = true }, enabled = !state.busy, modifier = Modifier.fillMaxWidth())

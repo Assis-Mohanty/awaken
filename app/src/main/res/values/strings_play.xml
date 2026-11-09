@@ -114,6 +114,8 @@
     <string name="quest_started">Started. Complete it when you\'re done.</string>
     <string name="quest_ready_in">You can complete it in %1$s.</string>
     <string name="quest_reason_label">Why this quest?</string>
+    <string name="quest_reason_line">%1$s %2$s</string>
+    <string name="quest_kind_difficulty">%1$s · %2$s</string>
     <string name="reason_main">Main quest: today\'s focus stat, %1$s.</string>
     <string name="reason_focus">%1$s is one of your focus stats.</string>
     <plurals name="reason_neglected">
@@ -270,20 +272,18 @@
 
     <!-- Vault (Phase 10a) -->
     <string name="shop_streak_shield">Streak freeze</string>
-    <string name="vault_window_balance">Balance</string>
-    <string name="vault_window_shield">Streak freeze</string>
     <string name="vault_gold">%1$s gold</string>
     <string name="vault_shields">Streak freezes %1$d / %2$d</string>
-    <string name="vault_shield_body">A streak freeze covers one missed day and keeps your streak. You can hold two.</string>
+    <string name="vault_item_blurb">Covers one missed day and keeps your streak.</string>
     <string name="vault_reroll_body">Extra quest rerolls cost 40 gold each, up to 3 a day. Buy them from Today.</string>
-    <string name="vault_price">%1$s</string>
+    <string name="vault_buy_price">Buy, %1$s</string>
     <string name="action_buy">Buy</string>
     <string name="action_cancel">Cancel</string>
     <string name="vault_missing_gold">%1$s more gold needed</string>
     <string name="vault_shield_limit">Streak freeze limit reached</string>
-    <string name="vault_confirm_title">Confirm purchase</string>
-    <string name="vault_confirm_body">%1$s for %2$s gold. Balance after: %3$s gold.</string>
-    <string name="action_confirm_buy">Buy for %1$s gold</string>
+    <string name="vault_confirm_title">Buy a streak freeze?</string>
+    <string name="vault_confirm_price">Price</string>
+    <string name="vault_confirm_after">Balance after</string>
     <string name="msg_vault_bought">%1$s purchased.</string>
     <string name="msg_vault_duplicate">That purchase was already completed.</string>
     <string name="cd_vault_action">%1$s: %2$s</string>

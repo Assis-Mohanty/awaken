@@ -5,35 +5,26 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.navigationBarsPadding
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.assismohanty.awaken.R
-import com.assismohanty.awaken.engine.model.Rank
 import com.assismohanty.awaken.engine.ShopRules
-import com.assismohanty.awaken.core.designsystem.components.MetricCard
-import com.assismohanty.awaken.core.designsystem.components.AwakenGlyphs
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.Alignment
-import androidx.compose.material3.Icon
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.heightIn
+import com.assismohanty.awaken.core.designsystem.components.AwakenBottomSheet
+import com.assismohanty.awaken.core.designsystem.components.AwakenCard
+import com.assismohanty.awaken.core.designsystem.components.BigValue
 import com.assismohanty.awaken.core.designsystem.components.LargeTitleScaffold
+import com.assismohanty.awaken.core.designsystem.components.ValueRow
 import com.assismohanty.awaken.core.designsystem.components.SkeletonCard
 import com.assismohanty.awaken.core.designsystem.components.PrimaryButton
 import com.assismohanty.awaken.core.designsystem.components.QuietButton
-import com.assismohanty.awaken.core.designsystem.components.SystemWindow
 import com.assismohanty.awaken.core.designsystem.components.formatCount
 import com.assismohanty.awaken.core.designsystem.components.shopItemNameRes
 import com.assismohanty.awaken.core.designsystem.preview.PhonePreviews
@@ -57,66 +48,58 @@ fun VaultScreen(state: VaultUiState, onEvent: (VaultEvent) -> Unit, onBack: () -
             SkeletonCard()
             return@LargeTitleScaffold
         }
-        BalanceWindow(state)
-        ShieldWindow(state, onEvent)
+        BalanceHero(state)
+        ShieldCard(state, onEvent)
+        Text(lexString(R.string.vault_reroll_body), style = AwakenTheme.type.caption, color = AwakenTheme.colors.textSecondary)
     }
     state.pending?.let { pending ->
         ConfirmSheet(pending.state.item, gold = state.gold, busy = state.busy, onEvent = onEvent)
     }
 }
 
+/** The balance is the one big number in the Store, straight on the page. */
 @Composable
-private fun BalanceWindow(state: VaultUiState) {
-    // The balance is the one big number in the Store.
+private fun BalanceHero(state: VaultUiState) {
     val shields = lexString(R.string.vault_shields, state.shields, state.shieldMax)
-    MetricCard(
-        label = lexString(R.string.vault_window_balance),
-        value = formatCount(state.gold),
-        unit = lexString(R.string.unit_gold),
-        secondary = shields,
-        icon = AwakenGlyphs.Coin,
-        iconTint = AwakenTheme.colors.reward,
-        large = true,
-        description = lexString(R.string.vault_gold, formatCount(state.gold)) + ". " + shields,
-    )
-}
-
-@Composable
-private fun ShieldWindow(state: VaultUiState, onEvent: (VaultEvent) -> Unit) {
-    val colors = AwakenTheme.colors
-    SystemWindow(title = lexString(R.string.vault_window_shield), accent = AwakenTheme.rankAccent(Rank.E), reveal = false) {
-        Text(lexString(R.string.vault_shield_body), style = AwakenTheme.type.caption, color = colors.textSecondary)
-        state.shield?.let { ItemRow(it, state, onEvent) }
-        Text(lexString(R.string.vault_reroll_body), style = AwakenTheme.type.caption, color = colors.textSecondary)
+    val description = lexString(R.string.vault_gold, formatCount(state.gold)) + ". " + shields
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .semantics(mergeDescendants = true) { contentDescription = description },
+        verticalArrangement = Arrangement.spacedBy(Spacing.xs),
+    ) {
+        BigValue(formatCount(state.gold), lexString(R.string.unit_gold), large = true)
+        Text(shields, style = AwakenTheme.type.caption, color = AwakenTheme.colors.textSecondary)
     }
 }
 
+/** The streak freeze: its name and what it does, with the price on the Buy button. */
 @Composable
-private fun ItemRow(item: VaultItemState, state: VaultUiState, onEvent: (VaultEvent) -> Unit) {
+private fun ShieldCard(state: VaultUiState, onEvent: (VaultEvent) -> Unit) {
+    val item = state.shield ?: return
     val colors = AwakenTheme.colors
     val type = AwakenTheme.type
     val name = shopItemNameRes(item.item.id)?.let { lexString(it) } ?: item.item.id
     val action = lexString(R.string.action_buy)
     val label = lexString(R.string.cd_vault_action, action, name)
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .heightIn(min = AwakenTheme.dimens.touchTarget),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
-    ) {
-        Icon(AwakenGlyphs.Shield, contentDescription = null, tint = colors.accent, modifier = Modifier.size(AwakenTheme.dimens.sigil))
-        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(Spacing.xxs)) {
-            Text(name, style = type.label, color = colors.textPrimary)
-            Text(lexString(R.string.vault_price, formatCount(item.item.price)), style = type.numericSmall, color = colors.reward)
-            blockReason(item.check)?.let { Text(it, style = type.caption, color = colors.textSecondary) }
+    AwakenCard(reveal = false, modifier = Modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier.fillMaxWidth().heightIn(min = AwakenTheme.dimens.touchTarget),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+        ) {
+            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(Spacing.xxs)) {
+                Text(name, style = type.label, color = colors.textPrimary)
+                Text(lexString(R.string.vault_item_blurb), style = type.caption, color = colors.textSecondary)
+                blockReason(item.check)?.let { Text(it, style = type.caption, color = colors.textSecondary) }
+            }
+            PrimaryButton(
+                text = lexString(R.string.vault_buy_price, formatCount(item.item.price)),
+                onClick = { onEvent(VaultEvent.Buy(item.item.id)) },
+                enabled = item.check == BuyCheck.Buyable && !state.busy,
+                modifier = Modifier.semantics { contentDescription = label },
+            )
         }
-        PrimaryButton(
-            text = action,
-            onClick = { onEvent(VaultEvent.Buy(item.item.id)) },
-            enabled = item.check == BuyCheck.Buyable && !state.busy,
-            modifier = Modifier.semantics { contentDescription = label },
-        )
     }
 }
 
@@ -127,38 +110,18 @@ private fun blockReason(check: BuyCheck): String? = when (check) {
     BuyCheck.ShieldLimit -> lexString(R.string.vault_shield_limit)
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ConfirmSheet(item: ShopItem, gold: Long, busy: Boolean, onEvent: (VaultEvent) -> Unit) {
-    val colors = AwakenTheme.colors
-    val name = shopItemNameRes(item.id)?.let { lexString(it) } ?: item.id
-    ModalBottomSheet(
-        onDismissRequest = { onEvent(VaultEvent.DismissConfirm) },
-        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-        containerColor = colors.surfaceOverlay,
-        shape = AwakenTheme.shapes.window,
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .navigationBarsPadding()
-                .padding(horizontal = Spacing.gutter, vertical = Spacing.md),
-            verticalArrangement = Arrangement.spacedBy(Spacing.md),
-        ) {
-            Text(lexString(R.string.vault_confirm_title), style = AwakenTheme.type.windowTitle, color = colors.accent)
-            Text(
-                lexString(R.string.vault_confirm_body, name, formatCount(item.price), formatCount(gold - item.price)),
-                style = AwakenTheme.type.body,
-                color = colors.textPrimary,
-            )
-            PrimaryButton(
-                text = lexString(R.string.action_confirm_buy, formatCount(item.price)),
-                onClick = { onEvent(VaultEvent.ConfirmBuy) },
-                enabled = !busy,
-                modifier = Modifier.fillMaxWidth(),
-            )
-            QuietButton(text = lexString(R.string.action_cancel), onClick = { onEvent(VaultEvent.DismissConfirm) }, modifier = Modifier.fillMaxWidth())
-        }
+    AwakenBottomSheet(onDismiss = { onEvent(VaultEvent.DismissConfirm) }, title = lexString(R.string.vault_confirm_title)) {
+        ValueRow(lexString(R.string.vault_confirm_price), lexString(R.string.vault_gold, formatCount(item.price)))
+        ValueRow(lexString(R.string.vault_confirm_after), lexString(R.string.vault_gold, formatCount(gold - item.price)))
+        PrimaryButton(
+            text = lexString(R.string.action_buy),
+            onClick = { onEvent(VaultEvent.ConfirmBuy) },
+            enabled = !busy,
+            modifier = Modifier.fillMaxWidth(),
+        )
+        QuietButton(text = lexString(R.string.action_cancel), onClick = { onEvent(VaultEvent.DismissConfirm) }, modifier = Modifier.fillMaxWidth())
     }
 }
 
