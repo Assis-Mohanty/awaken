@@ -37,7 +37,7 @@ class GymScreenTest {
 
     @Test
     fun aSetLoggedInTheCoachedFlowIsSavedWithTheWorkout() {
-        val viewModel = GymViewModel(graph.gym, graph.clock, NoRestScheduler, SilentChimePlayer, graph.uiPrefs, graph.planner)
+        val viewModel = GymViewModel(graph.gym, graph.clock, NoRestScheduler, SilentChimePlayer, graph.uiPrefs, graph.planner, graph.finishWorkout, graph.deleteWorkout)
         val benchId = runBlocking { graph.gym.searchExercises("barbell bench press medium grip", setOf(Equipment.BARBELL), Muscle.CHEST).first().id }
         composeRule.setContent {
             AwakenTheme(reduceMotion = true) {

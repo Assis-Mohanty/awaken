@@ -37,7 +37,7 @@ class GymHomeViewModelTest {
         Dispatchers.setMain(Dispatchers.Unconfined)
         // A Monday, so a later day exists in the same week.
         graph.clock.advance(Duration.ofDays(-6))
-        viewModel = GymViewModel(graph.gym, graph.clock, NoRest, Silent, graph.uiPrefs, graph.planner)
+        viewModel = GymViewModel(graph.gym, graph.clock, NoRest, Silent, graph.uiPrefs, graph.planner, graph.finishWorkout, graph.deleteWorkout)
         // The state only runs while somebody collects it.
         viewModel.uiState.onEach { }.launchIn(kotlinx.coroutines.CoroutineScope(Dispatchers.Unconfined))
     }

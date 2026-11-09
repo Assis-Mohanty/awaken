@@ -12,6 +12,12 @@ import com.assismohanty.awaken.core.domain.ExerciseProgression
 import com.assismohanty.awaken.core.domain.ExerciseRecords
 import com.assismohanty.awaken.core.domain.GymPrefs
 import com.assismohanty.awaken.core.domain.PersonalRecord
+import com.assismohanty.awaken.core.domain.DeleteWorkoutUseCase
+import com.assismohanty.awaken.core.domain.FinishWorkoutUseCase
+import com.assismohanty.awaken.core.domain.GymXpResult
+import com.assismohanty.awaken.engine.body.LiftKind
+import com.assismohanty.awaken.engine.body.Plausibility
+import com.assismohanty.awaken.engine.body.PlausibilitySession
 import com.assismohanty.awaken.core.domain.toLogged
 import com.assismohanty.awaken.engine.body.ExerciseHistory
 import com.assismohanty.awaken.engine.body.ExerciseSession
@@ -103,6 +109,7 @@ data class GymFlow(
     /** Earlier finished sessions per exercise id: what a set is compared with for a record (GD §16.7). */
     val recordHistory: Map<String, List<List<LoggedSet>>> = emptyMap(),
     val summaryRecords: List<ExerciseRecords> = emptyList(),
+    val summaryXp: GymXpResult = GymXpResult.NONE,
     val plates: PlatesFlow? = null,
     val settingsOpen: Boolean = false,
     val history: HistoryFlow? = null,
@@ -224,6 +231,8 @@ data class StandingUi(
     val marker: Float = 0f,
     val pointerKg: Double? = null,
     val pointerPercentile: Double? = null,
+    /** A lift still waiting for a later session to repeat it (GD §18.4); the standing ignores it until then. */
+    val unconfirmedKg: Double? = null,
 )
 
 /** One row of the strength tracker: the best set of an exercise, and its level when it is benchmarked. */
@@ -250,6 +259,7 @@ data class GymUiState(
     /** Ids of set rows that broke a personal record, for the "New record" chip. */
     val prSetIds: Set<String> = emptySet(),
     val summaryRecords: List<ExerciseRecords> = emptyList(),
+    val summaryXp: GymXpResult = GymXpResult.NONE,
     val prefs: GymPrefs = GymPrefs(),
     val plates: PlatesUi? = null,
     val settingsOpen: Boolean = false,
@@ -383,6 +393,8 @@ class GymViewModel @Inject constructor(
     private val chimePlayer: ChimePlayer,
     private val uiPrefs: UiPrefsRepository,
     private val planner: GymPlanner,
+    private val finishWorkout: FinishWorkoutUseCase,
+    private val deleteWorkout: DeleteWorkoutUseCase,
 ) : ViewModel() {
 
     private val flow = MutableStateFlow(GymFlow())
@@ -421,6 +433,7 @@ class GymViewModel @Inject constructor(
             hints = f.hints,
             prSetIds = prSetIds,
             summaryRecords = f.summaryRecords,
+            summaryXp = f.summaryXp,
             prefs = prefs,
             plates = f.plates?.let { PlatesUi(it.target, it.unit, prefs.setup(it.unit), if (it.target > 0.0) PlateMath.plan(it.target, prefs.setup(it.unit)) else null) },
             settingsOpen = f.settingsOpen,
@@ -542,13 +555,23 @@ class GymViewModel @Inject constructor(
         val e1rm = bestSet?.let(TrainingMath::estimatedOneRepMax)
         val bestReps = logged.filter { it.weightKg <= 0.0 }.maxOfOrNull { it.reps }
         val age = answers.birthYear?.let { today.year - it }
-        val standing = benchmarks?.let { StandingRules.standing(it, exerciseId, e1rm, bestReps, null, answers.sex, answers.bodyWeightKg, age) }
+        // The comparison reads the best confirmed estimate: a jump nobody has repeated yet waits (GD §18.4).
+        val replay = Plausibility.replay(sessions.map { s -> PlausibilitySession(s.date, s.sets.filter { it.done }) }, answers.bodyWeightKg, liftKind(benchmarks, exerciseId))
+        val standing = benchmarks?.let { StandingRules.standing(it, exerciseId, replay.bestConfirmedKg ?: e1rm.takeIf { replay.pending.isEmpty() }, bestReps, null, answers.sex, answers.bodyWeightKg, age) }
+        val unconfirmed = replay.pending.maxOfOrNull { it.e1rmKg }
         if (bestSet == null && standing == null) return null
-        val percentile = standing as? Standing.Percentile ?: return StandingUi(bestSet, e1rm, standing)
+        val percentile = standing as? Standing.Percentile ?: return StandingUi(bestSet, e1rm, standing, unconfirmedKg = unconfirmed)
         val marker = StandingRules.markerFraction(percentile)
         val at = pointer ?: marker
         val (kg, p) = StandingRules.atPointer(percentile, at)
-        return StandingUi(bestSet, e1rm, standing, pointer = at, marker = marker, pointerKg = kg, pointerPercentile = p)
+        return StandingUi(bestSet, e1rm, standing, pointer = at, marker = marker, pointerKg = kg, pointerPercentile = p, unconfirmedKg = unconfirmed)
+    }
+
+    private fun liftKind(data: BenchmarkData?, exerciseId: String) = when (data?.keyFor(exerciseId)) {
+        "squat" -> LiftKind.SQUAT
+        "bench" -> LiftKind.BENCH
+        "deadlift" -> LiftKind.DEADLIFT
+        else -> LiftKind.OTHER
     }
 
     private fun HistoryFlow.toUi(prefs: GymPrefs, answers: GymAnswers): HistoryUi {
@@ -635,7 +658,7 @@ class GymViewModel @Inject constructor(
                 planner.deleteRoutine(event.routineId)
                 flow.update { it.copy(deleteId = null, editorId = if (it.editorId == event.routineId) null else it.editorId) }
             }
-            is GymEvent.DeleteWorkout -> launch { gym.deleteWorkout(event.workoutId) }
+            is GymEvent.DeleteWorkout -> launch { deleteWorkout(event.workoutId) }
 
             GymEvent.OpenPicker -> {
                 flow.update { it.copy(picker = ExercisePicker()) }
@@ -774,7 +797,11 @@ class GymViewModel @Inject constructor(
                 val age = answers.birthYear?.let { gym.today().year - it }
                 val records = uiState.value.overview?.records.orEmpty()
                 val rows = records.map { record ->
-                    val level = (StandingRules.standing(data, record.exerciseId, record.estimatedMaxKg, null, null, answers.sex, answers.bodyWeightKg, age) as? Standing.Percentile)?.level
+                    val replay = Plausibility.replay(
+                        gym.history(record.exerciseId).map { s -> PlausibilitySession(s.date, s.sets.filter { it.done }) },
+                        answers.bodyWeightKg, liftKind(data, record.exerciseId),
+                    )
+                    val level = replay.bestConfirmedKg?.let { StandingRules.standing(data, record.exerciseId, it, null, null, answers.sex, answers.bodyWeightKg, age) as? Standing.Percentile }?.level
                     StrengthRow(record, level) to gym.exercise(record.exerciseId)?.primary?.firstOrNull()
                 }
                 val groups = rows.groupBy({ it.second }, { it.first }).map { (muscle, list) -> muscle to list.sortedByDescending { it.record.estimatedMaxKg } }
@@ -801,9 +828,9 @@ class GymViewModel @Inject constructor(
             }
 
             GymEvent.Finish -> withActive { workoutId ->
-                when (val result = gym.finish(workoutId)) {
+                when (val result = finishWorkout(workoutId)) {
                     is FinishResult.Finished -> flow.update {
-                        it.copy(summaryId = workoutId, notice = null, summaryRecords = result.records, confirmFinish = false, restMinimisedFor = null)
+                        it.copy(summaryId = workoutId, notice = null, summaryRecords = result.records, summaryXp = result.xp, confirmFinish = false, restMinimisedFor = null)
                     }
                     FinishResult.DiscardedEmpty -> flow.update { it.copy(notice = GymNotice.DISCARDED_EMPTY, confirmFinish = false) }
                 }
@@ -824,7 +851,7 @@ class GymViewModel @Inject constructor(
             }
             GymEvent.DismissNotice -> flow.update { it.copy(notice = null) }
             GymEvent.SkipRest -> withActive { gym.skipRest(it) }
-            GymEvent.DismissSummary -> flow.update { it.copy(summaryId = null, summaryRecords = emptyList()) }
+            GymEvent.DismissSummary -> flow.update { it.copy(summaryId = null, summaryRecords = emptyList(), summaryXp = GymXpResult.NONE) }
         }
     }
 

@@ -33,7 +33,7 @@ class GymWorkoutViewModelTest {
     @Before
     fun setUp() {
         Dispatchers.setMain(Dispatchers.Unconfined)
-        viewModel = GymViewModel(graph.gym, graph.clock, NoRestScheduler, SilentChimePlayer, graph.uiPrefs, graph.planner)
+        viewModel = GymViewModel(graph.gym, graph.clock, NoRestScheduler, SilentChimePlayer, graph.uiPrefs, graph.planner, graph.finishWorkout, graph.deleteWorkout)
         viewModel.uiState.onEach { }.launchIn(CoroutineScope(Dispatchers.Unconfined))
     }
 

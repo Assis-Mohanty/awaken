@@ -320,6 +320,13 @@ interface LedgerDao {
     @Query("SELECT COALESCE(SUM(delta), 0) FROM ledger_entry WHERE kind = 'XP_TOTAL' AND game_date = :gameDate AND xp_source = :xpSource")
     suspend fun netXp(gameDate: LocalDate, xpSource: String): Long
 
+    /** Net gym XP for a game-day: the workout rows and their undo rows (same `source_id`), for the daily gym cap (GD §18.4). */
+    @Query(
+        "SELECT COALESCE(SUM(delta), 0) FROM ledger_entry WHERE kind = 'XP_TOTAL' AND game_date = :gameDate " +
+            "AND source_id IN (SELECT source_id FROM ledger_entry WHERE source_type = 'GYM_WORKOUT')",
+    )
+    suspend fun netGymXp(gameDate: LocalDate): Long
+
     /** Net stat XP per stat from rows dated before [before]: last week's radar polygon. */
     @Query("SELECT stat, SUM(delta) AS total FROM ledger_entry WHERE kind = 'XP_STAT' AND game_date < :before GROUP BY stat")
     fun observeStatXpBefore(before: LocalDate): Flow<List<StatTotal>>

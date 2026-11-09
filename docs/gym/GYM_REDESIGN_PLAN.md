@@ -402,7 +402,7 @@ defaults (`GameDataPorterTest`).
 | 2 | Gym home (week strip, day body, rest day + swap), Plans list/detail/add, My routines + editor + weekly repeat, Gym settings | VM + previews green |
 | 3 | Fix P2 (repro test first), field-level set commands, coached mode, rest screen + MIN_REST, replace sheet, supersets/unilateral, foreground rest service, finish summary, quick-list, plurals (P6), danger discard | VM + previews green; phone check of screen-off chime |
 | 4 | Strength tracker, Exercise detail, `LevelGauge`, draggable `DistributionCurve` | VM + previews green |
-| 5 | `TrainingXp` wiring in `FinishWorkoutUseCase`, plausibility UI, full review (correctness, no raw tokens, every `G` number approved and in GD) | full suite + lint + Roborazzi green |
+| 5 | `TrainingXp` wiring in `FinishWorkoutUseCase`, plausibility UI, full review (correctness, no raw tokens, every `G` number approved and in GD) | full suite + lint + Roborazzi green. **Done** |
 
 ---
 

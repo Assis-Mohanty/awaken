@@ -116,10 +116,18 @@ data class GymPrefs(
 /** An exercise's hint overrides and what they resolve to. */
 data class ExerciseProgression(val range: RepRange, val incrementKg: Double, val customRange: Boolean, val customIncrement: Boolean)
 
+/** What finishing a workout paid (GD §18.4): STR XP, how the sets counted, and whether a daily cap held some back. */
+data class GymXpResult(val xp: Int, val fullSets: Int, val lightSets: Int, val unconfirmedSets: Int, val capped: Boolean) {
+    companion object {
+        val NONE = GymXpResult(0, 0, 0, 0, false)
+    }
+}
+
 sealed interface FinishResult {
     data class Finished(
         val workoutId: String,
         val records: List<ExerciseRecords> = emptyList(),
+        val xp: GymXpResult = GymXpResult.NONE,
     ) : FinishResult
     /** Nothing was ticked done, so the session was dropped rather than saved empty. */
     data object DiscardedEmpty : FinishResult
@@ -154,9 +162,8 @@ private fun CustomExerciseEntity.toExercise() = Exercise(
 )
 
 /**
- * The Gym tracker (GD §13.2): exercise library, the session in progress, routines and the derived overview. A tracker
- * only: it pays no XP and writes no ledger row of its own (ENGINE_DECISIONS #95); the one exception is a personal-record
- * record event (GD §16.7).
+ * The Gym tracker (GD §13.2): exercise library, the session in progress, routines and the derived overview. It writes no
+ * ledger row of its own: STR XP for a finished workout is paid by [FinishWorkoutUseCase] (GD §18.4).
  */
 @Singleton
 class GymTracker @Inject constructor(

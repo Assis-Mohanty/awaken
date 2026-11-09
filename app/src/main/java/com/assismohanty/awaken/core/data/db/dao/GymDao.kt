@@ -105,6 +105,10 @@ interface GymDao {
     @Query("SELECT * FROM workout WHERE id = :id")
     suspend fun workout(id: String): WorkoutEntity?
 
+    /** Finished workouts of one game-day other than [exceptId], oldest first: what earlier sets of the day already counted. */
+    @Query("SELECT * FROM workout WHERE ended_at IS NOT NULL AND game_date = :gameDate AND id != :exceptId ORDER BY started_at")
+    suspend fun finishedOn(gameDate: LocalDate, exceptId: String): List<WorkoutEntity>
+
     @Query("SELECT * FROM workout WHERE ended_at IS NOT NULL ORDER BY started_at DESC")
     fun observeFinishedWorkouts(): Flow<List<WorkoutEntity>>
 

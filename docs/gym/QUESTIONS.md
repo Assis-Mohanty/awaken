@@ -39,3 +39,11 @@ another does not rest). It feeds no XP, cap or rule. **Please approve 40 s or gi
 - **Reordering** routines and routine exercises uses move up / move down buttons, not drag handles.
 - **Timed exercises** (plank) show their target but their hold time is edited by removing and re-adding the exercise, not in the editor.
 - **Plan weekdays:** a multi-day plan keeps its own weekdays (for example Mon/Wed/Fri); it does not remap to your training days. Change them under "Choose days".
+
+## Q16. Shortcuts taken in Batches 4 and 5
+
+- **Plank has no standing yet.** The Army plank table is in `benchmarks.json`, but a logged set keeps its hold seconds only on `workout_set.duration_sec`, and the exercise history rows do not carry it, so Batch 4 shows no level for plank. Push-up works from best reps.
+- **The tracker lists weighted exercises only** (it reads the personal records, which need an estimated 1RM). Bodyweight moves show their standing in the exercise's history.
+- **Strength tracker and exercise detail are bottom sheets**, not routes, like History and the muscle map.
+- **No level-up celebration after Finish** (the summary shows the XP line only). The existing completion flow shows one for quests.
+- **Earlier sets of the day** for the 10-per-exercise limit are re-judged from the finished workouts, so a workout whose XP was held back by a cap still counts its sets toward that limit.

@@ -88,6 +88,7 @@ import com.assismohanty.awaken.engine.body.Muscle
 import com.assismohanty.awaken.engine.body.WorkingSets
 import com.assismohanty.awaken.engine.body.RestRules
 import com.assismohanty.awaken.engine.body.TrainingMath
+import com.assismohanty.awaken.core.domain.GymXpResult
 import java.time.Duration
 import java.time.Instant
 import java.time.LocalDate
@@ -123,7 +124,7 @@ fun GymScreen(state: GymUiState, onEvent: (GymEvent) -> Unit, modifier: Modifier
             ActiveWorkoutContent(state, active, onEvent)
         } else {
             state.summaryId?.let { id ->
-                state.overview?.history?.firstOrNull { it.workoutId == id }?.let { SessionSummary(it, state.summaryRecords, onEvent) }
+                state.overview?.history?.firstOrNull { it.workoutId == id }?.let { SessionSummary(it, state.summaryRecords, state.summaryXp, onEvent) }
             }
             state.notice?.let { NoticeLine(it, onEvent) }
             state.home?.let { home ->
@@ -376,7 +377,7 @@ internal fun tryText(ui: HintUi): String = when (val hint = ui.hint) {
 
 /** The finished session: time, sets, volume and the exercises, until dismissed. */
 @Composable
-private fun SessionSummary(summary: WorkoutSummary, records: List<ExerciseRecords>, onEvent: (GymEvent) -> Unit) {
+private fun SessionSummary(summary: WorkoutSummary, records: List<ExerciseRecords>, xp: GymXpResult, onEvent: (GymEvent) -> Unit) {
     val colors = AwakenTheme.colors
     SystemWindow(title = lexString(R.string.gym_summary_title), accent = colors.accent, reveal = false) {
         Row(horizontalArrangement = Arrangement.spacedBy(Spacing.lg), modifier = Modifier.fillMaxWidth()) {
@@ -385,6 +386,9 @@ private fun SessionSummary(summary: WorkoutSummary, records: List<ExerciseRecord
             Stat(lexString(R.string.gym_summary_volume), formatCount(summary.volumeKg.roundToLong()), Modifier.weight(1f))
         }
         Text(summary.exerciseNames.joinToString(" · "), style = AwakenTheme.type.body, color = colors.textSecondary)
+        if (xp.xp > 0) Text(lexString(R.string.gym_summary_xp, xp.xp), style = AwakenTheme.type.label, color = colors.reward)
+        if (xp.capped) Text(lexString(R.string.gym_summary_xp_capped), style = AwakenTheme.type.caption, color = colors.textSecondary)
+        if (xp.unconfirmedSets > 0) Text(lexPlural(R.plurals.gym_summary_unconfirmed, xp.unconfirmedSets, xp.unconfirmedSets), style = AwakenTheme.type.caption, color = colors.textSecondary)
         if (records.isNotEmpty()) {
             Text(lexString(R.string.gym_summary_records_title), style = AwakenTheme.type.label, color = colors.reward)
             records.forEach { exercise ->
@@ -509,6 +513,18 @@ private fun recordLine(exercise: String, event: RecordEvent): String = when (eve
     RecordType.BEST_E1RM -> lexString(R.string.gym_record_e1rm, exercise, formatNumber(event.value.roundTo1()))
     RecordType.MOST_REPS_AT_WEIGHT -> lexString(R.string.gym_record_reps, exercise, formatNumber(event.weightKg ?: 0.0), event.value.toInt())
     RecordType.BEST_SESSION_VOLUME -> lexString(R.string.gym_record_volume, exercise, formatCount(event.value.roundToLong()))
+}
+
+@PhonePreviews
+@Composable
+private fun GymSummaryXpPreview() {
+    AwakenTheme(reduceMotion = true) { GymScreen(previewGymState().copy(summaryId = "w0", summaryXp = GymXpResult(35, 6, 2, 0, false)), onEvent = {}) }
+}
+
+@PhonePreviews
+@Composable
+private fun GymSummaryXpCappedPreview() {
+    AwakenTheme(reduceMotion = true) { GymScreen(previewGymState().copy(summaryId = "w0", summaryXp = GymXpResult(20, 4, 0, 1, true)), onEvent = {}) }
 }
 
 @PhonePreviews

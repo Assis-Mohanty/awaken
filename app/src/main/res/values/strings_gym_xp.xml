@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="gym_summary_xp">+%1$d strength XP</string>
+    <string name="gym_summary_xp_capped">Daily limit reached, so some sets paid nothing.</string>
+    <plurals name="gym_summary_unconfirmed">
+        <item quantity="one">%1$d set is unconfirmed: repeat it in a later session to confirm.</item>
+        <item quantity="other">%1$d sets are unconfirmed: repeat them in a later session to confirm.</item>
+    </plurals>
+    <string name="gym_unconfirmed_lift">Unconfirmed: a %1$s kg estimate. Repeat it in a later session to confirm.</string>
+</resources>

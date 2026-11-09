@@ -73,6 +73,7 @@ internal fun StandingSection(ui: StandingUi, onEvent: (GymEvent) -> Unit) {
         )
     }
     ui.bestE1rmKg?.let { Text(lexString(R.string.gym_best_e1rm, formatNumber(it)), style = AwakenTheme.type.caption, color = colors.textSecondary) }
+    ui.unconfirmedKg?.let { Text(lexString(R.string.gym_unconfirmed_lift, formatNumber(it.roundTo1())), style = AwakenTheme.type.caption, color = colors.textSecondary) }
     val standing = ui.standing ?: return
     Text(lexString(R.string.gym_stand_title), style = AwakenTheme.type.label, color = colors.textPrimary)
     when (standing) {
