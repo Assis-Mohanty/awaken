@@ -17,7 +17,9 @@ import com.assismohanty.awaken.core.data.db.entity.WorkoutSetEntity
 import com.assismohanty.awaken.core.data.repo.TransactionRunner
 import com.assismohanty.awaken.engine.TrainingDays
 import com.assismohanty.awaken.engine.GameDay
+import com.assismohanty.awaken.engine.body.CoachedFlow
 import com.assismohanty.awaken.engine.body.Equipment
+import com.assismohanty.awaken.engine.body.FlowRow
 import com.assismohanty.awaken.engine.body.LoggedSet
 import com.assismohanty.awaken.engine.body.Muscle
 import com.assismohanty.awaken.engine.body.MuscleTargets
@@ -92,6 +94,9 @@ data class GymOverview(
     val trainingDay: Boolean = false,
 )
 
+/** The rest-end settings: [sound] plays the chime, [vibrate] buzzes. */
+data class RestAlerts(val sound: Boolean, val vibrate: Boolean)
+
 /** A rest timer that ran out; [chime] is false when it ended long ago (the phone was away). */
 data class RestEnd(val chime: Boolean)
 
@@ -120,7 +125,21 @@ sealed interface FinishResult {
     data object DiscardedEmpty : FinishResult
 }
 
+/** What completing a set did (GD §18.2). */
+sealed interface CompleteResult {
+    data object Completed : CompleteResult
+
+    /** The next set of the same exercise has to wait [secondsLeft] more seconds. */
+    data class TooSoon(val secondsLeft: Int) : CompleteResult
+
+    /** No reps (or no hold time) logged yet. */
+    data object NothingLogged : CompleteResult
+    data object NotFound : CompleteResult
+}
+
 internal fun WorkoutSetEntity.toLogged() = LoggedSet(weightKg, reps, done)
+
+internal fun WorkoutSetEntity.toFlow() = FlowRow(position, setIndex, side, done, superset)
 
 internal fun WorkoutSetEntity.targets() =
     MuscleTargets(primaryMuscles.mapNotNull(Muscle::fromKey).toSet(), secondaryMuscles.mapNotNull(Muscle::fromKey).toSet())
@@ -188,6 +207,11 @@ class GymTracker @Inject constructor(
 
     suspend fun activeWorkoutId(): String? = gymDao.activeWorkout()?.id
 
+    suspend fun workout(id: String): WorkoutEntity? = gymDao.workout(id)
+
+    /** Whether the end of a rest should sound and vibrate (Gym settings, GD §18.1); both on until set otherwise. */
+    suspend fun restAlerts(): RestAlerts = gymDao.gymSettings().let { RestAlerts(sound = it?.restSound ?: true, vibrate = it?.restVibrate ?: true) }
+
     /** Starts a session (or returns the one already running), optionally filled from [routineId]. */
     suspend fun start(name: String, routineId: String? = null): String = transactions.run {
         gymDao.activeWorkout()?.let { return@run it.id }
@@ -223,28 +247,47 @@ class GymTracker @Inject constructor(
         planned: RoutineExerciseEntity? = null,
     ) {
         val previous = gymDao.previousSets(exercise.id)
-        val count = (setCount ?: previous.size).coerceIn(1, MAX_SETS_PER_EXERCISE)
-        val rows = (0 until count).map { i ->
-            val template = previous.getOrNull(i) ?: previous.lastOrNull()
-            WorkoutSetEntity(
-                id = UUID.randomUUID().toString(),
-                workoutId = workoutId,
-                exerciseId = exercise.id,
-                exerciseName = exercise.name,
-                primaryMuscles = exercise.primary.map { it.key }.toSet(),
-                secondaryMuscles = exercise.secondary.map { it.key }.toSet(),
-                position = position,
-                setIndex = i,
-                weightKg = template?.weightKg ?: 0.0,
-                reps = template?.reps ?: planned?.repMin?.takeIf { planned.measure == RoutineExerciseEntity.MEASURE_REPS } ?: 0,
-                done = false,
-                restSec = RestRules.clamp(restSec ?: previous.lastOrNull()?.restSec),
-                section = planned?.section ?: RoutineExerciseEntity.SECTION_WORK,
-                superset = planned?.superset,
-                repMin = planned?.repMin,
-                repMax = planned?.repMax,
-                durationSec = null,
-            )
+        val previousBySet = previous.groupBy { it.setIndex }
+        val hint = hint(exercise.id) as? ProgressionHint.Suggest
+        // The hint is for the working sets (the heaviest of last time); warm-up ramps and back-offs repeat as they were.
+        val heaviest = previous.maxOfOrNull { it.weightKg } ?: 0.0
+        val working = previous.filter { it.weightKg == heaviest }
+        val count = (setCount ?: previousBySet.size).coerceIn(1, MAX_SETS_PER_EXERCISE)
+        val sides = if (planned?.unilateral == true) listOf("LEFT", "RIGHT") else listOf(null)
+        val timed = planned?.measure == RoutineExerciseEntity.MEASURE_TIME
+        val rows = (0 until count).flatMap { i ->
+            val template = previousBySet[i]?.first() ?: previous.lastOrNull()
+            val workingIndex = if (template == null) -1 else working.indexOfFirst { it.id == template.id }
+            sides.map { side ->
+                WorkoutSetEntity(
+                    id = UUID.randomUUID().toString(),
+                    workoutId = workoutId,
+                    exerciseId = exercise.id,
+                    exerciseName = exercise.name,
+                    primaryMuscles = exercise.primary.map { it.key }.toSet(),
+                    secondaryMuscles = exercise.secondary.map { it.key }.toSet(),
+                    position = position,
+                    setIndex = i,
+                    // The last session, nudged by the progression hint on the working sets (it only suggests; the hunter can change it).
+                    weightKg = if (workingIndex >= 0 && hint != null && hint.weightKg > 0.0) hint.weightKg else template?.weightKg ?: 0.0,
+                    reps = if (timed) {
+                        0
+                    } else if (workingIndex >= 0 && hint != null) {
+                        hint.reps.getOrNull(workingIndex) ?: hint.reps.lastOrNull() ?: template?.reps ?: 0
+                    } else {
+                        template?.reps ?: planned?.repMin ?: 0
+                    },
+                    done = false,
+                    restSec = RestRules.clamp(restSec ?: previous.lastOrNull()?.restSec),
+                    section = planned?.section ?: RoutineExerciseEntity.SECTION_WORK,
+                    // A timed exercise (plank) logs seconds held: a set with a hold time is a timed set.
+                    durationSec = if (timed) template?.durationSec ?: planned?.repMin ?: DEFAULT_HOLD_SEC else null,
+                    side = side,
+                    superset = planned?.superset,
+                    repMin = planned?.repMin,
+                    repMax = planned?.repMax,
+                )
+            }
         }
         gymDao.upsertSets(rows)
     }
@@ -252,11 +295,24 @@ class GymTracker @Inject constructor(
     /** Last session's sets of [exerciseId], for the "previous" column. */
     suspend fun previousSets(exerciseId: String): List<WorkoutSetEntity> = gymDao.previousSets(exerciseId)
 
+    /** One more set (both sides for a one-sided exercise), copied from the last one and not done. */
     suspend fun addSet(workoutId: String, position: Int) = transactions.run {
         val sets = gymDao.sets(workoutId).filter { it.position == position }
-        val last = sets.lastOrNull() ?: return@run
-        if (sets.size >= MAX_SETS_PER_EXERCISE) return@run
-        gymDao.upsertSets(listOf(last.copy(id = UUID.randomUUID().toString(), setIndex = last.setIndex + 1, done = false)))
+        val lastIndex = sets.maxOfOrNull { it.setIndex } ?: return@run
+        if (lastIndex + 1 >= MAX_SETS_PER_EXERCISE) return@run
+        gymDao.upsertSets(
+            sets.filter { it.setIndex == lastIndex }.map {
+                it.copy(id = UUID.randomUUID().toString(), setIndex = lastIndex + 1, done = false, completedAt = null)
+            },
+        )
+    }
+
+    /** Takes the last set away (both sides), unless it was done or it is the only one. */
+    suspend fun removeLastSet(workoutId: String, position: Int) = transactions.run {
+        val sets = gymDao.sets(workoutId).filter { it.position == position }
+        val lastIndex = sets.maxOfOrNull { it.setIndex } ?: return@run
+        if (sets.map { it.setIndex }.distinct().size < 2) return@run
+        sets.filter { it.setIndex == lastIndex && !it.done }.forEach { gymDao.deleteSet(it.id) }
     }
 
     /** Sets how long to rest between this exercise's sets; null turns the timer off for it. */
@@ -264,7 +320,10 @@ class GymTracker @Inject constructor(
         gymDao.setExerciseRest(workoutId, position, RestRules.clamp(restSec))
     }
 
-    /** Ticking a set done starts that exercise's rest; unticking one leaves a running rest alone. */
+    /**
+     * A direct edit of a whole set, with no minimum-rest check: kept for restoring and for tests. The screens use
+     * [completeSet] and the field-level setters, which read the row fresh and enforce the minimum rest.
+     */
     suspend fun updateSet(set: WorkoutSetEntity, weightKg: Double, reps: Int, done: Boolean) = transactions.run {
         val nowDone = done && reps > 0
         if (nowDone && !set.done) startRest(set.workoutId, gymDao.sets(set.workoutId).firstOrNull { it.id == set.id }?.restSec ?: set.restSec)
@@ -274,9 +333,107 @@ class GymTracker @Inject constructor(
                     weightKg = weightKg.coerceIn(0.0, TrainingMath.MAX_WEIGHT_KG),
                     reps = reps.coerceIn(0, TrainingMath.MAX_REPS),
                     done = nowDone,
+                    completedAt = if (nowDone) set.completedAt ?: clock.now() else null,
                 ),
             ),
         )
+    }
+
+    /**
+     * Completes a set (GD §18.2): refused with [CompleteResult.TooSoon] until the minimum rest since the previous set of the
+     * same exercise has passed, and with [CompleteResult.NothingLogged] while there is nothing to log. Stamps the
+     * completion time, and starts the rest unless a superset partner or the other side is still to do. A write of one
+     * field, read fresh, so a slow keystroke can never undo it.
+     */
+    suspend fun completeSet(setId: String): CompleteResult = transactions.run {
+        val set = gymDao.set(setId) ?: return@run CompleteResult.NotFound
+        if (set.done) return@run CompleteResult.Completed
+        val logged = set.durationSec?.let { it > 0 } ?: (set.reps > 0)
+        if (!logged) return@run CompleteResult.NothingLogged
+        val rows = gymDao.sets(set.workoutId)
+        val now = clock.now()
+        val previousAt = rows
+            .filter { it.exerciseId == set.exerciseId && it.done && it.setIndex != set.setIndex }
+            .mapNotNull { it.completedAt }
+            .maxOrNull()
+        val left = RestRules.minRestLeft(previousAt, now, set.restSec)
+        if (left > 0) return@run CompleteResult.TooSoon(left)
+        val done = set.copy(done = true, completedAt = now)
+        gymDao.upsertSets(listOf(done))
+        val flow = rows.map { if (it.id == set.id) done else it }.map(WorkoutSetEntity::toFlow)
+        if (CoachedFlow.restAfter(flow, done.toFlow())) startRest(set.workoutId, set.restSec)
+        CompleteResult.Completed
+    }
+
+    /** Opens a done set again so it can be edited; it counts as not done and has no completion time. */
+    suspend fun reopenSet(setId: String) = editSets(setId, alsoOtherSide = false) { it.copy(done = false, completedAt = null) }
+
+    /** Sets the weight of a set; the other side of a one-sided set follows while it is not done. */
+    suspend fun setWeight(setId: String, kg: Double) = editSets(setId) { it.copy(weightKg = kg.coerceIn(0.0, TrainingMath.MAX_WEIGHT_KG)) }
+
+    suspend fun setReps(setId: String, reps: Int) = editSets(setId) { it.copy(reps = reps.coerceIn(0, TrainingMath.MAX_REPS)) }
+
+    /** Seconds held, for a timed set. */
+    suspend fun setHold(setId: String, seconds: Int) = editSets(setId) { it.copy(durationSec = seconds.coerceIn(0, MAX_HOLD_SEC)) }
+
+    private suspend fun editSets(setId: String, alsoOtherSide: Boolean = true, change: (WorkoutSetEntity) -> WorkoutSetEntity) = transactions.run {
+        val set = gymDao.set(setId) ?: return@run
+        val targets = if (alsoOtherSide && set.side != null) {
+            gymDao.sets(set.workoutId).filter { it.position == set.position && it.setIndex == set.setIndex && (it.id == set.id || !it.done) }
+        } else {
+            listOf(set)
+        }
+        gymDao.upsertSets(targets.map(change))
+    }
+
+    /** Lengthens or shortens the running rest by [deltaSec] (−15 and +15 on the rest screen); it never goes past 10 minutes. */
+    suspend fun adjustRest(workoutId: String, deltaSec: Int) = transactions.run {
+        val workout = gymDao.workout(workoutId) ?: return@run
+        val ends = workout.restEndsAt ?: return@run
+        val total = workout.restTotalSec ?: return@run
+        val now = clock.now()
+        val newEnds = ends.plusSeconds(deltaSec.toLong())
+        val remaining = Duration.between(now, newEnds).seconds
+        if (remaining > RestRules.MAX_SEC) return@run
+        gymDao.upsertWorkout(
+            workout.copy(restEndsAt = if (newEnds.isBefore(now)) now else newEnds, restTotalSec = (total + deltaSec).coerceIn(RestRules.STEP_SEC, RestRules.MAX_SEC)),
+        )
+    }
+
+    /** Switches between coached (one exercise at a time) and the list of every set. */
+    suspend fun setMode(workoutId: String, mode: String) = gymDao.setWorkoutMode(workoutId, mode)
+
+    /**
+     * "Swap with" (GD §18.2): the sets still to do become [newExerciseId], keeping their count, targets and rest. Sets already
+     * done stay as they were, under the old exercise, so the log tells the truth.
+     */
+    suspend fun replaceExercise(workoutId: String, position: Int, newExerciseId: String) = transactions.run {
+        val exercise = exercise(newExerciseId) ?: return@run
+        val rows = gymDao.sets(workoutId).filter { it.position == position }
+        val remaining = rows.filter { !it.done }
+        if (remaining.isEmpty()) return@run
+        val target = if (rows.any { it.done }) position + 1 else position
+        if (target != position) gymDao.shiftPositionsAfter(workoutId, position)
+        val previous = gymDao.previousSets(exercise.id)
+        gymDao.upsertSets(
+            remaining.map { row ->
+                val template = previous.getOrNull(row.setIndex) ?: previous.lastOrNull()
+                row.copy(
+                    exerciseId = exercise.id,
+                    exerciseName = exercise.name,
+                    primaryMuscles = exercise.primary.map { it.key }.toSet(),
+                    secondaryMuscles = exercise.secondary.map { it.key }.toSet(),
+                    position = target,
+                    weightKg = template?.weightKg ?: 0.0,
+                    reps = if (row.durationSec != null) row.reps else template?.reps ?: row.repMin ?: row.reps,
+                )
+            },
+        )
+    }
+
+    /** Drops the sets of an exercise that are not done yet and moves on; done sets stay. */
+    suspend fun skipExercise(workoutId: String, position: Int) = transactions.run {
+        gymDao.sets(workoutId).filter { it.position == position && !it.done }.forEach { gymDao.deleteSet(it.id) }
     }
 
     private suspend fun startRest(workoutId: String, restSec: Int?) {
@@ -423,10 +580,23 @@ class GymTracker @Inject constructor(
     suspend fun saveAsRoutine(workoutId: String, name: String): String? = transactions.run {
         val exercises = group(gymDao.sets(workoutId))
         if (exercises.isEmpty()) return@run null
-        val routine = RoutineEntity(id = UUID.randomUUID().toString(), name = name.trim().take(MAX_NAME), updatedAt = clock.now())
+        val routine = RoutineEntity(
+            id = UUID.randomUUID().toString(), name = name.trim().take(MAX_NAME), updatedAt = clock.now(),
+            sortOrder = (gymDao.routines().maxOfOrNull { it.sortOrder } ?: -1) + 1,
+        )
         gymDao.upsertRoutine(routine)
         gymDao.insertRoutineExercises(
-            exercises.mapIndexed { i, e -> RoutineExerciseEntity(routine.id, i, e.exerciseId, e.sets.size.coerceAtLeast(1), e.restSec) },
+            exercises.mapIndexed { i, e ->
+                val first = e.sets.first()
+                RoutineExerciseEntity(
+                    routineId = routine.id, position = i, exerciseId = e.exerciseId,
+                    // A one-sided exercise has two rows per set.
+                    setCount = e.sets.map { it.setIndex }.distinct().size.coerceAtLeast(1), restSec = e.restSec,
+                    repMin = first.repMin, repMax = first.repMax, superset = first.superset, unilateral = first.side != null,
+                    section = first.section,
+                    measure = if (first.durationSec != null) RoutineExerciseEntity.MEASURE_TIME else RoutineExerciseEntity.MEASURE_REPS,
+                )
+            },
         )
         routine.id
     }
@@ -511,6 +681,8 @@ class GymTracker @Inject constructor(
         // Input sanity (not game numbers).
         const val MAX_NAME = 60
         const val MAX_SETS_PER_EXERCISE = 20
+        const val MAX_HOLD_SEC = 3_600
+        const val DEFAULT_HOLD_SEC = 30
     }
 }
 

@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Gym: the running workout, coached and list modes, rest screen (GAME_DESIGN §18.2) -->
+    <string name="gym_finish_workout">Finish workout</string>
+    <string name="gym_progress_cd">Exercise %1$d of %2$d</string>
+    <string name="gym_menu_cd">More for this workout</string>
+    <plurals name="gym_sets_done">
+        <item quantity="one">%d set done</item>
+        <item quantity="other">%d sets done</item>
+    </plurals>
+
+    <string name="gym_set_of">Set %1$d of %2$d</string>
+    <string name="gym_superset_of">Superset %1$s · %2$d of %3$d</string>
+    <string name="gym_side_left">Left side</string>
+    <string name="gym_side_right">Right side</string>
+    <string name="gym_target_range">Target %1$d–%2$d reps</string>
+    <string name="gym_target_hold">Target %1$d–%2$d seconds</string>
+    <string name="gym_unit_reps">reps</string>
+    <string name="gym_unit_seconds">seconds</string>
+    <string name="gym_number_weight_cd">Weight, %1$s kilograms. Tap to type.</string>
+    <string name="gym_number_reps_cd">Reps, %1$d. Tap to type.</string>
+    <string name="gym_number_hold_cd">Hold, %1$d seconds. Tap to type.</string>
+    <string name="gym_less_weight">Less weight</string>
+    <string name="gym_more_weight">More weight</string>
+    <string name="gym_less_reps">Fewer reps</string>
+    <string name="gym_more_reps">More reps</string>
+    <string name="gym_less_hold">Shorter hold</string>
+    <string name="gym_more_hold">Longer hold</string>
+
+    <string name="gym_last_time">Last time: %1$s</string>
+    <string name="gym_last_weighted">%1$s kg × %2$s</string>
+    <string name="gym_last_bodyweight">%1$s reps</string>
+    <string name="gym_last_time_none">First time. Start light and build up.</string>
+    <string name="gym_complete_set">Complete set</string>
+    <string name="gym_complete_wait">Rest at least %1$d s between sets so the log stays honest. Ready in %2$d s.</string>
+    <string name="gym_done_set_line">%1$d · %2$s</string>
+    <string name="gym_done_set_cd">Set %1$d done: %2$s. Tap to edit.</string>
+    <string name="gym_done_weighted">%1$s kg × %2$d</string>
+    <string name="gym_done_bodyweight">%1$d reps</string>
+    <string name="gym_done_hold">%1$d s</string>
+    <string name="gym_try_weighted">Try %1$s kg × %2$s</string>
+    <string name="gym_try_bodyweight">Try %1$s reps</string>
+    <string name="gym_all_done">Every set is done.</string>
+
+    <!-- Menu and swap -->
+    <string name="gym_menu_replace">Swap exercise</string>
+    <string name="gym_menu_plates">Plate calculator</string>
+    <string name="gym_menu_history">History</string>
+    <string name="gym_menu_add_set">Add a set</string>
+    <string name="gym_menu_remove_set">Remove last set</string>
+    <string name="gym_menu_skip">Skip this exercise</string>
+    <string name="gym_menu_remove">Remove this exercise</string>
+    <string name="gym_menu_list_mode">Show all sets in a list</string>
+    <string name="gym_menu_coached_mode">Show one exercise at a time</string>
+    <string name="gym_menu_discard">Discard workout</string>
+    <string name="gym_replace_title">Swap with</string>
+    <string name="gym_replace_easier">Easier</string>
+    <string name="gym_replace_similar">Similar</string>
+    <string name="gym_replace_harder">Harder</string>
+    <string name="gym_replace_none">No alternatives in the library for your equipment.</string>
+    <string name="gym_replace_note">Sets you already did stay as they were.</string>
+
+    <!-- Rest -->
+    <string name="gym_rest_screen_title">Rest</string>
+    <string name="gym_rest_minimise">Hide the rest screen</string>
+    <string name="gym_rest_less">−15</string>
+    <string name="gym_rest_more">+15</string>
+    <string name="gym_rest_less_cd">Shorten the rest by 15 seconds</string>
+    <string name="gym_rest_more_cd">Add 15 seconds to the rest</string>
+    <string name="gym_rest_skip_in">Skip in %1$d s</string>
+    <string name="gym_rest_log_last">Log last set</string>
+    <string name="gym_next_up">Next up</string>
+    <string name="gym_next_up_line">%1$s · %2$s</string>
+    <string name="gym_rest_ring_cd">%1$s left of %2$s rest</string>
+    <string name="gym_rest_banner">Resting %1$s</string>
+    <string name="gym_rest_show">Show</string>
+
+    <!-- Number pad, last set -->
+    <string name="gym_pad_title_weight">Weight (kg)</string>
+    <string name="gym_pad_title_reps">Reps</string>
+    <string name="gym_pad_title_hold">Hold (seconds)</string>
+    <string name="gym_pad_done">Done</string>
+    <string name="gym_last_set_title">Last set</string>
+
+    <!-- Finish, stale workout -->
+    <string name="gym_finish_confirm_title">Finish now?</string>
+    <plurals name="gym_finish_confirm_body">
+        <item quantity="one">%d set isn’t done and won’t be saved.</item>
+        <item quantity="other">%d sets aren’t done and won’t be saved.</item>
+    </plurals>
+    <string name="gym_finish_confirm_keep">Keep going</string>
+    <string name="gym_stale_title">Unfinished workout</string>
+    <string name="gym_stale_body">This workout was started on %1$s. Finish it to save what you did, or discard it.</string>
+
+    <!-- List mode -->
+    <string name="gym_list_set">Set %1$d</string>
+    <string name="gym_list_set_side">Set %1$d, %2$s</string>
+    <string name="gym_list_done">Done</string>
+    <string name="gym_list_reopen_cd">Reopen set %1$d</string>
+    <string name="gym_list_complete_cd">Complete set %1$d</string>
+</resources>

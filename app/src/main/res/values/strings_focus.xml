@@ -82,6 +82,9 @@
     <string name="cd_gym_rest">Rest between sets: %1$s</string>
     <string name="gym_rest_running">Rest %1$s</string>
     <string name="gym_rest_skip">Skip</string>
+    <string name="gym_rest_notif_title">Resting</string>
+    <string name="gym_rest_notif_body">Your next set is ready when this reaches zero.</string>
+    <string name="gym_rest_add_15">+15 s</string>
     <string name="gym_rest_over_title">Rest over</string>
     <string name="gym_rest_over_body">Ready for your next set.</string>
     <string name="gym_summary_title">Session complete</string>

@@ -5,6 +5,11 @@
 
     <!-- Focus Gate countdown and "return to claim" notifications (ARCH §3.3). Requested when a gate opens. -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Gym rest timer (GD 18.2): a foreground service counts the rest down and chimes with the screen off. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.VIBRATE" />
 
     <!-- Health Connect (ARCH §3.4): read-only. Core: steps, exercise, sleep. Optional: distance, active calories, heart rate. No background-read permission. -->
     <uses-permission android:name="android.permission.health.READ_STEPS" />
@@ -70,6 +75,16 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- Gym rest timer (GD 18.2). Play Console asks for the special-use declaration below. -->
+        <service
+            android:name=".core.work.RestTimerService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Gym rest timer: counts down the rest between sets and sounds an alert when it ends, with the screen off" />
+        </service>
 
         <!-- Focus Lock (GD 8.2): window-change events only, package name only; scoped to AWAKEN while idle and never to payment apps (ED #149). Opt-in in Android Accessibility settings. -->
         <service

@@ -77,7 +77,8 @@ class GymTrackerTest {
         gym.addExercise(workoutId, benchId())
 
         val sets = checkNotNull(gym.observeActive().first()).exercises.single().sets
-        assertThat(sets.map { it.weightKg to it.reps }).containsExactly(60.0 to 10, 70.0 to 8).inOrder()
+        // The warm-up set repeats as it was; the working set at 70 kg takes the hint (one more rep, GD §16.6).
+        assertThat(sets.map { it.weightKg to it.reps }).containsExactly(60.0 to 10, 70.0 to 9).inOrder()
         assertThat(sets.none { it.done }).isTrue()
     }
 

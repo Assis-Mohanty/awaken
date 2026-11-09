@@ -54,5 +54,6 @@ object GymContent {
         category = row.category,
         requires = overlay?.requires.orEmpty().mapNotNull(Gear::fromKey).toSet(),
         loads = overlay?.loads.orEmpty().mapNotNull { name -> InjuryRegion.entries.firstOrNull { it.name == name } }.toSet(),
+        variant = overlay?.variant,
     )
 }

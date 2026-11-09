@@ -36,6 +36,10 @@ import com.assismohanty.awaken.core.domain.RoutineDetail
 import com.assismohanty.awaken.core.domain.WorkoutSummary
 import com.assismohanty.awaken.core.domain.WeekDay
 import com.assismohanty.awaken.engine.body.DayPlan
+import com.assismohanty.awaken.engine.body.ExerciseAlternatives
+import com.assismohanty.awaken.engine.body.StepIncrement
+import com.assismohanty.awaken.core.domain.CompleteResult
+import com.assismohanty.awaken.core.data.db.entity.WorkoutEntity
 import com.assismohanty.awaken.engine.body.PlanFit
 import com.assismohanty.awaken.engine.body.TrainingMath
 import com.assismohanty.awaken.engine.body.WeekSchedule
@@ -65,6 +69,7 @@ import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.withLock
 
 /** The exercise picker sheet: search text, equipment chips and an optional muscle from the body map. */
 data class ExercisePicker(
@@ -106,7 +111,38 @@ data class GymFlow(
     val deleteId: String? = null,
     /** The picker adds to this routine instead of the running workout. */
     val pickerRoutineId: String? = null,
+    // The running workout (GD §18.2)
+    val labels: Map<String, ExerciseLabel> = emptyMap(),
+    val numberPad: NumberPadUi? = null,
+    /** The ⋯ menu is open for the exercise at this position. */
+    val workoutMenu: Int? = null,
+    val replace: ReplaceUi? = null,
+    val confirmFinish: Boolean = false,
+    val lastSetSheet: Boolean = false,
+    /** The rest screen was minimised for the rest that ends at this time; a new rest shows it again. */
+    val restMinimisedFor: Instant? = null,
 )
+
+/** The field the number pad is editing. */
+enum class PadField { WEIGHT, REPS, HOLD }
+
+data class NumberPadUi(val setId: String, val field: PadField)
+
+/** How an exercise of the running workout is shown: a clean name, its grip or setup, and how far the stepper moves (GD §18.2). */
+data class ExerciseLabel(val name: String, val variant: String?, val stepKg: Double)
+
+data class ExerciseChoice(val id: String, val name: String, val variant: String?)
+
+/** "Swap with" for one exercise: harder, similar and easier library alternatives; an empty list shows no option (GD §18.2). */
+data class ReplaceUi(
+    val position: Int,
+    val name: String,
+    val easier: List<ExerciseChoice>,
+    val similar: List<ExerciseChoice>,
+    val harder: List<ExerciseChoice>,
+) {
+    val isEmpty: Boolean get() = easier.isEmpty() && similar.isEmpty() && harder.isEmpty()
+}
 
 /** The plans that fit the hunter and the exercise names they refer to. */
 data class PlansData(val fits: List<PlanFit>, val names: Map<String, String>, val loaded: Boolean = true)
@@ -191,6 +227,15 @@ data class GymUiState(
     val settingsOpen: Boolean = false,
     val history: HistoryUi? = null,
     val home: GymHomeUi? = null,
+    val labels: Map<String, ExerciseLabel> = emptyMap(),
+    val numberPad: NumberPadUi? = null,
+    val workoutMenu: Int? = null,
+    val replace: ReplaceUi? = null,
+    val confirmFinish: Boolean = false,
+    val lastSetSheet: Boolean = false,
+    val restMinimisedFor: Instant? = null,
+    /** The running workout was started on an earlier game-day: offer to finish or discard it instead of carrying on. */
+    val staleWorkout: Boolean = false,
 )
 
 sealed interface GymEvent {
@@ -259,10 +304,31 @@ sealed interface GymEvent {
     data object CloseCustomForm : GymEvent
     data class CreateCustom(val name: String, val equipment: Equipment, val primary: Set<Muscle>, val secondary: Set<Muscle>) : GymEvent
 
-    data class UpdateSet(val set: WorkoutSetEntity, val weightKg: Double, val reps: Int, val done: Boolean) : GymEvent
+    // The running workout: field-level writes, never a whole-row snapshot (GD §18.2)
+    data class SetWeight(val setId: String, val kg: Double) : GymEvent
+    data class SetReps(val setId: String, val reps: Int) : GymEvent
+    data class SetHold(val setId: String, val seconds: Int) : GymEvent
+    data class CompleteSet(val setId: String) : GymEvent
+    data class ReopenSet(val setId: String) : GymEvent
+    data class AdjustRest(val deltaSec: Int) : GymEvent
+    data object MinimiseRest : GymEvent
+    data object ShowRest : GymEvent
+    data class OpenNumberPad(val setId: String, val field: PadField) : GymEvent
+    data object CloseNumberPad : GymEvent
+    data class OpenWorkoutMenu(val position: Int) : GymEvent
+    data object CloseWorkoutMenu : GymEvent
+    data class OpenReplace(val position: Int) : GymEvent
+    data object CloseReplace : GymEvent
+    data class ReplaceWith(val position: Int, val exerciseId: String) : GymEvent
+    data class SkipExercise(val position: Int) : GymEvent
     data class AddSet(val position: Int) : GymEvent
-    data class RemoveSet(val setId: String) : GymEvent
+    data class RemoveLastSet(val position: Int) : GymEvent
     data class RemoveExercise(val position: Int) : GymEvent
+    data object ToggleMode : GymEvent
+    data object AskFinish : GymEvent
+    data object DismissFinish : GymEvent
+    data object OpenLastSet : GymEvent
+    data object CloseLastSet : GymEvent
 
     data object Finish : GymEvent
     data object AskDiscard : GymEvent
@@ -272,7 +338,6 @@ sealed interface GymEvent {
     data object DismissSaveRoutine : GymEvent
     data class SaveRoutine(val name: String) : GymEvent
     data object DismissNotice : GymEvent
-    data class StepRest(val position: Int, val current: Int?, val up: Boolean) : GymEvent
     data object SkipRest : GymEvent
     data object DismissSummary : GymEvent
 }
@@ -327,6 +392,13 @@ class GymViewModel @Inject constructor(
             plates = f.plates?.let { PlatesUi(it.target, it.unit, prefs.setup(it.unit), if (it.target > 0.0) PlateMath.plan(it.target, prefs.setup(it.unit)) else null) },
             settingsOpen = f.settingsOpen,
             history = f.history?.toUi(prefs),
+            labels = f.labels,
+            numberPad = f.numberPad,
+            workoutMenu = f.workoutMenu,
+            replace = f.replace,
+            confirmFinish = f.confirmFinish,
+            lastSetSheet = f.lastSetSheet,
+            restMinimisedFor = f.restMinimisedFor,
         )
     }
 
@@ -367,7 +439,11 @@ class GymViewModel @Inject constructor(
 
     val uiState: StateFlow<GymUiState> = combine(core, home) { state, h ->
         // A finished workout on the selected day shows under it; the overview already holds every summary.
-        state.copy(home = h?.copy(selectedFinished = state.overview?.history.orEmpty().filter { it.gameDate == h.selected }))
+        val today = h?.week?.firstOrNull { it.today }?.date
+        state.copy(
+            home = h?.copy(selectedFinished = state.overview?.history.orEmpty().filter { it.gameDate == h.selected }),
+            staleWorkout = today != null && state.active?.workout?.gameDate?.isBefore(today) == true,
+        )
     }.onEach { state ->
         val workout = state.active?.workout
         val endsAt = workout?.restEndsAt
@@ -386,10 +462,34 @@ class GymViewModel @Inject constructor(
                 lastLoadedPrevious = ids
                 val previous = ids.associateWith { gym.previousSets(it) }
                 val records = ids.associateWith { gym.recordHistory(it) }
-                flow.update { it.copy(previous = previous, recordHistory = records) }
+                flow.update { it.copy(previous = previous, recordHistory = records, labels = labelsFor(active)) }
                 reloadHints(ids)
             }
         }
+    }
+
+    /** Clean names, variants and the stepper size of every exercise in the running workout (workouts stay in kg, so the step is in kg). */
+    private suspend fun labelsFor(active: ActiveWorkout?): Map<String, ExerciseLabel> {
+        val exercises = active?.exercises ?: return emptyMap()
+        val infos = planner.infos()
+        val prefs = gym.prefs()
+        return exercises.associate { e ->
+            val info = infos[e.exerciseId]
+            val own = gym.progression(e.exerciseId, info?.primary.orEmpty()).takeIf { it.customIncrement }?.incrementKg
+            val step = own ?: info?.let { StepIncrement.step(it.equipment, PlateUnit.KG, prefs.kg) } ?: StepIncrement.step(Equipment.OTHER, PlateUnit.KG, prefs.kg)
+            e.exerciseId to ExerciseLabel(info?.name ?: e.name, info?.variant, step)
+        }
+    }
+
+    private suspend fun openReplace(position: Int) {
+        val exercise = uiState.value.active?.exercises?.firstOrNull { it.position == position } ?: return
+        val infos = planner.infos()
+        val info = infos[exercise.exerciseId]
+        val answers = answers.first()
+        val alternatives = info?.let { ExerciseAlternatives.of(it, infos.values, answers.gear, answers.injuries) }
+        fun choices(list: List<com.assismohanty.awaken.engine.body.ExerciseInfo>?) = list.orEmpty().map { ExerciseChoice(it.id, it.name, it.variant) }
+        val ui = ReplaceUi(position, info?.name ?: exercise.name, choices(alternatives?.easier), choices(alternatives?.similar), choices(alternatives?.harder))
+        flow.update { it.copy(replace = ui) }
     }
 
     /** Hints depend on each exercise's last session and its overrides, so they reload when either can have changed. */
@@ -530,10 +630,56 @@ class GymViewModel @Inject constructor(
                 flow.update { it.copy(picker = null) }
             }
 
-            is GymEvent.UpdateSet -> launch { gym.updateSet(event.set, event.weightKg, event.reps, event.done) }
-            is GymEvent.AddSet -> withActive { gym.addSet(it, event.position) }
-            is GymEvent.RemoveSet -> launch { gym.removeSet(event.setId) }
-            is GymEvent.RemoveExercise -> withActive { gym.removeExercise(it, event.position) }
+            is GymEvent.SetWeight -> ordered { gym.setWeight(event.setId, event.kg) }
+            is GymEvent.SetReps -> ordered { gym.setReps(event.setId, event.reps) }
+            is GymEvent.SetHold -> ordered { gym.setHold(event.setId, event.seconds) }
+            is GymEvent.CompleteSet -> ordered {
+                // The rest screen shows again for the new rest.
+                if (gym.completeSet(event.setId) == CompleteResult.Completed) flow.update { it.copy(restMinimisedFor = null) }
+            }
+            is GymEvent.ReopenSet -> ordered { gym.reopenSet(event.setId) }
+            is GymEvent.AdjustRest -> ordered { gym.activeWorkoutId()?.let { gym.adjustRest(it, event.deltaSec) } }
+            GymEvent.MinimiseRest -> launch {
+                val ends = gym.activeWorkoutId()?.let { gym.workout(it) }?.restEndsAt
+                flow.update { it.copy(restMinimisedFor = ends) }
+            }
+            GymEvent.ShowRest -> flow.update { it.copy(restMinimisedFor = null) }
+            is GymEvent.OpenNumberPad -> flow.update { it.copy(numberPad = NumberPadUi(event.setId, event.field)) }
+            GymEvent.CloseNumberPad -> flow.update { it.copy(numberPad = null) }
+            is GymEvent.OpenWorkoutMenu -> flow.update { it.copy(workoutMenu = event.position) }
+            GymEvent.CloseWorkoutMenu -> flow.update { it.copy(workoutMenu = null) }
+            is GymEvent.OpenReplace -> launch { openReplace(event.position) }
+            GymEvent.CloseReplace -> flow.update { it.copy(replace = null) }
+            is GymEvent.ReplaceWith -> withActive {
+                gym.replaceExercise(it, event.position, event.exerciseId)
+                flow.update { f -> f.copy(replace = null, workoutMenu = null) }
+                lastLoadedPrevious = emptySet()
+            }
+            is GymEvent.SkipExercise -> withActive {
+                gym.skipExercise(it, event.position)
+                flow.update { f -> f.copy(workoutMenu = null) }
+            }
+            is GymEvent.AddSet -> withActive {
+                gym.addSet(it, event.position)
+                flow.update { f -> f.copy(workoutMenu = null) }
+            }
+            is GymEvent.RemoveLastSet -> withActive {
+                gym.removeLastSet(it, event.position)
+                flow.update { f -> f.copy(workoutMenu = null) }
+            }
+            is GymEvent.RemoveExercise -> withActive {
+                gym.removeExercise(it, event.position)
+                flow.update { f -> f.copy(workoutMenu = null) }
+            }
+            GymEvent.ToggleMode -> withActive { id ->
+                val coached = gym.workout(id)?.mode == WorkoutEntity.MODE_COACHED
+                gym.setMode(id, if (coached) WorkoutEntity.MODE_LIST else WorkoutEntity.MODE_COACHED)
+                flow.update { f -> f.copy(workoutMenu = null) }
+            }
+            GymEvent.AskFinish -> flow.update { it.copy(confirmFinish = true) }
+            GymEvent.DismissFinish -> flow.update { it.copy(confirmFinish = false) }
+            GymEvent.OpenLastSet -> flow.update { it.copy(lastSetSheet = true) }
+            GymEvent.CloseLastSet -> flow.update { it.copy(lastSetSheet = false) }
 
             is GymEvent.OpenPlates -> launch {
                 val unit = gym.prefs().unit
@@ -592,9 +738,9 @@ class GymViewModel @Inject constructor(
             GymEvent.Finish -> withActive { workoutId ->
                 when (val result = gym.finish(workoutId)) {
                     is FinishResult.Finished -> flow.update {
-                        it.copy(summaryId = workoutId, notice = null, summaryRecords = result.records)
+                        it.copy(summaryId = workoutId, notice = null, summaryRecords = result.records, confirmFinish = false, restMinimisedFor = null)
                     }
-                    FinishResult.DiscardedEmpty -> flow.update { it.copy(notice = GymNotice.DISCARDED_EMPTY) }
+                    FinishResult.DiscardedEmpty -> flow.update { it.copy(notice = GymNotice.DISCARDED_EMPTY, confirmFinish = false) }
                 }
             }
             GymEvent.AskDiscard -> flow.update { it.copy(confirmDiscard = true) }
@@ -605,15 +751,13 @@ class GymViewModel @Inject constructor(
             }
             GymEvent.AskSaveRoutine -> flow.update { it.copy(routinePrompt = true) }
             GymEvent.DismissSaveRoutine -> flow.update { it.copy(routinePrompt = false) }
-            is GymEvent.SaveRoutine -> withActive { workoutId ->
-                if (event.name.isBlank()) return@withActive
+            is GymEvent.SaveRoutine -> launch {
+                if (event.name.isBlank()) return@launch
+                val workoutId = flow.value.summaryId ?: gym.activeWorkoutId() ?: return@launch
                 val saved = gym.saveAsRoutine(workoutId, event.name) != null
                 flow.update { it.copy(routinePrompt = false, notice = if (saved) GymNotice.ROUTINE_SAVED else it.notice) }
             }
             GymEvent.DismissNotice -> flow.update { it.copy(notice = null) }
-            is GymEvent.StepRest -> withActive { workoutId ->
-                gym.setRest(workoutId, event.position, if (event.up) RestRules.stepUp(event.current) else RestRules.stepDown(event.current))
-            }
             GymEvent.SkipRest -> withActive { gym.skipRest(it) }
             GymEvent.DismissSummary -> flow.update { it.copy(summaryId = null, summaryRecords = emptyList()) }
         }
@@ -621,7 +765,14 @@ class GymViewModel @Inject constructor(
 
     private fun handleRestDue(workoutId: String) = launch {
         val end = gym.finishRestIfDue(workoutId) ?: return@launch
-        if (end.chime) chimePlayer.play(uiPrefs.prefs.first().chime)
+        if (end.chime && gym.restAlerts().sound) chimePlayer.play(uiPrefs.prefs.first().chime)
+    }
+
+    /** Workout edits run one after another in the order they were made, so a quick weight, reps and Complete never overtake each other. */
+    private val commands = kotlinx.coroutines.sync.Mutex()
+
+    private fun ordered(block: suspend () -> Unit) {
+        viewModelScope.launch { commands.withLock { block() } }
     }
 
     private fun launch(block: suspend () -> Unit) {

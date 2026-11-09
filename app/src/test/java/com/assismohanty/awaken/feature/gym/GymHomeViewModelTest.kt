@@ -73,8 +73,7 @@ class GymHomeViewModelTest {
         assertThat(home { it.planDetail != null }.planDetail?.fit?.plan?.id).isEqualTo("ppl3")
         viewModel.onEvent(GymEvent.AddPlan("ppl3"))
 
-        val h = home { it.routines.size == 3 && it.selectedRoutine != null }
-        assertThat(h.planDetail).isNull()
+        val h = home { it.routines.size == 3 && it.selectedRoutine != null && it.planDetail == null }
         assertThat(viewModel.uiState.value.notice).isEqualTo(GymNotice.PLAN_ADDED)
         // Monday is the first day of the plan, and today.
         assertThat(h.selectedRoutine?.name).isEqualTo("Push / Pull / Legs, 3 days · Push")

@@ -28,6 +28,8 @@ data class ExerciseInfo(
     val requires: Set<Gear> = emptySet(),
     /** Regions the overlay says this exercise loads, on top of the muscle rules. */
     val loads: Set<InjuryRegion> = emptySet(),
+    /** The grip or setup, shown under the clean name ("Barbell · medium grip"). */
+    val variant: String? = null,
 ) {
     val needs: ExerciseNeeds get() = ExerciseNeeds(equipment, requires)
 

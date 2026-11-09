@@ -1,6 +1,10 @@
 package com.assismohanty.awaken.core.work
 
 import android.content.Context
+import android.content.Intent
+import androidx.core.content.ContextCompat
+import timber.log.Timber
+import java.time.Instant
 import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
 import androidx.work.Data
@@ -39,7 +43,7 @@ class RestEndWorker @AssistedInject constructor(
         val workoutId = inputData.getString(KEY_WORKOUT_ID) ?: return Result.success()
         val end = gym.finishRestIfDue(workoutId) ?: return Result.success()
         notifications.showRestOver()
-        if (end.chime) chimePlayer.play(uiPrefs.prefs.first().chime)
+        if (end.chime && gym.restAlerts().sound) chimePlayer.play(uiPrefs.prefs.first().chime)
         return Result.success()
     }
 
@@ -59,12 +63,27 @@ class WorkRestScheduler @Inject constructor(
     @dagger.hilt.android.qualifiers.ApplicationContext private val context: Context,
     private val clock: Clock,
 ) : RestScheduler {
+    private var startedFor: Instant? = null
+
     override fun sync(workout: WorkoutEntity?) {
         val manager = WorkManager.getInstance(context)
         val endsAt = workout?.restEndsAt
         if (workout == null || endsAt == null) {
             manager.cancelUniqueWork(RestEndWorker.NAME)
+            if (startedFor != null) {
+                startedFor = null
+                context.stopService(Intent(context, RestTimerService::class.java))
+            }
             return
+        }
+        // The service keeps the countdown and the chime with the screen off; the worker below is the fallback when it cannot start.
+        if (startedFor != endsAt) {
+            startedFor = endsAt
+            try {
+                ContextCompat.startForegroundService(context, RestTimerService.intent(context, RestTimerService.ACTION_START, workout.id, endsAt))
+            } catch (e: Exception) {
+                Timber.w(e, "The rest timer service could not start; the end-of-rest job will do")
+            }
         }
         val delay = Duration.between(clock.now(), endsAt).toMillis().coerceAtLeast(0)
         manager.enqueueUniqueWork(

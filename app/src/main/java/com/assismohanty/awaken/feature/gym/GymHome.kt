@@ -82,7 +82,7 @@ private fun DayCard(home: GymHomeUi, onEvent: (GymEvent) -> Unit) {
         AwakenCard(reveal = false, modifier = Modifier.fillMaxWidth()) {
             Text(workout.name.ifBlank { lexString(R.string.gym_workout_default_name) }, style = AwakenTheme.type.windowTitle, color = colors.textPrimary)
             Text(
-                lexString(R.string.gym_history_meta, formatDate(workout.gameDate), workout.duration.toMinutes().toInt(), workout.sets, formatKg(workout.volumeKg)),
+                lexString(R.string.gym_history_meta, formatDate(workout.gameDate), workout.duration.toMinutes().toInt(), lexPlural(R.plurals.gym_sets_count, workout.sets, workout.sets), formatKg(workout.volumeKg)),
                 style = AwakenTheme.type.caption,
                 color = colors.textSecondary,
             )

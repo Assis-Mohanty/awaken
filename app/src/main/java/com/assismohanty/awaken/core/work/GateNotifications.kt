@@ -61,6 +61,25 @@ class GateNotifications @Inject constructor(
         notify(RUNNING_ID, builder)
     }
 
+    /** The ongoing gym rest countdown (a chronometer drawn by the system) with Skip and +15 s, for the rest timer service. */
+    fun restRunning(endsAt: Instant, skip: PendingIntent, add: PendingIntent): android.app.Notification {
+        val resources = words.resources(context)
+        return base()
+            .setContentTitle(resources.getString(R.string.gym_rest_notif_title))
+            .setContentText(resources.getString(R.string.gym_rest_notif_body))
+            .setOngoing(true)
+            .setOnlyAlertOnce(true)
+            .setSilent(true)
+            .setWhen(endsAt.toEpochMilli())
+            .setShowWhen(true)
+            .setUsesChronometer(true)
+            .setChronometerCountDown(true)
+            .setCategory(NotificationCompat.CATEGORY_PROGRESS)
+            .addAction(0, resources.getString(R.string.gym_rest_skip), skip)
+            .addAction(0, resources.getString(R.string.gym_rest_add_15), add)
+            .build()
+    }
+
     /** The gym rest timer ran out while the app was away. */
     fun showRestOver() {
         notify(

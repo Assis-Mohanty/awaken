@@ -116,10 +116,10 @@ interface GymDao {
 
     // Sets
 
-    @Query("SELECT * FROM workout_set WHERE workout_id = :workoutId ORDER BY position, set_index")
+    @Query("SELECT * FROM workout_set WHERE workout_id = :workoutId ORDER BY position, set_index, side")
     fun observeSets(workoutId: String): Flow<List<WorkoutSetEntity>>
 
-    @Query("SELECT * FROM workout_set WHERE workout_id = :workoutId ORDER BY position, set_index")
+    @Query("SELECT * FROM workout_set WHERE workout_id = :workoutId ORDER BY position, set_index, side")
     suspend fun sets(workoutId: String): List<WorkoutSetEntity>
 
     /** Every set of every finished workout: history, PRs and muscle load are derived from these. */
@@ -129,20 +129,34 @@ interface GymDao {
     )
     fun observeFinishedSets(): Flow<List<WorkoutSetEntity>>
 
-    /** Sets of [exerciseId] in the most recent finished workout that has it: the "previous" column. */
+    /**
+     * The done work sets of [exerciseId] in the most recent finished workout that has any: "Last time". Warm-ups and
+     * sets that were never done are not history, so a workout with only those is skipped rather than shown as empty.
+     */
     @Query(
-        "SELECT s.* FROM workout_set s WHERE s.exercise_id = :exerciseId AND s.workout_id = (" +
+        "SELECT s.* FROM workout_set s WHERE s.exercise_id = :exerciseId AND s.done = 1 AND s.section = 'WORK' AND s.workout_id = (" +
             "SELECT w.id FROM workout w JOIN workout_set x ON x.workout_id = w.id " +
-            "WHERE x.exercise_id = :exerciseId AND w.ended_at IS NOT NULL ORDER BY w.started_at DESC LIMIT 1" +
-            ") ORDER BY s.set_index",
+            "WHERE x.exercise_id = :exerciseId AND x.done = 1 AND x.section = 'WORK' AND w.ended_at IS NOT NULL " +
+            "ORDER BY w.started_at DESC LIMIT 1" +
+            ") ORDER BY s.set_index, s.side",
     )
     suspend fun previousSets(exerciseId: String): List<WorkoutSetEntity>
 
     @Query("SELECT COUNT(*) FROM workout WHERE ended_at IS NOT NULL AND game_date >= :from AND game_date <= :to")
     suspend fun finishedWorkoutCount(from: LocalDate, to: LocalDate): Int
 
+    @Query("SELECT * FROM workout_set WHERE id = :id")
+    suspend fun set(id: String): WorkoutSetEntity?
+
     @Upsert
     suspend fun upsertSets(sets: List<WorkoutSetEntity>)
+
+    /** Moves every exercise after [position] one place down, to make room for a new one (swap with). */
+    @Query("UPDATE workout_set SET position = position + 1 WHERE workout_id = :workoutId AND position > :position")
+    suspend fun shiftPositionsAfter(workoutId: String, position: Int)
+
+    @Query("UPDATE workout SET mode = :mode WHERE id = :workoutId")
+    suspend fun setWorkoutMode(workoutId: String, mode: String)
 
     /** Sets an exercise's rest on every one of its set rows. */
     @Query("UPDATE workout_set SET rest_sec = :restSec WHERE workout_id = :workoutId AND position = :position")
