@@ -64,9 +64,13 @@ fun FocusLockSetupScreen(
     val type = AwakenTheme.type
     val full = Modifier.fillMaxWidth()
     ScreenBackground(modifier = modifier) {
-        LargeTitleScaffold(title = lexString(R.string.focus_lock_title), onBack = onClose) {
+        LargeTitleScaffold(
+            title = lexString(R.string.focus_lock_title),
+            subtitle = if (state.step == SetupStep.EXPLAIN) lexString(R.string.focus_lock_explain_title) else null,
+            onBack = onClose,
+        ) {
             when (state.step) {
-                SetupStep.EXPLAIN -> SystemWindow(title = lexString(R.string.focus_lock_explain_title), accent = colors.accent, reveal = false) {
+                SetupStep.EXPLAIN -> SystemWindow(title = null, accent = colors.accent, reveal = false) {
                     listOf(
                         R.string.focus_lock_explain_intro,
                         R.string.focus_lock_explain_how,

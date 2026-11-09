@@ -193,6 +193,8 @@
     <string name="msg_trial_started">Rank-up test started. Finish one stage a day.</string>
     <string name="msg_trial_no_stages">No Hard quest fits your equipment or injury settings for every stage, so the test can\'t start.</string>
     <string name="action_day_plan">Day plan</string>
+    <string name="settings_export_note">Save a backup file</string>
+    <string name="settings_import_note">Restore from a backup</string>
     <string name="day_plan_title">Day plan</string>
     <string name="rest_day_label">Rest day</string>
     <string name="rest_day_chip">%1$s %2$d</string>

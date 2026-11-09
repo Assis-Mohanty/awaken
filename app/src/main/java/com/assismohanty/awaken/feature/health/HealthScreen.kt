@@ -38,6 +38,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.health.connect.client.HealthConnectClient
 import com.assismohanty.awaken.BuildConfig
 import com.assismohanty.awaken.R
+import com.assismohanty.awaken.core.designsystem.components.DetailRows
+import com.assismohanty.awaken.core.designsystem.components.BigValue
 import com.assismohanty.awaken.core.designsystem.components.LargeTitleScaffold
 import com.assismohanty.awaken.core.designsystem.components.ScreenBackground
 import com.assismohanty.awaken.core.designsystem.components.LegendSwatch
@@ -210,63 +212,36 @@ private fun TodayWindow(overview: HealthOverview, state: HealthUiState, onEvent:
     val heartRate = today.avgHeartRate
     val numbers = NumberFormat.getIntegerInstance()
     val oneDecimal = remember { NumberFormat.getNumberInstance().apply { maximumFractionDigits = 1; minimumFractionDigits = 1 } }
-    SystemWindow(
-        title = lexString(R.string.health_window_today),
-        accent = colors.positive,
-        reveal = false,
-        headerTrailing = {
-            QuietButton(
-                text = lexString(R.string.health_action_refresh),
-                onClick = { onEvent(HealthEvent.Refresh) },
-                enabled = !state.refreshing,
-            )
-        },
-    ) {
-        Text(
-            lexString(R.string.health_updated, formatTime(overview.updatedAt, zone)),
-            style = AwakenTheme.type.caption,
-            color = colors.textSecondary,
+    val noSteps = overview.stepSource == StepSource.NONE
+    val notAllowed = lexString(R.string.health_not_allowed)
+    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        BigValue(
+            value = if (noSteps) lexString(R.string.health_no_data) else numbers.format(today.steps),
+            unit = lexString(R.string.health_metric_steps).lowercase(),
+            large = true,
+            modifier = Modifier.weight(1f),
         )
-        if (showSource) {
-            Text(lexString(R.string.health_debug_source, lexString(overview.stepSource.labelRes)), style = AwakenTheme.type.caption, color = colors.textSecondary)
-        } else if (overview.stepSource == StepSource.PHONE) {
-            Text(lexString(R.string.health_steps_from_phone), style = AwakenTheme.type.caption, color = colors.textSecondary)
-        }
-        val notAllowed = lexString(R.string.health_not_allowed)
-        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm), modifier = Modifier.fillMaxWidth()) {
-            val noSteps = overview.stepSource == StepSource.NONE
-            MetricTile(
-                label = lexString(R.string.health_metric_steps),
-                value = if (noSteps) lexString(R.string.health_no_data) else numbers.format(today.steps),
-                modifier = Modifier.weight(1f),
-                dim = noSteps,
-            )
-            MetricTile(
-                label = lexString(R.string.health_metric_distance),
-                value = if (overview.canDistance) lexString(R.string.health_value_distance, oneDecimal.format(today.distanceMeters / METERS_PER_KM)) else notAllowed,
-                modifier = Modifier.weight(1f),
-                dim = !overview.canDistance,
-            )
-        }
-        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm), modifier = Modifier.fillMaxWidth()) {
-            MetricTile(
-                label = lexString(R.string.health_metric_calories),
-                value = if (overview.canCalories) lexString(R.string.health_value_kcal, numbers.format(today.activeKcal.toLong())) else notAllowed,
-                modifier = Modifier.weight(1f),
-                dim = !overview.canCalories,
-            )
-            MetricTile(
-                label = lexString(R.string.health_metric_heart_rate),
-                value = when {
-                    !overview.canHeartRate -> notAllowed
-                    heartRate == null -> lexString(R.string.health_no_data)
-                    else -> lexString(R.string.health_value_bpm, heartRate)
-                },
-                modifier = Modifier.weight(1f),
-                dim = !overview.canHeartRate || heartRate == null,
-            )
-        }
+        QuietButton(text = lexString(R.string.health_action_refresh), onClick = { onEvent(HealthEvent.Refresh) }, enabled = !state.refreshing)
     }
+    Text(lexString(R.string.health_updated, formatTime(overview.updatedAt, zone)), style = AwakenTheme.type.caption, color = colors.textSecondary)
+    if (showSource) {
+        Text(lexString(R.string.health_debug_source, lexString(overview.stepSource.labelRes)), style = AwakenTheme.type.caption, color = colors.textSecondary)
+    } else if (overview.stepSource == StepSource.PHONE) {
+        Text(lexString(R.string.health_steps_from_phone), style = AwakenTheme.type.caption, color = colors.textSecondary)
+    }
+    DetailRows(
+        listOf(
+            lexString(R.string.health_metric_distance) to
+                if (overview.canDistance) lexString(R.string.health_value_distance, oneDecimal.format(today.distanceMeters / METERS_PER_KM)) else notAllowed,
+            lexString(R.string.health_metric_calories) to
+                if (overview.canCalories) lexString(R.string.health_value_kcal, numbers.format(today.activeKcal.toLong())) else notAllowed,
+            lexString(R.string.health_metric_heart_rate) to when {
+                !overview.canHeartRate -> notAllowed
+                heartRate == null -> lexString(R.string.health_no_data)
+                else -> lexString(R.string.health_value_bpm, heartRate)
+            },
+        ),
+    )
 }
 
 @Composable

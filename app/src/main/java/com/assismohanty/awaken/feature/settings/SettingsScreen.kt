@@ -58,6 +58,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.assismohanty.awaken.R
+import com.assismohanty.awaken.core.designsystem.components.SegmentedControl
 import com.assismohanty.awaken.debug.DebugEntry
 import com.assismohanty.awaken.core.data.health.HealthStatus
 import com.assismohanty.awaken.core.audio.ChimeChoice
@@ -278,7 +279,7 @@ private fun SettingsMenu(state: SettingsUiState, archivedCount: Int, showAiPaths
 /** How to put the widgets and the Quick Settings tile on the phone; nothing here to change. */
 @Composable
 private fun WidgetsWindow() {
-    SystemWindow(title = lexString(R.string.settings_window_widgets), accent = accent(), reveal = false) {
+    SystemWindow(title = null, accent = accent(), reveal = false) {
         Text(lexString(R.string.settings_widgets_body), style = AwakenTheme.type.body, color = AwakenTheme.colors.textPrimary)
         Text(lexString(R.string.settings_widgets_tile), style = AwakenTheme.type.body, color = AwakenTheme.colors.textPrimary)
     }
@@ -291,7 +292,7 @@ private fun accent() = AwakenTheme.colors.accent
 private fun ProfileWindow(state: SettingsUiState, onEvent: (SettingsEvent) -> Unit) {
     val colors = AwakenTheme.colors
     val type = AwakenTheme.type
-    SystemWindow(title = lexString(R.string.settings_window_profile), accent = accent(), reveal = false) {
+    SystemWindow(title = null, accent = accent(), reveal = false) {
         OutlinedTextField(
             value = state.nameDraft,
             onValueChange = { onEvent(SettingsEvent.NameChanged(it)) },
@@ -368,7 +369,7 @@ private fun GoalsWindow(state: SettingsUiState, onEvent: (SettingsEvent) -> Unit
 private fun DayWindow(state: SettingsUiState, onEvent: (SettingsEvent) -> Unit, onOpenNotificationSettings: () -> Unit) {
     val colors = AwakenTheme.colors
     val type = AwakenTheme.type
-    SystemWindow(title = lexString(R.string.settings_window_day_reminders), accent = accent(), reveal = false) {
+    SystemWindow(title = null, accent = accent(), reveal = false) {
         Text(lexString(R.string.settings_day_start_title), style = type.label, color = colors.textPrimary)
         FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.xs), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
             state.dayStartOptions.forEach { hour ->
@@ -430,7 +431,7 @@ private fun DayWindow(state: SettingsUiState, onEvent: (SettingsEvent) -> Unit, 
 private fun ArchivedHabitsWindow(habits: List<ArchivedHabit>, onRestore: (String) -> Unit) {
     val colors = AwakenTheme.colors
     val type = AwakenTheme.type
-    SystemWindow(title = lexString(R.string.settings_window_habits), accent = accent(), reveal = false) {
+    SystemWindow(title = null, accent = accent(), reveal = false) {
         if (habits.isEmpty()) {
             Text(lexString(R.string.settings_archived_habits_empty), style = type.caption, color = colors.textSecondary)
         }
@@ -456,7 +457,7 @@ private fun ArchivedHabitsWindow(habits: List<ArchivedHabit>, onRestore: (String
 private fun HealthTrainingWindow(state: SettingsUiState, onEvent: (SettingsEvent) -> Unit, onOpenHealth: () -> Unit) {
     val colors = AwakenTheme.colors
     val type = AwakenTheme.type
-    SystemWindow(title = lexString(R.string.settings_window_health_training), accent = accent(), reveal = false) {
+    SystemWindow(title = null, accent = accent(), reveal = false) {
         HealthRow(state, onEvent, onOpenHealth)
         Text(lexString(R.string.settings_equipment_title), style = type.label, color = colors.textPrimary)
         FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.xs), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
@@ -543,17 +544,13 @@ private fun AiPathsWindow(state: SettingsUiState, onEvent: (SettingsEvent) -> Un
 
 @Composable
 private fun AppearanceWindow(state: SettingsUiState, onEvent: (SettingsEvent) -> Unit) {
-    SystemWindow(title = lexString(R.string.settings_window_appearance), accent = accent(), reveal = false) {
+    SystemWindow(title = null, accent = accent(), reveal = false) {
         Text(lexString(R.string.settings_appearance_title), style = AwakenTheme.type.label, color = AwakenTheme.colors.textPrimary)
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.xs), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
-            ThemeMode.entries.forEach { mode ->
-                ChoiceChip(
-                    text = lexString(mode.labelRes()),
-                    selected = mode == state.themeMode,
-                    onClick = { onEvent(SettingsEvent.SetThemeMode(mode)) },
-                )
-            }
-        }
+        SegmentedControl(
+            options = ThemeMode.entries.map { lexString(it.labelRes()) },
+            selected = ThemeMode.entries.indexOf(state.themeMode),
+            onSelect = { onEvent(SettingsEvent.SetThemeMode(ThemeMode.entries[it])) },
+        )
         Text(lexString(R.string.settings_chime_title), style = AwakenTheme.type.label, color = AwakenTheme.colors.textPrimary)
         FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.xs), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
             ChimeChoice.entries.forEach { choice ->
@@ -580,28 +577,31 @@ private fun AppearanceWindow(state: SettingsUiState, onEvent: (SettingsEvent) ->
 }
 
 @Composable
+private fun DataRow(icon: ImageVector, title: String, note: String?, onClick: () -> Unit, enabled: Boolean = true) {
+    ListRow(
+        title = title,
+        icon = icon,
+        secondary = note,
+        onClick = if (enabled) onClick else null,
+        trailing = {
+            Icon(AwakenGlyphs.ChevronRight, contentDescription = null, tint = AwakenTheme.colors.textSecondary, modifier = Modifier.size(AwakenTheme.dimens.iconSmall))
+        },
+    )
+}
+
+@Composable
 private fun DataWindow(state: SettingsUiState, onExport: () -> Unit, onImport: () -> Unit, onOpenPrivacy: () -> Unit) {
     val colors = AwakenTheme.colors
-    SystemWindow(title = lexString(R.string.settings_window_data), accent = accent(), reveal = false) {
+    SystemWindow(title = null, accent = accent(), reveal = false) {
         Text(lexString(R.string.settings_data_note), style = AwakenTheme.type.caption, color = colors.textSecondary)
-        PrimaryButton(
-            text = lexString(R.string.action_export_data),
-            onClick = onExport,
-            enabled = !state.busy,
-            modifier = Modifier.fillMaxWidth(),
-        )
-        SecondaryButton(
-            text = lexString(R.string.action_import_data),
-            onClick = onImport,
-            enabled = !state.busy,
-            modifier = Modifier.fillMaxWidth(),
-        )
         val version = LocalContext.current.let { context ->
             runCatching { context.packageManager.getPackageInfo(context.packageName, 0).versionName }.getOrNull().orEmpty()
         }
-        QuietButton(text = lexString(R.string.action_privacy_policy), onClick = onOpenPrivacy, modifier = Modifier.fillMaxWidth())
         var licences by rememberSaveable { mutableStateOf(false) }
-        QuietButton(text = lexString(R.string.settings_licences), onClick = { licences = true }, modifier = Modifier.fillMaxWidth())
+        DataRow(AwakenGlyphs.Vault, lexString(R.string.action_export_data), lexString(R.string.settings_export_note), onExport, enabled = !state.busy)
+        DataRow(AwakenGlyphs.Vault, lexString(R.string.action_import_data), lexString(R.string.settings_import_note), onImport, enabled = !state.busy)
+        DataRow(AwakenGlyphs.Lock, lexString(R.string.action_privacy_policy), null, onOpenPrivacy)
+        DataRow(AwakenGlyphs.Info, lexString(R.string.settings_licences), null, { licences = true })
         if (licences) LicencesSheet(onDismiss = { licences = false })
         Text(lexString(R.string.settings_about, version), style = AwakenTheme.type.caption, color = colors.textMuted)
     }
@@ -866,7 +866,7 @@ private fun StepGoalRow(state: SettingsUiState, onEvent: (SettingsEvent) -> Unit
 private fun PhoneFocusSection(onOpenScreenTime: () -> Unit, windows: @Composable () -> Unit) {
     val colors = AwakenTheme.colors
     val type = AwakenTheme.type
-    SystemWindow(title = lexString(R.string.settings_window_phone_focus), accent = accent(), reveal = false) {
+    SystemWindow(title = null, accent = accent(), reveal = false) {
         Text(lexString(R.string.settings_screen_time_title), style = type.label, color = colors.textPrimary)
         Text(lexString(R.string.settings_screen_time_note), style = type.caption, color = colors.textSecondary)
         SecondaryButton(text = lexString(R.string.action_open_screen_time), onClick = onOpenScreenTime, modifier = Modifier.fillMaxWidth())
