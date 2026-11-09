@@ -89,6 +89,10 @@ data object ReelStatsRoute
 @Serializable
 data object FocusAccessRoute
 
+/** Phone-down nights: on or off, bedtime and wake time. */
+@Serializable
+data object NightsRoute
+
 /** The Reel counter detector inspector (debug builds only). */
 @Serializable
 data object ReelInspectorRoute

@@ -10,6 +10,18 @@ import com.assismohanty.awaken.core.domain.DayRefresher
 import com.assismohanty.awaken.core.reelcounter.ReelWidgetData
 import com.assismohanty.awaken.core.domain.ObserveFocusGoalUseCase
 import com.assismohanty.awaken.engine.GameDay
+import com.assismohanty.awaken.core.data.repo.UiPrefsRepository
+import com.assismohanty.awaken.core.designsystem.components.ScreenTimeTileModel
+import com.assismohanty.awaken.core.domain.BedtimeReader
+import com.assismohanty.awaken.core.domain.LoadScreenTimeSummaryUseCase
+import com.assismohanty.awaken.core.lock.FocusLockSystemAccess
+import com.assismohanty.awaken.core.reelcounter.ReelSystemAccess
+import com.assismohanty.awaken.feature.today.toTile
+import kotlin.coroutines.cancellation.CancellationException
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
+import timber.log.Timber
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.LocalDate
 import javax.inject.Inject
@@ -110,11 +122,74 @@ class FocusReportViewModel @Inject constructor(
 data class FocusHubUiState(
     /** Reels watched today; null while the Reel counter is off. */
     val reelsToday: Int? = null,
+    val date: LocalDate? = null,
+    val screenTime: ScreenTimeTileModel = ScreenTimeTileModel.Loading,
+    val lockEnabled: Boolean = false,
+    val allowedCount: Int = 0,
+    val nightsEnabled: Boolean = false,
+    /** Minutes since midnight; only meaningful while [nightsEnabled]. */
+    val nightsBedtimeMinute: Int = 0,
+    /** Focus Lock or Reel counter is on but Android is not allowing what it needs. */
+    val permissionsNeedAttention: Boolean = false,
+)
+
+/** The reads that change outside the app (usage access, accessibility, battery), taken again on every resume. */
+private data class SystemReads(
+    val date: LocalDate? = null,
+    val screenTime: ScreenTimeTileModel = ScreenTimeTileModel.Loading,
+    val focusLockAccessibility: Boolean = false,
+    val reelAccessibility: Boolean = false,
+    val batteryUnrestricted: Boolean = false,
 )
 
 @HiltViewModel
-class FocusHubViewModel @Inject constructor(reelData: ReelWidgetData) : ViewModel() {
-    val uiState: StateFlow<FocusHubUiState> = reelData.observe()
-        .map { FocusHubUiState(reelsToday = it) }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), FocusHubUiState())
+class FocusHubViewModel @Inject constructor(
+    reelData: ReelWidgetData,
+    prefs: UiPrefsRepository,
+    bedtime: BedtimeReader,
+    private val loadScreenTime: LoadScreenTimeSummaryUseCase,
+    private val focusAccess: FocusLockSystemAccess,
+    private val reelAccess: ReelSystemAccess,
+    private val clock: Clock,
+) : ViewModel() {
+    private val reads = MutableStateFlow(SystemReads())
+
+    val uiState: StateFlow<FocusHubUiState> = combine(reelData.observe(), prefs.prefs, bedtime.observeSettings(), reads) { reels, p, nights, system ->
+        val latest = nights.maxByOrNull { it.effectiveFrom }
+        val lockNeeds = p.focusLock && !(system.focusLockAccessibility && system.batteryUnrestricted)
+        val reelNeeds = reels != null && !(system.reelAccessibility && system.batteryUnrestricted)
+        FocusHubUiState(
+            reelsToday = reels,
+            date = system.date,
+            screenTime = system.screenTime,
+            lockEnabled = p.focusLock,
+            allowedCount = p.allowedApps.size,
+            nightsEnabled = latest?.enabled == true,
+            nightsBedtimeMinute = latest?.bedtimeMinute ?: 0,
+            permissionsNeedAttention = lockNeeds || reelNeeds,
+        )
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), FocusHubUiState())
+
+    /** Back on the tab: read usage and the Android switches again. A failed screen-time read shows as not tracked, never a made-up number. */
+    fun refresh() {
+        reads.update {
+            it.copy(
+                date = clock.now().atZone(clock.zone()).toLocalDate(),
+                focusLockAccessibility = focusAccess.accessibilityEnabled(),
+                reelAccessibility = reelAccess.accessibilityEnabled(),
+                batteryUnrestricted = focusAccess.batteryUnrestricted(),
+            )
+        }
+        viewModelScope.launch {
+            val tile = try {
+                loadScreenTime()?.toTile() ?: ScreenTimeTileModel.NotTracked
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Timber.w(e, "Focus screen time read failed")
+                ScreenTimeTileModel.NotTracked
+            }
+            reads.update { it.copy(screenTime = tile) }
+        }
+    }
 }

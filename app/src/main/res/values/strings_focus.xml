@@ -38,6 +38,29 @@
         <item quantity="other">%1$d watched today</item>
     </plurals>
     <string name="focus_hub_limits_note">A daily cap for each app.</string>
+    <string name="focus_hub_screen_time_today">Screen time today</string>
+    <string name="focus_hub_distracting">%1$s distracting</string>
+    <string name="focus_hub_section_reels">Reels</string>
+    <string name="focus_hub_section_more">More</string>
+    <string name="focus_hub_lock_off">Off · set up in 1 minute</string>
+    <plurals name="focus_hub_lock_on">
+        <item quantity="one">On · %1$d app</item>
+        <item quantity="other">On · %1$d apps</item>
+    </plurals>
+    <plurals name="focus_hub_allowed_count">
+        <item quantity="one">%1$d stays open</item>
+        <item quantity="other">%1$d stay open</item>
+    </plurals>
+    <string name="focus_hub_nights_off">Off</string>
+    <string name="focus_hub_nights_from">From %1$s</string>
+    <string name="focus_hub_week_total">%1$s this week</string>
+    <string name="focus_hub_perm_ok">All good</string>
+    <string name="focus_hub_perm_attention">Needs attention</string>
+    <string name="focus_hub_hours_value">%1$d h %2$d</string>
+    <plurals name="focus_hub_streak_line">
+        <item quantity="one">%1$d day streak</item>
+        <item quantity="other">%1$d day streak</item>
+    </plurals>
     <string name="focus_hub_report_note">Minutes per day and per subject.</string>
     <string name="focus_card_title">Focus</string>
     <string name="focus_card_start">Start a session</string>

@@ -21,6 +21,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import com.assismohanty.awaken.R
+import com.assismohanty.awaken.core.designsystem.charts.BarShape
 import com.assismohanty.awaken.core.designsystem.charts.Chart
 import com.assismohanty.awaken.core.designsystem.charts.ChartSpec
 import com.assismohanty.awaken.core.designsystem.charts.Segment
@@ -179,6 +180,41 @@ private fun TileFigure(label: String, value: String, modifier: Modifier = Modifi
     Column(modifier = modifier.semantics(mergeDescendants = true) { contentDescription = "$label: $value" }) {
         Text(value, style = AwakenTheme.type.numericSmall, color = colors.textPrimary, maxLines = 1, overflow = TextOverflow.Ellipsis)
         Text(label, style = AwakenTheme.type.caption, color = colors.textSecondary, maxLines = 1, overflow = TextOverflow.Ellipsis)
+    }
+}
+
+/**
+ * The Focus tab's screen-time card: today's total, one bar split Distracting / Productive / Neutral, and the distracting
+ * minutes. Without access it offers [onGrantAccess]. Tap opens the Screen time screen.
+ */
+@Composable
+fun ScreenTimeCard(model: ScreenTimeTileModel, onClick: () -> Unit, onGrantAccess: () -> Unit, modifier: Modifier = Modifier) {
+    val colors = AwakenTheme.colors
+    val type = AwakenTheme.type
+    AwakenCard(modifier = modifier.fillMaxWidth(), reveal = false, onClick = onClick) {
+        Text(lexString(R.string.focus_hub_screen_time_today), style = type.caption, color = colors.textSecondary)
+        when (model) {
+            ScreenTimeTileModel.Loading -> TileNote(lexString(R.string.tile_loading))
+            ScreenTimeTileModel.NoAccess -> {
+                TileNote(lexString(R.string.tile_screen_time_no_access))
+                SecondaryButton(text = lexString(R.string.tile_grant_access), onClick = onGrantAccess, modifier = Modifier.fillMaxWidth())
+            }
+            ScreenTimeTileModel.NotTracked -> TileNote(lexString(R.string.tile_screen_time_not_tracked))
+            is ScreenTimeTileModel.Tracked -> {
+                Text(formatMinutesShort(model.total), style = type.metricL, color = colors.textPrimary)
+                Chart(
+                    ChartSpec.Segmented(
+                        segments = listOf(
+                            Segment(model.distracting.toFloat(), colors.critical),
+                            Segment(model.productive.toFloat(), colors.positive),
+                            Segment(model.neutral.toFloat(), colors.textSecondary),
+                        ),
+                        shape = BarShape.PILL,
+                    ),
+                )
+                Text(lexString(R.string.focus_hub_distracting, formatMinutes(model.distracting)), style = type.caption, color = colors.textSecondary)
+            }
+        }
     }
 }
 

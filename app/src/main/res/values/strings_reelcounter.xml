@@ -17,7 +17,7 @@
     <string name="reel_status_accessibility">Accessibility service</string>
     <string name="reel_status_running">Counting</string>
     <string name="reel_status_battery">Battery</string>
-    <string name="reel_open_limits">Daily limits</string>
+    <string name="reel_open_limits">Reel limits</string>
     <string name="reel_open_stats">Reel stats</string>
     <string name="reel_open_permissions">Permissions and battery</string>
     <string name="reel_bubble_setting">Show the counter bubble</string>
@@ -60,7 +60,7 @@
     <string name="reel_nudge_no_snoozes">No more extra reels today</string>
 
     <!-- Limits -->
-    <string name="reel_limits_title">Daily limits</string>
+    <string name="reel_limits_title">Reel limits</string>
     <string name="reel_limits_note">When you reach a limit you get a reminder, with 5 more reels up to twice a day. Limits are off until you set one.</string>
     <string name="reel_limit_off">No limit</string>
     <string name="reel_limit_value">%1$d a day</string>
