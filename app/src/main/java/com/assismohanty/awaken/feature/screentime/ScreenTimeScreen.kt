@@ -58,7 +58,9 @@ import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.assismohanty.awaken.R
 import com.assismohanty.awaken.core.designsystem.components.LargeTitleScaffold
+import com.assismohanty.awaken.core.designsystem.components.AwakenCard
 import com.assismohanty.awaken.core.designsystem.components.ChoiceChip
+import com.assismohanty.awaken.core.designsystem.components.SectionHeader
 import com.assismohanty.awaken.core.designsystem.components.ScreenBackground
 import com.assismohanty.awaken.core.designsystem.components.Pill
 import com.assismohanty.awaken.core.designsystem.components.PrimaryButton
@@ -150,7 +152,11 @@ fun ScreenTimeScreen(
 ) {
     val colors = AwakenTheme.colors
     ScreenBackground(modifier = modifier) {
-        LargeTitleScaffold(title = lexString(R.string.screentime_title), onBack = onBack) {
+        LargeTitleScaffold(
+            title = lexString(R.string.screentime_title),
+            subtitle = if (state.overview?.hasAccess == true) lexString(R.string.screentime_window_today) else null,
+            onBack = onBack,
+        ) {
             state.reels?.let { ReelsWindow(it, onOpenReelStats) }
             val overview = state.overview
             when {
@@ -164,8 +170,8 @@ fun ScreenTimeScreen(
                     UsageTodayWindow(overview, Modifier.staggeredEntrance(0))
                     state.pickups?.let { PickupsWindow(it, Modifier.staggeredEntrance(1)) }
                     DisciplineWindow(overview, onEvent, Modifier.staggeredEntrance(1))
-                    AppsWindow(state, onEvent, Modifier.staggeredEntrance(2))
-                    TrendWindow(overview.trend, Modifier.staggeredEntrance(3))
+                    TrendWindow(overview.trend, Modifier.staggeredEntrance(2))
+                    AppsWindow(state, onEvent, Modifier.staggeredEntrance(3))
                     Text(lexString(R.string.screentime_privacy_note), style = AwakenTheme.type.caption, color = colors.textSecondary)
                 }
             }
@@ -206,19 +212,21 @@ private fun AccessWindow(onOpenUsageAccess: () -> Unit, modifier: Modifier = Mod
 private fun UsageTodayWindow(overview: ScreenTimeOverview, modifier: Modifier = Modifier) {
     val colors = AwakenTheme.colors
     val type = AwakenTheme.type
-    SystemWindow(title = lexString(R.string.screentime_window_today), accent = colors.accent, modifier = modifier, reveal = false) {
+    Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
         if (!overview.tracked) {
             Text(lexString(R.string.screentime_not_tracked), style = type.metricL, color = colors.textPrimary)
             Text(lexString(R.string.screentime_not_tracked_body), style = type.body, color = colors.textSecondary)
-            return@SystemWindow
+            return@Column
         }
         Text(formatMinutes(overview.totalMinutes), style = type.metricXL, color = colors.textPrimary)
         SplitBar(overview.minutesByCategory, overview.totalMinutes)
-        AppCategory.entries.forEach { category ->
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
-                LegendSwatch(categoryColor(category))
-                Text(lexString(category.labelRes), style = type.label, color = colors.textPrimary, modifier = Modifier.weight(1f))
-                Text(formatMinutes(overview.minutesByCategory[category] ?: 0), style = type.numericSmall, color = colors.textSecondary)
+        AwakenCard(reveal = false, modifier = Modifier.fillMaxWidth()) {
+            AppCategory.entries.forEach { category ->
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+                    LegendSwatch(categoryColor(category))
+                    Text(lexString(category.labelRes), style = type.label, color = colors.textPrimary, modifier = Modifier.weight(1f))
+                    Text(formatMinutes(overview.minutesByCategory[category] ?: 0), style = type.numericSmall, color = colors.textSecondary)
+                }
             }
         }
     }
@@ -238,26 +246,20 @@ private fun SplitBar(byCategory: Map<AppCategory, Int>, total: Int) {
     Chart(ChartSpec.Segmented(segments = segments, track = AwakenTheme.colors.divider))
 }
 
+/** App limits: the stake, each limit's progress and the switch. A section on the page, not a card. */
 @Composable
 private fun DisciplineWindow(overview: ScreenTimeOverview, onEvent: (ScreenTimeEvent) -> Unit, modifier: Modifier = Modifier) {
     val colors = AwakenTheme.colors
     val type = AwakenTheme.type
-    val accent = when (overview.status) {
-        DisciplineStatus.FORFEITED -> colors.critical
-        DisciplineStatus.ON_TRACK -> colors.positive
-        else -> colors.accent
-    }
-    SystemWindow(
-        title = lexString(R.string.quest_kind_discipline),
-        accent = accent,
-        modifier = modifier,
-        reveal = false,
-        headerTrailing = {
-            if (overview.status != DisciplineStatus.OFF && overview.status != DisciplineStatus.NOT_TRACKED) {
-                Text(lexString(R.string.screentime_xp_at_stake, overview.xpAtStake), style = type.numericSmall, color = colors.reward)
-            }
-        },
-    ) {
+    Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+        SectionHeader(
+            title = lexString(R.string.quest_kind_discipline),
+            actions = {
+                if (overview.status != DisciplineStatus.OFF && overview.status != DisciplineStatus.NOT_TRACKED) {
+                    Text(lexString(R.string.screentime_xp_at_stake, overview.xpAtStake), style = type.numericSmall, color = colors.reward)
+                }
+            },
+        )
         val line = when (overview.status) {
             DisciplineStatus.OFF -> lexString(R.string.screentime_discipline_off, overview.xpAtStake)
             DisciplineStatus.STARTS_LATER -> lexString(R.string.screentime_discipline_starts)

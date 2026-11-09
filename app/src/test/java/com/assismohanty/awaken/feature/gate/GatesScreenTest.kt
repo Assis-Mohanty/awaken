@@ -69,7 +69,7 @@ class GatesScreenTest {
         }
 
         composeRule.onNodeWithContentDescription("25-minute session", substring = true).performClick()
-        composeRule.onNodeWithText("Start session").performScrollTo().performClick()
+        composeRule.onNodeWithText("Start 25-minute session").performScrollTo().performClick()
 
         assertThat(events).containsExactly(GatesEvent.Pick(GateRank.D), GatesEvent.Enter).inOrder()
         composeRule.onNodeWithContentDescription("25:00 remaining", substring = true).assertExists()

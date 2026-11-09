@@ -64,7 +64,7 @@ class ScreenTimeScreenTest {
         val state = previewScreenTimeState()
         show(state = state.copy(overview = state.overview?.copy(status = DisciplineStatus.OFF)), events = events)
         composeRule.onNodeWithText("Starts tomorrow", substring = true).performScrollTo().assertIsDisplayed()
-        composeRule.onNodeWithText("Turn on Screen Discipline").performScrollTo().performClick()
+        composeRule.onNodeWithText("Turn on app limits").performScrollTo().performClick()
         assertThat(events).containsExactly(ScreenTimeEvent.SetDiscipline(true))
     }
 

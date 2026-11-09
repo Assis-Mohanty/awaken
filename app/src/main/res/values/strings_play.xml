@@ -207,15 +207,15 @@
     <string name="msg_recovery_none">No recovery days left this month.</string>
     <!-- Focus Gates (GD §8, DESIGN_SYSTEM §4.4) -->
     <string name="gates_title">Focus sessions</string>
-    <string name="gates_body">Pick a length and stay with it. Time away from the app adds up: more than %1$s in total and the session ends early.</string>
     <string name="gate_name">%1$d-minute session</string>
     <string name="focus_session_title">Focus session</string>
     <string name="gate_minutes">%1$d min</string>
     <string name="gate_tile_late">Not enough time before the day resets.</string>
     <string name="cd_gate_tile">%1$s, %2$s</string>
     <string name="cd_gate_tile_late">%1$s, %2$s, not enough time before the day resets</string>
-    <string name="gate_stat_label">Stat to train</string>
-    <string name="gate_label_hint">Label (optional)</string>
+    <string name="gate_stat_label">Stat</string>
+    <string name="gate_label_hint">Subject (optional)</string>
+    <string name="gate_start_minutes">Start %1$d-minute session</string>
     <string name="gate_rule">One pause of up to 5 minutes. Time away while paused is free. Away more than %1$s otherwise and the session ends early.</string>
     <string name="action_enter_gate">Start session</string>
     <string name="action_pause">Pause (%1$s)</string>

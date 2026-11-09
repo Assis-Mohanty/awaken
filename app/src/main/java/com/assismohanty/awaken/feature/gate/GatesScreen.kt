@@ -44,6 +44,8 @@ import androidx.core.content.ContextCompat
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.assismohanty.awaken.R
+import com.assismohanty.awaken.core.designsystem.components.BigValue
+import com.assismohanty.awaken.core.designsystem.components.SegmentedTabs
 import com.assismohanty.awaken.core.designsystem.components.ChoiceChip
 import com.assismohanty.awaken.core.designsystem.components.FocusGoalRing
 import com.assismohanty.awaken.core.designsystem.components.PomodoroTrack
@@ -137,13 +139,7 @@ fun GatesScreen(state: GatesUiState, onEvent: (GatesEvent) -> Unit, onBack: () -
 
 @Composable
 private fun GatePicker(state: GatesUiState, onEvent: (GatesEvent) -> Unit) {
-    val colors = AwakenTheme.colors
     state.focusGoal?.let { FocusGoalRing(minutes = it.minutesToday, goal = it.goal, streak = it.streak, modifier = Modifier.fillMaxWidth()) }
-    Text(
-        lexString(R.string.gates_body, shortClock(GateRules.BREACH_BUDGET_MS)),
-        style = AwakenTheme.type.body,
-        color = colors.textSecondary,
-    )
     FocusModeChips(state.setup?.mode ?: GateMode.PRESET, pomodoro = state.pomodoroSetup != null, onEvent = onEvent)
     state.pomodoroSetup?.let {
         PomodoroSetupWindow(it, state, onEvent)
@@ -169,30 +165,29 @@ private fun GatePicker(state: GatesUiState, onEvent: (GatesEvent) -> Unit) {
     state.setup?.let { GateSetupWindow(it, onEvent) }
 }
 
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun FocusModeChips(selected: GateMode, pomodoro: Boolean, onEvent: (GatesEvent) -> Unit) {
-    val colors = AwakenTheme.colors
-    FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.xs), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
-        listOf(
-            GateMode.PRESET to R.string.focus_mode_preset,
-            GateMode.CUSTOM to R.string.focus_mode_custom,
-            GateMode.STOPWATCH to R.string.focus_mode_stopwatch,
-        ).forEach { (mode, label) ->
-            ChoiceChip(
-                text = lexString(label),
-                selected = selected == mode && !pomodoro,
-                onClick = { onEvent(if (mode == GateMode.PRESET) GatesEvent.CloseSetup else GatesEvent.PickMode(mode)) },
-                color = colors.accent,
+    val modes = listOf(
+        GateMode.PRESET to R.string.focus_mode_preset,
+        GateMode.CUSTOM to R.string.focus_mode_custom,
+        GateMode.STOPWATCH to R.string.focus_mode_stopwatch,
+    )
+    val labels = modes.map { lexString(it.second) } + lexString(R.string.focus_mode_pomodoro)
+    val selectedIndex = if (pomodoro) modes.size else modes.indexOfFirst { it.first == selected }.coerceAtLeast(0)
+    SegmentedTabs(
+        options = labels,
+        selected = selectedIndex,
+        onSelect = { index ->
+            val mode = modes.getOrNull(index)?.first
+            onEvent(
+                when (mode) {
+                    null -> GatesEvent.OpenPomodoro
+                    GateMode.PRESET -> GatesEvent.CloseSetup
+                    else -> GatesEvent.PickMode(mode)
+                },
             )
-        }
-        ChoiceChip(
-            text = lexString(R.string.focus_mode_pomodoro),
-            selected = pomodoro,
-            onClick = { onEvent(GatesEvent.OpenPomodoro) },
-            color = colors.accent,
-        )
-    }
+        },
+    )
 }
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -300,7 +295,6 @@ private fun GatePortal(tile: GateTile, selected: Boolean, onClick: () -> Unit, m
     val colors = AwakenTheme.colors
     val gateColor = if (tile.available) colors.gate(tile.rank) else colors.textMuted
     val name = lexString(R.string.gate_name, tile.minutes)
-    val minutes = lexString(R.string.gate_minutes, tile.minutes)
     val difficulty = tile.rank.difficulty.label()
     val description = if (tile.available) {
         lexString(R.string.cd_gate_tile, name, difficulty)
@@ -315,10 +309,9 @@ private fun GatePortal(tile: GateTile, selected: Boolean, onClick: () -> Unit, m
         onClick = onClick,
         modifier = modifier,
     ) {
-        IconCircle(AwakenGlyphs.Portal, gateColor)
-        Text(minutes, style = AwakenTheme.type.metricL, color = if (tile.available) colors.textPrimary else colors.textMuted)
+        BigValue(tile.minutes.toString(), lexString(R.string.focus_hub_minutes_unit))
         if (tile.available) {
-            DifficultyChip(tile.rank.difficulty)
+            Text(difficulty, style = AwakenTheme.type.caption, color = colors.textSecondary)
         } else {
             Text(lexString(R.string.gate_tile_late), style = AwakenTheme.type.caption, color = colors.textSecondary)
         }
@@ -329,8 +322,8 @@ private fun GatePortal(tile: GateTile, selected: Boolean, onClick: () -> Unit, m
 @Composable
 private fun GateSetupWindow(setup: GateSetup, onEvent: (GatesEvent) -> Unit) {
     val colors = AwakenTheme.colors
-    SystemWindow(title = lexString(R.string.gate_name, setup.rank.durationMinutes), accent = colors.gate(setup.rank)) {
-        Text(lexString(R.string.gate_stat_label), style = AwakenTheme.type.label, color = colors.textSecondary)
+    Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+        Text(lexString(R.string.gate_stat_label), style = AwakenTheme.type.windowTitle, color = colors.textPrimary)
         FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.xs), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
             GATE_STATS.forEach { stat ->
                 ChoiceChip(
@@ -357,11 +350,10 @@ private fun GateSetupWindow(setup: GateSetup, onEvent: (GatesEvent) -> Unit) {
         )
         Text(lexString(R.string.gate_rule, shortClock(GateRules.BREACH_BUDGET_MS)), style = AwakenTheme.type.caption, color = colors.textSecondary)
         PrimaryButton(
-            text = lexString(R.string.action_enter_gate),
+            text = lexString(R.string.gate_start_minutes, setup.rank.durationMinutes),
             onClick = { onEvent(GatesEvent.Enter) },
             modifier = Modifier.fillMaxWidth(),
         )
-        QuietButton(text = lexString(R.string.action_back), onClick = { onEvent(GatesEvent.CloseSetup) }, modifier = Modifier.fillMaxWidth())
     }
 }
 

@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Screen Discipline (GAME_DESIGN §6.7, DESIGN_SYSTEM §4.9) -->
-    <string name="quest_kind_discipline">Screen limits</string>
-    <string name="discipline_quest_title">Screen Discipline</string>
+    <string name="quest_kind_discipline">App limits</string>
+    <string name="discipline_quest_title">App limits</string>
     <string name="discipline_quest_description">Keep every distracting app under its daily limit until the day ends.</string>
     <string name="verify_usage">Verified by your phone\'s usage data. Pays at the end of the day if every limit held.</string>
 
@@ -35,12 +35,12 @@
 
     <string name="screentime_xp_at_stake">+%1$d XP</string>
     <string name="screentime_discipline_off">Set daily limits on distracting apps. Stay under them all day and earn +%1$d XP. Cross one and you forfeit it. Nothing you\'ve earned is ever taken.</string>
-    <string name="screentime_discipline_starts">Screen Discipline starts tomorrow. Today\'s usage is tracked but nothing is at stake yet.</string>
+    <string name="screentime_discipline_starts">App limits start tomorrow. Today\'s usage is tracked but nothing is at stake yet.</string>
     <string name="screentime_discipline_no_limits">No distracting app has a limit, so nothing is at stake. Set one below.</string>
     <string name="screentime_discipline_on_track">Every limit holds. Keep it until the day ends to claim +%1$d XP.</string>
     <string name="screentime_discipline_forfeited">A limit was crossed. Today\'s stake is forfeited. Your earned XP is untouched. Tomorrow is a new day.</string>
-    <string name="screentime_discipline_turn_on">Turn on Screen Discipline</string>
-    <string name="screentime_discipline_turn_off">Turn off Screen Discipline</string>
+    <string name="screentime_discipline_turn_on">Turn on app limits</string>
+    <string name="screentime_discipline_turn_off">Turn off app limits</string>
     <string name="screentime_discipline_rules">Starts tomorrow. Popular social and video apps start as distracting with a 30 min limit. Change any app below.</string>
     <string name="screentime_limit_progress">%1$s: %2$d of %3$d minutes used</string>
     <string name="screentime_minutes_of_limit">%1$d / %2$d min</string>
@@ -70,7 +70,7 @@
     <string name="screentime_duration_hours_minutes">%1$s h %2$s min</string>
 
     <!-- Notifications (channel screen_time) -->
-    <string name="screentime_channel_name">Screen Discipline</string>
+    <string name="screentime_channel_name">App limits</string>
     <string name="screentime_channel_description">A warning when a distracting app is close to its limit, and a notice if a limit is crossed.</string>
     <string name="screentime_warning_title">%1$s: almost at your limit</string>
     <plurals name="screentime_warning_text">
@@ -78,12 +78,12 @@
         <item quantity="other">%1$d minutes left. Cross it and you forfeit today\'s +%2$d XP.</item>
     </plurals>
     <string name="screentime_forfeit_title">Limit crossed</string>
-    <string name="screentime_forfeit_text">%1$s went over its limit. Today\'s Screen Discipline stake is forfeited. Your earned XP is untouched.</string>
+    <string name="screentime_forfeit_text">%1$s went over its limit. Today\'s app limits stake is forfeited. Your earned XP is untouched.</string>
 
     <!-- Today card and Settings -->
     <string name="today_discipline_on_track">Limits holding · +%1$d XP at day end</string>
     <string name="today_discipline_forfeited">Limit crossed · stake forfeited</string>
     <string name="action_open_screen_time">Screen time</string>
     <string name="settings_screen_time_title">Screen time</string>
-    <string name="settings_screen_time_note">App usage, categories and Screen Discipline limits.</string>
+    <string name="settings_screen_time_note">App usage, categories and app limits.</string>
 </resources>

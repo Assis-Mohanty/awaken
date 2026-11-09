@@ -400,32 +400,41 @@ fun DeltaPill(text: String, trend: Trend, modifier: Modifier = Modifier) = Trend
 @Composable
 fun SegmentedTabs(options: List<String>, selected: Int, onSelect: (Int) -> Unit, modifier: Modifier = Modifier) {
     val colors = AwakenTheme.colors
-    val shape = AwakenTheme.shapes.pill
-    Row(
+    val pill = AwakenTheme.shapes.pill
+    // Four labels do not fit one row on a small phone or at large text: stack them two to a row so none is cut.
+    val stacked = isLargeText() || (isSmallPhone() && options.size > SEGMENTS_PER_ROW)
+    val rows = if (stacked) options.withIndex().chunked(2) else listOf(options.withIndex().toList())
+    Column(
         modifier = modifier
-            .clip(shape)
+            .clip(if (stacked) AwakenTheme.shapes.window else pill)
             .background(colors.surfaceOverlay)
             .padding(SEGMENT_TRACK_PADDING)
             .selectableGroup(),
+        verticalArrangement = if (stacked) Arrangement.spacedBy(SEGMENT_TRACK_PADDING) else Arrangement.Top,
     ) {
-        options.forEachIndexed { index, option ->
-            val isSelected = index == selected
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .defaultMinSize(minHeight = AwakenTheme.dimens.segmentedHeight)
-                    .clip(shape)
-                    .background(if (isSelected) colors.accent else Color.Transparent)
-                    .selectable(selected = isSelected, role = Role.Tab, onClick = { onSelect(index) })
-                    .padding(horizontal = Spacing.sm),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(option, style = AwakenTheme.type.label, color = if (isSelected) colors.onAccent else colors.textSecondary, maxLines = 1)
+        rows.forEach { row ->
+            Row(horizontalArrangement = if (stacked) Arrangement.spacedBy(SEGMENT_TRACK_PADDING) else Arrangement.Start) {
+                row.forEach { (index, option) ->
+                    val isSelected = index == selected
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .defaultMinSize(minHeight = AwakenTheme.dimens.segmentedHeight)
+                            .clip(pill)
+                            .background(if (isSelected) colors.accent else Color.Transparent)
+                            .selectable(selected = isSelected, role = Role.Tab, onClick = { onSelect(index) })
+                            .padding(horizontal = if (options.size > SEGMENTS_PER_ROW) Spacing.xxs else Spacing.sm),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(option, style = AwakenTheme.type.label, color = if (isSelected) colors.onAccent else colors.textSecondary, maxLines = 1)
+                    }
+                }
             }
         }
     }
 }
 
+private const val SEGMENTS_PER_ROW = 3
 private val SEGMENT_TRACK_PADDING = 3.dp
 
 /** The v2 name for [SegmentedTabs]. */
