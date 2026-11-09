@@ -400,22 +400,25 @@ private fun ShortcutGrid(
     onOpenStore: () -> Unit,
     onOpenHealth: () -> Unit,
 ) {
-    FlowRow(
-        modifier = Modifier.fillMaxWidth(),
-        maxItemsInEachRow = if (isLargeText()) 1 else 2,
-        horizontalArrangement = Arrangement.spacedBy(Spacing.cardGap),
-        verticalArrangement = Arrangement.spacedBy(Spacing.cardGap),
-    ) {
-        ShortcutTile(
+    val tiles = listOf<@Composable (Modifier) -> Unit>(
+        { ShortcutTile(
             icon = AwakenGlyphs.Calendar,
             title = lexString(R.string.review_title),
             note = lexString(if (state.weeklyOpen) R.string.status_tile_review_open else R.string.status_tile_review_closed),
             onClick = onOpenReview,
-            modifier = Modifier.weight(1f),
-        )
-        ShortcutTile(AwakenGlyphs.Level, lexString(R.string.programs_row_title), lexString(R.string.status_tile_programs), onOpenPrograms, Modifier.weight(1f))
-        ShortcutTile(AwakenGlyphs.Shield, lexString(R.string.quit_row_title), lexString(R.string.status_tile_quit), onOpenQuit, Modifier.weight(1f))
-        ShortcutTile(AwakenGlyphs.Coin, lexString(R.string.status_store_row), lexString(R.string.status_store_row_gold, formatCount(gold)), onOpenStore, Modifier.weight(1f))
-        ShortcutTile(AwakenGlyphs.Vitality, lexString(R.string.health_title), lexString(R.string.status_tile_health), onOpenHealth, Modifier.weight(1f))
+            modifier = it,
+        ) },
+        { ShortcutTile(AwakenGlyphs.Level, lexString(R.string.programs_row_title), lexString(R.string.status_tile_programs), onOpenPrograms, it) },
+        { ShortcutTile(AwakenGlyphs.Shield, lexString(R.string.quit_row_title), lexString(R.string.status_tile_quit), onOpenQuit, it) },
+        { ShortcutTile(AwakenGlyphs.Coin, lexString(R.string.status_store_row), lexString(R.string.status_store_row_gold, formatCount(gold)), onOpenStore, it) },
+        { ShortcutTile(AwakenGlyphs.Vitality, lexString(R.string.health_title), lexString(R.string.status_tile_health), onOpenHealth, it) },
+    )
+    // One row per pair, as tall as its taller tile, so a wrapped note never leaves a gap under its neighbour.
+    Column(verticalArrangement = Arrangement.spacedBy(Spacing.cardGap)) {
+        tiles.chunked(if (isLargeText()) 1 else 2).forEach { row ->
+            Row(modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(Spacing.cardGap)) {
+                row.forEach { tile -> tile(Modifier.weight(1f).fillMaxHeight()) }
+            }
+        }
     }
 }

@@ -224,7 +224,7 @@ private fun SegmentedChart(spec: ChartSpec.Segmented, modifier: Modifier) {
             .then(if (spec.track != null) Modifier.background(spec.track) else Modifier)
             .clearAndSetSemantics { },
     ) {
-        spec.segments.forEach { segment ->
+        spec.segments.filter { it.weight > 0f }.forEach { segment ->
             Box(
                 modifier = Modifier
                     .weight(segment.weight)
