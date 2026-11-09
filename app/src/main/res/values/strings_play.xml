@@ -224,6 +224,9 @@
     <string name="action_keep_going">Keep going</string>
     <string name="gate_breach_line">Time away %1$s of %2$s</string>
     <string name="gate_paused_title">Paused</string>
+    <string name="session_lock">Lock</string>
+    <string name="session_unlock_pause">Unlock to pause or end the session</string>
+    <string name="session_unlock_break">Unlock to skip the break or end the session</string>
     <string name="gate_dial_remaining">remaining</string>
     <string name="gate_dial_pause_left">left in this pause</string>
     <string name="gate_paused_cd">%1$s left in this pause. It resumes on its own.</string>

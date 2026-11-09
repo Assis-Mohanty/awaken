@@ -33,6 +33,9 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -46,6 +49,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.assismohanty.awaken.R
 import com.assismohanty.awaken.core.designsystem.components.SessionScreen
+import com.assismohanty.awaken.core.designsystem.components.SessionLock
 import com.assismohanty.awaken.core.designsystem.components.SessionField
 import com.assismohanty.awaken.core.designsystem.components.SessionHeader
 import com.assismohanty.awaken.core.designsystem.components.SessionDial
@@ -466,9 +470,9 @@ private fun ColumnScope.StopwatchControls(active: ActiveGate, confirmAbandon: Bo
 }
 
 /**
- * A running or paused session: the stat's colour fills the screen, the dial shows what is left (or what is left of the
- * one pause), and the actions sit at the bottom, or on the right when the phone is on its side. The title is the length;
- * the line under it is the subject and stat.
+ * A running or paused session: the stat's colour fills the screen and the dial takes as much of it as it can. Nothing
+ * else is in the way: Pause and End session wait behind a lock that starts locked (bottom, or on the right when the phone
+ * is on its side). Pausing opens it so Resume is at hand; resuming locks it again.
  */
 @Composable
 private fun SessionRunScreen(
@@ -481,6 +485,8 @@ private fun SessionRunScreen(
     val colors = AwakenTheme.colors
     val length = lexString(R.string.gate_name, active.rank.durationMinutes)
     val about = listOfNotNull(active.subject?.takeIf { it.isNotBlank() } ?: active.label?.takeIf { it.isNotBlank() }, active.stat.label()).joinToString(" · ")
+    // Locked when a run starts; a pause unlocks it so Resume shows, and resuming locks it again. A new round starts locked.
+    var locked by rememberSaveable(active.paused, pomodoro?.round) { mutableStateOf(!active.paused) }
     SessionScreen(
         stat = active.stat,
         title = if (active.paused) lexString(R.string.gate_paused_title) else length,
@@ -519,16 +525,23 @@ private fun SessionRunScreen(
                 FieldPrimaryButton(lexString(R.string.action_abandon_gate), onClick = { onEvent(GatesEvent.ConfirmAbandon) }, modifier = Modifier.fillMaxWidth())
                 FieldQuietButton(lexString(R.string.action_keep_going), onClick = { onEvent(GatesEvent.CancelAbandon) })
             } else {
-                when {
-                    active.paused -> FieldPrimaryButton(lexString(R.string.action_resume), onClick = { onEvent(GatesEvent.Resume) }, modifier = Modifier.fillMaxWidth())
-                    active.canPause -> FieldPrimaryButton(
-                        lexString(R.string.action_pause, shortClock(GateRules.MAX_PAUSE.toMillis())),
-                        onClick = { onEvent(GatesEvent.Pause) },
-                        modifier = Modifier.fillMaxWidth(),
-                    )
-                    else -> Text(lexString(R.string.gate_pause_used), style = AwakenTheme.type.caption, color = colors.onFieldMuted)
+                SessionLock(
+                    stat = active.stat,
+                    locked = locked,
+                    onLockedChange = { locked = it },
+                    unlockLabel = lexString(R.string.session_unlock_pause),
+                ) {
+                    when {
+                        active.paused -> FieldPrimaryButton(lexString(R.string.action_resume), onClick = { onEvent(GatesEvent.Resume) }, modifier = Modifier.fillMaxWidth())
+                        active.canPause -> FieldPrimaryButton(
+                            lexString(R.string.action_pause, shortClock(GateRules.MAX_PAUSE.toMillis())),
+                            onClick = { onEvent(GatesEvent.Pause) },
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                        else -> Text(lexString(R.string.gate_pause_used), style = AwakenTheme.type.caption, color = colors.onFieldMuted)
+                    }
+                    FieldQuietButton(lexString(R.string.action_abandon_gate), onClick = { onEvent(GatesEvent.Abandon) })
                 }
-                FieldQuietButton(lexString(R.string.action_abandon_gate), onClick = { onEvent(GatesEvent.Abandon) })
             }
         },
     )
@@ -592,6 +605,8 @@ private fun PomodoroBreakScreen(pomodoro: PomodoroUi, onEvent: (GatesEvent) -> U
         else -> lexString(if (longBreak) R.string.pomodoro_long_break_title else R.string.pomodoro_break_title)
     }
     val breakMinutes = if (longBreak) pomodoro.config.longBreakMinutes else pomodoro.config.shortBreakMinutes
+    // A running break starts locked, like a focus round; "break over" and "complete" have nothing to protect.
+    var locked by rememberSaveable(pomodoro.round, pomodoro.phase) { mutableStateOf(true) }
     SessionScreen(
         stat = pomodoro.stat,
         title = title,
@@ -635,7 +650,12 @@ private fun PomodoroBreakScreen(pomodoro: PomodoroUi, onEvent: (GatesEvent) -> U
                     FieldPrimaryButton(lexString(R.string.pomodoro_start_round, pomodoro.round + 1), onClick = { onEvent(GatesEvent.PomodoroNextRound) }, modifier = Modifier.fillMaxWidth())
                     FieldQuietButton(lexString(R.string.pomodoro_end_session), onClick = { onEvent(GatesEvent.PomodoroEnd) })
                 }
-                else -> {
+                else -> SessionLock(
+                    stat = pomodoro.stat,
+                    locked = locked,
+                    onLockedChange = { locked = it },
+                    unlockLabel = lexString(R.string.session_unlock_break),
+                ) {
                     FieldPrimaryButton(lexString(R.string.pomodoro_skip_break), onClick = { onEvent(GatesEvent.PomodoroSkipBreak) }, modifier = Modifier.fillMaxWidth())
                     FieldQuietButton(lexString(R.string.pomodoro_end_session), onClick = { onEvent(GatesEvent.PomodoroEnd) })
                 }

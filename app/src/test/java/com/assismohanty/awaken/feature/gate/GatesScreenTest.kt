@@ -73,7 +73,11 @@ class GatesScreenTest {
 
         assertThat(events).containsExactly(GatesEvent.Pick(GateRank.D), GatesEvent.Enter).inOrder()
         composeRule.onNodeWithContentDescription("25:00 remaining", substring = true).assertExists()
+        // Pause and End session wait behind the lock, which starts locked.
+        composeRule.onNodeWithText("Pause (5:00)").assertDoesNotExist()
+        composeRule.onNodeWithContentDescription("Unlock to pause or end the session").performClick()
         composeRule.onNodeWithText("Pause (5:00)").assertExists()
+        composeRule.onNodeWithText("End session").assertExists()
     }
 
 }

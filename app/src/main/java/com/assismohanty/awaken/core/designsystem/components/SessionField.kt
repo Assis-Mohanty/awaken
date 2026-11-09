@@ -3,6 +3,26 @@ package com.assismohanty.awaken.core.designsystem.components
 import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.Icon
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -41,6 +61,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -48,6 +69,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowCompat
+import com.assismohanty.awaken.R
+import com.assismohanty.awaken.core.designsystem.lexicon.lexString
+import com.assismohanty.awaken.core.designsystem.preview.LandscapePreviews
 import com.assismohanty.awaken.core.designsystem.preview.PhonePreviews
 import com.assismohanty.awaken.core.designsystem.theme.AwakenTheme
 import com.assismohanty.awaken.core.designsystem.theme.Spacing
@@ -130,7 +154,7 @@ fun SessionScreen(
                     }
                 }
             } else {
-                val diameter = minOf(DIAL_MAX, maxHeight * PORTRAIT_HEIGHT_SHARE)
+                val diameter = minOf(DIAL_MAX, maxWidth, maxHeight * PORTRAIT_HEIGHT_SHARE)
                 Column(modifier = Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
                     SessionHeader(title, subtitle)
                     track?.invoke()
@@ -151,6 +175,71 @@ fun SessionScreen(
     }
 }
 
+/**
+ * The way to stop a session, kept out of the way: a round lock button that starts locked. Tapping it pops a panel over the
+ * dial with the actions in [content] (Pause, End session); tapping it again locks it. The panel floats, so opening it never
+ * moves or shrinks the dial. [unlockLabel] says what unlocking gives you.
+ */
+@Composable
+fun SessionLock(
+    stat: Stat,
+    locked: Boolean,
+    onLockedChange: (Boolean) -> Unit,
+    unlockLabel: String,
+    modifier: Modifier = Modifier,
+    content: @Composable ColumnScope.() -> Unit,
+) {
+    val colors = AwakenTheme.colors
+    val motion = AwakenTheme.motion
+    val lockLabel = lexString(R.string.session_lock)
+    Box(modifier = modifier.fillMaxWidth().height(LOCK_SIZE), contentAlignment = Alignment.BottomCenter) {
+        // The panel sits above the button and overflows upward over the dial instead of pushing it.
+        AnimatedVisibility(
+            visible = !locked,
+            enter = fadeIn(tween(motion.duration(motion.quickMs))) +
+                scaleIn(tween(motion.duration(motion.standardMs)), initialScale = POP_SCALE, transformOrigin = TransformOrigin(0.5f, 1f)),
+            exit = fadeOut(tween(motion.duration(motion.quickMs))) +
+                scaleOut(tween(motion.duration(motion.quickMs)), targetScale = POP_SCALE, transformOrigin = TransformOrigin(0.5f, 1f)),
+            modifier = Modifier
+                .fillMaxWidth()
+                .wrapContentHeight(align = Alignment.Bottom, unbounded = true)
+                .offset(y = -(LOCK_SIZE + Spacing.sm)),
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(AwakenTheme.shapes.window)
+                    .background(colors.field(stat))
+                    .border(AwakenTheme.dimens.hairline, colors.onFieldMuted.copy(alpha = TRACK_ALPHA), AwakenTheme.shapes.window)
+                    .padding(Spacing.sm),
+                verticalArrangement = Arrangement.spacedBy(Spacing.xs),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                content = content,
+            )
+        }
+        Box(
+            modifier = Modifier
+                .size(LOCK_SIZE)
+                .clip(CircleShape)
+                .background(if (locked) colors.field(stat) else colors.buttonOnField)
+                .border(AwakenTheme.dimens.accentWidth, if (locked) colors.onField else colors.buttonOnField, CircleShape)
+                .clickable(onClickLabel = if (locked) unlockLabel else lockLabel) { onLockedChange(!locked) }
+                .semantics { role = Role.Button },
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                AwakenGlyphs.Lock,
+                contentDescription = if (locked) unlockLabel else lockLabel,
+                tint = if (locked) colors.onField else colors.onButtonOnField,
+                modifier = Modifier.size(AwakenTheme.dimens.icon),
+            )
+        }
+    }
+}
+
+private val LOCK_SIZE: Dp = 56.dp
+private const val POP_SCALE = 0.9f
+
 /** The title and the quiet line under it, centred, in white. */
 @Composable
 fun SessionHeader(title: String, subtitle: String?, modifier: Modifier = Modifier) {
@@ -170,8 +259,14 @@ fun SessionDial(diameter: Dp, fraction: Float, numeral: String, caption: String,
     val colors = AwakenTheme.colors
     val ring = AwakenTheme.dimens.sessionDialRing
     val track = colors.onFieldMuted.copy(alpha = TRACK_ALPHA)
-    // The big numeral is sized for the full dial; it shrinks with a smaller one so it always sits inside the ring.
-    val numeralStyle = if (diameter < DIAL_MAX * SMALL_DIAL_SHARE) AwakenTheme.type.metricL else AwakenTheme.type.metricXL
+    // The numeral grows with the dial and shrinks for a long reading ("1:30:00") so it always sits inside the ring.
+    val density = LocalDensity.current
+    val numeralStyle = AwakenTheme.type.metricXL.let { base ->
+        val byDial = diameter * NUMERAL_SHARE
+        val byWidth = diameter * NUMERAL_FIT / (numeral.length * GLYPH_EM)
+        val size = with(density) { minOf(byDial, byWidth).toSp() }
+        base.copy(fontSize = size, lineHeight = size)
+    }
     Box(
         modifier = modifier.size(diameter).semantics(mergeDescendants = true) { contentDescription = description },
         contentAlignment = Alignment.Center,
@@ -230,29 +325,45 @@ fun FieldQuietButton(text: String, onClick: () -> Unit, modifier: Modifier = Mod
     }
 }
 
-private val DIAL_MAX: Dp = 296.dp
+private val DIAL_MAX: Dp = 460.dp
 private val DIAL_MIN: Dp = 120.dp
 private val LANDSCAPE_STATUS_ROOM: Dp = 32.dp
 private val SIDE_COLUMN_MAX: Dp = 360.dp
-private const val PORTRAIT_HEIGHT_SHARE = 0.4f
-private const val SMALL_DIAL_SHARE = 0.75f
+private const val PORTRAIT_HEIGHT_SHARE = 0.58f
+private const val NUMERAL_SHARE = 0.27f
+private const val NUMERAL_FIT = 0.74f
+private const val GLYPH_EM = 0.6f
 private const val TRACK_ALPHA = 0.28f
 private const val FULL = 360f
 private const val START = -90f
 
+/** The lock closed (how a session starts) and open (Pause and End session popped over the dial). */
 @PhonePreviews
+@LandscapePreviews
 @Composable
 private fun SessionScreenPreview() {
-    AwakenTheme(reduceMotion = true) {
-        SessionScreen(
-            stat = Stat.INT,
-            title = "15-minute session",
-            subtitle = "DSA, graphs · Intelligence",
-            body = { diameter -> SessionDial(diameter, 0.79f, "11:48", "remaining", "11:48 remaining") },
-            actions = {
+    AwakenTheme(reduceMotion = true) { SessionLockPreviewContent(locked = true) }
+}
+
+@PhonePreviews
+@LandscapePreviews
+@Composable
+private fun SessionScreenUnlockedPreview() {
+    AwakenTheme(reduceMotion = true) { SessionLockPreviewContent(locked = false) }
+}
+
+@Composable
+private fun SessionLockPreviewContent(locked: Boolean) {
+    SessionScreen(
+        stat = Stat.INT,
+        title = "15-minute session",
+        subtitle = "DSA, graphs · Intelligence",
+        body = { diameter -> SessionDial(diameter, 0.79f, "11:48", "remaining", "11:48 remaining") },
+        actions = {
+            SessionLock(stat = Stat.INT, locked = locked, onLockedChange = {}, unlockLabel = "Unlock") {
                 FieldPrimaryButton("Pause (5:00)", onClick = {}, modifier = Modifier.fillMaxWidth())
                 FieldQuietButton("End session", onClick = {})
-            },
-        )
-    }
+            }
+        },
+    )
 }

@@ -1,5 +1,14 @@
 package com.assismohanty.awaken.core.designsystem.components
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.tween
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -125,21 +134,112 @@ fun StopwatchFace(elapsed: Duration, modifier: Modifier = Modifier, paused: Bool
     }
 }
 
+/**
+ * One tile of the face. When its digits change, the top half folds down and the new bottom half falls into place, like a
+ * flip clock. Nothing moves while the digits are the same, and with Reduce motion the digits simply change.
+ */
 @Composable
 private fun FlipTile(text: String, style: androidx.compose.ui.text.TextStyle, width: Dp, height: Dp) {
     val colors = AwakenTheme.colors
+    val motion = AwakenTheme.motion
+    // What is on the tile at rest; while a flip runs it still holds the previous digits.
+    var shown by remember { mutableStateOf(text) }
+    val progress = remember { Animatable(0f) }
+    LaunchedEffect(text) {
+        if (text == shown) return@LaunchedEffect
+        if (motion.reduceMotion) {
+            shown = text
+            return@LaunchedEffect
+        }
+        progress.snapTo(0f)
+        progress.animateTo(1f, tween(FLIP_MS, easing = LinearEasing))
+        shown = text
+        progress.snapTo(0f)
+    }
+    val flipping = shown != text
+    val density = LocalDensity.current
+    val tile = colors.surfaceElevated
     Box(
         modifier = Modifier
             .size(width = width, height = height)
             .clip(RoundedCornerShape(TILE_CORNER))
-            .background(colors.surfaceElevated),
+            .background(tile),
         contentAlignment = Alignment.Center,
     ) {
-        Text(text, style = style, color = colors.textPrimary)
+        if (!flipping) {
+            Text(text, style = style, color = colors.textPrimary)
+        } else {
+            val p = progress.value
+            // Behind the flaps: the new top half and the old bottom half.
+            TileHalf(text, style, tile, width, height, top = true)
+            TileHalf(shown, style, tile, width, height, top = false)
+            if (p < HALF) {
+                // The old top half folds down about the seam.
+                TileHalf(
+                    shown, style, tile, width, height, top = true,
+                    modifier = Modifier.graphicsLayer {
+                        rotationX = FLIP_ANGLE * (p / HALF)
+                        cameraDistance = CAMERA_DISTANCE * density.density
+                    },
+                )
+            } else {
+                // The new bottom half falls into place from the seam.
+                TileHalf(
+                    text, style, tile, width, height, top = false,
+                    modifier = Modifier.graphicsLayer {
+                        rotationX = -FLIP_ANGLE * (1f - (p - HALF) / HALF)
+                        cameraDistance = CAMERA_DISTANCE * density.density
+                    },
+                )
+            }
+        }
         // The flip-clock seam across the middle.
         Box(modifier = Modifier.fillMaxWidth().height(HAIRLINE).background(colors.surface))
     }
 }
+
+/** Half of a tile: the digits drawn at full size and clipped to the top or the bottom half. */
+@Composable
+private fun TileHalf(
+    text: String,
+    style: androidx.compose.ui.text.TextStyle,
+    background: androidx.compose.ui.graphics.Color,
+    width: Dp,
+    height: Dp,
+    top: Boolean,
+    modifier: Modifier = Modifier,
+) {
+    Box(
+        modifier = modifier
+            .size(width = width, height = height)
+            .clip(HalfShape(top))
+            .background(background),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(text, style = style, color = AwakenTheme.colors.textPrimary)
+    }
+}
+
+private class HalfShape(private val top: Boolean) : androidx.compose.ui.graphics.Shape {
+    override fun createOutline(
+        size: androidx.compose.ui.geometry.Size,
+        layoutDirection: androidx.compose.ui.unit.LayoutDirection,
+        density: androidx.compose.ui.unit.Density,
+    ): androidx.compose.ui.graphics.Outline {
+        val half = size.height / 2f
+        val rect = if (top) {
+            androidx.compose.ui.geometry.Rect(0f, 0f, size.width, half)
+        } else {
+            androidx.compose.ui.geometry.Rect(0f, half, size.width, size.height)
+        }
+        return androidx.compose.ui.graphics.Outline.Rectangle(rect)
+    }
+}
+
+private const val FLIP_MS = 320
+private const val HALF = 0.5f
+private const val FLIP_ANGLE = 90f
+private const val CAMERA_DISTANCE = 14f
 
 @PhonePreviews
 @Composable
