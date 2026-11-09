@@ -42,6 +42,8 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.assismohanty.awaken.R
 import com.assismohanty.awaken.core.designsystem.components.LargeTitleScaffold
+import com.assismohanty.awaken.core.designsystem.components.ListRow
+import com.assismohanty.awaken.core.designsystem.components.SectionHeader
 import com.assismohanty.awaken.core.designsystem.components.SkeletonCard
 import com.assismohanty.awaken.core.data.db.entity.WorkoutEntity
 import com.assismohanty.awaken.core.data.db.entity.WorkoutSetEntity
@@ -100,7 +102,8 @@ fun GymRoute(modifier: Modifier = Modifier, viewModel: GymViewModel = hiltViewMo
 @Composable
 fun GymScreen(state: GymUiState, onEvent: (GymEvent) -> Unit, modifier: Modifier = Modifier) {
     val colors = AwakenTheme.colors
-    LargeTitleScaffold(title = lexString(R.string.gym_title), modifier = modifier) {
+    val subtitle = if (state.active == null && state.overview?.trainingDay == true) lexString(R.string.gym_training_day) else null
+    LargeTitleScaffold(title = lexString(R.string.gym_title), subtitle = subtitle, modifier = modifier) {
         if (state.loading) {
             SkeletonCard()
             return@LargeTitleScaffold
@@ -123,7 +126,7 @@ fun GymScreen(state: GymUiState, onEvent: (GymEvent) -> Unit, modifier: Modifier
         Text(lexString(R.string.gym_tracker_note), style = AwakenTheme.type.caption, color = colors.textMuted)
     }
     state.picker?.let { ExercisePickerSheet(it, onEvent) }
-    state.detail?.let { ExerciseDetailSheet(it, canAdd = true, onEvent = onEvent) }
+    state.detail?.let { ExerciseDetailSheet(it, canAdd = state.picker?.browse != true, onEvent = onEvent) }
     state.plates?.let { PlatesSheet(it, onEvent) }
     if (state.settingsOpen) GymSettingsSheet(state.prefs, onEvent)
     state.history?.let { HistorySheet(it, onEvent) }
@@ -150,29 +153,36 @@ private fun NoticeLine(notice: GymNotice, onEvent: (GymEvent) -> Unit) {
 
 @Composable
 private fun GymHome(overview: GymOverview, onEvent: (GymEvent) -> Unit) {
-    WeekWindow(overview, Modifier.staggeredEntrance(0))
-    RoutinesWindow(overview.routines, onEvent, Modifier.staggeredEntrance(1))
-    QuietButton(text = lexString(R.string.gym_settings_open), onClick = { onEvent(GymEvent.OpenGymSettings) })
-    RecordsWindow(overview.records, onEvent, Modifier.staggeredEntrance(2))
-    HistoryWindow(overview.history, onEvent, Modifier.staggeredEntrance(3))
+    RoutinesSection(overview.routines, onEvent, Modifier.staggeredEntrance(0))
+    WeekCard(overview, Modifier.staggeredEntrance(1))
+    RecordsSection(overview.records, onEvent, Modifier.staggeredEntrance(2))
+    HistorySection(overview.history, onEvent, Modifier.staggeredEntrance(3))
+    MoreSection(onEvent, Modifier.staggeredEntrance(4))
 }
 
+/** This week: the three totals, and a link that opens the muscle map in a sheet. */
 @Composable
-private fun WeekWindow(overview: GymOverview, modifier: Modifier = Modifier) {
+private fun WeekCard(overview: GymOverview, modifier: Modifier = Modifier) {
     val colors = AwakenTheme.colors
-    SystemWindow(title = lexString(R.string.gym_window_week), accent = colors.accent, modifier = modifier) {
-        if (overview.trainingDay) {
-            Text(lexString(R.string.gym_training_day), style = AwakenTheme.type.label, color = colors.accent)
-        }
+    var mapOpen by rememberSaveable { mutableStateOf(false) }
+    AwakenCard(modifier = modifier.fillMaxWidth(), reveal = false) {
+        Text(lexString(R.string.gym_window_week), style = AwakenTheme.type.caption, color = colors.textSecondary)
         Row(modifier = Modifier.fillMaxWidth()) {
             Stat(lexString(R.string.gym_week_workouts), formatCount(overview.weekWorkouts), Modifier.weight(1f))
             Stat(lexString(R.string.gym_week_sets), formatCount(overview.weekSets), Modifier.weight(1f))
             Stat(lexString(R.string.gym_week_volume), lexString(R.string.gym_kg_value, formatCount(overview.weekVolumeKg.roundToLong())), Modifier.weight(1f))
         }
-        var mapOpen by rememberSaveable { mutableStateOf(false) }
-        SecondaryButton(text = lexString(R.string.gym_muscle_map_open), onClick = { mapOpen = true }, modifier = Modifier.fillMaxWidth())
-        if (mapOpen) MuscleMapSheet(overview, onDismiss = { mapOpen = false })
+        Row(
+            modifier = Modifier
+                .defaultMinSize(minHeight = AwakenTheme.dimens.touchTarget)
+                .clickable { mapOpen = true },
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(lexString(R.string.gym_muscle_map_open), style = AwakenTheme.type.label, color = colors.textPrimary)
+            Icon(AwakenGlyphs.ChevronRight, contentDescription = null, tint = colors.textPrimary, modifier = Modifier.size(AwakenTheme.dimens.iconSmall))
+        }
     }
+    if (mapOpen) MuscleMapSheet(overview, onDismiss = { mapOpen = false })
 }
 
 /** The muscle map in a sheet from the "This week" card, so the routines stay near the top of Gym. */
@@ -241,52 +251,27 @@ private fun Stat(label: String, value: String, modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun RoutinesWindow(routines: List<RoutineSummary>, onEvent: (GymEvent) -> Unit, modifier: Modifier = Modifier) {
+private fun RoutinesSection(routines: List<RoutineSummary>, onEvent: (GymEvent) -> Unit, modifier: Modifier = Modifier) {
     val colors = AwakenTheme.colors
-    SystemWindow(title = lexString(R.string.gym_window_routines), accent = colors.accent, modifier = modifier, reveal = false) {
-        if (routines.isEmpty()) {
-            Text(lexString(R.string.gym_routines_empty), style = AwakenTheme.type.body, color = colors.textSecondary)
-        }
-        routines.forEachIndexed { i, routine ->
-            if (i > 0) HorizontalDivider(color = colors.divider, thickness = AwakenTheme.dimens.hairline)
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(routine.name, style = AwakenTheme.type.title, color = colors.textPrimary)
-                    Text(
-                        lexString(R.string.gym_routine_meta, routine.exerciseNames.size, routine.sets),
-                        style = AwakenTheme.type.caption,
-                        color = colors.textSecondary,
-                    )
-                    Text(routine.exerciseNames.joinToString(), style = AwakenTheme.type.caption, color = colors.textMuted, maxLines = 2)
-                }
-                QuietButton(lexString(R.string.gym_routine_start), onClick = { onEvent(GymEvent.StartRoutine(routine.routineId, routine.name)) })
-                IconButton(onClick = { onEvent(GymEvent.DeleteRoutine(routine.routineId)) }) {
-                    Icon(AwakenGlyphs.Close, contentDescription = lexString(R.string.gym_routine_delete, routine.name), tint = colors.textSecondary)
-                }
+    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+        SectionHeader(title = lexString(R.string.gym_window_routines))
+        AwakenCard(reveal = false, contentPadding = Spacing.listCard, spacing = Spacing.zero, modifier = Modifier.fillMaxWidth()) {
+            if (routines.isEmpty()) {
+                Text(lexString(R.string.gym_routines_empty), style = AwakenTheme.type.body, color = colors.textSecondary)
             }
-        }
-    }
-}
-
-@Composable
-private fun RecordsWindow(records: List<PersonalRecord>, onEvent: (GymEvent) -> Unit, modifier: Modifier = Modifier) {
-    val colors = AwakenTheme.colors
-    SystemWindow(title = lexString(R.string.gym_window_records), accent = colors.reward, modifier = modifier, reveal = false) {
-        if (records.isEmpty()) Text(lexString(R.string.gym_records_empty), style = AwakenTheme.type.body, color = colors.textSecondary)
-        records.take(MAX_RECORDS).forEach { record ->
-            val historyLabel = lexString(R.string.gym_history_open_cd, record.name)
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .defaultMinSize(minHeight = AwakenTheme.dimens.touchTarget)
-                    .clickable(onClickLabel = historyLabel) { onEvent(GymEvent.OpenHistory(record.exerciseId, record.name)) },
-                verticalArrangement = Arrangement.Center,
-            ) {
-                Text(record.name, style = AwakenTheme.type.label, color = colors.textPrimary)
-                Text(
-                    lexString(R.string.gym_record_line, formatNumber(record.weightKg), record.reps, formatNumber(record.estimatedMaxKg.roundTo1())),
-                    style = AwakenTheme.type.caption,
-                    color = colors.textSecondary,
+            routines.forEach { routine ->
+                ListRow(
+                    title = routine.name,
+                    secondary = lexString(R.string.gym_routine_line, routine.exerciseNames.joinToString(), routine.sets),
+                    trailing = {
+                        SecondaryButton(
+                            text = lexString(R.string.gym_routine_start),
+                            onClick = { onEvent(GymEvent.StartRoutine(routine.routineId, routine.name)) },
+                        )
+                        IconButton(onClick = { onEvent(GymEvent.DeleteRoutine(routine.routineId)) }) {
+                            Icon(AwakenGlyphs.Close, contentDescription = lexString(R.string.gym_routine_delete, routine.name), tint = colors.textSecondary)
+                        }
+                    },
                 )
             }
         }
@@ -294,33 +279,80 @@ private fun RecordsWindow(records: List<PersonalRecord>, onEvent: (GymEvent) -> 
 }
 
 @Composable
-private fun HistoryWindow(history: List<WorkoutSummary>, onEvent: (GymEvent) -> Unit, modifier: Modifier = Modifier) {
+private fun RecordsSection(records: List<PersonalRecord>, onEvent: (GymEvent) -> Unit, modifier: Modifier = Modifier) {
     val colors = AwakenTheme.colors
-    SystemWindow(title = lexString(R.string.gym_window_history), accent = colors.accent, modifier = modifier, reveal = false) {
-        if (history.isEmpty()) Text(lexString(R.string.gym_history_empty), style = AwakenTheme.type.body, color = colors.textSecondary)
-        history.take(MAX_HISTORY).forEachIndexed { i, workout ->
-            if (i > 0) HorizontalDivider(color = colors.divider, thickness = AwakenTheme.dimens.hairline)
-            val date = formatDate(workout.gameDate)
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(workout.name.ifBlank { lexString(R.string.gym_workout_default_name) }, style = AwakenTheme.type.title, color = colors.textPrimary)
-                    Text(
-                        lexString(
-                            R.string.gym_history_meta,
-                            date,
-                            workout.duration.toMinutes().toInt(),
-                            workout.sets,
-                            formatCount(workout.volumeKg.roundToLong()),
-                        ),
-                        style = AwakenTheme.type.caption,
-                        color = colors.textSecondary,
-                    )
-                    Text(workout.exerciseNames.joinToString(), style = AwakenTheme.type.caption, color = colors.textMuted, maxLines = 2)
-                }
-                IconButton(onClick = { onEvent(GymEvent.DeleteWorkout(workout.workoutId)) }) {
-                    Icon(AwakenGlyphs.Close, contentDescription = lexString(R.string.gym_history_delete, date), tint = colors.textSecondary)
-                }
+    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+        SectionHeader(title = lexString(R.string.gym_window_records))
+        AwakenCard(reveal = false, contentPadding = Spacing.listCard, spacing = Spacing.zero, modifier = Modifier.fillMaxWidth()) {
+            if (records.isEmpty()) Text(lexString(R.string.gym_records_empty), style = AwakenTheme.type.body, color = colors.textSecondary)
+            records.take(MAX_RECORDS).forEach { record ->
+                ListRow(
+                    title = record.name,
+                    secondary = lexString(R.string.gym_record_line, formatNumber(record.weightKg), record.reps, formatNumber(record.estimatedMaxKg.roundTo1())),
+                    onClick = { onEvent(GymEvent.OpenHistory(record.exerciseId, record.name)) },
+                )
             }
+        }
+    }
+}
+
+@Composable
+private fun HistorySection(history: List<WorkoutSummary>, onEvent: (GymEvent) -> Unit, modifier: Modifier = Modifier) {
+    val colors = AwakenTheme.colors
+    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+        SectionHeader(title = lexString(R.string.gym_window_history))
+        AwakenCard(reveal = false, contentPadding = Spacing.listCard, spacing = Spacing.zero, modifier = Modifier.fillMaxWidth()) {
+            if (history.isEmpty()) Text(lexString(R.string.gym_history_empty), style = AwakenTheme.type.body, color = colors.textSecondary)
+            history.take(MAX_HISTORY).forEach { workout ->
+                val date = formatDate(workout.gameDate)
+                ListRow(
+                    title = workout.name.ifBlank { lexString(R.string.gym_workout_default_name) },
+                    secondary = lexString(
+                        R.string.gym_history_meta,
+                        date,
+                        workout.duration.toMinutes().toInt(),
+                        workout.sets,
+                        formatCount(workout.volumeKg.roundToLong()),
+                    ),
+                    trailing = {
+                        IconButton(onClick = { onEvent(GymEvent.DeleteWorkout(workout.workoutId)) }) {
+                            Icon(AwakenGlyphs.Close, contentDescription = lexString(R.string.gym_history_delete, date), tint = colors.textSecondary)
+                        }
+                    },
+                )
+            }
+        }
+    }
+}
+
+/** What used to hide inside a workout or float on the page: the library, the plate calculator and Gym settings. */
+@Composable
+private fun MoreSection(onEvent: (GymEvent) -> Unit, modifier: Modifier = Modifier) {
+    val colors = AwakenTheme.colors
+    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+        SectionHeader(title = lexString(R.string.gym_window_more))
+        AwakenCard(reveal = false, contentPadding = Spacing.listCard, spacing = Spacing.zero, modifier = Modifier.fillMaxWidth()) {
+            val chevron: @Composable androidx.compose.foundation.layout.RowScope.() -> Unit = {
+                Icon(AwakenGlyphs.ChevronRight, contentDescription = null, tint = colors.textSecondary, modifier = Modifier.size(AwakenTheme.dimens.iconSmall))
+            }
+            ListRow(
+                title = lexString(R.string.gym_more_exercises),
+                secondary = lexString(R.string.gym_more_exercises_note),
+                onClick = { onEvent(GymEvent.OpenBrowse) },
+                trailing = chevron,
+            )
+            ListRow(
+                title = lexString(R.string.gym_plates_title),
+                secondary = lexString(R.string.gym_more_plates_note),
+                onClick = { onEvent(GymEvent.OpenPlates(null)) },
+                trailing = chevron,
+            )
+            ListRow(
+                title = lexString(R.string.gym_settings_open),
+                secondary = lexString(R.string.gym_more_settings_note),
+                onClick = { onEvent(GymEvent.OpenGymSettings) },
+                trailing = chevron,
+            )
         }
     }
 }

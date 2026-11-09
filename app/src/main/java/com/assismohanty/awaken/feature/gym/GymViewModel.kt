@@ -56,6 +56,8 @@ data class ExercisePicker(
     val muscle: Muscle? = null,
     val results: List<Exercise> = emptyList(),
     val showCustomForm: Boolean = false,
+    /** Reading the library from Gym home: no Add to workout and no custom exercise. */
+    val browse: Boolean = false,
 )
 
 /** Transient UI on top of the data: sheets, prompts and the last notice. */
@@ -161,6 +163,9 @@ sealed interface GymEvent {
     data class DeleteWorkout(val workoutId: String) : GymEvent
 
     data object OpenPicker : GymEvent
+
+    /** The exercise library from Gym home, for reading only. */
+    data object OpenBrowse : GymEvent
     data object ClosePicker : GymEvent
     data class Query(val text: String) : GymEvent
     data class ToggleEquipment(val equipment: Equipment) : GymEvent
@@ -308,6 +313,10 @@ class GymViewModel @Inject constructor(
 
             GymEvent.OpenPicker -> {
                 flow.update { it.copy(picker = ExercisePicker()) }
+                refreshPicker()
+            }
+            GymEvent.OpenBrowse -> {
+                flow.update { it.copy(picker = ExercisePicker(browse = true)) }
                 refreshPicker()
             }
             GymEvent.ClosePicker -> flow.update { it.copy(picker = null) }

@@ -76,7 +76,7 @@ fun ExercisePickerContent(picker: ExercisePicker, onEvent: (GymEvent) -> Unit, m
             .padding(horizontal = Spacing.gutter, vertical = Spacing.md),
         verticalArrangement = Arrangement.spacedBy(Spacing.sm),
     ) {
-        Text(lexString(R.string.gym_picker_title), style = type.windowTitle, color = colors.accent, modifier = Modifier.semantics { heading() })
+        Text(lexString(if (picker.browse) R.string.gym_browse_title else R.string.gym_picker_title), style = type.windowTitle, color = colors.accent, modifier = Modifier.semantics { heading() })
         if (picker.showCustomForm) {
             CustomExerciseForm(onEvent)
             return@Column
@@ -121,14 +121,16 @@ fun ExercisePickerContent(picker: ExercisePicker, onEvent: (GymEvent) -> Unit, m
         if (picker.results.isEmpty()) Text(lexString(R.string.gym_picker_empty), style = type.body, color = colors.textSecondary)
         picker.results.forEachIndexed { i, exercise ->
             if (i > 0) HorizontalDivider(color = colors.divider, thickness = AwakenTheme.dimens.hairline)
-            ExerciseResultRow(exercise, onEvent)
+            ExerciseResultRow(exercise, canAdd = !picker.browse, onEvent = onEvent)
         }
-        SecondaryButton(text = lexString(R.string.gym_picker_custom), onClick = { onEvent(GymEvent.OpenCustomForm) }, modifier = Modifier.fillMaxWidth())
+        if (!picker.browse) {
+            SecondaryButton(text = lexString(R.string.gym_picker_custom), onClick = { onEvent(GymEvent.OpenCustomForm) }, modifier = Modifier.fillMaxWidth())
+        }
     }
 }
 
 @Composable
-private fun ExerciseResultRow(exercise: Exercise, onEvent: (GymEvent) -> Unit) {
+private fun ExerciseResultRow(exercise: Exercise, canAdd: Boolean, onEvent: (GymEvent) -> Unit) {
     val colors = AwakenTheme.colors
     Row(
         modifier = Modifier
@@ -146,7 +148,7 @@ private fun ExerciseResultRow(exercise: Exercise, onEvent: (GymEvent) -> Unit) {
             )
             if (exercise.custom) Pill(text = lexString(R.string.gym_custom_badge), color = colors.accent)
         }
-        QuietButton(text = lexString(R.string.gym_exercise_add), onClick = { onEvent(GymEvent.AddExercise(exercise.id)) })
+        if (canAdd) QuietButton(text = lexString(R.string.gym_exercise_add), onClick = { onEvent(GymEvent.AddExercise(exercise.id)) })
     }
 }
 
