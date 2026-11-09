@@ -76,6 +76,7 @@ data class AwakenDimens(
     val heatmapGap: Dp = 3.dp,
     val gateDialSize: Dp = 264.dp,
     val gateDialRing: Dp = 10.dp,
+    val sessionDialRing: Dp = 12.dp,
     val gateDialInnerRing: Dp = 3.dp,
     val gateTileHeight: Dp = 128.dp,
     val ceremonyRing: Dp = 3.dp,

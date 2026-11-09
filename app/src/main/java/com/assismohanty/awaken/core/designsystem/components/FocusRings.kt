@@ -76,14 +76,18 @@ fun FocusGoalRing(minutes: Int, goal: Int, streak: Int, modifier: Modifier = Mod
 }
 
 private const val RING_SCALE = 1.8f
+private const val ON_FIELD_TRACK_ALPHA = 0.28f
 
 /**
  * Where a Pomodoro session is (GD §16.3): a dot per round, filled for the rounds done, a ring for the one under way,
  * and "Round 2 of 4 · Break". [round] is the current round, 1-based; during a break it is the round just finished.
  */
 @Composable
-fun PomodoroTrack(round: Int, rounds: Int, phase: PomodoroPhase, modifier: Modifier = Modifier) {
+fun PomodoroTrack(round: Int, rounds: Int, phase: PomodoroPhase, modifier: Modifier = Modifier, onField: Boolean = false) {
     val colors = AwakenTheme.colors
+    val ink = if (onField) colors.onField else colors.accent
+    val track = if (onField) colors.onFieldMuted.copy(alpha = ON_FIELD_TRACK_ALPHA) else colors.divider
+    val labelColor = if (onField) colors.onFieldMuted else colors.textSecondary
     val dimens = AwakenTheme.dimens
     val label = lexString(
         when (phase) {
@@ -105,13 +109,13 @@ fun PomodoroTrack(round: Int, rounds: Int, phase: PomodoroPhase, modifier: Modif
                 val done = index < round || (index == round && phase != PomodoroPhase.FOCUS)
                 val dot = Modifier.size(dimens.heroDot * 2).clearAndSetSemantics { }
                 when {
-                    done -> Column(dot.background(colors.accent, CircleShape)) {}
-                    index == round -> Column(dot.border(dimens.accentWidth, colors.accent, CircleShape)) {}
-                    else -> Column(dot.background(colors.divider, CircleShape)) {}
+                    done -> Column(dot.background(ink, CircleShape)) {}
+                    index == round -> Column(dot.border(dimens.accentWidth, ink, CircleShape)) {}
+                    else -> Column(dot.background(track, CircleShape)) {}
                 }
             }
         }
-        Text(text = label, style = AwakenTheme.type.label, color = colors.textSecondary, modifier = Modifier.clearAndSetSemantics { })
+        Text(text = label, style = AwakenTheme.type.label, color = labelColor, modifier = Modifier.clearAndSetSemantics { })
     }
 }
 

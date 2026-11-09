@@ -44,6 +44,12 @@ import androidx.core.content.ContextCompat
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.assismohanty.awaken.R
+import com.assismohanty.awaken.core.designsystem.components.SessionField
+import com.assismohanty.awaken.core.designsystem.components.SessionHeader
+import com.assismohanty.awaken.core.designsystem.components.SessionDial
+import com.assismohanty.awaken.core.designsystem.components.FieldPrimaryButton
+import com.assismohanty.awaken.core.designsystem.components.FieldQuietButton
+import com.assismohanty.awaken.core.designsystem.components.formatClock
 import com.assismohanty.awaken.core.designsystem.components.BigValue
 import com.assismohanty.awaken.core.designsystem.components.SegmentedTabs
 import com.assismohanty.awaken.core.designsystem.components.ChoiceChip
@@ -118,6 +124,11 @@ fun GatesScreen(state: GatesUiState, onEvent: (GatesEvent) -> Unit, onBack: () -
         StopwatchScreen(active, state.confirmAbandon, onEvent, modifier)
         return
     }
+    if (active != null) {
+        // A running session owns the screen in its stat's colour.
+        SessionRunScreen(active, state.confirmAbandon, onEvent, pomodoro = state.pomodoro, modifier = modifier)
+        return
+    }
     LargeTitleScaffold(
         title = when {
             active == null && state.pomodoro != null -> lexString(R.string.pomodoro_title)
@@ -130,7 +141,6 @@ fun GatesScreen(state: GatesUiState, onEvent: (GatesEvent) -> Unit, onBack: () -
     ) {
         when {
             state.loading -> SkeletonCard()
-            active != null -> GateRun(active, state.confirmAbandon, onEvent, pomodoro = state.pomodoro)
             state.pomodoro != null -> PomodoroBreakScreen(state.pomodoro, onEvent)
             else -> GatePicker(state, onEvent)
         }
@@ -449,58 +459,72 @@ private fun ColumnScope.StopwatchControls(active: ActiveGate, confirmAbandon: Bo
     }
 }
 
+/**
+ * A running or paused session: the stat's colour fills the screen, the dial shows what is left (or what is left of the
+ * one pause), and the actions sit at the bottom. The title is the length; the line under it is the subject and stat.
+ */
 @Composable
-private fun GateRun(active: ActiveGate, confirmAbandon: Boolean, onEvent: (GatesEvent) -> Unit, pomodoro: PomodoroUi? = null) {
-    if (active.lockWarning) LockWarning(onEvent)
+private fun SessionRunScreen(
+    active: ActiveGate,
+    confirmAbandon: Boolean,
+    onEvent: (GatesEvent) -> Unit,
+    modifier: Modifier = Modifier,
+    pomodoro: PomodoroUi? = null,
+) {
     val colors = AwakenTheme.colors
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(Spacing.md),
-    ) {
-        pomodoro?.let { PomodoroTrack(it.round, it.rounds, PomodoroPhase.FOCUS) }
-        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.xs), verticalAlignment = Alignment.CenterVertically) {
-            StatChip(active.stat)
-            active.label?.let { Text(it, style = AwakenTheme.type.label, color = colors.textPrimary) }
-        }
-        if (active.mode == GateMode.STOPWATCH) {
-            Text(lexString(R.string.focus_elapsed_caption), style = AwakenTheme.type.label, color = colors.textSecondary)
-            Text(shortClock(active.elapsed.toMillis()), style = AwakenTheme.type.metricL, color = colors.textPrimary)
-            PrimaryButton(lexString(R.string.action_stop_stopwatch), onClick = { onEvent(GatesEvent.Stop) }, modifier = Modifier.fillMaxWidth())
-        } else {
-            GateDial(
-                gate = active.rank,
-                remaining = active.remaining,
-                total = active.total,
-                breachUsed = active.breachUsed,
-            )
-        }
-        active.subject?.let { Text(it, style = AwakenTheme.type.caption, color = colors.textSecondary) }
-        Text(
-            lexString(R.string.gate_breach_line, shortClock(active.breachUsed.toMillis()), shortClock(GateRules.BREACH_BUDGET_MS)),
-            style = AwakenTheme.type.label,
-            color = if (active.breachUsed.isZero) colors.textSecondary else colors.critical,
+    val length = lexString(R.string.gate_name, active.rank.durationMinutes)
+    val about = listOfNotNull(active.subject?.takeIf { it.isNotBlank() } ?: active.label?.takeIf { it.isNotBlank() }, active.stat.label()).joinToString(" · ")
+    SessionField(active.stat, modifier = modifier) {
+        SessionHeader(
+            title = if (active.paused) lexString(R.string.gate_paused_title) else length,
+            subtitle = if (active.paused) length else about,
         )
-        when {
-            active.paused -> {
-                Text(lexString(R.string.gate_paused_left, shortClock(active.pauseLeft.toMillis())), style = AwakenTheme.type.label, color = colors.textPrimary)
-                PrimaryButton(lexString(R.string.action_resume), onClick = { onEvent(GatesEvent.Resume) }, modifier = Modifier.fillMaxWidth())
+        pomodoro?.let { PomodoroTrack(it.round, it.rounds, PomodoroPhase.FOCUS, modifier = Modifier.padding(top = Spacing.sm), onField = true) }
+        Column(
+            modifier = Modifier.weight(1f).fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(Spacing.md, Alignment.CenterVertically),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            if (active.paused) {
+                val left = formatClock(active.pauseLeft)
+                SessionDial(
+                    fraction = if (GateRules.MAX_PAUSE.isZero) 0f else active.pauseLeft.toMillis().toFloat() / GateRules.MAX_PAUSE.toMillis(),
+                    numeral = left,
+                    caption = lexString(R.string.gate_dial_pause_left),
+                    description = lexString(R.string.gate_paused_cd, left),
+                )
+            } else {
+                val left = formatClock(active.remaining)
+                SessionDial(
+                    fraction = if (active.total.isZero) 0f else active.remaining.toMillis().toFloat() / active.total.toMillis(),
+                    numeral = left,
+                    caption = lexString(R.string.gate_dial_remaining),
+                    description = lexString(R.string.cd_gate_dial, left, formatClock(active.breachUsed), formatClock(Duration.ofMillis(GateRules.BREACH_BUDGET_MS))),
+                )
             }
-            active.canPause -> SecondaryButton(
-                text = lexString(R.string.action_pause, shortClock(GateRules.MAX_PAUSE.toMillis())),
-                onClick = { onEvent(GatesEvent.Pause) },
-                modifier = Modifier.fillMaxWidth(),
+            Text(
+                lexString(R.string.gate_breach_line, shortClock(active.breachUsed.toMillis()), shortClock(GateRules.BREACH_BUDGET_MS)),
+                style = AwakenTheme.type.label,
+                color = if (active.breachUsed.isZero) colors.onFieldMuted else colors.onField,
             )
-            else -> Text(lexString(R.string.gate_pause_used), style = AwakenTheme.type.caption, color = colors.textSecondary)
         }
-        if (confirmAbandon) {
-            SystemWindow(title = null, accent = colors.critical, reveal = false) {
-                Text(lexString(R.string.gate_abandon_confirm), style = AwakenTheme.type.body, color = colors.textPrimary)
-                PrimaryButton(lexString(R.string.action_abandon_gate), onClick = { onEvent(GatesEvent.ConfirmAbandon) }, color = colors.critical, modifier = Modifier.fillMaxWidth())
-                QuietButton(lexString(R.string.action_keep_going), onClick = { onEvent(GatesEvent.CancelAbandon) }, modifier = Modifier.fillMaxWidth())
+        Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(Spacing.xs), horizontalAlignment = Alignment.CenterHorizontally) {
+            if (confirmAbandon) {
+                Text(lexString(R.string.gate_abandon_confirm), style = AwakenTheme.type.body, color = colors.onField)
+                FieldPrimaryButton(lexString(R.string.action_abandon_gate), onClick = { onEvent(GatesEvent.ConfirmAbandon) }, modifier = Modifier.fillMaxWidth())
+                FieldQuietButton(lexString(R.string.action_keep_going), onClick = { onEvent(GatesEvent.CancelAbandon) })
+            } else {
+                when {
+                    active.paused -> FieldPrimaryButton(lexString(R.string.action_resume), onClick = { onEvent(GatesEvent.Resume) }, modifier = Modifier.fillMaxWidth())
+                    active.canPause -> FieldPrimaryButton(
+                        lexString(R.string.action_pause, shortClock(GateRules.MAX_PAUSE.toMillis())),
+                        onClick = { onEvent(GatesEvent.Pause) },
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    else -> Text(lexString(R.string.gate_pause_used), style = AwakenTheme.type.caption, color = colors.onFieldMuted)
+                }
+                FieldQuietButton(lexString(R.string.action_abandon_gate), onClick = { onEvent(GatesEvent.Abandon) })
             }
-        } else {
-            QuietButton(lexString(R.string.action_abandon_gate), onClick = { onEvent(GatesEvent.Abandon) }, modifier = Modifier.fillMaxWidth())
         }
     }
 }

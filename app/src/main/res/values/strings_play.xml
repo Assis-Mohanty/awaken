@@ -223,7 +223,10 @@
     <string name="action_abandon_gate">End session</string>
     <string name="action_keep_going">Keep going</string>
     <string name="gate_breach_line">Time away %1$s of %2$s</string>
-    <string name="gate_paused_left">Paused. Resumes on its own in %1$s.</string>
+    <string name="gate_paused_title">Paused</string>
+    <string name="gate_dial_remaining">remaining</string>
+    <string name="gate_dial_pause_left">left in this pause</string>
+    <string name="gate_paused_cd">%1$s left in this pause. It resumes on its own.</string>
     <string name="gate_pause_used">Pause used.</string>
     <string name="gate_abandon_confirm">End this session? It gives no XP.</string>
     <string name="gate_collapsed_breach">Background time %1$s exceeded the %2$s limit.</string>
