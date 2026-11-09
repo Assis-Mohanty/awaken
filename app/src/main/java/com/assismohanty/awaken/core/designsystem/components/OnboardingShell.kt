@@ -131,21 +131,13 @@ fun OnboardingShell(
                 } else {
                     Box(Modifier.size(AwakenTheme.dimens.touchTarget))
                 }
-                Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
-                    Icon(
-                        painter = painterResource(R.drawable.ic_launcher_foreground),
-                        contentDescription = lexString(R.string.app_name),
-                        tint = colors.textPrimary,
-                        modifier = Modifier.size(AwakenTheme.dimens.onbLogo),
-                    )
-                }
+                SegmentedProgressBar(segments = segments, progress = progress, description = progressDescription, modifier = Modifier.weight(1f))
                 if (onSkip != null) {
                     QuietButton(text = skipText, onClick = onSkip)
                 } else {
                     Box(Modifier.size(AwakenTheme.dimens.touchTarget))
                 }
             }
-            SegmentedProgressBar(segments = segments, progress = progress, description = progressDescription)
             AnimatedContent(
                 targetState = stepKey,
                 modifier = Modifier.weight(1f).fillMaxWidth(),

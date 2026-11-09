@@ -2,6 +2,7 @@ package com.assismohanty.awaken.core.designsystem.components
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.material3.Icon
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -70,18 +71,22 @@ fun PlanSummaryCard(
     content: @Composable ColumnScope.() -> Unit = {},
 ) {
     val colors = AwakenTheme.colors
-    AwakenCard(
-        modifier = modifier.fillMaxWidth(),
-        title = title,
-        reveal = false,
-        headerTrailing = if (onEditToggle != null && editLabel != null) {
-            { QuietButton(text = editLabel, onClick = onEditToggle) }
-        } else {
-            null
-        },
-    ) {
-        Text(value, style = AwakenTheme.type.numeric, color = colors.textPrimary)
-        if (note != null) Text(note, style = AwakenTheme.type.caption, color = colors.textSecondary)
+    AwakenCard(modifier = modifier.fillMaxWidth(), reveal = false, onClick = onEditToggle) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(title, style = AwakenTheme.type.windowTitle, color = colors.textPrimary)
+                Text(value, style = AwakenTheme.type.caption, color = colors.textSecondary)
+                if (note != null) Text(note, style = AwakenTheme.type.caption, color = colors.textSecondary)
+            }
+            if (onEditToggle != null && editLabel != null) {
+                Icon(
+                    if (expanded) AwakenGlyphs.ChevronDown else AwakenGlyphs.ChevronRight,
+                    contentDescription = editLabel,
+                    tint = colors.textSecondary,
+                    modifier = Modifier.size(AwakenTheme.dimens.iconSmall),
+                )
+            }
+        }
         if (expanded) content()
     }
 }

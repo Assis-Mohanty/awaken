@@ -30,6 +30,9 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.assismohanty.awaken.R
+import com.assismohanty.awaken.engine.model.Stat
+import com.assismohanty.awaken.core.designsystem.components.DayBarPlate
+import com.assismohanty.awaken.core.designsystem.components.DayBar
 import com.assismohanty.awaken.core.designsystem.components.BigValue
 import com.assismohanty.awaken.core.designsystem.components.BmiCard
 import com.assismohanty.awaken.core.designsystem.components.ChoiceItem
@@ -192,13 +195,22 @@ private fun StepBody(step: OnboardingStep, state: OnboardingFlowState, onEvent: 
     }
 }
 
+/** Decoration only: two loaded plates and four waiting, the way Today shows a day. */
+private val WELCOME_PLATES = listOf(
+    DayBarPlate(Stat.VIT, weight = 3, done = true),
+    DayBarPlate(Stat.INT, weight = 3, done = true),
+    DayBarPlate(Stat.STR, weight = 2, done = false),
+    DayBarPlate(Stat.WIL, weight = 2, done = false),
+    DayBarPlate(Stat.CHA, weight = 3, done = false),
+    DayBarPlate(Stat.INT, weight = 2, done = false),
+)
+
 @Composable
 private fun WelcomeStep() {
     OnboardingStepBody(title = lexString(R.string.onb_welcome_title), subtitle = lexString(R.string.onb_welcome_body)) {
-        OnbIllustration(
-            image = OnboardingArt.resolve("welcome", "hero", null),
-            modifier = Modifier.weight(1f).fillMaxWidth(),
-        )
+        Box(modifier = Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
+            DayBar(plates = WELCOME_PLATES, description = "", modifier = Modifier.fillMaxWidth())
+        }
     }
 }
 
