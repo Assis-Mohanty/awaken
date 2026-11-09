@@ -128,8 +128,8 @@ fun DayPlanSheet(state: DayPlanUiState, onEvent: (DayPlanEvent) -> Unit) {
     ModalBottomSheet(
         onDismissRequest = { onEvent(DayPlanEvent.Dismiss) },
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-        containerColor = AwakenTheme.colors.surfaceOverlay,
-        shape = AwakenTheme.shapes.window,
+        containerColor = AwakenTheme.colors.surfaceElevated,
+        shape = AwakenTheme.shapes.sheet,
     ) {
         DayPlanContent(
             state = state,
@@ -151,7 +151,7 @@ fun DayPlanContent(state: DayPlanUiState, plan: DayPlan, onEvent: (DayPlanEvent)
     val type = AwakenTheme.type
     val locale = LocalConfiguration.current.locales[0]
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-        Text(lexString(R.string.day_plan_title), style = type.windowTitle, color = colors.accent, modifier = Modifier.semantics { heading() })
+        Text(lexString(R.string.day_plan_title), style = type.title, color = colors.textPrimary, modifier = Modifier.semantics { heading() })
 
         Text(lexString(R.string.rest_day_label), style = type.label, color = colors.textPrimary, modifier = Modifier.semantics { heading() })
         Text(lexString(R.string.rest_day_body), style = type.caption, color = colors.textSecondary)

@@ -50,7 +50,7 @@
 
     <!-- Reward sheet: formula breakdown (GAME_DESIGN §1 pillar 4) -->
     <string name="reward_xp_unit">XP</string>
-    <string name="reward_gold">Gold</string>
+    <string name="reward_gold_gain">+%1$s gold</string>
     <string name="reward_level_reached">Level %1$d reached</string>
     <string name="reward_rank_reached">Rank %1$s reached</string>
     <string name="unit_gold">gold</string>

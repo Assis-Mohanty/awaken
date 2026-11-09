@@ -3,7 +3,6 @@ package com.assismohanty.awaken.core.designsystem.components
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -25,9 +24,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
@@ -107,58 +104,60 @@ fun RewardSheetContent(
     }
     val finalXp = lexString(R.string.xp_gain, formatCount(model.xp))
 
+    val moment = model.levelReached != null || model.rankReached != null
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = Spacing.lg, vertical = Spacing.sm),
-        horizontalAlignment = Alignment.CenterHorizontally,
+            .padding(horizontal = Spacing.gutter, vertical = Spacing.sm),
         verticalArrangement = Arrangement.spacedBy(Spacing.md),
     ) {
-        Box(contentAlignment = Alignment.Center) {
-            Rings(listOf(RingSpec(1f, colors.positive)), size = AwakenTheme.dimens.avatar * 2)
-            Icon(AwakenGlyphs.Check, contentDescription = null, tint = colors.textPrimary, modifier = Modifier.size(AwakenTheme.dimens.icon * 1.5f))
-        }
-        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(Spacing.xxs)) {
-            Text(
-                text = lexString(R.string.system_title_quest_cleared),
-                style = type.title,
-                color = colors.textSecondary,
-                modifier = Modifier.semantics { heading() },
-            )
+        Text(
+            text = lexString(R.string.system_title_quest_cleared),
+            style = type.title,
+            color = colors.textPrimary,
+            modifier = Modifier.semantics { heading() },
+        )
+        model.levelReached?.let { level -> Moment(lexString(R.string.reward_level_reached, level)) { LevelRing(level) } }
+        model.rankReached?.let { rank -> Moment(lexString(R.string.reward_rank_reached, rank.name)) { RankBadge(rank, AwakenTheme.dimens.avatar * 2) } }
+        if (!moment) {
             BigValue(
                 value = "+" + formatCount(shownXp.value.toInt()),
                 unit = lexString(R.string.reward_xp_unit),
                 large = true,
-                modifier = Modifier.clearAndSetSemantics { contentDescription = finalXp },
+                modifier = Modifier.align(Alignment.CenterHorizontally).clearAndSetSemantics { contentDescription = finalXp },
             )
         }
-        Column(modifier = Modifier.fillMaxWidth()) {
-            model.statXp.forEach { (stat, xp) ->
-                GainRow(AwakenGlyphs.stat(stat), colors.statGlyph(stat), stat.label(), "+" + formatCount(xp))
-            }
-            if (model.gold > 0) {
-                GainRow(AwakenGlyphs.Coin, colors.reward, lexString(R.string.reward_gold), "+" + formatCount(model.gold))
-            }
-            model.levelReached?.let { level ->
-                GainRow(AwakenGlyphs.Level, colors.accent, lexString(R.string.reward_level_reached, level), "")
-            }
-            model.rankReached?.let { rank ->
-                GainRow(AwakenGlyphs.Level, colors.rank(rank), lexString(R.string.reward_rank_reached, rank.name), "")
+        Breakdown(model)
+        if (model.gold > 0) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+                Icon(AwakenGlyphs.Coin, contentDescription = null, tint = colors.reward, modifier = Modifier.size(AwakenTheme.dimens.icon))
+                Text(lexString(R.string.reward_gold_gain, formatCount(model.gold)), style = type.numeric, color = colors.textPrimary)
             }
         }
-        Breakdown(model)
         if (model.capped) Text(lexString(R.string.cap_reached_note), style = type.caption, color = colors.textSecondary)
         if (model.pathQuest) FeedbackChips(selected = feedback, onSelect = onFeedback)
         PrimaryButton(text = lexString(R.string.action_done), onClick = onDone, modifier = Modifier.fillMaxWidth())
     }
 }
 
+/** The level or rank just reached: a ring or badge on the left, the line beside it. */
 @Composable
-private fun GainRow(icon: ImageVector, tint: Color, label: String, value: String) {
-    ListRow(title = label, icon = icon, iconTint = tint) {
-        Text(value, style = AwakenTheme.type.numeric, color = AwakenTheme.colors.textPrimary)
+private fun Moment(text: String, mark: @Composable () -> Unit) {
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.md)) {
+        mark()
+        Text(text, style = AwakenTheme.type.label, color = AwakenTheme.colors.textPrimary)
     }
 }
+
+@Composable
+private fun LevelRing(level: Int) {
+    Box(contentAlignment = Alignment.Center) {
+        Rings(listOf(RingSpec(LEVEL_RING_FILL, AwakenTheme.colors.accent)), size = AwakenTheme.dimens.avatar * 2)
+        Text(level.toString(), style = AwakenTheme.type.numeric, color = AwakenTheme.colors.textPrimary)
+    }
+}
+
+private const val LEVEL_RING_FILL = 0.04f
 
 /** "Base 40 · Normal ×1.5 · Streak ×1.20 · Verified ×1.30 · Total 94 XP", one row each, from the engine's items. */
 @Composable
@@ -179,24 +178,18 @@ private fun Breakdown(model: RewardModel) {
             BreakdownItem.Kind.DAILY_CAP -> lexString(R.string.reward_row_cap) to "×" + formatMultiplier(item.value, fixed = true)
         }
     }
-    // A pressed-colour well: the sheet itself is card-coloured, so a card would vanish into it.
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(AwakenTheme.shapes.inner)
-            .background(colors.surfaceOverlay)
-            .padding(Spacing.md),
-        verticalArrangement = Arrangement.spacedBy(Spacing.xs),
-    ) {
-        rows.forEach { (label, value) -> FormulaRow(label, value, colors.textSecondary) }
-        HorizontalDivider(thickness = AwakenTheme.dimens.hairline, color = colors.divider)
+    Column(modifier = Modifier.fillMaxWidth()) {
+        rows.forEach { (label, value) ->
+            FormulaRow(label, value, colors.textSecondary)
+            HorizontalDivider(thickness = AwakenTheme.dimens.hairline, color = colors.divider)
+        }
         FormulaRow(lexString(R.string.reward_row_total), lexString(R.string.reward_total_value, formatCount(model.xp)), colors.textPrimary)
     }
 }
 
 @Composable
 private fun FormulaRow(label: String, value: String, labelColor: Color) {
-    Row(modifier = Modifier.fillMaxWidth().semantics(mergeDescendants = true) {}, verticalAlignment = Alignment.CenterVertically) {
+    Row(modifier = Modifier.fillMaxWidth().padding(vertical = Spacing.sm).semantics(mergeDescendants = true) {}, verticalAlignment = Alignment.CenterVertically) {
         Text(label, style = AwakenTheme.type.body, color = labelColor, modifier = Modifier.weight(1f))
         Text(value, style = AwakenTheme.type.numericSmall, color = AwakenTheme.colors.textPrimary)
     }
