@@ -13,6 +13,9 @@ import androidx.compose.ui.Modifier
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.assismohanty.awaken.R
+import com.assismohanty.awaken.core.designsystem.components.BigValue
+import com.assismohanty.awaken.core.designsystem.components.DetailRows
+import com.assismohanty.awaken.core.designsystem.lexicon.lexPlural
 import com.assismohanty.awaken.core.designsystem.components.AwakenCard
 import com.assismohanty.awaken.core.designsystem.components.AwakenGlyphs
 import com.assismohanty.awaken.core.designsystem.components.ChoiceChip
@@ -106,21 +109,21 @@ fun ReviewScreen(state: ReviewUiState, onEvent: (ReviewEvent) -> Unit, onClose: 
 @Composable
 private fun NumbersStep(model: WeeklyReviewModel, onEvent: (ReviewEvent) -> Unit) {
     val report = model.report
-    AwakenCard(reveal = false, title = lexString(if (model.soFar) R.string.review_numbers_so_far else R.string.review_numbers_title)) {
-        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.xs), modifier = Modifier.fillMaxWidth()) {
-            MetricTile(lexString(R.string.review_quests), formatCount(report.questsCompleted), Modifier.weight(1f))
-            MetricTile(lexString(R.string.review_xp), formatCount(report.totalXp), Modifier.weight(1f))
-        }
-        report.bestDay?.let { day ->
-            Text(
-                lexString(R.string.review_best_day) + " · " + day.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).withLocale(currentLocale())),
-                style = AwakenTheme.type.caption,
-                color = AwakenTheme.colors.textSecondary,
-            )
-        }
-        ConsistencyMeter(model.consistency)
+    val score = model.consistency
+    if (model.soFar) Text(lexString(R.string.review_numbers_so_far), style = AwakenTheme.type.caption, color = AwakenTheme.colors.textSecondary)
+    BigValue(value = formatCount(report.questsCompleted), unit = lexString(R.string.review_quests_unit), large = true)
+    val dateFormat = DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).withLocale(currentLocale())
+    DetailRows(
+        listOfNotNull(
+            lexString(R.string.review_xp) to formatCount(report.totalXp),
+            report.bestDay?.let { lexString(R.string.review_best_day) to it.format(dateFormat) },
+            lexString(R.string.review_active) to
+                if (score.eligible == 0) lexString(R.string.consistency_none) else lexPlural(R.plurals.consistency_line, score.eligible, score.cleared, score.eligible),
+        ),
+    )
+    AwakenCard(title = lexString(R.string.review_pattern_title), reveal = false, modifier = Modifier.fillMaxWidth()) {
+        Text(insightLine(model.insights), style = AwakenTheme.type.body, color = AwakenTheme.colors.textSecondary)
     }
-    InsightCard(text = insightLine(model.insights), icon = AwakenGlyphs.Sparkle)
     ReviewButtons(lexString(R.string.action_continue), { onEvent(ReviewEvent.Next) })
 }
 

@@ -151,7 +151,10 @@
     <!-- Weekly review (GD §14.4): no XP anywhere on these screens -->
     <string name="msg_review_saved">Review saved</string>
     <string name="review_title">Weekly review</string>
-    <string name="review_step">%1$d / %2$d</string>
+    <string name="review_step">Step %1$d of %2$d</string>
+    <string name="review_quests_unit">quests</string>
+    <string name="review_active">Active</string>
+    <string name="review_pattern_title">Your pattern</string>
     <string name="review_numbers_title">Your week</string>
     <string name="review_numbers_so_far">So far this week</string>
     <string name="review_quests">Quests completed</string>

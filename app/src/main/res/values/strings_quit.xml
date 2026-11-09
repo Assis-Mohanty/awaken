@@ -27,7 +27,11 @@
     </plurals>
     <string name="quit_hours">%1$d h</string>
     <string name="quit_just_started">Just started</string>
-    <string name="quit_best">Best run: %1$s. It\'s still yours.</string>
+    <string name="quit_best">Best run %1$s</string>
+    <string name="quit_row_best">Best run</string>
+    <string name="quit_row_best_none">None yet</string>
+    <string name="quit_row_saved">Saved</string>
+    <string name="quit_row_time">Time back</string>
     <string name="quit_best_none">Best run: none yet</string>
     <string name="quit_next">Next: %1$s</string>
     <string name="quit_all_milestones">Every milestone reached</string>

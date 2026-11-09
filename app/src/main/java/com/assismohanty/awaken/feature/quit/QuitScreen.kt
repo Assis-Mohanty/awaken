@@ -24,6 +24,9 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.assismohanty.awaken.R
+import com.assismohanty.awaken.core.designsystem.charts.ChartSpec
+import com.assismohanty.awaken.core.designsystem.charts.Chart
+import com.assismohanty.awaken.core.designsystem.components.DetailRows
 import com.assismohanty.awaken.core.designsystem.components.AwakenBottomSheet
 import com.assismohanty.awaken.core.designsystem.components.AwakenCard
 import com.assismohanty.awaken.core.designsystem.components.ChoiceChip
@@ -99,7 +102,6 @@ fun QuitScreen(
                             run = runText(counter),
                             best = bestText(counter),
                             progress = counter.milestoneProgress,
-                            next = nextText(counter),
                             extra = extraText(counter, state.currency),
                             note = counterNote(counter, state.hasAccess),
                             onClick = { onEvent(QuitEvent.Open(counter.counter.id)) },
@@ -138,17 +140,21 @@ fun QuitScreen(
 private fun QuitDetail(counter: QuitCounterState, state: QuitUiState, onEvent: (QuitEvent) -> Unit, onOpenUsageAccess: () -> Unit) {
     val colors = AwakenTheme.colors
     val type = AwakenTheme.type
-    AwakenCard(reveal = false, modifier = Modifier.fillMaxWidth()) {
-        Text(runText(counter), style = type.metricXL, color = colors.textPrimary)
-        Text(bestText(counter), style = type.caption, color = colors.textSecondary)
-        MilestoneLadder(QuitRules.MILESTONES, counter.currentDays)
-        Text(nextText(counter), style = type.caption, color = colors.textMuted)
-        extraText(counter, state.currency)?.let { Text(it, style = type.body, color = colors.textSecondary) }
-        counterNote(counter, state.hasAccess)?.let { Text(it, style = type.caption, color = colors.textSecondary) }
-        if (counter.counter.kind == QuitKind.DOOMSCROLLING) {
-            Text(lexString(R.string.quit_doom_how), style = type.caption, color = colors.textSecondary)
-            if (!state.hasAccess) SecondaryButton(text = lexString(R.string.quit_allow_access), onClick = onOpenUsageAccess, modifier = Modifier.fillMaxWidth())
-        }
+    Text(runText(counter), style = type.metricXL, color = colors.textPrimary)
+    Chart(ChartSpec.Progress(progress = counter.milestoneProgress, color = colors.accent))
+    Text(nextText(counter), style = type.caption, color = colors.textSecondary)
+    MilestoneLadder(QuitRules.MILESTONES, counter.currentDays)
+    DetailRows(
+        listOfNotNull(
+            lexString(R.string.quit_row_best) to if (counter.best.toHours() > 0) durationText(counter.best) else lexString(R.string.quit_row_best_none),
+            moneyText(counter, state.currency)?.let { lexString(R.string.quit_row_saved) to it },
+            timeText(counter)?.let { lexString(R.string.quit_row_time) to it },
+        ),
+    )
+    counterNote(counter, state.hasAccess)?.let { Text(it, style = type.caption, color = colors.textSecondary) }
+    if (counter.counter.kind == QuitKind.DOOMSCROLLING) {
+        Text(lexString(R.string.quit_doom_how), style = type.caption, color = colors.textSecondary)
+        if (!state.hasAccess) SecondaryButton(text = lexString(R.string.quit_allow_access), onClick = onOpenUsageAccess, modifier = Modifier.fillMaxWidth())
     }
     AwakenCard(reveal = false, modifier = Modifier.fillMaxWidth(), title = lexString(R.string.quit_restarts_title)) {
         if (counter.restarts.isEmpty()) {
@@ -336,13 +342,18 @@ private fun nextText(counter: QuitCounterState): String =
     counter.nextMilestone?.let { lexString(R.string.quit_next, lexPlural(R.plurals.quit_days, it, it)) } ?: lexString(R.string.quit_all_milestones)
 
 @Composable
+private fun moneyText(counter: QuitCounterState, fallbackCurrency: String): String? =
+    counter.moneySavedMinor?.takeIf { counter.counter.costPerDayMinor != null }?.let { formatMoney(it, counter.counter.currency ?: fallbackCurrency) }
+
+@Composable
+private fun timeText(counter: QuitCounterState): String? = counter.minutesReclaimed?.let { minutes ->
+    if (minutes >= MINUTES_PER_HOUR) lexString(R.string.quit_time_h, (minutes / MINUTES_PER_HOUR).toInt()) else lexString(R.string.quit_time_min, minutes.toInt())
+}
+
+@Composable
 private fun extraText(counter: QuitCounterState, fallbackCurrency: String): String? {
-    val money = counter.moneySavedMinor?.takeIf { counter.counter.costPerDayMinor != null }?.let {
-        formatMoney(it, counter.counter.currency ?: fallbackCurrency)
-    }
-    val time = counter.minutesReclaimed?.let { minutes ->
-        if (minutes >= MINUTES_PER_HOUR) lexString(R.string.quit_time_h, (minutes / MINUTES_PER_HOUR).toInt()) else lexString(R.string.quit_time_min, minutes.toInt())
-    }
+    val money = moneyText(counter, fallbackCurrency)
+    val time = timeText(counter)
     return when {
         money != null && time != null -> lexString(R.string.quit_saved_and_time, money, time)
         money != null -> lexString(R.string.quit_saved_only, money)

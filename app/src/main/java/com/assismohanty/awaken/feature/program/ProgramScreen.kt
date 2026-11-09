@@ -16,6 +16,13 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import com.assismohanty.awaken.R
+import com.assismohanty.awaken.core.designsystem.theme.Spacing
+import com.assismohanty.awaken.core.designsystem.components.SectionTitle
+import com.assismohanty.awaken.core.designsystem.components.ListRow
+import com.assismohanty.awaken.core.designsystem.components.BigValue
+import com.assismohanty.awaken.core.designsystem.components.AwakenGlyphs
+import androidx.compose.material3.Icon
+import androidx.compose.foundation.layout.size
 import com.assismohanty.awaken.core.data.db.entity.ProgramEntity
 import com.assismohanty.awaken.core.designsystem.components.AwakenBottomSheet
 import com.assismohanty.awaken.core.designsystem.components.AwakenCard
@@ -147,15 +154,21 @@ fun ProgramsScreen(state: ProgramsUiState, onEvent: (ProgramsEvent) -> Unit, onB
     val view = state.view
     val selected = state.selected
     ScreenBackground(modifier = modifier) {
-        LargeTitleScaffold(title = selected?.let { lexString(programNameRes(it.key)) } ?: lexString(R.string.programs_title), onBack = onBack) {
+        LargeTitleScaffold(
+            title = (if (state.running) view?.spec else selected)?.let { lexString(programNameRes(it.key)) } ?: lexString(R.string.programs_title),
+            subtitle = if (selected == null && !state.running) lexString(R.string.programs_intro) else null,
+            onBack = onBack,
+        ) {
             when {
                 state.loading -> Unit
                 state.running && view != null -> RunningWindow(view, onEvent)
                 selected != null -> DetailWindow(selected, state.availability[selected.key] ?: ProgramStart.OK, onEvent)
                 else -> {
                     view?.takeIf { it.program.status != ProgramStatus.ACTIVE }?.let { ResultWindow(it) }
-                    Text(lexString(R.string.programs_intro), style = AwakenTheme.type.body, color = AwakenTheme.colors.textSecondary)
-                    ProgramRules.CATALOG.forEach { spec -> ProgramCard(spec, onClick = { onEvent(ProgramsEvent.Open(spec.key)) }) }
+                    AwakenCard(reveal = false, spacing = Spacing.zero, modifier = Modifier.fillMaxWidth()) {
+                        ProgramRules.CATALOG.forEach { spec -> ProgramRow(spec, onClick = { onEvent(ProgramsEvent.Open(spec.key)) }) }
+                    }
+                    Text(lexString(R.string.programs_note), style = AwakenTheme.type.caption, color = AwakenTheme.colors.textSecondary)
                 }
             }
         }
@@ -183,15 +196,15 @@ fun ProgramsScreen(state: ProgramsUiState, onEvent: (ProgramsEvent) -> Unit, onB
 }
 
 @Composable
-private fun ProgramCard(spec: ProgramSpec, onClick: () -> Unit) {
+private fun ProgramRow(spec: ProgramSpec, onClick: () -> Unit) {
     val colors = AwakenTheme.colors
-    AwakenCard(reveal = false, onClick = onClick, modifier = Modifier.fillMaxWidth()) {
-        Text(lexString(programNameRes(spec.key)), style = AwakenTheme.type.title, color = colors.textPrimary)
-        Text(
-            lexString(R.string.program_days, spec.days) + " · " + lexString(R.string.program_card_note, spec.rules.size),
-            style = AwakenTheme.type.caption,
-            color = colors.textSecondary,
-        )
+    ListRow(
+        title = lexString(programNameRes(spec.key)),
+        secondary = lexString(R.string.program_card_note, spec.rules.size),
+        icon = AwakenGlyphs.Repeat,
+        onClick = onClick,
+    ) {
+        Icon(AwakenGlyphs.ChevronRight, contentDescription = null, tint = colors.textSecondary, modifier = Modifier.size(AwakenTheme.dimens.icon))
     }
 }
 
@@ -217,14 +230,14 @@ private fun DetailWindow(spec: ProgramSpec, availability: ProgramStart, onEvent:
 private fun RunningWindow(view: ProgramView, onEvent: (ProgramsEvent) -> Unit) {
     val colors = AwakenTheme.colors
     val day = view.dayToday ?: view.spec.days
-    SystemWindow(title = lexString(programNameRes(view.spec.key)), accent = colors.accent, reveal = false) {
-        Text(lexString(R.string.program_day_of, day, view.spec.days), style = AwakenTheme.type.metricL, color = colors.textPrimary)
-        ProgramCalendar(view.marks.map { it.toDayMark() }, description = calendarDescription(view, day))
-        Text(lexString(R.string.program_today_rules), style = AwakenTheme.type.label, color = colors.textSecondary)
+    BigValue(value = day.toString(), unit = lexString(R.string.program_of_days, view.spec.days), large = true)
+    ProgramCalendar(view.marks.map { it.toDayMark() }, description = calendarDescription(view, day))
+    SectionTitle(lexString(R.string.program_today_rules))
+    AwakenCard(reveal = false, modifier = Modifier.fillMaxWidth()) {
         view.ruleTitles.forEach { Text(it, style = AwakenTheme.type.body, color = colors.textPrimary) }
         if (view.spec.needsPhoneDownNight) Text(lexString(R.string.program_night_rule), style = AwakenTheme.type.body, color = colors.textPrimary)
-        QuietButton(text = lexString(R.string.program_abandon), onClick = { onEvent(ProgramsEvent.AskAbandon) })
     }
+    QuietButton(text = lexString(R.string.program_abandon), onClick = { onEvent(ProgramsEvent.AskAbandon) })
 }
 
 @Composable

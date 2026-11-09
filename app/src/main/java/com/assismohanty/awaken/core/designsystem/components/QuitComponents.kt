@@ -37,7 +37,6 @@ fun QuitCounterCard(
     run: String,
     best: String,
     progress: Float,
-    next: String,
     modifier: Modifier = Modifier,
     extra: String? = null,
     note: String? = null,
@@ -46,12 +45,15 @@ fun QuitCounterCard(
     val colors = AwakenTheme.colors
     val description = lexString(R.string.quit_card_cd, name, run, best)
     AwakenCard(modifier = modifier.fillMaxWidth().semantics(mergeDescendants = true) { contentDescription = description }, reveal = false, onClick = onClick) {
-        Text(name, style = AwakenTheme.type.label, color = colors.textSecondary, modifier = Modifier.clearAndSetSemantics { })
+        Text(name, style = AwakenTheme.type.title, color = colors.textPrimary, modifier = Modifier.clearAndSetSemantics { })
         Text(run, style = AwakenTheme.type.metricL, color = colors.textPrimary, modifier = Modifier.clearAndSetSemantics { })
-        Text(best, style = AwakenTheme.type.caption, color = colors.textSecondary, modifier = Modifier.clearAndSetSemantics { })
-        Chart(ChartSpec.Progress(progress = progress, color = colors.accent), modifier = Modifier.clearAndSetSemantics { })
-        Text(next, style = AwakenTheme.type.caption, color = colors.textMuted, modifier = Modifier.clearAndSetSemantics { })
-        extra?.let { Text(it, style = AwakenTheme.type.caption, color = colors.textSecondary, modifier = Modifier.clearAndSetSemantics { }) }
+        Chart(ChartSpec.Progress(progress = progress, color = colors.accent, track = colors.surfaceSunken, height = AwakenTheme.dimens.meterHeight), modifier = Modifier.clearAndSetSemantics { })
+        Text(
+            listOfNotNull(best, extra).joinToString(" · "),
+            style = AwakenTheme.type.caption,
+            color = colors.textSecondary,
+            modifier = Modifier.clearAndSetSemantics { },
+        )
         note?.let { Text(it, style = AwakenTheme.type.caption, color = colors.textSecondary, modifier = Modifier.clearAndSetSemantics { }) }
     }
 }
@@ -101,18 +103,16 @@ private fun QuitCounterCardPreview() {
             QuitCounterCard(
                 name = "Smoking",
                 run = "12 days",
-                best = "Best run: 30 days. It's still yours.",
+                best = "Best run 30 days",
                 progress = 0.7f,
-                next = "Next: 14 days",
                 extra = "₹1,800 saved · 6 h back",
             )
-            QuitCounterCard(name = "Alcohol", run = "7 h", best = "Best run: none yet", progress = 0f, next = "Next: 1 day")
+            QuitCounterCard(name = "Alcohol", run = "7 h", best = "Best run: none yet", progress = 0f)
             QuitCounterCard(
                 name = "Doomscrolling",
                 run = "3 days",
-                best = "Best run: 5 days. It's still yours.",
+                best = "Best run 5 days",
                 progress = 0.5f,
-                next = "Next: 7 days",
                 note = "Waiting for usage data. The count is paused, not reset.",
             )
         }

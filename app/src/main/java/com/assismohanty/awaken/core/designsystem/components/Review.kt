@@ -2,6 +2,10 @@ package com.assismohanty.awaken.core.designsystem.components
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -17,15 +21,23 @@ import com.assismohanty.awaken.core.designsystem.preview.ComponentPreview
 import com.assismohanty.awaken.core.designsystem.theme.AwakenTheme
 import com.assismohanty.awaken.core.designsystem.theme.Spacing
 
-/** "2 / 5" above a review step (DESIGN_SYSTEM §8.1 ReviewFlow). */
+/** "Step 2 of 5" over one segment per step, the finished ones filled (DESIGN_SYSTEM §8.1 ReviewFlow). */
 @Composable
 fun ReviewStepIndicator(step: Int, total: Int, modifier: Modifier = Modifier) {
-    Text(
-        text = lexString(R.string.review_step, step, total),
-        style = AwakenTheme.type.label,
-        color = AwakenTheme.colors.textSecondary,
-        modifier = modifier,
-    )
+    val colors = AwakenTheme.colors
+    Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+        Text(text = lexString(R.string.review_step, step, total), style = AwakenTheme.type.label, color = colors.textSecondary)
+        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.xxs), modifier = Modifier.fillMaxWidth()) {
+            repeat(total) { index ->
+                Box(
+                    Modifier
+                        .weight(1f)
+                        .height(Spacing.xxs)
+                        .background(if (index < step) colors.textPrimary else colors.surfaceOverlay, CircleShape),
+                )
+            }
+        }
+    }
 }
 
 /**

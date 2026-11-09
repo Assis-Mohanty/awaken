@@ -24,7 +24,9 @@
     <string name="programs_title">Programs</string>
     <string name="programs_row_title">Programs</string>
     <string name="programs_row_note">30, 66 or 75 days of a few daily rules.</string>
-    <string name="programs_intro">A program is a fixed set of daily rules with a day counter. Nothing is ever taken from you: a missed day just changes how the run ends.</string>
+    <string name="programs_intro">A fixed set of daily rules with a day counter</string>
+    <string name="programs_note">Nothing is taken from you. A missed day just changes how the run ends.</string>
+    <string name="program_of_days">of %1$d days</string>
     <string name="program_name_steady_30">30-day program</string>
     <string name="program_name_groundwork_66">66-day program</string>
     <string name="program_name_ironclad_75">75-day program</string>
@@ -41,7 +43,7 @@
     <string name="program_calendar_cd">Day %1$d of %2$d: %3$d kept, %4$d rest, %5$d broken</string>
     <string name="program_calendar_done_cd">%1$d days: %2$d kept, %3$d rest, %4$d broken</string>
     <string name="program_today_rules">Today\'s rules</string>
-    <string name="program_abandon">Abandon</string>
+    <string name="program_abandon">Abandon program</string>
     <string name="program_abandon_title">Abandon this program?</string>
     <string name="program_abandon_body">Its habits are archived. Nothing is taken from you.</string>
     <string name="program_completed_title">Completed</string>

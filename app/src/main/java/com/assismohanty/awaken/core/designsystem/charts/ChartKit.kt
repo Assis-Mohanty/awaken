@@ -3,6 +3,7 @@ package com.assismohanty.awaken.core.designsystem.charts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -294,7 +295,7 @@ private fun StackedColumnsChart(spec: ChartSpec.StackedColumns, modifier: Modifi
 private fun CalendarGridChart(spec: ChartSpec.CalendarGrid, modifier: Modifier) {
     val palette = AwakenTheme.palette
     val dimens = AwakenTheme.dimens
-    val shape = AwakenTheme.shapes.tile
+    val shape = CircleShape
     Column(
         verticalArrangement = Arrangement.spacedBy(Spacing.xxs),
         modifier = modifier.semantics(mergeDescendants = true) { contentDescription = spec.description },
@@ -312,7 +313,7 @@ private fun CalendarGridChart(spec: ChartSpec.CalendarGrid, modifier: Modifier) 
                             CalendarCell.PAST -> cell.border(dimens.hairline, palette.fog, shape)
                             CalendarCell.UPCOMING -> cell.background(palette.edge, shape)
                             CalendarCell.REST -> cell.background(palette.fog.copy(alpha = REST_ALPHA), shape)
-                            CalendarCell.BROKEN -> cell.border(dimens.hairline, palette.crit, shape)
+                            CalendarCell.BROKEN -> cell.background(AwakenTheme.colors.critical, shape)
                         },
                     )
                 }

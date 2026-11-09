@@ -235,6 +235,16 @@ object AwakenGlyphs {
         line("Info") { circle(12f, 12f, 8.75f); moveTo(12f, 11f); lineTo(12f, 16.25f); moveTo(12f, 7.75f); lineTo(12f, 7.9f) }
     }
 
+    /** A program: a run that comes round again. */
+    val Repeat: ImageVector by lazy {
+        line("Repeat") {
+            moveTo(17f, 3.5f); lineTo(20.5f, 7f); lineTo(17f, 10.5f)
+            moveTo(3.5f, 11f); lineTo(3.5f, 9.5f); curveTo(3.5f, 8f, 4.5f, 7f, 6f, 7f); lineTo(20.5f, 7f)
+            moveTo(7f, 20.5f); lineTo(3.5f, 17f); lineTo(7f, 13.5f)
+            moveTo(20.5f, 13f); lineTo(20.5f, 14.5f); curveTo(20.5f, 16f, 19.5f, 17f, 18f, 17f); lineTo(3.5f, 17f)
+        }
+    }
+
     val ChevronLeft: ImageVector by lazy { line("ChevronLeft") { moveTo(14.5f, 5.5f); lineTo(8f, 12f); lineTo(14.5f, 18.5f) } }
     val ChevronDown: ImageVector by lazy { line("ChevronDown") { moveTo(5.5f, 9f); lineTo(12f, 15.5f); lineTo(18.5f, 9f) } }
     val ChevronRight: ImageVector by lazy { line("ChevronRight") { moveTo(9.5f, 5.5f); lineTo(16f, 12f); lineTo(9.5f, 18.5f) } }
@@ -338,7 +348,7 @@ object AwakenGlyphs {
             Directive, Pentagon, Vault, Path, Settings, Bell, Level, Trophy,
             Shield, Portal, Coin, VerifiedSeal, Hourglass, Check, Gate,
             Star, Close, Plus, Info,
-            ChevronLeft, ChevronDown, ChevronRight, ArrowLeft, ArrowUp, ArrowDown, Search, Pencil,
+            ChevronLeft, ChevronDown, ChevronRight, Repeat, ArrowLeft, ArrowUp, ArrowDown, Search, Pencil,
             Trash, Lock, Calendar, Timer, Drop, Phone, Sunrise, Sun, Moon, Clock,
         )
     }
