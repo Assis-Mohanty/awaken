@@ -26,11 +26,13 @@ import com.assismohanty.awaken.engine.FocusGoalRules
 import com.assismohanty.awaken.engine.GameDay
 import com.assismohanty.awaken.engine.ScreenTimeRules
 import com.assismohanty.awaken.engine.TrainingDays
+import com.assismohanty.awaken.engine.body.Gear
 import com.assismohanty.awaken.engine.body.PlateMath
 import com.assismohanty.awaken.engine.body.PlateUnit
-import com.assismohanty.awaken.engine.body.ProgressionRules
 import com.assismohanty.awaken.engine.model.Difficulty
 import com.assismohanty.awaken.engine.model.Stat
+import com.assismohanty.awaken.engine.onboarding.ImproveGoal
+import com.assismohanty.awaken.engine.onboarding.InjuryRegion
 import com.assismohanty.awaken.engine.onboarding.MassUnit
 import com.assismohanty.awaken.engine.onboarding.OnboardingAnswers
 import com.assismohanty.awaken.engine.onboarding.OnboardingGrants
@@ -167,10 +169,8 @@ class CompleteOnboardingUseCase @Inject constructor(
                     },
                 )
             }
-            val usualReps = ProgressionRules.DEFAULT_RANGE
-            if (plan.repRange.min != usualReps.min || plan.repRange.max != usualReps.max || answers.weightUnit == MassUnit.LB) {
-                gymDao.upsertGymSettings(gymSettings(plan, answers))
-            }
+            // Always saved now: the fitness level, equipment and injuries are editable in Gym (GD §18.1), so they must exist there.
+            gymDao.upsertGymSettings(gymSettings(plan, answers))
         }
 
         // The profile exists now and the app is already on its way to Today; a failure here only delays the first plan, and
@@ -204,6 +204,17 @@ class CompleteOnboardingUseCase @Inject constructor(
             barKg = kg.barWeight, platesKg = kg.plates.joinToString(","), barLb = lb.barWeight, platesLb = lb.plates.joinToString(","),
             unit = (if (answers.weightUnit == MassUnit.LB) PlateUnit.LB else PlateUnit.KG).name,
             repMin = plan.repRange.min, repMax = plan.repRange.max,
+            fitnessLevel = answers.fitness?.name,
+            goal = trainingGoal(answers),
+            equipment = answers.equipment?.let { choice -> Gear.fromOnboarding(choice).joinToString(",") { it.key } },
+            injuries = answers.injuries.filter { it != InjuryRegion.NO_INJURIES }.joinToString(",") { it.name },
         )
+    }
+
+    /** Strength if the hunter wants it, else general fitness; the plans have no goal to infer from the other answers. */
+    private fun trainingGoal(answers: OnboardingAnswers): String? = when {
+        ImproveGoal.STRENGTH in answers.improve -> "strength"
+        ImproveGoal.FITNESS in answers.improve -> "general"
+        else -> null
     }
 }

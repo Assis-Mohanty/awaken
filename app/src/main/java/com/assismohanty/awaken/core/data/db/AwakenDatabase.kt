@@ -59,6 +59,8 @@ import com.assismohanty.awaken.core.data.db.dao.ProgramDao
 import com.assismohanty.awaken.core.data.db.entity.ProgramEntity
 import com.assismohanty.awaken.core.data.db.entity.ProgramMarkEntity
 import com.assismohanty.awaken.core.data.db.entity.GymSettingsEntity
+import com.assismohanty.awaken.core.data.db.entity.WeekSlotEntity
+import com.assismohanty.awaken.core.data.db.entity.DayOverrideEntity
 
 @Database(
     version = AwakenDatabase.SCHEMA_VERSION,
@@ -91,6 +93,8 @@ import com.assismohanty.awaken.core.data.db.entity.GymSettingsEntity
         WorkoutSetEntity::class,
         ExercisePrefEntity::class,
         GymSettingsEntity::class,
+        WeekSlotEntity::class,
+        DayOverrideEntity::class,
         BedtimeRuleEntity::class,
         QuitCounterEntity::class,
         RelapseEntity::class,
@@ -129,6 +133,6 @@ abstract class AwakenDatabase : RoomDatabase() {
         const val NAME = "awaken.db"
 
         /** Also the export format version: an export is only importable into the schema it was written from. */
-        const val SCHEMA_VERSION = 28
+        const val SCHEMA_VERSION = 29
     }
 }

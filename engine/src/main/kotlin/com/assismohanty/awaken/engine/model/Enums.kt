@@ -109,7 +109,7 @@ enum class Rank(val minLevel: Int) {
 enum class LedgerKind { XP_TOTAL, XP_STAT, GOLD, ITEM, FRAGMENT }
 
 /** Ledger row source types (ARCHITECTURE §2). */
-enum class SourceType { QUEST, GATE, TRIAL, ACHIEVEMENT, DAY_CLEAR, SHOP, UNDO, SHIELD_USE, CACHE_OPEN, DUNGEON }
+enum class SourceType { QUEST, GATE, TRIAL, ACHIEVEMENT, DAY_CLEAR, SHOP, UNDO, SHIELD_USE, CACHE_OPEN, DUNGEON, GYM_WORKOUT }
 
 /** Focus Gate ranks (GD §8). */
 enum class GateRank(val durationMinutes: Int, val difficulty: Difficulty) {

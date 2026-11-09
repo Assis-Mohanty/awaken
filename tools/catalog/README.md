@@ -26,3 +26,20 @@ node tools/catalog/build-foods.mjs <scratch>/FoodData_Central_sr_legacy_food_csv
 SR Legacy rows key nutrients by FDC nutrient id (1008 = kcal); FNDDS rows key them by the legacy nutrient number
 (208 = kcal). `build-foods.mjs` maps both onto the engine's `Nutrient` keys. Foods without energy are dropped.
 `CatalogTest` in `:app` checks that the files parse and that everyday searches still work.
+
+## Gym benchmarks (GD section 18.3)
+
+| Asset | Source | Pinned version | Licence |
+|---|---|---|---|
+| `app/src/main/assets/gym/benchmarks.json` (percentiles) | [OpenPowerlifting](https://www.openpowerlifting.org) bulk CSV, [opl-data](https://gitlab.com/openpowerlifting/opl-data) | `openpowerlifting-2026-11-07-f93a530c.csv` | Public domain (copyright waived) |
+| `tools/catalog/gym-standards.json` (copied into `benchmarks.json`) | US Army Fitness Test Score Tables, [PDF](https://www.army.mil/e2/downloads/rv7/aft/AFT_Scoring_Scales_250601.pdf), approved 15 May 2025, effective 1 Jun 2025 | same PDF | US Government work, public domain |
+
+```
+node tools/catalog/build-benchmarks.mjs <scratch>/openpowerlifting-2026-11-07-f93a530c.csv "2026-11-07 (f93a530c)" tools/catalog/gym-standards.json
+```
+
+The CSV (about 830 MB) is not committed. The script keeps raw, full-power (`SBD`) results, one row per lifter (their best total),
+ages 18 to 59 or unknown, no disqualifications, and writes the 99 percentile values of lift / body weight per lift and sex.
+`gym-standards.json` was extracted from the PDF text (rows of 60 points and up, one column per sex and age band; the male
+column is the Army male/combat column) and checked by `BenchmarkAssetsTest`. `plans.json` and `exercise_overlay.json` are
+hand-written and checked by `GymAssetsTest`.

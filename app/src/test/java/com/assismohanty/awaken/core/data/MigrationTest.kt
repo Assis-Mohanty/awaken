@@ -731,4 +731,64 @@ class MigrationTest {
             db.close()
         }
     }
+
+    /**
+     * v28 -> v29 (Gym redesign, GD section 18) only adds columns and two tables. A finished workout with its sets, a routine,
+     * and the plate settings come through untouched, the old sets get no completion time (so they never pay XP), and every
+     * new column reads its default.
+     */
+    @Test
+    fun v28To29KeepsGymHistoryAndAddsTheNewColumnsAtTheirDefaults() = runTest {
+        val path = createFromSchema(28)
+        SQLiteDatabase.openDatabase(path, null, SQLiteDatabase.OPEN_READWRITE).use { db ->
+            db.execSQL("INSERT INTO routine (id, name, updated_at) VALUES ('r1', 'Push', 5)")
+            db.execSQL("INSERT INTO routine_exercise (routine_id, position, exercise_id, set_count, rest_sec) VALUES ('r1', 0, 'bench', 3, 90)")
+            db.execSQL(
+                "INSERT INTO workout (id, name, game_date, started_at, ended_at, rest_ends_at, rest_total_sec) " +
+                    "VALUES ('w1', 'Push', '2026-10-18', 0, 1000, NULL, NULL)",
+            )
+            db.execSQL(
+                "INSERT INTO workout_set (id, workout_id, exercise_id, exercise_name, primary_muscles, secondary_muscles, position, set_index, weight_kg, reps, done, rest_sec) " +
+                    "VALUES ('s1', 'w1', 'bench', 'Bench press', 'chest', 'triceps', 0, 0, 60.0, 8, 1, 90)",
+            )
+            db.execSQL("INSERT INTO gym_settings (id, bar_kg, plates_kg, bar_lb, plates_lb, unit, rep_min, rep_max) VALUES (1, 20.0, '25,20', 45.0, '45,35', 'LB', 6, 10)")
+        }
+        val db = Room.databaseBuilder(context, AwakenDatabase::class.java, path)
+            .addMigrations(*ALL_MIGRATIONS)
+            .allowMainThreadQueries()
+            .build()
+        try {
+            val dao = db.gymDao()
+            val workout = dao.workout("w1")
+            assertThat(workout?.name).isEqualTo("Push")
+            assertThat(workout?.routineId).isNull()
+            assertThat(workout?.mode).isEqualTo("LIST")
+            val set = dao.sets("w1").single()
+            assertThat(set.weightKg).isEqualTo(60.0)
+            assertThat(set.reps).isEqualTo(8)
+            assertThat(set.done).isTrue()
+            assertThat(set.completedAt).isNull()
+            assertThat(set.section).isEqualTo("WORK")
+            assertThat(set.durationSec).isNull()
+            assertThat(dao.previousSets("bench")).hasSize(1)
+            val routine = dao.routineExercises("r1").single()
+            assertThat(routine.setCount).isEqualTo(3)
+            assertThat(routine.restSec).isEqualTo(90)
+            assertThat(routine.section).isEqualTo("WORK")
+            assertThat(routine.unilateral).isFalse()
+            val settings = dao.gymSettings()
+            assertThat(settings?.unit).isEqualTo("LB")
+            assertThat(settings?.repMin).isEqualTo(6)
+            assertThat(settings?.fitnessLevel).isNull()
+            assertThat(settings?.equipment).isNull()
+            assertThat(settings?.restCompoundSec).isEqualTo(120)
+            assertThat(settings?.restIsolationSec).isEqualTo(60)
+            assertThat(settings?.restSound).isTrue()
+            assertThat(settings?.coached).isTrue()
+            assertThat(dao.weekSlots()).isEmpty()
+            assertThat(db.openHelper.readableDatabase.version).isEqualTo(AwakenDatabase.SCHEMA_VERSION)
+        } finally {
+            db.close()
+        }
+    }
 }

@@ -359,11 +359,17 @@ class GymTracker @Inject constructor(
         val kg = prefs.kg.sanitised(PlateUnit.KG)
         val lb = prefs.lb.sanitised(PlateUnit.LB)
         val range = prefs.repRange.takeIf { it.isValid } ?: ProgressionRules.DEFAULT_RANGE
+        // Copy the stored row so the answers and rest settings added in v29 (GD §18.1) survive a plate or unit change.
+        val stored = gymDao.gymSettings()
+        val changed = GymSettingsEntity(
+            barKg = kg.barWeight, platesKg = kg.plates.joinToString(","), barLb = lb.barWeight, platesLb = lb.plates.joinToString(","),
+            unit = prefs.unit.name, repMin = range.min, repMax = range.max,
+        )
         gymDao.upsertGymSettings(
-            GymSettingsEntity(
-                barKg = kg.barWeight, platesKg = kg.plates.joinToString(","), barLb = lb.barWeight, platesLb = lb.plates.joinToString(","),
-                unit = prefs.unit.name, repMin = range.min, repMax = range.max,
-            ),
+            stored?.copy(
+                barKg = changed.barKg, platesKg = changed.platesKg, barLb = changed.barLb, platesLb = changed.platesLb,
+                unit = changed.unit, repMin = changed.repMin, repMax = changed.repMax,
+            ) ?: changed,
         )
     }
 
@@ -410,6 +416,9 @@ class GymTracker @Inject constructor(
 
     suspend fun deleteRoutine(routineId: String) = transactions.run {
         gymDao.clearRoutineExercises(routineId)
+        // The weekly schedule and one-off overrides must not point at a routine that is gone.
+        gymDao.deleteSlotsOfRoutine(routineId)
+        gymDao.deleteOverridesOfRoutine(routineId)
         gymDao.deleteRoutineRow(routineId)
     }
 

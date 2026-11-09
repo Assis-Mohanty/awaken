@@ -431,9 +431,50 @@ val MIGRATION_27_28 = object : Migration(27, 28) {
     }
 }
 
+/**
+ * v28 → v29 (Gym redesign, GD §18): routines gain an order, a source plan and per-exercise targets, supersets and
+ * sections; the weekly schedule and one-off day overrides are new tables; workouts remember their routine and mode; set
+ * rows gain a completion time, section, hold time, side, superset and planned range; Gym settings gain the onboarding
+ * answers and the rest and logging preferences. Every new column is nullable or has a default, so every existing workout,
+ * set, routine and personal record is untouched (sets from before have no completion time and so never pay XP).
+ */
+val MIGRATION_28_29 = object : Migration(28, 29) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE `routine` ADD COLUMN `sort_order` INTEGER NOT NULL DEFAULT 0")
+        db.execSQL("ALTER TABLE `routine` ADD COLUMN `source_plan_id` TEXT")
+        db.execSQL("ALTER TABLE `routine_exercise` ADD COLUMN `rep_min` INTEGER")
+        db.execSQL("ALTER TABLE `routine_exercise` ADD COLUMN `rep_max` INTEGER")
+        db.execSQL("ALTER TABLE `routine_exercise` ADD COLUMN `superset` TEXT")
+        db.execSQL("ALTER TABLE `routine_exercise` ADD COLUMN `unilateral` INTEGER NOT NULL DEFAULT 0")
+        db.execSQL("ALTER TABLE `routine_exercise` ADD COLUMN `section` TEXT NOT NULL DEFAULT 'WORK'")
+        db.execSQL("ALTER TABLE `routine_exercise` ADD COLUMN `measure` TEXT NOT NULL DEFAULT 'REPS'")
+        db.execSQL("CREATE TABLE IF NOT EXISTS `week_slot` (`weekday` INTEGER NOT NULL, `routine_id` TEXT NOT NULL, PRIMARY KEY(`weekday`))")
+        db.execSQL("CREATE TABLE IF NOT EXISTS `day_override` (`game_date` TEXT NOT NULL, `routine_id` TEXT, PRIMARY KEY(`game_date`))")
+        db.execSQL("ALTER TABLE `workout` ADD COLUMN `routine_id` TEXT")
+        db.execSQL("ALTER TABLE `workout` ADD COLUMN `mode` TEXT NOT NULL DEFAULT 'LIST'")
+        db.execSQL("ALTER TABLE `workout_set` ADD COLUMN `completed_at` INTEGER")
+        db.execSQL("ALTER TABLE `workout_set` ADD COLUMN `section` TEXT NOT NULL DEFAULT 'WORK'")
+        db.execSQL("ALTER TABLE `workout_set` ADD COLUMN `duration_sec` INTEGER")
+        db.execSQL("ALTER TABLE `workout_set` ADD COLUMN `side` TEXT")
+        db.execSQL("ALTER TABLE `workout_set` ADD COLUMN `superset` TEXT")
+        db.execSQL("ALTER TABLE `workout_set` ADD COLUMN `rep_min` INTEGER")
+        db.execSQL("ALTER TABLE `workout_set` ADD COLUMN `rep_max` INTEGER")
+        db.execSQL("ALTER TABLE `gym_settings` ADD COLUMN `fitness_level` TEXT")
+        db.execSQL("ALTER TABLE `gym_settings` ADD COLUMN `goal` TEXT")
+        db.execSQL("ALTER TABLE `gym_settings` ADD COLUMN `equipment` TEXT")
+        db.execSQL("ALTER TABLE `gym_settings` ADD COLUMN `injuries` TEXT")
+        db.execSQL("ALTER TABLE `gym_settings` ADD COLUMN `sex` TEXT")
+        db.execSQL("ALTER TABLE `gym_settings` ADD COLUMN `rest_compound_sec` INTEGER NOT NULL DEFAULT 120")
+        db.execSQL("ALTER TABLE `gym_settings` ADD COLUMN `rest_isolation_sec` INTEGER NOT NULL DEFAULT 60")
+        db.execSQL("ALTER TABLE `gym_settings` ADD COLUMN `rest_sound` INTEGER NOT NULL DEFAULT 1")
+        db.execSQL("ALTER TABLE `gym_settings` ADD COLUMN `rest_vibrate` INTEGER NOT NULL DEFAULT 1")
+        db.execSQL("ALTER TABLE `gym_settings` ADD COLUMN `coached` INTEGER NOT NULL DEFAULT 1")
+    }
+}
+
 /** Every migration, in order. The database builder and the migration test both use this list. */
 val ALL_MIGRATIONS: Array<Migration> = arrayOf(
     MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9,
     MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17,
-    MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21, MIGRATION_21_22, MIGRATION_22_23, MIGRATION_23_24, MIGRATION_24_25, MIGRATION_25_26, MIGRATION_26_27, MIGRATION_27_28,
+    MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21, MIGRATION_21_22, MIGRATION_22_23, MIGRATION_23_24, MIGRATION_24_25, MIGRATION_25_26, MIGRATION_26_27, MIGRATION_27_28, MIGRATION_28_29,
 )

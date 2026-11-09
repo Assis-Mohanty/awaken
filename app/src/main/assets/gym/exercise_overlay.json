@@ -1,0 +1,187 @@
+{
+ "version": 1,
+ "exercises": {
+  "fedb:Barbell_Bench_Press_-_Medium_Grip": {
+   "clean": "Bench press",
+   "variant": "Barbell · medium grip",
+   "requires": [
+    "bench"
+   ],
+   "loads": [
+    "SHOULDERS"
+   ]
+  },
+  "fedb:Barbell_Incline_Bench_Press_-_Medium_Grip": {
+   "clean": "Incline bench press",
+   "variant": "Barbell",
+   "requires": [
+    "bench"
+   ],
+   "loads": [
+    "SHOULDERS"
+   ]
+  },
+  "fedb:Incline_Dumbbell_Press": {
+   "clean": "Incline dumbbell press",
+   "requires": [
+    "bench"
+   ]
+  },
+  "fedb:Dumbbell_Bench_Press": {
+   "clean": "Dumbbell bench press",
+   "requires": [
+    "bench"
+   ]
+  },
+  "fedb:One_Arm_Dumbbell_Bench_Press": {
+   "clean": "One-arm dumbbell bench press",
+   "requires": [
+    "bench"
+   ]
+  },
+  "fedb:Dumbbell_Flyes": {
+   "clean": "Dumbbell fly",
+   "requires": [
+    "bench"
+   ]
+  },
+  "fedb:EZ-Bar_Skullcrusher": {
+   "clean": "Skullcrusher",
+   "variant": "EZ bar",
+   "requires": [
+    "bench"
+   ]
+  },
+  "fedb:Seated_Dumbbell_Press": {
+   "clean": "Seated dumbbell press",
+   "requires": [
+    "bench"
+   ]
+  },
+  "fedb:Incline_Dumbbell_Curl": {
+   "clean": "Incline dumbbell curl",
+   "requires": [
+    "bench"
+   ]
+  },
+  "fedb:Barbell_Hip_Thrust": {
+   "clean": "Hip thrust",
+   "variant": "Barbell",
+   "requires": [
+    "bench"
+   ]
+  },
+  "fedb:Standing_Military_Press": {
+   "clean": "Overhead press",
+   "variant": "Barbell · standing"
+  },
+  "fedb:Pullups": {
+   "clean": "Pull-up",
+   "requires": [
+    "pull_up_bar"
+   ]
+  },
+  "fedb:Chin-Up": {
+   "clean": "Chin-up",
+   "requires": [
+    "pull_up_bar"
+   ]
+  },
+  "fedb:Bent_Over_Barbell_Row": {
+   "clean": "Barbell row",
+   "variant": "Bent over",
+   "loads": [
+    "BACK"
+   ]
+  },
+  "fedb:T-Bar_Row_with_Handle": {
+   "clean": "T-bar row",
+   "loads": [
+    "BACK"
+   ]
+  },
+  "fedb:Barbell_Squat": {
+   "clean": "Back squat",
+   "variant": "Barbell",
+   "loads": [
+    "BACK",
+    "HIP"
+   ]
+  },
+  "fedb:Dumbbell_Squat": {
+   "clean": "Dumbbell squat",
+   "loads": [
+    "HIP"
+   ]
+  },
+  "fedb:Romanian_Deadlift": {
+   "clean": "Romanian deadlift",
+   "variant": "Barbell",
+   "loads": [
+    "BACK"
+   ]
+  },
+  "fedb:Stiff-Legged_Dumbbell_Deadlift": {
+   "clean": "Romanian deadlift",
+   "variant": "Dumbbell",
+   "loads": [
+    "BACK"
+   ]
+  },
+  "fedb:Standing_Dumbbell_Upright_Row": {
+   "loads": [
+    "SHOULDERS"
+   ]
+  },
+  "fedb:Pushups": {
+   "clean": "Push-up",
+   "loads": [
+    "WRIST"
+   ]
+  },
+  "fedb:Incline_Push-Up_Close-Grip": {
+   "clean": "Close-grip incline push-up",
+   "loads": [
+    "WRIST"
+   ]
+  },
+  "fedb:Push_Up_to_Side_Plank": {
+   "clean": "Push-up to side plank",
+   "loads": [
+    "WRIST"
+   ]
+  },
+  "fedb:Plank": {
+   "clean": "Plank",
+   "measure": "time",
+   "loads": [
+    "WRIST"
+   ]
+  },
+  "fedb:Bodyweight_Walking_Lunge": {
+   "clean": "Walking lunge",
+   "variant": "Bodyweight",
+   "equipment": "body only"
+  },
+  "fedb:Dead_Bug": {
+   "clean": "Dead bug"
+  },
+  "fedb:Face_Pull": {
+   "clean": "Face pull"
+  },
+  "fedb:Wide-Grip_Lat_Pulldown": {
+   "clean": "Lat pulldown",
+   "variant": "Wide grip"
+  },
+  "fedb:Seated_Cable_Rows": {
+   "clean": "Seated cable row"
+  },
+  "fedb:Leg_Press": {
+   "clean": "Leg press"
+  },
+  "fedb:Hack_Squat": {
+   "clean": "Hack squat",
+   "variant": "Machine"
+  }
+ }
+}

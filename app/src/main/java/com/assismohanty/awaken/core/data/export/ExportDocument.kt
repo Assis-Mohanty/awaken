@@ -25,7 +25,7 @@ data class ExportDocument(
             "path", "path_milestone", "path_week", "path_slot", "ai_report", "app_rule",
             "custom_exercise", "routine", "routine_exercise", "workout", "workout_set",
             "custom_food", "food_log", "nutrition_profile", "weekly_review", "focus_subject",
-            "pomodoro_session", "focus_goal", "exercise_pref", "gym_settings", "bedtime_rule", "quit_counter", "relapse", "quit_day", "program", "program_mark",
+            "pomodoro_session", "focus_goal", "exercise_pref", "gym_settings", "week_slot", "day_override", "bedtime_rule", "quit_counter", "relapse", "quit_day", "program", "program_mark",
         )
 
         /** Rebuilt after import (balances from the ledger, Health from Health Connect), so never written to the file. */

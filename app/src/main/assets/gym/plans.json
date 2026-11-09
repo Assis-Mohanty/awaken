@@ -1,0 +1,2818 @@
+{
+ "version": 1,
+ "plans": [
+  {
+   "id": "ppl6",
+   "name": "Push / Pull / Legs",
+   "level": "intermediate",
+   "goal": [
+    "muscle",
+    "strength"
+   ],
+   "equipment": [
+    "barbell",
+    "bench",
+    "dumbbells",
+    "cables",
+    "machines",
+    "pull_up_bar"
+   ],
+   "days": [
+    {
+     "name": "Push A",
+     "warmup": [
+      {
+       "exerciseId": "fedb:Pushups",
+       "sets": 2,
+       "restSec": 30,
+       "reps": [
+        10,
+        10
+       ]
+      }
+     ],
+     "work": [
+      {
+       "exerciseId": "fedb:Barbell_Bench_Press_-_Medium_Grip",
+       "sets": 4,
+       "restSec": 150,
+       "reps": [
+        6,
+        8
+       ]
+      },
+      {
+       "exerciseId": "fedb:Incline_Dumbbell_Press",
+       "sets": 3,
+       "restSec": 120,
+       "reps": [
+        8,
+        10
+       ]
+      },
+      {
+       "exerciseId": "fedb:Standing_Military_Press",
+       "sets": 3,
+       "restSec": 120,
+       "reps": [
+        6,
+        8
+       ]
+      },
+      {
+       "exerciseId": "fedb:Cable_Crossover",
+       "sets": 3,
+       "restSec": 60,
+       "reps": [
+        12,
+        15
+       ]
+      },
+      {
+       "exerciseId": "fedb:Side_Lateral_Raise",
+       "sets": 3,
+       "restSec": 60,
+       "reps": [
+        12,
+        15
+       ]
+      },
+      {
+       "exerciseId": "fedb:Triceps_Pushdown_-_Rope_Attachment",
+       "sets": 3,
+       "restSec": 75,
+       "reps": [
+        10,
+        12
+       ],
+       "superset": "A"
+      },
+      {
+       "exerciseId": "fedb:EZ-Bar_Skullcrusher",
+       "sets": 3,
+       "restSec": 75,
+       "reps": [
+        10,
+        12
+       ],
+       "superset": "A"
+      }
+     ],
+     "weekday": 1
+    },
+    {
+     "name": "Pull A",
+     "warmup": [
+      {
+       "exerciseId": "fedb:Dead_Bug",
+       "sets": 2,
+       "restSec": 30,
+       "reps": [
+        10,
+        10
+       ]
+      }
+     ],
+     "work": [
+      {
+       "exerciseId": "fedb:Pullups",
+       "sets": 4,
+       "restSec": 120,
+       "reps": [
+        6,
+        10
+       ]
+      },
+      {
+       "exerciseId": "fedb:Bent_Over_Barbell_Row",
+       "sets": 4,
+       "restSec": 120,
+       "reps": [
+        6,
+        8
+       ]
+      },
+      {
+       "exerciseId": "fedb:Wide-Grip_Lat_Pulldown",
+       "sets": 3,
+       "restSec": 90,
+       "reps": [
+        10,
+        12
+       ]
+      },
+      {
+       "exerciseId": "fedb:Seated_Cable_Rows",
+       "sets": 3,
+       "restSec": 90,
+       "reps": [
+        10,
+        12
+       ]
+      },
+      {
+       "exerciseId": "fedb:Reverse_Flyes",
+       "sets": 3,
+       "restSec": 60,
+       "reps": [
+        12,
+        15
+       ]
+      },
+      {
+       "exerciseId": "fedb:Barbell_Curl",
+       "sets": 3,
+       "restSec": 75,
+       "reps": [
+        8,
+        10
+       ],
+       "superset": "A"
+      },
+      {
+       "exerciseId": "fedb:Hammer_Curls",
+       "sets": 3,
+       "restSec": 75,
+       "reps": [
+        10,
+        12
+       ],
+       "superset": "A"
+      }
+     ],
+     "weekday": 2
+    },
+    {
+     "name": "Legs A",
+     "warmup": [
+      {
+       "exerciseId": "fedb:Bodyweight_Squat",
+       "sets": 2,
+       "restSec": 30,
+       "reps": [
+        12,
+        12
+       ]
+      }
+     ],
+     "work": [
+      {
+       "exerciseId": "fedb:Barbell_Squat",
+       "sets": 4,
+       "restSec": 180,
+       "reps": [
+        6,
+        8
+       ]
+      },
+      {
+       "exerciseId": "fedb:Romanian_Deadlift",
+       "sets": 3,
+       "restSec": 150,
+       "reps": [
+        8,
+        10
+       ]
+      },
+      {
+       "exerciseId": "fedb:Leg_Press",
+       "sets": 3,
+       "restSec": 120,
+       "reps": [
+        10,
+        12
+       ]
+      },
+      {
+       "exerciseId": "fedb:Lying_Leg_Curls",
+       "sets": 3,
+       "restSec": 75,
+       "reps": [
+        10,
+        12
+       ]
+      },
+      {
+       "exerciseId": "fedb:Leg_Extensions",
+       "sets": 3,
+       "restSec": 60,
+       "reps": [
+        12,
+        15
+       ]
+      },
+      {
+       "exerciseId": "fedb:Standing_Calf_Raises",
+       "sets": 4,
+       "restSec": 60,
+       "reps": [
+        10,
+        15
+       ]
+      }
+     ],
+     "weekday": 3
+    },
+    {
+     "name": "Push B",
+     "warmup": [
+      {
+       "exerciseId": "fedb:Pushups",
+       "sets": 2,
+       "restSec": 30,
+       "reps": [
+        10,
+        10
+       ]
+      }
+     ],
+     "work": [
+      {
+       "exerciseId": "fedb:Barbell_Incline_Bench_Press_-_Medium_Grip",
+       "sets": 4,
+       "restSec": 150,
+       "reps": [
+        6,
+        8
+       ]
+      },
+      {
+       "exerciseId": "fedb:Dumbbell_Bench_Press",
+       "sets": 3,
+       "restSec": 120,
+       "reps": [
+        8,
+        12
+       ]
+      },
+      {
+       "exerciseId": "fedb:Seated_Dumbbell_Press",
+       "sets": 3,
+       "restSec": 120,
+       "reps": [
+        8,
+        10
+       ]
+      },
+      {
+       "exerciseId": "fedb:Face_Pull",
+       "sets": 3,
+       "restSec": 60,
+       "reps": [
+        12,
+        15
+       ]
+      },
+      {
+       "exerciseId": "fedb:Low_Cable_Crossover",
+       "sets": 3,
+       "restSec": 60,
+       "reps": [
+        12,
+        15
+       ]
+      },
+      {
+       "exerciseId": "fedb:Tricep_Dumbbell_Kickback",
+       "sets": 3,
+       "restSec": 60,
+       "reps": [
+        10,
+        15
+       ]
+      }
+     ],
+     "weekday": 4
+    },
+    {
+     "name": "Pull B",
+     "warmup": [
+      {
+       "exerciseId": "fedb:Dead_Bug",
+       "sets": 2,
+       "restSec": 30,
+       "reps": [
+        10,
+        10
+       ]
+      }
+     ],
+     "work": [
+      {
+       "exerciseId": "fedb:Chin-Up",
+       "sets": 3,
+       "restSec": 120,
+       "reps": [
+        6,
+        10
+       ]
+      },
+      {
+       "exerciseId": "fedb:T-Bar_Row_with_Handle",
+       "sets": 3,
+       "restSec": 120,
+       "reps": [
+        8,
+        10
+       ]
+      },
+      {
+       "exerciseId": "fedb:One-Arm_Dumbbell_Row",
+       "sets": 3,
+       "restSec": 90,
+       "reps": [
+        10,
+        12
+       ]
+      },
+      {
+       "exerciseId": "fedb:Straight-Arm_Pulldown",
+       "sets": 3,
+       "restSec": 60,
+       "reps": [
+        12,
+        15
+       ]
+      },
+      {
+       "exerciseId": "fedb:Cable_Rear_Delt_Fly",
+       "sets": 3,
+       "restSec": 60,
+       "reps": [
+        12,
+        15
+       ]
+      },
+      {
+       "exerciseId": "fedb:Incline_Dumbbell_Curl",
+       "sets": 3,
+       "restSec": 60,
+       "reps": [
+        10,
+        12
+       ]
+      },
+      {
+       "exerciseId": "fedb:Standing_Biceps_Cable_Curl",
+       "sets": 3,
+       "restSec": 60,
+       "reps": [
+        10,
+        12
+       ]
+      }
+     ],
+     "weekday": 5
+    },
+    {
+     "name": "Legs B",
+     "warmup": [
+      {
+       "exerciseId": "fedb:Bodyweight_Squat",
+       "sets": 2,
+       "restSec": 30,
+       "reps": [
+        12,
+        12
+       ]
+      }
+     ],
+     "work": [
+      {
+       "exerciseId": "fedb:Barbell_Hip_Thrust",
+       "sets": 3,
+       "restSec": 120,
+       "reps": [
+        8,
+        10
+       ]
+      },
+      {
+       "exerciseId": "fedb:Hack_Squat",
+       "sets": 3,
+       "restSec": 120,
+       "reps": [
+        8,
+        10
+       ]
+      },
+      {
+       "exerciseId": "fedb:Dumbbell_Lunges",
+       "sets": 3,
+       "restSec": 90,
+       "reps": [
+        10,
+        12
+       ]
+      },
+      {
+       "exerciseId": "fedb:Seated_Leg_Curl",
+       "sets": 3,
+       "restSec": 75,
+       "reps": [
+        10,
+        12
+       ]
+      },
+      {
+       "exerciseId": "fedb:Seated_Calf_Raise",
+       "sets": 4,
+       "restSec": 60,
+       "reps": [
+        12,
+        15
+       ]
+      },
+      {
+       "exerciseId": "fedb:Plank",
+       "sets": 3,
+       "restSec": 60,
+       "seconds": [
+        30,
+        60
+       ]
+      }
+     ],
+     "weekday": 6
+    }
+   ]
+  },
+  {
+   "id": "ppl3",
+   "name": "Push / Pull / Legs, 3 days",
+   "level": "beginner",
+   "goal": [
+    "muscle",
+    "general"
+   ],
+   "equipment": [
+    "bench",
+    "dumbbells",
+    "cables",
+    "machines"
+   ],
+   "days": [
+    {
+     "name": "Push",
+     "warmup": [
+      {
+       "exerciseId": "fedb:Pushups",
+       "sets": 2,
+       "restSec": 30,
+       "reps": [
+        10,
+        10
+       ]
+      }
+     ],
+     "work": [
+      {
+       "exerciseId": "fedb:Leverage_Chest_Press",
+       "sets": 3,
+       "restSec": 90,
+       "reps": [
+        10,
+        12
+       ]
+      },
+      {
+       "exerciseId": "fedb:Dumbbell_Bench_Press",
+       "sets": 3,
+       "restSec": 90,
+       "reps": [
+        8,
+        12
+       ]
+      },
+      {
+       "exerciseId": "fedb:Seated_Dumbbell_Press",
+       "sets": 3,
+       "restSec": 90,
+       "reps": [
+        10,
+        12
+       ]
+      },
+      {
+       "exerciseId": "fedb:Side_Lateral_Raise",
+       "sets": 2,
+       "restSec": 60,
+       "reps": [
+        12,
+        15
+       ]
+      },
+      {
+       "exerciseId": "fedb:Triceps_Pushdown",
+       "sets": 3,
+       "restSec": 60,
+       "reps": [
+        10,
+        12
+       ]
+      }
+     ],
+     "weekday": 1
+    },
+    {
+     "name": "Pull",
+     "warmup": [
+      {
+       "exerciseId": "fedb:Dead_Bug",
+       "sets": 2,
+       "restSec": 30,
+       "reps": [
+        10,
+        10
+       ]
+      }
+     ],
+     "work": [
+      {
+       "exerciseId": "fedb:Wide-Grip_Lat_Pulldown",
+       "sets": 3,
+       "restSec": 90,
+       "reps": [
+        10,
+        12
+       ]
+      },
+      {
+       "exerciseId": "fedb:Seated_Cable_Rows",
+       "sets": 3,
+       "restSec": 90,
+       "reps": [
+        10,
+        12
+       ]
+      },
+      {
+       "exerciseId": "fedb:One-Arm_Dumbbell_Row",
+       "sets": 3,
+       "restSec": 75,
+       "reps": [
+        10,
+        12
+       ]
+      },
+      {
+       "exerciseId": "fedb:Reverse_Flyes",
+       "sets": 2,
+       "restSec": 60,
+       "reps": [
+        12,
+        15
+       ]
+      },
+      {
+       "exerciseId": "fedb:Dumbbell_Bicep_Curl",
+       "sets": 3,
+       "restSec": 60,
+       "reps": [
+        10,
+        12
+       ]
+      },
+      {
+       "exerciseId": "fedb:Hammer_Curls",
+       "sets": 2,
+       "restSec": 60,
+       "reps": [
+        10,
+        12
+       ]
+      }
+     ],
+     "weekday": 3
+    },
+    {
+     "name": "Legs",
+     "warmup": [
+      {
+       "exerciseId": "fedb:Bodyweight_Squat",
+       "sets": 2,
+       "restSec": 30,
+       "reps": [
+        12,
+        12
+       ]
+      }
+     ],
+     "work": [
+      {
+       "exerciseId": "fedb:Leg_Press",
+       "sets": 3,
+       "restSec": 120,
+       "reps": [
+        10,
+        15
+       ]
+      },
+      {
+       "exerciseId": "fedb:Stiff-Legged_Dumbbell_Deadlift",
+       "sets": 3,
+       "restSec": 90,
+       "reps": [
+        10,
+        12
+       ]
+      },
+      {
+       "exerciseId": "fedb:Lying_Leg_Curls",
+       "sets": 3,
+       "restSec": 75,
+       "reps": [
+        10,
+        12
+       ]
+      },
+      {
+       "exerciseId": "fedb:Leg_Extensions",
+       "sets": 3,
+       "restSec": 60,
+       "reps": [
+        12,
+        15
+       ]
+      },
+      {
+       "exerciseId": "fedb:Standing_Calf_Raises",
+       "sets": 3,
+       "restSec": 60,
+       "reps": [
+        12,
+        15
+       ]
+      },
+      {
+       "exerciseId": "fedb:Plank",
+       "sets": 3,
+       "restSec": 60,
+       "seconds": [
+        20,
+        45
+       ]
+      }
+     ],
+     "weekday": 5
+    }
+   ]
+  },
+  {
+   "id": "ul4",
+   "name": "Upper / Lower",
+   "level": "beginner",
+   "goal": [
+    "muscle",
+    "strength",
+    "general"
+   ],
+   "equipment": [
+    "barbell",
+    "bench",
+    "dumbbells",
+    "cables",
+    "machines"
+   ],
+   "days": [
+    {
+     "name": "Upper A",
+     "warmup": [
+      {
+       "exerciseId": "fedb:Pushups",
+       "sets": 2,
+       "restSec": 30,
+       "reps": [
+        10,
+        10
+       ]
+      }
+     ],
+     "work": [
+      {
+       "exerciseId": "fedb:Barbell_Bench_Press_-_Medium_Grip",
+       "sets": 4,
+       "restSec": 150,
+       "reps": [
+        6,
+        8
+       ]
+      },
+      {
+       "exerciseId": "fedb:Bent_Over_Barbell_Row",
+       "sets": 4,
+       "restSec": 120,
+       "reps": [
+        6,
+        8
+       ]
+      },
+      {
+       "exerciseId": "fedb:Standing_Military_Press",
+       "sets": 3,
+       "restSec": 120,
+       "reps": [
+        8,
+        10
+       ]
+      },
+      {
+       "exerciseId": "fedb:Wide-Grip_Lat_Pulldown",
+       "sets": 3,
+       "restSec": 90,
+       "reps": [
+        8,
+        12
+       ]
+      },
+      {
+       "exerciseId": "fedb:Triceps_Pushdown",
+       "sets": 3,
+       "restSec": 60,
+       "reps": [
+        10,
+        12
+       ],
+       "superset": "A"
+      },
+      {
+       "exerciseId": "fedb:Barbell_Curl",
+       "sets": 3,
+       "restSec": 60,
+       "reps": [
+        10,
+        12
+       ],
+       "superset": "A"
+      }
+     ],
+     "weekday": 1
+    },
+    {
+     "name": "Lower A",
+     "warmup": [
+      {
+       "exerciseId": "fedb:Bodyweight_Squat",
+       "sets": 2,
+       "restSec": 30,
+       "reps": [
+        12,
+        12
+       ]
+      }
+     ],
+     "work": [
+      {
+       "exerciseId": "fedb:Barbell_Squat",
+       "sets": 4,
+       "restSec": 180,
+       "reps": [
+        6,
+        8
+       ]
+      },
+      {
+       "exerciseId": "fedb:Romanian_Deadlift",
+       "sets": 3,
+       "restSec": 150,
+       "reps": [
+        8,
+        10
+       ]
+      },
+      {
+       "exerciseId": "fedb:Leg_Press",
+       "sets": 3,
+       "restSec": 120,
+       "reps": [
+        10,
+        12
+       ]
+      },
+      {
+       "exerciseId": "fedb:Lying_Leg_Curls",
+       "sets": 3,
+       "restSec": 75,
+       "reps": [
+        10,
+        12
+       ]
+      },
+      {
+       "exerciseId": "fedb:Standing_Calf_Raises",
+       "sets": 4,
+       "restSec": 60,
+       "reps": [
+        10,
+        15
+       ]
+      }
+     ],
+     "weekday": 2
+    },
+    {
+     "name": "Upper B",
+     "warmup": [
+      {
+       "exerciseId": "fedb:Pushups",
+       "sets": 2,
+       "restSec": 30,
+       "reps": [
+        10,
+        10
+       ]
+      }
+     ],
+     "work": [
+      {
+       "exerciseId": "fedb:Barbell_Incline_Bench_Press_-_Medium_Grip",
+       "sets": 3,
+       "restSec": 120,
+       "reps": [
+        8,
+        10
+       ]
+      },
+      {
+       "exerciseId": "fedb:Seated_Cable_Rows",
+       "sets": 3,
+       "restSec": 90,
+       "reps": [
+        8,
+        12
+       ]
+      },
+      {
+       "exerciseId": "fedb:Seated_Dumbbell_Press",
+       "sets": 3,
+       "restSec": 90,
+       "reps": [
+        8,
+        12
+       ]
+      },
+      {
+       "exerciseId": "fedb:One-Arm_Dumbbell_Row",
+       "sets": 3,
+       "restSec": 75,
+       "reps": [
+        10,
+        12
+       ]
+      },
+      {
+       "exerciseId": "fedb:Side_Lateral_Raise",
+       "sets": 3,
+       "restSec": 60,
+       "reps": [
+        12,
+        15
+       ]
+      },
+      {
+       "exerciseId": "fedb:Hammer_Curls",
+       "sets": 3,
+       "restSec": 60,
+       "reps": [
+        10,
+        12
+       ],
+       "superset": "A"
+      },
+      {
+       "exerciseId": "fedb:Standing_Dumbbell_Triceps_Extension",
+       "sets": 3,
+       "restSec": 60,
+       "reps": [
+        10,
+        12
+       ],
+       "superset": "A"
+      }
+     ],
+     "weekday": 4
+    },
+    {
+     "name": "Lower B",
+     "warmup": [
+      {
+       "exerciseId": "fedb:Bodyweight_Squat",
+       "sets": 2,
+       "restSec": 30,
+       "reps": [
+        12,
+        12
+       ]
+      }
+     ],
+     "work": [
+      {
+       "exerciseId": "fedb:Barbell_Hip_Thrust",
+       "sets": 3,
+       "restSec": 120,
+       "reps": [
+        8,
+        10
+       ]
+      },
+      {
+       "exerciseId": "fedb:Hack_Squat",
+       "sets": 3,
+       "restSec": 120,
+       "reps": [
+        8,
+        10
+       ]
+      },
+      {
+       "exerciseId": "fedb:Dumbbell_Lunges",
+       "sets": 3,
+       "restSec": 90,
+       "reps": [
+        10,
+        12
+       ]
+      },
+      {
+       "exerciseId": "fedb:Seated_Leg_Curl",
+       "sets": 3,
+       "restSec": 75,
+       "reps": [
+        10,
+        12
+       ]
+      },
+      {
+       "exerciseId": "fedb:Leg_Extensions",
+       "sets": 3,
+       "restSec": 60,
+       "reps": [
+        12,
+        15
+       ]
+      },
+      {
+       "exerciseId": "fedb:Seated_Calf_Raise",
+       "sets": 4,
+       "restSec": 60,
+       "reps": [
+        12,
+        15
+       ]
+      }
+     ],
+     "weekday": 5
+    }
+   ]
+  },
+  {
+   "id": "fb3",
+   "name": "Full body, 3 days",
+   "level": "intermediate",
+   "goal": [
+    "strength",
+    "muscle",
+    "general"
+   ],
+   "equipment": [
+    "barbell",
+    "bench",
+    "dumbbells",
+    "cables",
+    "pull_up_bar"
+   ],
+   "days": [
+    {
+     "name": "Full body A",
+     "warmup": [
+      {
+       "exerciseId": "fedb:Bodyweight_Squat",
+       "sets": 2,
+       "restSec": 30,
+       "reps": [
+        12,
+        12
+       ]
+      }
+     ],
+     "work": [
+      {
+       "exerciseId": "fedb:Barbell_Squat",
+       "sets": 3,
+       "restSec": 180,
+       "reps": [
+        5,
+        8
+       ]
+      },
+      {
+       "exerciseId": "fedb:Barbell_Bench_Press_-_Medium_Grip",
+       "sets": 3,
+       "restSec": 150,
+       "reps": [
+        6,
+        8
+       ]
+      },
+      {
+       "exerciseId": "fedb:Bent_Over_Barbell_Row",
+       "sets": 3,
+       "restSec": 120,
+       "reps": [
+        6,
+        8
+       ]
+      },
+      {
+       "exerciseId": "fedb:Plank",
+       "sets": 3,
+       "restSec": 60,
+       "seconds": [
+        30,
+        60
+       ]
+      }
+     ],
+     "weekday": 1
+    },
+    {
+     "name": "Full body B",
+     "warmup": [
+      {
+       "exerciseId": "fedb:Pushups",
+       "sets": 2,
+       "restSec": 30,
+       "reps": [
+        10,
+        10
+       ]
+      }
+     ],
+     "work": [
+      {
+       "exerciseId": "fedb:Romanian_Deadlift",
+       "sets": 3,
+       "restSec": 150,
+       "reps": [
+        8,
+        10
+       ]
+      },
+      {
+       "exerciseId": "fedb:Incline_Dumbbell_Press",
+       "sets": 3,
+       "restSec": 120,
+       "reps": [
+        8,
+        10
+       ]
+      },
+      {
+       "exerciseId": "fedb:Pullups",
+       "sets": 3,
+       "restSec": 120,
+       "reps": [
+        6,
+        10
+       ]
+      },
+      {
+       "exerciseId": "fedb:Seated_Dumbbell_Press",
+       "sets": 3,
+       "restSec": 90,
+       "reps": [
+        8,
+        10
+       ]
+      },
+      {
+       "exerciseId": "fedb:Barbell_Curl",
+       "sets": 2,
+       "restSec": 60,
+       "reps": [
+        10,
+        12
+       ],
+       "superset": "A"
+      },
+      {
+       "exerciseId": "fedb:Triceps_Pushdown",
+       "sets": 2,
+       "restSec": 60,
+       "reps": [
+        10,
+        12
+       ],
+       "superset": "A"
+      }
+     ],
+     "weekday": 3
+    },
+    {
+     "name": "Full body C",
+     "warmup": [
+      {
+       "exerciseId": "fedb:Dead_Bug",
+       "sets": 2,
+       "restSec": 30,
+       "reps": [
+        10,
+        10
+       ]
+      }
+     ],
+     "work": [
+      {
+       "exerciseId": "fedb:Dumbbell_Lunges",
+       "sets": 3,
+       "restSec": 90,
+       "reps": [
+        10,
+        12
+       ]
+      },
+      {
+       "exerciseId": "fedb:Dumbbell_Bench_Press",
+       "sets": 3,
+       "restSec": 120,
+       "reps": [
+        8,
+        10
+       ]
+      },
+      {
+       "exerciseId": "fedb:One-Arm_Dumbbell_Row",
+       "sets": 3,
+       "restSec": 90,
+       "reps": [
+        10,
+        12
+       ]
+      },
+      {
+       "exerciseId": "fedb:Side_Lateral_Raise",
+       "sets": 3,
+       "restSec": 60,
+       "reps": [
+        12,
+        15
+       ]
+      },
+      {
+       "exerciseId": "fedb:Hammer_Curls",
+       "sets": 2,
+       "restSec": 60,
+       "reps": [
+        10,
+        12
+       ],
+       "superset": "A"
+      },
+      {
+       "exerciseId": "fedb:Standing_Dumbbell_Triceps_Extension",
+       "sets": 2,
+       "restSec": 60,
+       "reps": [
+        10,
+        12
+       ],
+       "superset": "A"
+      }
+     ],
+     "weekday": 5
+    }
+   ]
+  },
+  {
+   "id": "fb3_beg",
+   "name": "Beginner full body",
+   "level": "beginner",
+   "goal": [
+    "general",
+    "muscle"
+   ],
+   "equipment": [
+    "bench",
+    "dumbbells",
+    "cables",
+    "machines"
+   ],
+   "days": [
+    {
+     "name": "Full body A",
+     "warmup": [
+      {
+       "exerciseId": "fedb:Bodyweight_Squat",
+       "sets": 2,
+       "restSec": 30,
+       "reps": [
+        12,
+        12
+       ]
+      }
+     ],
+     "work": [
+      {
+       "exerciseId": "fedb:Leg_Press",
+       "sets": 3,
+       "restSec": 120,
+       "reps": [
+        10,
+        15
+       ]
+      },
+      {
+       "exerciseId": "fedb:Leverage_Chest_Press",
+       "sets": 3,
+       "restSec": 90,
+       "reps": [
+        10,
+        15
+       ]
+      },
+      {
+       "exerciseId": "fedb:Wide-Grip_Lat_Pulldown",
+       "sets": 3,
+       "restSec": 90,
+       "reps": [
+        10,
+        15
+       ]
+      },
+      {
+       "exerciseId": "fedb:Seated_Dumbbell_Press",
+       "sets": 2,
+       "restSec": 90,
+       "reps": [
+        10,
+        12
+       ]
+      },
+      {
+       "exerciseId": "fedb:Lying_Leg_Curls",
+       "sets": 2,
+       "restSec": 75,
+       "reps": [
+        10,
+        12
+       ]
+      },
+      {
+       "exerciseId": "fedb:Plank",
+       "sets": 2,
+       "restSec": 60,
+       "seconds": [
+        20,
+        40
+       ]
+      }
+     ],
+     "weekday": 1
+    },
+    {
+     "name": "Full body B",
+     "warmup": [
+      {
+       "exerciseId": "fedb:Pushups",
+       "sets": 2,
+       "restSec": 30,
+       "reps": [
+        10,
+        10
+       ]
+      }
+     ],
+     "work": [
+      {
+       "exerciseId": "fedb:Dumbbell_Squat",
+       "sets": 3,
+       "restSec": 120,
+       "reps": [
+        10,
+        12
+       ]
+      },
+      {
+       "exerciseId": "fedb:Dumbbell_Bench_Press",
+       "sets": 3,
+       "restSec": 90,
+       "reps": [
+        8,
+        12
+       ]
+      },
+      {
+       "exerciseId": "fedb:Seated_Cable_Rows",
+       "sets": 3,
+       "restSec": 90,
+       "reps": [
+        10,
+        12
+       ]
+      },
+      {
+       "exerciseId": "fedb:Side_Lateral_Raise",
+       "sets": 2,
+       "restSec": 60,
+       "reps": [
+        12,
+        15
+       ]
+      },
+      {
+       "exerciseId": "fedb:Dumbbell_Bicep_Curl",
+       "sets": 2,
+       "restSec": 60,
+       "reps": [
+        10,
+        12
+       ]
+      },
+      {
+       "exerciseId": "fedb:Triceps_Pushdown",
+       "sets": 2,
+       "restSec": 60,
+       "reps": [
+        10,
+        12
+       ]
+      }
+     ],
+     "weekday": 3
+    },
+    {
+     "name": "Full body C",
+     "warmup": [
+      {
+       "exerciseId": "fedb:Dead_Bug",
+       "sets": 2,
+       "restSec": 30,
+       "reps": [
+        10,
+        10
+       ]
+      }
+     ],
+     "work": [
+      {
+       "exerciseId": "fedb:Stiff-Legged_Dumbbell_Deadlift",
+       "sets": 3,
+       "restSec": 120,
+       "reps": [
+        10,
+        12
+       ]
+      },
+      {
+       "exerciseId": "fedb:Leverage_Chest_Press",
+       "sets": 3,
+       "restSec": 90,
+       "reps": [
+        10,
+        15
+       ]
+      },
+      {
+       "exerciseId": "fedb:One-Arm_Dumbbell_Row",
+       "sets": 3,
+       "restSec": 75,
+       "reps": [
+        10,
+        12
+       ]
+      },
+      {
+       "exerciseId": "fedb:Standing_Dumbbell_Press",
+       "sets": 2,
+       "restSec": 90,
+       "reps": [
+        10,
+        12
+       ]
+      },
+      {
+       "exerciseId": "fedb:Leg_Extensions",
+       "sets": 2,
+       "restSec": 60,
+       "reps": [
+        12,
+        15
+       ]
+      },
+      {
+       "exerciseId": "fedb:Standing_Calf_Raises",
+       "sets": 2,
+       "restSec": 60,
+       "reps": [
+        12,
+        15
+       ]
+      }
+     ],
+     "weekday": 5
+    }
+   ]
+  },
+  {
+   "id": "chest",
+   "name": "Chest",
+   "level": "any",
+   "goal": [
+    "muscle"
+   ],
+   "equipment": [
+    "barbell",
+    "bench",
+    "dumbbells",
+    "cables"
+   ],
+   "days": [
+    {
+     "name": "Chest",
+     "warmup": [
+      {
+       "exerciseId": "fedb:Pushups",
+       "sets": 2,
+       "restSec": 30,
+       "reps": [
+        10,
+        10
+       ]
+      }
+     ],
+     "work": [
+      {
+       "exerciseId": "fedb:Barbell_Bench_Press_-_Medium_Grip",
+       "sets": 4,
+       "restSec": 150,
+       "reps": [
+        6,
+        8
+       ]
+      },
+      {
+       "exerciseId": "fedb:Incline_Dumbbell_Press",
+       "sets": 3,
+       "restSec": 120,
+       "reps": [
+        8,
+        10
+       ]
+      },
+      {
+       "exerciseId": "fedb:Cable_Crossover",
+       "sets": 3,
+       "restSec": 60,
+       "reps": [
+        12,
+        15
+       ]
+      },
+      {
+       "exerciseId": "fedb:Dumbbell_Flyes",
+       "sets": 3,
+       "restSec": 60,
+       "reps": [
+        12,
+        15
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "chest_tri",
+   "name": "Chest and triceps",
+   "level": "any",
+   "goal": [
+    "muscle"
+   ],
+   "equipment": [
+    "barbell",
+    "bench",
+    "dumbbells",
+    "cables"
+   ],
+   "days": [
+    {
+     "name": "Chest and triceps",
+     "warmup": [
+      {
+       "exerciseId": "fedb:Pushups",
+       "sets": 2,
+       "restSec": 30,
+       "reps": [
+        10,
+        10
+       ]
+      }
+     ],
+     "work": [
+      {
+       "exerciseId": "fedb:Incline_Dumbbell_Press",
+       "sets": 3,
+       "restSec": 120,
+       "reps": [
+        8,
+        10
+       ]
+      },
+      {
+       "exerciseId": "fedb:Barbell_Bench_Press_-_Medium_Grip",
+       "sets": 3,
+       "restSec": 150,
+       "reps": [
+        6,
+        8
+       ]
+      },
+      {
+       "exerciseId": "fedb:Cable_Crossover",
+       "sets": 3,
+       "restSec": 60,
+       "reps": [
+        12,
+        15
+       ]
+      },
+      {
+       "exerciseId": "fedb:Triceps_Pushdown_-_Rope_Attachment",
+       "sets": 3,
+       "restSec": 75,
+       "reps": [
+        10,
+        12
+       ],
+       "superset": "A"
+      },
+      {
+       "exerciseId": "fedb:EZ-Bar_Skullcrusher",
+       "sets": 3,
+       "restSec": 75,
+       "reps": [
+        10,
+        12
+       ],
+       "superset": "A"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "chest_sho",
+   "name": "Chest and shoulders",
+   "level": "any",
+   "goal": [
+    "muscle"
+   ],
+   "equipment": [
+    "barbell",
+    "bench",
+    "dumbbells",
+    "cables"
+   ],
+   "days": [
+    {
+     "name": "Chest and shoulders",
+     "warmup": [
+      {
+       "exerciseId": "fedb:Pushups",
+       "sets": 2,
+       "restSec": 30,
+       "reps": [
+        10,
+        10
+       ]
+      }
+     ],
+     "work": [
+      {
+       "exerciseId": "fedb:Barbell_Bench_Press_-_Medium_Grip",
+       "sets": 4,
+       "restSec": 150,
+       "reps": [
+        6,
+        8
+       ]
+      },
+      {
+       "exerciseId": "fedb:Standing_Military_Press",
+       "sets": 3,
+       "restSec": 120,
+       "reps": [
+        6,
+        8
+       ]
+      },
+      {
+       "exerciseId": "fedb:Incline_Dumbbell_Press",
+       "sets": 3,
+       "restSec": 120,
+       "reps": [
+        8,
+        10
+       ]
+      },
+      {
+       "exerciseId": "fedb:Side_Lateral_Raise",
+       "sets": 3,
+       "restSec": 60,
+       "reps": [
+        12,
+        15
+       ]
+      },
+      {
+       "exerciseId": "fedb:Cable_Crossover",
+       "sets": 3,
+       "restSec": 60,
+       "reps": [
+        12,
+        15
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "back",
+   "name": "Back",
+   "level": "any",
+   "goal": [
+    "muscle",
+    "strength"
+   ],
+   "equipment": [
+    "barbell",
+    "dumbbells",
+    "cables",
+    "pull_up_bar"
+   ],
+   "days": [
+    {
+     "name": "Back",
+     "warmup": [
+      {
+       "exerciseId": "fedb:Dead_Bug",
+       "sets": 2,
+       "restSec": 30,
+       "reps": [
+        10,
+        10
+       ]
+      }
+     ],
+     "work": [
+      {
+       "exerciseId": "fedb:Pullups",
+       "sets": 4,
+       "restSec": 120,
+       "reps": [
+        6,
+        10
+       ]
+      },
+      {
+       "exerciseId": "fedb:Bent_Over_Barbell_Row",
+       "sets": 4,
+       "restSec": 120,
+       "reps": [
+        6,
+        8
+       ]
+      },
+      {
+       "exerciseId": "fedb:Wide-Grip_Lat_Pulldown",
+       "sets": 3,
+       "restSec": 90,
+       "reps": [
+        10,
+        12
+       ]
+      },
+      {
+       "exerciseId": "fedb:Seated_Cable_Rows",
+       "sets": 3,
+       "restSec": 90,
+       "reps": [
+        10,
+        12
+       ]
+      },
+      {
+       "exerciseId": "fedb:Straight-Arm_Pulldown",
+       "sets": 3,
+       "restSec": 60,
+       "reps": [
+        12,
+        15
+       ]
+      },
+      {
+       "exerciseId": "fedb:Reverse_Flyes",
+       "sets": 3,
+       "restSec": 60,
+       "reps": [
+        12,
+        15
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "back_bi",
+   "name": "Back and biceps",
+   "level": "any",
+   "goal": [
+    "muscle"
+   ],
+   "equipment": [
+    "barbell",
+    "dumbbells",
+    "cables"
+   ],
+   "days": [
+    {
+     "name": "Back and biceps",
+     "warmup": [
+      {
+       "exerciseId": "fedb:Dead_Bug",
+       "sets": 2,
+       "restSec": 30,
+       "reps": [
+        10,
+        10
+       ]
+      }
+     ],
+     "work": [
+      {
+       "exerciseId": "fedb:Wide-Grip_Lat_Pulldown",
+       "sets": 4,
+       "restSec": 90,
+       "reps": [
+        8,
+        12
+       ]
+      },
+      {
+       "exerciseId": "fedb:T-Bar_Row_with_Handle",
+       "sets": 3,
+       "restSec": 120,
+       "reps": [
+        8,
+        10
+       ]
+      },
+      {
+       "exerciseId": "fedb:Seated_Cable_Rows",
+       "sets": 3,
+       "restSec": 90,
+       "reps": [
+        10,
+        12
+       ]
+      },
+      {
+       "exerciseId": "fedb:Straight-Arm_Pulldown",
+       "sets": 3,
+       "restSec": 60,
+       "reps": [
+        12,
+        15
+       ]
+      },
+      {
+       "exerciseId": "fedb:Barbell_Curl",
+       "sets": 3,
+       "restSec": 75,
+       "reps": [
+        8,
+        10
+       ],
+       "superset": "A"
+      },
+      {
+       "exerciseId": "fedb:Hammer_Curls",
+       "sets": 3,
+       "restSec": 75,
+       "reps": [
+        10,
+        12
+       ],
+       "superset": "A"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "sho_arms",
+   "name": "Shoulders and arms",
+   "level": "any",
+   "goal": [
+    "muscle"
+   ],
+   "equipment": [
+    "barbell",
+    "bench",
+    "dumbbells",
+    "cables"
+   ],
+   "days": [
+    {
+     "name": "Shoulders and arms",
+     "warmup": [
+      {
+       "exerciseId": "fedb:Pushups",
+       "sets": 2,
+       "restSec": 30,
+       "reps": [
+        10,
+        10
+       ]
+      }
+     ],
+     "work": [
+      {
+       "exerciseId": "fedb:Standing_Military_Press",
+       "sets": 4,
+       "restSec": 120,
+       "reps": [
+        6,
+        8
+       ]
+      },
+      {
+       "exerciseId": "fedb:Seated_Dumbbell_Press",
+       "sets": 3,
+       "restSec": 90,
+       "reps": [
+        8,
+        10
+       ]
+      },
+      {
+       "exerciseId": "fedb:Side_Lateral_Raise",
+       "sets": 3,
+       "restSec": 60,
+       "reps": [
+        12,
+        15
+       ]
+      },
+      {
+       "exerciseId": "fedb:Cable_Rear_Delt_Fly",
+       "sets": 3,
+       "restSec": 60,
+       "reps": [
+        12,
+        15
+       ]
+      },
+      {
+       "exerciseId": "fedb:Barbell_Curl",
+       "sets": 3,
+       "restSec": 60,
+       "reps": [
+        8,
+        10
+       ],
+       "superset": "A"
+      },
+      {
+       "exerciseId": "fedb:Triceps_Pushdown",
+       "sets": 3,
+       "restSec": 60,
+       "reps": [
+        10,
+        12
+       ],
+       "superset": "A"
+      },
+      {
+       "exerciseId": "fedb:Hammer_Curls",
+       "sets": 3,
+       "restSec": 60,
+       "reps": [
+        10,
+        12
+       ],
+       "superset": "B"
+      },
+      {
+       "exerciseId": "fedb:Standing_Dumbbell_Triceps_Extension",
+       "sets": 3,
+       "restSec": 60,
+       "reps": [
+        10,
+        12
+       ],
+       "superset": "B"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "legs",
+   "name": "Legs",
+   "level": "any",
+   "goal": [
+    "muscle",
+    "strength"
+   ],
+   "equipment": [
+    "barbell",
+    "dumbbells",
+    "machines"
+   ],
+   "days": [
+    {
+     "name": "Legs",
+     "warmup": [
+      {
+       "exerciseId": "fedb:Bodyweight_Squat",
+       "sets": 2,
+       "restSec": 30,
+       "reps": [
+        12,
+        12
+       ]
+      }
+     ],
+     "work": [
+      {
+       "exerciseId": "fedb:Barbell_Squat",
+       "sets": 4,
+       "restSec": 180,
+       "reps": [
+        6,
+        8
+       ]
+      },
+      {
+       "exerciseId": "fedb:Romanian_Deadlift",
+       "sets": 3,
+       "restSec": 150,
+       "reps": [
+        8,
+        10
+       ]
+      },
+      {
+       "exerciseId": "fedb:Leg_Press",
+       "sets": 3,
+       "restSec": 120,
+       "reps": [
+        10,
+        12
+       ]
+      },
+      {
+       "exerciseId": "fedb:Dumbbell_Lunges",
+       "sets": 3,
+       "restSec": 90,
+       "reps": [
+        10,
+        12
+       ]
+      },
+      {
+       "exerciseId": "fedb:Lying_Leg_Curls",
+       "sets": 3,
+       "restSec": 75,
+       "reps": [
+        10,
+        12
+       ]
+      },
+      {
+       "exerciseId": "fedb:Leg_Extensions",
+       "sets": 3,
+       "restSec": 60,
+       "reps": [
+        12,
+        15
+       ]
+      },
+      {
+       "exerciseId": "fedb:Standing_Calf_Raises",
+       "sets": 4,
+       "restSec": 60,
+       "reps": [
+        10,
+        15
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "bw_home3",
+   "name": "Bodyweight at home",
+   "level": "beginner",
+   "goal": [
+    "general",
+    "muscle"
+   ],
+   "equipment": [],
+   "days": [
+    {
+     "name": "Push and core",
+     "warmup": [
+      {
+       "exerciseId": "fedb:Bodyweight_Squat",
+       "sets": 2,
+       "restSec": 30,
+       "reps": [
+        12,
+        12
+       ]
+      }
+     ],
+     "work": [
+      {
+       "exerciseId": "fedb:Pushups",
+       "sets": 4,
+       "restSec": 60,
+       "reps": [
+        8,
+        15
+       ]
+      },
+      {
+       "exerciseId": "fedb:Incline_Push-Up_Close-Grip",
+       "sets": 3,
+       "restSec": 60,
+       "reps": [
+        10,
+        15
+       ]
+      },
+      {
+       "exerciseId": "fedb:Push_Up_to_Side_Plank",
+       "sets": 3,
+       "restSec": 60,
+       "reps": [
+        8,
+        12
+       ]
+      },
+      {
+       "exerciseId": "fedb:Reverse_Crunch",
+       "sets": 3,
+       "restSec": 45,
+       "reps": [
+        10,
+        15
+       ]
+      },
+      {
+       "exerciseId": "fedb:Plank",
+       "sets": 3,
+       "restSec": 45,
+       "seconds": [
+        30,
+        60
+       ]
+      }
+     ],
+     "weekday": 1
+    },
+    {
+     "name": "Legs",
+     "warmup": [
+      {
+       "exerciseId": "fedb:Dead_Bug",
+       "sets": 2,
+       "restSec": 30,
+       "reps": [
+        10,
+        10
+       ]
+      }
+     ],
+     "work": [
+      {
+       "exerciseId": "fedb:Bodyweight_Squat",
+       "sets": 4,
+       "restSec": 60,
+       "reps": [
+        15,
+        20
+       ]
+      },
+      {
+       "exerciseId": "fedb:Glute_Kickback",
+       "sets": 3,
+       "restSec": 60,
+       "reps": [
+        12,
+        15
+       ]
+      },
+      {
+       "exerciseId": "fedb:Bodyweight_Walking_Lunge",
+       "sets": 3,
+       "restSec": 60,
+       "reps": [
+        10,
+        12
+       ]
+      },
+      {
+       "exerciseId": "fedb:Single_Leg_Glute_Bridge",
+       "sets": 3,
+       "restSec": 45,
+       "reps": [
+        10,
+        15
+       ]
+      },
+      {
+       "exerciseId": "fedb:Butt_Lift_Bridge",
+       "sets": 3,
+       "restSec": 45,
+       "reps": [
+        15,
+        20
+       ]
+      }
+     ],
+     "weekday": 3
+    },
+    {
+     "name": "Full body",
+     "warmup": [
+      {
+       "exerciseId": "fedb:Pushups",
+       "sets": 2,
+       "restSec": 30,
+       "reps": [
+        10,
+        10
+       ]
+      }
+     ],
+     "work": [
+      {
+       "exerciseId": "fedb:Bodyweight_Squat",
+       "sets": 3,
+       "restSec": 60,
+       "reps": [
+        15,
+        20
+       ]
+      },
+      {
+       "exerciseId": "fedb:Pushups",
+       "sets": 3,
+       "restSec": 60,
+       "reps": [
+        8,
+        15
+       ]
+      },
+      {
+       "exerciseId": "fedb:Dead_Bug",
+       "sets": 3,
+       "restSec": 45,
+       "reps": [
+        8,
+        12
+       ]
+      },
+      {
+       "exerciseId": "fedb:Glute_Kickback",
+       "sets": 3,
+       "restSec": 60,
+       "reps": [
+        12,
+        15
+       ]
+      },
+      {
+       "exerciseId": "fedb:Plank",
+       "sets": 3,
+       "restSec": 45,
+       "seconds": [
+        30,
+        60
+       ]
+      }
+     ],
+     "weekday": 5
+    }
+   ]
+  },
+  {
+   "id": "db_fb3",
+   "name": "Dumbbell-only full body",
+   "level": "beginner",
+   "goal": [
+    "general",
+    "muscle"
+   ],
+   "equipment": [
+    "bench",
+    "dumbbells"
+   ],
+   "days": [
+    {
+     "name": "Full body A",
+     "warmup": [
+      {
+       "exerciseId": "fedb:Bodyweight_Squat",
+       "sets": 2,
+       "restSec": 30,
+       "reps": [
+        12,
+        12
+       ]
+      }
+     ],
+     "work": [
+      {
+       "exerciseId": "fedb:Dumbbell_Squat",
+       "sets": 3,
+       "restSec": 120,
+       "reps": [
+        10,
+        12
+       ]
+      },
+      {
+       "exerciseId": "fedb:Dumbbell_Bench_Press",
+       "sets": 3,
+       "restSec": 90,
+       "reps": [
+        8,
+        12
+       ]
+      },
+      {
+       "exerciseId": "fedb:Bent_Over_Two-Dumbbell_Row",
+       "sets": 3,
+       "restSec": 90,
+       "reps": [
+        10,
+        12
+       ]
+      },
+      {
+       "exerciseId": "fedb:Seated_Dumbbell_Press",
+       "sets": 3,
+       "restSec": 90,
+       "reps": [
+        8,
+        12
+       ]
+      },
+      {
+       "exerciseId": "fedb:Dumbbell_Bicep_Curl",
+       "sets": 2,
+       "restSec": 60,
+       "reps": [
+        10,
+        12
+       ],
+       "superset": "A"
+      },
+      {
+       "exerciseId": "fedb:Standing_Dumbbell_Triceps_Extension",
+       "sets": 2,
+       "restSec": 60,
+       "reps": [
+        10,
+        12
+       ],
+       "superset": "A"
+      },
+      {
+       "exerciseId": "fedb:Plank",
+       "sets": 3,
+       "restSec": 45,
+       "seconds": [
+        30,
+        60
+       ]
+      }
+     ],
+     "weekday": 1
+    },
+    {
+     "name": "Full body B",
+     "warmup": [
+      {
+       "exerciseId": "fedb:Pushups",
+       "sets": 2,
+       "restSec": 30,
+       "reps": [
+        10,
+        10
+       ]
+      }
+     ],
+     "work": [
+      {
+       "exerciseId": "fedb:Stiff-Legged_Dumbbell_Deadlift",
+       "sets": 3,
+       "restSec": 120,
+       "reps": [
+        10,
+        12
+       ]
+      },
+      {
+       "exerciseId": "fedb:Incline_Dumbbell_Press",
+       "sets": 3,
+       "restSec": 90,
+       "reps": [
+        8,
+        12
+       ]
+      },
+      {
+       "exerciseId": "fedb:One-Arm_Dumbbell_Row",
+       "sets": 3,
+       "restSec": 75,
+       "reps": [
+        10,
+        12
+       ]
+      },
+      {
+       "exerciseId": "fedb:Standing_Dumbbell_Press",
+       "sets": 3,
+       "restSec": 90,
+       "reps": [
+        8,
+        12
+       ]
+      },
+      {
+       "exerciseId": "fedb:Side_Lateral_Raise",
+       "sets": 2,
+       "restSec": 60,
+       "reps": [
+        12,
+        15
+       ]
+      }
+     ],
+     "weekday": 3
+    },
+    {
+     "name": "Full body C",
+     "warmup": [
+      {
+       "exerciseId": "fedb:Dead_Bug",
+       "sets": 2,
+       "restSec": 30,
+       "reps": [
+        10,
+        10
+       ]
+      }
+     ],
+     "work": [
+      {
+       "exerciseId": "fedb:Dumbbell_Lunges",
+       "sets": 3,
+       "restSec": 90,
+       "reps": [
+        10,
+        12
+       ]
+      },
+      {
+       "exerciseId": "fedb:One_Arm_Dumbbell_Bench_Press",
+       "sets": 3,
+       "restSec": 90,
+       "reps": [
+        8,
+        12
+       ]
+      },
+      {
+       "exerciseId": "fedb:Bent_Over_Two-Dumbbell_Row_With_Palms_In",
+       "sets": 3,
+       "restSec": 90,
+       "reps": [
+        10,
+        12
+       ]
+      },
+      {
+       "exerciseId": "fedb:Hammer_Curls",
+       "sets": 2,
+       "restSec": 60,
+       "reps": [
+        10,
+        12
+       ],
+       "superset": "A"
+      },
+      {
+       "exerciseId": "fedb:Tricep_Dumbbell_Kickback",
+       "sets": 2,
+       "restSec": 60,
+       "reps": [
+        10,
+        15
+       ],
+       "superset": "A"
+      }
+     ],
+     "weekday": 5
+    }
+   ]
+  },
+  {
+   "id": "db_ul4",
+   "name": "Dumbbell upper / lower",
+   "level": "intermediate",
+   "goal": [
+    "muscle",
+    "strength"
+   ],
+   "equipment": [
+    "bench",
+    "dumbbells"
+   ],
+   "days": [
+    {
+     "name": "Upper A",
+     "warmup": [
+      {
+       "exerciseId": "fedb:Pushups",
+       "sets": 2,
+       "restSec": 30,
+       "reps": [
+        10,
+        10
+       ]
+      }
+     ],
+     "work": [
+      {
+       "exerciseId": "fedb:Dumbbell_Bench_Press",
+       "sets": 4,
+       "restSec": 120,
+       "reps": [
+        6,
+        10
+       ]
+      },
+      {
+       "exerciseId": "fedb:Bent_Over_Two-Dumbbell_Row",
+       "sets": 4,
+       "restSec": 90,
+       "reps": [
+        8,
+        10
+       ]
+      },
+      {
+       "exerciseId": "fedb:Seated_Dumbbell_Press",
+       "sets": 3,
+       "restSec": 90,
+       "reps": [
+        8,
+        10
+       ]
+      },
+      {
+       "exerciseId": "fedb:Side_Lateral_Raise",
+       "sets": 3,
+       "restSec": 60,
+       "reps": [
+        12,
+        15
+       ]
+      },
+      {
+       "exerciseId": "fedb:Dumbbell_Bicep_Curl",
+       "sets": 3,
+       "restSec": 60,
+       "reps": [
+        10,
+        12
+       ],
+       "superset": "A"
+      },
+      {
+       "exerciseId": "fedb:Lying_Dumbbell_Tricep_Extension",
+       "sets": 3,
+       "restSec": 60,
+       "reps": [
+        10,
+        12
+       ],
+       "superset": "A"
+      }
+     ],
+     "weekday": 1
+    },
+    {
+     "name": "Lower A",
+     "warmup": [
+      {
+       "exerciseId": "fedb:Bodyweight_Squat",
+       "sets": 2,
+       "restSec": 30,
+       "reps": [
+        12,
+        12
+       ]
+      }
+     ],
+     "work": [
+      {
+       "exerciseId": "fedb:Dumbbell_Squat",
+       "sets": 4,
+       "restSec": 120,
+       "reps": [
+        8,
+        12
+       ]
+      },
+      {
+       "exerciseId": "fedb:Stiff-Legged_Dumbbell_Deadlift",
+       "sets": 3,
+       "restSec": 120,
+       "reps": [
+        8,
+        12
+       ]
+      },
+      {
+       "exerciseId": "fedb:Dumbbell_Step_Ups",
+       "sets": 3,
+       "restSec": 90,
+       "reps": [
+        10,
+        12
+       ]
+      },
+      {
+       "exerciseId": "fedb:Standing_Dumbbell_Calf_Raise",
+       "sets": 4,
+       "restSec": 60,
+       "reps": [
+        12,
+        15
+       ]
+      }
+     ],
+     "weekday": 2
+    },
+    {
+     "name": "Upper B",
+     "warmup": [
+      {
+       "exerciseId": "fedb:Pushups",
+       "sets": 2,
+       "restSec": 30,
+       "reps": [
+        10,
+        10
+       ]
+      }
+     ],
+     "work": [
+      {
+       "exerciseId": "fedb:Incline_Dumbbell_Press",
+       "sets": 4,
+       "restSec": 120,
+       "reps": [
+        8,
+        10
+       ]
+      },
+      {
+       "exerciseId": "fedb:One-Arm_Dumbbell_Row",
+       "sets": 4,
+       "restSec": 90,
+       "reps": [
+        8,
+        12
+       ]
+      },
+      {
+       "exerciseId": "fedb:Dumbbell_Shoulder_Press",
+       "sets": 3,
+       "restSec": 90,
+       "reps": [
+        8,
+        10
+       ]
+      },
+      {
+       "exerciseId": "fedb:Reverse_Flyes",
+       "sets": 3,
+       "restSec": 60,
+       "reps": [
+        12,
+        15
+       ]
+      },
+      {
+       "exerciseId": "fedb:Hammer_Curls",
+       "sets": 3,
+       "restSec": 60,
+       "reps": [
+        10,
+        12
+       ],
+       "superset": "A"
+      },
+      {
+       "exerciseId": "fedb:Tricep_Dumbbell_Kickback",
+       "sets": 3,
+       "restSec": 60,
+       "reps": [
+        10,
+        15
+       ],
+       "superset": "A"
+      }
+     ],
+     "weekday": 4
+    },
+    {
+     "name": "Lower B",
+     "warmup": [
+      {
+       "exerciseId": "fedb:Bodyweight_Squat",
+       "sets": 2,
+       "restSec": 30,
+       "reps": [
+        12,
+        12
+       ]
+      }
+     ],
+     "work": [
+      {
+       "exerciseId": "fedb:Dumbbell_Rear_Lunge",
+       "sets": 4,
+       "restSec": 90,
+       "reps": [
+        8,
+        12
+       ]
+      },
+      {
+       "exerciseId": "fedb:Plie_Dumbbell_Squat",
+       "sets": 3,
+       "restSec": 90,
+       "reps": [
+        10,
+        12
+       ]
+      },
+      {
+       "exerciseId": "fedb:Stiff-Legged_Dumbbell_Deadlift",
+       "sets": 3,
+       "restSec": 90,
+       "reps": [
+        10,
+        12
+       ]
+      },
+      {
+       "exerciseId": "fedb:Standing_Dumbbell_Calf_Raise",
+       "sets": 4,
+       "restSec": 60,
+       "reps": [
+        12,
+        15
+       ]
+      },
+      {
+       "exerciseId": "fedb:Plank",
+       "sets": 3,
+       "restSec": 45,
+       "seconds": [
+        30,
+        60
+       ]
+      }
+     ],
+     "weekday": 5
+    }
+   ]
+  },
+  {
+   "id": "core",
+   "name": "Core",
+   "level": "any",
+   "goal": [
+    "general"
+   ],
+   "equipment": [],
+   "days": [
+    {
+     "name": "Core",
+     "warmup": [
+      {
+       "exerciseId": "fedb:Butt_Lift_Bridge",
+       "sets": 2,
+       "restSec": 30,
+       "reps": [
+        12,
+        12
+       ]
+      }
+     ],
+     "work": [
+      {
+       "exerciseId": "fedb:Dead_Bug",
+       "sets": 3,
+       "restSec": 45,
+       "reps": [
+        8,
+        12
+       ]
+      },
+      {
+       "exerciseId": "fedb:Plank",
+       "sets": 3,
+       "restSec": 45,
+       "seconds": [
+        30,
+        60
+       ]
+      },
+      {
+       "exerciseId": "fedb:Reverse_Crunch",
+       "sets": 3,
+       "restSec": 45,
+       "reps": [
+        10,
+        15
+       ]
+      },
+      {
+       "exerciseId": "fedb:Crunches",
+       "sets": 3,
+       "restSec": 45,
+       "reps": [
+        15,
+        20
+       ]
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}

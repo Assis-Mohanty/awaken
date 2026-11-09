@@ -7,7 +7,9 @@ import androidx.room.Query
 import androidx.room.Upsert
 import com.assismohanty.awaken.core.data.db.entity.CustomExerciseEntity
 import com.assismohanty.awaken.core.data.db.entity.ExercisePrefEntity
+import com.assismohanty.awaken.core.data.db.entity.DayOverrideEntity
 import com.assismohanty.awaken.core.data.db.entity.GymSettingsEntity
+import com.assismohanty.awaken.core.data.db.entity.WeekSlotEntity
 import com.assismohanty.awaken.core.data.db.entity.RoutineEntity
 import com.assismohanty.awaken.core.data.db.entity.RoutineExerciseEntity
 import com.assismohanty.awaken.core.data.db.entity.WorkoutEntity
@@ -52,6 +54,36 @@ interface GymDao {
 
     @Query("DELETE FROM routine WHERE id = :routineId")
     suspend fun deleteRoutineRow(routineId: String)
+
+    // Weekly schedule and one-off day overrides (GD §18.1)
+
+    @Query("SELECT * FROM week_slot ORDER BY weekday")
+    fun observeWeekSlots(): Flow<List<WeekSlotEntity>>
+
+    @Query("SELECT * FROM week_slot ORDER BY weekday")
+    suspend fun weekSlots(): List<WeekSlotEntity>
+
+    @Upsert
+    suspend fun upsertWeekSlot(slot: WeekSlotEntity)
+
+    @Query("DELETE FROM week_slot WHERE weekday = :weekday")
+    suspend fun deleteWeekSlot(weekday: Int)
+
+    @Query("DELETE FROM week_slot WHERE routine_id = :routineId")
+    suspend fun deleteSlotsOfRoutine(routineId: String)
+
+    @Query("SELECT * FROM day_override WHERE game_date >= :from AND game_date <= :to ORDER BY game_date")
+    fun observeDayOverrides(from: LocalDate, to: LocalDate): Flow<List<DayOverrideEntity>>
+
+    @Upsert
+    suspend fun upsertDayOverrides(rows: List<DayOverrideEntity>)
+
+    @Query("DELETE FROM day_override WHERE routine_id = :routineId")
+    suspend fun deleteOverridesOfRoutine(routineId: String)
+
+    /** Overrides older than the cutoff no longer matter; trimmed so the table stays small. */
+    @Query("DELETE FROM day_override WHERE game_date < :before")
+    suspend fun deleteOverridesBefore(before: LocalDate)
 
     // Workouts
 

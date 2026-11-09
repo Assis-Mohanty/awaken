@@ -30,6 +30,10 @@ data class RoutineEntity(
     @PrimaryKey val id: String,
     val name: String,
     @ColumnInfo(name = "updated_at") val updatedAt: Instant,
+    /** Order in My routines (GD §18.1); lower first. */
+    @ColumnInfo(name = "sort_order", defaultValue = "0") val sortOrder: Int = 0,
+    /** The plan this routine was copied from, if any. The copy never changes when the plan does. */
+    @ColumnInfo(name = "source_plan_id") val sourcePlanId: String? = null,
 )
 
 @Entity(tableName = "routine_exercise", primaryKeys = ["routine_id", "position"])
@@ -40,6 +44,38 @@ data class RoutineExerciseEntity(
     @ColumnInfo(name = "set_count") val setCount: Int,
     /** Rest between this exercise's sets in seconds; null = no rest timer (GD §13.2). */
     @ColumnInfo(name = "rest_sec") val restSec: Int? = null,
+    /** Target reps (or seconds, when [measure] is `TIME`) as a range; null = no target (GD §18.1). */
+    @ColumnInfo(name = "rep_min") val repMin: Int? = null,
+    @ColumnInfo(name = "rep_max") val repMax: Int? = null,
+    /** Exercises of one routine sharing a letter are done back to back. */
+    val superset: String? = null,
+    /** Left and right are two steps of one set. */
+    @ColumnInfo(defaultValue = "0") val unilateral: Boolean = false,
+    /** `WORK` or `WARMUP`. */
+    @ColumnInfo(defaultValue = "WORK") val section: String = SECTION_WORK,
+    /** `REPS` or `TIME`. */
+    @ColumnInfo(defaultValue = "REPS") val measure: String = MEASURE_REPS,
+) {
+    companion object {
+        const val SECTION_WORK = "WORK"
+        const val SECTION_WARMUP = "WARMUP"
+        const val MEASURE_REPS = "REPS"
+        const val MEASURE_TIME = "TIME"
+    }
+}
+
+/** One weekday's routine; it repeats every week until changed (GD §18.1). [weekday] is ISO 1 = Monday … 7 = Sunday. */
+@Entity(tableName = "week_slot")
+data class WeekSlotEntity(
+    @PrimaryKey val weekday: Int,
+    @ColumnInfo(name = "routine_id") val routineId: String,
+)
+
+/** A one-off change for one game-date: another routine, or null for rest ("Swap with today"). */
+@Entity(tableName = "day_override")
+data class DayOverrideEntity(
+    @PrimaryKey @ColumnInfo(name = "game_date") val gameDate: LocalDate,
+    @ColumnInfo(name = "routine_id") val routineId: String? = null,
 )
 
 /** One session. [endedAt] null = still in progress (at most one at a time). */
@@ -53,7 +89,16 @@ data class WorkoutEntity(
     /** The running rest timer: when it ends, and how long it was. Stored so it survives the app being killed. */
     @ColumnInfo(name = "rest_ends_at") val restEndsAt: Instant? = null,
     @ColumnInfo(name = "rest_total_sec") val restTotalSec: Int? = null,
-)
+    /** The routine this session was started from, if any. */
+    @ColumnInfo(name = "routine_id") val routineId: String? = null,
+    /** How it is logged: `LIST` (every set visible) or `COACHED` (one exercise at a time). Sessions before v29 are `LIST`. */
+    @ColumnInfo(defaultValue = "LIST") val mode: String = MODE_LIST,
+) {
+    companion object {
+        const val MODE_LIST = "LIST"
+        const val MODE_COACHED = "COACHED"
+    }
+}
 
 /**
  * One set row. The exercise's name and muscles are snapshotted so history and muscle load stay put if a custom
@@ -74,6 +119,18 @@ data class WorkoutSetEntity(
     val done: Boolean,
     /** The exercise's rest, repeated on each of its sets so history keeps what was used. */
     @ColumnInfo(name = "rest_sec") val restSec: Int? = null,
+    /** When the set was completed; null for sets logged before v29 (they never pay XP, GD §18.4). */
+    @ColumnInfo(name = "completed_at") val completedAt: Instant? = null,
+    /** `WORK` or `WARMUP`. Warm-ups pay no XP. */
+    @ColumnInfo(defaultValue = "WORK") val section: String = RoutineExerciseEntity.SECTION_WORK,
+    /** Seconds held, for a timed exercise such as a plank; null for a reps exercise. */
+    @ColumnInfo(name = "duration_sec") val durationSec: Int? = null,
+    /** `LEFT` or `RIGHT` for the two steps of a one-sided set; null otherwise. */
+    val side: String? = null,
+    val superset: String? = null,
+    /** The planned range for this set, for "Set 2 of 3 · 8-10". */
+    @ColumnInfo(name = "rep_min") val repMin: Int? = null,
+    @ColumnInfo(name = "rep_max") val repMax: Int? = null,
 )
 
 /** A food the hunter added. [nutrientsJson] is `{"kcal":250,…}` per 100 g; [portionsJson] is `[["1 bowl",180],…]`. */
@@ -146,4 +203,21 @@ data class GymSettingsEntity(
     val unit: String,
     @ColumnInfo(name = "rep_min") val repMin: Int,
     @ColumnInfo(name = "rep_max") val repMax: Int,
+    // v29 (GD §18.1): the answers onboarding asked, editable in Gym. Null = not set. Lists are comma-separated.
+    /** `BEGINNER`, `INTERMEDIATE` or `ADVANCED`. */
+    @ColumnInfo(name = "fitness_level") val fitnessLevel: String? = null,
+    /** `strength`, `muscle` or `general`. */
+    val goal: String? = null,
+    /** `Gear.key` values. */
+    val equipment: String? = null,
+    /** `InjuryRegion` names. */
+    val injuries: String? = null,
+    /** `M` or `F`; used only to compare lifts with published data. */
+    val sex: String? = null,
+    @ColumnInfo(name = "rest_compound_sec", defaultValue = "120") val restCompoundSec: Int = 120,
+    @ColumnInfo(name = "rest_isolation_sec", defaultValue = "60") val restIsolationSec: Int = 60,
+    @ColumnInfo(name = "rest_sound", defaultValue = "1") val restSound: Boolean = true,
+    @ColumnInfo(name = "rest_vibrate", defaultValue = "1") val restVibrate: Boolean = true,
+    /** Coached (one exercise at a time) is the default; false = every set visible. */
+    @ColumnInfo(defaultValue = "1") val coached: Boolean = true,
 )

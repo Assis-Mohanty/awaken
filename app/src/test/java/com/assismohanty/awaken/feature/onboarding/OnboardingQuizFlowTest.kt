@@ -241,6 +241,11 @@ class OnboardingQuizFlowTest {
         val gym = runBlocking { graph.db.gymDao().gymSettings() }
         assertThat(gym?.repMin).isEqualTo(10)
         assertThat(gym?.repMax).isEqualTo(15)
+        // The Gym answers are kept so they can be edited inside Gym (GD §18.1).
+        assertThat(gym?.fitnessLevel).isEqualTo("BEGINNER")
+        assertThat(gym?.equipment).isEqualTo("dumbbells,bench")
+        assertThat(gym?.injuries).isEqualTo("KNEE")
+        assertThat(gym?.goal).isNull()
         // The first plan exists and is the one that was previewed.
         composeRule.waitUntil(30_000) {
             org.robolectric.shadows.ShadowLooper.idleMainLooper()

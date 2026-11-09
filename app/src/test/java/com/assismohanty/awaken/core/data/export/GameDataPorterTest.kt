@@ -414,6 +414,35 @@ class GameDataPorterTest {
     }
 
     @Test
+    fun aBackupFromBeforeTheGymRedesignStillImports() = runTest {
+        playSomeGame()
+        val current = source.porter.export()
+        val newColumns = mapOf(
+            "routine" to setOf("sort_order", "source_plan_id"),
+            "routine_exercise" to setOf("rep_min", "rep_max", "superset", "unilateral", "section", "measure"),
+            "workout" to setOf("routine_id", "mode"),
+            "workout_set" to setOf("completed_at", "section", "duration_sec", "side", "superset", "rep_min", "rep_max"),
+            "gym_settings" to setOf(
+                "fitness_level", "goal", "equipment", "injuries", "sex", "rest_compound_sec", "rest_isolation_sec", "rest_sound", "rest_vibrate", "coached",
+            ),
+        )
+        // What a v28 app wrote: no week_slot or day_override table, and none of the new gym columns.
+        val v28 = mutate(current) { root ->
+            root["schemaVersion"] = JsonPrimitive(28)
+            root["tables"] = JsonObject(
+                root.getValue("tables").jsonObject.filterKeys { it != "week_slot" && it != "day_override" }.mapValues { (table, rows) ->
+                    val dropped = newColumns[table]
+                    if (dropped == null) rows else JsonArray(rows.jsonArray.map { JsonObject(it.jsonObject.filterKeys { key -> key !in dropped }) })
+                },
+            )
+        }
+
+        assertThat(target.porter.import(v28)).isInstanceOf(ImportResult.Imported::class.java)
+        assertThat(target.ledger.balances()).isEqualTo(source.ledger.balances())
+        assertThat(tablesOf(target.porter.export())).isEqualTo(tablesOf(current))
+    }
+
+    @Test
     fun aBackupFromBeforeCampaignsStillImports() = runTest {
         playSomeGame()
         val current = source.porter.export()

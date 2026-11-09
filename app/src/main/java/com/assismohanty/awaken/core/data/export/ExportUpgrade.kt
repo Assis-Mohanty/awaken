@@ -17,6 +17,7 @@ object ExportUpgrade {
     private const val SUBJECT_TABLE = "focus_subject"
     private val FOCUS_V20_TABLES = listOf("pomodoro_session", "focus_goal")
     private val GYM_V21_TABLES = listOf("exercise_pref", "gym_settings")
+    private val GYM_V29_TABLES = listOf("week_slot", "day_override")
     private const val BEDTIME_TABLE = "bedtime_rule"
     private val QUIT_V23_TABLES = listOf("quit_counter", "relapse", "quit_day")
     private val LONG_ARC_V24_TABLES = listOf("dungeon", "program", "program_mark")
@@ -178,6 +179,14 @@ object ExportUpgrade {
         // v27 → v28 (quiz onboarding): the new profile columns are nullable or default to none, so an older file simply leaves them out.
         if (current.app == ExportDocument.APP_ID && current.schemaVersion == 27) {
             current = current.copy(schemaVersion = 28)
+        }
+        // v28 → v29 (Gym redesign): the weekly schedule and day overrides did not exist, and every new column is nullable or
+        // has a default, so an older file simply leaves them out.
+        if (current.app == ExportDocument.APP_ID && current.schemaVersion == 28) {
+            current = current.copy(
+                schemaVersion = 29,
+                tables = current.tables + GYM_V29_TABLES.filter { it !in current.tables }.associateWith { emptyList() },
+            )
         }
         return current
     }

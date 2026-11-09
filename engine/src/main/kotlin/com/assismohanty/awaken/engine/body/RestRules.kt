@@ -29,6 +29,24 @@ object RestRules {
 
     fun clamp(restSec: Int?): Int? = restSec?.takeIf { it > 0 }?.coerceAtMost(MAX_SEC)
 
+    // Minimum rest between two sets of the same exercise (GD §18.2, G7).
+    const val MIN_REST_FRACTION = 0.25
+    const val MIN_REST_FLOOR_SEC = 10
+    const val MIN_REST_CEILING_SEC = 30
+
+    /** The shortest rest before the next set of the same exercise counts: 25 % of the planned rest, within 10..30 s; no planned rest → 10 s. */
+    fun minRest(plannedRestSec: Int?): Int {
+        val planned = clamp(plannedRestSec) ?: return MIN_REST_FLOOR_SEC
+        return kotlin.math.ceil(planned * MIN_REST_FRACTION).toInt().coerceIn(MIN_REST_FLOOR_SEC, MIN_REST_CEILING_SEC)
+    }
+
+    /** Seconds left before the next set of the same exercise may be completed; 0 when it may, or when there was no earlier set. */
+    fun minRestLeft(previousCompletedAt: Instant?, now: Instant, plannedRestSec: Int?): Int {
+        if (previousCompletedAt == null) return 0
+        val gap = Duration.between(previousCompletedAt, now).seconds
+        return (minRest(plannedRestSec) - gap).coerceAtLeast(0).toInt()
+    }
+
     fun remaining(endsAt: Instant, now: Instant): Duration {
         val left = Duration.between(now, endsAt)
         return if (left.isNegative) Duration.ZERO else left

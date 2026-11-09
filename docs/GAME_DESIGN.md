@@ -548,9 +548,9 @@ Template quests stay hand-written and bundled. AI writes only Path content (§6.
 
 > Note on vector 7: the level table in §4.4 lists the *step into* each level (i.e. `xpToNext(L−1)`), so "L10 step 504" = `xpToNext(9)`. Vector 7 is `xpToNext(10)` = 578. Tests are authoritative.
 
-## 13. Body tracking — Gym and Diet (trackers, no XP)
+## 13. Body tracking — Gym and Diet (trackers; Gym pays STR XP only under §18)
 
-Approved 2026-10-27. Gym and Diet are trackers: they mint **no XP, gold, stat XP or items** and write no ledger rows. Hooks into the RPG are in `BACKLOG.md` and need their own numbers here before any code. Rules live in `:engine` `body/` (`NutritionMath`, `TrainingMath`). Units are metric (kg, cm, g).
+Approved 2026-10-27. Gym and Diet are trackers: they mint **no gold or items**, and Diet mints no XP. **Gym sets pay STR XP only through §18** (approved 2026-11-09), which reverses the original "no XP" for gym. Hooks into the RPG are in `BACKLOG.md` and need their own numbers here before any code. Rules live in `:engine` `body/` (`NutritionMath`, `TrainingMath`). Units are metric (kg, cm, g).
 
 ### 13.1 Diet — calorie budget and nutrient targets
 - **BMR** (Mifflin–St Jeor): `10·kg + 6.25·cm − 5·age + 5` (male) / `− 161` (female). Age = game-date year − birth year.
@@ -833,7 +833,7 @@ Per exercise, compared with every **earlier** finished session of it (§13.2 dat
 | Best session volume | max §13.2 volume of the exercise in one session |
 
 - A set is a PR when it beats the record held **before this session** (ties are not PRs). An exercise's first session sets records but flags no PR. Ticking a set done that is a PR shows a small celebration (haptic + "New record" chip, reduce-motion respected); the finished-workout summary lists the session's PRs (one line per record type per exercise).
-- **Rewards:** no XP and no gold (weights are self-logged). PR events are one per record type per exercise per session.
+- **Rewards:** a PR pays no XP and no gold itself (weights are self-logged); gym sets pay XP under §18.4. PR events are one per record type per exercise per session.
 
 ### 16.8 Plate calculator (C3)
 
@@ -1055,3 +1055,83 @@ Source: `docs/onboarding/PLAN.md` (§4, §5). The onboarding questions set start
 | 175 | Target 53.5 kg / 53.4 kg at 170 cm; 20 kg and 400 kg | allowed / below BMI 18.5; out of range |
 | 176 | The estimate curve, losing and gaining | starts at today's weight, ends on the target, never overshoots or reverses |
 | 177 | Plan screen focus pair VIT, WIL; tap INT / tap WIL / tap VIT | WIL, INT (the older one is replaced) / unchanged / unchanged |
+
+
+---
+
+## 18. Gym redesign: plans, coached logging, benchmarks and STR XP (approved 2026-11-09)
+
+> **Approved 2026-11-09 (user: "approve all, next").** Every number tagged **`G<n>`** is approved as written (list in §18.7), and open questions Q1-Q10 of `docs/gym/GYM_REDESIGN_PLAN.md` are resolved with the recommendations there. **This section reverses §13's "no XP" and §16.7's "no reward" for gym sets:** sets that pass the rules below pay STR XP (§18.4). Everything else in §13 and §16.6-16.9 stands.
+
+### 18.1 Plans, routines and your answers
+
+- **Plans** (`assets/gym/plans.json`, at most **20** `G1`; 16 ship) are original, hand-written plans: compound before isolation, 1-8 work exercises a day (`G2`), at most 20 weekly sets per primary muscle (`G3`). A plan day has an optional warm-up (no XP) and work; rest per exercise is a multiple of 15 s (§13.2); supersets are 2-3 contiguous exercises with the same set count; a timed exercise (plank) has seconds instead of reps.
+- **My routines** are copies: adding a plan copies each day into a routine, so a plan never changes under you. A routine is assigned to ISO weekdays (`week_slot`, one routine per weekday, repeating every week). **Swap with today** writes a one-off `day_override` for the two dates only (`WeekSchedule`).
+- **Your answers** live in Gym settings (`gym_settings`): fitness level, goal, gear, injuries, body weight (one value, `hunter_profile.weight_kg`), sex (only for benchmarks), units, rest defaults, rest sound and vibration, coached or list logging. Onboarding writes them for new hunters; for existing ones they start empty and Gym asks.
+- **Filtering** (`PlanRules.fit`): a plan shows only if every piece of its gear is owned; beginners do not see plans marked intermediate or advanced and get catalog `expert` exercises swapped down; an exercise an injury hides is replaced by the easiest library alternative (same lead muscle) or dropped; a day with no work left hides the plan. **Strength goal** trains the first non-superset compound of a day at **4-6** reps (`G4`).
+- **Ranking:** goal match, then distance from your training-day count (single-day plans last), then level match, then name.
+- **Injury mapping** (`InjuryRules`, plus per-exercise `loads` in `assets/gym/exercise_overlay.json`): shoulders hide exercises whose primary muscle is shoulders; back, lower back; wrist, forearms; knee, quadriceps compounds and plyometrics; hip, glutes/adductors/abductors compounds. The overlay adds named exercises (dips, upright rows, deadlifts, push-ups on the wrist, and so on). Not medical advice.
+- **Gear** (`Gear`): pull-up bar, dip bars, bench, dumbbells, barbell, cables, machines, kettlebells, bands. The overlay adds what the catalog leaves out (a pull-up bar for "body only" pull-ups, equipment for the ~80 moves with none).
+
+### 18.2 Logging, rest and swaps
+
+- **Default rest** `G5`: compound **120 s**, isolation **60 s**.
+- **Stepper** `G6` (`StepIncrement`): barbell and EZ bar = **2 x the smallest owned plate** (2.5 kg; 5 lb), dumbbell 2.5 kg (5 lb), cable and machine 5 kg (10 lb), kettlebell 4 kg (10 lb), added bodyweight 2.5 kg (5 lb). The exercise's own increment (§16.6) wins.
+- **Minimum rest** `G7`: `minRest = clamp(ceil(0.25 x plannedRest), 10, 30)` seconds; no planned rest = 10 s. The next set of the **same exercise** cannot be completed, and Skip is hidden, until `minRest` has passed since the previous set of it. It does not apply between superset partners or between the left and right side of one set; it applies between rounds.
+- **Swap with** (`ExerciseAlternatives`): same lead muscle, same mechanic, equipment you own, nothing an injury hides, category strength or powerlifting; **easier** = catalog level one step down, **similar** = same, **harder** = one up; at most 5 each, ranked by shared secondary muscles then name. No level or mechanic in the library = no alternatives; an empty list shows no option.
+- A rest in progress runs as a foreground-service notification with a chronometer (type `specialUse`) so it chimes with the screen off; the stored end time and `RestEndWorker` remain the fallback.
+
+### 18.3 Benchmarks ("Where do I stand?")
+
+- **Data** (`assets/gym/benchmarks.json`, built by `tools/catalog/build-benchmarks.mjs`): **percentiles** for squat, bench and deadlift from OpenPowerlifting (public domain): raw, full-power meets, one row per lifter (their best total), ages 18-59 or unknown, no disqualifications; each lift and sex is stored as the 99 values of `best lift / body weight` at the 1st-99th percentile. **Standards** for plank and push-up from the US Army Fitness Test tables (US government work, public domain): points from 60 up by age band and sex, as printed.
+- **Population wording.** The percentile is against *people who compete in raw powerlifting*, never "users" or "the general lifting population", so an ordinary gym-goer will usually sit low. The caption says "Estimated against people who compete in raw powerlifting". The Army standard is shown as a level, with no percentile and no curve.
+- **Maths** (`Benchmarks`): ratio = estimated 1RM / body weight (GD §13.2 e1RM); percentile by linear interpolation between quantiles, clamped to **1-99** (never "100th"); `ratioAt` inverts it for the draggable pointer; the curve is the relative density between quantiles, smoothed, never labelled with its peak.
+- **Levels** `G8`: below p20 Beginner, p20-49 Novice, p50-79 Intermediate, p80-94 Advanced, p95 and above Elite. **Standard levels** `G9`: below a pass Beginner, a pass to 59 points Novice, 60-79 Intermediate, 80-99 Advanced, 100 Elite. The Army pass is 60 points, so there the Novice band is empty (see `docs/gym/QUESTIONS.md` Q11).
+- **Age** for a standard comes from the birth year; none set = the 22-26 band `G10`. Ages 62 and over use the "over 62" column. Body weight and sex are needed; without them only PRs and charts show. Exercises without a credible source get no level at all.
+
+### 18.4 STR XP from training
+
+```
+counted set  = a WORK set (not warm-up) with a completion time, reps >= 1 (or a hold >= 10 s),
+               that is not flagged (18.5) and whose gap to the previous set of the same exercise
+               (from another round) is at least minRest
+effort       = 1.0 normal; 0.5 light: a weighted set under 50 % of the exercise's best confirmed
+               e1RM `G11`, or a bodyweight set under 5 reps / a hold under 20 s `G12`
+per exercise = at most 10 counted sets per exercise per game-day `G13`
+gymXp        = round( 5 x sum(effort) )                      `G14`   (half-up)
+paid         = min( gymXp, 150 - gym XP earned today, 600 - all self-report XP earned today )
+               `G15` daily gym cap 150; `G16` gym XP also counts toward the SELF cap of 600 (§4.3); past a cap = 0, no 25 % tail
+```
+
+- **Stat and total:** 100 % STR, counts toward level; **no gold, no streak multiplier, no verification multiplier.**
+- **Ledger** (invariants 1-3): paid **once at Finish**, in the same transaction that ends the workout: `(GYM_WORKOUT, workoutId, XP_TOTAL)` and `(GYM_WORKOUT, workoutId, XP_STAT, STR)`. Finishing twice inserts nothing. Deleting a finished workout inserts reversing `UNDO` rows with the same ids and negated deltas; the originals stay. Sets edited or added after the workout ends never re-price it; sets with no completion time (logged before v29) never pay.
+- A Health Connect exercise quest and gym XP may both pay for the same session (different evidence).
+
+### 18.5 Plausibility flag
+
+- A set with an estimated 1RM **above 1.20 x** the best confirmed one, where that best comes from at least **2** earlier sessions `G17`, or above a body-weight ceiling `G18` (**3.5 x** for squat and deadlift, **2.5 x** for bench, **2.0 x** for anything else), is **saved but flagged**: no XP, no benchmark update. It still counts toward volume and charts.
+- **Confirmed** when a set on a **later game-day** reaches **95 %** of it `G19`. From then on the benchmark uses it. XP is never paid retroactively. Derived by replaying finished sessions (invariant 7); nothing is stored.
+
+### 18.6 Test vectors (`:engine`: `TrainingXpTest`, `PlausibilityTest`, `GymRedesignRulesTest`, `GymAssetsTest`, `BenchmarkAssetsTest`)
+
+| # | Input | Expected |
+|---|---|---|
+| G-1 | 3 work sets bench 60 x 8, rest 120 (min rest 30 s), completed at 0 s / 95 s / 190 s | 3 counted, **15 XP** |
+| G-2 | Same, the 2nd at +20 s | 2nd not counted, 10 XP |
+| G-3 | 2 warm-up sets + 3 work sets | warm-ups 0, 15 XP |
+| G-4 | Best 1RM 100 kg; a set of 40 x 10 | light, 0.5, 3 XP (2.5 rounds half-up) |
+| G-5 | 14 counted sets of one exercise in a day | 10 counted, 50 XP |
+| G-6 | Two workouts in a day: 25 then 15 full sets | 125, then 25 (cap 150) |
+| G-7 | 580 self-report XP earned today; 20 full sets | 20 XP (self cap 600) |
+| G-8 | Finish twice | one pair of ledger rows |
+| G-9 | Delete a finished workout | reversing `UNDO` rows, originals kept |
+| G-10 | Best confirmed 100 (3 sessions); a set of 125 | flagged, 0 XP, benchmark stays 100 |
+| G-11 | A later game-day set at 120 (>= 118.75) | confirmed; benchmark 125 |
+| G-12 | Superset partners 5 s apart; round 2 at +40 s with min rest 15; left/right 3 s apart | all counted |
+| G-13 | Planned rest 60 / 90 / 120 / 30 / off / 600 | min rest 15 / 23 / 30 / 10 / 10 / 30 |
+| G-14 | Ratio at exactly p50; below p1; above p99 | 50 / 1 / 99 |
+| G-15 | Swap with a bench press (beginner, compound, chest) owning barbell + dumbbells + bench | easier: none; similar and harder only owned-gear chest compounds |
+
+### 18.7 Approved numbers
+
+`G1` 20 plans max (16 ship) - `G2` 1-8 work exercises a day - `G3` 20 weekly sets per primary muscle - `G4` strength goal 4-6 reps on the first compound - `G5` default rest 120 s compound / 60 s isolation - `G6` stepper 2 x smallest plate, 2.5 / 5 / 4 / 2.5 kg - `G7` minimum rest `clamp(ceil(25 %), 10, 30)` s - `G8` levels at p20 / p50 / p80 / p95 - `G9` standard levels by points (pass / 60 / 80 / 100) - `G10` default age band 22-26 - `G11` light weighted under 50 % of best 1RM - `G12` light bodyweight under 5 reps or 20 s, holds count from 10 s - `G13` 10 counted sets per exercise per day - `G14` 5 XP per set - `G15` 150 gym XP a day - `G16` gym XP inside the 600 self cap, 0 past a cap - `G17` jump 1.20 x with 2 earlier sessions - `G18` ceilings 3.5 / 2.5 / 2.0 x body weight - `G19` confirm at 95 %.
