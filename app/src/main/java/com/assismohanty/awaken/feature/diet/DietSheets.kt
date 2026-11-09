@@ -275,6 +275,7 @@ fun TargetsContent(plan: DietPlan, onEvent: (DietEvent) -> Unit) {
             resets++
         },
     )
+    QuietButton(text = lexString(R.string.diet_targets_redo_setup), onClick = { onEvent(DietEvent.EditProfile) })
 }
 
 // Custom food

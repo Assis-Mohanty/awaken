@@ -174,7 +174,7 @@ class DietViewModel @Inject constructor(private val diet: DietTracker) : ViewMod
             DietEvent.EditProfile -> {
                 val setup = uiState.value.plan?.setup ?: return
                 val form = SetupForm(setup.goal, setup.sex, setup.birthYear, setup.heightCm, setup.weightKg, setup.activity, editing = true)
-                flow.update { it.copy(setup = withPreview(form)) }
+                flow.update { it.copy(setup = withPreview(form), targets = false) }
             }
             DietEvent.CancelProfile -> flow.update { it.copy(setup = null) }
             is DietEvent.SetupChanged -> flow.update { f -> f.copy(setup = withPreview(event.change(f.setup ?: SetupForm()))) }

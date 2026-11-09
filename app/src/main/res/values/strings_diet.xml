@@ -90,6 +90,13 @@
     <string name="diet_targets_default">default %1$s</string>
     <string name="diet_targets_none">no target</string>
     <string name="diet_targets_reset">Reset all to defaults</string>
+    <string name="diet_targets_redo_setup">Redo setup</string>
+    <string name="cd_diet_targets">Targets</string>
+    <string name="cd_diet_add_to_meal">Add food to %1$s</string>
+    <string name="diet_eaten_line">%1$s eaten</string>
+    <string name="diet_goal_line">%1$s goal</string>
+    <string name="diet_kcal_left">kcal left</string>
+    <string name="diet_kcal_over_unit">kcal over</string>
     <string name="cd_diet_target">%1$s target in %2$s</string>
 
     <!-- Custom food -->

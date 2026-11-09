@@ -60,8 +60,8 @@ class DietScreenTest {
         waitForText("2,749 kcal / day")
         composeRule.onNodeWithText("Save budget").performScrollTo().performClick()
 
-        waitForText("Daily energy")
-        composeRule.onAllNodesWithText("Add food").onFirst().performScrollTo().performClick()
+        waitForText("kcal left")
+        composeRule.onNodeWithContentDescription("Add food to Breakfast").performScrollTo().performClick()
         waitForText("Add to Breakfast")
         composeRule.onNodeWithText("Search foods", substring = true).performTextInput("idli")
         waitForText("Idli")

@@ -22,12 +22,15 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.assismohanty.awaken.R
+import com.assismohanty.awaken.core.designsystem.components.BigValue
+import com.assismohanty.awaken.core.designsystem.components.HeaderIconButton
 import com.assismohanty.awaken.core.designsystem.components.LargeTitleScaffold
 import com.assismohanty.awaken.core.designsystem.components.SkeletonCard
 import com.assismohanty.awaken.core.data.db.entity.FoodLogEntity
@@ -78,7 +81,15 @@ fun DietRoute(modifier: Modifier = Modifier, viewModel: DietViewModel = hiltView
 @Composable
 fun DietScreen(state: DietUiState, onEvent: (DietEvent) -> Unit, modifier: Modifier = Modifier) {
     val colors = AwakenTheme.colors
-    LargeTitleScaffold(title = lexString(R.string.diet_title), modifier = modifier) {
+    LargeTitleScaffold(
+        title = lexString(R.string.diet_title),
+        modifier = modifier,
+        actions = {
+            if (state.setup == null && state.plan != null) {
+                HeaderIconButton(AwakenGlyphs.Settings, lexString(R.string.cd_diet_targets), { onEvent(DietEvent.OpenTargets) })
+            }
+        },
+    ) {
         if (state.loading) {
             SkeletonCard()
             return@LargeTitleScaffold
@@ -191,15 +202,11 @@ private fun LabeledNumber(@StringRes label: Int, field: @Composable () -> Unit) 
 private fun Diary(state: DietUiState, plan: DietPlan, onEvent: (DietEvent) -> Unit) {
     val day = state.day ?: DiaryDay(state.date, emptyMap(), Nutrients())
     DateStepper(state.date, state.isToday, onEvent)
-    BudgetWindow(plan, day.totals, Modifier.staggeredEntrance(0))
+    BudgetHero(plan, day.totals, Modifier.staggeredEntrance(0))
     Meal.entries.forEachIndexed { i, meal ->
         MealWindow(meal, day.meals[meal].orEmpty(), onEvent, Modifier.staggeredEntrance(1 + i))
     }
     NutrientsWindow(plan, day.totals)
-    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-        QuietButton(text = lexString(R.string.diet_edit_targets), onClick = { onEvent(DietEvent.OpenTargets) })
-        QuietButton(text = lexString(R.string.diet_edit_profile), onClick = { onEvent(DietEvent.EditProfile) })
-    }
 }
 
 @Composable
@@ -226,45 +233,38 @@ private fun DateStepper(date: LocalDate, isToday: Boolean, onEvent: (DietEvent) 
 
 private val MACROS = listOf(Nutrient.PROTEIN, Nutrient.CARBS, Nutrient.FAT, Nutrient.FIBER)
 
+/** The day's number: calories left (or over), the bar to the goal, eaten against goal, then the four macros in a grid. */
 @Composable
-private fun BudgetWindow(plan: DietPlan, totals: Nutrients, modifier: Modifier = Modifier) {
+private fun BudgetHero(plan: DietPlan, totals: Nutrients, modifier: Modifier = Modifier) {
     val colors = AwakenTheme.colors
     val type = AwakenTheme.type
     val goal = plan.plan.kcal
     val eaten = totals[Nutrient.KCAL].roundToInt()
     val remaining = goal - eaten
-    SystemWindow(title = lexString(R.string.diet_window_budget), accent = colors.accent, modifier = modifier) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.lg)) {
-            Chart(
-                ChartSpec.Ring(
-                    progress = if (goal > 0) eaten.toFloat() / goal else 0f,
-                    description = lexString(R.string.cd_diet_ring, formatCount(eaten), formatCount(goal)),
-                    color = if (remaining < 0) colors.critical else colors.positive,
-                ),
-            ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(formatCount(abs(remaining)), style = type.numeric, color = if (remaining < 0) colors.critical else colors.textPrimary)
-                    Text(
-                        lexString(if (remaining < 0) R.string.diet_kcal_over else R.string.diet_kcal_remaining),
-                        style = type.caption,
-                        color = colors.textSecondary,
-                    )
+    val over = remaining < 0
+    val barDescription = lexString(R.string.cd_diet_ring, formatCount(eaten), formatCount(goal))
+    Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+        BigValue(formatCount(abs(remaining)), lexString(if (over) R.string.diet_kcal_over_unit else R.string.diet_kcal_left), large = true)
+        Chart(
+            ChartSpec.Progress(
+                progress = if (goal > 0) eaten.toFloat() / goal else 0f,
+                color = if (over) colors.critical else colors.accent,
+            ),
+            modifier = Modifier.semantics { contentDescription = barDescription },
+        )
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            Text(lexString(R.string.diet_eaten_line, formatCount(eaten)), style = type.caption, color = colors.textSecondary)
+            Text(lexString(R.string.diet_goal_line, formatCount(goal)), style = type.caption, color = colors.textSecondary)
+        }
+        MACROS.chunked(2).forEach { pair ->
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Spacing.lg)) {
+                pair.forEach { nutrient ->
+                    Column(modifier = Modifier.weight(1f)) {
+                        NutrientLine(nutrient, totals[nutrient], plan.plan.targets[nutrient]?.amount, TargetKind.GOAL)
+                    }
                 }
             }
-            Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-                Figure(lexString(R.string.diet_eaten), formatCount(eaten))
-                Figure(lexString(R.string.diet_goal), formatCount(goal))
-            }
         }
-        MACROS.forEach { nutrient -> NutrientLine(nutrient, totals[nutrient], plan.plan.targets[nutrient]?.amount, TargetKind.GOAL) }
-    }
-}
-
-@Composable
-private fun Figure(label: String, value: String) {
-    Column {
-        Text(value, style = AwakenTheme.type.numericSmall, color = AwakenTheme.colors.textPrimary)
-        Text(label, style = AwakenTheme.type.caption, color = AwakenTheme.colors.textSecondary)
     }
 }
 
@@ -303,13 +303,15 @@ private fun MealWindow(meal: Meal, entries: List<DiaryEntry>, onEvent: (DietEven
         accent = colors.accent,
         modifier = modifier,
         reveal = false,
-        headerTrailing = { Text(lexString(R.string.diet_meal_kcal, formatCount(kcal)), style = AwakenTheme.type.label, color = colors.textSecondary) },
+        headerTrailing = {
+            Text(lexString(R.string.diet_meal_kcal, formatCount(kcal)), style = AwakenTheme.type.label, color = colors.textSecondary)
+            HeaderIconButton(AwakenGlyphs.Plus, lexString(R.string.cd_diet_add_to_meal, lexString(meal.nameRes())), { onEvent(DietEvent.OpenSearch(meal)) })
+        },
     ) {
         if (entries.isEmpty()) Text(lexString(R.string.diet_meal_empty), style = AwakenTheme.type.caption, color = colors.textMuted)
         entries.forEach { entry ->
             EntryRow(entry.row, entry.amounts, onEvent)
         }
-        SecondaryButton(text = lexString(R.string.diet_add_food), onClick = { onEvent(DietEvent.OpenSearch(meal)) }, modifier = Modifier.fillMaxWidth())
     }
 }
 
