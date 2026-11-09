@@ -20,3 +20,9 @@ annotation class PhonePreviews
 @Preview(name = "Component · font 200%", showBackground = true, backgroundColor = 0xFF131417, widthDp = 380, fontScale = 2f, uiMode = Configuration.UI_MODE_NIGHT_YES)
 @Preview(name = "Component · light", showBackground = true, backgroundColor = 0xFFF2F2ED, widthDp = 380, uiMode = Configuration.UI_MODE_NIGHT_NO)
 annotation class ComponentPreview
+
+/** A screen on its side: a large and a small landscape phone in the dark palette, and the small one in the light palette. */
+@Preview(name = "Landscape", device = "spec:width=891dp,height=411dp", showBackground = true, backgroundColor = 0xFF131417, uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Preview(name = "Landscape · small", device = "spec:width=640dp,height=360dp", showBackground = true, backgroundColor = 0xFF131417, uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Preview(name = "Landscape · small · light", device = "spec:width=640dp,height=360dp", showBackground = true, backgroundColor = 0xFFF2F2ED, uiMode = Configuration.UI_MODE_NIGHT_NO)
+annotation class LandscapePreviews

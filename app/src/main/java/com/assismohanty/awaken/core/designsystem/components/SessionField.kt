@@ -8,15 +8,26 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.defaultMinSize
+import androidx.compose.foundation.layout.displayCutout
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.systemBarsPadding
+import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.union
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Text
@@ -30,7 +41,6 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -46,9 +56,10 @@ import com.assismohanty.awaken.engine.model.Stat
 /**
  * A session takes over the screen in the deep version of its stat's colour (design/DESIGN.md): white text, a round dial,
  * the actions at the bottom. The status bar icons turn light while it shows, so they read on the colour in either mode.
+ * Lay a session out with [SessionScreen]; this is only the colour, the insets and the status bar.
  */
 @Composable
-fun SessionField(stat: Stat, modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
+fun SessionField(stat: Stat, modifier: Modifier = Modifier, content: @Composable BoxScope.() -> Unit) {
     val colors = AwakenTheme.colors
     val view = LocalView.current
     DisposableEffect(view) {
@@ -61,12 +72,11 @@ fun SessionField(stat: Stat, modifier: Modifier = Modifier, content: @Composable
         }
     }
     Box(modifier = modifier.fillMaxSize().background(colors.field(stat))) {
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .systemBarsPadding()
+                .windowInsetsPadding(WindowInsets.systemBars.union(WindowInsets.displayCutout))
                 .padding(horizontal = Spacing.gutter, vertical = Spacing.md),
-            horizontalAlignment = Alignment.CenterHorizontally,
             content = content,
         )
     }
@@ -76,6 +86,69 @@ private tailrec fun Context.findActivity(): Activity? = when (this) {
     is Activity -> this
     is ContextWrapper -> baseContext.findActivity()
     else -> null
+}
+
+/**
+ * A session screen that fits its space. Upright: the title, the dial with its status under it in the middle, the actions
+ * at the bottom. On its side: the dial on the left at the full height, the title and the actions in a column on the right,
+ * scrolling if a phone is too short. [body] draws the dial at the [Dp] diameter it is given and whatever sits under it.
+ */
+@Composable
+fun SessionScreen(
+    stat: Stat,
+    title: String,
+    subtitle: String?,
+    modifier: Modifier = Modifier,
+    track: (@Composable () -> Unit)? = null,
+    body: @Composable ColumnScope.(diameter: Dp) -> Unit,
+    actions: @Composable ColumnScope.() -> Unit,
+) {
+    SessionField(stat, modifier = modifier) {
+        BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+            val landscape = maxWidth > maxHeight
+            if (landscape) {
+                // The dial takes the height, less a line for the status under it.
+                val diameter = (maxHeight - LANDSCAPE_STATUS_ROOM).coerceIn(DIAL_MIN, DIAL_MAX)
+                Row(
+                    modifier = Modifier.fillMaxSize(),
+                    horizontalArrangement = Arrangement.spacedBy(Spacing.lg),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Column(
+                        modifier = Modifier.weight(1f).fillMaxHeight(),
+                        verticalArrangement = Arrangement.spacedBy(Spacing.xs, Alignment.CenterVertically),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) { body(diameter) }
+                    Column(
+                        modifier = Modifier.weight(1f).widthIn(max = SIDE_COLUMN_MAX).fillMaxHeight().verticalScroll(rememberScrollState()),
+                        verticalArrangement = Arrangement.spacedBy(Spacing.sm, Alignment.CenterVertically),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                        SessionHeader(title, subtitle)
+                        track?.invoke()
+                        actions()
+                    }
+                }
+            } else {
+                val diameter = minOf(DIAL_MAX, maxHeight * PORTRAIT_HEIGHT_SHARE)
+                Column(modifier = Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
+                    SessionHeader(title, subtitle)
+                    track?.invoke()
+                    Column(
+                        modifier = Modifier.weight(1f).fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(Spacing.md, Alignment.CenterVertically),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) { body(diameter) }
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(Spacing.xs),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        content = actions,
+                    )
+                }
+            }
+        }
+    }
 }
 
 /** The title and the quiet line under it, centred, in white. */
@@ -89,16 +162,16 @@ fun SessionHeader(title: String, subtitle: String?, modifier: Modifier = Modifie
 }
 
 /**
- * The round plate dial: a white arc for what is left over a faint track, the number inside and a caption under it.
- * Its diameter is the smaller of 296dp and 35% of the screen height (design/components.md).
+ * The round plate dial: a white arc for what is left over a faint track, the number inside and a caption under it. The
+ * numeral scales with the diameter (design/components.md).
  */
 @Composable
-fun SessionDial(fraction: Float, numeral: String, caption: String, description: String, modifier: Modifier = Modifier) {
+fun SessionDial(diameter: Dp, fraction: Float, numeral: String, caption: String, description: String, modifier: Modifier = Modifier) {
     val colors = AwakenTheme.colors
-    val screenHeight = LocalConfiguration.current.screenHeightDp.dp
-    val diameter = minOf(DIAL_MAX, screenHeight * DIAL_HEIGHT_SHARE)
     val ring = AwakenTheme.dimens.sessionDialRing
     val track = colors.onFieldMuted.copy(alpha = TRACK_ALPHA)
+    // The big numeral is sized for the full dial; it shrinks with a smaller one so it always sits inside the ring.
+    val numeralStyle = if (diameter < DIAL_MAX * SMALL_DIAL_SHARE) AwakenTheme.type.metricL else AwakenTheme.type.metricXL
     Box(
         modifier = modifier.size(diameter).semantics(mergeDescendants = true) { contentDescription = description },
         contentAlignment = Alignment.Center,
@@ -112,7 +185,7 @@ fun SessionDial(fraction: Float, numeral: String, caption: String, description: 
             if (sweep > 0f) drawArc(colors.onField, START, sweep, false, Offset(inset, inset), arcSize, style = Stroke(stroke, cap = StrokeCap.Round))
         }
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(numeral, style = AwakenTheme.type.metricXL, color = colors.onField)
+            Text(numeral, style = numeralStyle, color = colors.onField)
             Text(caption, style = AwakenTheme.type.caption, color = colors.onFieldMuted)
         }
     }
@@ -158,22 +231,28 @@ fun FieldQuietButton(text: String, onClick: () -> Unit, modifier: Modifier = Mod
 }
 
 private val DIAL_MAX: Dp = 296.dp
-private const val DIAL_HEIGHT_SHARE = 0.35f
+private val DIAL_MIN: Dp = 120.dp
+private val LANDSCAPE_STATUS_ROOM: Dp = 32.dp
+private val SIDE_COLUMN_MAX: Dp = 360.dp
+private const val PORTRAIT_HEIGHT_SHARE = 0.4f
+private const val SMALL_DIAL_SHARE = 0.75f
 private const val TRACK_ALPHA = 0.28f
 private const val FULL = 360f
 private const val START = -90f
 
 @PhonePreviews
 @Composable
-private fun SessionFieldPreview() {
+private fun SessionScreenPreview() {
     AwakenTheme(reduceMotion = true) {
-        SessionField(Stat.INT) {
-            SessionHeader("15-minute session", "DSA, graphs · Intelligence")
-            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
-                SessionDial(fraction = 0.79f, numeral = "11:48", caption = "remaining", description = "11:48 remaining")
-            }
-            FieldPrimaryButton("Pause (5:00)", onClick = {}, modifier = Modifier.fillMaxWidth())
-            FieldQuietButton("End session", onClick = {})
-        }
+        SessionScreen(
+            stat = Stat.INT,
+            title = "15-minute session",
+            subtitle = "DSA, graphs · Intelligence",
+            body = { diameter -> SessionDial(diameter, 0.79f, "11:48", "remaining", "11:48 remaining") },
+            actions = {
+                FieldPrimaryButton("Pause (5:00)", onClick = {}, modifier = Modifier.fillMaxWidth())
+                FieldQuietButton("End session", onClick = {})
+            },
+        )
     }
 }

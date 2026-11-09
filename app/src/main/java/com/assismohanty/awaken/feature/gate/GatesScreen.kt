@@ -38,12 +38,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.core.content.ContextCompat
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.assismohanty.awaken.R
+import com.assismohanty.awaken.core.designsystem.components.SessionScreen
 import com.assismohanty.awaken.core.designsystem.components.SessionField
 import com.assismohanty.awaken.core.designsystem.components.SessionHeader
 import com.assismohanty.awaken.core.designsystem.components.SessionDial
@@ -77,6 +79,7 @@ import com.assismohanty.awaken.core.designsystem.components.AwakenCard
 import com.assismohanty.awaken.core.designsystem.components.ListRow
 import androidx.compose.material3.Icon
 import androidx.compose.foundation.layout.size
+import com.assismohanty.awaken.core.designsystem.preview.LandscapePreviews
 import com.assismohanty.awaken.core.designsystem.preview.PhonePreviews
 import com.assismohanty.awaken.core.designsystem.theme.AwakenTheme
 import com.assismohanty.awaken.core.designsystem.theme.Spacing
@@ -129,6 +132,10 @@ fun GatesScreen(state: GatesUiState, onEvent: (GatesEvent) -> Unit, onBack: () -
         SessionRunScreen(active, state.confirmAbandon, onEvent, pomodoro = state.pomodoro, modifier = modifier)
         return
     }
+    state.pomodoro?.let {
+        PomodoroBreakScreen(it, onEvent, modifier)
+        return
+    }
     LargeTitleScaffold(
         title = when {
             active == null && state.pomodoro != null -> lexString(R.string.pomodoro_title)
@@ -141,7 +148,6 @@ fun GatesScreen(state: GatesUiState, onEvent: (GatesEvent) -> Unit, onBack: () -
     ) {
         when {
             state.loading -> SkeletonCard()
-            state.pomodoro != null -> PomodoroBreakScreen(state.pomodoro, onEvent)
             else -> GatePicker(state, onEvent)
         }
     }
@@ -461,7 +467,8 @@ private fun ColumnScope.StopwatchControls(active: ActiveGate, confirmAbandon: Bo
 
 /**
  * A running or paused session: the stat's colour fills the screen, the dial shows what is left (or what is left of the
- * one pause), and the actions sit at the bottom. The title is the length; the line under it is the subject and stat.
+ * one pause), and the actions sit at the bottom, or on the right when the phone is on its side. The title is the length;
+ * the line under it is the subject and stat.
  */
 @Composable
 private fun SessionRunScreen(
@@ -474,20 +481,17 @@ private fun SessionRunScreen(
     val colors = AwakenTheme.colors
     val length = lexString(R.string.gate_name, active.rank.durationMinutes)
     val about = listOfNotNull(active.subject?.takeIf { it.isNotBlank() } ?: active.label?.takeIf { it.isNotBlank() }, active.stat.label()).joinToString(" · ")
-    SessionField(active.stat, modifier = modifier) {
-        SessionHeader(
-            title = if (active.paused) lexString(R.string.gate_paused_title) else length,
-            subtitle = if (active.paused) length else about,
-        )
-        pomodoro?.let { PomodoroTrack(it.round, it.rounds, PomodoroPhase.FOCUS, modifier = Modifier.padding(top = Spacing.sm), onField = true) }
-        Column(
-            modifier = Modifier.weight(1f).fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(Spacing.md, Alignment.CenterVertically),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
+    SessionScreen(
+        stat = active.stat,
+        title = if (active.paused) lexString(R.string.gate_paused_title) else length,
+        subtitle = if (active.paused) length else about,
+        modifier = modifier,
+        track = pomodoro?.let { { PomodoroTrack(it.round, it.rounds, PomodoroPhase.FOCUS, modifier = Modifier.padding(top = Spacing.sm), onField = true) } },
+        body = { diameter ->
             if (active.paused) {
                 val left = formatClock(active.pauseLeft)
                 SessionDial(
+                    diameter = diameter,
                     fraction = if (GateRules.MAX_PAUSE.isZero) 0f else active.pauseLeft.toMillis().toFloat() / GateRules.MAX_PAUSE.toMillis(),
                     numeral = left,
                     caption = lexString(R.string.gate_dial_pause_left),
@@ -496,6 +500,7 @@ private fun SessionRunScreen(
             } else {
                 val left = formatClock(active.remaining)
                 SessionDial(
+                    diameter = diameter,
                     fraction = if (active.total.isZero) 0f else active.remaining.toMillis().toFloat() / active.total.toMillis(),
                     numeral = left,
                     caption = lexString(R.string.gate_dial_remaining),
@@ -507,10 +512,10 @@ private fun SessionRunScreen(
                 style = AwakenTheme.type.label,
                 color = if (active.breachUsed.isZero) colors.onFieldMuted else colors.onField,
             )
-        }
-        Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(Spacing.xs), horizontalAlignment = Alignment.CenterHorizontally) {
+        },
+        actions = {
             if (confirmAbandon) {
-                Text(lexString(R.string.gate_abandon_confirm), style = AwakenTheme.type.body, color = colors.onField)
+                Text(lexString(R.string.gate_abandon_confirm), style = AwakenTheme.type.body, color = colors.onField, textAlign = TextAlign.Center)
                 FieldPrimaryButton(lexString(R.string.action_abandon_gate), onClick = { onEvent(GatesEvent.ConfirmAbandon) }, modifier = Modifier.fillMaxWidth())
                 FieldQuietButton(lexString(R.string.action_keep_going), onClick = { onEvent(GatesEvent.CancelAbandon) })
             } else {
@@ -525,8 +530,8 @@ private fun SessionRunScreen(
                 }
                 FieldQuietButton(lexString(R.string.action_abandon_gate), onClick = { onEvent(GatesEvent.Abandon) })
             }
-        }
-    }
+        },
+    )
 }
 
 /** The Pomodoro setup (GD §16.3): the four settings, what the rounds train, and an optional subject. */
@@ -577,44 +582,69 @@ private fun PomodoroStepper(@androidx.annotation.StringRes label: Int, value: St
  * on a tap, because one that began while you were away would spend its breach budget.
  */
 @Composable
-private fun PomodoroBreakScreen(pomodoro: PomodoroUi, onEvent: (GatesEvent) -> Unit) {
+private fun PomodoroBreakScreen(pomodoro: PomodoroUi, onEvent: (GatesEvent) -> Unit, modifier: Modifier = Modifier) {
     val colors = AwakenTheme.colors
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(Spacing.md),
-    ) {
-        PomodoroTrack(pomodoro.round, pomodoro.rounds, if (pomodoro.finished) PomodoroPhase.DONE else pomodoro.phase)
-        when {
-            pomodoro.finished -> {
-                Text(lexString(R.string.pomodoro_done_title), style = AwakenTheme.type.windowTitle, color = colors.textPrimary)
-                Text(lexString(R.string.pomodoro_done_body, pomodoro.rounds, pomodoro.config.focusMinutes), style = AwakenTheme.type.body, color = colors.textSecondary)
-                PrimaryButton(lexString(R.string.pomodoro_another), onClick = { onEvent(GatesEvent.PomodoroAnother) }, modifier = Modifier.fillMaxWidth())
-                QuietButton(lexString(R.string.pomodoro_done_button), onClick = { onEvent(GatesEvent.PomodoroDone) }, modifier = Modifier.fillMaxWidth())
-            }
-            pomodoro.breakOver -> {
-                Text(lexString(R.string.pomodoro_break_over_screen), style = AwakenTheme.type.windowTitle, color = colors.textPrimary)
-                PrimaryButton(
-                    lexString(R.string.pomodoro_start_round, pomodoro.round + 1),
-                    onClick = { onEvent(GatesEvent.PomodoroNextRound) },
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                QuietButton(lexString(R.string.pomodoro_end_session), onClick = { onEvent(GatesEvent.PomodoroEnd) }, modifier = Modifier.fillMaxWidth())
-            }
-            else -> {
-                Text(
-                    lexString(if (pomodoro.phase == PomodoroPhase.LONG_BREAK) R.string.pomodoro_long_break_title else R.string.pomodoro_break_title),
-                    style = AwakenTheme.type.windowTitle,
-                    color = colors.textPrimary,
-                )
-                Text(lexString(R.string.pomodoro_break_left, shortClock(pomodoro.breakLeft.toMillis())), style = AwakenTheme.type.metricL, color = colors.textPrimary)
-                Text(lexString(R.string.pomodoro_break_hint), style = AwakenTheme.type.caption, color = colors.textSecondary)
-                SecondaryButton(lexString(R.string.pomodoro_skip_break), onClick = { onEvent(GatesEvent.PomodoroSkipBreak) }, modifier = Modifier.fillMaxWidth())
-                QuietButton(lexString(R.string.pomodoro_end_session), onClick = { onEvent(GatesEvent.PomodoroEnd) }, modifier = Modifier.fillMaxWidth())
-            }
-        }
+    val phase = if (pomodoro.finished) PomodoroPhase.DONE else pomodoro.phase
+    val longBreak = pomodoro.phase == PomodoroPhase.LONG_BREAK
+    val title = when {
+        pomodoro.finished -> lexString(R.string.pomodoro_done_title)
+        pomodoro.breakOver -> lexString(R.string.pomodoro_break_over_screen)
+        else -> lexString(if (longBreak) R.string.pomodoro_long_break_title else R.string.pomodoro_break_title)
     }
+    val breakMinutes = if (longBreak) pomodoro.config.longBreakMinutes else pomodoro.config.shortBreakMinutes
+    SessionScreen(
+        stat = pomodoro.stat,
+        title = title,
+        subtitle = null,
+        modifier = modifier,
+        track = { PomodoroTrack(pomodoro.round, pomodoro.rounds, phase, modifier = Modifier.padding(top = Spacing.sm), onField = true) },
+        body = { diameter ->
+            when {
+                pomodoro.finished -> Text(
+                    lexString(R.string.pomodoro_done_body, pomodoro.rounds, pomodoro.config.focusMinutes),
+                    style = AwakenTheme.type.body,
+                    color = colors.onField,
+                    textAlign = TextAlign.Center,
+                )
+                pomodoro.breakOver -> Text(
+                    lexString(R.string.pomodoro_break_over_next, pomodoro.round + 1, pomodoro.rounds),
+                    style = AwakenTheme.type.body,
+                    color = colors.onField,
+                    textAlign = TextAlign.Center,
+                )
+                else -> {
+                    val left = shortClock(pomodoro.breakLeft.toMillis())
+                    SessionDial(
+                        diameter = diameter,
+                        fraction = if (breakMinutes <= 0) 0f else pomodoro.breakLeft.toMillis().toFloat() / (breakMinutes * MILLIS_PER_MINUTE),
+                        numeral = left,
+                        caption = lexString(R.string.pomodoro_dial_left),
+                        description = lexString(R.string.pomodoro_break_left, left),
+                    )
+                    Text(lexString(R.string.pomodoro_break_hint), style = AwakenTheme.type.caption, color = colors.onFieldMuted, textAlign = TextAlign.Center)
+                }
+            }
+        },
+        actions = {
+            when {
+                pomodoro.finished -> {
+                    FieldPrimaryButton(lexString(R.string.pomodoro_another), onClick = { onEvent(GatesEvent.PomodoroAnother) }, modifier = Modifier.fillMaxWidth())
+                    FieldQuietButton(lexString(R.string.pomodoro_done_button), onClick = { onEvent(GatesEvent.PomodoroDone) })
+                }
+                pomodoro.breakOver -> {
+                    FieldPrimaryButton(lexString(R.string.pomodoro_start_round, pomodoro.round + 1), onClick = { onEvent(GatesEvent.PomodoroNextRound) }, modifier = Modifier.fillMaxWidth())
+                    FieldQuietButton(lexString(R.string.pomodoro_end_session), onClick = { onEvent(GatesEvent.PomodoroEnd) })
+                }
+                else -> {
+                    FieldPrimaryButton(lexString(R.string.pomodoro_skip_break), onClick = { onEvent(GatesEvent.PomodoroSkipBreak) }, modifier = Modifier.fillMaxWidth())
+                    FieldQuietButton(lexString(R.string.pomodoro_end_session), onClick = { onEvent(GatesEvent.PomodoroEnd) })
+                }
+            }
+        },
+    )
 }
+
+private const val MILLIS_PER_MINUTE = 60_000L
 
 private val previewTiles = GateRank.entries.map { GateTile(it, it.durationMinutes, available = it != GateRank.B) }
 
@@ -627,6 +657,7 @@ private fun GatesPickerPreview() {
 }
 
 @PhonePreviews
+@LandscapePreviews
 @Composable
 private fun GateRunPreview() {
     AwakenTheme {
@@ -646,6 +677,7 @@ private fun GateRunPreview() {
 }
 
 @PhonePreviews
+@LandscapePreviews
 @Composable
 private fun GatePausedPreview() {
     AwakenTheme {
@@ -732,6 +764,7 @@ private fun GatesPomodoroSetupPreview() {
 }
 
 @PhonePreviews
+@LandscapePreviews
 @Composable
 private fun GatesPomodoroBreakPreview() {
     AwakenTheme {
@@ -748,6 +781,7 @@ private fun GatesPomodoroBreakPreview() {
 }
 
 @PhonePreviews
+@LandscapePreviews
 @Composable
 private fun GatesPomodoroDonePreview() {
     AwakenTheme {
@@ -760,6 +794,7 @@ private fun GatesPomodoroDonePreview() {
 }
 
 @PhonePreviews
+@LandscapePreviews
 @Composable
 private fun GatePomodoroRoundPreview() {
     AwakenTheme {

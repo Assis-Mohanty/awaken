@@ -48,6 +48,7 @@
     <string name="pomodoro_long_break_title">Long break</string>
     <string name="pomodoro_break_hint">Step away for a moment. The next round waits for you.</string>
     <string name="pomodoro_break_left">%1$s left</string>
+    <string name="pomodoro_dial_left">left</string>
     <string name="pomodoro_break_over_screen">Break over</string>
     <string name="pomodoro_start_round">Start round %1$d</string>
     <string name="pomodoro_skip_break">Skip break</string>
