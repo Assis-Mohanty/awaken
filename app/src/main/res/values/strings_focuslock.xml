@@ -80,7 +80,7 @@
 
     <!-- Allowed apps -->
     <string name="focus_lock_allowed_title">Allowed apps</string>
-    <string name="focus_lock_allowed_intro">Ticked apps stay usable during a focus session. Everything else is covered.</string>
+    <string name="focus_lock_allowed_subtitle">These stay usable during a session</string>
     <string name="focus_lock_allowed_search">Search apps</string>
     <string name="focus_lock_allowed_always">Always allowed</string>
     <string name="focus_lock_allowed_empty">No apps match.</string>

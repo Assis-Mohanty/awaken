@@ -1,6 +1,17 @@
 package com.assismohanty.awaken.feature.focuslock
 
 import androidx.compose.foundation.layout.fillMaxWidth
+import com.assismohanty.awaken.core.designsystem.components.AwakenCard
+import com.assismohanty.awaken.core.designsystem.components.AwakenGlyphs
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.material3.Icon
+import androidx.compose.ui.Alignment
+import androidx.compose.foundation.layout.size
+import com.assismohanty.awaken.core.designsystem.theme.Spacing
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -84,17 +95,37 @@ fun FocusAccessScreen(
     val colors = AwakenTheme.colors
     val type = AwakenTheme.type
     LargeTitleScaffold(title = lexString(R.string.access_title), onBack = onBack, modifier = modifier) {
-        Text(lexString(R.string.access_note), style = type.body, color = colors.textSecondary)
-        SystemWindow(title = lexString(R.string.access_focus_lock), accent = colors.accent, reveal = false) {
-            StatusRow(R.string.focus_lock_status_accessibility, state.focusLockAccessibility, onOpenAccessibility)
+        AwakenCard(reveal = false, contentPadding = Spacing.listCard, spacing = Spacing.zero, modifier = Modifier.fillMaxWidth()) {
+            AccessRow(lexString(R.string.access_focus_lock), state.focusLockAccessibility, onOpenAccessibility)
+            AccessRow(lexString(R.string.access_reel_counter), state.reelAccessibility, onOpenAccessibility)
+            AccessRow(lexString(R.string.reel_status_battery), state.batteryUnrestricted, onOpenBattery)
         }
-        SystemWindow(title = lexString(R.string.access_reel_counter), accent = colors.accent, reveal = false) {
-            StatusRow(R.string.reel_status_accessibility, state.reelAccessibility, onOpenAccessibility)
+        Text(lexString(batteryGuide(state.oem)), style = type.caption, color = colors.textSecondary)
+        SecondaryButton(lexString(R.string.focus_lock_autostart), onOpenAutostart, Modifier.fillMaxWidth())
+    }
+}
+
+/** One thing Android must allow: a check when it is, "Needs attention" and a Fix button when it is not. */
+@Composable
+private fun AccessRow(title: String, ok: Boolean, onFix: () -> Unit) {
+    val colors = AwakenTheme.colors
+    Row(
+        modifier = Modifier.fillMaxWidth().heightIn(min = AwakenTheme.dimens.touchTarget + Spacing.xs).padding(vertical = Spacing.xxs),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(title, style = AwakenTheme.type.windowTitle, color = colors.textPrimary)
+            Text(
+                lexString(if (ok) R.string.access_status_on else R.string.access_status_attention),
+                style = AwakenTheme.type.caption,
+                color = if (ok) colors.textSecondary else colors.critical,
+            )
         }
-        SystemWindow(title = lexString(R.string.reel_status_battery), accent = colors.accent, reveal = false) {
-            StatusRow(R.string.focus_lock_battery_optimisation, state.batteryUnrestricted, onOpenBattery)
-            Text(lexString(batteryGuide(state.oem)), style = type.body, color = colors.textPrimary)
-            SecondaryButton(lexString(R.string.focus_lock_autostart), onOpenAutostart, Modifier.fillMaxWidth())
+        if (ok) {
+            Icon(AwakenGlyphs.Check, contentDescription = lexString(R.string.cd_access_ok, title), tint = colors.textPrimary, modifier = Modifier.size(AwakenTheme.dimens.icon))
+        } else {
+            SecondaryButton(lexString(R.string.focus_lock_fix), onFix)
         }
     }
 }

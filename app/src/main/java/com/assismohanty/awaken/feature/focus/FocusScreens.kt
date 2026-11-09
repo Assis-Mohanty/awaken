@@ -1,6 +1,7 @@
 package com.assismohanty.awaken.feature.focus
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.Text
@@ -17,6 +18,7 @@ import com.assismohanty.awaken.core.designsystem.charts.StackedColumn
 import com.assismohanty.awaken.core.designsystem.components.AwakenCard
 import com.assismohanty.awaken.core.designsystem.components.EmptyState
 import com.assismohanty.awaken.core.designsystem.components.LargeTitleScaffold
+import com.assismohanty.awaken.core.designsystem.components.SectionHeader
 import com.assismohanty.awaken.core.designsystem.components.SkeletonCard
 import com.assismohanty.awaken.core.designsystem.components.formatMinutes
 import com.assismohanty.awaken.core.designsystem.lexicon.lexString
@@ -37,12 +39,18 @@ fun FocusReportRoute(onBack: () -> Unit, modifier: Modifier = Modifier, viewMode
 @Composable
 fun FocusReportScreen(state: FocusReportUiState, onBack: () -> Unit, modifier: Modifier = Modifier) {
     val colors = AwakenTheme.colors
-    LargeTitleScaffold(title = lexString(R.string.focus_report_title), onBack = onBack, modifier = modifier) {
+    LargeTitleScaffold(
+        title = lexString(R.string.focus_report_title),
+        subtitle = if (!state.loading && state.totalMinutes > 0) lexString(R.string.focus_hub_week_label) else null,
+        onBack = onBack,
+        modifier = modifier,
+    ) {
         when {
             state.loading -> SkeletonCard()
             state.totalMinutes == 0 -> EmptyState(line = lexString(R.string.focus_report_empty), actionLabel = null, onAction = {})
             else -> {
-                AwakenCard(title = lexString(R.string.focus_report_days), reveal = false) {
+                Text(formatMinutes(state.totalMinutes), style = AwakenTheme.type.metricXL, color = colors.textPrimary)
+                Column(verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
                     val max = state.days.maxOf { it.minutes }.coerceAtLeast(1)
                     Chart(
                         ChartSpec.StackedColumns(
@@ -62,28 +70,22 @@ fun FocusReportScreen(state: FocusReportUiState, onBack: () -> Unit, modifier: M
                             Text(dayName(day.date), style = AwakenTheme.type.caption, color = colors.textSecondary, modifier = Modifier.weight(1f))
                         }
                     }
-                    Text(
-                        lexString(R.string.focus_report_total, formatMinutes(state.totalMinutes)),
-                        style = AwakenTheme.type.label,
-                        color = colors.textPrimary,
-                    )
                 }
-                AwakenCard(title = lexString(R.string.focus_report_subjects), reveal = false) {
-                    val top = state.subjects.maxOfOrNull { it.minutes }?.coerceAtLeast(1) ?: 1
-                    Chart(
-                        ChartSpec.Comparison(
-                            rows = state.subjects.map { subject ->
-                                ComparisonRow(
-                                    label = subject.name ?: lexString(R.string.focus_report_no_subject),
-                                    value = formatMinutes(subject.minutes),
-                                    fraction = subject.minutes.toFloat() / top,
-                                    color = colors.accent,
-                                )
-                            },
-                            description = lexString(R.string.focus_report_subjects_cd),
-                        ),
-                    )
-                }
+                SectionHeader(title = lexString(R.string.focus_report_subjects))
+                val top = state.subjects.maxOfOrNull { it.minutes }?.coerceAtLeast(1) ?: 1
+                Chart(
+                    ChartSpec.Comparison(
+                        rows = state.subjects.map { subject ->
+                            ComparisonRow(
+                                label = subject.name ?: lexString(R.string.focus_report_no_subject),
+                                value = formatMinutes(subject.minutes),
+                                fraction = subject.minutes.toFloat() / top,
+                                color = colors.accent,
+                            )
+                        },
+                        description = lexString(R.string.focus_report_subjects_cd),
+                    ),
+                )
             }
         }
     }

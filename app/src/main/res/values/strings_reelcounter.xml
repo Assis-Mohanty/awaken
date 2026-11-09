@@ -41,8 +41,10 @@
 
     <!-- Permissions and battery (covers Focus Lock and Reel counter) -->
     <string name="access_title">Permissions and battery</string>
-    <string name="access_note">Focus Lock and Reel counter are separate accessibility services. Each needs its own switch in Android; the battery steps are shared.</string>
     <string name="access_focus_lock">Focus Lock</string>
+    <string name="access_status_on">Switched on</string>
+    <string name="access_status_attention">Needs attention</string>
+    <string name="cd_access_ok">%1$s is switched on</string>
     <string name="access_reel_counter">Reel counter</string>
 
     <!-- Overlay windows -->
@@ -61,12 +63,12 @@
 
     <!-- Limits -->
     <string name="reel_limits_title">Reel limits</string>
+    <string name="reel_limits_subtitle">A reminder when you reach a limit</string>
     <string name="reel_limits_note">When you reach a limit you get a reminder, with 5 more reels up to twice a day. Limits are off until you set one.</string>
     <string name="reel_limit_off">No limit</string>
     <string name="reel_limit_value">%1$d a day</string>
     <string name="reel_limit_lower">Lower the limit</string>
     <string name="reel_limit_raise">Raise the limit</string>
-    <string name="reel_limit_toggle">Limit for %1$s</string>
 
     <!-- Stats -->
     <string name="reel_stats_title">Reel stats</string>

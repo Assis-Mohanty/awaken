@@ -65,9 +65,7 @@
     <string name="focus_card_title">Focus</string>
     <string name="focus_card_start">Start a session</string>
     <string name="focus_report_title">Focus report</string>
-    <string name="focus_report_days">Minutes per day</string>
     <string name="focus_report_subjects">By subject</string>
-    <string name="focus_report_total">%1$s over the last 7 days</string>
     <string name="focus_report_day_cd">%1$s: %2$s of focus</string>
     <string name="focus_report_subjects_cd">Focus time per subject over the last 7 days</string>
     <string name="focus_report_no_subject">No subject</string>

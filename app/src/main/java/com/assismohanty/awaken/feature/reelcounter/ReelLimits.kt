@@ -7,6 +7,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.selection.toggleable
 import com.assismohanty.awaken.core.designsystem.components.AwakenSwitch
+import com.assismohanty.awaken.core.designsystem.components.AwakenCard
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -80,20 +82,24 @@ fun ReelLimitsRoute(onBack: () -> Unit, modifier: Modifier = Modifier, viewModel
 fun ReelLimitsScreen(state: ReelLimitsUiState, onEvent: (ReelLimitsEvent) -> Unit, onBack: () -> Unit, modifier: Modifier = Modifier) {
     val colors = AwakenTheme.colors
     val type = AwakenTheme.type
-    LargeTitleScaffold(title = lexString(R.string.reel_limits_title), onBack = onBack, modifier = modifier) {
-        Text(lexString(R.string.reel_limits_note), style = type.body, color = colors.textSecondary)
-        state.rows.forEach { row ->
-            SystemWindow(title = lexString(row.app.labelRes()), accent = colors.accent, reveal = false) {
+    LargeTitleScaffold(
+        title = lexString(R.string.reel_limits_title),
+        subtitle = lexString(R.string.reel_limits_subtitle),
+        onBack = onBack,
+        modifier = modifier,
+    ) {
+        AwakenCard(reveal = false, contentPadding = Spacing.listCard, spacing = Spacing.zero, modifier = Modifier.fillMaxWidth()) {
+            state.rows.forEach { row ->
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .heightIn(min = AwakenTheme.dimens.touchTarget)
+                        .heightIn(min = AwakenTheme.dimens.touchTarget + Spacing.xs)
                         .toggleable(value = row.limit != null, role = Role.Switch, onValueChange = { onEvent(ReelLimitsEvent.Toggle(row.app, it)) }),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
-                        Text(lexString(R.string.reel_limit_toggle, lexString(row.app.labelRes())), style = type.label, color = colors.textPrimary)
+                        Text(lexString(row.app.labelRes()), style = type.windowTitle, color = colors.textPrimary)
                         Text(
                             row.limit?.let { lexString(R.string.reel_limit_value, it) } ?: lexString(R.string.reel_limit_off),
                             style = type.caption,
@@ -103,7 +109,7 @@ fun ReelLimitsScreen(state: ReelLimitsUiState, onEvent: (ReelLimitsEvent) -> Uni
                     AwakenSwitch(checked = row.limit != null)
                 }
                 if (row.limit != null) {
-                    Row(horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(Spacing.xs), modifier = Modifier.padding(bottom = Spacing.xs)) {
                         SecondaryButton(
                             lexString(R.string.reel_limit_lower),
                             { onEvent(ReelLimitsEvent.Step(row.app, up = false)) },
@@ -120,6 +126,7 @@ fun ReelLimitsScreen(state: ReelLimitsUiState, onEvent: (ReelLimitsEvent) -> Uni
                 }
             }
         }
+        Text(lexString(R.string.reel_limits_note), style = type.caption, color = colors.textSecondary)
     }
 }
 

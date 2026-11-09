@@ -1,6 +1,7 @@
 package com.assismohanty.awaken.feature.focuslock
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -15,7 +16,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.assismohanty.awaken.R
-import com.assismohanty.awaken.core.designsystem.components.RoundCheck
+import com.assismohanty.awaken.core.designsystem.components.AwakenSwitch
 import com.assismohanty.awaken.core.designsystem.components.ScreenBackground
 import com.assismohanty.awaken.core.designsystem.components.LargeTitleScaffold
 import com.assismohanty.awaken.core.designsystem.components.SystemWindow
@@ -37,8 +38,11 @@ fun AllowedAppsScreen(state: AllowedAppsUiState, onEvent: (AllowedAppsEvent) -> 
     val colors = AwakenTheme.colors
     val type = AwakenTheme.type
     ScreenBackground(modifier = modifier) {
-        LargeTitleScaffold(title = lexString(R.string.focus_lock_allowed_title), onBack = onBack) {
-            Text(lexString(R.string.focus_lock_allowed_intro), style = type.caption, color = colors.textSecondary)
+        LargeTitleScaffold(
+            title = lexString(R.string.focus_lock_allowed_title),
+            subtitle = lexString(R.string.focus_lock_allowed_subtitle),
+            onBack = onBack,
+        ) {
             OutlinedTextField(
                 value = state.query,
                 onValueChange = { onEvent(AllowedAppsEvent.Query(it)) },
@@ -58,15 +62,17 @@ fun AllowedAppsScreen(state: AllowedAppsUiState, onEvent: (AllowedAppsEvent) -> 
                             .toggleable(
                                 value = row.allowed,
                                 enabled = !row.locked,
-                                role = Role.Checkbox,
+                                role = Role.Switch,
                                 onValueChange = { onEvent(AllowedAppsEvent.Toggle(row.packageName)) },
                             ),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
                     ) {
-                        RoundCheck(checked = row.allowed, onCheckedChange = null, enabled = !row.locked)
-                        Text(row.label, style = type.label, color = colors.textPrimary, modifier = Modifier.weight(1f))
-                        if (row.locked) Text(lexString(R.string.focus_lock_allowed_always), style = type.caption, color = colors.textSecondary)
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(row.label, style = type.label, color = colors.textPrimary)
+                            if (row.locked) Text(lexString(R.string.focus_lock_allowed_always), style = type.caption, color = colors.textSecondary)
+                        }
+                        AwakenSwitch(checked = row.allowed, enabled = !row.locked)
                     }
                 }
             }
