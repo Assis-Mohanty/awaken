@@ -34,36 +34,47 @@ class SettingsScreenTest {
         events: MutableList<SettingsEvent> = mutableListOf(),
         onBack: () -> Unit = {},
         onOpenPrivacy: () -> Unit = {},
+        section: SettingsSection? = null,
     ) {
         composeRule.setContent {
             AwakenTheme(reduceMotion = true) {
-                SettingsScreen(state = state, onEvent = { events += it }, onBack = onBack, onExport = {}, onImport = {}, onOpenPrivacy = onOpenPrivacy)
+                SettingsScreen(state = state, onEvent = { events += it }, onBack = onBack, onExport = {}, onImport = {}, onOpenPrivacy = onOpenPrivacy, initialSection = section)
             }
         }
     }
 
+    private val menuTitles = listOf("Profile", "Day and reminders", "Health and training", "Appearance and sound", "Widgets and shortcuts", "Your data", "Phone and focus")
+
     @Test
-    fun showsEveryGroup() {
+    fun theMenuListsEverySection() {
         show(previewSettingsState())
-        listOf("Profile", "Day and reminders", "Goals", "Health and training", "Phone and focus", "Habits", "AI Paths", "Appearance and sound", "Your data").forEach {
-            composeRule.onAllNodesWithText(it).onFirst().performScrollTo().assertIsDisplayed()
-        }
+        menuTitles.forEach { composeRule.onNodeWithText(it).performScrollTo().assertIsDisplayed() }
     }
 
     @Test
-    fun sectionsAreInThePlannedOrder() {
+    fun menuSectionsAreInThePlannedOrder() {
         show(previewSettingsState())
-        val titles = listOf("Profile", "Day and reminders", "Goals", "Health and training", "Phone and focus", "Habits", "AI Paths", "Appearance and sound", "Your data")
         val tree = composeRule.onRoot().printToString(Int.MAX_VALUE)
-        val indexes = titles.map { tree.indexOf(it) }
+        val indexes = menuTitles.map { tree.indexOf(it) }
         assertThat(indexes).doesNotContain(-1)
         assertThat(indexes).isInOrder()
     }
 
     @Test
+    fun aRowOpensItsSectionAndBackReturnsToTheMenu() {
+        var backs = 0
+        show(previewSettingsState(), onBack = { backs++ })
+        composeRule.onNodeWithText("Appearance and sound").performScrollTo().performClick()
+        composeRule.onNodeWithText("Haptics").performScrollTo().assertIsDisplayed()
+        composeRule.onNodeWithContentDescription("Back").performClick()
+        composeRule.onNodeWithText("Your data").performScrollTo().assertIsDisplayed()
+        assertThat(backs).isEqualTo(0)
+    }
+
+    @Test
     fun aiPathsSwitchReportsTurningItOnAndOff() {
         val events = mutableListOf<SettingsEvent>()
-        show(previewSettingsState(), events)
+        show(previewSettingsState(), events, section = SettingsSection.DATA)
         composeRule.onNodeWithText("Off. Nothing is sent, and the app runs on its built-in quests.").performScrollTo()
         composeRule.onAllNodesWithText("AI Paths").onLast().performScrollTo().performClick()
         assertThat(events).containsExactly(SettingsEvent.SetAiPaths(true))
@@ -72,7 +83,7 @@ class SettingsScreenTest {
     @Test
     fun turningAiPathsOffIsOneTap() {
         val events = mutableListOf<SettingsEvent>()
-        show(previewSettingsState().copy(aiPathsEnabled = true), events)
+        show(previewSettingsState().copy(aiPathsEnabled = true), events, section = SettingsSection.DATA)
         composeRule.onAllNodesWithText("AI Paths").onLast().performScrollTo().performClick()
         assertThat(events).containsExactly(SettingsEvent.SetAiPaths(false))
     }
@@ -88,7 +99,7 @@ class SettingsScreenTest {
 
     @Test
     fun savingTheNameNeedsAChange() {
-        show(previewSettingsState())
+        show(previewSettingsState(), section = SettingsSection.PROFILE)
         composeRule.onNodeWithText("Save name").performScrollTo().assertIsNotEnabled()
 
     }
@@ -96,21 +107,21 @@ class SettingsScreenTest {
     @Test
     fun aChangedNameCanBeSavedAndAShortOneShowsTheRule() {
         val events = mutableListOf<SettingsEvent>()
-        show(previewSettingsState().copy(nameDraft = "Kael"), events)
+        show(previewSettingsState().copy(nameDraft = "Kael"), events, section = SettingsSection.PROFILE)
         composeRule.onNodeWithText("Save name").performScrollTo().assertIsEnabled().performClick()
         assertThat(events).containsExactly(SettingsEvent.SaveName)
     }
 
     @Test
     fun aTooShortNameShowsTheRule() {
-        show(previewSettingsState().copy(nameDraft = "Al", showNameError = true))
+        show(previewSettingsState().copy(nameDraft = "Al", showNameError = true), section = SettingsSection.PROFILE)
         composeRule.onNodeWithText("Use 3 to 20 characters.").performScrollTo().assertIsDisplayed()
     }
 
     @Test
     fun focusTogglesAndSavesOnlyWithTwoDifferentStats() {
         val events = mutableListOf<SettingsEvent>()
-        show(previewSettingsState().copy(focusDraft = listOf(Stat.STR, Stat.WIL)), events)
+        show(previewSettingsState().copy(focusDraft = listOf(Stat.STR, Stat.WIL)), events, section = SettingsSection.PROFILE)
         composeRule.onNodeWithText("Save focus").performScrollTo().assertIsEnabled()
         composeRule.onNodeWithText("Vitality").performScrollTo().performClick()
         assertThat(events).containsExactly(SettingsEvent.ToggleFocus(Stat.VIT))
@@ -119,7 +130,7 @@ class SettingsScreenTest {
     @Test
     fun dayStartOffersMidnightToSixOnly() {
         val events = mutableListOf<SettingsEvent>()
-        show(previewSettingsState(), events)
+        show(previewSettingsState(), events, section = SettingsSection.DAY)
         composeRule.onNodeWithText("06:00").performScrollTo().performClick()
         assertThat(events).containsExactly(SettingsEvent.SetDayStart(6))
         composeRule.onNodeWithText("07:00").assertDoesNotExist()
@@ -127,20 +138,20 @@ class SettingsScreenTest {
 
     @Test
     fun injuryTagsAppearOnlyWhileInjuryModeIsOn() {
-        show(previewSettingsState())
+        show(previewSettingsState(), section = SettingsSection.HEALTH)
         composeRule.onNodeWithText("Upper body").performScrollTo().assertIsDisplayed()
     }
 
     @Test
     fun injuryTagsAreHiddenWhenTheModeIsOff() {
-        show(previewSettingsState().copy(injuryMode = false))
+        show(previewSettingsState().copy(injuryMode = false), section = SettingsSection.HEALTH)
         composeRule.onNodeWithText("Upper body").assertDoesNotExist()
     }
 
     @Test
     fun theSwitchesReportTheirNewValue() {
         val events = mutableListOf<SettingsEvent>()
-        show(previewSettingsState(), events)
+        show(previewSettingsState(), events, section = SettingsSection.APPEARANCE)
         composeRule.onNodeWithText("Haptics").performScrollTo().performClick()
         composeRule.onNodeWithText("Reduce motion").performScrollTo().performClick()
         assertThat(events).containsExactly(SettingsEvent.SetHaptics(false), SettingsEvent.SetReduceMotion(true)).inOrder()
@@ -149,9 +160,8 @@ class SettingsScreenTest {
     @Test
     fun appearanceOffersSystemDarkAndLight() {
         val events = mutableListOf<SettingsEvent>()
-        show(previewSettingsState(), events)
-        composeRule.onNodeWithText("Appearance").performScrollTo().assertIsDisplayed()
-        composeRule.onNodeWithText("Light").performScrollTo().performClick()
+        show(previewSettingsState(), events, section = SettingsSection.APPEARANCE)
+                composeRule.onNodeWithText("Light").performScrollTo().performClick()
         composeRule.onNodeWithText("Dark").performScrollTo().performClick()
         assertThat(events).containsExactly(SettingsEvent.SetThemeMode(ThemeMode.LIGHT), SettingsEvent.SetThemeMode(ThemeMode.DARK)).inOrder()
     }
@@ -176,7 +186,7 @@ class SettingsScreenTest {
     @Test
     fun healthConnectOffersConnectThenDisconnect() {
         val events = mutableListOf<SettingsEvent>()
-        show(previewSettingsState().copy(healthStatus = HealthStatus.AVAILABLE), events)
+        show(previewSettingsState().copy(healthStatus = HealthStatus.AVAILABLE), events, section = SettingsSection.HEALTH)
         composeRule.onNodeWithText("Off. Verified quests earn 30% more XP.").performScrollTo().assertIsDisplayed()
         composeRule.onNodeWithText("Connect").performScrollTo().performClick()
         assertThat(events).containsExactly(SettingsEvent.ConnectHealth)
@@ -185,14 +195,14 @@ class SettingsScreenTest {
     @Test
     fun aConnectedHunterCanDisconnect() {
         val events = mutableListOf<SettingsEvent>()
-        show(previewSettingsState().copy(healthConnected = true, healthStatus = HealthStatus.AVAILABLE), events)
+        show(previewSettingsState().copy(healthConnected = true, healthStatus = HealthStatus.AVAILABLE), events, section = SettingsSection.HEALTH)
         composeRule.onNodeWithText("Disconnect").performScrollTo().performClick()
         assertThat(events).containsExactly(SettingsEvent.DisconnectHealth)
     }
 
     @Test
     fun missingHealthConnectSaysHowToGetIt() {
-        show(previewSettingsState().copy(healthStatus = HealthStatus.NOT_INSTALLED))
+        show(previewSettingsState().copy(healthStatus = HealthStatus.NOT_INSTALLED), section = SettingsSection.HEALTH)
         composeRule.onNodeWithText("Health Connect isn't installed. Install it from Play Store to verify steps automatically.")
             .performScrollTo().assertIsDisplayed()
     }
@@ -208,7 +218,7 @@ class SettingsScreenTest {
     @Test
     fun thePrivacyPolicyOpensFromSettings() {
         var opened = 0
-        show(previewSettingsState(), onOpenPrivacy = { opened++ })
+        show(previewSettingsState(), onOpenPrivacy = { opened++ }, section = SettingsSection.DATA)
         composeRule.onNodeWithText("Privacy policy").performScrollTo().performClick()
         assertThat(opened).isEqualTo(1)
     }
@@ -225,6 +235,7 @@ class SettingsScreenTest {
                     onExport = {},
                     onImport = {},
                     onOpenNotificationSettings = { opened++ },
+                    initialSection = SettingsSection.DAY,
                 )
             }
         }
@@ -235,7 +246,7 @@ class SettingsScreenTest {
 
     @Test
     fun noHintWhenNotificationsAreAllowed() {
-        show(previewSettingsState())
+        show(previewSettingsState(), section = SettingsSection.DAY)
         composeRule.onNodeWithText("Open notification settings").assertDoesNotExist()
     }
 }

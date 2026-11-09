@@ -33,6 +33,13 @@ import androidx.compose.material3.TimeInput
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.Icon
+import com.assismohanty.awaken.core.designsystem.components.ListRow
+import com.assismohanty.awaken.core.designsystem.components.AwakenCard
+import com.assismohanty.awaken.core.designsystem.components.AwakenGlyphs
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.activity.compose.BackHandler
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
@@ -154,7 +161,7 @@ fun SettingsRoute(
 
 /** Settings (DESIGN_SYSTEM §4.7). Edits apply immediately except name and focus, which have a Save button. */
 @Composable
-fun SettingsScreen(
+internal fun SettingsScreen(
     state: SettingsUiState,
     onEvent: (SettingsEvent) -> Unit,
     onBack: () -> Unit,
@@ -170,23 +177,38 @@ fun SettingsScreen(
     archivedHabits: List<ArchivedHabit> = emptyList(),
     onRestoreHabit: (habitId: String) -> Unit = {},
     showAiPaths: Boolean = true,
+    initialSection: SettingsSection? = null,
 ) {
-    LargeTitleScaffold(title = lexString(R.string.settings_title), onBack = onBack, modifier = modifier) {
+    // The menu is the first screen; each row opens its section in place, and back returns to the menu (design/IA.md section 5).
+    var section by rememberSaveable { mutableStateOf(initialSection) }
+    BackHandler(enabled = section != null) { section = null }
+    LargeTitleScaffold(
+        title = section?.let { lexString(it.titleRes) } ?: lexString(R.string.settings_title),
+        onBack = { if (section != null) section = null else onBack() },
+        modifier = modifier,
+    ) {
         if (!state.loading) {
-            // The ten sections of DECLUTTER_PLAN §5, in order.
-            ProfileWindow(state, onEvent)
-            DayWindow(state, onEvent, onOpenNotificationSettings)
-            GoalsWindow(state, onEvent)
-            HealthTrainingWindow(state, onEvent, onOpenHealth)
-            PhoneFocusSection(onOpenScreenTime, focusWindow)
-            ArchivedHabitsWindow(archivedHabits, onRestoreHabit)
-            if (showAiPaths) AiPathsWindow(state, onEvent)
-            AppearanceWindow(state, onEvent)
-            DataWindow(state, onExport, onImport, onOpenPrivacy)
-            // Debug builds only (DebugEntry is a no-op in release): never floats over content.
-            if (DebugEntry.ENABLED) {
-                SystemWindow(title = lexString(R.string.settings_window_developer), accent = accent(), reveal = false) {
-                    DebugEntry.LauncherButton(onClick = onOpenDebug)
+            when (section) {
+                null -> SettingsMenu(state, archivedHabits.size, showAiPaths, onOpen = { section = it })
+                SettingsSection.PROFILE -> {
+                    ProfileWindow(state, onEvent)
+                    GoalsWindow(state, onEvent)
+                }
+                SettingsSection.DAY -> DayWindow(state, onEvent, onOpenNotificationSettings)
+                SettingsSection.HEALTH -> HealthTrainingWindow(state, onEvent, onOpenHealth)
+                SettingsSection.APPEARANCE -> AppearanceWindow(state, onEvent)
+                SettingsSection.WIDGETS -> WidgetsWindow()
+                SettingsSection.PHONE_FOCUS -> PhoneFocusSection(onOpenScreenTime, focusWindow)
+                SettingsSection.ARCHIVED -> ArchivedHabitsWindow(archivedHabits, onRestoreHabit)
+                SettingsSection.DATA -> {
+                    DataWindow(state, onExport, onImport, onOpenPrivacy)
+                    if (showAiPaths) AiPathsWindow(state, onEvent)
+                    // Debug builds only (DebugEntry is a no-op in release): never floats over content.
+                    if (DebugEntry.ENABLED) {
+                        SystemWindow(title = lexString(R.string.settings_window_developer), accent = accent(), reveal = false) {
+                            DebugEntry.LauncherButton(onClick = onOpenDebug)
+                        }
+                    }
                 }
             }
         }
@@ -203,6 +225,63 @@ fun SettingsScreen(
         )
     }
     state.importSummary?.let { summary -> ImportDoneDialog(summary) { onEvent(SettingsEvent.DismissImportSummary) } }
+}
+
+/** The six sections of design/IA.md section 5, plus the two that have no other home yet (phone and focus, archived habits). */
+internal enum class SettingsSection(val titleRes: Int, val icon: ImageVector) {
+    PROFILE(R.string.settings_window_profile, AwakenGlyphs.Charisma),
+    DAY(R.string.settings_window_day_reminders, AwakenGlyphs.Sun),
+    HEALTH(R.string.settings_window_health_training, AwakenGlyphs.Vitality),
+    APPEARANCE(R.string.settings_window_appearance, AwakenGlyphs.Sparkle),
+    WIDGETS(R.string.settings_window_widgets, AwakenGlyphs.Home),
+    DATA(R.string.settings_window_data, AwakenGlyphs.Vault),
+    PHONE_FOCUS(R.string.settings_window_phone_focus, AwakenGlyphs.Phone),
+    ARCHIVED(R.string.settings_window_habits, AwakenGlyphs.Calendar),
+}
+
+/** One card of rows, each with its current value; a row opens its section. */
+@Composable
+private fun SettingsMenu(state: SettingsUiState, archivedCount: Int, showAiPaths: Boolean, onOpen: (SettingsSection) -> Unit) {
+    val colors = AwakenTheme.colors
+    val reminder = state.reminder?.let { DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT).format(it) }
+    val dayStart = lexString(R.string.settings_hour_format, state.dayStartHour)
+    val values = mapOf(
+        SettingsSection.PROFILE to (listOf(state.savedName) + state.savedFocus.map { it.label() }).filter { it.isNotBlank() }.joinToString(" · "),
+        SettingsSection.DAY to if (reminder != null) {
+            lexString(R.string.settings_value_day, dayStart, reminder)
+        } else {
+            lexString(R.string.settings_value_day_none, dayStart)
+        },
+        SettingsSection.HEALTH to lexString(if (state.healthConnected) R.string.settings_value_health_on else R.string.settings_value_health_off),
+        SettingsSection.APPEARANCE to lexString(state.themeMode.labelRes()),
+        SettingsSection.WIDGETS to lexString(R.string.settings_value_widgets),
+        SettingsSection.DATA to lexString(if (showAiPaths) R.string.settings_value_data_ai else R.string.settings_value_data),
+        SettingsSection.PHONE_FOCUS to lexString(R.string.settings_value_phone),
+        SettingsSection.ARCHIVED to lexString(R.string.settings_value_archived, archivedCount),
+    )
+    val rows = SettingsSection.entries.filter { it != SettingsSection.ARCHIVED || archivedCount > 0 }
+    AwakenCard(reveal = false, contentPadding = Spacing.listCard, spacing = Spacing.zero, modifier = Modifier.fillMaxWidth()) {
+        rows.forEach { row ->
+            ListRow(
+                title = lexString(row.titleRes),
+                icon = row.icon,
+                secondary = values[row],
+                onClick = { onOpen(row) },
+                trailing = {
+                    Icon(AwakenGlyphs.ChevronRight, contentDescription = null, tint = colors.textSecondary, modifier = Modifier.size(AwakenTheme.dimens.iconSmall))
+                },
+            )
+        }
+    }
+}
+
+/** How to put the widgets and the Quick Settings tile on the phone; nothing here to change. */
+@Composable
+private fun WidgetsWindow() {
+    SystemWindow(title = lexString(R.string.settings_window_widgets), accent = accent(), reveal = false) {
+        Text(lexString(R.string.settings_widgets_body), style = AwakenTheme.type.body, color = AwakenTheme.colors.textPrimary)
+        Text(lexString(R.string.settings_widgets_tile), style = AwakenTheme.type.body, color = AwakenTheme.colors.textPrimary)
+    }
 }
 
 @Composable
@@ -673,7 +752,48 @@ private fun SettingsScreenEditingPreview() {
             onBack = {},
             onExport = {},
             onImport = {},
+            initialSection = SettingsSection.PROFILE,
         )
+    }
+}
+
+@PhonePreviews
+@Composable
+private fun SettingsDayPreview() {
+    AwakenTheme(reduceMotion = true) {
+        SettingsScreen(previewSettingsState(), onEvent = {}, onBack = {}, onExport = {}, onImport = {}, initialSection = SettingsSection.DAY)
+    }
+}
+
+@PhonePreviews
+@Composable
+private fun SettingsHealthPreview() {
+    AwakenTheme(reduceMotion = true) {
+        SettingsScreen(previewSettingsState(), onEvent = {}, onBack = {}, onExport = {}, onImport = {}, initialSection = SettingsSection.HEALTH)
+    }
+}
+
+@PhonePreviews
+@Composable
+private fun SettingsAppearancePreview() {
+    AwakenTheme(reduceMotion = true) {
+        SettingsScreen(previewSettingsState(), onEvent = {}, onBack = {}, onExport = {}, onImport = {}, initialSection = SettingsSection.APPEARANCE)
+    }
+}
+
+@PhonePreviews
+@Composable
+private fun SettingsWidgetsPreview() {
+    AwakenTheme(reduceMotion = true) {
+        SettingsScreen(previewSettingsState(), onEvent = {}, onBack = {}, onExport = {}, onImport = {}, initialSection = SettingsSection.WIDGETS)
+    }
+}
+
+@PhonePreviews
+@Composable
+private fun SettingsDataPreview() {
+    AwakenTheme(reduceMotion = true) {
+        SettingsScreen(previewSettingsState(), onEvent = {}, onBack = {}, onExport = {}, onImport = {}, initialSection = SettingsSection.DATA)
     }
 }
 
@@ -701,6 +821,7 @@ private fun SettingsScreenWithFocusPreview() {
             onBack = {},
             onExport = {},
             onImport = {},
+            initialSection = SettingsSection.PHONE_FOCUS,
             focusWindow = {
                 FocusLockWindowContent(
                     state = FocusLockSettingsUiState(enabled = true, accessibilityEnabled = true, serviceRunning = true, allowedCount = 2),
