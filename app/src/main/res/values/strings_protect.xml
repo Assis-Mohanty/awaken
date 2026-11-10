@@ -8,6 +8,8 @@
     <string name="protect_notif_title">Pause is on</string>
     <string name="protect_notif_body">AWAKEN notices when one of your chosen apps opens. Nothing is saved or sent anywhere.</string>
     <string name="protect_notif_turn_off">Turn off</string>
+    <string name="focus_lock_notif_title">Focus session in progress</string>
+    <string name="focus_lock_notif_body">AWAKEN covers other apps until the session ends. Nothing is saved or sent anywhere.</string>
 
     <!-- The pause screen -->
     <string name="pause_overlay_about">About to open %1$s</string>

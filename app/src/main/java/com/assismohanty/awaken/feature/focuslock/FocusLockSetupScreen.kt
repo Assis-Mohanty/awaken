@@ -24,7 +24,7 @@ import com.assismohanty.awaken.core.lock.FocusLockSettingsLauncher
 import com.assismohanty.awaken.engine.OemFamily
 import com.assismohanty.awaken.engine.model.Rank
 
-/** Steps after the disclosure: the Android switch, then the battery page. */
+/** Steps after the disclosure: the two Android permissions, then the battery page. */
 private const val PROGRESS_STEPS = 2
 
 @Composable
@@ -40,8 +40,7 @@ fun FocusLockSetupRoute(onBack: () -> Unit, modifier: Modifier = Modifier, viewM
         state = state,
         onEvent = viewModel::onEvent,
         onClose = viewModel::closed,
-        onOpenAccessibility = { FocusLockSettingsLauncher.openAccessibility(context) },
-        onOpenAppInfo = { FocusLockSettingsLauncher.openAppDetails(context) },
+        onOpenPermissions = viewModel::openPermissions,
         onOpenBattery = { FocusLockSettingsLauncher.openBatteryOptimisation(context) },
         onOpenAutostart = { FocusLockSettingsLauncher.openAutostart(context, state.oem) },
         modifier = modifier,
@@ -54,8 +53,7 @@ fun FocusLockSetupScreen(
     state: FocusLockSetupUiState,
     onEvent: (FocusLockSetupEvent) -> Unit,
     onClose: () -> Unit,
-    onOpenAccessibility: () -> Unit,
-    onOpenAppInfo: () -> Unit,
+    onOpenPermissions: () -> Unit,
     onOpenBattery: () -> Unit,
     onOpenAutostart: () -> Unit,
     modifier: Modifier = Modifier,
@@ -88,13 +86,11 @@ fun FocusLockSetupScreen(
                     Text(lexString(R.string.focus_lock_step_count, 1, PROGRESS_STEPS), style = type.caption, color = colors.textSecondary)
                     Text(lexString(R.string.focus_lock_enable_body), style = type.body, color = colors.textPrimary)
                     Text(
-                        lexString(if (state.accessibilityEnabled) R.string.focus_lock_enabled_yes else R.string.focus_lock_enabled_no),
+                        lexString(if (state.permissionsReady) R.string.focus_lock_enabled_yes else R.string.focus_lock_enabled_no),
                         style = type.label,
-                        color = if (state.accessibilityEnabled) colors.positive else colors.textSecondary,
+                        color = if (state.permissionsReady) colors.positive else colors.textSecondary,
                     )
-                    PrimaryButton(lexString(R.string.focus_lock_open_accessibility), onOpenAccessibility, full)
-                    Text(lexString(R.string.focus_lock_restricted_note), style = type.caption, color = colors.textSecondary)
-                    SecondaryButton(lexString(R.string.focus_lock_open_app_info), onOpenAppInfo, full)
+                    PrimaryButton(lexString(R.string.focus_lock_open_permissions), onOpenPermissions, full)
                     SecondaryButton(lexString(R.string.focus_lock_next), { onEvent(FocusLockSetupEvent.Next) }, full)
                 }
                 SetupStep.BATTERY -> SystemWindow(title = lexString(R.string.focus_lock_battery_title), accent = colors.accent, reveal = false) {
@@ -133,7 +129,7 @@ internal fun batteryGuide(family: OemFamily): Int = when (family) {
 @Composable
 private fun SetupExplainPreview() {
     AwakenTheme(reduceMotion = true) {
-        FocusLockSetupScreen(FocusLockSetupUiState(), {}, {}, {}, {}, {}, {})
+        FocusLockSetupScreen(FocusLockSetupUiState(), {}, {}, {}, {}, {})
     }
 }
 
@@ -142,8 +138,8 @@ private fun SetupExplainPreview() {
 private fun SetupBatteryPreview() {
     AwakenTheme(reduceMotion = true) {
         FocusLockSetupScreen(
-            FocusLockSetupUiState(step = SetupStep.BATTERY, accessibilityEnabled = true, oem = OemFamily.XIAOMI),
-            {}, {}, {}, {}, {}, {},
+            FocusLockSetupUiState(step = SetupStep.BATTERY, permissionsReady = true, oem = OemFamily.XIAOMI),
+            {}, {}, {}, {}, {},
         )
     }
 }

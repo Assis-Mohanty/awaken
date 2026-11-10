@@ -137,7 +137,7 @@ data class FocusHubUiState(
 private data class SystemReads(
     val date: LocalDate? = null,
     val screenTime: ScreenTimeTileModel = ScreenTimeTileModel.Loading,
-    val focusLockAccessibility: Boolean = false,
+    val focusLockReady: Boolean = false,
     val reelAccessibility: Boolean = false,
     val batteryUnrestricted: Boolean = false,
 )
@@ -156,7 +156,7 @@ class FocusHubViewModel @Inject constructor(
 
     val uiState: StateFlow<FocusHubUiState> = combine(reelData.observe(), prefs.prefs, bedtime.observeSettings(), reads) { reels, p, nights, system ->
         val latest = nights.maxByOrNull { it.effectiveFrom }
-        val lockNeeds = p.focusLock && !(system.focusLockAccessibility && system.batteryUnrestricted)
+        val lockNeeds = p.focusLock && !(system.focusLockReady && system.batteryUnrestricted)
         val reelNeeds = reels != null && !(system.reelAccessibility && system.batteryUnrestricted)
         FocusHubUiState(
             reelsToday = reels,
@@ -175,7 +175,7 @@ class FocusHubViewModel @Inject constructor(
         reads.update {
             it.copy(
                 date = clock.now().atZone(clock.zone()).toLocalDate(),
-                focusLockAccessibility = focusAccess.accessibilityEnabled(),
+                focusLockReady = focusAccess.permissionsReady(),
                 reelAccessibility = reelAccess.accessibilityEnabled(),
                 batteryUnrestricted = focusAccess.batteryUnrestricted(),
             )

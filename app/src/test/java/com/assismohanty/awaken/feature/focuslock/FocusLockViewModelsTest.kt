@@ -40,7 +40,7 @@ class FocusLockViewModelsTest {
 
     @Test
     fun agreeingSwitchesFocusLockOnAndMovesToTheAndroidStep() = runBlocking<Unit> {
-        val vm = FocusLockSetupViewModel(graph.uiPrefs, FocusLockSystemAccess(context))
+        val vm = FocusLockSetupViewModel(graph.uiPrefs, FocusLockSystemAccess(context, graph.usage))
         assertThat(vm.uiState.value.step).isEqualTo(SetupStep.EXPLAIN)
         assertThat(graph.uiPrefs.prefs.first().focusLock).isFalse()
 
@@ -56,7 +56,7 @@ class FocusLockViewModelsTest {
 
     @Test
     fun notNowLeavesFocusLockOffAndClosesTheSetup() = runBlocking<Unit> {
-        val vm = FocusLockSetupViewModel(graph.uiPrefs, FocusLockSystemAccess(context))
+        val vm = FocusLockSetupViewModel(graph.uiPrefs, FocusLockSystemAccess(context, graph.usage))
 
         vm.onEvent(FocusLockSetupEvent.NotNow)
 

@@ -45,6 +45,10 @@ import com.assismohanty.awaken.core.lock.BlockOverlay
 import com.assismohanty.awaken.engine.PauseRules
 import com.assismohanty.awaken.reelcounter.service.CounterRunner
 import com.assismohanty.awaken.engine.PauseVariant
+import com.assismohanty.awaken.core.work.ACTION_OPEN_GATES
+import com.assismohanty.awaken.core.work.GateCoordinator
+import com.assismohanty.awaken.core.lock.FocusLockState
+import com.assismohanty.awaken.feature.focuslock.FocusLockOverlayContent
 import com.assismohanty.awaken.feature.protect.PauseOverlayContent
 import com.assismohanty.awaken.feature.protect.PauseOverlayUiState
 import dagger.hilt.android.AndroidEntryPoint
@@ -93,7 +97,14 @@ class ProtectService : Service() {
 
     @Inject lateinit var appIcons: AppIcons
 
+    @Inject lateinit var focusWatcher: FocusLockWatcher
+
+    @Inject lateinit var focusState: FocusLockState
+
+    @Inject lateinit var coordinator: GateCoordinator
+
     private var audioFocus: AudioFocusRequest? = null
+    private val holds = HashSet<String>()
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private var loop: Job? = null
@@ -104,7 +115,10 @@ class ProtectService : Service() {
     // Lockdown (GD §19.2): the running session as the database last said, the block screen, and what it shows.
     @Volatile private var lockdownSession: LockdownSessionEntity? = null
     private var lockdownOverlay: BlockOverlay<CoverShown>? = null
+    private var focusOverlay: BlockOverlay<FocusShown>? = null
+    private var focusBlocked: String? = null
     private var postedFor: String? = null
+    private var postedFocus = false
     private var lastPrefs: UiPrefs = UiPrefs()
     @Volatile private var shields = ShieldStatus(0, false)
     private var openedAllowedAt: Instant = Instant.EPOCH
@@ -113,6 +127,9 @@ class ProtectService : Service() {
 
     /** The session screen drawn over everything: the state it shows, and the look it is drawn in. */
     private data class CoverShown(val ui: LockdownSessionUiState, val darkTheme: Boolean, val reduceMotion: Boolean)
+
+    /** The Focus Lock cover's content: the app covered and the session clock, plus the look it is drawn in. */
+    private data class FocusShown(val cover: FocusCover, val label: String, val icon: ImageBitmap?, val darkTheme: Boolean, val reduceMotion: Boolean)
 
     /** The pause window's content: the screen state plus the look it is drawn in. */
     private data class Shown(val ui: PauseOverlayUiState, val darkTheme: Boolean, val reduceMotion: Boolean)
@@ -148,7 +165,7 @@ class ProtectService : Service() {
         override fun cover(cover: LockdownCover) {
             // Just after the hunter opened an allowed app from the screen, the launcher is still the app in front: leave it be.
             if (Duration.between(openedAllowedAt, clock.now()).toMillis() < OPEN_GRACE_MS) return
-            holdBehind(true)
+            holdBehind(true, "lockdown")
             // Same as Pause: the overlay alone leaves the app playing, so AWAKEN's own session screen comes forward and the app stops.
             if (cover.packageName != null && cover.packageName != packageName) bringAwakenToFront()
             lockdownOverlay?.show(CoverShown(sessionUi(cover.remaining), isDark(lastPrefs.themeMode), lastPrefs.reduceMotion))
@@ -156,7 +173,23 @@ class ProtectService : Service() {
 
         override fun uncover() {
             lockdownOverlay?.hide()
-            holdBehind(false)
+            holdBehind(false, "lockdown")
+        }
+    }
+
+    private val focusScreen = object : FocusLockScreen {
+        override fun cover(cover: FocusCover) {
+            holdBehind(true, "focus")
+            // Same as Pause: the cover alone leaves the app playing, so AWAKEN comes forward under it and the app stops.
+            if (cover.packageName != packageName) bringAwakenToFront()
+            focusBlocked = cover.packageName
+            focusOverlay?.show(FocusShown(cover, labelOf(cover.packageName), appIcons.icon(cover.packageName), isDark(lastPrefs.themeMode), lastPrefs.reduceMotion))
+        }
+
+        override fun uncover() {
+            focusBlocked = null
+            focusOverlay?.hide()
+            holdBehind(false, "focus")
         }
     }
 
@@ -176,7 +209,30 @@ class ProtectService : Service() {
                 LockdownSessionScreen(model.ui, onExit = ::leaveLockdown, onOpenApp = ::openAllowed, onCall = ::openDialer)
             }
         }
+        focusOverlay = BlockOverlay<FocusShown>(this, WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY, onBackKey = ::focusBack) { model ->
+            AwakenTheme(darkTheme = model.darkTheme, reduceMotion = model.reduceMotion) {
+                FocusLockOverlayContent(
+                    appLabel = model.label,
+                    appIcon = model.icon,
+                    time = model.cover.time,
+                    countsUp = model.cover.countsUp,
+                    onBackToFocus = ::focusBackToFocus,
+                    onEndAndOpen = ::focusEndAndOpen,
+                )
+            }
+        }
         scope.launch { uiPrefs.prefs.collect { lastPrefs = it } }
+        scope.launch {
+            focusState.snapshot.collect {
+                focusWatcher.snapshot = it
+                // The ongoing notice says what is being watched: swap it when a focus session starts or ends.
+                val running = focusWatcher.sessionRunning()
+                if (running != postedFocus) {
+                    postedFocus = running
+                    postForeground(lockdownSession)
+                }
+            }
+        }
         scope.launch {
             combine(lockdownController.observeShields(), lockdownController.observeRunning()) { _, _ -> lockdownController.shieldStatus() }.collect { shields = it }
         }
@@ -223,7 +279,11 @@ class ProtectService : Service() {
         overlay = null
         lockdownOverlay?.hide()
         lockdownOverlay = null
-        holdBehind(false)
+        focusOverlay?.hide()
+        focusOverlay = null
+        holdBehind(false, "pause")
+        holdBehind(false, "lockdown")
+        holdBehind(false, "focus")
         controller.onServiceChanged(false)
         super.onDestroy()
     }
@@ -258,6 +318,7 @@ class ProtectService : Service() {
             if (!active.value) {
                 watcher.onScreenOff(screen)
                 lockdownWatcher.onScreenOff(lockdownScreen)
+                focusWatcher.onScreenOff(focusScreen)
                 active.first { it }
                 continue
             }
@@ -281,6 +342,14 @@ class ProtectService : Service() {
                 continue
             }
             lockdownUp = false
+            // A Focus Lock cover looks fast too: a covered app must not linger. It never waits for a call (the dialer is never covered).
+            val focusRunning = focusWatcher.sessionRunning()
+            if (focusRunning || focusWatcher.isCovering) {
+                if (focusWatcher.poll(focusScreen) == PollResult.NoAccess) {
+                    controller.refresh()
+                    return
+                }
+            }
             if (inCall()) {
                 watcher.dismiss(screen)
             } else {
@@ -296,7 +365,7 @@ class ProtectService : Service() {
                 nextCheck = now.plusMillis(CHECK_MS)
                 controller.refresh()
             }
-            delay(if (watcher.isShowing || now.isBefore(fastUntil)) FAST_MS else STEADY_MS)
+            delay(if (watcher.isShowing || focusRunning || now.isBefore(fastUntil)) FAST_MS else STEADY_MS)
         }
     }
 
@@ -347,6 +416,8 @@ class ProtectService : Service() {
         val type = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE else 0
         val notification = if (session != null) {
             notifications.lockdownRunning(clock.now().plus(lockdownController.remaining(session)))
+        } else if (focusWatcher.sessionRunning()) {
+            notifications.focusRunning()
         } else {
             notifications.running(turnOffIntent())
         }
@@ -384,10 +455,11 @@ class ProtectService : Service() {
      * moment (a well-behaved video app pauses when it loses focus; one that ignores focus keeps playing), and Reel counter
      * stops counting until the pause is gone.
      */
-    private fun holdBehind(on: Boolean) {
-        reelCounter.setHeld(on)
+    private fun holdBehind(on: Boolean, owner: String = "pause") {
+        reelCounter.setHeld(on, owner)
+        if (on) holds.add(owner) else holds.remove(owner)
         val audio = getSystemService(AudioManager::class.java) ?: return
-        if (on) {
+        if (holds.isNotEmpty()) {
             if (audioFocus != null) return
             val request = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT)
                 .setAudioAttributes(AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_MEDIA).setContentType(AudioAttributes.CONTENT_TYPE_SPEECH).build())
@@ -397,6 +469,37 @@ class ProtectService : Service() {
         } else {
             audioFocus?.let { audio.abandonAudioFocusRequest(it) }
             audioFocus = null
+        }
+    }
+
+    /** [Back to focus]: AWAKEN's Focus Gates screen, or the home screen when it cannot be opened. */
+    private fun focusBackToFocus() {
+        val opened = runCatching {
+            startActivity(
+                Intent(this, MainActivity::class.java)
+                    .setAction(ACTION_OPEN_GATES)
+                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP),
+            )
+        }.onFailure { Timber.w(it, "Could not open AWAKEN from the cover") }.isSuccess
+        if (!opened) screen.goHome()
+        focusWatcher.dismissed(focusScreen)
+    }
+
+    /** Back on the cover: leave the blocked app for the home screen, then drop the cover. */
+    private fun focusBack() {
+        screen.goHome()
+        focusWatcher.dismissed(focusScreen)
+    }
+
+    /** [End session and open]: the session collapses with no reward (GD 8.2), then the app opens. */
+    private fun focusEndAndOpen() {
+        val pkg = focusBlocked ?: return
+        scope.launch {
+            runCatching { coordinator.endEarly() }.onFailure { Timber.e(it, "Ending the session early failed") }
+            packageManager.getLaunchIntentForPackage(pkg)?.let {
+                runCatching { startActivity(it.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }.onFailure { e -> Timber.w(e, "Could not open the app after ending the session") }
+            }
+            focusWatcher.dismissed(focusScreen)
         }
     }
 

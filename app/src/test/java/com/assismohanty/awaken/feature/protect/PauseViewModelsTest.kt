@@ -51,7 +51,7 @@ class PauseViewModelsTest {
         graph.close()
     }
 
-    private fun settingsVm() = PauseSettingsViewModel(store, ProtectSystemAccess(context, graph.usage, FocusLockSystemAccess(context)))
+    private fun settingsVm() = PauseSettingsViewModel(store, ProtectSystemAccess(context, graph.usage, FocusLockSystemAccess(context, graph.usage)))
 
     private fun appsVm() = PauseAppsViewModel(store, graph.usage, AlwaysAllowed(context, graph.uptime))
 

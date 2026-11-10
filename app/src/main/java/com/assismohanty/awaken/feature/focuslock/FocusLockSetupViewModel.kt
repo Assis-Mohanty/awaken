@@ -17,7 +17,7 @@ enum class SetupStep { EXPLAIN, ENABLE, BATTERY, DONE }
 
 data class FocusLockSetupUiState(
     val step: SetupStep = SetupStep.EXPLAIN,
-    val accessibilityEnabled: Boolean = false,
+    val permissionsReady: Boolean = false,
     val batteryUnrestricted: Boolean = false,
     val oem: OemFamily = OemFamily.OTHER,
     val finished: Boolean = false,
@@ -34,7 +34,7 @@ sealed interface FocusLockSetupEvent {
     data object Resumed : FocusLockSetupEvent
 }
 
-/** Focus Lock setup (GD 8.2): disclosure, the Android accessibility switch, then the battery steps. */
+/** Focus Lock setup (GD 8.2): disclosure, usage access and appear on top, then the battery steps. */
 @HiltViewModel
 class FocusLockSetupViewModel @Inject constructor(
     private val prefs: UiPrefsRepository,
@@ -59,7 +59,10 @@ class FocusLockSetupViewModel @Inject constructor(
 
     fun closed() = _state.update { it.copy(finished = true) }
 
+    /** Opens the Android page for whichever permission is still missing. */
+    fun openPermissions() = access.openMissingPermission()
+
     private fun refresh() = _state.update {
-        it.copy(accessibilityEnabled = access.accessibilityEnabled(), batteryUnrestricted = access.batteryUnrestricted())
+        it.copy(permissionsReady = access.permissionsReady(), batteryUnrestricted = access.batteryUnrestricted())
     }
 }

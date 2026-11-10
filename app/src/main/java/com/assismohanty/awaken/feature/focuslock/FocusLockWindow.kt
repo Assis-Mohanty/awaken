@@ -46,7 +46,7 @@ fun FocusLockWindowRoute(
         onToggle = { on ->
             if (!on || viewModel.canEnableDirectly()) viewModel.onEvent(FocusLockSettingsEvent.SetEnabled(on)) else onOpenSetup()
         },
-        onFixAccessibility = { FocusLockSettingsLauncher.openAccessibility(context) },
+        onFixPermissions = viewModel::openPermissions,
         onFixBattery = { FocusLockSettingsLauncher.openBatteryOptimisation(context) },
         onFixUsage = { FocusLockSettingsLauncher.openUsageAccess(context) },
         onOpenAllowedApps = onOpenAllowedApps,
@@ -59,7 +59,7 @@ fun FocusLockWindowRoute(
 fun FocusLockWindowContent(
     state: FocusLockSettingsUiState,
     onToggle: (Boolean) -> Unit,
-    onFixAccessibility: () -> Unit,
+    onFixPermissions: () -> Unit,
     onFixBattery: () -> Unit,
     onFixUsage: () -> Unit,
     onOpenAllowedApps: () -> Unit,
@@ -84,8 +84,8 @@ fun FocusLockWindowContent(
             AwakenSwitch(checked = state.enabled)
         }
         if (state.enabled) {
-            StatusRow(R.string.focus_lock_status_accessibility, state.accessibilityEnabled, onFixAccessibility)
-            StatusRow(R.string.focus_lock_status_running, state.serviceRunning, onFixAccessibility)
+            StatusRow(R.string.focus_lock_status_accessibility, state.permissionsReady, onFixPermissions)
+            StatusRow(R.string.focus_lock_status_running, state.serviceRunning, onFixPermissions)
             StatusRow(R.string.focus_lock_status_battery, state.batteryUnrestricted, onFixBattery)
             StatusRow(R.string.focus_lock_status_usage, state.usageAccess, onFixUsage)
         }
@@ -123,8 +123,8 @@ internal fun StatusRow(label: Int, ok: Boolean, onFix: () -> Unit) {
 private fun FocusLockWindowPreview() {
     AwakenTheme(reduceMotion = true) {
         FocusLockWindowContent(
-            state = FocusLockSettingsUiState(enabled = true, accessibilityEnabled = true, serviceRunning = true, allowedCount = 3),
-            onToggle = {}, onFixAccessibility = {}, onFixBattery = {}, onFixUsage = {}, onOpenAllowedApps = {}, onOpenScreenTime = {},
+            state = FocusLockSettingsUiState(enabled = true, permissionsReady = true, serviceRunning = true, allowedCount = 3),
+            onToggle = {}, onFixPermissions = {}, onFixBattery = {}, onFixUsage = {}, onOpenAllowedApps = {}, onOpenScreenTime = {},
         )
     }
 }

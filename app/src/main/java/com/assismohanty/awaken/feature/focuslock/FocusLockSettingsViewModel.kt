@@ -19,7 +19,7 @@ import kotlinx.coroutines.launch
 /** What the Settings Focus window shows (GD 8.2). */
 data class FocusLockSettingsUiState(
     val enabled: Boolean = false,
-    val accessibilityEnabled: Boolean = false,
+    val permissionsReady: Boolean = false,
     val serviceRunning: Boolean = false,
     val batteryUnrestricted: Boolean = false,
     val usageAccess: Boolean = false,
@@ -47,7 +47,7 @@ class FocusLockSettingsViewModel @Inject constructor(
         combine(prefs.prefs, status.serviceConnected, system) { p, running, checks ->
             FocusLockSettingsUiState(
                 enabled = p.focusLock,
-                accessibilityEnabled = checks.accessibility,
+                permissionsReady = checks.permissions,
                 serviceRunning = running,
                 batteryUnrestricted = checks.battery,
                 usageAccess = checks.usage,
@@ -55,19 +55,22 @@ class FocusLockSettingsViewModel @Inject constructor(
             )
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), FocusLockSettingsUiState())
 
-    /** True when turning Focus Lock on can skip the setup: Android already has the service switched on. */
-    fun canEnableDirectly(): Boolean = system.value.accessibility
+    /** True when turning Focus Lock on can skip the setup: both Android permissions are already on. */
+    fun canEnableDirectly(): Boolean = system.value.permissions
 
     fun onEvent(event: FocusLockSettingsEvent) {
         when (event) {
             is FocusLockSettingsEvent.SetEnabled -> viewModelScope.launch { prefs.setFocusLock(event.enabled) }
             FocusLockSettingsEvent.Resumed -> system.update {
-                SystemChecks(access.accessibilityEnabled(), access.batteryUnrestricted(), usage.hasAccess())
+                SystemChecks(access.permissionsReady(), access.batteryUnrestricted(), usage.hasAccess())
             }
         }
     }
 
-    private data class SystemChecks(val accessibility: Boolean = false, val battery: Boolean = false, val usage: Boolean = false)
+    /** Opens the Android page for whichever permission is still missing. */
+    fun openPermissions() = access.openMissingPermission()
+
+    private data class SystemChecks(val permissions: Boolean = false, val battery: Boolean = false, val usage: Boolean = false)
 
     private companion object {
         const val STOP_TIMEOUT_MS = 5_000L

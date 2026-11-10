@@ -851,8 +851,8 @@ private fun SettingsScreenWithFocusPreview() {
             initialSection = SettingsSection.PHONE_FOCUS,
             focusWindow = {
                 FocusLockWindowContent(
-                    state = FocusLockSettingsUiState(enabled = true, accessibilityEnabled = true, serviceRunning = true, allowedCount = 2),
-                    onToggle = {}, onFixAccessibility = {}, onFixBattery = {}, onFixUsage = {}, onOpenAllowedApps = {}, onOpenScreenTime = {},
+                    state = FocusLockSettingsUiState(enabled = true, permissionsReady = true, serviceRunning = true, allowedCount = 2),
+                    onToggle = {}, onFixPermissions = {}, onFixBattery = {}, onFixUsage = {}, onOpenAllowedApps = {}, onOpenScreenTime = {},
                 )
             },
         )

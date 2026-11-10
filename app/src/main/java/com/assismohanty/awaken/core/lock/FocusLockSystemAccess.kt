@@ -8,22 +8,25 @@ import android.net.Uri
 import android.os.Build
 import android.os.PowerManager
 import android.provider.Settings
+import com.assismohanty.awaken.core.data.usage.UsageGateway
 import com.assismohanty.awaken.engine.OemFamily
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
 import timber.log.Timber
 
-/** What Android currently allows for Focus Lock (GD 8.2): the Accessibility switch and the battery setting. */
+/** What Android currently allows for Focus Lock (GD 8.2): usage access, "appear on top" and the battery setting. */
 @Singleton
-class FocusLockSystemAccess @Inject constructor(@ApplicationContext private val context: Context) {
-    private val component = ComponentName(context, FocusLockService::class.java)
+class FocusLockSystemAccess @Inject constructor(
+    @ApplicationContext private val context: Context,
+    private val usage: UsageGateway,
+) {
+    /** Usage access (to see which app opened) and "appear on top" (to draw the cover) are both on. */
+    fun permissionsReady(): Boolean = usage.hasAccess() && Settings.canDrawOverlays(context)
 
-    /** The hunter switched AWAKEN on in Android's Accessibility settings. */
-    fun accessibilityEnabled(): Boolean {
-        val enabled = Settings.Secure.getString(context.contentResolver, Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES).orEmpty()
-        return enabled.split(':').any { ComponentName.unflattenFromString(it) == component }
-    }
+    /** Opens whichever of the two is still missing (usage access first). */
+    fun openMissingPermission() =
+        if (!usage.hasAccess()) FocusLockSettingsLauncher.openUsageAccess(context) else FocusLockSettingsLauncher.openOverlayPermission(context)
 
     /** AWAKEN is exempt from battery optimisation, so the phone does not stop the service in the background. */
     fun batteryUnrestricted(): Boolean =

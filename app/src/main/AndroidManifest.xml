@@ -110,20 +110,6 @@
             </intent-filter>
         </receiver>
 
-        <!-- Focus Lock (GD 8.2): window-change events only, package name only; scoped to AWAKEN while idle and never to payment apps (ED #149). Opt-in in Android Accessibility settings. -->
-        <service
-            android:name=".core.lock.FocusLockService"
-            android:exported="true"
-            android:label="@string/focus_lock_service_label"
-            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
-            <intent-filter>
-                <action android:name="android.accessibilityservice.AccessibilityService" />
-            </intent-filter>
-            <meta-data
-                android:name="android.accessibilityservice"
-                android:resource="@xml/focus_lock_service" />
-        </service>
-
         <!-- Privacy policy shown by Health Connect's permission screens (Android 13 and lower). -->
         <activity
             android:name=".feature.settings.PrivacyPolicyActivity"

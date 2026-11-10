@@ -49,6 +49,23 @@ class ProtectNotifications @Inject constructor(
             .build()
     }
 
+    /** Shown while a focus session is covered by Focus Lock and Pause is not what keeps the service up. No action: the session ends from AWAKEN. */
+    fun focusRunning(): Notification {
+        ensureChannel()
+        val resources = words.resources(context)
+        return NotificationCompat.Builder(context, CHANNEL_ID)
+            .setSmallIcon(R.drawable.ic_stat_awaken)
+            .setContentTitle(resources.getString(R.string.focus_lock_notif_title))
+            .setContentText(resources.getString(R.string.focus_lock_notif_body))
+            .setContentIntent(openApp())
+            .setOngoing(true)
+            .setSilent(true)
+            .setOnlyAlertOnce(true)
+            .setCategory(NotificationCompat.CATEGORY_SERVICE)
+            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .build()
+    }
+
     /** Shown while a Lockdown runs: the time left, counted down by the system. No action: a Lockdown has no end button. */
     fun lockdownRunning(endsAt: Instant): Notification {
         ensureChannel()

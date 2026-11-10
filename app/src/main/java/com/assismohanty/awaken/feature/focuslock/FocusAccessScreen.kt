@@ -42,7 +42,7 @@ import javax.inject.Inject
 
 /** One screen for what Android must allow for both accessibility services, Focus Lock and Reel counter. */
 data class FocusAccessUiState(
-    val focusLockAccessibility: Boolean = false,
+    val focusLockReady: Boolean = false,
     val reelAccessibility: Boolean = false,
     val batteryUnrestricted: Boolean = false,
     val oem: OemFamily = OemFamily.OTHER,
@@ -56,10 +56,12 @@ class FocusAccessViewModel @Inject constructor(
     private val _state = MutableStateFlow(FocusAccessUiState(oem = focusAccess.oemFamily()))
     val uiState: StateFlow<FocusAccessUiState> = _state.asStateFlow()
 
+    fun openFocusLock() = focusAccess.openMissingPermission()
+
     /** Back from an Android settings page: read the switches again. */
     fun refresh() = _state.update {
         it.copy(
-            focusLockAccessibility = focusAccess.accessibilityEnabled(),
+            focusLockReady = focusAccess.permissionsReady(),
             reelAccessibility = reelAccess.accessibilityEnabled(),
             batteryUnrestricted = focusAccess.batteryUnrestricted(),
         )
@@ -77,6 +79,7 @@ fun FocusAccessRoute(onBack: () -> Unit, modifier: Modifier = Modifier, viewMode
     FocusAccessScreen(
         state = state,
         onBack = onBack,
+        onOpenFocusLock = viewModel::openFocusLock,
         onOpenAccessibility = { FocusLockSettingsLauncher.openAccessibility(context) },
         onOpenBattery = { FocusLockSettingsLauncher.openBatteryOptimisation(context) },
         onOpenAutostart = { FocusLockSettingsLauncher.openAutostart(context, state.oem) },
@@ -88,6 +91,7 @@ fun FocusAccessRoute(onBack: () -> Unit, modifier: Modifier = Modifier, viewMode
 fun FocusAccessScreen(
     state: FocusAccessUiState,
     onBack: () -> Unit,
+    onOpenFocusLock: () -> Unit,
     onOpenAccessibility: () -> Unit,
     onOpenBattery: () -> Unit,
     onOpenAutostart: () -> Unit,
@@ -97,7 +101,7 @@ fun FocusAccessScreen(
     val type = AwakenTheme.type
     LargeTitleScaffold(title = lexString(R.string.access_title), onBack = onBack, modifier = modifier) {
         AwakenCard(reveal = false, contentPadding = Spacing.listCard, spacing = Spacing.zero, modifier = Modifier.fillMaxWidth()) {
-            AccessRow(lexString(R.string.access_focus_lock), state.focusLockAccessibility, onOpenAccessibility)
+            AccessRow(lexString(R.string.access_focus_lock), state.focusLockReady, onOpenFocusLock)
             AccessRow(lexString(R.string.access_reel_counter), state.reelAccessibility, onOpenAccessibility)
             AccessRow(lexString(R.string.reel_status_battery), state.batteryUnrestricted, onOpenBattery)
         }
@@ -137,8 +141,8 @@ private fun AccessRow(title: String, ok: Boolean, onFix: () -> Unit) {
 private fun FocusAccessPreview() {
     AwakenTheme(reduceMotion = true) {
         FocusAccessScreen(
-            FocusAccessUiState(focusLockAccessibility = true, reelAccessibility = false, batteryUnrestricted = false, oem = OemFamily.XIAOMI),
-            {}, {}, {}, {},
+            FocusAccessUiState(focusLockReady = true, reelAccessibility = false, batteryUnrestricted = false, oem = OemFamily.XIAOMI),
+            {}, {}, {}, {}, {},
         )
     }
 }
@@ -147,6 +151,6 @@ private fun FocusAccessPreview() {
 @Composable
 private fun FocusAccessAllGoodPreview() {
     AwakenTheme(reduceMotion = true) {
-        FocusAccessScreen(FocusAccessUiState(true, true, true), {}, {}, {}, {})
+        FocusAccessScreen(FocusAccessUiState(true, true, true), {}, {}, {}, {}, {})
     }
 }

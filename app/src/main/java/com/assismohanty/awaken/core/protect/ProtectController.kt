@@ -18,6 +18,7 @@ import com.assismohanty.awaken.core.data.db.dao.LockdownDao
 import com.assismohanty.awaken.core.data.di.ApplicationScope
 import com.assismohanty.awaken.core.data.repo.PauseSettings
 import com.assismohanty.awaken.core.data.repo.PauseStore
+import com.assismohanty.awaken.core.lock.FocusLockState
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -43,6 +44,7 @@ class ProtectController @Inject constructor(
     private val store: PauseStore,
     private val lockdownDao: LockdownDao,
     private val access: ProtectSystemAccess,
+    private val focusState: FocusLockState,
     private val clock: Clock,
     @ApplicationScope private val scope: CoroutineScope,
 ) : DefaultLifecycleObserver {
@@ -52,6 +54,8 @@ class ProtectController @Inject constructor(
 
     fun start() {
         scope.launch { store.settings.collect { refresh(it) } }
+        // A focus session starting, pausing or ending decides whether the Focus Lock cover needs the service.
+        scope.launch { focusState.snapshot.collect { refresh() } }
     }
 
     override fun onStart(owner: LifecycleOwner) {
@@ -73,6 +77,12 @@ class ProtectController @Inject constructor(
                 return
             }
             cancelWatchdog()
+            focusState.refreshAccess()
+            if (access.ready() && focusState.sessionRunning(clock.now())) {
+                cancelWake()
+                if (!serviceRunning) startService()
+                return
+            }
             val current = settings ?: store.current()
             val config = current.config
             if (!(config.enabled && config.targets.isNotEmpty() && access.ready())) {
