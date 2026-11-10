@@ -548,6 +548,10 @@ Template quests stay hand-written and bundled. AI writes only Path content (§6.
 
 > Note on vector 7: the level table in §4.4 lists the *step into* each level (i.e. `xpToNext(L−1)`), so "L10 step 504" = `xpToNext(9)`. Vector 7 is `xpToNext(10)` = 578. Tests are authoritative.
 
+*Vectors 178-197 (Pause and Lockdown) live in §19.4.*
+
+---
+
 ## 13. Body tracking — Gym and Diet (trackers; Gym pays STR XP only under §18)
 
 Approved 2026-10-27. Gym and Diet are trackers: they mint **no gold or items**, and Diet mints no XP. **Gym sets pay STR XP only through §18** (approved 2026-11-09), which reverses the original "no XP" for gym. Hooks into the RPG are in `BACKLOG.md` and need their own numbers here before any code. Rules live in `:engine` `body/` (`NutritionMath`, `TrainingMath`). Units are metric (kg, cm, g).
@@ -1135,3 +1139,91 @@ paid         = min( gymXp, 150 - gym XP earned today, 600 - all self-report XP e
 ### 18.7 Approved numbers
 
 `G1` 20 plans max (16 ship) - `G2` 1-8 work exercises a day - `G3` 20 weekly sets per primary muscle - `G4` strength goal 4-6 reps on the first compound - `G5` default rest 120 s compound / 60 s isolation - `G6` stepper 2 x smallest plate, 2.5 / 5 / 4 / 2.5 kg - `G7` minimum rest `clamp(ceil(25 %), 10, 30)` s - `G8` levels at p20 / p50 / p80 / p95 - `G9` standard levels by points (pass / 60 / 80 / 100) - `G10` default age band 22-26 - `G11` light weighted under 50 % of best 1RM - `G12` light bodyweight under 5 reps or 20 s, holds count from 10 s - `G13` 10 counted sets per exercise per day - `G14` 5 XP per set - `G15` 150 gym XP a day - `G16` gym XP inside the 600 self cap, 0 past a cap - `G17` jump 1.20 x with 2 earlier sessions - `G18` ceilings 3.5 / 2.5 / 2.0 x body weight - `G19` confirm at 95 %.
+
+---
+
+## 19. Focus protection (approved 2026-11-10, `docs/protect/PLAN.md`)
+
+Three features that help the hunter stay off chosen apps. **None of them pays XP, gold or anything else for pausing,
+resisting or closing an app.** Only a cleared Lockdown pays, as the existing focus gate (§19.2 LD5).
+
+### 19.1 Pause
+
+When a chosen app comes to the front from another app, a full-screen pause shows a breathing ring, a countdown, today's
+open count and one line from a bundled bank. [Not now] goes Home at any time. After the countdown the app opens by
+itself, or after a tap if that is switched on.
+
+| # | Rule | Value |
+|---|---|---|
+| PZ1 | Base delay | 3 s (choices 3 / 5 / 10 s) |
+| PZ2 | Progressive delay | the n-th pause of an app today lasts `min(base + 2 s x (n - 1), 15 s)`; can be switched off (default on) |
+| PZ3 | Cooldown after a continue | 5 min per app (choices 1 / 5 / 10 / 15). No pause while `now < continuedAt + cooldown` |
+| PZ4 | After Not now | no cooldown; the next open pauses again as the next n |
+| PZ5 | Today | the game-day (`dayStartHour`), per app |
+| PZ6 | Target apps | at most 12; never an app that is never covered (§8.2 L1, payment apps) |
+| PZ7 | Intention chips (optional, default off) | Reply to someone, Look something up, Post something, Take a break, No reason |
+| PZ8 | Active hours | default all day, every day. One window `[start, end)`; may cross midnight and then belongs to the weekday it started on |
+| PZ9 | Stats | per app, last 7 game-days: pauses, Not now. Rows older than 8 game-days are deleted at rollover. Display only |
+| PZ10 | Line bank | 40 bundled lines; the line is `lines[(gameDayIndex + n) mod 40]`. Reflective, never shaming, no health or science claims |
+| PZ11 | Require a tap to continue | default off |
+
+Pause never fires while a Lockdown runs, or while a Focus Gate runs with Focus Lock covering the app.
+
+### 19.2 Lockdown
+
+A focus session with no early end. Only the chosen apps (and the always-allowed ones) open; everything else gets a block
+screen with the time left and [Back to session]. It runs as a CUSTOM gate (§8.1) with a lockdown flag.
+
+| # | Rule | Value |
+|---|---|---|
+| LD1 | Duration | 15-180 min in 5-min steps, default 30 |
+| LD2 | Allowed apps | at most 3 |
+| LD3 | Emergency exit | hold 3 s, then wait 60 s on the session screen; leaving the screen cancels. Then the session is BROKEN |
+| LD4 | Cooldown after a broken session | 60 min before the next Lockdown |
+| LD5 | Reward | a cleared Lockdown pays as a CUSTOM gate of its length (§8.1 P2 tiers, `V = TIMER 1.15`) at **x 1.00**, counts toward the P5 cap of 4 paid runs per game-day (a 5th still locks, pays 0). Broken: no XP, no gold, nothing deducted |
+| LD6 | Uncovered time | up to 90 s with the watcher down is tolerated. Past that the usage log decides: only allowed or never-covered apps seen continues; anything else, or an unreadable log, breaks it |
+| LD7 | Allowed-app limits | not a Distracting app (§6.7) and not of kind SOCIAL, VIDEO or GAME |
+| LD8 | Heartbeat | time served is saved every 30 s |
+| LD9 | Permission check | usage access and the overlay permission are checked every 5 s; losing either breaks the session |
+
+Time: a session counts time on the monotonic clock only. Changing the system time or zone changes nothing; a drift of more
+than 60 s between the two clocks sets `clockChanged` for history, nothing else. After a reboot the session resumes from the
+last heartbeat and the time with the phone off counts as zero. Lockdown runs have no 90 s app-background breach (LD6
+replaces it) and do not collapse as DEVICE_RESTARTED. Focus Lock ignores them.
+
+Always allowed, in Lockdown and Pause: the §8.2 L1 never-cover list, this phone's launcher, keyboard, dialer, SMS app,
+UPI and tap-to-pay apps, the clock/alarm app, the permission controller, the package installer, and any system app with
+no launcher icon. During a phone call nothing is ever covered.
+
+### 19.3 Strict+ (accessibility, off in the Play build)
+
+No numbers that touch rewards. Short-video blocking presses Back at most once per second and goes Home after 2 Backs on the
+same screen. YouTube Study mode and short-video blocking read view ids (and, for Study mode only, the one channel-name
+node) and store nothing. Uninstall and force-stop protection is not built (Play policy).
+
+### 19.4 Test vectors (continue §12 and §14.10 numbering)
+
+| # | Input | Expected |
+|---|---|---|
+| 178 | Pause, base 3, n = 1 | 3 s |
+| 179 | same, n = 4 | 9 s |
+| 180 | same, n = 9 | 15 s |
+| 181 | continued 10:00:00, reopened 10:04:59 / 10:05:00 | no pause / pause |
+| 182 | Not now 10:00:00, reopened 10:00:10 | pause, n = 2 |
+| 183 | hours 09:00-18:00 Mon-Fri; Mon 08:59 / Mon 09:00 / Mon 18:00 / Sat 10:00 | none / pause / none / none |
+| 184 | hours 22:00-02:00 Mon only; Tue 01:00 / Wed 01:00 | pause / none |
+| 185 | target opened while Lockdown RUNNING | none |
+| 186 | target on top, previous real package is the same target | none |
+| 187 | Lockdown 30 min, same boot, 10 min elapsed, wall clock +3 h | 20 min left, `clockChanged` |
+| 188 | same, wall clock -2 h | 20 min left, `clockChanged` |
+| 189 | Lockdown 30 min, heartbeat at 10:30 served, then reboot, any wall time | 19:30 left |
+| 190 | Lockdown 30 min served in full | COMPLETED, pays as CUSTOM 30 min (tier D) |
+| 191 | emergency exit: hold 3 s, wait 60 s | BROKEN, ledger unchanged |
+| 192 | emergency exit: hold 3 s, leave at 59 s | RUNNING |
+| 193 | usage access revoked mid-session | BROKEN (PERMISSION_REVOKED), ledger unchanged |
+| 194 | start 59 min / 60 min after a BROKEN session | refused / allowed |
+| 195 | watcher down 91 s; usage log shows a non-allowed app / only allowed apps / unreadable | BROKEN / RUNNING / BROKEN |
+| 196 | watcher down 90 s | RUNNING |
+| 197 | 5th paid custom run of the game-day is a cleared Lockdown | 0 XP, session still COMPLETED |
+
+Vectors 178-186 pass in `PauseRulesTest` (Batch 1); 187-197 are written in Batch 3 with `LockdownRules`.

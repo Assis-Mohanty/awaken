@@ -94,6 +94,7 @@ Habit/RPG apps are a crowded but low-quality niche on Play: Habitica (aging, pun
 | F48 | **Phone-down nights** [D3]: a verified BEDTIME quest from usage data, fails closed; optional wind-down breathing | GD §16.12; DS §9.3 |
 | F49 | **Quit counters** [D4]: days clean, best run kept forever, money/time, restart log, milestones, auto doomscrolling (fails closed); no XP | GD §16.13; DS §9.2–9.3 |
 | F51 | **Programs** [F6]: Steady 30, Groundwork 66, Ironclad 75; restart or continue after a broken day | GD §16.15; DS §9.3 |
+| F52 | **Focus protection** [docs/protect/PLAN.md]: Pause (a breathing delay before chosen apps), Lockdown (a focus session with no early end), Strict+ short-video blocking and YouTube Study mode (accessibility, off in the Play build). No XP for pausing or resisting; no uninstall protection | GD §19; DS §9.3 |
 
 
 ## 5. Explicitly OUT of scope for v1.0 (put in `BACKLOG.md`)
