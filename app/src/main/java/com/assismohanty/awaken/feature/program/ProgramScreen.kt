@@ -16,6 +16,11 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import com.assismohanty.awaken.R
+import androidx.compose.ui.semantics.semantics
+import com.assismohanty.awaken.engine.model.Stat
+import com.assismohanty.awaken.core.designsystem.components.label
+import com.assismohanty.awaken.core.designsystem.components.StatMarker
+import com.assismohanty.awaken.core.designsystem.components.RoundCheck
 import com.assismohanty.awaken.core.designsystem.theme.Spacing
 import com.assismohanty.awaken.core.designsystem.components.SectionTitle
 import com.assismohanty.awaken.core.designsystem.components.ListRow
@@ -52,6 +57,7 @@ import com.assismohanty.awaken.engine.ProgramRules
 import com.assismohanty.awaken.engine.ProgramSpec
 import com.assismohanty.awaken.engine.ProgramStart
 import com.assismohanty.awaken.engine.ProgramStatus
+import com.assismohanty.awaken.core.domain.ProgramRuleRow
 import com.assismohanty.awaken.engine.model.Rank
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.Instant
@@ -233,8 +239,21 @@ private fun RunningWindow(view: ProgramView, onEvent: (ProgramsEvent) -> Unit) {
     BigValue(value = day.toString(), unit = lexString(R.string.program_of_days, view.spec.days), large = true)
     ProgramCalendar(view.marks.map { it.toDayMark() }, description = calendarDescription(view, day))
     SectionTitle(lexString(R.string.program_today_rules))
-    AwakenCard(reveal = false, modifier = Modifier.fillMaxWidth()) {
-        view.ruleTitles.forEach { Text(it, style = AwakenTheme.type.body, color = colors.textPrimary) }
+    AwakenCard(reveal = false, contentPadding = Spacing.listCard, spacing = Spacing.zero, modifier = Modifier.fillMaxWidth()) {
+        if (view.rules.isEmpty()) {
+            view.ruleTitles.forEach { Text(it, style = AwakenTheme.type.body, color = colors.textPrimary) }
+        }
+        view.rules.forEach { rule ->
+            ListRow(
+                title = rule.title,
+                secondary = rule.stat.label(),
+                modifier = Modifier.semantics(mergeDescendants = true) {},
+                leading = { RoundCheck(checked = rule.done, onCheckedChange = null) },
+            ) {
+                StatMarker(rule.stat)
+                Text(lexString(R.string.xp_gain_short, rule.xp), style = AwakenTheme.type.numericSmall, color = colors.textSecondary)
+            }
+        }
         if (view.spec.needsPhoneDownNight) Text(lexString(R.string.program_night_rule), style = AwakenTheme.type.body, color = colors.textPrimary)
     }
     QuietButton(text = lexString(R.string.program_abandon), onClick = { onEvent(ProgramsEvent.AskAbandon) })
@@ -364,6 +383,15 @@ private fun view(key: String, status: ProgramStatus, marks: List<ProgramMark>, d
         brokenDays = broken,
         pendingBreak = null,
         ruleTitles = listOf("Walk 7,000 steps", "Read 10 pages", "15-minute focus session"),
+        rules = if (status == ProgramStatus.ACTIVE) {
+            listOf(
+                ProgramRuleRow("Walk 7,000 steps", Stat.VIT, done = false, xp = 20),
+                ProgramRuleRow("Read 10 pages", Stat.INT, done = true, xp = 20),
+                ProgramRuleRow("15-minute focus session", Stat.WIL, done = false, xp = 20),
+            )
+        } else {
+            emptyList()
+        },
     )
 
 private fun state(view: ProgramView? = null, selectedKey: String? = null, availability: ProgramStart = ProgramStart.OK) = ProgramsUiState(

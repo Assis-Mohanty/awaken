@@ -27,6 +27,9 @@ import com.assismohanty.awaken.engine.BedtimeVerdict
 import com.assismohanty.awaken.engine.model.HabitType
 import com.assismohanty.awaken.engine.model.HunterContext
 import com.assismohanty.awaken.engine.model.QuestStatus
+import com.assismohanty.awaken.core.data.repo.GameStateReader
+import com.assismohanty.awaken.engine.model.Stat
+import com.assismohanty.awaken.engine.XpCalculator
 import com.assismohanty.awaken.engine.model.QuestType
 import com.assismohanty.awaken.engine.model.VerificationSource
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -136,6 +139,9 @@ class StartProgramUseCase @Inject constructor(
 enum class ProgramMark { KEPT, REST, BROKEN, TODAY, UPCOMING }
 
 /** The Programs screen's picture of the current (or last) run. */
+/** One of the run's daily rules as today shows it: its stat, whether today's quest is done and what it is worth at the current streak. */
+data class ProgramRuleRow(val title: String, val stat: Stat, val done: Boolean, val xp: Int)
+
 data class ProgramView(
     val program: ProgramEntity,
     val spec: ProgramSpec,
@@ -147,6 +153,8 @@ data class ProgramView(
     /** The most recent broken day nobody has answered yet: the app asks about it. */
     val pendingBreak: LocalDate?,
     val ruleTitles: List<String>,
+    /** Today's rules with their state; empty when the run has ended or the habits are gone. */
+    val rules: List<ProgramRuleRow> = emptyList(),
 )
 
 /** Everything derived about a program run from the quests and day records (GD §16.15). Nothing is stored per day. */
@@ -189,6 +197,19 @@ class ProgramReader @Inject constructor(
     }
 
     suspend fun lastFinalized(): LocalDate? = dayRecordDao.lastFinalizedDate()
+
+    /** The run's rules for [today] with their stat, done state and what each is worth at [streak] (engine `XpCalculator`). */
+    suspend fun todaysRules(program: ProgramEntity, today: LocalDate, streak: Int): List<ProgramRuleRow> {
+        val quests = questDao.getForDate(today)
+        return programDao.habits(program.id).map { habit ->
+            ProgramRuleRow(
+                title = habit.title,
+                stat = habit.stat,
+                done = quests.any { it.habitId == habit.id && it.status == QuestStatus.COMPLETED },
+                xp = XpCalculator.questXp(habit.difficulty, streak, habit.verification.source),
+            )
+        }
+    }
 }
 
 /**
@@ -268,6 +289,7 @@ class ObserveProgramUseCase @Inject constructor(
     private val programDao: ProgramDao,
     private val reader: ProgramReader,
     private val text: ProgramText,
+    private val gameState: GameStateReader,
     private val clock: Clock,
 ) {
     operator fun invoke(ticks: Flow<Any>): Flow<ProgramView?> =
@@ -299,6 +321,7 @@ class ObserveProgramUseCase @Inject constructor(
             brokenDays = marks.count { it == ProgramMark.BROKEN },
             pendingBreak = if (running) reader.pendingBreak(verdicts, programDao.marks(program.id)) else null,
             ruleTitles = titles.ifEmpty { spec.rules.map { text.ruleTitle(it.key, plain = false) } },
+            rules = if (running) reader.todaysRules(program, today, gameState.hunterContext(profile, today).streak) else emptyList(),
         )
     }
 }

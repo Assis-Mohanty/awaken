@@ -1,5 +1,11 @@
 package com.assismohanty.awaken.feature.status
 
+import com.assismohanty.awaken.engine.ProgramStatus
+import com.assismohanty.awaken.core.domain.StepSource
+import com.assismohanty.awaken.core.domain.HealthOverviewResult
+import com.assismohanty.awaken.core.domain.LoadHealthOverviewUseCase
+import com.assismohanty.awaken.core.domain.ObserveQuitCountersUseCase
+import com.assismohanty.awaken.core.domain.ObserveProgramUseCase
 import android.graphics.Bitmap
 import android.net.Uri
 import androidx.lifecycle.ViewModel
@@ -51,6 +57,14 @@ data class StatusUiState(
     val selectedDay: HeatmapEntry? = null,
     val consistency: ConsistencyScore = ConsistencyScore(0, 0),
     val insights: InsightsModel = InsightsModel(),
+    /** The run in progress ("Day 12 of 30"); null when no program is running. */
+    val programDay: Int? = null,
+    val programDays: Int? = null,
+    /** The longest-running quit counter, for the tile; null when there are none. */
+    val quitName: String? = null,
+    val quitDays: Int? = null,
+    /** Today's steps from Health; null when not available. */
+    val steps: Int? = null,
     val reviewOpen: Boolean = false,
     val weeklyReport: WeeklyReport? = null,
     /** Sunday (GD §11), or forced from the debug toggle. */
@@ -72,6 +86,7 @@ sealed interface StatusEvent {
 }
 
 private data class LocalState(
+    val steps: Int? = null,
     val selectedDate: LocalDate? = null,
     val debugWeekly: Boolean = false,
     val capturing: Boolean = false,
@@ -85,11 +100,25 @@ class StatusViewModel @Inject constructor(
     private val shareImageWriter: ShareImageWriter,
     private val completionCenter: CompletionCenter,
     refreshHealthCache: RefreshHealthCacheUseCase,
+    observeProgram: ObserveProgramUseCase,
+    observeQuit: ObserveQuitCountersUseCase,
+    private val loadHealth: LoadHealthOverviewUseCase,
 ) : ViewModel() {
 
     private val local = MutableStateFlow(LocalState())
 
     init {
+        viewModelScope.launch {
+            try {
+                val result = loadHealth(days = 1)
+                val steps = (result as? HealthOverviewResult.Ready)?.overview?.let { o -> o.today.steps.takeIf { o.stepSource != StepSource.NONE } }
+                local.update { it.copy(steps = steps?.toInt()) }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Timber.w(e, "Steps for the Health tile could not be read")
+            }
+        }
         // Foreground-only Health reads (Phase 11): fill the insight cache for days not read yet; Status re-derives on change.
         viewModelScope.launch {
             try {
@@ -102,8 +131,16 @@ class StatusViewModel @Inject constructor(
         }
     }
 
-    val uiState: StateFlow<StatusUiState> = combine(observeStatus(dayChanges = dayRefresher.ticks), local) { model, local ->
-        model?.toUiState(local) ?: StatusUiState()
+    private val tiles = combine(observeProgram(dayRefresher.ticks), observeQuit(dayRefresher.ticks), ::Pair)
+
+    val uiState: StateFlow<StatusUiState> = combine(observeStatus(dayChanges = dayRefresher.ticks), local, tiles) { model, local, (program, quit) ->
+        val longest = quit.maxByOrNull { it.current }
+        (model?.toUiState(local) ?: StatusUiState()).copy(
+            programDay = program?.takeIf { it.program.status == ProgramStatus.ACTIVE }?.dayToday,
+            programDays = program?.takeIf { it.program.status == ProgramStatus.ACTIVE }?.spec?.days,
+            quitName = longest?.counter?.name,
+            quitDays = longest?.current?.toDays()?.toInt(),
+        )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), StatusUiState())
 
     fun onEvent(event: StatusEvent) {
@@ -139,6 +176,7 @@ class StatusViewModel @Inject constructor(
 
 private fun StatusModel.toUiState(local: LocalState): StatusUiState = StatusUiState(
     loading = false,
+    steps = local.steps,
     header = HunterHeaderModel(
         name = hunter.name,
         level = hunter.level,

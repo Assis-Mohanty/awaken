@@ -339,6 +339,11 @@ internal fun previewStatusState(locked: Boolean = false): StatusUiState {
     }
     return StatusUiState(
         loading = false,
+        programDay = if (locked) null else 12,
+        programDays = if (locked) null else 30,
+        quitName = if (locked) null else "Smoking",
+        quitDays = if (locked) null else 12,
+        steps = if (locked) null else 8_412,
         header = HunterHeaderModel(
             name = "Assis", level = if (locked) 1 else 14, rank = Rank.D,
             xpIntoLevel = 420, xpForLevel = 712, streak = 9, gold = 1_240,
@@ -408,10 +413,38 @@ private fun ShortcutGrid(
             onClick = onOpenReview,
             modifier = it,
         ) },
-        { ShortcutTile(AwakenGlyphs.Level, lexString(R.string.programs_row_title), lexString(R.string.status_tile_programs), onOpenPrograms, it) },
-        { ShortcutTile(AwakenGlyphs.Shield, lexString(R.string.quit_row_title), lexString(R.string.status_tile_quit), onOpenQuit, it) },
+        {
+            ShortcutTile(
+                AwakenGlyphs.Level,
+                lexString(R.string.programs_row_title),
+                if (state.programDay != null && state.programDays != null) lexString(R.string.status_tile_programs_running, state.programDay, state.programDays) else lexString(R.string.status_tile_programs),
+                onOpenPrograms,
+                it,
+            )
+        },
+        {
+            ShortcutTile(
+                AwakenGlyphs.Shield,
+                lexString(R.string.quit_row_title),
+                if (state.quitName != null && state.quitDays != null) {
+                    lexString(R.string.status_tile_quit_run, state.quitName, lexPlural(R.plurals.quit_days, state.quitDays, state.quitDays))
+                } else {
+                    lexString(R.string.status_tile_quit)
+                },
+                onOpenQuit,
+                it,
+            )
+        },
         { ShortcutTile(AwakenGlyphs.Coin, lexString(R.string.status_store_row), lexString(R.string.status_store_row_gold, formatCount(gold)), onOpenStore, it) },
-        { ShortcutTile(AwakenGlyphs.Vitality, lexString(R.string.health_title), lexString(R.string.status_tile_health), onOpenHealth, it) },
+        {
+            ShortcutTile(
+                AwakenGlyphs.Vitality,
+                lexString(R.string.health_title),
+                state.steps?.let { lexString(R.string.status_tile_health_steps, formatCount(it.toLong())) } ?: lexString(R.string.status_tile_health),
+                onOpenHealth,
+                it,
+            )
+        },
     )
     // One row per pair, as tall as its taller tile, so a wrapped note never leaves a gap under its neighbour.
     Column(verticalArrangement = Arrangement.spacedBy(Spacing.cardGap)) {

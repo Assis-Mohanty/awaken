@@ -70,7 +70,7 @@ class LongArcUseCasesTest {
 
     private suspend fun currentProgram() = graph.db.programDao().observeCurrent().firstOrNull()
 
-    private suspend fun view() = ObserveProgramUseCase(graph.db.hunterDao(), graph.db.programDao(), graph.programReader, ProgramText(context), graph.clock)(flowOf(Unit)).firstOrNull()
+    private suspend fun view() = ObserveProgramUseCase(graph.db.hunterDao(), graph.db.programDao(), graph.programReader, ProgramText(context), graph.reader, graph.clock)(flowOf(Unit)).firstOrNull()
 
     private suspend fun keepToday() {
         programQuests(graph.today()).forEach { quest ->

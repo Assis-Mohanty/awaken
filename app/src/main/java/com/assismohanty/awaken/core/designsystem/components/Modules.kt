@@ -332,6 +332,8 @@ fun ListRow(
     iconTint: Color = AwakenTheme.colors.textPrimary,
     secondary: String? = null,
     onClick: (() -> Unit)? = null,
+    /** Replaces the icon at the start of the row (a check, for a row that reports done or not). */
+    leading: (@Composable () -> Unit)? = null,
     trailing: (@Composable RowScope.() -> Unit)? = null,
 ) {
     val colors = AwakenTheme.colors
@@ -344,7 +346,8 @@ fun ListRow(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
     ) {
-        icon?.let {
+        leading?.invoke()
+        if (leading == null) icon?.let {
             Box(modifier = Modifier.size(AwakenTheme.dimens.iconWell), contentAlignment = Alignment.Center) {
                 Icon(it, contentDescription = null, tint = iconTint, modifier = Modifier.size(AwakenTheme.dimens.icon))
             }
