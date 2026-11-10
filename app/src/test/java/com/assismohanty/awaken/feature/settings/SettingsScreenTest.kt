@@ -131,9 +131,13 @@ class SettingsScreenTest {
     fun dayStartOffersMidnightToSixOnly() {
         val events = mutableListOf<SettingsEvent>()
         show(previewSettingsState(), events, section = SettingsSection.DAY)
-        composeRule.onNodeWithText("06:00").performScrollTo().performClick()
-        assertThat(events).containsExactly(SettingsEvent.SetDayStart(6))
+        composeRule.onNodeWithText("Day starts at").performScrollTo().performClick()
+        // The picker shows the hour either side of the one chosen; step forward to the last allowed hour.
+        composeRule.onNodeWithText("05:00").performClick()
+        composeRule.onNodeWithText("06:00").performClick()
         composeRule.onNodeWithText("07:00").assertDoesNotExist()
+        composeRule.onNodeWithText("Save").performClick()
+        assertThat(events).containsExactly(SettingsEvent.SetDayStart(6))
     }
 
     @Test

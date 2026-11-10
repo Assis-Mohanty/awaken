@@ -58,6 +58,9 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.assismohanty.awaken.R
+import com.assismohanty.awaken.core.designsystem.components.AwakenBottomSheet
+import com.assismohanty.awaken.core.designsystem.components.SectionTitle
+import com.assismohanty.awaken.core.designsystem.components.HourPicker
 import com.assismohanty.awaken.core.designsystem.components.SegmentedControl
 import com.assismohanty.awaken.debug.DebugEntry
 import com.assismohanty.awaken.core.data.health.HealthStatus
@@ -279,9 +282,17 @@ private fun SettingsMenu(state: SettingsUiState, archivedCount: Int, showAiPaths
 /** How to put the widgets and the Quick Settings tile on the phone; nothing here to change. */
 @Composable
 private fun WidgetsWindow() {
-    SystemWindow(title = null, accent = accent(), reveal = false) {
-        Text(lexString(R.string.settings_widgets_body), style = AwakenTheme.type.body, color = AwakenTheme.colors.textPrimary)
-        Text(lexString(R.string.settings_widgets_tile), style = AwakenTheme.type.body, color = AwakenTheme.colors.textPrimary)
+    val colors = AwakenTheme.colors
+    SectionTitle(lexString(R.string.settings_widgets_home))
+    AwakenCard(reveal = false, contentPadding = Spacing.listCard, spacing = Spacing.zero, modifier = Modifier.fillMaxWidth()) {
+        ListRow(title = lexString(R.string.settings_widget_today), icon = AwakenGlyphs.Home, secondary = lexString(R.string.settings_widget_today_note))
+        ListRow(title = lexString(R.string.settings_widget_focus), icon = AwakenGlyphs.Timer, secondary = lexString(R.string.settings_widget_focus_note))
+        ListRow(title = lexString(R.string.settings_widget_start), icon = AwakenGlyphs.Clock, secondary = lexString(R.string.settings_widget_start_note))
+    }
+    Text(lexString(R.string.settings_widgets_body), style = AwakenTheme.type.caption, color = colors.textSecondary)
+    SectionTitle(lexString(R.string.settings_widgets_quick))
+    AwakenCard(reveal = false, contentPadding = Spacing.listCard, spacing = Spacing.zero, modifier = Modifier.fillMaxWidth()) {
+        ListRow(title = lexString(R.string.settings_widget_tile), icon = AwakenGlyphs.Timer, secondary = lexString(R.string.settings_widgets_tile))
     }
 }
 
@@ -369,61 +380,71 @@ private fun GoalsWindow(state: SettingsUiState, onEvent: (SettingsEvent) -> Unit
 private fun DayWindow(state: SettingsUiState, onEvent: (SettingsEvent) -> Unit, onOpenNotificationSettings: () -> Unit) {
     val colors = AwakenTheme.colors
     val type = AwakenTheme.type
-    SystemWindow(title = null, accent = accent(), reveal = false) {
-        Text(lexString(R.string.settings_day_start_title), style = type.label, color = colors.textPrimary)
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.xs), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
-            state.dayStartOptions.forEach { hour ->
-                ChoiceChip(
-                    text = lexString(R.string.settings_hour_format, hour),
-                    selected = hour == state.dayStartHour,
-                    onClick = { onEvent(SettingsEvent.SetDayStart(hour)) },
-                )
-            }
-        }
-        Text(lexString(R.string.settings_day_start_note), style = type.caption, color = colors.textSecondary)
-        Text(lexString(R.string.settings_morning_end), style = type.label, color = colors.textPrimary)
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.xs), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
-            TimeBlocks.MORNING_END_HOURS.forEach { hour ->
-                ChoiceChip(
-                    text = lexString(R.string.settings_hour_format, hour),
-                    selected = hour == state.morningEnd,
-                    onClick = { onEvent(SettingsEvent.SetMorningEnd(hour)) },
-                )
-            }
-        }
-        Text(lexString(R.string.settings_day_end), style = type.label, color = colors.textPrimary)
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.xs), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
-            TimeBlocks.DAY_END_HOURS.forEach { hour ->
-                ChoiceChip(
-                    text = lexString(R.string.settings_hour_format, hour),
-                    selected = hour == state.dayEnd,
-                    onClick = { onEvent(SettingsEvent.SetDayEnd(hour)) },
-                )
-            }
-        }
-        Text(lexString(R.string.settings_blocks_note), style = type.caption, color = colors.textSecondary)
-        Text(lexString(R.string.settings_reminder_title), style = type.label, color = colors.textPrimary)
-        Text(
-            text = state.reminder?.let { formatTime(it) } ?: lexString(R.string.settings_reminder_off),
-            style = type.numericSmall,
-            color = colors.textPrimary,
+    // Which hour is being chosen: 0 none, 1 day start, 2 morning end, 3 day end.
+    var picking by rememberSaveable { mutableStateOf(0) }
+    AwakenCard(reveal = false, contentPadding = Spacing.listCard, spacing = Spacing.zero, modifier = Modifier.fillMaxWidth()) {
+        DayRow(AwakenGlyphs.Sun, lexString(R.string.settings_day_start_title), lexString(R.string.settings_hour_format, state.dayStartHour)) { picking = 1 }
+        DayRow(AwakenGlyphs.Sun, lexString(R.string.settings_morning_end), lexString(R.string.settings_hour_format, state.morningEnd)) { picking = 2 }
+        DayRow(AwakenGlyphs.Moon, lexString(R.string.settings_day_end), lexString(R.string.settings_hour_format, state.dayEnd)) { picking = 3 }
+        DayRow(
+            AwakenGlyphs.Clock,
+            lexString(R.string.settings_reminder_title),
+            state.reminder?.let { formatTime(it) } ?: lexString(R.string.settings_reminder_off),
+        ) { onEvent(SettingsEvent.OpenReminderPicker) }
+    }
+    Text(lexString(R.string.settings_day_start_note), style = type.caption, color = colors.textSecondary)
+    Text(lexString(R.string.settings_blocks_note), style = type.caption, color = colors.textSecondary)
+    if (state.reminder != null) {
+        QuietButton(text = lexString(R.string.action_reminder_off), onClick = { onEvent(SettingsEvent.SetReminder(null)) })
+    }
+    Text(lexString(R.string.settings_reminder_note), style = type.caption, color = colors.textSecondary)
+    if (state.notificationsBlocked) {
+        Text(lexString(R.string.settings_notifications_blocked), style = type.caption, color = colors.critical)
+        SecondaryButton(
+            text = lexString(R.string.action_open_notification_settings),
+            onClick = onOpenNotificationSettings,
+            modifier = Modifier.fillMaxWidth(),
         )
-        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
-            SecondaryButton(text = lexString(R.string.action_change_reminder), onClick = { onEvent(SettingsEvent.OpenReminderPicker) })
-            if (state.reminder != null) {
-                QuietButton(text = lexString(R.string.action_reminder_off), onClick = { onEvent(SettingsEvent.SetReminder(null)) })
-            }
+    }
+    if (picking != 0) {
+        val (title, options, current) = when (picking) {
+            1 -> Triple(lexString(R.string.settings_day_start_title), state.dayStartOptions, state.dayStartHour)
+            2 -> Triple(lexString(R.string.settings_morning_end), TimeBlocks.MORNING_END_HOURS.toList(), state.morningEnd)
+            else -> Triple(lexString(R.string.settings_day_end), TimeBlocks.DAY_END_HOURS.toList(), state.dayEnd)
         }
-        Text(lexString(R.string.settings_reminder_note), style = type.caption, color = colors.textSecondary)
-        if (state.notificationsBlocked) {
-            Text(lexString(R.string.settings_notifications_blocked), style = type.caption, color = colors.critical)
-            SecondaryButton(
-                text = lexString(R.string.action_open_notification_settings),
-                onClick = onOpenNotificationSettings,
+        var chosen by rememberSaveable(picking) { mutableStateOf(current) }
+        AwakenBottomSheet(onDismiss = { picking = 0 }, title = title) {
+            HourPicker(options = options, selected = chosen, onSelect = { chosen = it }, label = { lexString(R.string.settings_hour_format, it) })
+            if (picking == 1) Text(lexString(R.string.settings_day_start_note), style = type.caption, color = colors.textSecondary)
+            PrimaryButton(
+                text = lexString(R.string.action_save),
+                onClick = {
+                    onEvent(
+                        when (picking) {
+                            1 -> SettingsEvent.SetDayStart(chosen)
+                            2 -> SettingsEvent.SetMorningEnd(chosen)
+                            else -> SettingsEvent.SetDayEnd(chosen)
+                        },
+                    )
+                    picking = 0
+                },
                 modifier = Modifier.fillMaxWidth(),
             )
         }
     }
+}
+
+@Composable
+private fun DayRow(icon: ImageVector, title: String, value: String, onClick: () -> Unit) {
+    ListRow(
+        title = title,
+        icon = icon,
+        secondary = value,
+        onClick = onClick,
+        trailing = {
+            Icon(AwakenGlyphs.ChevronRight, contentDescription = null, tint = AwakenTheme.colors.textSecondary, modifier = Modifier.size(AwakenTheme.dimens.iconSmall))
+        },
+    )
 }
 
 /** Habits the hunter archived (long-press on Today): each comes back with Restore, max 8 active (GD §6.1). */

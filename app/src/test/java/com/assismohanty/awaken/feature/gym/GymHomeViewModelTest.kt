@@ -12,6 +12,11 @@ import com.google.common.truth.Truth.assertThat
 import java.time.Duration
 import java.time.LocalDate
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import androidx.lifecycle.viewmodel.viewModelFactory
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.ViewModelStore
+import androidx.lifecycle.ViewModelProvider
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.launchIn
@@ -30,6 +35,8 @@ import org.junit.runner.RunWith
 class GymHomeViewModelTest {
     private val graph = TestGraph()
     private lateinit var viewModel: GymViewModel
+    private val store = ViewModelStore()
+    private var collector: Job? = null
     private val monday = LocalDate.of(2026, 10, 12)
 
     @Before
@@ -37,13 +44,16 @@ class GymHomeViewModelTest {
         Dispatchers.setMain(Dispatchers.Unconfined)
         // A Monday, so a later day exists in the same week.
         graph.clock.advance(Duration.ofDays(-6))
-        viewModel = GymViewModel(graph.gym, graph.clock, NoRest, Silent, graph.uiPrefs, graph.planner, graph.finishWorkout, graph.deleteWorkout)
+        viewModel = ViewModelProvider.create(store, viewModelFactory { initializer { GymViewModel(graph.gym, graph.clock, NoRest, Silent, graph.uiPrefs, graph.planner, graph.finishWorkout, graph.deleteWorkout) } })[GymViewModel::class]
         // The state only runs while somebody collects it.
-        viewModel.uiState.onEach { }.launchIn(kotlinx.coroutines.CoroutineScope(Dispatchers.Unconfined))
+        collector = viewModel.uiState.onEach { }.launchIn(kotlinx.coroutines.CoroutineScope(Dispatchers.Unconfined))
     }
 
     @After
     fun tearDown() {
+        // Stop the state flow and the view model's own scope before Main is reset, or a late tick races the next test's setMain.
+        collector?.cancel()
+        store.clear()
         Dispatchers.resetMain()
         graph.close()
     }

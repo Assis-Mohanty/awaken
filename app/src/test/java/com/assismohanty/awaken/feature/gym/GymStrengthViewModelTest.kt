@@ -8,6 +8,11 @@ import com.assismohanty.awaken.testing.TestGraph
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import androidx.lifecycle.viewmodel.viewModelFactory
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.ViewModelStore
+import androidx.lifecycle.ViewModelProvider
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.launchIn
@@ -27,16 +32,21 @@ import org.junit.runner.RunWith
 class GymStrengthViewModelTest {
     private val graph = TestGraph()
     private lateinit var viewModel: GymViewModel
+    private val store = ViewModelStore()
+    private var collector: Job? = null
 
     @Before
     fun setUp() {
         Dispatchers.setMain(Dispatchers.Unconfined)
-        viewModel = GymViewModel(graph.gym, graph.clock, NoRestScheduler, SilentChimePlayer, graph.uiPrefs, graph.planner, graph.finishWorkout, graph.deleteWorkout)
-        viewModel.uiState.onEach { }.launchIn(CoroutineScope(Dispatchers.Unconfined))
+        viewModel = ViewModelProvider.create(store, viewModelFactory { initializer { GymViewModel(graph.gym, graph.clock, NoRestScheduler, SilentChimePlayer, graph.uiPrefs, graph.planner, graph.finishWorkout, graph.deleteWorkout) } })[GymViewModel::class]
+        collector = viewModel.uiState.onEach { }.launchIn(CoroutineScope(Dispatchers.Unconfined))
     }
 
     @After
     fun tearDown() {
+        // Stop the state flow and the view model's own scope before Main is reset, or a late tick races the next test's setMain.
+        collector?.cancel()
+        store.clear()
         Dispatchers.resetMain()
         graph.close()
     }

@@ -351,6 +351,15 @@
     <string name="settings_value_data_ai">Export, import, privacy, AI planner</string>
     <string name="settings_value_phone">Focus Lock, bedtime, reel counter</string>
     <string name="settings_value_archived">%1$d archived</string>
+    <string name="settings_widgets_home">Home screen widgets</string>
+    <string name="settings_widgets_quick">Quick Settings</string>
+    <string name="settings_widget_today">Today</string>
+    <string name="settings_widget_today_note">Level, streak and progress</string>
+    <string name="settings_widget_focus">Focus</string>
+    <string name="settings_widget_focus_note">Today\'s focus minutes</string>
+    <string name="settings_widget_start">Start focus</string>
+    <string name="settings_widget_start_note">One tap to a session</string>
+    <string name="settings_widget_tile">Focus tile</string>
     <string name="settings_widgets_body">To add a widget, touch and hold an empty spot on your home screen, choose Widgets, then pick AWAKEN.</string>
     <string name="settings_widgets_tile">For the quick tile, swipe down twice from the top of the screen, tap the pencil and drag the Focus tile into your row.</string>
     <string name="settings_theme_system">System</string>
