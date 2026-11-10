@@ -37,6 +37,13 @@
     <string name="gym_notice_routine_saved">Routine saved.</string>
 
     <!-- Active session -->
+    <string name="gym_session_sub">%1$s · exercise %2$d of %3$d</string>
+    <string name="gym_summary_reward">Reward</string>
+    <string name="gym_summary_full_sets">Full sets</string>
+    <string name="gym_summary_light_sets">Light sets</string>
+    <string name="gym_summary_total">Total</string>
+    <string name="gym_summary_total_value">%1$s XP</string>
+    <string name="gym_summary_xp_none">No sets counted for XP this time.</string>
     <string name="gym_session_timer">%1$s elapsed</string>
     <string name="gym_session_summary">%1$s · %2$s kg</string>
     <string name="gym_add_exercise">Add exercise</string>

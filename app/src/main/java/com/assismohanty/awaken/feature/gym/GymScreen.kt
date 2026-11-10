@@ -42,6 +42,9 @@ import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.assismohanty.awaken.R
+import kotlin.math.roundToInt
+import com.assismohanty.awaken.core.designsystem.components.SectionTitle
+import com.assismohanty.awaken.core.designsystem.components.DetailRows
 import com.assismohanty.awaken.core.designsystem.components.LargeTitleScaffold
 import com.assismohanty.awaken.core.designsystem.components.ListRow
 import com.assismohanty.awaken.core.designsystem.components.SectionHeader
@@ -112,12 +115,17 @@ fun GymScreen(state: GymUiState, onEvent: (GymEvent) -> Unit, modifier: Modifier
         return
     }
     val subtitle = if (state.active == null && state.overview?.trainingDay == true) lexString(R.string.gym_training_day) else null
+    val heading = state.active?.let { coachedHeading(state, it) }
     LargeTitleScaffold(
-        title = lexString(R.string.gym_title),
-        subtitle = subtitle,
+        title = heading?.first ?: lexString(R.string.gym_title),
+        subtitle = heading?.second ?: subtitle,
         modifier = modifier,
         actions = {
-            if (state.active == null) HeaderIconButton(AwakenGlyphs.Settings, lexString(R.string.gym_settings_icon_cd), { onEvent(GymEvent.OpenGymSettings) })
+            if (state.active == null) {
+                HeaderIconButton(AwakenGlyphs.Settings, lexString(R.string.gym_settings_icon_cd), { onEvent(GymEvent.OpenGymSettings) })
+            } else if (heading != null) {
+                CoachedActions(state.active, onEvent)
+            }
         },
     ) {
         if (state.loading) {
@@ -218,6 +226,8 @@ private fun WeekCard(overview: GymOverview, modifier: Modifier = Modifier) {
 }
 
 /** The muscle map in a sheet from the "This week" card, so the routines stay near the top of Gym. */
+private const val MAP_TOP_MUSCLES = 5
+
 @Composable
 private fun MuscleMapSheet(overview: GymOverview, onDismiss: () -> Unit) {
     AwakenBottomSheet(onDismiss = onDismiss, title = lexString(R.string.gym_muscle_map_title)) {
@@ -241,6 +251,10 @@ private fun MuscleMapContent(overview: GymOverview) {
         onMuscleClick = { opened = it },
     )
     Text(lexString(R.string.gym_week_map_caption), style = AwakenTheme.type.caption, color = AwakenTheme.colors.textSecondary)
+    val busiest = overview.weekMuscleLoad.filterValues { it > 0.0 }.entries.sortedByDescending { it.value }.take(MAP_TOP_MUSCLES)
+    if (busiest.isNotEmpty()) {
+        DetailRows(busiest.map { (muscle, sets) -> lexString(muscle.nameRes()) to lexPlural(R.plurals.gym_sets_count, sets.roundToInt(), sets.roundToInt()) })
+    }
     opened?.let { muscle -> MuscleDetail(muscle, overview) }
 }
 
@@ -277,7 +291,7 @@ internal fun loadIntensity(load: Map<Muscle, Double>): Map<Muscle, Float> =
 @Composable
 private fun Stat(label: String, value: String, modifier: Modifier = Modifier) {
     Column(modifier = modifier) {
-        Text(value, style = AwakenTheme.type.numeric, color = AwakenTheme.colors.textPrimary)
+        Text(value, style = AwakenTheme.type.metricL, color = AwakenTheme.colors.textPrimary)
         Text(label, style = AwakenTheme.type.caption, color = AwakenTheme.colors.textSecondary)
     }
 }
@@ -383,27 +397,34 @@ internal fun tryText(ui: HintUi): String = when (val hint = ui.hint) {
 @Composable
 private fun SessionSummary(summary: WorkoutSummary, records: List<ExerciseRecords>, xp: GymXpResult, onEvent: (GymEvent) -> Unit) {
     val colors = AwakenTheme.colors
-    SystemWindow(title = lexString(R.string.gym_summary_title), accent = colors.accent, reveal = false) {
-        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.lg), modifier = Modifier.fillMaxWidth()) {
-            Stat(lexString(R.string.gym_summary_time), formatElapsed(summary.duration), Modifier.weight(1f))
-            Stat(lexString(R.string.gym_summary_sets), summary.sets.toString(), Modifier.weight(1f))
-            Stat(lexString(R.string.gym_summary_volume), formatCount(summary.volumeKg.roundToLong()), Modifier.weight(1f))
-        }
-        Text(summary.exerciseNames.joinToString(" · "), style = AwakenTheme.type.body, color = colors.textSecondary)
-        if (xp.xp > 0) Text(lexString(R.string.gym_summary_xp, xp.xp), style = AwakenTheme.type.label, color = colors.reward)
-        if (xp.capped) Text(lexString(R.string.gym_summary_xp_capped), style = AwakenTheme.type.caption, color = colors.textSecondary)
-        if (xp.unconfirmedSets > 0) Text(lexPlural(R.plurals.gym_summary_unconfirmed, xp.unconfirmedSets, xp.unconfirmedSets), style = AwakenTheme.type.caption, color = colors.textSecondary)
-        if (records.isNotEmpty()) {
-            Text(lexString(R.string.gym_summary_records_title), style = AwakenTheme.type.label, color = colors.reward)
+    Text(lexString(R.string.gym_summary_title), style = AwakenTheme.type.title, color = colors.textPrimary, modifier = Modifier.semantics { heading() })
+    Row(horizontalArrangement = Arrangement.spacedBy(Spacing.lg), modifier = Modifier.fillMaxWidth()) {
+        Stat(lexString(R.string.gym_summary_time), formatElapsed(summary.duration), Modifier.weight(1f))
+        Stat(lexString(R.string.gym_summary_sets), summary.sets.toString(), Modifier.weight(1f))
+        Stat(lexString(R.string.gym_summary_volume), formatCount(summary.volumeKg.roundToLong()), Modifier.weight(1f))
+    }
+    Text(summary.exerciseNames.joinToString(" · "), style = AwakenTheme.type.body, color = colors.textSecondary)
+    if (records.isNotEmpty()) {
+        SectionTitle(lexString(R.string.gym_summary_records_title))
+        AwakenCard(reveal = false, modifier = Modifier.fillMaxWidth()) {
             records.forEach { exercise ->
-                exercise.events.forEach { event ->
-                    Text(recordLine(exercise.name, event), style = AwakenTheme.type.caption, color = colors.textSecondary)
-                }
+                exercise.events.forEach { event -> Text(recordLine(exercise.name, event), style = AwakenTheme.type.body, color = colors.textSecondary) }
             }
         }
-        QuietButton(text = lexString(R.string.gym_save_routine), onClick = { onEvent(GymEvent.AskSaveRoutine) })
-        SecondaryButton(text = lexString(R.string.gym_summary_done), onClick = { onEvent(GymEvent.DismissSummary) }, modifier = Modifier.fillMaxWidth())
     }
+    SectionTitle(lexString(R.string.gym_summary_reward))
+    DetailRows(
+        listOfNotNull(
+            if (xp.fullSets > 0) lexString(R.string.gym_summary_full_sets) to xp.fullSets.toString() else null,
+            if (xp.lightSets > 0) lexString(R.string.gym_summary_light_sets) to xp.lightSets.toString() else null,
+            lexString(R.string.gym_summary_total) to lexString(R.string.gym_summary_total_value, formatCount(xp.xp)),
+        ),
+    )
+    if (xp.xp == 0 && !xp.capped) Text(lexString(R.string.gym_summary_xp_none), style = AwakenTheme.type.caption, color = colors.textSecondary)
+    if (xp.capped) Text(lexString(R.string.gym_summary_xp_capped), style = AwakenTheme.type.caption, color = colors.textSecondary)
+    if (xp.unconfirmedSets > 0) Text(lexPlural(R.plurals.gym_summary_unconfirmed, xp.unconfirmedSets, xp.unconfirmedSets), style = AwakenTheme.type.caption, color = colors.textSecondary)
+    PrimaryButton(text = lexString(R.string.gym_summary_done), onClick = { onEvent(GymEvent.DismissSummary) }, modifier = Modifier.fillMaxWidth())
+    QuietButton(text = lexString(R.string.gym_save_routine), onClick = { onEvent(GymEvent.AskSaveRoutine) }, modifier = Modifier.fillMaxWidth())
 }
 
 @Composable

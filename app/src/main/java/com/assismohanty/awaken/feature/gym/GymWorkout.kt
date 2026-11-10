@@ -79,6 +79,25 @@ internal fun minRestLeft(set: WorkoutSetEntity, exercise: WorkoutExercise, now: 
 
 private fun WorkoutSetEntity.logged() = durationSec?.let { it > 0 } ?: (reps > 0)
 
+/** The coached workout's page heading: the exercise now showing, and "29:05 · exercise 1 of 4" under it. Null when there is no current set. */
+@Composable
+internal fun coachedHeading(state: GymUiState, active: ActiveWorkout): Pair<String, String>? {
+    if (active.workout.mode != WorkoutEntity.MODE_COACHED) return null
+    val cursor = CoachedFlow.current(active.flowRows()) ?: return null
+    val exercise = active.exercises.firstOrNull { it.position == cursor.position } ?: return null
+    val index = active.exercises.indexOf(exercise) + 1
+    val elapsed = formatElapsed(elapsedSince(active.workout.startedAt, state.now))
+    return (state.labels[exercise.exerciseId]?.name ?: exercise.name) to lexString(R.string.gym_session_sub, elapsed, index, active.exercises.size)
+}
+
+/** Finish and the exercise menu, in the header beside the heading from [coachedHeading]. */
+@Composable
+internal fun CoachedActions(active: ActiveWorkout, onEvent: (GymEvent) -> Unit) {
+    val position = CoachedFlow.current(active.flowRows())?.position ?: 0
+    QuietButton(text = lexString(R.string.gym_finish), onClick = { onEvent(GymEvent.AskFinish) })
+    HeaderIconButton(AwakenGlyphs.More, lexString(R.string.gym_menu_cd), { onEvent(GymEvent.OpenWorkoutMenu(position)) })
+}
+
 @Composable
 private fun WorkoutHeader(active: ActiveWorkout, now: Instant, canFinish: Boolean, menuPosition: Int, onEvent: (GymEvent) -> Unit) {
     val colors = AwakenTheme.colors
@@ -180,7 +199,7 @@ private fun CoachedWorkout(state: GymUiState, active: ActiveWorkout, onEvent: (G
     val cursor = CoachedFlow.current(rows)
     val exercise = active.exercises.firstOrNull { it.position == cursor?.position }
     val set = if (cursor != null) exercise?.setAt(cursor) else null
-    WorkoutHeader(active, state.now, canFinish = cursor != null, menuPosition = cursor?.position ?: 0, onEvent = onEvent)
+    if (cursor == null) WorkoutHeader(active, state.now, canFinish = false, menuPosition = 0, onEvent = onEvent)
     SegmentsFor(active, cursor)
     if (cursor == null || exercise == null || set == null) {
         if (active.exercises.isEmpty()) {
@@ -195,7 +214,6 @@ private fun CoachedWorkout(state: GymUiState, active: ActiveWorkout, onEvent: (G
     val label = state.labels[exercise.exerciseId]
     val (number, total) = CoachedFlow.setNumber(rows, exercise.position, cursor.setIndex)
     Column(verticalArrangement = Arrangement.spacedBy(Spacing.xxs)) {
-        Text(label?.name ?: exercise.name, style = AwakenTheme.type.headline, color = colors.textPrimary)
         label?.variant?.let { Text(it, style = AwakenTheme.type.caption, color = colors.textSecondary) }
         Text(setLine(active, exercise, number, total, cursor), style = AwakenTheme.type.label, color = colors.accent)
         targetLine(set)?.let { Text(it, style = AwakenTheme.type.caption, color = colors.textSecondary) }
