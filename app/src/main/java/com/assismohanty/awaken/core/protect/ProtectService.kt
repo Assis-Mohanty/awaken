@@ -8,6 +8,8 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.ServiceInfo
+import android.media.AudioAttributes
+import android.media.AudioFocusRequest
 import android.media.AudioManager
 import android.os.Build
 import android.os.IBinder
@@ -27,6 +29,7 @@ import com.assismohanty.awaken.core.data.repo.UiPrefsRepository
 import com.assismohanty.awaken.core.designsystem.theme.AwakenTheme
 import com.assismohanty.awaken.core.lock.BlockOverlay
 import com.assismohanty.awaken.engine.PauseRules
+import com.assismohanty.awaken.reelcounter.service.CounterRunner
 import com.assismohanty.awaken.engine.PauseVariant
 import com.assismohanty.awaken.feature.protect.PauseOverlayContent
 import com.assismohanty.awaken.feature.protect.PauseOverlayUiState
@@ -68,6 +71,10 @@ class ProtectService : Service() {
 
     @Inject lateinit var clock: Clock
 
+    @Inject lateinit var reelCounter: CounterRunner
+
+    private var audioFocus: AudioFocusRequest? = null
+
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private var loop: Job? = null
     private var overlay: BlockOverlay<Shown>? = null
@@ -85,12 +92,14 @@ class ProtectService : Service() {
 
     private val screen = object : PauseScreen {
         override fun show(request: PauseRequest) {
+            holdBehind(true)
             scope.launch { present(request) }
         }
 
         override fun hide() {
             shown = null
             overlay?.hide()
+            holdBehind(false)
         }
 
         override fun goHome() {
@@ -142,6 +151,7 @@ class ProtectService : Service() {
         scope.cancel()
         overlay?.hide()
         overlay = null
+        holdBehind(false)
         controller.onServiceChanged(false)
         super.onDestroy()
     }
@@ -212,6 +222,27 @@ class ProtectService : Service() {
         val next = Shown(ui, isDark(prefs.themeMode), prefs.reduceMotion)
         shown = next
         overlay?.show(next)
+    }
+
+    /**
+     * While the pause screen is up the app under it must be quiet and must not be counted: AWAKEN takes audio focus for the
+     * moment (a well-behaved video app pauses when it loses focus; one that ignores focus keeps playing), and Reel counter
+     * stops counting until the pause is gone.
+     */
+    private fun holdBehind(on: Boolean) {
+        reelCounter.setHeld(on)
+        val audio = getSystemService(AudioManager::class.java) ?: return
+        if (on) {
+            if (audioFocus != null) return
+            val request = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT)
+                .setAudioAttributes(AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_MEDIA).setContentType(AudioAttributes.CONTENT_TYPE_SPEECH).build())
+                .setOnAudioFocusChangeListener { }
+                .build()
+            if (audio.requestAudioFocus(request) == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) audioFocus = request
+        } else {
+            audioFocus?.let { audio.abandonAudioFocusRequest(it) }
+            audioFocus = null
+        }
     }
 
     private fun notNow() {

@@ -62,6 +62,9 @@ class CounterRunner @Inject constructor(
     private var probeJob: Job? = null
     private var recheckJob: Job? = null
 
+    @Volatile
+    private var held = false
+
     /** Safe to call again after the service reconnects: the previous run is stopped first. */
     fun start(probe: (Instant) -> RawSignal.Probe) {
         stop()
@@ -99,6 +102,26 @@ class CounterRunner @Inject constructor(
         }
     }
 
+    /**
+     * While another screen (the Pause screen) covers the app, time under it must not count. Turning it on ends the current
+     * screen at once and drops signals until it is turned off; turning it off looks at the screen again straight away.
+     */
+    fun setHeld(on: Boolean) {
+        if (held == on) return
+        held = on
+        val s = scope ?: return
+        s.launch {
+            ready?.join()
+            lock.withLock {
+                if (on) {
+                    handle(RawSignal.ScreenOff(clock.now()))
+                } else {
+                    probeFactory?.let { handle(it(clock.now())) }
+                }
+            }
+        }
+    }
+
     fun submitSnooze(app: ShortVideoApp) {
         val s = scope ?: return
         s.launch {
@@ -128,6 +151,7 @@ class CounterRunner @Inject constructor(
     }
 
     private suspend fun handle(raw: RawSignal) {
+        if (held && raw !is RawSignal.ScreenOff) return
         val current = _state.value ?: return
         val tr = tracker ?: return
         val events = mutableListOf<CounterEvent>()
