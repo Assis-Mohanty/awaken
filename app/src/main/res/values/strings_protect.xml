@@ -18,7 +18,6 @@
     <string name="pause_overlay_not_now">Not now</string>
     <string name="pause_overlay_continue">Continue to %1$s</string>
     <string name="pause_overlay_seconds_left">%1$d seconds left</string>
-    <string name="pause_overlay_ready">Ready when you are</string>
     <string name="pause_intention_title">What for?</string>
     <string name="pause_intention_reply">Reply to someone</string>
     <string name="pause_intention_look_up">Look something up</string>

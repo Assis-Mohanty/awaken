@@ -512,7 +512,7 @@ transmitted."
 | `GAME_DESIGN.md` | New §19 with the approved PZ / LD numbers; §12 vectors 178+; §8.2 note that Lockdown runs are not covered by Focus Lock | 1 and 3 |
 | `ENGINE_DECISIONS.md` | #165+ : pause "previous package" rule, n counting, cooldown boundary, window crossing midnight, Lockdown time rules, LD6 gap rule | 1 and 3 |
 | `ARCHITECTURE.md` | `core/protect` (service, watcher, boot receiver, watchdog), `feature/protect`, the two tables, `MonotonicClock`, the build flag, the single accessibility service | 2, 3, 4 |
-| `DESIGN_SYSTEM.md` | New components: `BreathingRing` (reduce-motion: static ring + number), `HoldToConfirmButton`, `PauseOverlay`, `BlockScreen` variant without the end button | 2 and 3 |
+| `DESIGN_SYSTEM.md` | New components: `RisingFill` (reduce-motion: whole-second steps), `HoldToConfirmButton`, `PauseOverlay`, `BlockScreen` variant without the end button | 2 and 3 |
 | `PLAY_STORE_LAUNCH.md` | §5b rewritten; new §5d FGS declaration; §5c replaced by the Strict+ declaration, disclosure, video script; privacy lines; Data Safety note | 7 |
 | `CLAUDE.md` | New packages, the flag, the one-service invariant, new commands if any | 2 and 4 |
 | `docs/protect/PHONE_TEST.md`, `BATTERY.md` | Phone checklist and measurement log | 7 |
@@ -553,7 +553,7 @@ with only the named new goldens, commit, short summary, STOP.
 | Batch | Contents | Main files |
 |---|---|---|
 | **1** | `GAME_DESIGN` §19, PRD, ENGINE_DECISIONS. `PauseRules`, `PauseVariant`, `PausePlan` and tests | `engine/.../PauseRules.kt`, `PauseRulesTest.kt`, docs |
-| **2** | Watcher: `UsageGateway.foreground()`, `ProtectService`, overlay window type on `BlockOverlay`, `SYSTEM_ALERT_WINDOW` + FGS manifest entries, `protect` channel. Pause: `PauseStore`, `pause_event` + migration, settings / apps / stats screens, overlay content, permission flow, line bank, battery handling | `core/protect/*`, `feature/protect/Pause*`, `core/data/usage/*`, `AwakenDatabase`, `strings_protect.xml`, designsystem `BreathingRing` |
+| **2** | Watcher: `UsageGateway.foreground()`, `ProtectService`, overlay window type on `BlockOverlay`, `SYSTEM_ALERT_WINDOW` + FGS manifest entries, `protect` channel. Pause: `PauseStore`, `pause_event` + migration, settings / apps / stats screens, overlay content, permission flow, line bank, battery handling | `core/protect/*`, `feature/protect/Pause*`, `core/data/usage/*`, `AwakenDatabase`, `strings_protect.xml`, designsystem `RisingFill` |
 | **3** | `LockdownRules` + tests, `MonotonicClock`, `lockdown_session`, gate `lockdown` flag and `LOCKDOWN_BROKEN`, start / complete / break use-cases, `BootReceiver`, watchdog worker, setup / confirm / session / block / result screens, emergency exit, Focus Lock ignores Lockdown runs. If Q1 = (a): move Focus Lock onto the watcher and delete `FocusLockService` | `engine/.../LockdownRules.kt`, `core/protect/*`, `core/domain/Lockdown*UseCase.kt`, `GateUseCases.kt`, `feature/protect/Lockdown*`, designsystem `HoldToConfirmButton` |
 | **4** (if approved) | Build flag + release manifest removal + single service; capture real detector ids; `ShortVideoBlockRule`; settings + disclosure screen | `app/build.gradle.kts`, `app/src/release/AndroidManifest.xml`, `reelcounter-core`, `reelcounter-android/service`, `feature/protect/Strict*` |
 | **5** (if approved) | Inspector capture first (stop if no stable id); `ChannelMatch`; list screen; Study mode | `reelcounter-core`, `reelcounter-android`, `feature/protect/Study*` |

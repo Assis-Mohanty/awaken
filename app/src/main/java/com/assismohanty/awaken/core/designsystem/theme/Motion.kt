@@ -32,8 +32,6 @@ data class AwakenMotion(
     val countUpMs: Int = 900,
     val ceremonyMs: Int = 1_600,
     val ceremonySkippableAfterMs: Long = 400,
-    /** One breath in, or one breath out, on the pause screen's ring (slow on purpose; static under reduce-motion). */
-    val breatheMs: Int = 4_000,
     /** How long a SystemToast stays up (reading time, so not shortened by reduce-motion). */
     val toastHoldMs: Long = 3_000,
     val quickEasing: Easing = EaseOut,

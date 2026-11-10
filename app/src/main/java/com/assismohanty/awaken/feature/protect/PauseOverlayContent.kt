@@ -1,5 +1,8 @@
 package com.assismohanty.awaken.feature.protect
 
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.animate
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -12,12 +15,12 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -26,11 +29,11 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.text.style.TextAlign
 import com.assismohanty.awaken.R
 import com.assismohanty.awaken.core.designsystem.components.AwakenGlyphs
-import com.assismohanty.awaken.core.designsystem.components.BreathingRing
 import com.assismohanty.awaken.core.designsystem.components.ChoiceChip
 import com.assismohanty.awaken.core.designsystem.components.IconCircle
 import com.assismohanty.awaken.core.designsystem.components.PrimaryButton
 import com.assismohanty.awaken.core.designsystem.components.QuietButton
+import com.assismohanty.awaken.core.designsystem.components.RisingFill
 import com.assismohanty.awaken.core.designsystem.components.ScreenBackground
 import com.assismohanty.awaken.core.designsystem.lexicon.lexPlural
 import com.assismohanty.awaken.core.designsystem.lexicon.lexString
@@ -41,9 +44,9 @@ import com.assismohanty.awaken.engine.PauseRules
 import kotlinx.coroutines.delay
 
 /**
- * What the pause screen shows (GD §19.1). [seconds] is the countdown, [line] the one line from the bank, [opensToday] how
- * many times this app was opened today (this one included). With [askIntention] the "What for?" chips show; [chosen] is
- * the one picked.
+ * What the pause screen shows (GD §19.1). [seconds] is how long the screen takes to fill, [line] the one line from the
+ * bank, [opensToday] how many times this app was opened today (this one included). With [askIntention] the "What for?"
+ * chips show; [chosen] is the one picked.
  */
 data class PauseOverlayUiState(
     val appLabel: String,
@@ -57,11 +60,11 @@ data class PauseOverlayUiState(
 )
 
 /**
- * The full-screen pause: a breathing ring that counts down, today's open count, one line, and [Not now] at any time. When
- * the countdown ends the app opens by itself ([onContinue]), or a Continue button appears if [PauseOverlayUiState.requireTap].
- * The screen never pays or punishes anything.
+ * The full-screen pause: a colour rises from the bottom and covers the screen over [PauseOverlayUiState.seconds], and that
+ * is the only clock (no number). When it is full the app opens by itself ([onContinue]), or a Continue button is enabled
+ * if [PauseOverlayUiState.requireTap]. [Not now] works from the first moment. Under reduce-motion the colour rises in
+ * whole-second steps instead of smoothly. The screen never pays or punishes anything.
  */
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun PauseOverlayContent(
     state: PauseOverlayUiState,
@@ -70,17 +73,42 @@ fun PauseOverlayContent(
     onIntention: (PauseRules.Intention) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val colors = AwakenTheme.colors
-    val type = AwakenTheme.type
-    var remaining by remember(state.seconds) { mutableIntStateOf(state.seconds) }
-    LaunchedEffect(state.seconds, state.requireTap) {
-        while (remaining > 0) {
-            delay(ONE_SECOND_MS)
-            remaining -= 1
+    val reduceMotion = AwakenTheme.motion.reduceMotion
+    var progress by remember(state.seconds) { mutableFloatStateOf(0f) }
+    var done by remember(state.seconds) { mutableStateOf(state.seconds <= 0) }
+    LaunchedEffect(state.seconds, state.requireTap, reduceMotion) {
+        if (state.seconds > 0) {
+            if (reduceMotion) {
+                for (second in 1..state.seconds) {
+                    delay(ONE_SECOND_MS)
+                    progress = second / state.seconds.toFloat()
+                }
+            } else {
+                animate(0f, 1f, animationSpec = tween(state.seconds * ONE_SECOND_MS.toInt(), easing = LinearEasing)) { value, _ -> progress = value }
+            }
         }
+        done = true
         if (!state.requireTap) onContinue()
     }
+    PauseOverlayLayout(state, progress, done, onNotNow, onContinue, onIntention, modifier)
+}
+
+/** The pause screen at a given [progress] (0 empty, 1 full); stateless so every moment of it can be previewed. */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+internal fun PauseOverlayLayout(
+    state: PauseOverlayUiState,
+    progress: Float,
+    done: Boolean,
+    onNotNow: () -> Unit,
+    onContinue: () -> Unit,
+    onIntention: (PauseRules.Intention) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val colors = AwakenTheme.colors
+    val type = AwakenTheme.type
     ScreenBackground(modifier = modifier) {
+        RisingFill(progress = progress, description = lexString(R.string.pause_overlay_seconds_left, state.seconds))
         Column(
             modifier = Modifier
                 .safeDrawingPadding()
@@ -93,9 +121,9 @@ fun PauseOverlayContent(
             verticalArrangement = Arrangement.spacedBy(Spacing.md),
         ) {
             if (state.appIcon != null) {
-                Image(bitmap = state.appIcon, contentDescription = null, modifier = Modifier.size(AwakenTheme.dimens.crestLarge / 2))
+                Image(bitmap = state.appIcon, contentDescription = null, modifier = Modifier.size(AwakenTheme.dimens.crestLarge))
             } else {
-                IconCircle(AwakenGlyphs.Lock, colors.accent, size = AwakenTheme.dimens.crestLarge / 2)
+                IconCircle(AwakenGlyphs.Lock, colors.accent, size = AwakenTheme.dimens.crestLarge)
             }
             Text(
                 text = lexString(R.string.pause_overlay_about, state.appLabel),
@@ -103,15 +131,6 @@ fun PauseOverlayContent(
                 color = colors.textPrimary,
                 textAlign = TextAlign.Center,
             )
-            BreathingRing(
-                description = if (remaining > 0) lexString(R.string.pause_overlay_seconds_left, remaining) else lexString(R.string.pause_overlay_ready),
-            ) {
-                if (remaining > 0) {
-                    Text(text = remaining.toString(), style = type.metricXL, color = colors.textPrimary)
-                } else {
-                    Icon(AwakenGlyphs.Check, contentDescription = null, tint = colors.accent, modifier = Modifier.size(AwakenTheme.dimens.icon))
-                }
-            }
             if (state.line != null) {
                 Text(text = state.line, style = type.body, color = colors.textPrimary, textAlign = TextAlign.Center)
             }
@@ -141,7 +160,7 @@ fun PauseOverlayContent(
                 PrimaryButton(
                     text = lexString(R.string.pause_overlay_continue, state.appLabel),
                     onClick = onContinue,
-                    enabled = remaining == 0,
+                    enabled = done,
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
@@ -160,29 +179,29 @@ internal fun PauseRules.Intention.label(): Int = when (this) {
 
 private const val ONE_SECOND_MS = 1_000L
 
-private val sampleLine = "What did you come here for?"
+private const val SAMPLE_LINE = "What did you come here for?"
 
 @PhonePreviews
 @Composable
-private fun PauseCountingPreview() {
+private fun PauseHalfwayPreview() {
     AwakenTheme(reduceMotion = true) {
-        PauseOverlayContent(
-            state = PauseOverlayUiState("Instagram", null, seconds = 5, line = sampleLine, opensToday = 3, requireTap = false, askIntention = false),
-            onNotNow = {}, onContinue = {}, onIntention = {},
+        PauseOverlayLayout(
+            state = PauseOverlayUiState("Instagram", null, seconds = 5, line = SAMPLE_LINE, opensToday = 3, requireTap = false, askIntention = false),
+            progress = 0.5f, done = false, onNotNow = {}, onContinue = {}, onIntention = {},
         )
     }
 }
 
 @PhonePreviews
 @Composable
-private fun PauseTapToContinueWithChipsPreview() {
+private fun PauseFullTapToContinueWithChipsPreview() {
     AwakenTheme(reduceMotion = true) {
-        PauseOverlayContent(
+        PauseOverlayLayout(
             state = PauseOverlayUiState(
-                "A very long app name that keeps going and going", null, seconds = 0, line = sampleLine, opensToday = 1,
+                "A very long app name that keeps going and going", null, seconds = 5, line = SAMPLE_LINE, opensToday = 1,
                 requireTap = true, askIntention = true, chosen = PauseRules.Intention.LOOK_UP,
             ),
-            onNotNow = {}, onContinue = {}, onIntention = {},
+            progress = 1f, done = true, onNotNow = {}, onContinue = {}, onIntention = {},
         )
     }
 }

@@ -1149,9 +1149,9 @@ resisting or closing an app.** Only a cleared Lockdown pays, as the existing foc
 
 ### 19.1 Pause
 
-When a chosen app comes to the front from another app, a full-screen pause shows a breathing ring, a countdown, today's
-open count and one line from a bundled bank. [Not now] goes Home at any time. After the countdown the app opens by
-itself, or after a tap if that is switched on.
+When a chosen app comes to the front from another app, a full-screen pause shows a colour rising from the bottom of the
+screen (that rising is the only clock: no number), today's open count and one line from a bundled bank. [Not now] goes
+Home at any time. When the screen is full the app opens by itself, or after a tap if that is switched on.
 
 | # | Rule | Value |
 |---|---|---|
