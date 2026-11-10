@@ -108,7 +108,8 @@ class AlwaysAllowed @Inject constructor(
             ?.let(ComponentName::unflattenFromString)?.packageName
     }.getOrNull()
 
-    private fun homePackages(): Set<String> = runCatching {
+    /** This phone's launchers (the home screen). */
+    fun homePackages(): Set<String> = runCatching {
         val intent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME)
         val infos = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             context.packageManager.queryIntentActivities(intent, PackageManager.ResolveInfoFlags.of(0))

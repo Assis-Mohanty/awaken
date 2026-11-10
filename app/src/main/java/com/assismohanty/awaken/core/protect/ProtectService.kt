@@ -96,6 +96,7 @@ class ProtectService : Service() {
     @Volatile private var lockdownSession: LockdownSessionEntity? = null
     private var lockdownOverlay: BlockOverlay<CoverShown>? = null
     private var postedFor: String? = null
+    private var lastSessionOpen: Instant? = null
     private var lastPrefs: UiPrefs = UiPrefs()
     private var cachedPackage: String? = null
     private var cachedLabel: String = ""
@@ -140,6 +141,13 @@ class ProtectService : Service() {
                 cachedIcon = runCatching { packageManager.getApplicationIcon(cover.packageName).toBitmap().asImageBitmap() }.getOrNull()
             }
             lockdownOverlay?.show(CoverShown(cachedLabel, cachedIcon, cover.remaining, isDark(lastPrefs.themeMode), lastPrefs.reduceMotion))
+            // Strict: whatever was opened, the session screen comes straight back (at most once a second).
+            val now = clock.now()
+            val last = lastSessionOpen
+            if (last == null || Duration.between(last, now).toMillis() >= REOPEN_MS) {
+                lastSessionOpen = now
+                openSession()
+            }
         }
 
         override fun uncover() {
@@ -215,13 +223,17 @@ class ProtectService : Service() {
     private fun startLoop() {
         if (loop?.isActive == true) return
         loop = scope.launch {
-            try {
-                watch()
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                Timber.e(e, "The Pause loop failed")
-                stopSelf()
+            // One failed look must never end the watching (a Lockdown stops covering if it does): log it and look again.
+            while (true) {
+                try {
+                    watch()
+                    return@launch
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    Timber.e(e, "The watch loop failed; looking again")
+                    delay(RETRY_MS)
+                }
             }
         }
     }
@@ -410,5 +422,11 @@ class ProtectService : Service() {
 
         /** How often the service asks the controller whether the active hours are still open and the permissions still on. */
         const val CHECK_MS = 30_000L
+
+        /** After a failed look, wait this long before the next. */
+        const val RETRY_MS = 1_000L
+
+        /** The session screen is brought back at most this often, so two quick opens do not fight. */
+        const val REOPEN_MS = 1_000L
     }
 }

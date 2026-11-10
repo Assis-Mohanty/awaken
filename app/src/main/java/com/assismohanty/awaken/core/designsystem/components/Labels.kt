@@ -120,6 +120,7 @@ fun formatMultiplier(value: Double, fixed: Boolean): String {
 @StringRes
 fun shopItemNameRes(itemId: String): Int? = when (itemId) {
     "streak_shield" -> R.string.shop_streak_shield
+    "lockdown_shield" -> R.string.shop_lockdown_shield
     else -> null
 }
 

@@ -2,35 +2,48 @@ package com.assismohanty.awaken.core.domain
 
 import com.assismohanty.awaken.core.data.clock.Clock
 import com.assismohanty.awaken.core.data.clock.DeviceUptime
+import com.assismohanty.awaken.core.data.clock.gameDate
+import com.assismohanty.awaken.core.data.db.dao.HunterDao
 import com.assismohanty.awaken.core.data.db.dao.LockdownDao
+import com.assismohanty.awaken.core.data.db.entity.LedgerEntryEntity
 import com.assismohanty.awaken.core.data.db.entity.LockdownSessionEntity
+import com.assismohanty.awaken.core.data.repo.LedgerRepository
 import com.assismohanty.awaken.core.data.repo.TransactionRunner
 import com.assismohanty.awaken.core.data.usage.OpenedRead
 import com.assismohanty.awaken.core.data.usage.UsageGateway
 import com.assismohanty.awaken.engine.AppCategory
 import com.assismohanty.awaken.engine.AppKind
 import com.assismohanty.awaken.engine.BlockDecision
+import com.assismohanty.awaken.engine.ExitCheck
+import com.assismohanty.awaken.engine.GameDay
 import com.assismohanty.awaken.engine.GapLog
 import com.assismohanty.awaken.engine.GateMode
 import com.assismohanty.awaken.engine.LockdownBreak
 import com.assismohanty.awaken.engine.LockdownClock
 import com.assismohanty.awaken.engine.LockdownRules
 import com.assismohanty.awaken.engine.LockdownStatus
+import com.assismohanty.awaken.engine.ShopRules
+import com.assismohanty.awaken.engine.model.LedgerKind
+import com.assismohanty.awaken.engine.model.SourceType
 import com.assismohanty.awaken.engine.model.Stat
 import java.time.Duration
 import java.time.Instant
 import java.util.UUID
-import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 
 /** What Android currently allows for Pause and Lockdown. A seam so the domain has no Android classes (GD §19.2 LD9). */
 interface LockdownEnvironment {
     fun usageAccess(): Boolean
     fun canAppearOnTop(): Boolean
 
-    /** This phone's launcher, keyboard, dialer, messages and payment apps, and AWAKEN: never covered. */
-    fun alwaysAllowed(): Set<String>
+    /** This phone's keyboard, dialer, messages and payment apps, and AWAKEN itself. Not its launchers: a Lockdown covers those. */
+    fun okFromPhone(): Set<String>
+
+    /** This phone's launchers (the home screen). A Lockdown covers them and brings the hunter back to the session. */
+    fun homePackages(): Set<String>
 
     /** A real app (a launcher icon the hunter installed); anything else is the phone's own window and is never covered. */
     fun isCoverable(packageName: String): Boolean
@@ -45,7 +58,6 @@ sealed interface StartLockdownResult {
     /** An allowed app is Distracting, social, video or a game (LD7). */
     data class AppNotAllowed(val packageName: String) : StartLockdownResult
     data object NeedsPermissions : StartLockdownResult
-    data class InCooldown(val left: Duration) : StartLockdownResult
     data object AlreadyRunning : StartLockdownResult
     data object TooLate : StartLockdownResult
 }
@@ -75,8 +87,6 @@ class StartLockdownUseCase @Inject constructor(
             !LockdownRules.canAllow(category, kinds[pkg] ?: AppKind.OTHER)
         }?.let { return StartLockdownResult.AppNotAllowed(it) }
         val now = clock.now()
-        val left = LockdownRules.cooldownLeft(dao.lastBrokenAt(), now)
-        if (!left.isZero) return StartLockdownResult.InCooldown(left)
         return transactions.run {
             if (dao.running() != null) return@run StartLockdownResult.AlreadyRunning
             when (val gate = startGate.startFocus(GateMode.CUSTOM, minutes, Stat.INT, label = "Lockdown", subjectId = null, lockdown = true)) {
@@ -115,10 +125,25 @@ sealed interface LockdownTick {
     data class Broken(val session: LockdownSessionEntity, val reason: LockdownBreak) : LockdownTick
 }
 
+/** The Lockdown shields the hunter holds, and whether one was already used to leave today (GD §19.2 LD3). */
+data class ShieldStatus(val shields: Int, val usedToday: Boolean) {
+    val check: ExitCheck get() = LockdownRules.exitCheck(shields, usedToday)
+}
+
+/** What asking to leave with a shield did. */
+sealed interface LockdownExit {
+    /** The shield was spent and the session ended with no reward. */
+    data class Left(val tick: LockdownTick) : LockdownExit
+
+    /** There is no way out: no shield, or one was already used today. */
+    data class Refused(val check: ExitCheck) : LockdownExit
+    data object NoSession : LockdownExit
+}
+
 /**
  * Everything that happens to a running Lockdown (GD §19.2): the time (monotonic, never the wall clock), the heartbeat, the
- * permission check, finishing, and breaking. Called by the watcher service and by the session screen; serialised by the
- * gate controller's lock and the single-row session.
+ * permission check, finishing, breaking, and leaving with a shield. Called by the watcher service and by the session
+ * screen; serialised by the gate controller's lock and the single-row session.
  */
 @Singleton
 class LockdownController @Inject constructor(
@@ -126,6 +151,8 @@ class LockdownController @Inject constructor(
     private val gates: GateRunController,
     private val usage: UsageGateway,
     private val env: LockdownEnvironment,
+    private val ledger: LedgerRepository,
+    private val hunterDao: HunterDao,
     private val transactions: TransactionRunner,
     private val uptime: DeviceUptime,
     private val clock: Clock,
@@ -142,8 +169,16 @@ class LockdownController @Inject constructor(
 
     fun observeLatest(): Flow<LockdownSessionEntity?> = dao.observeLatest()
 
-    /** How long until another Lockdown can start (zero when it can). */
-    suspend fun cooldownLeft(): Duration = LockdownRules.cooldownLeft(dao.lastBrokenAt(), clock.now())
+    /** The Lockdown shields held, as they change (bought, spent, or handed out by a debug build). */
+    fun observeShields(): Flow<Int> = ledger.observeBalances().map { it.item(ShopRules.LOCKDOWN_SHIELD_ID).toInt() }
+
+    /** The shields held, and whether one was already spent to leave a Lockdown on this game-day. */
+    suspend fun shieldStatus(): ShieldStatus {
+        val startHour = hunterDao.getProfile()?.dayStartHour ?: GameDay.DEFAULT_DAY_START_HOUR
+        val dayStart = GameDay.startOf(clock.gameDate(startHour), clock.zone(), startHour)
+        val shields = ledger.balances().item(ShopRules.LOCKDOWN_SHIELD_ID).toInt()
+        return ShieldStatus(shields, usedToday = dao.shieldExitsSince(dayStart) > 0)
+    }
 
     fun clockOf(session: LockdownSessionEntity): LockdownClock =
         LockdownClock(session.plannedMs, session.servedMs, session.anchorElapsedMs, session.anchorWall, session.bootCount)
@@ -186,10 +221,31 @@ class LockdownController @Inject constructor(
         return LockdownTick.Running(session, remaining(session))
     }
 
-    /** The emergency exit finished (LD3): the session breaks, with no reward and a cooldown. */
-    suspend fun emergencyExit(): LockdownTick {
-        val session = dao.running() ?: return LockdownTick.None
-        return breakSession(session, LockdownBreak.EMERGENCY_EXIT, 0)
+    /**
+     * The slide to exit finished (LD3): one Lockdown shield is spent and the session breaks, with no reward. Refused with
+     * no shield, or when one was already used on this game-day; then there is no way out until the time is up. The shield
+     * and the end of the session commit together.
+     */
+    suspend fun leaveWithShield(): LockdownExit = transactions.run {
+        val session = dao.running() ?: return@run LockdownExit.NoSession
+        val status = shieldStatus()
+        if (status.check != ExitCheck.ALLOWED) return@run LockdownExit.Refused(status.check)
+        val now = clock.now()
+        val startHour = hunterDao.getProfile()?.dayStartHour ?: GameDay.DEFAULT_DAY_START_HOUR
+        ledger.insertIdempotent(
+            listOf(
+                LedgerEntryEntity(
+                    kind = LedgerKind.ITEM,
+                    itemId = ShopRules.LOCKDOWN_SHIELD_ID,
+                    delta = -1,
+                    sourceType = SourceType.SHIELD_USE,
+                    sourceId = "lockdown:${session.id}",
+                    gameDate = clock.gameDate(startHour),
+                    createdAt = now,
+                ),
+            ),
+        )
+        LockdownExit.Left(breakSession(session, LockdownBreak.EMERGENCY_EXIT, 0))
     }
 
     private suspend fun complete(session: LockdownSessionEntity): LockdownTick = transactions.run {
@@ -236,9 +292,10 @@ class LockdownController @Inject constructor(
     /** What the usage log showed while the watcher was down: only allowed apps, another app, or nothing readable (fail closed). */
     private suspend fun gapLog(session: LockdownSessionEntity, from: Instant, to: Instant): GapLog {
         val read = usage.opened(from, to) as? OpenedRead.Opened ?: return GapLog.UNREADABLE
-        val always = env.alwaysAllowed()
+        val ok = env.okFromPhone()
+        val homes = env.homePackages()
         val others = read.packages.any {
-            LockdownRules.decide(it, env.isCoverable(it), session.allowedPackages, always) == BlockDecision.BLOCK
+            LockdownRules.decide(it, env.isCoverable(it), session.allowedPackages, ok, homes) == BlockDecision.BLOCK
         }
         return if (others) GapLog.SAW_OTHER_APP else GapLog.ONLY_ALLOWED
     }

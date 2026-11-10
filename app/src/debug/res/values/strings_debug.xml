@@ -19,6 +19,7 @@
     <string name="debug_rebuild">Rebuild balances</string>
     <string name="debug_grant_shield">Grant shield</string>
     <string name="debug_grant_gold">+2,000 gold</string>
+    <string name="debug_grant_lockdown_shields">+5 Lockdown shields</string>
     <string name="debug_simulate_steps_on">Simulate 9,000 steps</string>
     <string name="debug_banner">Debug: %1$s</string>
     <string name="debug_banner_steps">fake steps</string>

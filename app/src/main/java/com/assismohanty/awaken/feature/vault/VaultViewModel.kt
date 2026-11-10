@@ -34,6 +34,8 @@ data class VaultUiState(
     val shields: Int = 0,
     val shieldMax: Int = StreakRules.MAX_SHIELDS,
     val shield: VaultItemState? = null,
+    val lockdownShield: VaultItemState? = null,
+    val lockdownShields: Int = 0,
     val pending: PendingPurchase? = null,
     /** Set while a purchase runs, so a double tap can't start a second one. */
     val busy: Boolean = false,
@@ -111,6 +113,8 @@ private fun VaultModel.toUiState(local: LocalState): VaultUiState = VaultUiState
     gold = gold,
     shields = shields,
     shield = items.firstOrNull { it.item.kind == ShopKind.SHIELD },
+    lockdownShield = items.firstOrNull { it.item.kind == ShopKind.LOCKDOWN_SHIELD },
+    lockdownShields = lockdownShields,
     pending = local.pending,
     busy = local.busy,
 )

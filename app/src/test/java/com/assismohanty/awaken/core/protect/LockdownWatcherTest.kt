@@ -18,21 +18,22 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 
-/** The Lockdown loop body: which app in front gets covered (GD §19.2). */
+/** The Lockdown loop body: which app in front gets covered (GD §19.2). It is strict. */
 @RunWith(AndroidJUnit4::class)
 class LockdownWatcherTest {
     private val graph = TestGraph()
-    private val always = setOf(LAUNCHER, "com.assismohanty.awaken")
+    private val okFromPhone = setOf("com.assismohanty.awaken", "com.google.android.inputmethod.latin", "com.google.android.dialer")
     private val coverable = setOf(FakeUsageGateway.INSTAGRAM, FakeUsageGateway.DOCS, "com.whatsapp", "com.spotify.music")
     private var overlay = true
     private val env = object : LockdownEnvironment {
         override fun usageAccess() = true
         override fun canAppearOnTop() = overlay
-        override fun alwaysAllowed() = always
+        override fun okFromPhone() = okFromPhone
+        override fun homePackages() = setOf(LAUNCHER)
         override fun isCoverable(packageName: String) = packageName in coverable
     }
     private val dao = graph.db.lockdownDao()
-    private val controller = LockdownController(dao, graph.gateRuns, graph.usage, env, graph.transactions, graph.uptime, graph.clock)
+    private val controller = LockdownController(dao, graph.gateRuns, graph.usage, env, graph.ledger, graph.db.hunterDao(), graph.transactions, graph.uptime, graph.clock)
     private val watcher = LockdownWatcher(graph.usage, controller, env, graph.clock)
     private val start = StartLockdownUseCase(graph.startGate, dao, graph.usage, graph.distractingApps, env, graph.transactions, graph.uptime, graph.clock)
     private val screen = object : LockdownScreen {
@@ -67,8 +68,17 @@ class LockdownWatcherTest {
     }
 
     @Test
-    fun anAllowedAppTheLauncherAndTheSessionScreenAreNotCovered() = runBlocking<Unit> {
-        for (pkg in listOf(FakeUsageGateway.DOCS, LAUNCHER, "com.assismohanty.awaken", "com.android.dialer")) {
+    fun theHomeScreenAndSettingsAreCoveredToo() = runBlocking<Unit> {
+        open(LAUNCHER)
+        watcher.poll(screen)
+        open("com.android.settings")
+        watcher.poll(screen)
+        assertThat(screen.covers.map { it.packageName }).containsExactly(LAUNCHER, "com.android.settings").inOrder()
+    }
+
+    @Test
+    fun theAllowedAppTheSessionScreenTheKeyboardAndThePhoneAreNotCovered() = runBlocking<Unit> {
+        for (pkg in listOf(FakeUsageGateway.DOCS, "com.assismohanty.awaken", "com.google.android.inputmethod.latin", "com.google.android.dialer", "com.android.incallui", "com.android.systemui")) {
             open(pkg)
             watcher.poll(screen)
         }
@@ -76,10 +86,10 @@ class LockdownWatcherTest {
     }
 
     @Test
-    fun theCoverGoesWhenTheHunterReturnsToAnAllowedApp() = runBlocking<Unit> {
+    fun theCoverGoesWhenTheHunterIsBackOnTheSessionScreen() = runBlocking<Unit> {
         open("com.whatsapp")
         watcher.poll(screen)
-        open(LAUNCHER)
+        open("com.assismohanty.awaken")
         watcher.poll(screen)
         assertThat(screen.uncovers).isEqualTo(1)
     }

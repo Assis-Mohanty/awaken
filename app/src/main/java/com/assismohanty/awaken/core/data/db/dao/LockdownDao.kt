@@ -23,10 +23,7 @@ interface LockdownDao {
     @Query("SELECT * FROM lockdown_session ORDER BY started_at DESC LIMIT 1")
     fun observeLatest(): Flow<LockdownSessionEntity?>
 
-    /** When the last broken session ended; the cooldown counts from it (LD4). */
-    @Query("SELECT MAX(ended_at) FROM lockdown_session WHERE status = 'BROKEN'")
-    suspend fun lastBrokenAt(): Instant?
-
-    @Query("SELECT * FROM lockdown_session ORDER BY started_at DESC LIMIT :limit")
-    fun observeRecent(limit: Int): Flow<List<LockdownSessionEntity>>
+    /** Sessions ended by a shield since [since] (the start of the game-day): one shield exit a day (LD3). */
+    @Query("SELECT COUNT(*) FROM lockdown_session WHERE broken_reason = 'EMERGENCY_EXIT' AND ended_at >= :since")
+    suspend fun shieldExitsSince(since: Instant): Int
 }

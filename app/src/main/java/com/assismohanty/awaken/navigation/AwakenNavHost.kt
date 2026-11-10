@@ -236,6 +236,7 @@ private fun MainScaffold(
                         actions = FocusHubActions(
                             onStart = { navController.navigate(GatesRoute) { launchSingleTop = true } },
                             onOpenReport = { navController.navigate(FocusReportRoute) },
+                            onOpenLockdown = { navController.navigate(LockdownSetupRoute) { launchSingleTop = true } },
                             onOpenFocusLock = { navController.navigate(FocusLockSetupRoute) { launchSingleTop = true } },
                             onOpenAllowedApps = { navController.navigate(AllowedAppsRoute) { launchSingleTop = true } },
                             onOpenReelSetup = { navController.navigate(ReelCounterSetupRoute) { launchSingleTop = true } },
@@ -273,7 +274,6 @@ private fun MainScaffold(
                         onOpenFocusAccess = { navController.navigate(FocusAccessRoute) { launchSingleTop = true } },
                         onOpenReelInspector = { navController.navigate(ReelInspectorRoute) { launchSingleTop = true } },
                         onOpenPause = { navController.navigate(PauseRoute) { launchSingleTop = true } },
-                        onOpenLockdown = { navController.navigate(LockdownSetupRoute) { launchSingleTop = true } },
                     )
                 }
                 composable<PauseRoute> {

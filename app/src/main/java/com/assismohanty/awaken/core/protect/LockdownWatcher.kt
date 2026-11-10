@@ -65,7 +65,7 @@ class LockdownWatcher @Inject constructor(
             }
         }
         val pkg = top
-        val decision = LockdownRules.decide(pkg, pkg != null && env.isCoverable(pkg), tick.session.allowedPackages, env.alwaysAllowed())
+        val decision = LockdownRules.decide(pkg, pkg != null && env.isCoverable(pkg), tick.session.allowedPackages, env.okFromPhone(), env.homePackages())
         if (decision == BlockDecision.BLOCK && pkg != null) {
             covering = true
             screen.cover(LockdownCover(pkg, tick.remaining))

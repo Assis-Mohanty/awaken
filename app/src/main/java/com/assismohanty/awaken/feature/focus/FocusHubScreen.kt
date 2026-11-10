@@ -45,6 +45,7 @@ import java.util.Locale
 data class FocusHubActions(
     val onStart: () -> Unit = {},
     val onOpenReport: () -> Unit = {},
+    val onOpenLockdown: () -> Unit = {},
     val onOpenFocusLock: () -> Unit = {},
     val onOpenAllowedApps: () -> Unit = {},
     val onOpenScreenTime: () -> Unit = {},
@@ -97,6 +98,12 @@ fun FocusHubScreen(
 
         SectionHeader(title = lexString(R.string.focus_hub_section_blockers))
         HubRows {
+            HubRow(
+                title = lexString(R.string.lockdown_title),
+                glyph = AwakenGlyphs.Lock,
+                secondary = lexString(R.string.lockdown_hub_note),
+                onClick = actions.onOpenLockdown,
+            )
             HubRow(
                 title = lexString(R.string.focus_lock_title),
                 glyph = AwakenGlyphs.Lock,

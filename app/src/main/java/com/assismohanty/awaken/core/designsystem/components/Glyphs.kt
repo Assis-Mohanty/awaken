@@ -316,6 +316,28 @@ object AwakenGlyphs {
     }
 
     /** Screen time. */
+    /** A telephone handset: the call button of a Lockdown. */
+    val Call: ImageVector by lazy {
+        solid("Call") {
+            moveTo(6.62f, 10.79f)
+            curveToRelative(1.44f, 2.83f, 3.76f, 5.14f, 6.59f, 6.59f)
+            lineToRelative(2.2f, -2.2f)
+            curveToRelative(0.27f, -0.27f, 0.67f, -0.36f, 1.02f, -0.24f)
+            curveToRelative(1.12f, 0.37f, 2.33f, 0.57f, 3.57f, 0.57f)
+            curveToRelative(0.55f, 0f, 1f, 0.45f, 1f, 1f)
+            verticalLineTo(20f)
+            curveToRelative(0f, 0.55f, -0.45f, 1f, -1f, 1f)
+            curveTo(10.61f, 21f, 3f, 13.39f, 3f, 4f)
+            curveToRelative(0f, -0.55f, 0.45f, -1f, 1f, -1f)
+            horizontalLineToRelative(3.5f)
+            curveToRelative(0.55f, 0f, 1f, 0.45f, 1f, 1f)
+            curveToRelative(0f, 1.25f, 0.2f, 2.45f, 0.57f, 3.57f)
+            curveToRelative(0.11f, 0.35f, 0.03f, 0.74f, -0.25f, 1.02f)
+            lineToRelative(-2.2f, 2.2f)
+            close()
+        }
+    }
+
     val Phone: ImageVector by lazy { line("Phone") { roundRect(6.75f, 2.75f, 10.5f, 18.5f, 2.75f); moveTo(10.5f, 18f); lineTo(13.5f, 18f) } }
 
     /** Insights (solid). */
@@ -366,7 +388,7 @@ object AwakenGlyphs {
             Shield, Portal, Coin, VerifiedSeal, Hourglass, Check, Gate,
             Star, Close, Plus, Info,
             ChevronLeft, ChevronDown, ChevronRight, Repeat, Contrast, Grid, Database, ArrowLeft, ArrowUp, ArrowDown, Search, Pencil,
-            Trash, Lock, Calendar, Timer, Drop, Phone, Sunrise, Sun, Moon, Clock,
+            Trash, Lock, Calendar, Timer, Drop, Phone, Call, Sunrise, Sun, Moon, Clock,
         )
     }
 

@@ -98,6 +98,7 @@ fun DebugScreen(
                 OutlinedButton(onClick = { onEvent(DebugEvent.RebuildBalances) }) { Text(stringResource(R.string.debug_rebuild)) }
                 OutlinedButton(onClick = { onEvent(DebugEvent.GrantShield) }) { Text(stringResource(R.string.debug_grant_shield)) }
                 OutlinedButton(onClick = { onEvent(DebugEvent.GrantGold) }) { Text(stringResource(R.string.debug_grant_gold)) }
+                OutlinedButton(onClick = { onEvent(DebugEvent.GrantLockdownShields) }) { Text(stringResource(R.string.debug_grant_lockdown_shields)) }
                 OutlinedButton(onClick = { onEvent(DebugEvent.SimulateSteps(!state.simulateSteps)) }) {
                     Text(stringResource(if (state.simulateSteps) R.string.debug_simulate_steps_off else R.string.debug_simulate_steps_on))
                 }

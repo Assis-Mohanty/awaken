@@ -32,7 +32,8 @@ object ProtectModule {
         object : LockdownEnvironment {
             override fun usageAccess(): Boolean = access.usageAccess()
             override fun canAppearOnTop(): Boolean = access.canAppearOnTop()
-            override fun alwaysAllowed(): Set<String> = allowed.current()
+            override fun okFromPhone(): Set<String> = allowed.current() - allowed.homePackages()
+            override fun homePackages(): Set<String> = allowed.homePackages()
             override fun isCoverable(packageName: String): Boolean = coverable.isCoverable(packageName)
         }
 

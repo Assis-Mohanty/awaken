@@ -53,7 +53,8 @@ class PurchaseItemUseCase @Inject constructor(
             )
             if (debit.isEmpty()) return@run PurchaseResult.Duplicate
             ledger.insertIdempotent(
-                listOf(row(LedgerKind.ITEM, 1, SourceType.SHOP, purchaseId, today, now, itemId = LedgerRepository.STREAK_SHIELD_ITEM_ID)),
+                // The ledger item id of a shield is its shop id, so each kind of shield has its own balance.
+                listOf(row(LedgerKind.ITEM, 1, SourceType.SHOP, purchaseId, today, now, itemId = item.id)),
             )
             PurchaseResult.Purchased(item, goldAfter = balances.gold - item.price)
         }
@@ -66,6 +67,7 @@ data class VaultItemState(val item: ShopItem, val check: BuyCheck)
 data class VaultModel(
     val gold: Long,
     val shields: Int,
+    val lockdownShields: Int,
     val items: List<VaultItemState>,
 )
 
@@ -77,6 +79,7 @@ class ObserveVaultUseCase @Inject constructor(
         VaultModel(
             gold = balances.gold,
             shields = shields,
+            lockdownShields = balances.item(ShopRules.LOCKDOWN_SHIELD_ID).toInt(),
             items = ShopRules.catalog.map { item -> VaultItemState(item, ShopRules.canBuy(item, balances.gold, shields)) },
         )
     }

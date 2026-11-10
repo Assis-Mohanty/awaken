@@ -4,68 +4,82 @@ import android.content.Intent
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import com.assismohanty.awaken.R
+import com.assismohanty.awaken.core.data.clock.Clock
 import com.assismohanty.awaken.core.data.repo.UiPrefsRepository
-import com.assismohanty.awaken.core.data.clock.DeviceUptime
 import com.assismohanty.awaken.core.data.usage.UsageGateway
-import com.assismohanty.awaken.core.designsystem.components.HoldToConfirmButton
+import com.assismohanty.awaken.core.designsystem.components.AppSlot
+import com.assismohanty.awaken.core.designsystem.components.AppSlotsBar
+import com.assismohanty.awaken.core.designsystem.components.AwakenCard
+import com.assismohanty.awaken.core.designsystem.components.AwakenGlyphs
+import com.assismohanty.awaken.core.designsystem.components.FitText
 import com.assismohanty.awaken.core.designsystem.components.PrimaryButton
 import com.assismohanty.awaken.core.designsystem.components.ScreenBackground
-import com.assismohanty.awaken.core.designsystem.components.SecondaryButton
-import com.assismohanty.awaken.core.designsystem.components.SystemWindow
+import com.assismohanty.awaken.core.designsystem.components.SlideToConfirm
+import com.assismohanty.awaken.core.designsystem.lexicon.lexPlural
 import com.assismohanty.awaken.core.designsystem.lexicon.lexString
+import com.assismohanty.awaken.core.designsystem.preview.LandscapePreviews
 import com.assismohanty.awaken.core.designsystem.preview.PhonePreviews
 import com.assismohanty.awaken.core.designsystem.theme.AwakenTheme
 import com.assismohanty.awaken.core.designsystem.theme.Spacing
 import com.assismohanty.awaken.core.domain.LockdownController
-import com.assismohanty.awaken.engine.ExitPhase
+import com.assismohanty.awaken.core.domain.ShieldStatus
+import com.assismohanty.awaken.core.protect.AppIcons
+import com.assismohanty.awaken.engine.ExitCheck
 import com.assismohanty.awaken.engine.LockdownBreak
 import com.assismohanty.awaken.engine.LockdownRules
 import com.assismohanty.awaken.engine.LockdownStatus
-import com.assismohanty.awaken.feature.quest.shortClock
 import dagger.hilt.android.lifecycle.HiltViewModel
+import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
 import javax.inject.Inject
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.MutableStateFlow
 
-/** An app the session may still use: a shortcut on the session screen. */
-data class LockdownAppChip(val packageName: String, val label: String)
+/** One of the three app slots on the session screen; an empty one is shown but does nothing. */
+data class LockdownSlotUi(val packageName: String?, val label: String?, val icon: ImageBitmap?)
 
-/** Where the emergency exit is, as the screen shows it (LD3). */
-sealed interface LockdownExitUi {
-    data object Idle : LockdownExitUi
-    data class Holding(val progress: Float) : LockdownExitUi
-    data class Waiting(val secondsLeft: Int, val progress: Float) : LockdownExitUi
-}
-
-data class LockdownSessionUiState(val remainingMs: Long, val apps: List<LockdownAppChip>, val exit: LockdownExitUi)
+data class LockdownSessionUiState(
+    val remainingMs: Long,
+    val endsAtText: String,
+    val slots: List<LockdownSlotUi>,
+    val shields: Int,
+    val exit: ExitCheck,
+)
 
 data class LockdownResultUiState(val id: String, val completed: Boolean, val minutes: Int, val reason: LockdownBreak?)
 
@@ -77,8 +91,8 @@ sealed interface LockdownHostState {
 }
 
 sealed interface LockdownEvent {
-    data class ExitPressed(val pressed: Boolean) : LockdownEvent
-    data class ScreenVisible(val visible: Boolean) : LockdownEvent
+    /** The slide to exit finished: spend a shield and leave. */
+    data object Exit : LockdownEvent
     data class Dismiss(val id: String) : LockdownEvent
 }
 
@@ -87,34 +101,42 @@ class LockdownHostViewModel @Inject constructor(
     private val controller: LockdownController,
     private val uiPrefs: UiPrefsRepository,
     private val usage: UsageGateway,
-    private val uptime: DeviceUptime,
+    private val icons: AppIcons,
+    private val clock: Clock,
 ) : ViewModel() {
-    private val pressing = MutableStateFlow(false)
-    private val visible = MutableStateFlow(true)
-    private val exit = MutableStateFlow<ExitPhase>(ExitPhase.Idle)
     private val labels = MutableStateFlow<Map<String, String>>(emptyMap())
-    private val clockTicks = flow {
+    private val ticks = flow {
         while (true) {
-            emit(uptime.elapsedRealtimeMs())
+            emit(Unit)
             delay(TICK_MS)
         }
     }
+    private val shield: StateFlow<ShieldStatus> = combine(controller.observeShields(), controller.observeRunning()) { _, _ -> controller.shieldStatus() }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), ShieldStatus(0, false))
 
     @Volatile
     private var running = false
 
     val uiState: StateFlow<LockdownHostState> = combine(
-        controller.observeRunning(), controller.observeLatest(), uiPrefs.prefs, labels, combine(exit, clockTicks) { phase, now -> phase to now },
-    ) { session, latest, prefs, names, (phase, now) ->
+        controller.observeRunning(), controller.observeLatest(), uiPrefs.prefs, labels, combine(shield, ticks) { status, _ -> status },
+    ) { session, latest, prefs, names, status ->
         running = session != null
         when {
-            session != null -> LockdownHostState.Session(
-                LockdownSessionUiState(
-                    remainingMs = controller.remaining(session).toMillis(),
-                    apps = session.allowedPackages.map { LockdownAppChip(it, names[it] ?: it) }.sortedBy { it.label.lowercase() },
-                    exit = phase.toUi(now),
-                ),
-            )
+            session != null -> {
+                val remaining = controller.remaining(session)
+                val chosen = session.allowedPackages.sortedBy { (names[it] ?: it).lowercase() }
+                LockdownHostState.Session(
+                    LockdownSessionUiState(
+                        remainingMs = remaining.toMillis(),
+                        endsAtText = TIME.format(clock.now().plus(remaining).atZone(clock.zone())),
+                        slots = (0 until LockdownRules.MAX_APPS).map { index ->
+                            chosen.getOrNull(index)?.let { LockdownSlotUi(it, names[it] ?: it, icons.icon(it)) } ?: LockdownSlotUi(null, null, null)
+                        },
+                        shields = status.shields,
+                        exit = status.check,
+                    ),
+                )
+            }
             latest != null && latest.status != LockdownStatus.RUNNING && latest.id != prefs.lockdownSeenId ->
                 LockdownHostState.Result(LockdownResultUiState(latest.id, latest.status == LockdownStatus.COMPLETED, (latest.plannedMs / MS_PER_MINUTE).toInt(), latest.brokenReason))
             else -> LockdownHostState.Hidden
@@ -123,47 +145,28 @@ class LockdownHostViewModel @Inject constructor(
 
     init {
         viewModelScope.launch { labels.value = usage.launcherApps().associate { it.packageName to it.label } }
-        // The emergency exit's clock, and a look at the session once a second so it ends even if the service is not running.
+        // A look at the session once a second, so it still ends (or completes) with the app open and the service not running.
         viewModelScope.launch {
-            var beat = 0
             while (true) {
-                delay(EXIT_STEP_MS)
-                if (!running) {
-                    exit.value = ExitPhase.Idle
-                    continue
-                }
-                val next = LockdownRules.nextExit(exit.value, pressing.value, visible.value, uptime.elapsedRealtimeMs())
-                exit.value = if (next == ExitPhase.Done) ExitPhase.Idle else next
-                if (next == ExitPhase.Done) controller.emergencyExit()
-                if (++beat % BEATS_PER_TICK == 0) controller.tick()
+                delay(BEAT_MS)
+                if (running) controller.tick()
             }
         }
     }
 
     fun onEvent(event: LockdownEvent) {
         when (event) {
-            is LockdownEvent.ExitPressed -> pressing.value = event.pressed
-            is LockdownEvent.ScreenVisible -> visible.value = event.visible
+            LockdownEvent.Exit -> viewModelScope.launch { controller.leaveWithShield() }
             is LockdownEvent.Dismiss -> viewModelScope.launch { uiPrefs.setLockdownSeen(event.id) }
-        }
-    }
-
-    private fun ExitPhase.toUi(now: Long): LockdownExitUi = when (this) {
-        ExitPhase.Idle, ExitPhase.Done -> LockdownExitUi.Idle
-        is ExitPhase.Holding -> LockdownExitUi.Holding(((now - sinceMs).toFloat() / LockdownRules.EXIT_HOLD_MS).coerceIn(0f, 1f))
-        is ExitPhase.Waiting -> {
-            val left = (LockdownRules.EXIT_WAIT_MS - (now - sinceMs)).coerceAtLeast(0)
-            LockdownExitUi.Waiting(((left + MS_PER_SECOND - 1) / MS_PER_SECOND).toInt(), 1f - left.toFloat() / LockdownRules.EXIT_WAIT_MS)
         }
     }
 
     private companion object {
         const val STOP_TIMEOUT_MS = 5_000L
         const val TICK_MS = 250L
-        const val EXIT_STEP_MS = 100L
-        const val BEATS_PER_TICK = 10
+        const val BEAT_MS = 1_000L
         const val MS_PER_MINUTE = 60_000L
-        const val MS_PER_SECOND = 1_000L
+        val TIME: DateTimeFormatter = DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT)
     }
 }
 
@@ -175,79 +178,167 @@ class LockdownHostViewModel @Inject constructor(
 fun LockdownHost(modifier: Modifier = Modifier, viewModel: LockdownHostViewModel = hiltViewModel(), content: @Composable () -> Unit) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
-    LifecycleResumeEffect(viewModel) {
-        viewModel.onEvent(LockdownEvent.ScreenVisible(true))
-        onPauseOrDispose { viewModel.onEvent(LockdownEvent.ScreenVisible(false)) }
-    }
     Box(modifier = modifier) {
         content()
         when (val current = state) {
             LockdownHostState.Hidden -> Unit
             is LockdownHostState.Session -> LockdownSessionScreen(
                 state = current.ui,
-                onEvent = viewModel::onEvent,
+                onExit = { viewModel.onEvent(LockdownEvent.Exit) },
                 onOpenApp = { pkg ->
                     context.packageManager.getLaunchIntentForPackage(pkg)?.let { context.startActivity(it.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
                 },
+                onCall = { context.startActivity(Intent(Intent.ACTION_DIAL).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) },
             )
             is LockdownHostState.Result -> LockdownResultScreen(current.ui, onDone = { viewModel.onEvent(LockdownEvent.Dismiss(current.ui.id)) })
         }
     }
 }
 
-/** The only screen of AWAKEN while a Lockdown runs: the time left, the apps still allowed, and the emergency exit. */
+/** The clock as it reads: 18:42, or 1:05:09 from an hour up. */
+internal fun lockdownClockText(remainingMs: Long): String {
+    val total = (remainingMs / MS_PER_SECOND).coerceAtLeast(0)
+    val hours = total / SECONDS_PER_HOUR
+    val minutes = (total % SECONDS_PER_HOUR) / SECONDS_PER_MINUTE
+    val seconds = total % SECONDS_PER_MINUTE
+    return if (hours > 0) "%d:%02d:%02d".format(hours, minutes, seconds) else "%02d:%02d".format(minutes, seconds)
+}
+
+private const val MS_PER_SECOND = 1_000L
+private const val SECONDS_PER_MINUTE = 60L
+private const val SECONDS_PER_HOUR = 3_600L
+
+/**
+ * The only screen of AWAKEN while a Lockdown runs: the time left as the biggest thing on the screen (the app's own
+ * numbers, sized to fill their card), the seconds, when it ends, the shields, a slide to leave (which costs a shield, once
+ * a day), and the apps still allowed with a call button. It fills the screen in portrait, and splits in two sideways.
+ * Going anywhere else brings the hunter back here. There is no button to end it.
+ */
 @Composable
 fun LockdownSessionScreen(
     state: LockdownSessionUiState,
-    onEvent: (LockdownEvent) -> Unit,
+    onExit: () -> Unit,
     onOpenApp: (String) -> Unit,
+    onCall: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val colors = AwakenTheme.colors
     val type = AwakenTheme.type
     BackHandler(enabled = true) { }
     ScreenBackground(modifier = modifier.fillMaxSize().pointerInput(Unit) { }) {
-        Column(
+        BoxWithConstraints(
             modifier = Modifier
+                .fillMaxSize()
                 .safeDrawingPadding()
-                .padding(horizontal = Spacing.gutter, vertical = Spacing.lg)
-                .widthIn(max = Spacing.contentMaxWidth)
-                .fillMaxWidth()
-                .align(Alignment.Center)
-                .verticalScroll(rememberScrollState()),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(Spacing.md),
+                .padding(horizontal = Spacing.gutter, vertical = Spacing.md),
         ) {
-            Text(lexString(R.string.lockdown_title), style = type.title, color = colors.textSecondary)
-            Text(
-                lexString(R.string.lockdown_left, shortClock(state.remainingMs)),
-                style = type.metricXL,
-                color = colors.textPrimary,
-                textAlign = TextAlign.Center,
-            )
-            SystemWindow(title = lexString(R.string.lockdown_session_apps), accent = colors.accent, reveal = false) {
-                if (state.apps.isEmpty()) {
-                    Text(lexString(R.string.lockdown_session_no_apps), style = type.caption, color = colors.textSecondary)
-                }
-                state.apps.forEach { app -> SecondaryButton(app.label, { onOpenApp(app.packageName) }, Modifier.fillMaxWidth()) }
+            val sideways = maxWidth > maxHeight
+            val title: @Composable () -> Unit = {
+                Text(lexString(R.string.lockdown_title), style = type.title, color = colors.textSecondary)
             }
-            SystemWindow(title = lexString(R.string.lockdown_exit_title), accent = colors.critical, reveal = false) {
-                Text(lexString(R.string.lockdown_exit_note), style = type.caption, color = colors.textSecondary)
-                val (label, progress) = when (val exit = state.exit) {
-                    LockdownExitUi.Idle -> lexString(R.string.lockdown_exit_hold) to 0f
-                    is LockdownExitUi.Holding -> lexString(R.string.lockdown_exit_holding) to exit.progress
-                    is LockdownExitUi.Waiting -> lexString(R.string.lockdown_exit_waiting, exit.secondsLeft) to exit.progress
+            val clock: @Composable (Modifier) -> Unit = { m ->
+                AwakenCard(reveal = false, modifier = m.fillMaxWidth()) {
+                    FitText(lockdownClockText(state.remainingMs), type.metricXL, Modifier.weight(1f).fillMaxWidth())
                 }
-                HoldToConfirmButton(
-                    text = label,
-                    progress = progress,
-                    description = lexString(R.string.cd_lockdown_exit),
-                    onPressedChange = { onEvent(LockdownEvent.ExitPressed(it)) },
-                )
+            }
+            val tiles: @Composable (Modifier) -> Unit = { m -> Tiles(state, m) }
+            val controls: @Composable () -> Unit = { Controls(state, onExit, onOpenApp, onCall) }
+            if (sideways) {
+                Row(modifier = Modifier.fillMaxSize(), horizontalArrangement = Arrangement.spacedBy(Spacing.md)) {
+                    Column(modifier = Modifier.weight(1f).fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+                        title()
+                        clock(Modifier.weight(1f))
+                    }
+                    Column(modifier = Modifier.weight(1f).fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+                        tiles(Modifier.weight(1f))
+                        controls()
+                    }
+                }
+            } else {
+                Column(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+                    Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) { title() }
+                    clock(Modifier.weight(CLOCK_WEIGHT))
+                    tiles(Modifier.weight(1f))
+                    controls()
+                }
             }
         }
     }
 }
+
+/** The seconds, when it ends and the shields: a tall tile beside a column of two. */
+@Composable
+private fun Tiles(state: LockdownSessionUiState, modifier: Modifier) {
+    val colors = AwakenTheme.colors
+    val type = AwakenTheme.type
+    val shieldDescription = lexPlural(R.plurals.lockdown_shield_count_cd, state.shields, state.shields)
+    Row(modifier = modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+        AwakenCard(reveal = false, modifier = Modifier.weight(1f).fillMaxHeight()) {
+            FitText("%02d".format((state.remainingMs / MS_PER_SECOND) % SECONDS_PER_MINUTE), type.metricXL, Modifier.weight(1f).fillMaxWidth())
+            Text(
+                lexString(R.string.lockdown_seconds).uppercase(),
+                style = type.caption,
+                color = colors.textSecondary,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
+        Column(modifier = Modifier.weight(1f).fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+            AwakenCard(reveal = false, modifier = Modifier.weight(1f).fillMaxWidth()) {
+                Text(lexString(R.string.lockdown_ends).uppercase(), style = type.caption, color = colors.textSecondary)
+                FitText(state.endsAtText, type.metricXL, Modifier.weight(1f).fillMaxWidth())
+            }
+            AwakenCard(reveal = false, modifier = Modifier.weight(1f).fillMaxWidth()) {
+                Row(
+                    modifier = Modifier.weight(1f).fillMaxWidth().semantics(mergeDescendants = true) { contentDescription = shieldDescription },
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(Spacing.sm, Alignment.CenterHorizontally),
+                ) {
+                    Icon(AwakenGlyphs.Shield, contentDescription = null, tint = colors.accent, modifier = Modifier.size(AwakenTheme.dimens.icon))
+                    Text(state.shields.toString(), style = type.title, color = colors.textPrimary)
+                }
+            }
+        }
+    }
+}
+
+/** The slide to leave, why it may be off, and the app slots with the call button. */
+@Composable
+private fun Controls(state: LockdownSessionUiState, onExit: () -> Unit, onOpenApp: (String) -> Unit, onCall: () -> Unit) {
+    val colors = AwakenTheme.colors
+    val type = AwakenTheme.type
+    Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(Spacing.sm), horizontalAlignment = Alignment.CenterHorizontally) {
+        SlideToConfirm(
+            text = lexString(R.string.lockdown_slide_exit),
+            handle = AwakenGlyphs.Shield,
+            description = lexString(R.string.lockdown_slide_exit_cd),
+            onConfirmed = onExit,
+            enabled = state.exit == ExitCheck.ALLOWED,
+            handleColor = colors.critical,
+        )
+        Text(
+            text = when (state.exit) {
+                ExitCheck.ALLOWED -> lexString(R.string.lockdown_exit_uses, state.shields)
+                ExitCheck.NO_SHIELD -> lexString(R.string.lockdown_exit_none)
+                ExitCheck.USED_TODAY -> lexString(R.string.lockdown_exit_used)
+            },
+            style = type.caption,
+            color = colors.textSecondary,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth(),
+        )
+        AppSlotsBar(
+            slots = state.slots.map { slot ->
+                AppSlot(slot.icon, slot.packageName != null, slot.label?.let { lexString(R.string.lockdown_slot_open_cd, it) } ?: lexString(R.string.lockdown_slot_empty_session_cd))
+            },
+            callDescription = lexString(R.string.lockdown_call_cd),
+            onSlot = { index -> state.slots.getOrNull(index)?.packageName?.let(onOpenApp) },
+            onCall = onCall,
+        )
+    }
+}
+
+private const val CLOCK_WEIGHT = 1.5f
 
 /** How a Lockdown ended, until the hunter taps Done. */
 @Composable
@@ -262,7 +353,8 @@ fun LockdownResultScreen(state: LockdownResultUiState, onDone: () -> Unit, modif
                 .padding(horizontal = Spacing.gutter, vertical = Spacing.lg)
                 .widthIn(max = Spacing.contentMaxWidth)
                 .fillMaxWidth()
-                .align(Alignment.Center),
+                .align(Alignment.Center)
+                .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(Spacing.md),
         ) {
@@ -288,29 +380,30 @@ fun LockdownResultScreen(state: LockdownResultUiState, onDone: () -> Unit, modif
     }
 }
 
-private val previewApps = listOf(LockdownAppChip("a", "Notes"), LockdownAppChip("b", "Spotify"))
+private val previewSlots = listOf(LockdownSlotUi("a", "Notes", null), LockdownSlotUi(null, null, null), LockdownSlotUi(null, null, null))
 
 @PhonePreviews
+@LandscapePreviews
 @Composable
 private fun LockdownSessionPreview() {
     AwakenTheme(reduceMotion = true) {
-        LockdownSessionScreen(LockdownSessionUiState(18 * 60_000L + 42_000L, previewApps, LockdownExitUi.Idle), {}, {})
+        LockdownSessionScreen(LockdownSessionUiState(18 * 60_000L + 42_000L, "11:06 AM", previewSlots, shields = 3, exit = ExitCheck.ALLOWED), {}, {}, {})
     }
 }
 
 @PhonePreviews
 @Composable
-private fun LockdownSessionExitWaitingPreview() {
+private fun LockdownSessionNoWayOutPreview() {
     AwakenTheme(reduceMotion = true) {
-        LockdownSessionScreen(LockdownSessionUiState(5 * 60_000L, emptyList(), LockdownExitUi.Waiting(41, 0.32f)), {}, {})
+        LockdownSessionScreen(LockdownSessionUiState(2 * 3_600_000L + 5_000L, "1:20 PM", previewSlots, shields = 0, exit = ExitCheck.NO_SHIELD), {}, {}, {})
     }
 }
 
 @PhonePreviews
 @Composable
-private fun LockdownSessionHoldingPreview() {
+private fun LockdownSessionUsedTodayPreview() {
     AwakenTheme(reduceMotion = true) {
-        LockdownSessionScreen(LockdownSessionUiState(2 * 3_600_000L + 5_000L, previewApps + LockdownAppChip("c", "A very long app name that keeps going"), LockdownExitUi.Holding(0.5f)), {}, {})
+        LockdownSessionScreen(LockdownSessionUiState(4_000L, "11:06 AM", previewSlots, shields = 2, exit = ExitCheck.USED_TODAY), {}, {}, {})
     }
 }
 
@@ -323,5 +416,5 @@ private fun LockdownResultCompletedPreview() {
 @PhonePreviews
 @Composable
 private fun LockdownResultBrokenPreview() {
-    AwakenTheme(reduceMotion = true) { LockdownResultScreen(LockdownResultUiState("2", completed = false, minutes = 30, reason = LockdownBreak.PERMISSION_REVOKED), {}) }
+    AwakenTheme(reduceMotion = true) { LockdownResultScreen(LockdownResultUiState("2", completed = false, minutes = 30, reason = LockdownBreak.EMERGENCY_EXIT), {}) }
 }

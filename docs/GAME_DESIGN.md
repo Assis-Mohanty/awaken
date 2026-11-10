@@ -462,6 +462,7 @@ Test vectors: lock on, 120 s away → still running; lock off, 91 s away → BRE
 | Item | Price | Limit | Purpose |
 |---|---|---|---|
 | Streak Shield | 300 | hold ≤ 2 | loss insurance |
+| Lockdown shield | 1,000 | no limit | leave a Lockdown early, once per game-day (§19.2) |
 | Extra reroll | 40 | 3/day | autonomy |
 
 **No XP boosters for gold. No XP for gold. No real-money anything in v1.** The Store sells only items that change how you play. Themes, title frames, badges and the Relic Cache (with Loot Fragments) were removed on 2026-11-03; past purchases stay in the ledger (`sourceType = SHOP`, `CACHE_OPEN`, `ITEM`) and nothing writes new ones.
@@ -1171,29 +1172,41 @@ Pause never fires while a Lockdown runs, or while a Focus Gate runs with Focus L
 
 ### 19.2 Lockdown
 
-A focus session with no early end. Only the chosen apps (and the always-allowed ones) open; everything else gets a block
-screen with the time left and [Back to session]. It runs as a CUSTOM gate (§8.1) with a lockdown flag.
+> **Redesigned by the user 2026-11-10** (replaces the first version: the 3-second hold, the 1-minute wait and the 1-hour cooldown are gone).
+
+A focus session with no early end. It lives in the Focus tab. The hunter scrolls to a time (or taps 15 min, 45 min or 1 hour),
+reads that they can not leave, sees whether a Lockdown shield is available, picks up to 3 apps with the plus slots, and slides
+to start. While it runs, **everything else is covered, including the home screen, Settings and the app installer**: whatever
+the hunter opens, the session screen comes straight back. Only the chosen apps, the phone (call button, dialer, in-call),
+emergency and payment apps, the keyboard, system UI and AWAKEN's own session screen work. It runs as a CUSTOM gate (§8.1)
+with a lockdown flag.
 
 | # | Rule | Value |
 |---|---|---|
-| LD1 | Duration | 15-180 min in 5-min steps, default 30 |
-| LD2 | Allowed apps | at most 3 |
-| LD3 | Emergency exit | hold 3 s, then wait 60 s on the session screen; leaving the screen cancels. Then the session is BROKEN |
-| LD4 | Cooldown after a broken session | 60 min before the next Lockdown |
-| LD5 | Reward | a cleared Lockdown pays as a CUSTOM gate of its length (§8.1 P2 tiers, `V = TIMER 1.15`) at **x 1.00**, counts toward the P5 cap of 4 paid runs per game-day (a 5th still locks, pays 0). Broken: no XP, no gold, nothing deducted |
-| LD6 | Uncovered time | up to 90 s with the watcher down is tolerated. Past that the usage log decides: only allowed or never-covered apps seen continues; anything else, or an unreadable log, breaks it |
-| LD7 | Allowed-app limits | not a Distracting app (§6.7) and not of kind SOCIAL, VIDEO or GAME |
+| LD1 | Duration | 15-180 min in 5-min steps, default 45; quick choices 15 min, 45 min, 1 hour |
+| LD2 | Allowed apps | at most 3, chosen in the plus slots before starting |
+| LD3 | Leaving early | **Only with a Lockdown shield, by sliding to exit, and at most once per game-day.** It spends 1 shield (a ledger row), ends the session as BROKEN, pays nothing. With no shield, or after one exit today, there is no way out until the time is up (only a power-off, safe mode or similar) |
+| LD4 | Cooldown | none (removed): a broken Lockdown can be followed by another at once |
+| LD5 | Reward | a cleared Lockdown pays as a CUSTOM gate of its length (§8.1 P2 tiers, `V = TIMER 1.15`) at **x 1.00**, counts toward the P5 cap of 4 paid runs per game-day (a 5th still locks, pays 0). Broken: no XP, no gold, nothing deducted except the shield |
+| LD6 | Uncovered time | up to 90 s with the watcher down is tolerated. Past that the usage log decides: only allowed or never-covered apps continues; anything else (the home screen counts), or an unreadable log, breaks it |
+| LD7 | Allowed-app limits | not a Distracting app (§6.7) and not of kind SOCIAL, VIDEO or GAME; the picker lists only apps that can be chosen, the most used first, and a search finds the rest |
 | LD8 | Heartbeat | time served is saved every 30 s |
 | LD9 | Permission check | usage access and the overlay permission are checked every 5 s; losing either breaks the session |
+| LD10 | Lockdown shield | an item; **price 1,000 gold** in the Store (§9.2), no holding limit; a debug build can hand out 5 in one tap. "Once per game-day" counts sessions ended by a shield since the game-day started |
 
 Time: a session counts time on the monotonic clock only. Changing the system time or zone changes nothing; a drift of more
 than 60 s between the two clocks sets `clockChanged` for history, nothing else. After a reboot the session resumes from the
 last heartbeat and the time with the phone off counts as zero. Lockdown runs have no 90 s app-background breach (LD6
 replaces it) and do not collapse as DEVICE_RESTARTED. Focus Lock ignores them.
 
-Always allowed, in Lockdown and Pause: the §8.2 L1 never-cover list, this phone's launcher, keyboard, dialer, SMS app,
-UPI and tap-to-pay apps, the clock/alarm app, the permission controller, the package installer, and any system app with
-no launcher icon. During a phone call nothing is ever covered.
+Never covered, in Lockdown and Pause: the phone, in-call, emergency and telecom apps, messages, UPI and tap-to-pay apps, the
+keyboard, system UI and this phone's permission dialogs (any package that is not a real app). **Covered in Lockdown only:**
+this phone's launcher, Settings and the app installer. During a phone call nothing is ever covered.
+
+**Play policy note.** Covering Settings and the installer means the app can not be switched off or removed from inside a
+Lockdown. The Play Malware policy says "Apps that abuse features to prevent them from being uninstalled or stopped" and "Don't
+write code that prevents a user's app from being uninstalled". This is a user-started, time-boxed rule with a shield exit and
+no accessibility or device-admin use, but it is risky; see `docs/protect/PLAN.md` §5.
 
 ### 19.3 Strict+ (accessibility, off in the Play build)
 
@@ -1219,11 +1232,11 @@ node) and store nothing. Uninstall and force-stop protection is not built (Play 
 | 188 | same, wall clock -2 h | 20 min left, `clockChanged` |
 | 189 | Lockdown 30 min, heartbeat at 10:30 served, then reboot, any wall time | 19:30 left |
 | 190 | Lockdown 30 min served in full | COMPLETED, pays as CUSTOM 30 min (tier D) |
-| 191 | emergency exit: hold 3 s, wait 60 s | BROKEN, ledger unchanged |
-| 192 | emergency exit: hold 3 s, leave at 59 s | RUNNING |
+| 191 | leave with a shield (1 held) | BROKEN, shield 1 -> 0, no XP or gold |
+| 192 | leave with no shield | refused, RUNNING |
 | 193 | usage access revoked mid-session | BROKEN (PERMISSION_REVOKED), ledger unchanged |
-| 194 | start 59 min / 60 min after a BROKEN session | refused / allowed |
-| 195 | watcher down 91 s; usage log shows a non-allowed app / only allowed apps / unreadable | BROKEN / RUNNING / BROKEN |
+| 194 | second shield exit on the same game-day with 4 shields left / the next game-day | refused (USED_TODAY) / allowed |
+| 195 | watcher down 91 s; usage log shows the home screen or another app / only allowed apps / unreadable | BROKEN / RUNNING / BROKEN |
 | 196 | watcher down 90 s | RUNNING |
 | 197 | 5th paid custom run of the game-day is a cleared Lockdown | 0 XP, session still COMPLETED |
 

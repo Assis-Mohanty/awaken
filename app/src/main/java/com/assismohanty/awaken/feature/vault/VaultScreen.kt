@@ -49,7 +49,8 @@ fun VaultScreen(state: VaultUiState, onEvent: (VaultEvent) -> Unit, onBack: () -
             return@LargeTitleScaffold
         }
         BalanceHero(state)
-        ShieldCard(state, onEvent)
+        ItemCard(state.shield, R.string.vault_item_blurb, state.busy, onEvent)
+        ItemCard(state.lockdownShield, R.string.vault_lockdown_blurb, state.busy, onEvent)
         Text(lexString(R.string.vault_reroll_body), style = AwakenTheme.type.caption, color = AwakenTheme.colors.textSecondary)
     }
     state.pending?.let { pending ->
@@ -61,7 +62,8 @@ fun VaultScreen(state: VaultUiState, onEvent: (VaultEvent) -> Unit, onBack: () -
 @Composable
 private fun BalanceHero(state: VaultUiState) {
     val shields = lexString(R.string.vault_shields, state.shields, state.shieldMax)
-    val description = lexString(R.string.vault_gold, formatCount(state.gold)) + ". " + shields
+    val lockdown = lexString(R.string.vault_lockdown_held, state.lockdownShields)
+    val description = lexString(R.string.vault_gold, formatCount(state.gold)) + ". " + shields + ". " + lockdown
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -70,13 +72,14 @@ private fun BalanceHero(state: VaultUiState) {
     ) {
         BigValue(formatCount(state.gold), lexString(R.string.unit_gold), large = true)
         Text(shields, style = AwakenTheme.type.caption, color = AwakenTheme.colors.textSecondary)
+        Text(lockdown, style = AwakenTheme.type.caption, color = AwakenTheme.colors.textSecondary)
     }
 }
 
 /** The streak freeze: its name and what it does, with the price on the Buy button. */
 @Composable
-private fun ShieldCard(state: VaultUiState, onEvent: (VaultEvent) -> Unit) {
-    val item = state.shield ?: return
+private fun ItemCard(item: VaultItemState?, blurb: Int, busy: Boolean, onEvent: (VaultEvent) -> Unit) {
+    if (item == null) return
     val colors = AwakenTheme.colors
     val type = AwakenTheme.type
     val name = shopItemNameRes(item.item.id)?.let { lexString(it) } ?: item.item.id
@@ -90,13 +93,13 @@ private fun ShieldCard(state: VaultUiState, onEvent: (VaultEvent) -> Unit) {
         ) {
             Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(Spacing.xxs)) {
                 Text(name, style = type.label, color = colors.textPrimary)
-                Text(lexString(R.string.vault_item_blurb), style = type.caption, color = colors.textSecondary)
+                Text(lexString(blurb), style = type.caption, color = colors.textSecondary)
                 blockReason(item.check)?.let { Text(it, style = type.caption, color = colors.textSecondary) }
             }
             PrimaryButton(
                 text = lexString(R.string.vault_buy_price, formatCount(item.item.price)),
                 onClick = { onEvent(VaultEvent.Buy(item.item.id)) },
-                enabled = item.check == BuyCheck.Buyable && !state.busy,
+                enabled = item.check == BuyCheck.Buyable && !busy,
                 modifier = Modifier.semantics { contentDescription = label },
             )
         }
@@ -133,6 +136,8 @@ internal fun previewVaultState(rich: Boolean = true): VaultUiState {
         gold = gold,
         shields = 1,
         shield = VaultItemState(item, ShopRules.canBuy(item, gold, shields = 1)),
+        lockdownShield = ShopRules.byId.getValue(ShopRules.LOCKDOWN_SHIELD_ID).let { VaultItemState(it, ShopRules.canBuy(it, gold, shields = 1)) },
+        lockdownShields = 2,
     )
 }
 

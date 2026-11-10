@@ -30,6 +30,7 @@ import com.assismohanty.awaken.core.domain.ObserveHunterStateUseCase
 import com.assismohanty.awaken.core.domain.RerollQuestUseCase
 import com.assismohanty.awaken.core.domain.StartQuestUseCase
 import com.assismohanty.awaken.core.domain.UndoCompletionUseCase
+import com.assismohanty.awaken.engine.ShopRules
 import com.assismohanty.awaken.engine.model.LedgerKind
 import com.assismohanty.awaken.engine.model.SourceType
 import com.assismohanty.awaken.engine.model.Stat
@@ -76,6 +77,7 @@ sealed interface DebugEvent {
     data object RebuildBalances : DebugEvent
     data object GrantShield : DebugEvent
     data object GrantGold : DebugEvent
+    data object GrantLockdownShields : DebugEvent
     data class SimulateSteps(val enabled: Boolean) : DebugEvent
     data object SyncHealth : DebugEvent
     data object AddUsage : DebugEvent
@@ -263,6 +265,9 @@ class DebugViewModel @Inject constructor(
         }
         DebugEvent.ScreenshotMode -> demoSeeder()
         DebugEvent.GrantGold -> grantCurrency(LedgerKind.GOLD, DEBUG_GOLD, "Granted $DEBUG_GOLD gold.")
+        DebugEvent.GrantLockdownShields -> grantCurrency(
+            LedgerKind.ITEM, ShopRules.DEBUG_LOCKDOWN_SHIELDS.toLong(), "Granted ${ShopRules.DEBUG_LOCKDOWN_SHIELDS} Lockdown shields.", itemId = ShopRules.LOCKDOWN_SHIELD_ID,
+        )
         DebugEvent.GrantLevel -> uiState.value.hunter?.let { hunter ->
             // Exactly enough XP for the next level; xp_source is empty so it never counts toward the daily caps.
             val needed = hunter.xpForLevel - hunter.xpIntoLevel
@@ -292,12 +297,13 @@ class DebugViewModel @Inject constructor(
     }
 
     /** Debug faucet: a currency credit with a fresh idempotency key (never used by release code). */
-    private suspend fun grantCurrency(kind: LedgerKind, amount: Long, message: String): String =
+    private suspend fun grantCurrency(kind: LedgerKind, amount: Long, message: String, itemId: String = ""): String =
         uiState.value.gameDate?.let { today ->
             ledger.insertIdempotent(
                 listOf(
                     LedgerEntryEntity(
                         kind = kind,
+                        itemId = itemId,
                         delta = amount,
                         sourceType = SourceType.SHOP,
                         sourceId = "debug:${UUID.randomUUID()}",

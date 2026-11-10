@@ -2,21 +2,28 @@ package com.assismohanty.awaken.core.domain
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.assismohanty.awaken.core.data.db.entity.GateRunStatus
+import com.assismohanty.awaken.core.data.db.entity.LedgerEntryEntity
 import com.assismohanty.awaken.core.data.usage.OpenedRead
+import com.assismohanty.awaken.engine.BuyCheck
+import com.assismohanty.awaken.engine.ExitCheck
 import com.assismohanty.awaken.engine.GateCollapseReason
 import com.assismohanty.awaken.engine.LockdownBreak
 import com.assismohanty.awaken.engine.LockdownStatus
+import com.assismohanty.awaken.engine.ShopRules
+import com.assismohanty.awaken.engine.model.LedgerKind
+import com.assismohanty.awaken.engine.model.SourceType
 import com.assismohanty.awaken.testing.FakeUsageGateway
 import com.assismohanty.awaken.testing.TestGraph
 import com.google.common.truth.Truth.assertThat
 import java.time.Duration
+import java.time.LocalDate
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 
-/** Lockdown start, time, completion, the emergency exit and the gaps (GD §19.2), on a real in-memory database. */
+/** Lockdown start, time, completion, the shield exit and the gaps (GD §19.2), on a real in-memory database. */
 @RunWith(AndroidJUnit4::class)
 class LockdownUseCasesTest {
     private val graph = TestGraph()
@@ -24,16 +31,18 @@ class LockdownUseCasesTest {
     private val gateDao = graph.db.gateRunDao()
     private var usageAccess = true
     private var overlay = true
-    private val always = setOf("com.sec.android.app.launcher", "com.assismohanty.awaken")
+    private val launcher = "com.sec.android.app.launcher"
+    private val okFromPhone = setOf("com.assismohanty.awaken")
     private val coverable = setOf(FakeUsageGateway.INSTAGRAM, FakeUsageGateway.DOCS, FakeUsageGateway.CALCULATOR, "com.whatsapp")
     private val env = object : LockdownEnvironment {
         override fun usageAccess() = usageAccess
         override fun canAppearOnTop() = overlay
-        override fun alwaysAllowed() = always
+        override fun okFromPhone() = okFromPhone
+        override fun homePackages() = setOf(launcher)
         override fun isCoverable(packageName: String) = packageName in coverable
     }
     private val start = StartLockdownUseCase(graph.startGate, dao, graph.usage, graph.distractingApps, env, graph.transactions, graph.uptime, graph.clock)
-    private val controller = LockdownController(dao, graph.gateRuns, graph.usage, env, graph.transactions, graph.uptime, graph.clock)
+    private val controller = LockdownController(dao, graph.gateRuns, graph.usage, env, graph.ledger, graph.db.hunterDao(), graph.transactions, graph.uptime, graph.clock)
 
     @Before
     fun setUp() = runBlocking { graph.seedHunter() }
@@ -48,6 +57,21 @@ class LockdownUseCasesTest {
         graph.uptime.elapsedMs += minutes * 60_000
         graph.clock.advance(Duration.ofMinutes(minutes))
     }
+
+    private fun give(kind: LedgerKind, amount: Long, itemId: String = "") = runBlocking {
+        graph.ledger.insertIdempotent(
+            listOf(
+                LedgerEntryEntity(
+                    kind = kind, itemId = itemId, delta = amount, sourceType = SourceType.SHOP, sourceId = "test:${kind.name}:$itemId:$amount:${graph.clock.instant}",
+                    gameDate = LocalDate.parse("2026-10-18"), createdAt = graph.clock.instant,
+                ),
+            ),
+        )
+    }
+
+    private fun giveShields(n: Long) = give(LedgerKind.ITEM, n, ShopRules.LOCKDOWN_SHIELD_ID)
+
+    private fun shields(): Long = runBlocking { graph.ledger.balances().item(ShopRules.LOCKDOWN_SHIELD_ID) }
 
     @Test
     fun startingOpensAFlaggedGateRunAndARunningSession() = runBlocking<Unit> {
@@ -94,7 +118,6 @@ class LockdownUseCasesTest {
         assertThat(graph.ledger.balances()).isNotEqualTo(before)
         assertThat(gateDao.running()).isNull()
         assertThat(gateDao.get(done.session.gateRunId)?.status).isEqualTo(GateRunStatus.CLEARED)
-        // Paid once: asking again changes nothing.
         val after = graph.ledger.balances()
         assertThat(controller.tick()).isEqualTo(LockdownTick.None)
         assertThat(graph.ledger.balances()).isEqualTo(after)
@@ -108,7 +131,6 @@ class LockdownUseCasesTest {
         assertThat(controller.remaining(started.session)).isEqualTo(Duration.ofMinutes(20))
         val tick = controller.tick() as LockdownTick.Running
         assertThat(tick.remaining).isEqualTo(Duration.ofMinutes(20))
-        // The heartbeat noticed the clock moved differently from the monotonic one.
         assertThat(dao.running()?.clockChanged).isTrue()
     }
 
@@ -124,7 +146,7 @@ class LockdownUseCasesTest {
     fun vector189AfterARebootItResumesFromTheLastSavedTotal() = runBlocking<Unit> {
         startOk(30)
         passMinutes(10)
-        controller.tick() // the heartbeat saves 10 minutes
+        controller.tick()
         graph.uptime.reboot()
         graph.clock.advance(Duration.ofHours(8))
         val saved = dao.running()!!
@@ -133,21 +155,84 @@ class LockdownUseCasesTest {
     }
 
     @Test
-    fun vector191TheEmergencyExitBreaksItWithNoRewardAndStartsTheWait() = runBlocking<Unit> {
+    fun vector191AShieldLetsYouLeaveAndIsSpentWithNoReward() = runBlocking<Unit> {
+        giveShields(2)
         startOk(30)
         passMinutes(5)
         val before = graph.ledger.balances()
-        val broken = controller.emergencyExit() as LockdownTick.Broken
+        val left = controller.leaveWithShield() as LockdownExit.Left
+        val broken = left.tick as LockdownTick.Broken
         assertThat(broken.reason).isEqualTo(LockdownBreak.EMERGENCY_EXIT)
-        assertThat(graph.ledger.balances()).isEqualTo(before)
+        assertThat(shields()).isEqualTo(1)
+        // Only the shield changed: no XP, no gold.
+        val after = graph.ledger.balances()
+        assertThat(after.gold).isEqualTo(before.gold)
+        assertThat(after.xpTotal).isEqualTo(before.xpTotal)
         val run = gateDao.get(broken.session.gateRunId)
         assertThat(run?.status).isEqualTo(GateRunStatus.COLLAPSED)
         assertThat(run?.collapseReason).isEqualTo(GateCollapseReason.LOCKDOWN_BROKEN)
-        // Vector 194: an hour of waiting.
-        passMinutes(59)
-        assertThat(start(30, emptySet())).isInstanceOf(StartLockdownResult.InCooldown::class.java)
-        passMinutes(1)
-        assertThat(start(30, emptySet())).isInstanceOf(StartLockdownResult.Started::class.java)
+        assertThat(dao.running()).isNull()
+    }
+
+    @Test
+    fun withNoShieldThereIsNoWayOut() = runBlocking<Unit> {
+        startOk(30)
+        assertThat(controller.leaveWithShield()).isEqualTo(LockdownExit.Refused(ExitCheck.NO_SHIELD))
+        assertThat(dao.running()?.status).isEqualTo(LockdownStatus.RUNNING)
+        assertThat(gateDao.running()?.lockdown).isTrue()
+    }
+
+    @Test
+    fun onlyOneShieldExitPerGameDayHoweverManyShieldsRemain() = runBlocking<Unit> {
+        giveShields(5)
+        startOk(30)
+        assertThat(controller.leaveWithShield()).isInstanceOf(LockdownExit.Left::class.java)
+        assertThat(controller.shieldStatus()).isEqualTo(ShieldStatus(shields = 4, usedToday = true))
+        // No wait before the next Lockdown, but it can not be left today.
+        startOk(30)
+        assertThat(controller.leaveWithShield()).isEqualTo(LockdownExit.Refused(ExitCheck.USED_TODAY))
+        assertThat(shields()).isEqualTo(4)
+        assertThat(dao.running()?.status).isEqualTo(LockdownStatus.RUNNING)
+    }
+
+    @Test
+    fun theShieldComesBackToUseOnTheNextGameDay() = runBlocking<Unit> {
+        giveShields(3)
+        startOk(30)
+        controller.leaveWithShield()
+        assertThat(controller.shieldStatus().usedToday).isTrue()
+        // The game-day starts at 04:00; from 10:00 that is 18 hours away.
+        passMinutes(18 * 60)
+        assertThat(controller.shieldStatus()).isEqualTo(ShieldStatus(shields = 2, usedToday = false))
+        startOk(30)
+        assertThat(controller.leaveWithShield()).isInstanceOf(LockdownExit.Left::class.java)
+        assertThat(shields()).isEqualTo(1)
+    }
+
+    @Test
+    fun leavingWithNoSessionDoesNothing() = runBlocking<Unit> {
+        giveShields(1)
+        assertThat(controller.leaveWithShield()).isEqualTo(LockdownExit.NoSession)
+        assertThat(shields()).isEqualTo(1)
+    }
+
+    @Test
+    fun aLockdownShieldIsBoughtForOneThousandGoldAndHasNoLimit() = runBlocking<Unit> {
+        give(LedgerKind.GOLD, 2_500)
+        val first = graph.purchaseItem(ShopRules.LOCKDOWN_SHIELD_ID, "p1")
+        assertThat(first).isInstanceOf(PurchaseResult.Purchased::class.java)
+        val second = graph.purchaseItem(ShopRules.LOCKDOWN_SHIELD_ID, "p2")
+        assertThat(second).isInstanceOf(PurchaseResult.Purchased::class.java)
+        assertThat(shields()).isEqualTo(2)
+        assertThat(graph.ledger.balances().gold).isEqualTo(500)
+        // Not enough gold left for a third.
+        assertThat(graph.purchaseItem(ShopRules.LOCKDOWN_SHIELD_ID, "p3")).isEqualTo(PurchaseResult.Rejected(BuyCheck.InsufficientGold(500)))
+        assertThat(shields()).isEqualTo(2)
+        // A retried tap with the same key charges nothing twice (with gold to spare, so only the key stops it).
+        give(LedgerKind.GOLD, 1_000)
+        assertThat(graph.purchaseItem(ShopRules.LOCKDOWN_SHIELD_ID, "p1")).isEqualTo(PurchaseResult.Duplicate)
+        assertThat(graph.ledger.balances().gold).isEqualTo(1_500)
+        assertThat(shields()).isEqualTo(2)
     }
 
     @Test
@@ -158,6 +243,9 @@ class LockdownUseCasesTest {
         val broken = controller.tick() as LockdownTick.Broken
         assertThat(broken.reason).isEqualTo(LockdownBreak.PERMISSION_REVOKED)
         assertThat(gateDao.running()).isNull()
+        // A broken Lockdown starts no wait.
+        overlay = true
+        assertThat(start(30, emptySet())).isInstanceOf(StartLockdownResult.Started::class.java)
     }
 
     @Test
@@ -166,7 +254,6 @@ class LockdownUseCasesTest {
         assertThat(graph.gateRuns.pause()).isFalse()
         graph.gateRuns.abandon()
         assertThat(graph.gateRuns.endEarly()).isInstanceOf(GateCheck.Running::class.java)
-        // Hours away, a restart and a changed day change nothing for the gate rules.
         graph.gateRuns.onAppStopped()
         graph.uptime.reboot()
         graph.clock.advance(Duration.ofHours(30))
@@ -186,14 +273,14 @@ class LockdownUseCasesTest {
     fun vector195AGapPastNinetySecondsIsJudgedByTheUsageLog() = runBlocking<Unit> {
         startOk(30, setOf(FakeUsageGateway.DOCS))
         graph.clock.advance(Duration.ofMinutes(5))
-        // Only an allowed app and the launcher: carry on, and the gap is written down.
-        graph.usage.opened.addAll(listOf(FakeUsageGateway.DOCS, "com.sec.android.app.launcher"))
+        // Only an allowed app and AWAKEN: carry on, and the gap is written down.
+        graph.usage.opened.addAll(listOf(FakeUsageGateway.DOCS, "com.assismohanty.awaken"))
         val ok = controller.onWatcherStart() as LockdownTick.Running
         assertThat(ok.session.uncoveredMs).isEqualTo(5 * 60_000L)
 
-        // Another app opened during a later gap: it breaks.
+        // The home screen counts as another app now: it is covered too.
         graph.clock.advance(Duration.ofMinutes(5))
-        graph.usage.opened.add("com.whatsapp")
+        graph.usage.opened.add(launcher)
         val broken = controller.onWatcherStart() as LockdownTick.Broken
         assertThat(broken.reason).isEqualTo(LockdownBreak.UNCOVERED)
     }
