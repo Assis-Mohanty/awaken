@@ -106,7 +106,7 @@ class ProtectService : Service() {
     private var postedFor: String? = null
     private var lastPrefs: UiPrefs = UiPrefs()
     @Volatile private var shields = ShieldStatus(0, false)
-    private var openedAllowedAt: Instant = Instant.MIN
+    private var openedAllowedAt: Instant = Instant.EPOCH
 
     /** The session screen drawn over everything: the state it shows, and the look it is drawn in. */
     private data class CoverShown(val ui: LockdownSessionUiState, val darkTheme: Boolean, val reduceMotion: Boolean)

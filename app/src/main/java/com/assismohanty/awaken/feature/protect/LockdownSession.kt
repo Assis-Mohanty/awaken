@@ -182,14 +182,17 @@ fun LockdownHost(modifier: Modifier = Modifier, viewModel: LockdownHostViewModel
         content()
         when (val current = state) {
             LockdownHostState.Hidden -> Unit
-            is LockdownHostState.Session -> LockdownSessionScreen(
-                state = current.ui,
-                onExit = { viewModel.onEvent(LockdownEvent.Exit) },
-                onOpenApp = { pkg ->
-                    context.packageManager.getLaunchIntentForPackage(pkg)?.let { context.startActivity(it.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
-                },
-                onCall = { context.startActivity(Intent(Intent.ACTION_DIAL).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) },
-            )
+            is LockdownHostState.Session -> {
+                BackHandler(enabled = true) { }
+                LockdownSessionScreen(
+                    state = current.ui,
+                    onExit = { viewModel.onEvent(LockdownEvent.Exit) },
+                    onOpenApp = { pkg ->
+                        context.packageManager.getLaunchIntentForPackage(pkg)?.let { context.startActivity(it.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
+                    },
+                    onCall = { context.startActivity(Intent(Intent.ACTION_DIAL).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) },
+                )
+            }
             is LockdownHostState.Result -> LockdownResultScreen(current.ui, onDone = { viewModel.onEvent(LockdownEvent.Dismiss(current.ui.id)) })
         }
     }
@@ -224,7 +227,7 @@ fun LockdownSessionScreen(
 ) {
     val colors = AwakenTheme.colors
     val type = AwakenTheme.type
-    BackHandler(enabled = true) { }
+    // No BackHandler here: this screen also lives in a service window with no activity (the host and the overlay take Back themselves).
     ScreenBackground(modifier = modifier.fillMaxSize().pointerInput(Unit) { }) {
         BoxWithConstraints(
             modifier = Modifier
