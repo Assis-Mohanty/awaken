@@ -7,9 +7,8 @@
       "note": "UNVERIFIED placeholder ids",
       "screens": [
         {
-          "containerIds": ["com.instagram.android:id/clips_viewer_view_pager"],
-          "signal": "PAGER_PAGE",
-          "signalSourceIds": ["com.instagram.android:id/clips_viewer_view_pager"]
+          "containerIds": ["com.instagram.android:id/clips_item_overlay_component"],
+          "signal": "CHILD_SWAP"
         }
       ]
     },

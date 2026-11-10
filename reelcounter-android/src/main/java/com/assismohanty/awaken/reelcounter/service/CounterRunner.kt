@@ -193,7 +193,7 @@ class CounterRunner @Inject constructor(
 
     private fun updateProbeLoop(tr: ScreenTracker) {
         val s = scope ?: return
-        if (tr.activeApp != null) {
+        if (tr.activeApp != null || tr.foregroundApp != null) {
             if (probeJob?.isActive != true) {
                 probeJob = s.launch {
                     while (isActive) {
@@ -209,7 +209,7 @@ class CounterRunner @Inject constructor(
     }
 
     companion object {
-        const val PROBE_MILLIS = 1_000L
+        const val PROBE_MILLIS = 500L
         const val HEARTBEAT_MILLIS = 5 * 60 * 1_000L
     }
 }

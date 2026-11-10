@@ -18,6 +18,13 @@ class ScreenTracker(
     var activeApp: ShortVideoApp? = null
         private set
 
+    /**
+     * The short-video app in front, even while its screen is not recognised right now (a swipe in flight, a comment sheet).
+     * The runner keeps probing while this is set, so a single missed or mid-swipe look can never end the counting.
+     */
+    var foregroundApp: ShortVideoApp? = null
+        private set
+
     private var lastEvalAt: Instant? = null
     private val trackers = mutableMapOf<ShortVideoApp, ItemPositionTracker>()
 
@@ -27,6 +34,14 @@ class ScreenTracker(
 
     fun onSignal(signal: RawSignal): TrackerOutput {
         val events = mutableListOf<CounterEvent>()
+        when (signal) {
+            is RawSignal.WindowStateChanged -> foregroundApp = ShortVideoApp.fromPackage(signal.packageName) ?: foregroundApp
+            is RawSignal.WindowContentChanged -> foregroundApp = ShortVideoApp.fromPackage(signal.packageName) ?: foregroundApp
+            is RawSignal.ViewScrolled -> foregroundApp = ShortVideoApp.fromPackage(signal.packageName) ?: foregroundApp
+            is RawSignal.Probe -> foregroundApp = ShortVideoApp.fromPackage(signal.foregroundPackage)
+            is RawSignal.ScreenOff -> foregroundApp = null
+            is RawSignal.ScreenOn -> foregroundApp = ShortVideoApp.fromPackage(signal.foregroundPackage)
+        }
         when (signal) {
             is RawSignal.WindowStateChanged -> evaluate(signal.packageName, signal.nodes, signal.at, events)
             is RawSignal.WindowContentChanged -> {
