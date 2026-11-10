@@ -824,3 +824,18 @@ Barcode: 50-pack check (reported, not a gate).
 4. Hindi: the plan covers searching in Devanagari and transliteration. The app's own text stays English. Confirm.
 5. The app accepts ages 13 to 17 today. With the guard they get a diary with no targets. Should Diet setup be closed
    to them completely instead?
+
+
+---
+
+## Part B status
+
+**Batch 1 (2026-11-10), taken on the plan's recommended answers ("continue").** Done: `tools/catalog/build-catalog.mjs`, `xlsx.mjs`, `foods.db` (16,161 foods, 10.9 MB), `CatalogDatabase` + `FoodCatalog` over it, `FoodSearch.key` in `:engine`, zinc / B12 / folate, licence and attribution files, GD section 20, ENGINE_DECISIONS 179-185, PRD F53, `CatalogTest`. Deviations from the plan above:
+
+- **Foundation Foods dropped**: the 2026-10-29 CSV has no food table. SR Legacy + FNDDS + CoFID cover the same ground.
+- **One file instead of three** for the Indian data: aliases and serving sizes sit beside each food in `indian-foods*.json`, not in separate `portions.json` / `aliases.json`.
+- **213 Indian entries, not 300** (91 recipes, 122 overlays on USDA/CoFID rows). CoFID's South Asian coverage meant fewer recipes were needed, but categories are still thin (see `report.md`). The rest is a follow-up, not a blocker for Batch 2.
+- **`packaged.db` (barcode pack) is not built here.** It is only needed in Batch 7, and the ODbL offer (Q4) needs the public repo first.
+- **Atwater check counts fibre at 2 kcal/g** (ENGINE_DECISIONS 182) and **CoFID carbs include fibre** (181).
+- **Q6 (daily XP) stays unbuilt** until confirmed; GD 20.5 is marked unconfirmed.
+- Not yet verified (plan 4.2): Mifflin-St Jeor citation, activity multipliers, protein and macro ranges, 7,700 kcal/kg, water figures. Batch 2 reads them first-hand before the numbers go into code.

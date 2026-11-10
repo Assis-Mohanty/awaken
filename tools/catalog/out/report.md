@@ -1,0 +1,266 @@
+# Catalog build report
+
+Foods: 16161 (SR Legacy 7793, FNDDS 5431, CoFID 2846, AWAKEN recipes 91).
+Indian entries in indian-foods*.json: 213 (91 recipes, 122 overlays on source rows).
+foods.db: 10.92 MB (budget 12 MB).
+Atwater warnings (USDA, CoFID): 71. Atwater errors (own rows): 0.
+CoFID rows dropped as duplicates of USDA rows: 7. USDA portions over 2000 g skipped: 64.
+
+## Errors
+none
+
+## Warnings
+- Atwater usda:167567 "Baking chocolate, unsweetened, liquid": 586 estimated vs 472 kcal
+- Atwater cofid:13-648 "Beans, broad, whole, boiled in unsalted water": 112 estimated vs 91 kcal
+- Atwater cofid:13-663 "Beans, butter, dried, boiled in unsalted water": 132 estimated vs 105 kcal
+- Atwater cofid:13-662 "Beans, chick peas, Kabuli, whole, dried, boiled in unsalted water": 155 estimated vs 129 kcal
+- Atwater cofid:13-659 "Beans, red kidney, dried, boiled in unsalted water": 126 estimated vs 100 kcal
+- Atwater cofid:19-548 "Beef bourguignonne, made with lean beef, homemade": 126 estimated vs 105 kcal
+- Atwater usda:167681 "Beverages, fruit-flavored drink, dry powdered mix, low calorie, with aspartame": 351 estimated vs 218 kcal
+- Atwater usda:167707 "Beverages, fruit-flavored drink, powder, with high vitamin C with other added vitamins, low calorie": 362 estimated vs 227 kcal
+- Atwater usda:173237 "Beverages, Orange-flavor drink, breakfast type, low calorie, powder": 350 estimated vs 217 kcal
+- Atwater cofid:11-906 "Bran, wheat": 274 estimated vs 186 kcal
+- Atwater cofid:11-767 "Breakfast cereal, bran type cereal, fortified": 328 estimated vs 267 kcal
+- Atwater usda:173755 "Carob flour": 300 estimated vs 222 kcal
+- Atwater usda:174635 "Cereals ready-to-eat, SUN COUNTRY, KRETSCHMER Toasted Wheat Bran": 272 estimated vs 200 kcal
+- Atwater usda:2710372 "Chewing gum, sugar free": 378 estimated vs 268 kcal
+- Atwater usda:169882 "Chewing gum, sugarless": 378 estimated vs 268 kcal
+- Atwater usda:173858 "Chicken spread": 246 estimated vs 158 kcal
+- Atwater usda:168999 "Chokecherries, raw, pitted (Northern Plains Indians)": 122 estimated vs 162 kcal
+- Atwater usda:168058 "Chokecherries, raw, pitted (Shoshone Bannock)": 122 estimated vs 156 kcal
+- Atwater usda:2705587 "Cocoa powder, not reconstituted": 359 estimated vs 228 kcal
+- Atwater usda:169593 "Cocoa, dry powder, unsweetened": 359 estimated vs 228 kcal
+- Atwater usda:169594 "Cocoa, dry powder, unsweetened, processed with alkali": 364 estimated vs 220 kcal
+- Atwater cofid:17-358 "Cream of tartar": 0 estimated vs 239 kcal
+- Atwater usda:2710614 "Fruit flavored drink, powdered, not reconstituted, diet": 351 estimated vs 218 kcal
+- Atwater usda:168581 "Fungi, Cloud ears, dried": 195 estimated vs 284 kcal
+- Atwater usda:169597 "Gelatin desserts, dry mix, reduced calorie, with aspartame": 383 estimated vs 198 kcal
+- in:mysore-pak "Mysore pak": protein + carbs + fat above 105 g
+- cofid:13-882 "Rosemary, dried": protein + carbs + fat above 105 g
+
+## Share of foods with each micronutrient
+fiber 88% · sugars 88% · sat_fat 96% · mono_fat 95% · poly_fat 95% · trans_fat 40% · cholesterol 96% · sodium 99% · potassium 98% · calcium 99% · iron 99% · magnesium 97% · vitamin_a 92% · vitamin_c 97% · vitamin_d 82% · caffeine 66% · alcohol 79% · zinc 97% · vitamin_b12 95% · folate 92%
+
+## Indian entries as resolved (review these)
+- in:kulcha "Kulcha" = 60 g Wheat flour, white, all-purpose, enriched, bleached; 8 g Yogurt, plain, whole milk; 8 g Oil, peanut, salad or cooking -> 90 g
+- in:missi-roti "Missi roti" = 25 g Flour, chapati, brown; 20 g Chickpea flour (besan); 5 g Oil, peanut, salad or cooking -> 70 g
+- in:gobi-paratha "Gobi paratha" = 50 g Flour, chapati, brown; 50 g Cauliflower, raw; 8 g Oil, peanut, salad or cooking -> 115 g
+- in:lachha-paratha "Lachha paratha" = 45 g Flour, chapati, brown; 15 g Wheat flour, white, all-purpose, enriched, bleached; 12 g Oil, peanut, salad or cooking -> 85 g
+- in:tomato-rice "Tomato rice" = 75 g Rice, white, long-grain, regular, raw, enriched; 100 g Tomatoes, red, ripe, raw, year round average; 8 g Oil, peanut, salad or cooking; 20 g Onions, raw -> 280 g
+- in:coconut-rice "Coconut rice" = 75 g Rice, white, long-grain, regular, raw, enriched; 25 g Nuts, coconut meat, raw; 6 g Oil, peanut, salad or cooking -> 240 g
+- in:tamarind-rice "Tamarind rice" = 75 g Rice, white, long-grain, regular, raw, enriched; 10 g Peanuts, all types, raw; 10 g Oil, peanut, salad or cooking -> 240 g
+- in:egg-fried-rice "Egg fried rice" = 150 g Rice, white, long-grain, regular, enriched, cooked; 50 g Egg, whole, raw, fresh; 8 g Oil, peanut, salad or cooking; 15 g Carrots, raw -> 215 g
+- in:chicken-fried-rice "Chicken fried rice" = 150 g Rice, white, long-grain, regular, enriched, cooked; 50 g Chicken, broilers or fryers, breast, skinless, boneless, meat only, with added solution, raw; 25 g Egg, whole, raw, fresh; 8 g Oil, peanut, salad or cooking; 20 g Cabbage, raw -> 235 g
+- in:dal-chawal "Dal and rice (one plate)" = 150 g Rice, white, long-grain, regular, enriched, cooked; 150 g Curry, lentil, red/masoor dahl and tomato, with vegetable oil, homemade -> 300 g
+- in:rajma-chawal "Rajma chawal (one plate)" = 150 g Rice, white, long-grain, regular, enriched, cooked; 150 g Curry, red kidney bean, Punjabi, homemade -> 300 g
+- in:egg-biryani "Egg biryani" = 80 g Rice, white, long-grain, regular, raw, enriched; 100 g Egg, whole, raw, fresh; 12 g Oil, peanut, salad or cooking; 40 g Onions, raw; 20 g Yogurt, plain, whole milk -> 330 g
+- in:bisi-bele-bath "Bisi bele bath" = 40 g Rice, white, long-grain, regular, raw, enriched; 20 g Beans, pigeon peas, dahl, dried, raw; 20 g Carrots, raw; 20 g Peas, green, raw; 8 g Ghee, butter -> 280 g
+- in:urad-dal "Urad dal" = 40 g Black gram, duhli urad dahl, split, dried, raw; 8 g Oil, peanut, salad or cooking -> 190 g
+- in:baingan-bharta "Baingan bharta" = 200 g Eggplant, raw; 50 g Onions, raw; 80 g Tomatoes, red, ripe, raw, year round average; 15 g Oil, peanut, salad or cooking -> 230 g
+- in:aloo-jeera "Jeera aloo (dry)" = 150 g Potatoes, boiled, cooked in skin, flesh, without salt; 8 g Oil, peanut, salad or cooking -> 155 g
+- in:dum-aloo "Dum aloo" = 150 g Potatoes, boiled, cooked in skin, flesh, without salt; 60 g Tomatoes, red, ripe, raw, year round average; 40 g Onions, raw; 12 g Oil, peanut, salad or cooking; 20 g Yogurt, plain, whole milk -> 260 g
+- in:malai-kofta "Malai kofta" = 50 g Cheese, Paneer; 50 g Potatoes, boiled, cooked in skin, flesh, without salt; 20 g Cream, fluid, heavy whipping; 100 g Tomatoes, red, ripe, raw, year round average; 30 g Onions, raw; 14 g Oil, peanut, salad or cooking; 8 g Nuts, cashew nuts, raw -> 260 g
+- in:navratan-korma "Navratan korma" = 30 g Peas, green, raw; 30 g Carrots, raw; 40 g Cauliflower, raw; 30 g Cheese, Paneer; 25 g Cream, fluid, heavy whipping; 10 g Nuts, cashew nuts, raw; 30 g Onions, raw; 10 g Oil, peanut, salad or cooking -> 240 g
+- in:mutton-keema "Mutton keema" = 120 g Lamb, ground, raw; 40 g Onions, raw; 50 g Tomatoes, red, ripe, raw, year round average; 30 g Peas, green, raw; 12 g Oil, peanut, salad or cooking -> 210 g
+- in:rava-dosa "Rava dosa" = 30 g Semolina, enriched; 10 g Wheat flour, white, all-purpose, enriched, bleached; 8 g Oil, peanut, salad or cooking -> 85 g
+- in:pesarattu "Pesarattu" = 40 g Beans, mung, dahl, dried, raw; 8 g Rice, white, long-grain, regular, raw, enriched; 6 g Oil, peanut, salad or cooking -> 95 g
+- in:idiyappam "Idiyappam" = 45 g Flour, rice -> 100 g
+- in:bonda "Aloo bonda" = 60 g Potatoes, boiled, cooked in skin, flesh, without salt; 20 g Chickpea flour (besan); 14 g Oil, peanut, salad or cooking -> 90 g
+- in:cabbage-poriyal "Cabbage poriyal" = 100 g Cabbage, raw; 10 g Nuts, coconut meat, raw; 6 g Oil, peanut, salad or cooking -> 110 g
+- in:tomato-chutney "Tomato chutney" = 150 g Tomatoes, red, ripe, raw, year round average; 10 g Oil, peanut, salad or cooking; 30 g Onions, raw -> 100 g
+- in:rasgulla "Rasgulla" = 20 g Cheese, Paneer; 12 g Sugars, granulated -> 45 g
+- in:coconut-barfi "Coconut barfi" = 40 g Nuts, coconut meat, raw; 10 g Milk, dry, whole, with added vitamin D; 25 g Sugars, granulated -> 68 g
+- in:mysore-pak "Mysore pak" = 30 g Chickpea flour (besan); 40 g Ghee, butter; 45 g Sugars, granulated -> 100 g
+- in:moong-dal-halwa "Moong dal halwa" = 35 g Beans, mung, dahl, dried, raw; 25 g Ghee, butter; 30 g Sugars, granulated -> 110 g
+- in:jaljeera "Jaljeera" = 15 g Lemon juice, raw; 8 g Sugars, granulated -> 250 g
+- in:thandai "Thandai" = 200 g Milk, whole, 3.25% milkfat, with added vitamin D; 8 g Nuts, almonds; 20 g Sugars, granulated -> 230 g
+- in:rose-milk "Rose milk" = 200 g Milk, whole, 3.25% milkfat, with added vitamin D; 20 g Sugars, granulated -> 215 g
+- in:cold-coffee "Cold coffee (with milk and sugar)" = 200 g Milk, whole, 3.25% milkfat, with added vitamin D; 15 g Sugars, granulated -> 235 g
+- usda:173944 "Banana" <- sr:=Bananas, raw
+- usda:169910 "Mango" <- sr:=Mangos, raw
+- usda:171689 "Apple" <- sr:Apples, raw, with skin
+- usda:169926 "Papaya" <- sr:=Papayas, raw
+- usda:173044 "Guava" <- sr:=Guavas, common, raw
+- usda:169097 "Orange" <- sr:=Oranges, raw, all commercial varieties
+- usda:167765 "Watermelon" <- sr:=Watermelon, raw
+- usda:169134 "Pomegranate" <- sr:=Pomegranates, raw
+- usda:174683 "Grapes" <- sr:Grapes, red or green (European type
+- usda:169124 "Pineapple" <- sr:=Pineapple, raw, all varieties
+- usda:169092 "Muskmelon" <- sr:=Melons, cantaloupe, raw
+- usda:171726 "Dates" <- sr:=Dates, deglet noor
+- usda:170169 "Coconut, fresh" <- sr:=Nuts, coconut meat, raw
+- usda:2707572 "Coconut water" <- fndds:=Coconut water, unsweetened
+- usda:170026 "Potato, raw" <- sr:=Potatoes, flesh and skin, raw
+- usda:170000 "Onion, raw" <- sr:=Onions, raw
+- usda:170457 "Tomato, raw" <- sr:=Tomatoes, red, ripe, raw, year round average
+- usda:170393 "Carrot, raw" <- sr:=Carrots, raw
+- usda:169225 "Cucumber" <- sr:=Cucumber, peeled, raw
+- usda:168462 "Spinach, raw" <- sr:=Spinach, raw
+- usda:169986 "Cauliflower, raw" <- sr:=Cauliflower, raw
+- usda:169975 "Cabbage, raw" <- sr:=Cabbage, raw
+- usda:169228 "Brinjal (eggplant)" <- sr:=Eggplant, raw
+- usda:169260 "Okra (bhindi), raw" <- sr:=Okra, raw
+- usda:169232 "Bottle gourd (lauki), raw" <- sr:=Gourd, white-flowered (calabash), raw
+- usda:169145 "Beetroot, raw" <- sr:=Beets, raw
+- usda:169276 "Radish (mooli), raw" <- sr:=Radishes, raw
+- usda:170427 "Capsicum, green" <- sr:=Peppers, sweet, green, raw
+- usda:170419 "Green peas, raw" <- sr:peas green raw
+- usda:170567 "Almonds" <- sr:=Nuts, almonds
+- usda:170162 "Cashews" <- sr:=Nuts, cashew nuts, raw
+- usda:172430 "Peanuts" <- sr:=Peanuts, all types, raw
+- usda:170187 "Walnuts" <- sr:=Nuts, walnuts, english
+- usda:169655 "Sugar" <- sr:sugars granulated
+- cofid:17-050 "Honey" <- cofid:=Honey
+- usda:173410 "Butter" <- sr:=Butter, salted
+- usda:171410 "Cooking oil" <- sr:=Oil, peanut, salad or cooking
+- usda:169715 "Sooji (rava)" <- sr:=Semolina, enriched
+- usda:168894 "Maida (refined flour)" <- sr:wheat flour white all-purpose enriched bleached
+- cofid:14-892 "Peanut butter" <- cofid:=Peanut butter, smooth
+- cofid:11-742 "Cornflakes" <- cofid:=Breakfast cereal, cornflakes, fortified
+- usda:172688 "Brown bread" <- sr:bread whole-wheat commercially prepared
+- usda:172183 "Egg white" <- sr:=Egg, white, raw, fresh
+- usda:2705709 "Cheese (cheddar)" <- fndds:=Cheese, Cheddar
+- usda:171477 "Chicken breast, cooked" <- sr:=Chicken, broilers or fryers, breast, meat only, cooked, roasted
+- usda:174185 "Fish, cooked (rohu or carp)" <- sr:=Fish, carp, cooked, dry heat
+- usda:171971 "Prawns, cooked" <- sr:Crustaceans, shrimp, mixed species, cooked, moist heat
+- usda:167747 "Lemon juice" <- sr:=Lemon juice, raw
+- usda:173227 "Black tea (no milk, no sugar)" <- sr:=Beverages, tea, black, brewed, prepared with tap water
+- usda:2710606 "Sugarcane juice" <- fndds:=Sugar cane beverage
+- in:nimbu-pani "Nimbu pani (sweet)" = 20 g Lemon juice; 15 g Sugar -> 250 g
+- in:banana-shake "Banana milkshake" = 200 g Milk, whole, 3.25% milkfat, with added vitamin D; 100 g Banana; 10 g Sugar -> 310 g
+- in:mango-lassi "Mango lassi" = 150 g Yogurt, plain, whole milk; 100 g Mango; 15 g Sugar -> 280 g
+- in:salted-lassi "Salted lassi" = 100 g Yogurt, plain, whole milk -> 250 g
+- in:tomato-soup "Tomato soup" = 150 g Tomato, raw; 5 g Butter; 20 g Onion, raw -> 260 g
+- in:bread-omelette "Bread omelette" = 100 g Egg, whole, raw, fresh; 56 g Brown bread; 8 g Cooking oil -> 165 g
+- in:veg-fried-rice "Vegetable fried rice" = 150 g Rice, white, long-grain, regular, enriched, cooked; 10 g Cooking oil; 20 g Carrot, raw; 20 g Cabbage, raw; 20 g Onion, raw -> 215 g
+- in:coconut-chutney "Coconut chutney" = 40 g Coconut, fresh; 2 g Cooking oil -> 70 g
+- in:peanut-chikki "Peanut chikki" = 60 g Peanuts; 40 g Sugar -> 95 g
+- in:roasted-chana "Roasted chana" = 30 g Chickpeas (garbanzo beans, bengal gram), mature seeds, raw -> 28 g
+- in:aloo-tikki "Aloo tikki" = 100 g Potatoes, boiled, cooked in skin, flesh, without salt; 12 g Cooking oil; 8 g Chickpea flour (besan) -> 105 g
+- in:chicken-65 "Chicken 65" = 100 g Chicken, broilers or fryers, breast, skinless, boneless, meat only, with added solution, raw; 15 g Maida (refined flour); 10 g Egg, whole, raw, fresh; 18 g Cooking oil -> 135 g
+- in:chicken-tikka "Chicken tikka (dry)" = 130 g Chicken, broilers or fryers, breast, skinless, boneless, meat only, with added solution, raw; 25 g Yogurt, plain, whole milk; 5 g Cooking oil -> 120 g
+- in:thepla "Thepla" = 40 g Flour, chapati, brown; 6 g Cooking oil; 8 g Yogurt, plain, whole milk -> 70 g
+- in:bhatura "Bhatura" = 65 g Maida (refined flour); 10 g Yogurt, plain, whole milk; 18 g Cooking oil -> 90 g
+- in:pongal "Ven pongal" = 40 g Rice, white, long-grain, regular, raw, enriched; 20 g Beans, mung, dahl, dried, raw; 8 g Ghee, butter -> 230 g
+- in:appam "Appam" = 40 g Rice, white, long-grain, regular, raw, enriched; 10 g Coconut, fresh -> 95 g
+- in:puttu "Puttu" = 50 g Flour, rice; 15 g Coconut, fresh -> 105 g
+- in:chana-sundal "Sundal (chickpea)" = 100 g Chickpeas (garbanzo beans, bengal gram), mature seeds, cooked, boiled, without salt; 5 g Coconut, fresh; 3 g Cooking oil -> 108 g
+- in:sabudana-khichdi "Sabudana khichdi" = 40 g Tapioca, pearl, dry; 15 g Peanuts; 8 g Cooking oil; 30 g Potatoes, boiled, cooked in skin, flesh, without salt -> 150 g
+- in:besan-ladoo "Besan ladoo" = 40 g Chickpea flour (besan); 18 g Ghee, butter; 25 g Sugar -> 80 g
+- in:kaju-katli "Kaju katli" = 60 g Cashews; 30 g Sugar -> 88 g
+- in:milk-peda "Peda" = 35 g Milk, dry, whole, with added vitamin D; 6 g Ghee, butter; 25 g Sugar -> 62 g
+- in:shrikhand "Shrikhand" = 200 g Yogurt, plain, whole milk; 40 g Sugar -> 140 g
+- in:bread-butter "Bread and butter" = 56 g Brown bread; 10 g Butter -> 66 g
+- cofid:11-459 "Chapati / roti" <- cofid:=Chapatis, made without fat
+- cofid:11-987 "Roti with ghee" <- cofid:=Chapatis, made with fat, retail
+- usda:2707613 "Naan" <- fndds:=Bread, naan
+- usda:2707715 "Paratha, plain" <- fndds:=Bread, paratha
+- usda:2707714 "Puri" <- fndds:=Bread, puri
+- usda:2708346 "Idli" <- fndds:=Idli
+- usda:2708347 "Dosa, plain" <- fndds:=Dosa, plain
+- usda:2709129 "Masala dosa" <- fndds:=Dosa, with filling
+- usda:2709128 "Upma" <- fndds:=Upma
+- usda:2709130 "Medu vada" <- fndds:=Vada
+- usda:2708730 "Samosa" <- fndds:=Samosa
+- usda:2707430 "Sambar" <- fndds:=Sambar, vegetable stew
+- usda:2706538 "Chicken biryani" <- fndds:=Biryani with chicken
+- usda:2708985 "Vegetable biryani" <- fndds:=Biryani with vegetables
+- cofid:19-591 "Mutton biryani" <- cofid:=Curry, lamb biryani, homemade
+- usda:2709631 "Palak paneer" <- fndds:=Palak Paneer
+- usda:2706437 "Chicken curry" <- fndds:=Chicken curry
+- usda:2706460 "Fish curry" <- fndds:=Fish curry
+- usda:2710351 "Ladoo" <- fndds:=Ladoo, round ball
+- usda:2707429 "Papad, grilled" <- fndds:=Papad, grilled or broiled
+- cofid:12-495 "Paneer" <- cofid:=Cheese, Paneer
+- cofid:12-373 "Sweet lassi" <- cofid:=Lassi, sweetened
+- cofid:17-640 "Ghee" <- cofid:=Ghee, butter
+- cofid:15-528 "Khichdi" <- cofid:=Khichadi, with butter ghee
+- cofid:12-606 "Kulfi" <- cofid:=Kulfi, homemade
+- cofid:17-343 "Mango chutney" <- cofid:=Chutney, mango, sweet
+- cofid:11-895 "Atta (whole wheat flour)" <- cofid:=Flour, chapati, brown
+- usda:174288 "Besan (gram flour)" <- sr:=Chickpea flour (besan)
+- usda:168878 "Rice, cooked (white)" <- sr:=Rice, white, long-grain, regular, enriched, cooked
+- usda:169704 "Rice, cooked (brown)" <- sr:rice brown long-grain cooked
+- usda:171284 "Curd (dahi)" <- sr:=Yogurt, plain, whole milk
+- usda:170874 "Buttermilk (chaas)" <- sr:=Milk, buttermilk, fluid, cultured, lowfat
+- usda:171265 "Milk, whole" <- sr:=Milk, whole, 3.25% milkfat, with added vitamin D
+- usda:172421 "Lentils, boiled (plain)" <- sr:=Lentils, mature seeds, cooked, boiled, without salt
+- usda:173757 "Chickpeas, boiled (kabuli chana)" <- sr:=Chickpeas (garbanzo beans, bengal gram), mature seeds, cooked, boiled, without salt
+- usda:173424 "Boiled egg" <- sr:=Egg, whole, cooked, hard-boiled
+- cofid:15-760 "Dal tadka" <- cofid:=Curry, lentil, red/masoor dahl and tomato, with vegetable oil, homemade
+- cofid:15-762 "Masoor dal" <- cofid:=Curry, lentil, red/masoor dahl, Punjabi, homemade
+- cofid:15-132 "Moong dal" <- cofid:=Curry, mung bean dahl and tomato, homemade
+- cofid:15-780 "Toor dal (arhar)" <- cofid:=Curry, pigeon pea dahl, with vegetable oil, homemade
+- cofid:15-641 "Chana dal" <- cofid:=Curry, chick pea dhal, homemade
+- cofid:15-146 "Rajma" <- cofid:=Curry, red kidney bean, Punjabi, homemade
+- cofid:15-108 "Chole (chana masala)" <- cofid:=Curry, chick pea, whole and tomato, Punjabi, with vegetable oil, homemade
+- cofid:15-095 "Lobia curry" <- cofid:=Curry, black-eye bean, Punjabi, homemade
+- cofid:15-737 "Dal makhani" <- cofid:=Curry, black gram, whole, Gujerati, homemade
+- cofid:15-490 "Sabut moong dal" <- cofid:=Curry, mung bean, whole, Punjabi, homemade
+- cofid:13-484 "Mixed dal" <- cofid:=Dahl, mixed, homemade
+- cofid:15-743 "Palak chana dal" <- cofid:=Curry, chick pea dahl and spinach, with vegetable oil, homemade
+- cofid:15-741 "Aloo gobi" <- cofid:=Curry, cauliflower and potato, homemade
+- cofid:15-781 "Aloo matar" <- cofid:=Curry, potato and pea, homemade
+- cofid:15-627 "Bhindi masala" <- cofid:=Curry, bhindi subji, homemade
+- cofid:15-783 "Aloo sabzi" <- cofid:=Curry, potato, Punjabi, homemade
+- cofid:15-789 "Mixed vegetable curry" <- cofid:=Curry, vegetable, frozen mixed vegetables, homemade
+- cofid:15-787 "Palak aloo" <- cofid:=Curry, spinach and potato, masala, homemade
+- cofid:15-756 "Karela sabzi" <- cofid:=Curry, karela, homemade
+- cofid:15-740 "Cabbage sabzi" <- cofid:=Curry, cabbage, masala, homemade
+- cofid:15-739 "Bombay aloo" <- cofid:=Curry, Bombay potato, homemade
+- cofid:15-788 "Tinda aloo" <- cofid:=Curry, tinda gourd and potato, homemade
+- cofid:15-755 "Beans sabzi" <- cofid:=Curry, green bean, masala, homemade
+- cofid:15-774 "Lauki kofta curry" <- cofid:=Curry, dudhi, kofta, homemade
+- cofid:15-694 "Palak sabzi (dry)" <- cofid:=Bhaji, spinach, homemade
+- cofid:15-678 "Gobi sabzi (dry)" <- cofid:=Bhaji, cauliflower, homemade
+- cofid:15-681 "Mushroom masala" <- cofid:=Bhaji, mushroom, homemade
+- cofid:15-754 "Egg curry" <- cofid:=Curry, egg, with rapeseed oil, homemade
+- cofid:19-595 "Mutton rogan josh" <- cofid:=Curry, lamb rogan josh, homemade
+- cofid:19-565 "Chicken korma" <- cofid:=Curry, chicken korma, homemade
+- cofid:19-296 "Chicken tikka masala" <- cofid:=Curry, chicken tikka masala, retail, reheated
+- cofid:19-567 "Chicken vindaloo" <- cofid:=Curry, chicken vindaloo, homemade
+- cofid:19-540 "Tandoori chicken" <- cofid:=Curry, chicken tandoori, retail, reheated
+- cofid:16-333 "Prawn curry" <- cofid:=Curry, prawn, takeaway
+- cofid:16-462 "Fish curry (Bengali style)" <- cofid:=Curry, fish and vegetable, Bangladeshi, homemade
+- cofid:19-549 "Beef curry" <- cofid:=Curry, beef, homemade
+- in:pakora "Pakora" = 30 g Besan (gram flour); 30 g Onion, raw; 14 g Cooking oil -> 62 g
+- in:aloo-paratha "Aloo paratha" = 50 g Atta (whole wheat flour); 60 g Potatoes, boiled, cooked in skin, flesh, without salt; 8 g Cooking oil -> 112 g
+- in:paneer-paratha "Paneer paratha" = 50 g Atta (whole wheat flour); 40 g Paneer; 8 g Cooking oil -> 98 g
+- in:butter-chicken "Butter chicken" = 150 g Chicken, broilers or fryers, dark meat, thigh, meat only, raw; 15 g Butter; 30 g Cream, fluid, heavy whipping; 100 g Tomato, raw; 40 g Onion, raw -> 260 g
+- in:raita "Raita" = 100 g Curd (dahi); 40 g Cucumber; 10 g Onion, raw -> 145 g
+- in:poha "Poha" = 50 g Rice, white, long-grain, regular, raw, enriched; 7 g Cooking oil; 30 g Onion, raw; 30 g Potatoes, boiled, cooked in skin, flesh, without salt; 8 g Peanuts -> 190 g
+- in:masala-chai "Masala chai (with milk and sugar)" = 110 g Milk, whole; 8 g Sugar -> 150 g
+- in:filter-coffee "Filter coffee (with milk and sugar)" = 90 g Milk, whole; 7 g Sugar -> 120 g
+- in:kheer "Kheer" = 200 g Milk, whole; 15 g Rice, white, long-grain, regular, raw, enriched; 20 g Sugar -> 200 g
+- in:gulab-jamun "Gulab jamun" = 28 g Milk, dry, whole, with added vitamin D; 6 g Maida (refined flour); 6 g Cooking oil; 22 g Sugar -> 75 g
+- in:jalebi "Jalebi" = 25 g Maida (refined flour); 12 g Cooking oil; 30 g Sugar -> 70 g
+- in:suji-halwa "Suji halwa" = 30 g Sooji (rava); 14 g Ghee; 30 g Sugar -> 120 g
+- in:gajar-halwa "Gajar halwa" = 200 g Carrot, raw; 100 g Milk, whole; 30 g Sugar; 12 g Ghee -> 170 g
+- in:veg-pulao "Vegetable pulao" = 75 g Rice, white, long-grain, regular, raw, enriched; 8 g Cooking oil; 25 g Green peas, raw; 25 g Carrot, raw; 25 g Onion, raw -> 260 g
+- in:jeera-rice "Jeera rice" = 75 g Rice, white, long-grain, regular, raw, enriched; 6 g Ghee -> 230 g
+- in:curd-rice "Curd rice" = 120 g Rice, cooked (white); 100 g Curd (dahi); 3 g Cooking oil -> 225 g
+- in:lemon-rice "Lemon rice" = 75 g Rice, white, long-grain, regular, raw, enriched; 8 g Cooking oil; 8 g Peanuts -> 235 g
+- in:masala-omelette "Masala omelette" = 100 g Egg, whole, raw, fresh; 6 g Cooking oil; 20 g Onion, raw; 15 g Tomato, raw -> 125 g
+- in:egg-bhurji "Egg bhurji" = 100 g Egg, whole, raw, fresh; 7 g Cooking oil; 25 g Onion, raw; 25 g Tomato, raw -> 140 g
+- in:paneer-bhurji "Paneer bhurji" = 100 g Paneer; 8 g Cooking oil; 40 g Onion, raw; 40 g Tomato, raw -> 165 g
+- in:matar-paneer "Matar paneer" = 70 g Paneer; 50 g Green peas, raw; 80 g Tomato, raw; 40 g Onion, raw; 10 g Cooking oil -> 220 g
+- in:kadai-paneer "Kadhai paneer" = 90 g Paneer; 90 g Tomato, raw; 40 g Onion, raw; 12 g Cooking oil -> 210 g
+- in:paneer-butter-masala "Paneer butter masala" = 90 g Paneer; 15 g Butter; 25 g Cream, fluid, heavy whipping; 100 g Tomato, raw; 30 g Onion, raw -> 230 g
+- in:paneer-tikka "Paneer tikka" = 100 g Paneer; 25 g Curd (dahi); 5 g Cooking oil -> 120 g
+- in:besan-chilla "Besan chilla" = 40 g Besan (gram flour); 20 g Onion, raw; 5 g Cooking oil -> 110 g
+- in:uttapam "Uttapam" = 35 g Rice, white, long-grain, regular, raw, enriched; 30 g Onion, raw; 20 g Tomato, raw; 6 g Cooking oil -> 150 g
+- in:dhokla "Dhokla" = 40 g Besan (gram flour); 25 g Curd (dahi); 3 g Cooking oil -> 115 g
+- in:rasam "Rasam" = 60 g Tomato, raw; 8 g Beans, pigeon peas, dahl, dried, raw; 3 g Cooking oil -> 200 g
+- in:kadhi "Kadhi" = 100 g Curd (dahi); 12 g Besan (gram flour); 5 g Cooking oil -> 220 g
+- in:pav-bhaji "Pav bhaji (bhaji only)" = 100 g Potatoes, boiled, cooked in skin, flesh, without salt; 50 g Cauliflower, raw; 30 g Green peas, raw; 60 g Tomato, raw; 15 g Butter; 30 g Onion, raw -> 250 g
+- in:sprouts-salad "Sprouts salad" = 100 g Mung beans, mature seeds, sprouted, raw; 30 g Tomato, raw; 20 g Onion, raw; 30 g Cucumber -> 170 g
+- in:vegetable-sandwich "Vegetable sandwich (grilled)" = 60 g Brown bread; 5 g Butter; 30 g Tomato, raw; 30 g Cucumber; 30 g Potatoes, boiled, cooked in skin, flesh, without salt -> 150 g
+
+## CoFID duplicates dropped
+- cofid:17-010 "Lard" = usda:171401
+- cofid:17-031 "Oil, coconut" = usda:171412
+- cofid:17-036 "Oil, grapeseed" = usda:171028
+- cofid:17-037 "Oil, hazelnut" = usda:171427
+- cofid:17-039 "Oil, palm" = usda:171015
+- cofid:17-047 "Oil, walnut" = usda:171030
+- cofid:17-064 "Syrup, corn, dark" = usda:168836

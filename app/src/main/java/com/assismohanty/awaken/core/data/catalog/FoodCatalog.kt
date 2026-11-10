@@ -1,20 +1,24 @@
 package com.assismohanty.awaken.core.data.catalog
 
 import android.content.Context
+import androidx.room.Room
+import com.assismohanty.awaken.core.data.catalog.db.CatalogDao
+import com.assismohanty.awaken.core.data.catalog.db.CatalogDatabase
+import com.assismohanty.awaken.core.data.catalog.db.CatalogFoodEntity
+import com.assismohanty.awaken.core.data.catalog.db.CatalogPortionEntity
+import com.assismohanty.awaken.core.data.catalog.db.CatalogSourceEntity
 import com.assismohanty.awaken.core.data.di.IoDispatcher
+import com.assismohanty.awaken.engine.body.FoodSearch
 import com.assismohanty.awaken.engine.body.Nutrient
 import com.assismohanty.awaken.engine.body.Nutrients
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
-import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.doubleOrNull
@@ -22,7 +26,7 @@ import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 
-enum class FoodSource { USDA_SR, USDA_FNDDS, CUSTOM }
+enum class FoodSource { USDA_SR, USDA_FNDDS, COFID, AWAKEN, CUSTOM }
 
 /** A household measure: "1 cup" = 163 g. */
 data class Portion(val label: String, val grams: Double)
@@ -36,61 +40,64 @@ data class Food(
     val portions: List<Portion> = emptyList(),
 )
 
-/** The bundled USDA FoodData Central catalog (public domain; tools/catalog/README.md). Loaded once, off the main thread. */
+/**
+ * The bundled food catalog (`assets/nutrition/foods.db`; sources and licences in `tools/catalog/README.md`). Room copies
+ * the asset on first use and every query runs off the main thread.
+ */
 @Singleton
 class FoodCatalog @Inject constructor(
     @ApplicationContext private val context: Context,
     @IoDispatcher private val ioDispatcher: CoroutineDispatcher,
 ) {
-    private val mutex = Mutex()
-    private var cached: Indexed? = null
-
-    private class Indexed(val foods: List<Food>, val names: List<String>) {
-        val byId: Map<String, Food> = foods.associateBy { it.id }
+    private val dao: CatalogDao by lazy {
+        Room.databaseBuilder(context, CatalogDatabase::class.java, CatalogDatabase.NAME)
+            .createFromAsset(CatalogDatabase.ASSET_PATH)
+            .fallbackToDestructiveMigration(true) // no user data lives here: a new asset replaces the old file
+            .build()
+            .catalogDao()
     }
 
-    private suspend fun indexed(): Indexed = cached ?: mutex.withLock {
-        cached ?: withContext(ioDispatcher) {
-            val text = context.assets.open(ASSET_PATH).bufferedReader().use { it.readText() }
-            val foods = parse(text)
-            Indexed(foods, foods.map { CatalogSearch.normalize(it.name) })
-        }.also { cached = it }
+    suspend fun search(query: String, limit: Int = SEARCH_LIMIT): List<Food> = withContext(ioDispatcher) {
+        val match = FoodSearch.key(query).split(' ').filter { it.isNotEmpty() }.joinToString(" ") { "keys:$it*" }
+        if (match.isEmpty()) emptyList() else dao.search(match, limit).withPortions()
     }
 
-    suspend fun search(query: String, limit: Int = SEARCH_LIMIT): List<Food> = indexed().let { index ->
-        withContext(ioDispatcher) { CatalogSearch.search(index.foods, index.names, query, limit) }
+    suspend fun byId(id: String): Food? = withContext(ioDispatcher) { dao.food(id)?.let { listOf(it).withPortions().first() } }
+
+    suspend fun size(): Int = withContext(ioDispatcher) { dao.count() }
+
+    /** Every source in the catalog, for the data sources screen. */
+    suspend fun sources(): List<CatalogSourceEntity> = withContext(ioDispatcher) { dao.sources() }
+
+    private suspend fun List<CatalogFoodEntity>.withPortions(): List<Food> {
+        if (isEmpty()) return emptyList()
+        val portions = dao.portions(map { it.id }).groupBy { it.foodId }
+        return map { it.toFood(portions[it.id].orEmpty()) }
     }
 
-    suspend fun byId(id: String): Food? = indexed().byId[id]
-
-    suspend fun size(): Int = indexed().foods.size
+    private fun CatalogFoodEntity.toFood(portions: List<CatalogPortionEntity>): Food {
+        val known = buildMap {
+            put(Nutrient.KCAL, kcal)
+            protein?.let { put(Nutrient.PROTEIN, it) }
+            carbs?.let { put(Nutrient.CARBS, it) }
+            fat?.let { put(Nutrient.FAT, it) }
+        }
+        return Food(
+            id = id,
+            name = name,
+            source = when (sourceId) {
+                "usda_fndds" -> FoodSource.USDA_FNDDS
+                "cofid" -> FoodSource.COFID
+                "awaken" -> FoodSource.AWAKEN
+                else -> FoodSource.USDA_SR
+            },
+            per100 = Nutrients(nutrientsFromJson(nutrientsJson).values + known),
+            portions = portions.map { Portion(it.label, it.grams) },
+        )
+    }
 
     companion object {
-        const val ASSET_PATH = "nutrition/foods.json"
         const val SEARCH_LIMIT = 50
-
-        /** `{"nutrients":[keys…],"foods":[[id,name,"S"|"F",[values…],[[label,grams]…]]…]}` as written by build-foods.mjs. */
-        fun parse(text: String): List<Food> {
-            val root = Json.parseToJsonElement(text).jsonObject
-            val columns = root.getValue("nutrients").jsonArray.map { Nutrient.fromKey(it.jsonPrimitive.content) }
-            return root.getValue("foods").jsonArray.map { element ->
-                val row = element.jsonArray
-                val values = row[3].jsonArray
-                val nutrients = buildMap {
-                    columns.forEachIndexed { i, nutrient ->
-                        val value = values[i]
-                        if (nutrient != null && value !is JsonNull) value.jsonPrimitive.doubleOrNull?.let { put(nutrient, it) }
-                    }
-                }
-                Food(
-                    id = row[0].jsonPrimitive.content,
-                    name = row[1].jsonPrimitive.content,
-                    source = if (row[2].jsonPrimitive.content == "F") FoodSource.USDA_FNDDS else FoodSource.USDA_SR,
-                    per100 = Nutrients(nutrients),
-                    portions = row[4].jsonArray.map { it.toPortion() },
-                )
-            }
-        }
 
         private fun JsonElement.toPortion(): Portion {
             val pair = jsonArray

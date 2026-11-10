@@ -95,6 +95,7 @@ Habit/RPG apps are a crowded but low-quality niche on Play: Habitica (aging, pun
 | F49 | **Quit counters** [D4]: days clean, best run kept forever, money/time, restart log, milestones, auto doomscrolling (fails closed); no XP | GD §16.13; DS §9.2–9.3 |
 | F51 | **Programs** [F6]: Steady 30, Groundwork 66, Ironclad 75; restart or continue after a broken day | GD §16.15; DS §9.3 |
 | F52 | **Focus protection** [docs/protect/PLAN.md]: Pause (a breathing delay before chosen apps), Lockdown (a focus session with no early end), Strict+ short-video blocking and YouTube Study mode (accessibility, off in the Play build). No XP for pausing or resisting; no uninstall protection | GD §19; DS §9.3 |
+| F53 | **Diet v2 food catalog** [docs/diet/PLAN.md, Batch 1]: one offline database of USDA SR Legacy + FNDDS + UK CoFID foods with Indian names, spellings, Devanagari aliases and household servings (katori, roti, glass), fast prefix search that tolerates spelling variants; replaces the F27 JSON catalog. The rest of Diet v2 follows in Batches 2-9 | GD 20; ARCH 3.13 |
 
 
 ## 5. Explicitly OUT of scope for v1.0 (put in `BACKLOG.md`)

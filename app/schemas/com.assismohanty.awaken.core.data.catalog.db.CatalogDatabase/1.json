@@ -1,0 +1,340 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 1,
+    "identityHash": "868135610fbc110c1a881b6aedb2cb4d",
+    "entities": [
+      {
+        "tableName": "source",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `licence` TEXT NOT NULL, `url` TEXT NOT NULL, `version` TEXT NOT NULL, `attribution` TEXT NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "name",
+            "columnName": "name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "licence",
+            "columnName": "licence",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "url",
+            "columnName": "url",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "version",
+            "columnName": "version",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "attribution",
+            "columnName": "attribution",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        }
+      },
+      {
+        "tableName": "food",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `source_id` TEXT NOT NULL, `tier` TEXT NOT NULL, `diet_tag` TEXT, `category` TEXT, `kcal` REAL NOT NULL, `protein` REAL, `carbs` REAL, `fat` REAL, `nutrients_json` TEXT NOT NULL, `kcal_low` REAL, `kcal_high` REAL, `popularity` INTEGER NOT NULL, PRIMARY KEY(`id`), FOREIGN KEY(`source_id`) REFERENCES `source`(`id`) ON UPDATE NO ACTION ON DELETE NO ACTION )",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "name",
+            "columnName": "name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sourceId",
+            "columnName": "source_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "tier",
+            "columnName": "tier",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "dietTag",
+            "columnName": "diet_tag",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "category",
+            "columnName": "category",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "kcal",
+            "columnName": "kcal",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "protein",
+            "columnName": "protein",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "carbs",
+            "columnName": "carbs",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "fat",
+            "columnName": "fat",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "nutrientsJson",
+            "columnName": "nutrients_json",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "kcalLow",
+            "columnName": "kcal_low",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "kcalHigh",
+            "columnName": "kcal_high",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "popularity",
+            "columnName": "popularity",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_food_source_id",
+            "unique": false,
+            "columnNames": [
+              "source_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_food_source_id` ON `${TABLE_NAME}` (`source_id`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "source",
+            "onDelete": "NO ACTION",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "source_id"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "portion",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`food_id` TEXT NOT NULL, `position` INTEGER NOT NULL, `unit` TEXT NOT NULL, `label` TEXT NOT NULL, `grams` REAL NOT NULL, PRIMARY KEY(`food_id`, `position`), FOREIGN KEY(`food_id`) REFERENCES `food`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "foodId",
+            "columnName": "food_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "position",
+            "columnName": "position",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "unit",
+            "columnName": "unit",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "label",
+            "columnName": "label",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "grams",
+            "columnName": "grams",
+            "affinity": "REAL",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "food_id",
+            "position"
+          ]
+        },
+        "foreignKeys": [
+          {
+            "table": "food",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "food_id"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "alias",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`food_id` TEXT NOT NULL, `alias` TEXT NOT NULL, `lang` TEXT NOT NULL, PRIMARY KEY(`food_id`, `alias`), FOREIGN KEY(`food_id`) REFERENCES `food`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "foodId",
+            "columnName": "food_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "alias",
+            "columnName": "alias",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lang",
+            "columnName": "lang",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "food_id",
+            "alias"
+          ]
+        },
+        "foreignKeys": [
+          {
+            "table": "food",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "food_id"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "food_fts",
+        "createSql": "CREATE VIRTUAL TABLE IF NOT EXISTS `${TABLE_NAME}` USING FTS4(`name` TEXT NOT NULL, `aliases` TEXT NOT NULL, `keys` TEXT NOT NULL, tokenize=unicode61)",
+        "fields": [
+          {
+            "fieldPath": "name",
+            "columnName": "name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "aliases",
+            "columnName": "aliases",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "keys",
+            "columnName": "keys",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "rowid"
+          ]
+        },
+        "ftsVersion": "FTS4",
+        "ftsOptions": {
+          "tokenizer": "unicode61",
+          "tokenizerArgs": [],
+          "contentTable": "",
+          "languageIdColumnName": "",
+          "matchInfo": "FTS4",
+          "notIndexedColumns": [],
+          "prefixSizes": [],
+          "preferredOrder": "ASC"
+        },
+        "contentSyncTriggers": []
+      },
+      {
+        "tableName": "meta",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`key` TEXT NOT NULL, `value` TEXT NOT NULL, PRIMARY KEY(`key`))",
+        "fields": [
+          {
+            "fieldPath": "key",
+            "columnName": "key",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "value",
+            "columnName": "value",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "key"
+          ]
+        }
+      }
+    ],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '868135610fbc110c1a881b6aedb2cb4d')"
+    ]
+  }
+}

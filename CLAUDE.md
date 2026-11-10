@@ -66,6 +66,7 @@ Proxy (`/proxy`): TypeScript on Cloudflare Workers · zod · Wrangler · Vitest.
 ./gradlew :app:testDebugUnitTest       # app unit tests (Robolectric; includes Compose UI tests)
 ./gradlew :app:recordRoborazziDebug     # re-record golden screenshots of every @Preview (deliberate visual changes only)
 ./gradlew :app:verifyRoborazziDebug     # compare against the committed goldens
+node tools/catalog/build-catalog.mjs <sr_dir> <fndds_dir> <cofid_dir>   # rebuild assets/nutrition/foods.db (see tools/catalog/README.md)
 ./gradlew :app:connectedDebugAndroidTest   # instrumented (needs device/emulator)
 ./gradlew :app:assembleDebug           # debug APK -> app/build/outputs/apk/debug/
 ./gradlew :app:bundleRelease           # signed AAB for Play (needs keystore.properties)

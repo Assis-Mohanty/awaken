@@ -1241,3 +1241,45 @@ node) and store nothing. Uninstall and force-stop protection is not built (Play 
 | 197 | 5th paid custom run of the game-day is a cleared Lockdown | 0 XP, session still COMPLETED |
 
 Vectors 178-186 pass in `PauseRulesTest`; 187-196 in `LockdownRulesTest` and `LockdownUseCasesTest`; 197 is the existing P5 cap (`FocusRulesTest`), reached through `claim()`. Also tested: only calm apps can be allowed (LD7), at most 3, cover/no-cover per app.
+
+
+---
+
+## 20. Diet v2 (PROPOSED 2026-11-10, `docs/diet/PLAN.md`)
+
+Status: the plan's recommended answers to Q1-Q13 were taken as the working decision on 2026-11-10 (user: "continue"). Q6 (the daily reward, 20.5) reverses section 13's "Diet mints no XP" and **is not built until it is confirmed**. Numbers below are the plan's PROPOSED numbers; the full list is plan section 13.
+
+- **20.1 Goals** (`GoalCalculator`, Batch 2): pace lose -250 / **-500** / -750, gain **+300** / +500 (defaults unchanged, 13.1); deficit used = min(chosen, 25 % of round(TDEE)), surplus at most +500; floor 1,200 / 1,500 applies after the cap; "about N kg a week" = delta x 7 / 7,700, always with "about". Presets: Balanced (13.1), High protein (2.2 g/kg), Lower carb (fat 35 %), Custom (protein 10-35 %, carbs 20-65 %, fat 20-40 %, adding to 100). Protein per kg 0.8 to 2.2. A manual calorie target cannot go below the floor.
+- **20.2 Recalculation and guard**: trend weight = mean of the last 7 game-days when there are at least 3 weigh-ins; offer new targets when it differs from the plan weight by 1.0 kg; dismissing hides the offer 7 days; nothing changes silently. Targets, pace, weight goals and fasting are hidden when the age (game-date year - birth year) is 18 or less, or BMI is below 18.5 (`BodyMath.BMI_BELOW`). Logging, totals, micros, water and the weight log stay.
+- **20.3 Catalog**: tiers CURATED (analytical or hand-matched), DERIVED (our recipes, FNDDS), ESTIMATED (a different dish stands in); a calorie range is shown when the home-cooking spread is 15 % or more; Atwater check `4*protein + 4*(carbs - fibre) + 2*fibre + 9*fat + 7*alcohol` (fibre at 2 kcal/g; carbs include fibre as in USDA; CoFID carbohydrate has its AOAC fibre added): warning above max(20 kcal, 20 %), error for our own rows above max(10 kcal, 10 %); duplicates within 2 %; household volumes katori 150 ml, cup 240, glass 250, tbsp 15, tsp 5; foods.db at most 12 MB on disk. New nutrients: zinc, vitamin B12, folate.
+- **20.4 Trackers (pay nothing)**: water target 2,000 ml (female) / 2,500 ml (male), glass 250 ml; fasting presets 12 / 14 / 16 h, nothing longer, hidden by the guard; up to 4 meal reminders; up to 8 meals; micronutrient rows show "Partial data" when under 80 % of the day's calories come from foods with a value.
+- **20.5 Reward (Q6, unconfirmed)**: 20 XP VIT once per game-day when the day has entries in at least 2 meals; counts toward the 600 self-report cap; nothing for past days, hidden targets, water, weight, fasting, scanning or what was eaten.
+- **20.6 Scanner**: score floor 0.15; ship only if top-3 hit rate on the 200 test photos is at least 70 % for dishes in the label set and 55 % overall, median under 300 ms, slowest under 1 s, and at most 30 % confident guesses for dishes outside the set.
+
+Test vectors (continue 12 and 19.4 numbering; 198-220 are written for Batch 2, 214 is already tested in `FoodSearchTest`):
+
+| # | Input | Expected |
+|---|---|---|
+| 198 | Man, lose steady (−500), Balanced | 2,249 kcal · protein 160 g · fat 62.5 g · carbs 261.7 g |
+| 199 | Man, lose faster (−750) | cap = 25 % of 2,749 = 687 → **2,062 kcal** |
+| 200 | Man, gain faster (+500) | 3,249 kcal |
+| 201 | Man, maintain, High protein | protein 176 g · fat 76.4 g · carbs 339.4 g |
+| 202 | Woman, lose gentle (−250) | 1,297 kcal |
+| 203 | Woman, lose faster (−750) | cap 386 → 1,161 → floor **1,200** |
+| 204 | Woman types a 1,000 kcal override | refused; field stays at 1,200 |
+| 205 | Born 2008, game date in 2026 (difference 18) / born 2007 (19) | targets hidden / shown |
+| 206 | 170 cm at 53.4 kg (BMI 18.48) / 53.5 kg (BMI 18.51) | hidden / shown |
+| 207 | Plan weight 80.0; weigh-ins over 7 days 79.2, 79.0, 78.8 (mean 79.0) / 79.4, 79.1, 78.9 (mean 79.13) | prompt / no prompt |
+| 208 | Two weigh-ins in 7 days | no trend, no prompt |
+| 209 | Recipe: 200 g at 130 kcal/100 g + 50 g at 900 kcal/100 g, 4 servings, cooked 500 g | total 710 · 177.5 per serving · 142 per 100 g |
+| 210 | Recipe 209 scaled × 1.5 | 6 servings, total 1,065, still 177.5 per serving |
+| 211 | Food: protein 10, carbs 20, fat 5, label 165 kcal / label 210 kcal | estimate 165: pass / off by 45 (27 %): warning, error for our own rows |
+| 212 | 2 katori at 150 g each of a food with 110 kcal/100 g | 300 g · 330 kcal |
+| 213 | Label per serving of 30 g: 150 kcal, salt 0.5 g | per 100 g: 500 kcal, sodium 667 mg |
+| 214 | "chapathi", "chappati", "chapatti", "Chapati" | one search key |
+| 215 | UPC-A `036000291452` / EAN-13 `8901030865278` with last digit changed | `0036000291452` / rejected |
+| 216 | Entries in breakfast only / breakfast and lunch / the same day again | 0 XP / 20 XP VIT / nothing inserted |
+| 217 | Second meal logged with 590 self-report XP already earned today / with 600 | 10 XP / 0 XP |
+| 218 | Second meal logged for yesterday; or with targets hidden | 0 XP |
+| 219 | Day: 1,000 kcal from foods with an iron value, 500 kcal from foods without | iron coverage 67 % → "Partial data" |
+| 220 | Recipe row with oil 5 g to 15 g giving 190 and 280 kcal per 100 g | range shown (38 %), logs 235 |

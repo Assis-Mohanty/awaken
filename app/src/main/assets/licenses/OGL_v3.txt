@@ -1,0 +1,12 @@
+Open Government Licence v3.0
+
+Applies to: UK Composition of Foods Integrated Dataset (CoFID) 2021 (Public Health England), used offline in AWAKEN.
+
+Contains public sector information licensed under the Open Government Licence v3.0.
+
+The full licence text is at https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/
+In short, you are free to copy, publish, distribute, transmit and adapt the Information, and to exploit it commercially
+and non-commercially, for example by combining it with other Information or including it in your own product or
+application, as long as you acknowledge the source of the Information in your product or application and provide a link
+to this licence. The licence does not grant any right to suggest that the Information Provider endorses you or your use
+of the Information.

@@ -30,6 +30,9 @@ enum class Nutrient(val key: String, val unit: NutrientUnit) {
     VITAMIN_A("vitamin_a", NutrientUnit.UG),
     VITAMIN_C("vitamin_c", NutrientUnit.MG),
     VITAMIN_D("vitamin_d", NutrientUnit.UG),
+    ZINC("zinc", NutrientUnit.MG),
+    VITAMIN_B12("vitamin_b12", NutrientUnit.UG),
+    FOLATE("folate", NutrientUnit.UG),
     CAFFEINE("caffeine", NutrientUnit.MG),
     ALCOHOL("alcohol", NutrientUnit.G),
     ;
@@ -129,7 +132,7 @@ object NutritionMath {
     fun kindOf(nutrient: Nutrient): TargetKind = when (nutrient) {
         Nutrient.KCAL, Nutrient.PROTEIN, Nutrient.CARBS, Nutrient.FIBER,
         Nutrient.POTASSIUM, Nutrient.CALCIUM, Nutrient.IRON, Nutrient.MAGNESIUM,
-        Nutrient.VITAMIN_A, Nutrient.VITAMIN_C, Nutrient.VITAMIN_D,
+        Nutrient.VITAMIN_A, Nutrient.VITAMIN_C, Nutrient.VITAMIN_D, Nutrient.ZINC, Nutrient.VITAMIN_B12, Nutrient.FOLATE,
         -> TargetKind.GOAL
         else -> TargetKind.LIMIT
     }

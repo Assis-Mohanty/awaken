@@ -1,13 +1,22 @@
-AWAKEN bundles two public-domain datasets, used offline.
+AWAKEN bundles these datasets, used offline. Nothing is downloaded.
 
 Exercise library
   free-exercise-db by Yuri Honas and contributors - https://github.com/yuhonas/free-exercise-db
   Released under The Unlicense (public domain). Commit f00c92c7dcf1216a928a52c3706c7ce8e2f71ed5.
 
 Food and nutrient data
-  U.S. Department of Agriculture, Agricultural Research Service. FoodData Central.
-  SR Legacy (April 2018) and Food and Nutrient Database for Dietary Studies (FNDDS, 2024-10-31).
-  https://fdc.nal.usda.gov/ - Public domain (CC0 1.0).
+  U.S. Department of Agriculture, Agricultural Research Service, Beltsville Human Nutrition Research Center.
+  FoodData Central. https://fdc.nal.usda.gov/ - Public domain (CC0 1.0).
+  SR Legacy (April 2018) and Food and Nutrient Database for Dietary Studies (FNDDS 2021-2023, released 2024-10-31).
+
+  Contains public sector information licensed under the Open Government Licence v3.0.
+  Source: Public Health England, McCance and Widdowson's The Composition of Foods Integrated Dataset (CoFID) 2021.
+  https://www.gov.uk/government/publications/composition-of-foods-integrated-dataset-cofid
+  Licence: https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/ (see OGL_v3.txt).
+  This app is not endorsed by the UK Government.
+
+  Indian dishes marked "Estimate" are calculated by AWAKEN from its own recipes and the ingredient data above.
+  Home cooking varies, so treat them as a guide. Values are for information only, not medical advice.
 
 Strength benchmarks
   OpenPowerlifting - https://www.openpowerlifting.org - https://gitlab.com/openpowerlifting/opl-data

@@ -128,6 +128,9 @@
     <string name="nutrient_vitamin_a">Vitamin A</string>
     <string name="nutrient_vitamin_c">Vitamin C</string>
     <string name="nutrient_vitamin_d">Vitamin D</string>
+    <string name="nutrient_zinc">Zinc</string>
+    <string name="nutrient_vitamin_b12">Vitamin B12</string>
+    <string name="nutrient_folate">Folate</string>
     <string name="nutrient_caffeine">Caffeine</string>
     <string name="nutrient_alcohol">Alcohol</string>
 

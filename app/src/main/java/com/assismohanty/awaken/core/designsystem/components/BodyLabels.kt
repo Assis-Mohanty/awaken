@@ -67,6 +67,9 @@ fun Nutrient.nameRes(): Int = when (this) {
     Nutrient.VITAMIN_A -> R.string.nutrient_vitamin_a
     Nutrient.VITAMIN_C -> R.string.nutrient_vitamin_c
     Nutrient.VITAMIN_D -> R.string.nutrient_vitamin_d
+    Nutrient.ZINC -> R.string.nutrient_zinc
+    Nutrient.VITAMIN_B12 -> R.string.nutrient_vitamin_b12
+    Nutrient.FOLATE -> R.string.nutrient_folate
     Nutrient.CAFFEINE -> R.string.nutrient_caffeine
     Nutrient.ALCOHOL -> R.string.nutrient_alcohol
 }
