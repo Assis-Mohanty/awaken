@@ -68,7 +68,7 @@ data class PauseHours(val start: LocalTime, val end: LocalTime, val days: Set<Da
     }
 }
 
-/** The hunter's Pause settings. [delayBaseSeconds] is one of 3, 5, 10; [cooldownMinutes] one of 1, 5, 10, 15. */
+/** The hunter's Pause settings. [delayBaseSeconds] is one of 3, 5, 10; [cooldownMinutes] one of 0 (every open pauses), 1, 5, 10, 15. */
 data class PauseConfig(
     val enabled: Boolean = true,
     val targets: Set<String> = emptySet(),
@@ -91,7 +91,7 @@ object PauseRules {
     const val DEFAULT_DELAY_SECONDS = 3
     const val DELAY_STEP_SECONDS = 2
     const val MAX_DELAY_SECONDS = 15
-    const val DEFAULT_COOLDOWN_MINUTES = 5
+    const val DEFAULT_COOLDOWN_MINUTES = 0
     const val MAX_TARGETS = 12
     const val LINE_COUNT = 40
     const val STATS_DAYS = 7
@@ -100,16 +100,15 @@ object PauseRules {
     const val KEEP_DAYS = 8
 
     val DELAY_CHOICES: List<Int> = listOf(3, 5, 10)
-    val COOLDOWN_CHOICES: List<Int> = listOf(1, 5, 10, 15)
+    val COOLDOWN_CHOICES: List<Int> = listOf(0, 1, 5, 10, 15)
 
     /**
-     * Windows that appear over an app without being a new app: system UI, the permission dialogs of the usual phone
+     * Windows that appear over an app without being a new app: the permission dialogs of the usual phone
      * makers, the share sheet, Google Play services. The app adds this phone's keyboard and AWAKEN itself at runtime.
      * Not verified on every phone (docs/protect/PLAN.md §3.3); a name missing here only means one extra pause.
      */
     val TRANSIENT_WINDOWS: Set<String> = setOf(
         "android",
-        "com.android.systemui",
         "com.google.android.permissioncontroller",
         "com.android.permissioncontroller",
         "com.android.intentresolver",

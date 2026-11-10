@@ -6,6 +6,7 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.assismohanty.awaken.core.data.repo.PauseStore
 import com.assismohanty.awaken.core.data.usage.ForegroundRead
+import com.assismohanty.awaken.core.data.usage.ResumedApp
 import com.assismohanty.awaken.engine.PauseOutcome
 import com.assismohanty.awaken.engine.PauseRules
 import com.assismohanty.awaken.engine.PauseVariant
@@ -55,10 +56,15 @@ class PauseWatcherTest {
         graph.close()
     }
 
-    private fun on(pkg: String) {
-        graph.usage.foregroundRead = ForegroundRead.Top(pkg)
+    private var tick = 0L
+
+    /** The log shows [pkgs] coming to the front, one millisecond apart and after everything seen before. */
+    private fun onAll(vararg pkgs: String) {
+        graph.usage.foregroundRead = ForegroundRead.Resumed(pkgs.map { ResumedApp(it, graph.clock.instant.plusMillis(++tick)) })
         runBlocking { watcher.poll(screen) }
     }
+
+    private fun on(pkg: String) = onAll(pkg)
 
     private fun chooseInstagram() = runBlocking {
         store.setTargets(setOf(INSTAGRAM))
@@ -96,7 +102,43 @@ class PauseWatcherTest {
     }
 
     @Test
+    fun withTheDefaultSettingsEveryOpenPausesEvenRightAfterContinuing() = runBlocking<Unit> {
+        chooseInstagram()
+        on(LAUNCHER)
+        on(INSTAGRAM)
+        watcher.onContinue(screen)
+        on("com.whatsapp")
+        on(INSTAGRAM)
+        assertThat(screen.shown).hasSize(2)
+    }
+
+    @Test
+    fun switchingAwayAndBackInsideOneLookStillPausesAgain() = runBlocking<Unit> {
+        chooseInstagram()
+        on(LAUNCHER)
+        on(INSTAGRAM)
+        watcher.onContinue(screen)
+        onAll("com.whatsapp", INSTAGRAM)
+        assertThat(screen.shown).hasSize(2)
+    }
+
+    @Test
+    fun aLookThatRepeatsWhatWasAlreadyHandledChangesNothing() = runBlocking<Unit> {
+        chooseInstagram()
+        onAll(LAUNCHER, INSTAGRAM)
+        watcher.onContinue(screen)
+        val before = screen.shown.size
+        // The same two entries again (the windows overlap), with the same times.
+        graph.usage.foregroundRead = ForegroundRead.Resumed(
+            listOf(ResumedApp(LAUNCHER, graph.clock.instant.plusMillis(tick - 1)), ResumedApp(INSTAGRAM, graph.clock.instant.plusMillis(tick))),
+        )
+        watcher.poll(screen)
+        assertThat(screen.shown).hasSize(before)
+    }
+
+    @Test
     fun continuingRecordsItAndQuietsTheAppForFiveMinutes() = runBlocking<Unit> {
+        store.setCooldown(5)
         chooseInstagram()
         on(LAUNCHER)
         on(INSTAGRAM)
@@ -119,6 +161,7 @@ class PauseWatcherTest {
 
     @Test
     fun notNowGoesHomeStartsNoCooldownAndTheNextOpenIsTheNextPause() = runBlocking<Unit> {
+        store.setCooldown(5)
         chooseInstagram()
         on(LAUNCHER)
         on(INSTAGRAM)
@@ -152,13 +195,13 @@ class PauseWatcherTest {
         chooseInstagram()
         on(LAUNCHER)
         on(INSTAGRAM)
-        graph.usage.foregroundRead = ForegroundRead.Top(INSTAGRAM)
-        runBlocking { watcher.poll(screen) }
+        onAll(INSTAGRAM)
         assertThat(screen.shown).hasSize(1)
     }
 
     @Test
     fun aKeyboardOverTheAppIsNotLeavingIt() = runBlocking<Unit> {
+        store.setCooldown(5)
         chooseInstagram()
         on(LAUNCHER)
         on(INSTAGRAM)
@@ -200,6 +243,7 @@ class PauseWatcherTest {
 
     @Test
     fun screenOffTakesThePauseDownAndTheNextUnlockIntoTheAppIsAFreshOpen() = runBlocking<Unit> {
+        store.setCooldown(5)
         chooseInstagram()
         on(LAUNCHER)
         on(INSTAGRAM)

@@ -1149,15 +1149,15 @@ resisting or closing an app.** Only a cleared Lockdown pays, as the existing foc
 
 ### 19.1 Pause
 
-When a chosen app comes to the front from another app, a full-screen pause shows a colour rising from the bottom of the
-screen (that rising is the only clock: no number), today's open count and one line from a bundled bank. [Not now] goes
+When a chosen app comes to the front from another app, a full-screen pause shows water pouring down from the top of the
+screen (that filling is the only clock: no number), today's open count and one line from a bundled bank. [Not now] goes
 Home at any time. When the screen is full the app opens by itself, or after a tap if that is switched on.
 
 | # | Rule | Value |
 |---|---|---|
 | PZ1 | Base delay | 3 s (choices 3 / 5 / 10 s) |
 | PZ2 | Progressive delay | the n-th pause of an app today lasts `min(base + 2 s x (n - 1), 15 s)`; can be switched off (default on) |
-| PZ3 | Cooldown after a continue | 5 min per app (choices 1 / 5 / 10 / 15). No pause while `now < continuedAt + cooldown` |
+| PZ3 | Cooldown after a continue | **Off by default: every open pauses** (changed 2026-11-10: the hunter wants it every time they switch back). Choices Off / 1 / 5 / 10 / 15 min. With a cooldown, no pause while `now < continuedAt + cooldown` |
 | PZ4 | After Not now | no cooldown; the next open pauses again as the next n |
 | PZ5 | Today | the game-day (`dayStartHour`), per app |
 | PZ6 | Target apps | at most 12; never an app that is never covered (§8.2 L1, payment apps) |
@@ -1208,7 +1208,8 @@ node) and store nothing. Uninstall and force-stop protection is not built (Play 
 | 178 | Pause, base 3, n = 1 | 3 s |
 | 179 | same, n = 4 | 9 s |
 | 180 | same, n = 9 | 15 s |
-| 181 | continued 10:00:00, reopened 10:04:59 / 10:05:00 | no pause / pause |
+| 181 | cooldown 5 min, continued 10:00:00, reopened 10:04:59 / 10:05:00 | no pause / pause |
+| 181a | cooldown Off (default), continued 10:00:00, reopened 10:00:01 | pause |
 | 182 | Not now 10:00:00, reopened 10:00:10 | pause, n = 2 |
 | 183 | hours 09:00-18:00 Mon-Fri; Mon 08:59 / Mon 09:00 / Mon 18:00 / Sat 10:00 | none / pause / none / none |
 | 184 | hours 22:00-02:00 Mon only; Tue 01:00 / Wed 01:00 | pause / none |

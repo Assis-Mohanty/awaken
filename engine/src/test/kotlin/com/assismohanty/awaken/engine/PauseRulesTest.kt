@@ -58,8 +58,17 @@ class PauseRulesTest {
     @Test
     fun `vector 181 cooldown ends exactly at five minutes`() {
         val state = PauseAppState(lastContinuedAt = at("10:00:00"))
-        assertThat(decide(now = at("10:04:59"), state = state)).isEqualTo(PauseDecision.None)
-        assertThat(decide(now = at("10:05:00"), state = state)).isInstanceOf(PauseDecision.Show::class.java)
+        val five = config.copy(cooldownMinutes = 5)
+        assertThat(decide(cfg = five, now = at("10:04:59"), state = state)).isEqualTo(PauseDecision.None)
+        assertThat(decide(cfg = five, now = at("10:05:00"), state = state)).isInstanceOf(PauseDecision.Show::class.java)
+    }
+
+    @Test
+    fun `with no quiet time every open pauses`() {
+        val state = PauseAppState(lastContinuedAt = at("10:00:00"))
+        assertThat(PauseRules.DEFAULT_COOLDOWN_MINUTES).isEqualTo(0)
+        assertThat(decide(now = at("10:00:00"), state = state)).isInstanceOf(PauseDecision.Show::class.java)
+        assertThat(decide(now = at("10:00:01"), state = state)).isInstanceOf(PauseDecision.Show::class.java)
     }
 
     @Test

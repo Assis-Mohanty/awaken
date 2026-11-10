@@ -42,7 +42,8 @@
     <string name="pause_progressive_title">Longer each time</string>
     <string name="pause_progressive_note">Adds 2 seconds each time you open the same app today, up to 15 seconds.</string>
     <string name="pause_cooldown_title">Quiet time after you continue</string>
-    <string name="pause_cooldown_note">That app won\'t pause again for this long.</string>
+    <string name="pause_cooldown_note">Off means the pause comes every time you open the app. Otherwise it stays quiet for this long after you continue.</string>
+    <string name="pause_cooldown_off">Off</string>
     <string name="pause_cooldown_value">%1$d min</string>
     <string name="pause_require_tap_title">Tap to continue</string>
     <string name="pause_require_tap_note">Wait for a tap instead of opening the app when the pause ends.</string>

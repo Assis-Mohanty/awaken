@@ -23,7 +23,7 @@ class PauseStoreTest {
         assertThat(settings.config.targets).isEmpty()
         assertThat(settings.config.delayBaseSeconds).isEqualTo(3)
         assertThat(settings.config.progressive).isTrue()
-        assertThat(settings.config.cooldownMinutes).isEqualTo(5)
+        assertThat(settings.config.cooldownMinutes).isEqualTo(0)
         assertThat(settings.config.intentionPrompt).isFalse()
         assertThat(settings.config.hours).isNull()
         assertThat(settings.requireTap).isFalse()

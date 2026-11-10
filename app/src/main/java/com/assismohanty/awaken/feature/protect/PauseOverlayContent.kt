@@ -33,7 +33,7 @@ import com.assismohanty.awaken.core.designsystem.components.ChoiceChip
 import com.assismohanty.awaken.core.designsystem.components.IconCircle
 import com.assismohanty.awaken.core.designsystem.components.PrimaryButton
 import com.assismohanty.awaken.core.designsystem.components.QuietButton
-import com.assismohanty.awaken.core.designsystem.components.RisingFill
+import com.assismohanty.awaken.core.designsystem.components.WaterFill
 import com.assismohanty.awaken.core.designsystem.components.ScreenBackground
 import com.assismohanty.awaken.core.designsystem.lexicon.lexPlural
 import com.assismohanty.awaken.core.designsystem.lexicon.lexString
@@ -60,7 +60,7 @@ data class PauseOverlayUiState(
 )
 
 /**
- * The full-screen pause: a colour rises from the bottom and covers the screen over [PauseOverlayUiState.seconds], and that
+ * The full-screen pause: water pours down from the top and covers the screen over [PauseOverlayUiState.seconds], and that
  * is the only clock (no number). When it is full the app opens by itself ([onContinue]), or a Continue button is enabled
  * if [PauseOverlayUiState.requireTap]. [Not now] works from the first moment. Under reduce-motion the colour rises in
  * whole-second steps instead of smoothly. The screen never pays or punishes anything.
@@ -108,7 +108,7 @@ internal fun PauseOverlayLayout(
     val colors = AwakenTheme.colors
     val type = AwakenTheme.type
     ScreenBackground(modifier = modifier) {
-        RisingFill(progress = progress, description = lexString(R.string.pause_overlay_seconds_left, state.seconds))
+        WaterFill(progress = progress, description = lexString(R.string.pause_overlay_seconds_left, state.seconds))
         Column(
             modifier = Modifier
                 .safeDrawingPadding()

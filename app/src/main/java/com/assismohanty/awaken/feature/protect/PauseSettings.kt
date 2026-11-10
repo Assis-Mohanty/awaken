@@ -248,7 +248,7 @@ fun PauseSettingsScreen(
                 Row(horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
                     PauseRules.COOLDOWN_CHOICES.forEach { minutes ->
                         ChoiceChip(
-                            text = lexString(R.string.pause_cooldown_value, minutes),
+                            text = if (minutes == 0) lexString(R.string.pause_cooldown_off) else lexString(R.string.pause_cooldown_value, minutes),
                             selected = config.cooldownMinutes == minutes,
                             onClick = { onEvent(PauseSettingsEvent.SetCooldown(minutes)) },
                         )

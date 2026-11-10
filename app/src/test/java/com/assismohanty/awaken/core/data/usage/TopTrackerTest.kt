@@ -7,23 +7,33 @@ class TopTrackerTest {
     private val resumed = 1
     private val paused = 2
 
-    private fun run(vararg events: Pair<Int, String>): String? = events.fold(null as String?) { top, (type, pkg) -> TopTracker.next(top, type, pkg) }
-
-    @Test
-    fun theLastAppToResumeIsOnTop() {
-        assertThat(run(resumed to "a", paused to "a", resumed to "b")).isEqualTo("b")
+    private fun run(vararg events: Pair<Int, String>): List<String> {
+        val apps = mutableListOf<ResumedApp>()
+        events.forEachIndexed { index, (type, pkg) -> TopTracker.add(apps, type, pkg, index.toLong()) }
+        return apps.map { it.packageName }
     }
 
     @Test
-    fun aPauseAloneChangesNothing() {
-        assertThat(run(paused to "a")).isNull()
-        assertThat(run(resumed to "a", paused to "a")).isEqualTo("a")
+    fun everyChangeOfAppIsKeptInOrder() {
+        assertThat(run(resumed to "a", paused to "a", resumed to "b", resumed to "a")).containsExactly("a", "b", "a").inOrder()
+    }
+
+    @Test
+    fun anotherScreenOfTheSameAppIsNotAChange() {
+        assertThat(run(resumed to "a", resumed to "a", resumed to "b")).containsExactly("a", "b").inOrder()
+    }
+
+    @Test
+    fun aPauseAloneAddsNothing() {
+        assertThat(run(paused to "a")).isEmpty()
     }
 
     @Test
     fun otherEventTypesAndBlankNamesAreIgnored() {
-        assertThat(TopTracker.next("a", 15, "b")).isEqualTo("a")
-        assertThat(TopTracker.next("a", resumed, "")).isEqualTo("a")
-        assertThat(TopTracker.next("a", resumed, null)).isEqualTo("a")
+        val apps = mutableListOf<ResumedApp>()
+        TopTracker.add(apps, 15, "b", 0)
+        TopTracker.add(apps, resumed, "", 0)
+        TopTracker.add(apps, resumed, null, 0)
+        assertThat(apps).isEmpty()
     }
 }

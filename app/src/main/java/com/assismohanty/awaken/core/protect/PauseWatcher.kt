@@ -82,6 +82,7 @@ class PauseWatcher @Inject constructor(
     private var top: String? = null
     private var previous: String? = null
     private var lastQuery: Instant? = null
+    private var seenUntil: Instant? = null
     private var showing: PauseRequest? = null
     private var intention: PauseRules.Intention? = null
     private var prunedFor: LocalDate? = null
@@ -96,9 +97,15 @@ class PauseWatcher @Inject constructor(
         return when (val read = usage.foreground(since, now)) {
             ForegroundRead.NoAccess -> PollResult.NoAccess
             ForegroundRead.Unavailable, ForegroundRead.NoChange -> PollResult.Ok(changed = false)
-            is ForegroundRead.Top -> {
-                val changed = read.packageName != top
-                onTop(read.packageName, now, screen)
+            is ForegroundRead.Resumed -> {
+                var changed = false
+                // The window overlaps the last look a little, so skip what was already handled; take the rest in order.
+                for (app in read.apps) {
+                    if (seenUntil?.let { !app.at.isAfter(it) } == true) continue
+                    seenUntil = app.at
+                    if (app.packageName != top) changed = true
+                    onTop(app.packageName, now, screen)
+                }
                 PollResult.Ok(changed)
             }
         }

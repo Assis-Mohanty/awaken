@@ -43,9 +43,12 @@ sealed interface ForegroundRead {
     /** No app came to the front in the window. */
     data object NoChange : ForegroundRead
 
-    /** The app that most recently came to the front in the window. */
-    data class Top(val packageName: String) : ForegroundRead
+    /** Every app that came to the front in the window, oldest first, one entry per change of app. */
+    data class Resumed(val apps: List<ResumedApp>) : ForegroundRead
 }
+
+/** An app that came to the front, and when. */
+data class ResumedApp(val packageName: String, val at: Instant)
 
 /**
  * Device events for pickups and the night check (GD §16.10). Like [UsageRead], only [Tracked] is real data; a missing
@@ -74,7 +77,7 @@ interface UsageGateway {
     /** The packages that came to the foreground during `[start, end)`. Package names only; nothing is stored. */
     suspend fun opened(start: Instant, end: Instant): OpenedRead
 
-    /** The app that most recently came to the front over `[since, until)`. Package name only; nothing is stored. */
+    /** The apps that came to the front over `[since, until)`, with times. Package names only; nothing is stored. */
     suspend fun foreground(since: Instant, until: Instant): ForegroundRead
 
     /** Screen and keyguard events plus app visits over `[start, end)`. Times only; no package name leaves this read. */

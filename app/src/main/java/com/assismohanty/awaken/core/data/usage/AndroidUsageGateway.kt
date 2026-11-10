@@ -91,12 +91,12 @@ class AndroidUsageGateway @Inject constructor(
         val manager = context.getSystemService(UsageStatsManager::class.java) ?: return@withContext ForegroundRead.Unavailable
         val events = manager.queryEvents(since.toEpochMilli(), until.toEpochMilli()) ?: return@withContext ForegroundRead.Unavailable
         val event = UsageEvents.Event()
-        var top: String? = null
+        val apps = ArrayList<ResumedApp>()
         while (events.hasNextEvent()) {
             events.getNextEvent(event)
-            top = TopTracker.next(top, event.eventType, event.packageName)
+            TopTracker.add(apps, event.eventType, event.packageName, event.timeStamp)
         }
-        top?.let { ForegroundRead.Top(it) } ?: ForegroundRead.NoChange
+        if (apps.isEmpty()) ForegroundRead.NoChange else ForegroundRead.Resumed(apps)
     }
 
     override suspend fun events(start: Instant, end: Instant): EventsRead = withContext(ioDispatcher) {
@@ -170,12 +170,15 @@ class AndroidUsageGateway @Inject constructor(
     }
 }
 
-/** Which app is in front after one more event: the last one that resumed (ACTIVITY_RESUMED, event type 1). */
+/** Collects the apps that came to the front (ACTIVITY_RESUMED, event type 1), one entry per change of app. */
 internal object TopTracker {
     private const val RESUMED = 1
 
-    fun next(top: String?, eventType: Int, packageName: String?): String? =
-        if (eventType == RESUMED && !packageName.isNullOrBlank()) packageName else top
+    fun add(apps: MutableList<ResumedApp>, eventType: Int, packageName: String?, timeMs: Long) {
+        if (eventType != RESUMED || packageName.isNullOrBlank()) return
+        if (apps.lastOrNull()?.packageName == packageName) return
+        apps += ResumedApp(packageName, Instant.ofEpochMilli(timeMs))
+    }
 }
 
 /**
