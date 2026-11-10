@@ -190,11 +190,11 @@ class OnboardingQuizFlowTest {
 
         composeRule.onNodeWithText("Your plan").assertExists()
         // The answers have become the plan: focus areas, goals and the first quests.
-        composeRule.onNodeWithText("Vitality and Willpower").assertExists()
+        composeRule.onNodeWithText("Vitality and Willpower", substring = true).assertExists()
         composeRule.onNodeWithText("6,000 steps a day").assertExists()
-        composeRule.onNodeWithText("Mon").assertExists()
+        composeRule.onNodeWithText("Mon", substring = true).assertExists()
         // Screen time was answered but usage access was put off, so the plan says what it needs.
-        composeRule.onAllNodesWithText("Needs usage access to work.").assertCountEquals(1)
+        composeRule.onAllNodesWithText("Needs usage access to work.", substring = true).assertCountEquals(1)
 
         val answers = vm.uiState.value.answers
         assertThat(answers.name).isEqualTo("Sam")

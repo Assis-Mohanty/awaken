@@ -124,6 +124,8 @@ fun SessionScreen(
     subtitle: String?,
     modifier: Modifier = Modifier,
     track: (@Composable () -> Unit)? = null,
+    /** Share of the height the dial may take upright; screens with more under the dial pass less. */
+    dialShare: Float = PORTRAIT_HEIGHT_SHARE,
     body: @Composable ColumnScope.(diameter: Dp) -> Unit,
     actions: @Composable ColumnScope.() -> Unit,
 ) {
@@ -154,7 +156,7 @@ fun SessionScreen(
                     }
                 }
             } else {
-                val diameter = minOf(DIAL_MAX, maxWidth, maxHeight * PORTRAIT_HEIGHT_SHARE)
+                val diameter = minOf(DIAL_MAX, maxWidth, maxHeight * dialShare)
                 Column(modifier = Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
                     SessionHeader(title, subtitle)
                     track?.invoke()
@@ -285,6 +287,24 @@ fun SessionDial(diameter: Dp, fraction: Float, numeral: String, caption: String,
         }
     }
 }
+
+/** A small filled pill on a field (nudge buttons): light text on a lighter tone of the field. */
+@Composable
+fun FieldPillButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    val colors = AwakenTheme.colors
+    val interaction = remember { MutableInteractionSource() }
+    Button(
+        onClick = onClick,
+        interactionSource = interaction,
+        shape = AwakenTheme.shapes.button,
+        colors = ButtonDefaults.buttonColors(containerColor = colors.onField.copy(alpha = PILL_ALPHA), contentColor = colors.onField),
+        modifier = modifier.pressScale(interaction).defaultMinSize(minHeight = AwakenTheme.dimens.touchTarget),
+    ) {
+        Text(text = text, style = AwakenTheme.type.title)
+    }
+}
+
+private const val PILL_ALPHA = 0.18f
 
 /** The one action on a field: a chalk pill with dark text, whichever mode the app is in. */
 @Composable

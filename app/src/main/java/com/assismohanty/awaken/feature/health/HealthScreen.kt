@@ -38,6 +38,10 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.health.connect.client.HealthConnectClient
 import com.assismohanty.awaken.BuildConfig
 import com.assismohanty.awaken.R
+import com.assismohanty.awaken.core.designsystem.components.AwakenGlyphs
+import com.assismohanty.awaken.core.designsystem.components.AwakenCard
+import com.assismohanty.awaken.core.designsystem.components.ListRow
+import com.assismohanty.awaken.core.designsystem.components.SectionTitle
 import com.assismohanty.awaken.core.designsystem.components.DetailRows
 import com.assismohanty.awaken.core.designsystem.components.BigValue
 import com.assismohanty.awaken.core.designsystem.components.LargeTitleScaffold
@@ -125,7 +129,15 @@ fun HealthScreen(
 ) {
     val colors = AwakenTheme.colors
     ScreenBackground(modifier = modifier) {
-        LargeTitleScaffold(title = lexString(R.string.health_title), onBack = onBack) {
+        LargeTitleScaffold(
+            title = lexString(R.string.health_title),
+            onBack = onBack,
+            actions = {
+                if (state.overview != null) {
+                    QuietButton(text = lexString(R.string.health_action_refresh), onClick = { onEvent(HealthEvent.Refresh) }, enabled = !state.refreshing)
+                }
+            },
+        ) {
             val overview = state.overview
             when {
                 overview != null -> {
@@ -214,15 +226,11 @@ private fun TodayWindow(overview: HealthOverview, state: HealthUiState, onEvent:
     val oneDecimal = remember { NumberFormat.getNumberInstance().apply { maximumFractionDigits = 1; minimumFractionDigits = 1 } }
     val noSteps = overview.stepSource == StepSource.NONE
     val notAllowed = lexString(R.string.health_not_allowed)
-    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        BigValue(
-            value = if (noSteps) lexString(R.string.health_no_data) else numbers.format(today.steps),
-            unit = lexString(R.string.health_metric_steps).lowercase(),
-            large = true,
-            modifier = Modifier.weight(1f),
-        )
-        QuietButton(text = lexString(R.string.health_action_refresh), onClick = { onEvent(HealthEvent.Refresh) }, enabled = !state.refreshing)
-    }
+    BigValue(
+        value = if (noSteps) lexString(R.string.health_no_data) else numbers.format(today.steps),
+        unit = lexString(R.string.health_metric_steps).lowercase(),
+        large = true,
+    )
     Text(lexString(R.string.health_updated, formatTime(overview.updatedAt, zone)), style = AwakenTheme.type.caption, color = colors.textSecondary)
     if (showSource) {
         Text(lexString(R.string.health_debug_source, lexString(overview.stepSource.labelRes)), style = AwakenTheme.type.caption, color = colors.textSecondary)
@@ -247,33 +255,21 @@ private fun TodayWindow(overview: HealthOverview, state: HealthUiState, onEvent:
 @Composable
 private fun WorkoutsWindow(sessions: List<HealthSession>, zone: ZoneId) {
     val colors = AwakenTheme.colors
-    val type = AwakenTheme.type
-    SystemWindow(title = lexString(R.string.health_window_workouts), accent = colors.positive, reveal = false) {
-        if (sessions.isEmpty()) {
-            Text(lexString(R.string.health_no_workouts), style = type.body, color = colors.textSecondary)
-        }
+    SectionTitle(lexString(R.string.health_window_workouts))
+    if (sessions.isEmpty()) {
+        Text(lexString(R.string.health_no_workouts), style = AwakenTheme.type.body, color = colors.textSecondary)
+        return
+    }
+    AwakenCard(reveal = false, contentPadding = Spacing.listCard, spacing = Spacing.zero, modifier = Modifier.fillMaxWidth()) {
         sessions.forEach { session ->
             val name = prettyWorkoutLabel(session.label) ?: lexString(R.string.health_workout_default)
-            Text(
-                lexString(R.string.health_workout_title, name, formatDuration(session.duration)),
-                style = type.label,
-                color = colors.textPrimary,
-            )
-            Text(
-                lexString(R.string.health_workout_window, formatTime(session.start, zone), formatTime(session.end, zone)),
-                style = type.caption,
-                color = colors.textSecondary,
-            )
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.xs), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
-                session.distanceMeters?.let {
-                    Pill(text = lexString(R.string.health_value_distance, NumberFormat.getNumberInstance().apply { maximumFractionDigits = 1 }.format(it / METERS_PER_KM)), color = colors.textSecondary)
-                }
-                session.activeKcal?.let {
-                    Pill(text = lexString(R.string.health_value_kcal, NumberFormat.getIntegerInstance().format(it.toLong())), color = colors.textSecondary)
-                }
-                session.avgHeartRate?.let { Pill(text = lexString(R.string.health_value_bpm, it), color = colors.critical) }
-                session.origin?.let { Pill(text = healthSourceName(it), color = colors.positive) }
-            }
+            val details = listOfNotNull(
+                formatDuration(session.duration),
+                session.distanceMeters?.let { lexString(R.string.health_value_distance, NumberFormat.getNumberInstance().apply { maximumFractionDigits = 1 }.format(it / METERS_PER_KM)) },
+                session.avgHeartRate?.let { lexString(R.string.health_value_bpm, it) },
+                session.origin?.let { healthSourceName(it) },
+            ).joinToString(" · ")
+            ListRow(title = name, icon = AwakenGlyphs.Strength, secondary = details)
         }
     }
 }
@@ -281,24 +277,28 @@ private fun WorkoutsWindow(sessions: List<HealthSession>, zone: ZoneId) {
 @Composable
 private fun SleepWindow(session: HealthSession?, zone: ZoneId) {
     val colors = AwakenTheme.colors
-    val type = AwakenTheme.type
-    SystemWindow(title = lexString(R.string.health_window_sleep), accent = colors.accent, reveal = false) {
-        if (session == null) {
-            Text(lexString(R.string.health_no_sleep), style = type.body, color = colors.textSecondary)
-            return@SystemWindow
-        }
-        Text(lexString(R.string.health_sleep_total, formatDuration(session.duration)), style = type.numericSmall, color = colors.textPrimary)
-        Text(
+    SectionTitle(lexString(R.string.health_window_sleep))
+    if (session == null) {
+        Text(lexString(R.string.health_no_sleep), style = AwakenTheme.type.body, color = colors.textSecondary)
+        return
+    }
+    val minutes = session.duration.toMinutes().coerceAtLeast(0)
+    Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm), verticalAlignment = Alignment.Bottom) {
+        BigValue(value = (minutes / MINUTES_PER_HOUR).toString(), unit = lexString(R.string.health_unit_h))
+        BigValue(value = (minutes % MINUTES_PER_HOUR).toString(), unit = lexString(R.string.health_unit_min))
+    }
+    Text(
+        listOfNotNull(
             lexString(R.string.health_workout_window, formatTime(session.start, zone), formatTime(session.end, zone)),
-            style = type.caption,
-            color = colors.textSecondary,
-        )
-        if (session.stages.isEmpty()) {
-            Text(lexString(R.string.health_sleep_no_stages), style = type.caption, color = colors.textSecondary)
-        } else {
-            StageTimeline(session)
-        }
-        session.origin?.let { Pill(text = healthSourceName(it), color = colors.positive) }
+            session.origin?.let { healthSourceName(it) },
+        ).joinToString(" · "),
+        style = AwakenTheme.type.caption,
+        color = colors.textSecondary,
+    )
+    if (session.stages.isEmpty()) {
+        Text(lexString(R.string.health_sleep_no_stages), style = AwakenTheme.type.caption, color = colors.textSecondary)
+    } else {
+        StageTimeline(session)
     }
 }
 

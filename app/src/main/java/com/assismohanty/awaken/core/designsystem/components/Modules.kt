@@ -321,7 +321,7 @@ fun IconCircle(icon: ImageVector, tint: Color, modifier: Modifier = Modifier, si
 // ---- List row ----
 
 /**
- * List row (DESIGN_SYSTEM §3): leading [IconCircle], title (17sp), secondary line, trailing control. The whole row is
+ * List row (DESIGN_SYSTEM §3): leading bare icon, title (17sp), secondary line, trailing control. The whole row is
  * one target when [onClick] is set. Use inside a card; rows separate by spacing, not lines.
  */
 @Composable
@@ -344,7 +344,11 @@ fun ListRow(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
     ) {
-        icon?.let { IconCircle(it, iconTint) }
+        icon?.let {
+            Box(modifier = Modifier.size(AwakenTheme.dimens.iconWell), contentAlignment = Alignment.Center) {
+                Icon(it, contentDescription = null, tint = iconTint, modifier = Modifier.size(AwakenTheme.dimens.icon))
+            }
+        }
         Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(Spacing.xxs / 2)) {
             Text(title, style = AwakenTheme.type.windowTitle, color = colors.textPrimary)
             secondary?.let { Text(it, style = AwakenTheme.type.caption, color = colors.textSecondary) }

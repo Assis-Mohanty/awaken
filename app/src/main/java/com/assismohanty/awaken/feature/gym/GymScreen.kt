@@ -120,12 +120,17 @@ fun GymScreen(state: GymUiState, onEvent: (GymEvent) -> Unit, modifier: Modifier
     }
     val subtitle = if (state.active == null && state.overview?.trainingDay == true) lexString(R.string.gym_training_day) else null
     val heading = state.active?.let { coachedHeading(state, it) }
+    val summary = if (state.active == null) state.summaryId?.let { id -> state.overview?.history?.firstOrNull { it.workoutId == id } } else null
     LargeTitleScaffold(
-        title = heading?.first ?: lexString(R.string.gym_title),
-        subtitle = heading?.second ?: subtitle,
+        title = if (summary != null) lexString(R.string.gym_summary_title) else heading?.first ?: lexString(R.string.gym_title),
+        subtitle = if (summary != null) {
+            listOfNotNull(summary.name.ifBlank { null }, formatDate(summary.gameDate)).joinToString(" · ")
+        } else {
+            heading?.second ?: subtitle
+        },
         modifier = modifier,
         actions = {
-            if (state.active == null) {
+            if (state.active == null && summary == null) {
                 HeaderIconButton(AwakenGlyphs.Settings, lexString(R.string.gym_settings_icon_cd), { onEvent(GymEvent.OpenGymSettings) })
             } else if (heading != null) {
                 CoachedActions(state.active, onEvent)
@@ -139,10 +144,9 @@ fun GymScreen(state: GymUiState, onEvent: (GymEvent) -> Unit, modifier: Modifier
         val active = state.active
         if (active != null) {
             ActiveWorkoutContent(state, active, onEvent)
+        } else if (summary != null) {
+            SessionSummary(summary, state.summaryRecords, state.summaryXp, onEvent)
         } else {
-            state.summaryId?.let { id ->
-                state.overview?.history?.firstOrNull { it.workoutId == id }?.let { SessionSummary(it, state.summaryRecords, state.summaryXp, onEvent) }
-            }
             state.notice?.let { NoticeLine(it, onEvent) }
             state.home?.let { home ->
                 GymWeekSection(home, onEvent)
@@ -401,7 +405,6 @@ internal fun tryText(ui: HintUi): String = when (val hint = ui.hint) {
 @Composable
 private fun SessionSummary(summary: WorkoutSummary, records: List<ExerciseRecords>, xp: GymXpResult, onEvent: (GymEvent) -> Unit) {
     val colors = AwakenTheme.colors
-    Text(lexString(R.string.gym_summary_title), style = AwakenTheme.type.title, color = colors.textPrimary, modifier = Modifier.semantics { heading() })
     Row(horizontalArrangement = Arrangement.spacedBy(Spacing.lg), modifier = Modifier.fillMaxWidth()) {
         Stat(lexString(R.string.gym_summary_time), formatElapsed(summary.duration), Modifier.weight(1f))
         Stat(lexString(R.string.gym_summary_sets), summary.sets.toString(), Modifier.weight(1f))

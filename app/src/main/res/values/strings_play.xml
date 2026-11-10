@@ -303,7 +303,8 @@
     <string name="cd_open_settings">Open settings</string>
     <string name="cd_open_paths">Open paths</string>
     <string name="settings_morning_end">Morning ends</string>
-    <string name="settings_day_end">Day ends</string>
+    <string name="settings_day_end">Evening starts</string>
+    <string name="settings_menu_footer">AWAKEN %1$s. Everything stays on this phone.</string>
     <string name="settings_blocks_note">Today groups your quests into Morning, Day and Evening by these times.</string>
     <string name="settings_window_profile">Profile</string>
     <string name="settings_window_data">Your data</string>

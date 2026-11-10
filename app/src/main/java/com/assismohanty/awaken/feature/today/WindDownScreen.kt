@@ -1,5 +1,6 @@
 package com.assismohanty.awaken.feature.today
 
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -74,8 +75,8 @@ fun WindDownScreen(started: Boolean, elapsedSeconds: Int, onStart: () -> Unit, o
         },
         actions = {
             when {
-                !started -> FieldPrimaryButton(text = lexString(R.string.bedtime_wind_start), onClick = onStart)
-                finished -> FieldPrimaryButton(text = lexString(R.string.bedtime_wind_done), onClick = onDone)
+                !started -> FieldPrimaryButton(text = lexString(R.string.bedtime_wind_start), onClick = onStart, modifier = Modifier.fillMaxWidth())
+                finished -> FieldPrimaryButton(text = lexString(R.string.bedtime_wind_done), onClick = onDone, modifier = Modifier.fillMaxWidth())
                 else -> FieldQuietButton(text = lexString(R.string.bedtime_wind_finish), onClick = onDone)
             }
         },

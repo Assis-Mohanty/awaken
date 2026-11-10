@@ -183,15 +183,15 @@ private fun Breakdown(model: RewardModel) {
             FormulaRow(label, value, colors.textSecondary)
             HorizontalDivider(thickness = AwakenTheme.dimens.hairline, color = colors.divider)
         }
-        FormulaRow(lexString(R.string.reward_row_total), lexString(R.string.reward_total_value, formatCount(model.xp)), colors.textPrimary)
+        FormulaRow(lexString(R.string.reward_row_total), lexString(R.string.reward_total_value, formatCount(model.xp)), colors.textPrimary, total = true)
     }
 }
 
 @Composable
-private fun FormulaRow(label: String, value: String, labelColor: Color) {
+private fun FormulaRow(label: String, value: String, labelColor: Color, total: Boolean = false) {
     Row(modifier = Modifier.fillMaxWidth().padding(vertical = Spacing.sm).semantics(mergeDescendants = true) {}, verticalAlignment = Alignment.CenterVertically) {
-        Text(label, style = AwakenTheme.type.body, color = labelColor, modifier = Modifier.weight(1f))
-        Text(value, style = AwakenTheme.type.numericSmall, color = AwakenTheme.colors.textPrimary)
+        Text(label, style = if (total) AwakenTheme.type.numericSmall else AwakenTheme.type.body, color = labelColor, modifier = Modifier.weight(1f))
+        Text(value, style = if (total) AwakenTheme.type.numeric else AwakenTheme.type.numericSmall, color = AwakenTheme.colors.textPrimary)
     }
 }
 

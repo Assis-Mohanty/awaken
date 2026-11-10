@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.LiveRegionMode
@@ -56,13 +57,14 @@ private fun LiveLine(text: String) {
 }
 
 /**
- * One card of the plan screen: what was set ([title], [value]) and, when [onEditToggle] is given, an Edit / Done button that
- * opens [content] under the value. [note] is a quiet line under the value (what it needs, or where else to change it).
+ * One setting of the plan as a row: a leading [icon], the [title], its [value] and an optional [note] under it, and a chevron
+ * when it can be edited. Tapping opens [content] (the editor) under the row. Put the rows in one card.
  */
 @Composable
-fun PlanSummaryCard(
+fun PlanRow(
     title: String,
     value: String,
+    icon: ImageVector,
     modifier: Modifier = Modifier,
     note: String? = null,
     editLabel: String? = null,
@@ -71,23 +73,28 @@ fun PlanSummaryCard(
     content: @Composable ColumnScope.() -> Unit = {},
 ) {
     val colors = AwakenTheme.colors
-    AwakenCard(modifier = modifier.fillMaxWidth(), reveal = false, onClick = onEditToggle) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(title, style = AwakenTheme.type.windowTitle, color = colors.textPrimary)
-                Text(value, style = AwakenTheme.type.caption, color = colors.textSecondary)
-                if (note != null) Text(note, style = AwakenTheme.type.caption, color = colors.textSecondary)
-            }
-            if (onEditToggle != null && editLabel != null) {
-                Icon(
-                    if (expanded) AwakenGlyphs.ChevronDown else AwakenGlyphs.ChevronRight,
-                    contentDescription = editLabel,
-                    tint = colors.textSecondary,
-                    modifier = Modifier.size(AwakenTheme.dimens.iconSmall),
-                )
-            }
+    Column(modifier = modifier.fillMaxWidth()) {
+        ListRow(
+            title = title,
+            icon = icon,
+            secondary = listOfNotNull(value, note).joinToString(" · "),
+            onClick = onEditToggle,
+            trailing = if (onEditToggle != null && editLabel != null) {
+                {
+                    Icon(
+                        if (expanded) AwakenGlyphs.ChevronDown else AwakenGlyphs.ChevronRight,
+                        contentDescription = editLabel,
+                        tint = colors.textSecondary,
+                        modifier = Modifier.size(AwakenTheme.dimens.iconSmall),
+                    )
+                }
+            } else {
+                null
+            },
+        )
+        if (expanded) {
+            Column(modifier = Modifier.padding(vertical = Spacing.xs), verticalArrangement = Arrangement.spacedBy(Spacing.sm), content = content)
         }
-        if (expanded) content()
     }
 }
 
@@ -140,10 +147,12 @@ private fun PlanRingPreview() {
 private fun PlanSummaryCardPreview() {
     AwakenTheme(reduceMotion = true) {
         Column(Modifier.padding(Spacing.gutter), verticalArrangement = Arrangement.spacedBy(Spacing.cardGap)) {
-            PlanSummaryCard(title = "Step goal", value = "8,000 steps", editLabel = "Edit", onEditToggle = {}, expanded = true) {
+            AwakenCard(reveal = false, contentPadding = Spacing.listCard, spacing = Spacing.zero, modifier = Modifier.fillMaxWidth()) {
+            PlanRow(title = "Step goal", value = "8,000 steps", icon = AwakenGlyphs.Strength, editLabel = "Edit", onEditToggle = {}, expanded = true) {
                 StepperRow("8,000", onLess = {}, onMore = {}, canLess = true, canMore = true, lessDescription = "Less", moreDescription = "More")
             }
-            PlanSummaryCard(title = "App limits", value = "Off", note = "Needs usage access")
+            PlanRow(title = "App limits", value = "Off", icon = AwakenGlyphs.Phone, note = "Needs usage access")
+            }
         }
     }
 }

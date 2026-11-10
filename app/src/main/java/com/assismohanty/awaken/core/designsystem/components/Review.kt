@@ -26,7 +26,7 @@ import com.assismohanty.awaken.core.designsystem.theme.Spacing
 fun ReviewStepIndicator(step: Int, total: Int, modifier: Modifier = Modifier) {
     val colors = AwakenTheme.colors
     Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
-        Text(text = lexString(R.string.review_step, step, total), style = AwakenTheme.type.label, color = colors.textSecondary)
+        Text(text = lexString(R.string.review_step, step, total), style = AwakenTheme.type.caption, color = colors.textSecondary)
         Row(horizontalArrangement = Arrangement.spacedBy(Spacing.xxs), modifier = Modifier.fillMaxWidth()) {
             repeat(total) { index ->
                 Box(

@@ -20,6 +20,8 @@
     <string name="health_value_kcal">%1$s kcal</string>
     <string name="health_value_bpm">%1$d bpm</string>
 
+    <string name="health_unit_h">h</string>
+    <string name="health_unit_min">min</string>
     <string name="health_window_workouts">Workouts</string>
     <string name="health_no_workouts">No recorded workouts yet today.</string>
     <string name="health_workout_default">Workout</string>

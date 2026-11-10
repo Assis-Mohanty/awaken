@@ -15,6 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import com.assismohanty.awaken.R
+import com.assismohanty.awaken.core.designsystem.components.FieldPillButton
 import com.assismohanty.awaken.core.designsystem.components.SetDots
 import com.assismohanty.awaken.engine.body.PlateUnit
 import com.assismohanty.awaken.engine.body.PlateSetup
@@ -380,6 +381,8 @@ private fun CompleteButton(set: WorkoutSetEntity, exercise: WorkoutExercise, now
 
 // Rest
 
+private const val REST_DIAL_SHARE = 0.36f
+
 /** The full-screen rest: the round dial in the Strength colour, the nudge buttons, what comes next, and Skip once the minimum rest has passed. */
 @Composable
 internal fun RestScreen(state: GymUiState, active: ActiveWorkout, ends: Instant, onEvent: (GymEvent) -> Unit) {
@@ -396,7 +399,8 @@ internal fun RestScreen(state: GymUiState, active: ActiveWorkout, ends: Instant,
     SessionScreen(
         stat = Stat.STR,
         title = lexString(R.string.gym_rest_screen_title),
-        subtitle = null,
+        subtitle = listOfNotNull(active.workout.name.ifBlank { null }, formatElapsed(elapsedSince(active.workout.startedAt, state.now))).joinToString(" · "),
+        dialShare = REST_DIAL_SHARE,
         body = { diameter ->
             SessionDial(
                 diameter = diameter,
@@ -408,12 +412,12 @@ internal fun RestScreen(state: GymUiState, active: ActiveWorkout, ends: Instant,
             val lessDescription = lexString(R.string.gym_rest_less_cd)
             val moreDescription = lexString(R.string.gym_rest_more_cd)
             Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-                FieldQuietButton(
+                FieldPillButton(
                     text = lexString(R.string.gym_rest_less),
                     onClick = { onEvent(GymEvent.AdjustRest(-REST_STEP_SEC)) },
                     modifier = Modifier.semantics { contentDescription = lessDescription },
                 )
-                FieldQuietButton(
+                FieldPillButton(
                     text = lexString(R.string.gym_rest_more),
                     onClick = { onEvent(GymEvent.AdjustRest(REST_STEP_SEC)) },
                     modifier = Modifier.semantics { contentDescription = moreDescription },
@@ -438,10 +442,12 @@ internal fun RestScreen(state: GymUiState, active: ActiveWorkout, ends: Instant,
                 // Skipping opens once the minimum rest has passed, so a set cannot be ticked seconds after the last.
                 Text(lexString(R.string.gym_rest_skip_in, minRest - elapsed), style = AwakenTheme.type.body, color = colors.onFieldMuted)
             }
-            if (active.exercises.any { e -> e.sets.any { it.done } }) {
-                FieldQuietButton(text = lexString(R.string.gym_rest_log_last), onClick = { onEvent(GymEvent.OpenLastSet) })
+            Row(horizontalArrangement = Arrangement.spacedBy(Spacing.xs), modifier = Modifier.fillMaxWidth()) {
+                if (active.exercises.any { e -> e.sets.any { it.done } }) {
+                    FieldQuietButton(text = lexString(R.string.gym_rest_log_last), onClick = { onEvent(GymEvent.OpenLastSet) }, modifier = Modifier.weight(1f))
+                }
+                FieldQuietButton(text = lexString(R.string.gym_rest_minimise), onClick = { onEvent(GymEvent.MinimiseRest) }, modifier = Modifier.weight(1f))
             }
-            FieldQuietButton(text = lexString(R.string.gym_rest_minimise), onClick = { onEvent(GymEvent.MinimiseRest) })
         },
     )
 }

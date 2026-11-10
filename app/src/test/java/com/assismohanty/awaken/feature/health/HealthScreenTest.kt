@@ -56,7 +56,7 @@ class HealthScreenTest {
         show(HealthUiState(status = HealthScreenStatus.READY, overview = overview(canMore = true)))
 
         composeRule.onNodeWithText("8,412", substring = true).assertIsDisplayed()
-        composeRule.onNodeWithText("Running · 38 min").performScrollTo().assertIsDisplayed()
+        composeRule.onNodeWithText("38 min", substring = true).performScrollTo().assertIsDisplayed()
         composeRule.onNodeWithText("Records typed in by hand are ignored", substring = true).performScrollTo().assertIsDisplayed()
     }
 

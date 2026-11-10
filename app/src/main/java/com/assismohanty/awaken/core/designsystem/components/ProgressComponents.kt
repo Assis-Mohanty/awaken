@@ -107,16 +107,17 @@ fun LevelHero(
 @Composable
 fun ShortcutTile(icon: ImageVector, title: String, note: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
     val colors = AwakenTheme.colors
+    val small = isSmallPhone()
     AwakenCard(
         modifier = modifier.semantics(mergeDescendants = true) { contentDescription = "$title, $note" },
         reveal = false,
         onClick = onClick,
-        contentPadding = PaddingValues(Spacing.md),
+        contentPadding = PaddingValues(if (small) Spacing.sm else Spacing.md),
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(if (small) Spacing.xs else Spacing.sm)) {
             Icon(icon, contentDescription = null, tint = colors.textPrimary, modifier = Modifier.size(AwakenTheme.dimens.icon))
             Column(modifier = Modifier.weight(1f)) {
-                Text(title, style = AwakenTheme.type.windowTitle, color = colors.textPrimary)
+                Text(title, style = if (small) AwakenTheme.type.label else AwakenTheme.type.windowTitle, color = colors.textPrimary)
                 Text(note, style = AwakenTheme.type.caption, color = colors.textSecondary, maxLines = 2)
             }
         }

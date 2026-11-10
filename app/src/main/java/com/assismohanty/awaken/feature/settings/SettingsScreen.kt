@@ -236,9 +236,9 @@ internal enum class SettingsSection(val titleRes: Int, val icon: ImageVector) {
     PROFILE(R.string.settings_window_profile, AwakenGlyphs.Charisma),
     DAY(R.string.settings_window_day_reminders, AwakenGlyphs.Sun),
     HEALTH(R.string.settings_window_health_training, AwakenGlyphs.Vitality),
-    APPEARANCE(R.string.settings_window_appearance, AwakenGlyphs.Sparkle),
-    WIDGETS(R.string.settings_window_widgets, AwakenGlyphs.Home),
-    DATA(R.string.settings_window_data, AwakenGlyphs.Vault),
+    APPEARANCE(R.string.settings_window_appearance, AwakenGlyphs.Contrast),
+    WIDGETS(R.string.settings_window_widgets, AwakenGlyphs.Grid),
+    DATA(R.string.settings_window_data, AwakenGlyphs.Database),
     PHONE_FOCUS(R.string.settings_window_phone_focus, AwakenGlyphs.Phone),
     ARCHIVED(R.string.settings_window_habits, AwakenGlyphs.Calendar),
 }
@@ -277,6 +277,10 @@ private fun SettingsMenu(state: SettingsUiState, archivedCount: Int, showAiPaths
             )
         }
     }
+    val version = LocalContext.current.let { context ->
+        runCatching { context.packageManager.getPackageInfo(context.packageName, 0).versionName }.getOrNull().orEmpty()
+    }
+    Text(lexString(R.string.settings_menu_footer, version), style = AwakenTheme.type.caption, color = colors.textMuted, modifier = Modifier.fillMaxWidth())
 }
 
 /** How to put the widgets and the Quick Settings tile on the phone; nothing here to change. */
@@ -619,8 +623,8 @@ private fun DataWindow(state: SettingsUiState, onExport: () -> Unit, onImport: (
             runCatching { context.packageManager.getPackageInfo(context.packageName, 0).versionName }.getOrNull().orEmpty()
         }
         var licences by rememberSaveable { mutableStateOf(false) }
-        DataRow(AwakenGlyphs.Vault, lexString(R.string.action_export_data), lexString(R.string.settings_export_note), onExport, enabled = !state.busy)
-        DataRow(AwakenGlyphs.Vault, lexString(R.string.action_import_data), lexString(R.string.settings_import_note), onImport, enabled = !state.busy)
+        DataRow(AwakenGlyphs.Database, lexString(R.string.action_export_data), lexString(R.string.settings_export_note), onExport, enabled = !state.busy)
+        DataRow(AwakenGlyphs.Database, lexString(R.string.action_import_data), lexString(R.string.settings_import_note), onImport, enabled = !state.busy)
         DataRow(AwakenGlyphs.Lock, lexString(R.string.action_privacy_policy), null, onOpenPrivacy)
         DataRow(AwakenGlyphs.Info, lexString(R.string.settings_licences), null, { licences = true })
         if (licences) LicencesSheet(onDismiss = { licences = false })

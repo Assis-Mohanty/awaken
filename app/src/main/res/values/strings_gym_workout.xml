@@ -63,8 +63,8 @@
     <!-- Rest -->
     <string name="gym_rest_screen_title">Rest</string>
     <string name="gym_rest_minimise">Hide the rest screen</string>
-    <string name="gym_rest_less">−15</string>
-    <string name="gym_rest_more">+15</string>
+    <string name="gym_rest_less">−15 s</string>
+    <string name="gym_rest_more">+15 s</string>
     <string name="gym_rest_less_cd">Shorten the rest by 15 seconds</string>
     <string name="gym_rest_more_cd">Add 15 seconds to the rest</string>
     <string name="gym_rest_skip_in">Skip in %1$d s</string>

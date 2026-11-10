@@ -245,6 +245,23 @@ object AwakenGlyphs {
         }
     }
 
+    /** Appearance: a disc with its half marked. */
+    val Contrast: ImageVector by lazy { line("Contrast") { circle(12f, 12f, 8.75f); moveTo(12f, 3.25f); lineTo(12f, 20.75f) } }
+
+    /** Widgets: four tiles. */
+    val Grid: ImageVector by lazy {
+        line("Grid") { roundRect(4f, 4f, 6.5f, 6.5f, 1.5f); roundRect(13.5f, 4f, 6.5f, 6.5f, 1.5f); roundRect(4f, 13.5f, 6.5f, 6.5f, 1.5f); roundRect(13.5f, 13.5f, 6.5f, 6.5f, 1.5f) }
+    }
+
+    /** Your data: a stack. */
+    val Database: ImageVector by lazy {
+        line("Database") {
+            moveTo(5f, 6f); curveTo(5f, 4.5f, 8f, 3.5f, 12f, 3.5f); curveTo(16f, 3.5f, 19f, 4.5f, 19f, 6f); curveTo(19f, 7.5f, 16f, 8.5f, 12f, 8.5f); curveTo(8f, 8.5f, 5f, 7.5f, 5f, 6f)
+            moveTo(5f, 6f); lineTo(5f, 18f); curveTo(5f, 19.5f, 8f, 20.5f, 12f, 20.5f); curveTo(16f, 20.5f, 19f, 19.5f, 19f, 18f); lineTo(19f, 6f)
+            moveTo(5f, 12f); curveTo(5f, 13.5f, 8f, 14.5f, 12f, 14.5f); curveTo(16f, 14.5f, 19f, 13.5f, 19f, 12f)
+        }
+    }
+
     val ChevronLeft: ImageVector by lazy { line("ChevronLeft") { moveTo(14.5f, 5.5f); lineTo(8f, 12f); lineTo(14.5f, 18.5f) } }
     val ChevronDown: ImageVector by lazy { line("ChevronDown") { moveTo(5.5f, 9f); lineTo(12f, 15.5f); lineTo(18.5f, 9f) } }
     val ChevronRight: ImageVector by lazy { line("ChevronRight") { moveTo(9.5f, 5.5f); lineTo(16f, 12f); lineTo(9.5f, 18.5f) } }
@@ -348,7 +365,7 @@ object AwakenGlyphs {
             Directive, Pentagon, Vault, Path, Settings, Bell, Level, Trophy,
             Shield, Portal, Coin, VerifiedSeal, Hourglass, Check, Gate,
             Star, Close, Plus, Info,
-            ChevronLeft, ChevronDown, ChevronRight, Repeat, ArrowLeft, ArrowUp, ArrowDown, Search, Pencil,
+            ChevronLeft, ChevronDown, ChevronRight, Repeat, Contrast, Grid, Database, ArrowLeft, ArrowUp, ArrowDown, Search, Pencil,
             Trash, Lock, Calendar, Timer, Drop, Phone, Sunrise, Sun, Moon, Clock,
         )
     }

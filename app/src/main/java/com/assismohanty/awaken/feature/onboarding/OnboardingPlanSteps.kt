@@ -21,6 +21,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLocale
 import com.assismohanty.awaken.R
+import com.assismohanty.awaken.core.designsystem.components.PlanRow
+import com.assismohanty.awaken.core.designsystem.components.AwakenGlyphs
 import com.assismohanty.awaken.core.designsystem.charts.Chart
 import com.assismohanty.awaken.core.designsystem.charts.ChartSpec
 import com.assismohanty.awaken.core.designsystem.components.AwakenCard
@@ -30,7 +32,6 @@ import com.assismohanty.awaken.core.designsystem.components.DayChips
 import com.assismohanty.awaken.core.designsystem.components.OnboardingShell
 import com.assismohanty.awaken.core.designsystem.components.OnboardingStepBody
 import com.assismohanty.awaken.core.designsystem.components.PlanRing
-import com.assismohanty.awaken.core.designsystem.components.PlanSummaryCard
 import com.assismohanty.awaken.core.designsystem.components.PrimaryButton
 import com.assismohanty.awaken.core.designsystem.components.QuietButton
 import com.assismohanty.awaken.core.designsystem.components.RulerPicker
@@ -165,9 +166,11 @@ internal fun PlanStep(state: OnboardingFlowState, onEvent: (OnboardingFlowEvent)
                 Text(lexString(R.string.onb_plan_save_failed), style = AwakenTheme.type.title, color = AwakenTheme.colors.textPrimary)
             }
 
+            AwakenCard(reveal = false, contentPadding = Spacing.listCard, spacing = Spacing.zero, modifier = Modifier.fillMaxWidth()) {
             val (first, second) = plan.focusStats
-            PlanSummaryCard(
+            PlanRow(
                 title = lexString(R.string.onb_plan_focus_title),
+                icon = AwakenGlyphs.Level,
                 value = lexString(R.string.onb_plan_focus_value, lexString(first.nameRes()), lexString(second.nameRes())),
                 note = lexString(R.string.onb_plan_focus_note),
                 editLabel = lexString(if (editing == KEY_FOCUS) R.string.onb_plan_done else R.string.onb_plan_edit),
@@ -186,10 +189,9 @@ internal fun PlanStep(state: OnboardingFlowState, onEvent: (OnboardingFlowEvent)
                 }
             }
 
-            QuestsCard(state.build)
-
-            PlanSummaryCard(
+            PlanRow(
                 title = lexString(R.string.onb_plan_focus_goal_title),
+                icon = AwakenGlyphs.Timer,
                 value = lexString(R.string.onb_plan_per_day, formatMinutes(plan.focusGoalMinutes)),
                 editLabel = lexString(if (editing == KEY_FOCUS_GOAL) R.string.onb_plan_done else R.string.onb_plan_edit),
                 onEditToggle = { toggle(KEY_FOCUS_GOAL) },
@@ -206,8 +208,9 @@ internal fun PlanStep(state: OnboardingFlowState, onEvent: (OnboardingFlowEvent)
                 )
             }
 
-            PlanSummaryCard(
+            PlanRow(
                 title = lexString(R.string.onb_plan_steps_title),
+                icon = AwakenGlyphs.Strength,
                 value = lexString(R.string.onb_plan_steps_value, formatCount(plan.stepGoal)),
                 editLabel = lexString(if (editing == KEY_STEPS) R.string.onb_plan_done else R.string.onb_plan_edit),
                 onEditToggle = { toggle(KEY_STEPS) },
@@ -225,8 +228,9 @@ internal fun PlanStep(state: OnboardingFlowState, onEvent: (OnboardingFlowEvent)
             }
 
             val dayNames = (1..DAYS_IN_WEEK).associateWith { DayOfWeek.of(it).getDisplayName(TextStyle.SHORT, locale) }
-            PlanSummaryCard(
+            PlanRow(
                 title = lexString(R.string.onb_plan_days_title),
+                icon = AwakenGlyphs.Calendar,
                 value = plan.trainingDays.sorted().joinToString(", ") { dayNames.getValue(it) }.ifEmpty { lexString(R.string.onb_plan_days_none) },
                 note = if (plan.trainingReminder) lexString(R.string.onb_plan_days_reminder) else null,
                 editLabel = lexString(if (editing == KEY_DAYS) R.string.onb_plan_done else R.string.onb_plan_edit),
@@ -248,8 +252,9 @@ internal fun PlanStep(state: OnboardingFlowState, onEvent: (OnboardingFlowEvent)
 
             val discipline = plan.discipline
             if (discipline != null) {
-                PlanSummaryCard(
+                PlanRow(
                     title = lexString(R.string.onb_plan_limits_title),
+                icon = AwakenGlyphs.Phone,
                     value = lexString(R.string.onb_plan_limits_value, formatMinutes(discipline.limitMinutes)),
                     note = lexString(R.string.onb_plan_limits_note),
                     editLabel = lexString(if (editing == KEY_LIMITS) R.string.onb_plan_done else R.string.onb_plan_edit),
@@ -267,8 +272,9 @@ internal fun PlanStep(state: OnboardingFlowState, onEvent: (OnboardingFlowEvent)
                     )
                 }
             } else if (plan.needsUsageAccess) {
-                PlanSummaryCard(
+                PlanRow(
                     title = lexString(R.string.onb_plan_limits_title),
+                icon = AwakenGlyphs.Phone,
                     value = lexString(R.string.onb_plan_limits_off),
                     note = lexString(R.string.onb_plan_needs_usage),
                 ) {}
@@ -280,23 +286,30 @@ internal fun PlanStep(state: OnboardingFlowState, onEvent: (OnboardingFlowEvent)
             }
 
             plan.phoneDown?.let { night ->
-                PlanSummaryCard(
+                PlanRow(
                     title = lexString(R.string.onb_plan_night_title),
+                icon = AwakenGlyphs.Moon,
                     value = lexString(R.string.onb_plan_night_value, timeText(night.bedtimeMinute, locale), timeText(night.wakeMinute, locale)),
                     note = lexString(R.string.onb_plan_night_note),
                 )
             }
 
             if (plan.suggestReelCounter) {
-                PlanSummaryCard(
+                PlanRow(
                     title = lexString(R.string.onb_plan_reel_title),
+                icon = AwakenGlyphs.Sparkle,
                     value = lexString(R.string.onb_plan_reel_value),
                     note = lexString(R.string.onb_plan_reel_note),
                 )
             }
 
+            }
+            QuestsCard(state.build)
+
             if (WeightTargetRules.isOffered(state.answers.age, state.answers.heightCm, state.answers.weightKg)) {
-                TargetCard(state, onEvent, editing == KEY_TARGET) { toggle(KEY_TARGET) }
+                AwakenCard(reveal = false, contentPadding = Spacing.listCard, spacing = Spacing.zero, modifier = Modifier.fillMaxWidth()) {
+                    TargetCard(state, onEvent, editing == KEY_TARGET) { toggle(KEY_TARGET) }
+                }
             }
         }
     }
@@ -305,15 +318,18 @@ internal fun PlanStep(state: OnboardingFlowState, onEvent: (OnboardingFlowEvent)
 @Composable
 private fun QuestsCard(build: PlanBuild) {
     val quests = (build as? PlanBuild.Ready)?.quests
-    PlanSummaryCard(
-        title = lexString(R.string.onb_plan_quests_title),
-        value = when {
-            quests != null -> lexPlural(R.plurals.onb_plan_quests_value, quests.size, quests.size)
-            build == PlanBuild.Failed -> lexString(R.string.onb_plan_quests_unavailable)
-            else -> lexString(R.string.onb_plan_quests_working)
-        },
-        note = quests?.joinToString("\n") { it.title },
-    )
+    AwakenCard(reveal = false, title = lexString(R.string.onb_plan_quests_title), modifier = Modifier.fillMaxWidth()) {
+        Text(
+            when {
+                quests != null -> lexPlural(R.plurals.onb_plan_quests_value, quests.size, quests.size)
+                build == PlanBuild.Failed -> lexString(R.string.onb_plan_quests_unavailable)
+                else -> lexString(R.string.onb_plan_quests_working)
+            },
+            style = AwakenTheme.type.numeric,
+            color = AwakenTheme.colors.textPrimary,
+        )
+        quests?.forEach { Text(it.title, style = AwakenTheme.type.caption, color = AwakenTheme.colors.textSecondary) }
+    }
 }
 
 private fun timeText(minuteOfDay: Int, locale: java.util.Locale): String =
@@ -350,8 +366,9 @@ private fun TargetCard(state: OnboardingFlowState, onEvent: (OnboardingFlowEvent
     val date = target?.let { runCatching { LocalDate.parse(it.date) }.getOrNull() }
     val dateText = date?.let { DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).withLocale(locale).format(it) }
 
-    PlanSummaryCard(
+    PlanRow(
         title = lexString(R.string.onb_target_title),
+        icon = AwakenGlyphs.Vitality,
         value = if (target == null) lexString(R.string.onb_target_optional) else weightText(target.weightKg, unit),
         note = if (target != null && dateText != null) lexString(R.string.onb_target_summary, weightText(weightKg, unit), weightText(target.weightKg, unit), dateText) else null,
         editLabel = lexString(if (open) R.string.onb_plan_done else if (target == null) R.string.onb_target_add else R.string.onb_plan_edit),
