@@ -5,7 +5,7 @@ import java.time.Duration
 import java.time.Instant
 
 /** Why a Focus Gate collapsed (GD §8, ENGINE_DECISIONS #34–#37). */
-enum class GateCollapseReason { BREACH, DEVICE_RESTARTED, DAY_RESET, ENDED_EARLY, DISTRACTING_APP }
+enum class GateCollapseReason { BREACH, DEVICE_RESTARTED, DAY_RESET, ENDED_EARLY, DISTRACTING_APP, LOCKDOWN_BROKEN }
 
 /**
  * The timing facts of one gate run, as persisted. A run has at most one pause ([GateRules.MAX_PAUSES]): it starts at

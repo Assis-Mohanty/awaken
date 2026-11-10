@@ -13,6 +13,8 @@ import com.assismohanty.awaken.engine.GateRules
 import com.assismohanty.awaken.engine.GateTiming
 import com.assismohanty.awaken.engine.RankRules
 import com.assismohanty.awaken.engine.model.Difficulty
+import com.assismohanty.awaken.engine.LockdownBreak
+import com.assismohanty.awaken.engine.LockdownStatus
 import com.assismohanty.awaken.engine.PauseOutcome
 import com.assismohanty.awaken.engine.PauseRules
 import com.assismohanty.awaken.engine.PomodoroPhase
@@ -265,6 +267,8 @@ data class GateRunEntity(
     /** The Pomodoro session this run is a focus round of (GD §16.3), and which round; null for any other run. */
     @ColumnInfo(name = "pomodoro_id") val pomodoroId: String? = null,
     @ColumnInfo(name = "pomodoro_round") val pomodoroRound: Int? = null,
+    /** A Lockdown session (GD §19.2): no pause, no breach budget, no restart collapse; Lockdown decides when it ends. */
+    @ColumnInfo(name = "lockdown", defaultValue = "0") val lockdown: Boolean = false,
 ) {
     val timing: GateTiming
         get() = GateTiming(
@@ -549,4 +553,28 @@ data class PauseEventEntity(
     val outcome: PauseOutcome,
     @ColumnInfo(name = "delay_seconds") val delaySeconds: Int,
     val intention: PauseRules.Intention? = null,
+)
+
+/**
+ * One Lockdown session (GD §19.2): a focus session with no early end. It owns the time (the monotonic anchor, never the
+ * wall clock) and the apps allowed during it; its gate run ([gateRunId]) carries the reward. [heartbeatWall] is when the
+ * watcher last saved it, so a stretch the watcher was down can be checked against the usage log.
+ */
+@Entity(tableName = "lockdown_session", indices = [Index("status")])
+data class LockdownSessionEntity(
+    @PrimaryKey val id: String,
+    @ColumnInfo(name = "gate_run_id") val gateRunId: String,
+    @ColumnInfo(name = "planned_ms") val plannedMs: Long,
+    @ColumnInfo(name = "served_ms") val servedMs: Long,
+    @ColumnInfo(name = "anchor_elapsed_ms") val anchorElapsedMs: Long,
+    @ColumnInfo(name = "anchor_wall") val anchorWall: Instant,
+    @ColumnInfo(name = "boot_count") val bootCount: Int,
+    @ColumnInfo(name = "allowed_packages") val allowedPackages: Set<String>,
+    val status: LockdownStatus,
+    @ColumnInfo(name = "broken_reason") val brokenReason: LockdownBreak? = null,
+    @ColumnInfo(name = "clock_changed") val clockChanged: Boolean = false,
+    @ColumnInfo(name = "uncovered_ms") val uncoveredMs: Long = 0,
+    @ColumnInfo(name = "heartbeat_wall") val heartbeatWall: Instant,
+    @ColumnInfo(name = "started_at") val startedAt: Instant,
+    @ColumnInfo(name = "ended_at") val endedAt: Instant? = null,
 )

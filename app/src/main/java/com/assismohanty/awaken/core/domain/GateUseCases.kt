@@ -105,12 +105,13 @@ class StartGateUseCase @Inject constructor(
         subjectId: String?,
         pomodoroId: String? = null,
         pomodoroRound: Int? = null,
+        lockdown: Boolean = false,
     ): StartGateResult {
         require(mode != GateMode.PRESET) { "Presets start through invoke(rank, stat, label)" }
         val planned = if (mode == GateMode.CUSTOM) FocusRules.clampCustomMinutes(minutes) else FocusRules.STOPWATCH_MIN_MINUTES
         // The quest opens at the lowest tier; a stopwatch is repriced when it stops, a custom run keeps its tier.
         val rank = FocusRules.tierFor(planned) ?: GateRank.E
-        return open(rank, mode, planned, stat, label, subjectId, pomodoroId, pomodoroRound)
+        return open(rank, mode, planned, stat, label, subjectId, pomodoroId, pomodoroRound, lockdown)
     }
 
     /**
@@ -157,6 +158,7 @@ class StartGateUseCase @Inject constructor(
         subjectId: String?,
         pomodoroId: String? = null,
         pomodoroRound: Int? = null,
+        lockdown: Boolean = false,
     ): StartGateResult =
         transactions.run {
             val profile = hunterDao.getProfile() ?: return@run StartGateResult.NoHunter
@@ -202,6 +204,7 @@ class StartGateUseCase @Inject constructor(
                 subjectId = subjectId,
                 pomodoroId = pomodoroId,
                 pomodoroRound = pomodoroRound,
+                lockdown = lockdown,
             )
             questDao.insertAll(listOf(quest))
             gateRunDao.upsert(run)
@@ -231,7 +234,7 @@ class GateRunController @Inject constructor(
     /** Uses the run's one pause (GD §8). Returns false if it can't pause now. */
     suspend fun pause(): Boolean = mutex.withLock {
         transactions.run {
-            val run = gateRunDao.running() ?: return@run false
+            val run = gateRunDao.running()?.takeIf { !it.lockdown } ?: return@run false
             val now = clock.now()
             // A stopwatch has no pause limit: each resume folds its pause into the total, so the next tap can pause again.
             val pausesUsed = if (run.pausedAt == null || run.mode == GateMode.STOPWATCH) 0 else 1
@@ -259,7 +262,7 @@ class GateRunController @Inject constructor(
     suspend fun abandon() {
         mutex.withLock {
             transactions.run {
-                gateRunDao.running()?.let { close(it, GateRunStatus.ABANDONED, reason = null) }
+                gateRunDao.running()?.takeIf { !it.lockdown }?.let { close(it, GateRunStatus.ABANDONED, reason = null) }
             }
         }
     }
@@ -268,6 +271,8 @@ class GateRunController @Inject constructor(
     suspend fun endEarly(): GateCheck = mutex.withLock {
         transactions.run {
             val run = gateRunDao.running() ?: return@run GateCheck.NoRun
+            // A Lockdown has no early end: only its own emergency exit (breakLockdown) closes it.
+            if (run.lockdown) return@run GateCheck.Running(run)
             close(run, GateRunStatus.COLLAPSED, GateCollapseReason.ENDED_EARLY)
         }
     }
@@ -276,7 +281,7 @@ class GateRunController @Inject constructor(
     suspend fun onAppStopped(): GateRunEntity? = mutex.withLock {
         transactions.run {
             val run = gateRunDao.running() ?: return@run null
-            if (run.lastStopAt != null) return@run run
+            if (run.lockdown || run.lastStopAt != null) return@run run
             val stopped = run.copy(lastStopAt = clock.now(), lastStopElapsedMs = uptime.elapsedRealtimeMs(), lockAtStop = focusLock.isActive())
             gateRunDao.upsert(stopped)
             stopped
@@ -290,6 +295,8 @@ class GateRunController @Inject constructor(
     suspend fun check(): GateCheck = mutex.withLock {
         transactions.run {
             var run = gateRunDao.running() ?: return@run GateCheck.NoRun
+            // A Lockdown has no breach budget, no restart collapse and no planned end by the wall clock: LockdownController decides.
+            if (run.lockdown) return@run GateCheck.Running(run)
             val now = clock.now()
             val stopAt = run.lastStopAt
             val stopElapsed = run.lastStopElapsedMs
@@ -337,6 +344,22 @@ class GateRunController @Inject constructor(
         if (!to.isAfter(from)) return false
         val read = usage.opened(from, to) as? OpenedRead.Opened ?: return false
         return FocusLockRules.distractedDuring(read.packages, distractingApps.current(), focusLock.alwaysAllowed())
+    }
+
+    /** A Lockdown served its full length: it is paid as a custom run of that length, under the same daily cap (GD §19.2 LD5). */
+    suspend fun finishLockdown(): GateCheck = mutex.withLock {
+        transactions.run {
+            val run = gateRunDao.running()?.takeIf { it.lockdown } ?: return@run GateCheck.NoRun
+            claim(run)
+        }
+    }
+
+    /** A Lockdown broke (emergency exit, a permission lost, an uncovered stretch): collapsed, no reward (GD §19.2 LD3). */
+    suspend fun breakLockdown(): GateCheck = mutex.withLock {
+        transactions.run {
+            val run = gateRunDao.running()?.takeIf { it.lockdown } ?: return@run GateCheck.NoRun
+            close(run, GateRunStatus.COLLAPSED, GateCollapseReason.LOCKDOWN_BROKEN)
+        }
     }
 
     /** The hunter stops the stopwatch: it is priced by the time it counted (GD §8.1 P2–P3). */

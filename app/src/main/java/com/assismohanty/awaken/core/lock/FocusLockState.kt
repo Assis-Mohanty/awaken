@@ -70,7 +70,8 @@ class FocusLockState @Inject constructor(
 
     /** The session as the rules see it at [now]; a stopwatch has no planned end. */
     fun gate(run: GateRunEntity?, now: Instant): LockGate {
-        if (run == null) return LockGate(running = false, paused = false, endsAt = null)
+        // A Lockdown covers apps itself; Focus Lock stays out of its way (GD §19.2).
+        if (run == null || run.lockdown) return LockGate(running = false, paused = false, endsAt = null)
         val timing = run.timing
         return LockGate(
             running = true,

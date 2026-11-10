@@ -486,9 +486,26 @@ val MIGRATION_29_30 = object : Migration(29, 30) {
     }
 }
 
+/**
+ * v30 -> v31 (Focus protection, Lockdown): a table of Lockdown sessions, and a flag on gate runs saying which run is one.
+ * Every existing run gets 0 (an ordinary gate), so nothing existing changes.
+ */
+val MIGRATION_30_31 = object : Migration(30, 31) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS `lockdown_session` (`id` TEXT NOT NULL, `gate_run_id` TEXT NOT NULL, `planned_ms` INTEGER NOT NULL, " +
+                "`served_ms` INTEGER NOT NULL, `anchor_elapsed_ms` INTEGER NOT NULL, `anchor_wall` INTEGER NOT NULL, `boot_count` INTEGER NOT NULL, " +
+                "`allowed_packages` TEXT NOT NULL, `status` TEXT NOT NULL, `broken_reason` TEXT, `clock_changed` INTEGER NOT NULL, " +
+                "`uncovered_ms` INTEGER NOT NULL, `heartbeat_wall` INTEGER NOT NULL, `started_at` INTEGER NOT NULL, `ended_at` INTEGER, PRIMARY KEY(`id`))",
+        )
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_lockdown_session_status` ON `lockdown_session` (`status`)")
+        db.execSQL("ALTER TABLE `gate_run` ADD COLUMN `lockdown` INTEGER NOT NULL DEFAULT 0")
+    }
+}
+
 /** Every migration, in order. The database builder and the migration test both use this list. */
 val ALL_MIGRATIONS: Array<Migration> = arrayOf(
     MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9,
     MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17,
-    MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21, MIGRATION_21_22, MIGRATION_22_23, MIGRATION_23_24, MIGRATION_24_25, MIGRATION_25_26, MIGRATION_26_27, MIGRATION_27_28, MIGRATION_28_29, MIGRATION_29_30,
+    MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21, MIGRATION_21_22, MIGRATION_22_23, MIGRATION_23_24, MIGRATION_24_25, MIGRATION_25_26, MIGRATION_26_27, MIGRATION_27_28, MIGRATION_28_29, MIGRATION_29_30, MIGRATION_30_31,
 )

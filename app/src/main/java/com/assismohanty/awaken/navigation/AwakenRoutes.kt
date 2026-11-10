@@ -118,6 +118,10 @@ data object OnboardingPreviewRoute
 @Serializable
 data object PauseRoute
 
+/** Lockdown setup: how long, which apps stay usable, then the confirmation (GD 19.2), opened from Settings. */
+@Serializable
+data object LockdownSetupRoute
+
 /** The apps Pause covers. */
 @Serializable
 data object PauseAppsRoute

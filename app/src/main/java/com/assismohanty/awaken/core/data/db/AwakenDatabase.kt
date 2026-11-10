@@ -47,7 +47,9 @@ import com.assismohanty.awaken.core.data.db.entity.TrialEntity
 import com.assismohanty.awaken.core.data.db.entity.FocusGoalEntity
 import com.assismohanty.awaken.core.data.db.entity.PomodoroSessionEntity
 import com.assismohanty.awaken.core.data.db.dao.PomodoroDao
+import com.assismohanty.awaken.core.data.db.dao.LockdownDao
 import com.assismohanty.awaken.core.data.db.dao.PauseDao
+import com.assismohanty.awaken.core.data.db.entity.LockdownSessionEntity
 import com.assismohanty.awaken.core.data.db.entity.PauseEventEntity
 import com.assismohanty.awaken.core.data.db.entity.WorkoutEntity
 import com.assismohanty.awaken.core.data.db.entity.WorkoutSetEntity
@@ -109,6 +111,7 @@ import com.assismohanty.awaken.core.data.db.entity.DayOverrideEntity
         PomodoroSessionEntity::class,
         FocusGoalEntity::class,
         PauseEventEntity::class,
+        LockdownSessionEntity::class,
     ],
 )
 @TypeConverters(Converters::class)
@@ -132,11 +135,12 @@ abstract class AwakenDatabase : RoomDatabase() {
     abstract fun focusDao(): FocusDao
     abstract fun pomodoroDao(): PomodoroDao
     abstract fun pauseDao(): PauseDao
+    abstract fun lockdownDao(): LockdownDao
 
     companion object {
         const val NAME = "awaken.db"
 
         /** Also the export format version: an export is only importable into the schema it was written from. */
-        const val SCHEMA_VERSION = 30
+        const val SCHEMA_VERSION = 31
     }
 }

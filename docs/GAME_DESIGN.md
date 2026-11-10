@@ -1227,4 +1227,4 @@ node) and store nothing. Uninstall and force-stop protection is not built (Play 
 | 196 | watcher down 90 s | RUNNING |
 | 197 | 5th paid custom run of the game-day is a cleared Lockdown | 0 XP, session still COMPLETED |
 
-Vectors 178-186 pass in `PauseRulesTest` (Batch 1); 187-197 are written in Batch 3 with `LockdownRules`.
+Vectors 178-186 pass in `PauseRulesTest`; 187-196 in `LockdownRulesTest` and `LockdownUseCasesTest`; 197 is the existing P5 cap (`FocusRulesTest`), reached through `claim()`. Also tested: only calm apps can be allowed (LD7), at most 3, cover/no-cover per app.

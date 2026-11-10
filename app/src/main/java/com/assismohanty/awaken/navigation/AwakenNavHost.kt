@@ -50,6 +50,7 @@ import com.assismohanty.awaken.feature.focus.FocusReportRoute as FocusReportEntr
 import com.assismohanty.awaken.feature.focuslock.AllowedAppsRoute as AllowedAppsEntry
 import com.assismohanty.awaken.feature.focuslock.FocusLockSetupRoute as FocusLockSetupEntry
 import com.assismohanty.awaken.feature.focuslock.FocusAccessRoute as FocusAccessEntry
+import com.assismohanty.awaken.feature.protect.LockdownSetupRoute as LockdownSetupEntry
 import com.assismohanty.awaken.feature.protect.PauseAppsRoute as PauseAppsEntry
 import com.assismohanty.awaken.feature.protect.PauseSettingsRoute as PauseSettingsEntry
 import com.assismohanty.awaken.feature.protect.PauseStatsRoute as PauseStatsEntry
@@ -272,6 +273,7 @@ private fun MainScaffold(
                         onOpenFocusAccess = { navController.navigate(FocusAccessRoute) { launchSingleTop = true } },
                         onOpenReelInspector = { navController.navigate(ReelInspectorRoute) { launchSingleTop = true } },
                         onOpenPause = { navController.navigate(PauseRoute) { launchSingleTop = true } },
+                        onOpenLockdown = { navController.navigate(LockdownSetupRoute) { launchSingleTop = true } },
                     )
                 }
                 composable<PauseRoute> {
@@ -281,6 +283,7 @@ private fun MainScaffold(
                         onOpenStats = { navController.navigate(PauseStatsRoute) { launchSingleTop = true } },
                     )
                 }
+                composable<LockdownSetupRoute> { LockdownSetupEntry(onBack = { navController.popBackStack() }) }
                 composable<PauseAppsRoute> { PauseAppsEntry(onBack = { navController.popBackStack() }) }
                 composable<PauseStatsRoute> { PauseStatsEntry(onBack = { navController.popBackStack() }) }
                 composable<HealthRoute> { HealthEntry(onBack = { navController.popBackStack() }) }

@@ -20,7 +20,14 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.core.app.ServiceCompat
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.drawable.toBitmap
+import com.assismohanty.awaken.MainActivity
 import com.assismohanty.awaken.R
+import com.assismohanty.awaken.core.data.db.entity.LockdownSessionEntity
+import com.assismohanty.awaken.core.data.repo.UiPrefs
+import com.assismohanty.awaken.core.domain.LockdownController
+import com.assismohanty.awaken.core.domain.LockdownTick
+import com.assismohanty.awaken.feature.protect.LockdownBlockContent
+import java.time.Duration
 import com.assismohanty.awaken.core.data.clock.Clock
 import com.assismohanty.awaken.core.data.repo.LexiconSource
 import com.assismohanty.awaken.core.data.repo.PauseStore
@@ -73,6 +80,10 @@ class ProtectService : Service() {
 
     @Inject lateinit var reelCounter: CounterRunner
 
+    @Inject lateinit var lockdownWatcher: LockdownWatcher
+
+    @Inject lateinit var lockdownController: LockdownController
+
     private var audioFocus: AudioFocusRequest? = null
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
@@ -80,6 +91,18 @@ class ProtectService : Service() {
     private var overlay: BlockOverlay<Shown>? = null
     private var shown: Shown? = null
     private val active = MutableStateFlow(true)
+
+    // Lockdown (GD §19.2): the running session as the database last said, the block screen, and what it shows.
+    @Volatile private var lockdownSession: LockdownSessionEntity? = null
+    private var lockdownOverlay: BlockOverlay<CoverShown>? = null
+    private var postedFor: String? = null
+    private var lastPrefs: UiPrefs = UiPrefs()
+    private var cachedPackage: String? = null
+    private var cachedLabel: String = ""
+    private var cachedIcon: ImageBitmap? = null
+
+    /** The block screen's content: what is covered, how long is left, and the look it is drawn in. */
+    private data class CoverShown(val label: String, val icon: ImageBitmap?, val remaining: Duration, val darkTheme: Boolean, val reduceMotion: Boolean)
 
     /** The pause window's content: the screen state plus the look it is drawn in. */
     private data class Shown(val ui: PauseOverlayUiState, val darkTheme: Boolean, val reduceMotion: Boolean)
@@ -108,6 +131,23 @@ class ProtectService : Service() {
         }
     }
 
+    private val lockdownScreen = object : LockdownScreen {
+        override fun cover(cover: LockdownCover) {
+            holdBehind(true)
+            if (cachedPackage != cover.packageName) {
+                cachedPackage = cover.packageName
+                cachedLabel = labelOf(cover.packageName)
+                cachedIcon = runCatching { packageManager.getApplicationIcon(cover.packageName).toBitmap().asImageBitmap() }.getOrNull()
+            }
+            lockdownOverlay?.show(CoverShown(cachedLabel, cachedIcon, cover.remaining, isDark(lastPrefs.themeMode), lastPrefs.reduceMotion))
+        }
+
+        override fun uncover() {
+            lockdownOverlay?.hide()
+            holdBehind(false)
+        }
+    }
+
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onCreate() {
@@ -116,6 +156,21 @@ class ProtectService : Service() {
         overlay = BlockOverlay<Shown>(this, WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY, onBackKey = ::notNow) { model ->
             AwakenTheme(darkTheme = model.darkTheme, reduceMotion = model.reduceMotion) {
                 PauseOverlayContent(model.ui, onNotNow = ::notNow, onContinue = ::continueIn, onIntention = ::pick)
+            }
+        }
+        lockdownOverlay = BlockOverlay<CoverShown>(this, WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY, onBackKey = ::openSession) { model ->
+            AwakenTheme(darkTheme = model.darkTheme, reduceMotion = model.reduceMotion) {
+                LockdownBlockContent(model.label, model.icon, model.remaining, onBackToSession = ::openSession)
+            }
+        }
+        scope.launch { uiPrefs.prefs.collect { lastPrefs = it } }
+        scope.launch {
+            lockdownController.observeRunning().collect { session ->
+                lockdownSession = session
+                if (session?.id != postedFor) {
+                    postedFor = session?.id
+                    postForeground(session)
+                }
             }
         }
         val filter = IntentFilter().apply {
@@ -128,8 +183,7 @@ class ProtectService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        val type = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE else 0
-        val started = runCatching { ServiceCompat.startForeground(this, ProtectNotifications.NOTIFICATION_ID, notifications.running(turnOffIntent()), type) }
+        val started = runCatching { foreground(lockdownSession) }
         if (started.isFailure) {
             Timber.w(started.exceptionOrNull(), "Pause could not go to the foreground")
             stopSelf()
@@ -151,6 +205,8 @@ class ProtectService : Service() {
         scope.cancel()
         overlay?.hide()
         overlay = null
+        lockdownOverlay?.hide()
+        lockdownOverlay = null
         holdBehind(false)
         controller.onServiceChanged(false)
         super.onDestroy()
@@ -177,13 +233,30 @@ class ProtectService : Service() {
     private suspend fun watch() {
         var fastUntil = Instant.MIN
         var nextCheck = Instant.MIN
+        var lockdownUp = false
         while (true) {
             if (!active.value) {
                 watcher.onScreenOff(screen)
+                lockdownWatcher.onScreenOff(lockdownScreen)
                 active.first { it }
                 continue
             }
             val now = clock.now()
+            if (lockdownSession != null) {
+                // A Lockdown covers apps itself, so Pause stays out of the way; it looks fast, because a covered app must not linger.
+                watcher.dismiss(screen)
+                if (!lockdownUp) {
+                    lockdownUp = true
+                    if (lockdownEnded(lockdownWatcher.start(lockdownScreen))) {
+                        lockdownUp = false
+                        continue
+                    }
+                }
+                if (!inCall() && lockdownEnded(lockdownWatcher.poll(lockdownScreen))) lockdownUp = false
+                delay(FAST_MS)
+                continue
+            }
+            lockdownUp = false
             if (inCall()) {
                 watcher.dismiss(screen)
             } else {
@@ -201,6 +274,39 @@ class ProtectService : Service() {
             }
             delay(if (watcher.isShowing || now.isBefore(fastUntil)) FAST_MS else STEADY_MS)
         }
+    }
+
+    /** A Lockdown look is over for good (finished, broke, or is gone): say so if the app is closed, and let the service settle. */
+    private fun lockdownEnded(tick: LockdownTick): Boolean {
+        if (tick is LockdownTick.Running) return false
+        when (tick) {
+            is LockdownTick.Completed -> notifications.lockdownEnded(completed = true)
+            is LockdownTick.Broken -> notifications.lockdownEnded(completed = false)
+            else -> Unit
+        }
+        scope.launch { controller.refresh() }
+        return true
+    }
+
+    /** [Back to session]: AWAKEN's own session screen, which is never covered. */
+    private fun openSession() {
+        val open = Intent(this, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+        runCatching { startActivity(open) }.onFailure { Timber.w(it, "Could not open the session from the block screen") }
+    }
+
+    private fun foreground(session: LockdownSessionEntity?) {
+        val type = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE else 0
+        val notification = if (session != null) {
+            notifications.lockdownRunning(clock.now().plus(lockdownController.remaining(session)))
+        } else {
+            notifications.running(turnOffIntent())
+        }
+        ServiceCompat.startForeground(this, ProtectNotifications.NOTIFICATION_ID, notification, type)
+    }
+
+    /** Swaps the ongoing notice when a Lockdown starts or ends. */
+    private fun postForeground(session: LockdownSessionEntity?) {
+        runCatching { foreground(session) }.onFailure { Timber.w(it, "Could not update the Pause notice") }
     }
 
     private suspend fun present(request: PauseRequest) {

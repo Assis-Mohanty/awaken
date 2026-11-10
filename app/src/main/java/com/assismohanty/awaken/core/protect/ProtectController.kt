@@ -6,12 +6,15 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.work.CoroutineWorker
+import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.ExistingWorkPolicy
+import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import androidx.hilt.work.HiltWorker
 import com.assismohanty.awaken.core.data.clock.Clock
+import com.assismohanty.awaken.core.data.db.dao.LockdownDao
 import com.assismohanty.awaken.core.data.di.ApplicationScope
 import com.assismohanty.awaken.core.data.repo.PauseSettings
 import com.assismohanty.awaken.core.data.repo.PauseStore
@@ -38,6 +41,7 @@ import timber.log.Timber
 class ProtectController @Inject constructor(
     @ApplicationContext private val context: Context,
     private val store: PauseStore,
+    private val lockdownDao: LockdownDao,
     private val access: ProtectSystemAccess,
     private val clock: Clock,
     @ApplicationScope private val scope: CoroutineScope,
@@ -61,6 +65,14 @@ class ProtectController @Inject constructor(
 
     suspend fun refresh(settings: PauseSettings? = null) {
         try {
+            // A running Lockdown needs the service whatever Pause says; if a permission is gone the service is what breaks it (LD9).
+            if (lockdownDao.running() != null) {
+                cancelWake()
+                scheduleWatchdog()
+                if (!serviceRunning) startService()
+                return
+            }
+            cancelWatchdog()
             val current = settings ?: store.current()
             val config = current.config
             if (!(config.enabled && config.targets.isNotEmpty() && access.ready())) {
@@ -101,12 +113,24 @@ class ProtectController @Inject constructor(
         WorkManager.getInstance(context).enqueueUniqueWork(WAKE_WORK, ExistingWorkPolicy.REPLACE, request)
     }
 
+    /** Every 15 minutes while a Lockdown runs, make sure the service is up (PLAN §3.6). */
+    private fun scheduleWatchdog() {
+        val request = PeriodicWorkRequestBuilder<ProtectWakeWorker>(WATCHDOG_MINUTES, TimeUnit.MINUTES).build()
+        WorkManager.getInstance(context).enqueueUniquePeriodicWork(WATCHDOG_WORK, ExistingPeriodicWorkPolicy.KEEP, request)
+    }
+
+    private fun cancelWatchdog() {
+        WorkManager.getInstance(context).cancelUniqueWork(WATCHDOG_WORK)
+    }
+
     private fun cancelWake() {
         WorkManager.getInstance(context).cancelUniqueWork(WAKE_WORK)
     }
 
     private companion object {
         const val WAKE_WORK = "protect_wake"
+        const val WATCHDOG_WORK = "protect_watchdog"
+        const val WATCHDOG_MINUTES = 15L
         const val MIN_WAKE_DELAY_MS = 60_000L
     }
 }

@@ -29,6 +29,7 @@ import kotlinx.coroutines.launch
 import com.assismohanty.awaken.core.work.ACTION_OPEN_REVIEW
 import com.assismohanty.awaken.core.work.ACTION_OPEN_TODAY
 import com.assismohanty.awaken.navigation.AppearanceViewModel
+import com.assismohanty.awaken.feature.protect.LockdownHost
 import com.assismohanty.awaken.navigation.AwakenNavHost
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -68,11 +69,14 @@ class MainActivity : ComponentActivity() {
                 reduceMotion = look.reduceMotion,
                 hapticsEnabled = look.hapticsEnabled,
             ) {
-                AwakenNavHost(
-                    openTodayRequests = openTodayRequests,
-                    openReviewRequests = openReviewRequests,
-                    openGatesRequests = openGatesRequests,
-                )
+                // A running Lockdown covers the whole app with its session screen (GD 19.2); its result stays until seen.
+                LockdownHost {
+                    AwakenNavHost(
+                        openTodayRequests = openTodayRequests,
+                        openReviewRequests = openReviewRequests,
+                        openGatesRequests = openGatesRequests,
+                    )
+                }
             }
         }
     }

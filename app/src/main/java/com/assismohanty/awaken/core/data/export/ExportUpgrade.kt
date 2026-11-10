@@ -19,6 +19,7 @@ object ExportUpgrade {
     private val GYM_V21_TABLES = listOf("exercise_pref", "gym_settings")
     private val GYM_V29_TABLES = listOf("week_slot", "day_override")
     private const val PAUSE_TABLE = "pause_event"
+    private const val LOCKDOWN_TABLE = "lockdown_session"
     private const val BEDTIME_TABLE = "bedtime_rule"
     private val QUIT_V23_TABLES = listOf("quit_counter", "relapse", "quit_day")
     private val LONG_ARC_V24_TABLES = listOf("dungeon", "program", "program_mark")
@@ -194,6 +195,13 @@ object ExportUpgrade {
             current = current.copy(
                 schemaVersion = 30,
                 tables = current.tables + (PAUSE_TABLE to current.tables[PAUSE_TABLE].orEmpty()),
+            )
+        }
+        // v30 → v31 (Lockdown): the table did not exist, and the new gate_run column defaults to 0 (an ordinary gate).
+        if (current.app == ExportDocument.APP_ID && current.schemaVersion == 30) {
+            current = current.copy(
+                schemaVersion = 31,
+                tables = current.tables + (LOCKDOWN_TABLE to current.tables[LOCKDOWN_TABLE].orEmpty()),
             )
         }
         return current

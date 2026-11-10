@@ -38,6 +38,8 @@ data class UiPrefs(
     /** Time-of-day block boundaries (GD §14.5), whole hours. */
     val morningEndHour: Int = TimeBlocks.DEFAULT_MORNING_END,
     val dayEndHour: Int = TimeBlocks.DEFAULT_DAY_END,
+    /** The newest ended Lockdown whose result the hunter has seen (GD §19.2); empty before any. */
+    val lockdownSeenId: String = "",
 ) {
     val blockBounds: TimeBlocks.Bounds get() = TimeBlocks.Bounds.safe(morningEndHour, dayEndHour)
 }
@@ -56,6 +58,7 @@ class UiPrefsRepository @Inject constructor(@UiPrefsStore private val store: Dat
             chime = it[CHIME]?.let { name -> ChimeChoice.entries.firstOrNull { choice -> choice.name == name } } ?: ChimeChoice.SOFT_BELL,
             morningEndHour = it[MORNING_END] ?: TimeBlocks.DEFAULT_MORNING_END,
             dayEndHour = it[DAY_END] ?: TimeBlocks.DEFAULT_DAY_END,
+            lockdownSeenId = it[LOCKDOWN_SEEN].orEmpty(),
         )
     }
 
@@ -92,6 +95,10 @@ class UiPrefsRepository @Inject constructor(@UiPrefsStore private val store: Dat
         store.edit { it[MORNING_END] = hour }
     }
 
+    suspend fun setLockdownSeen(id: String) {
+        store.edit { it[LOCKDOWN_SEEN] = id }
+    }
+
     suspend fun setDayEnd(hour: Int) {
         require(hour in TimeBlocks.DAY_END_HOURS)
         store.edit { it[DAY_END] = hour }
@@ -107,5 +114,6 @@ class UiPrefsRepository @Inject constructor(@UiPrefsStore private val store: Dat
         val ALLOWED_APPS = stringSetPreferencesKey("focus_lock_allowed_apps")
         val MORNING_END = intPreferencesKey("morning_end_hour")
         val DAY_END = intPreferencesKey("day_end_hour")
+        val LOCKDOWN_SEEN = stringPreferencesKey("lockdown_seen_id")
     }
 }
