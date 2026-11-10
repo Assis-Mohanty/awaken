@@ -15,6 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import com.assismohanty.awaken.R
+import com.assismohanty.awaken.core.designsystem.components.SetDots
 import com.assismohanty.awaken.engine.body.PlateUnit
 import com.assismohanty.awaken.engine.body.PlateSetup
 import com.assismohanty.awaken.engine.body.PlatePlan
@@ -220,7 +221,20 @@ private fun CoachedWorkout(state: GymUiState, active: ActiveWorkout, onEvent: (G
     val (number, total) = CoachedFlow.setNumber(rows, exercise.position, cursor.setIndex)
     Column(verticalArrangement = Arrangement.spacedBy(Spacing.xxs)) {
         label?.variant?.let { Text(it, style = AwakenTheme.type.caption, color = colors.textSecondary) }
-        Text(setLine(active, exercise, number, total, cursor), style = AwakenTheme.type.label, color = colors.accent)
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+            Text(setLine(active, exercise, number, total, cursor), style = AwakenTheme.type.label, color = colors.accent, modifier = Modifier.weight(1f))
+            val indexes = exercise.sets.map { it.setIndex }.distinct().sorted()
+            SetDots(
+                states = indexes.map { index ->
+                    when {
+                        exercise.sets.filter { it.setIndex == index }.all { it.done } -> SegmentState.DONE
+                        index == cursor.setIndex -> SegmentState.CURRENT
+                        else -> SegmentState.TODO
+                    }
+                },
+                description = lexString(R.string.gym_set_of, number, total),
+            )
+        }
         targetLine(set)?.let { Text(it, style = AwakenTheme.type.caption, color = colors.textSecondary) }
     }
     if (label?.barbell == true && !set.timed()) {
@@ -514,3 +528,30 @@ private const val MAP_SHARE = 0.5f
 private const val DEFAULT_STEP_KG = 2.5
 private const val HOLD_STEP_SEC = 5
 private const val REST_STEP_SEC = 15
+
+/** A set just broke a personal record: the number big on the Strength field, and Keep going to carry on to the rest. */
+@Composable
+internal fun PrMoment(moment: PrMomentUi, onEvent: (GymEvent) -> Unit) {
+    val set = moment.set
+    val numeral = when {
+        set.timed() -> (set.durationSec ?: 0).toString()
+        set.weightKg > 0.0 -> formatNumber(set.weightKg)
+        else -> set.reps.toString()
+    }
+    val caption = when {
+        set.timed() -> lexString(R.string.gym_unit_seconds)
+        set.weightKg > 0.0 -> lexString(R.string.gym_pr_caption, set.reps)
+        else -> lexString(R.string.gym_unit_reps)
+    }
+    SessionScreen(
+        stat = Stat.STR,
+        title = lexString(R.string.gym_pr_title),
+        subtitle = moment.exercise,
+        body = { diameter ->
+            SessionDial(diameter = diameter, fraction = 1f, numeral = numeral, caption = caption, description = lexString(R.string.gym_pr_cd, moment.exercise, numeral, caption))
+        },
+        actions = {
+            FieldPrimaryButton(text = lexString(R.string.gym_pr_keep_going), onClick = { onEvent(GymEvent.DismissPr(set.id)) }, modifier = Modifier.fillMaxWidth())
+        },
+    )
+}

@@ -38,6 +38,10 @@
 
     <!-- Active session -->
     <string name="gym_bar_line">Bar %1$s kg + %2$s kg a side</string>
+    <string name="gym_pr_title">New record</string>
+    <string name="gym_pr_caption">kg × %1$d</string>
+    <string name="gym_pr_cd">New record, %1$s: %2$s %3$s</string>
+    <string name="gym_pr_keep_going">Keep going</string>
     <string name="gym_session_sub">%1$s · exercise %2$d of %3$d</string>
     <string name="gym_summary_reward">Reward</string>
     <string name="gym_summary_full_sets">Full sets</string>

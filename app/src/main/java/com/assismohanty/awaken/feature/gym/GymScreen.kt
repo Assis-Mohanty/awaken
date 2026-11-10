@@ -109,6 +109,10 @@ fun GymRoute(modifier: Modifier = Modifier, viewModel: GymViewModel = hiltViewMo
 @Composable
 fun GymScreen(state: GymUiState, onEvent: (GymEvent) -> Unit, modifier: Modifier = Modifier) {
     val colors = AwakenTheme.colors
+    if (!state.loading && state.active != null && state.prMoment != null) {
+        PrMoment(state.prMoment, onEvent)
+        return
+    }
     val restEnds = state.active?.workout?.restEndsAt?.takeIf { !state.loading && state.restMinimisedFor != it }
     if (state.active != null && restEnds != null) {
         RestScreen(state, state.active, restEnds, onEvent)

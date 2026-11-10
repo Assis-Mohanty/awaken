@@ -183,6 +183,17 @@ private fun GymWorkoutAllDonePreview() {
 
 @PhonePreviews
 @Composable
+private fun GymPrMomentPreview() {
+    AwakenTheme(reduceMotion = true) {
+        GymScreen(
+            state(benchMidway) { copy(prMoment = PrMomentUi("Barbell bench press", set(0, 0, "Barbell Bench Press", "bench", 82.5, 5, done = true, doneAgoSec = 3))) },
+            onEvent = {},
+        )
+    }
+}
+
+@PhonePreviews
+@Composable
 private fun GymRestScreenPreview() {
     val ends = clockNow.plusSeconds(74)
     val active = ActiveWorkout(

@@ -18,6 +18,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.border
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -31,6 +33,31 @@ import com.assismohanty.awaken.core.designsystem.theme.Spacing
 
 /** Where an exercise stands in the workout. */
 enum class SegmentState { DONE, CURRENT, TODO }
+
+/** One dot per set of the exercise on screen: done filled, the current one ringed, the rest faint. */
+@Composable
+fun SetDots(states: List<SegmentState>, description: String, modifier: Modifier = Modifier) {
+    val colors = AwakenTheme.colors
+    Row(
+        modifier = modifier.clearAndSetSemantics { contentDescription = description },
+        horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        states.forEach { state ->
+            Box(
+                Modifier
+                    .size(Spacing.sm)
+                    .then(
+                        when (state) {
+                            SegmentState.DONE -> Modifier.background(colors.textPrimary, CircleShape)
+                            SegmentState.CURRENT -> Modifier.border(AwakenTheme.dimens.accentWidth, colors.textPrimary, CircleShape)
+                            SegmentState.TODO -> Modifier.background(colors.surfaceOverlay, CircleShape)
+                        },
+                    ),
+            )
+        }
+    }
+}
 
 /** One thin segment per exercise: done in the accent, the current one in ink, the rest faint. [description] is read in place of the picture. */
 @Composable

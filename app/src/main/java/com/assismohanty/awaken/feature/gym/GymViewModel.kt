@@ -65,6 +65,7 @@ import com.assismohanty.awaken.core.work.RestScheduler
 import com.assismohanty.awaken.engine.body.Muscle
 import com.assismohanty.awaken.engine.body.RestRules
 import dagger.hilt.android.lifecycle.HiltViewModel
+import java.time.Duration
 import java.time.Instant
 import javax.inject.Inject
 import kotlinx.coroutines.delay
@@ -134,7 +135,12 @@ data class GymFlow(
     val lastSetSheet: Boolean = false,
     /** The rest screen was minimised for the rest that ends at this time; a new rest shows it again. */
     val restMinimisedFor: Instant? = null,
+    /** Record moments already acknowledged (set ids). */
+    val prSeen: Set<String> = emptySet(),
 )
+
+/** A set that broke a personal record, with the exercise name for the screen. */
+data class PrMomentUi(val exercise: String, val set: WorkoutSetEntity)
 
 /** The field the number pad is editing. */
 enum class PadField { WEIGHT, REPS, HOLD }
@@ -274,6 +280,8 @@ data class GymUiState(
     val confirmFinish: Boolean = false,
     val lastSetSheet: Boolean = false,
     val restMinimisedFor: Instant? = null,
+    /** A set that just broke a record and has not been acknowledged yet; shown before the rest. */
+    val prMoment: PrMomentUi? = null,
     /** The running workout was started on an earlier game-day: offer to finish or discard it instead of carrying on. */
     val staleWorkout: Boolean = false,
 )
@@ -384,6 +392,7 @@ sealed interface GymEvent {
     data object DismissNotice : GymEvent
     data object SkipRest : GymEvent
     data object DismissSummary : GymEvent
+    data class DismissPr(val setId: String) : GymEvent
 }
 
 @HiltViewModel
@@ -419,6 +428,11 @@ class GymViewModel @Inject constructor(
             val flags = RecordRules.setFlags(f.recordHistory[exercise.exerciseId].orEmpty(), exercise.sets.map { it.toLogged() })
             exercise.sets.zip(flags).filter { (_, types) -> types.isNotEmpty() }.map { (set, _) -> set.id }
         }.toSet()
+        // Only a set finished in the last half minute counts, so reopening the app never replays an old record.
+        val prMoment = active?.exercises.orEmpty().flatMap { e -> e.sets.map { e to it } }
+            .filter { (_, set) -> set.done && set.id in prSetIds && set.id !in f.prSeen && set.completedAt?.let { Duration.between(it, now) < PR_MOMENT_WINDOW } == true }
+            .maxByOrNull { (_, set) -> set.completedAt ?: Instant.EPOCH }
+            ?.let { (e, set) -> PrMomentUi(f.labels[e.exerciseId]?.name ?: e.name, set) }
         GymUiState(
             loading = false,
             overview = overview,
@@ -433,6 +447,7 @@ class GymViewModel @Inject constructor(
             previous = f.previous,
             hints = f.hints,
             prSetIds = prSetIds,
+            prMoment = prMoment,
             summaryRecords = f.summaryRecords,
             summaryXp = f.summaryXp,
             prefs = prefs,
@@ -718,6 +733,7 @@ class GymViewModel @Inject constructor(
                 flow.update { it.copy(restMinimisedFor = ends) }
             }
             GymEvent.ShowRest -> flow.update { it.copy(restMinimisedFor = null) }
+            is GymEvent.DismissPr -> flow.update { it.copy(prSeen = it.prSeen + event.setId) }
             is GymEvent.OpenNumberPad -> flow.update { it.copy(numberPad = NumberPadUi(event.setId, event.field)) }
             GymEvent.CloseNumberPad -> flow.update { it.copy(numberPad = null) }
             is GymEvent.OpenWorkoutMenu -> flow.update { it.copy(workoutMenu = event.position) }
@@ -900,3 +916,5 @@ class GymViewModel @Inject constructor(
         const val TICK_MS = 1_000L
     }
 }
+
+private val PR_MOMENT_WINDOW: Duration = Duration.ofSeconds(30)
