@@ -67,6 +67,14 @@ class ScreenDetectorTest {
     }
 
     @Test
+    fun itemContainerSignatureIsItsOwnKeyEvenWithNoVisibleChild() {
+        val r = rule(IG_PAGER, ItemSignal.CHILD_SWAP).copy(itemIsContainer = true)
+        val offscreen = node("c", visible = false)
+        val d = verified(r).detect(IG_PKG, screenWith(node("item-3", id = IG_PAGER, children = listOf(offscreen)))) as Detection.ShortVideo
+        assertThat(d.childSignature).isEqualTo("item-3")
+    }
+
+    @Test
     fun structuralFallbackMatchesFullScreenPager() {
         val d = unverified(rule("com.instagram.android:id/nonexistent", ItemSignal.PAGER_PAGE))
             .detect(IG_PKG, igPagerScreen())

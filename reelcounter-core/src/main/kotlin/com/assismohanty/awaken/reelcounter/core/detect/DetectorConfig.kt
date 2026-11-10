@@ -26,6 +26,8 @@ data class ScreenRule(
     /** Empty = any scroll source in the package. */
     val signalSourceIds: List<String> = emptyList(),
     val minCoverage: Double = 0.85,
+    /** The container is one item (a recycled view per reel), so its own key tells items apart; its children may not be on screen. */
+    val itemIsContainer: Boolean = false,
 )
 
 @Serializable

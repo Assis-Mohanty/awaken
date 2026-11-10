@@ -8,7 +8,8 @@
       "screens": [
         {
           "containerIds": ["com.instagram.android:id/clips_item_overlay_component"],
-          "signal": "CHILD_SWAP"
+          "signal": "CHILD_SWAP",
+          "itemIsContainer": true
         }
       ]
     },

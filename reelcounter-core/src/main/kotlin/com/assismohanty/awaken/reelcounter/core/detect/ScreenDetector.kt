@@ -32,7 +32,7 @@ class ScreenDetector(config: DetectorConfig) {
                         val child = n.children.firstOrNull {
                             it.visibleToUser && it.bounds.coverage(screen) >= rule.minCoverage
                         }
-                        return Detection.ShortVideo(app, rule, viaFallback = false, childSignature = child?.key)
+                        return Detection.ShortVideo(app, rule, viaFallback = false, childSignature = if (rule.itemIsContainer) n.key else child?.key)
                     }
                 }
             }
