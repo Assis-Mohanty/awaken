@@ -3,7 +3,7 @@
     <!-- Gym: workout tracker (PRD F-gym, GAME_DESIGN §13.2). Trackers only: no XP. -->
     <string name="nav_gym">Gym</string>
     <string name="gym_title">Gym</string>
-    <string name="gym_tracker_note">Tracking only. Workouts here don’t grant XP yet.</string>
+    <string name="gym_rest_of">of %1$s</string>
 
     <string name="gym_start_empty">Start workout</string>
     <string name="gym_window_week">This week</string>

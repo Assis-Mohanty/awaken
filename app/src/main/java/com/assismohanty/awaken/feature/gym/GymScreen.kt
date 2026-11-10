@@ -106,6 +106,11 @@ fun GymRoute(modifier: Modifier = Modifier, viewModel: GymViewModel = hiltViewMo
 @Composable
 fun GymScreen(state: GymUiState, onEvent: (GymEvent) -> Unit, modifier: Modifier = Modifier) {
     val colors = AwakenTheme.colors
+    val restEnds = state.active?.workout?.restEndsAt?.takeIf { !state.loading && state.restMinimisedFor != it }
+    if (state.active != null && restEnds != null) {
+        RestScreen(state, state.active, restEnds, onEvent)
+        return
+    }
     val subtitle = if (state.active == null && state.overview?.trainingDay == true) lexString(R.string.gym_training_day) else null
     LargeTitleScaffold(
         title = lexString(R.string.gym_title),
@@ -134,7 +139,6 @@ fun GymScreen(state: GymUiState, onEvent: (GymEvent) -> Unit, modifier: Modifier
             }
             state.overview?.let { GymHome(it, onEvent) }
         }
-        Text(lexString(R.string.gym_tracker_note), style = AwakenTheme.type.caption, color = colors.textMuted)
     }
     state.home?.let { home ->
         home.planDetail?.let { PlanDetailSheet(it, onEvent) }

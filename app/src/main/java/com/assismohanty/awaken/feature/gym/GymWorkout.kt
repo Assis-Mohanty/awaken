@@ -15,6 +15,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import com.assismohanty.awaken.R
+import com.assismohanty.awaken.engine.model.Stat
+import com.assismohanty.awaken.core.designsystem.components.SessionScreen
+import com.assismohanty.awaken.core.designsystem.components.SessionDial
+import com.assismohanty.awaken.core.designsystem.components.FieldQuietButton
+import com.assismohanty.awaken.core.designsystem.components.FieldPrimaryButton
+import androidx.compose.ui.text.style.TextAlign
 import com.assismohanty.awaken.core.data.db.entity.WorkoutEntity
 import com.assismohanty.awaken.core.data.db.entity.WorkoutSetEntity
 import com.assismohanty.awaken.core.designsystem.components.AwakenCard
@@ -53,10 +59,6 @@ import java.time.Instant
 internal fun ActiveWorkoutContent(state: GymUiState, active: ActiveWorkout, onEvent: (GymEvent) -> Unit) {
     val ends = active.workout.restEndsAt
     if (state.staleWorkout) StaleWorkoutCard(active, onEvent)
-    if (ends != null && state.restMinimisedFor != ends) {
-        RestScreen(state, active, ends, onEvent)
-        return
-    }
     if (ends != null) RestBanner(state, ends, onEvent)
     if (active.workout.mode == WorkoutEntity.MODE_COACHED) CoachedWorkout(state, active, onEvent) else ListWorkout(state, active, onEvent)
 }
@@ -317,8 +319,9 @@ private fun CompleteButton(set: WorkoutSetEntity, exercise: WorkoutExercise, now
 
 // Rest
 
+/** The full-screen rest: the round dial in the Strength colour, the nudge buttons, what comes next, and Skip once the minimum rest has passed. */
 @Composable
-private fun RestScreen(state: GymUiState, active: ActiveWorkout, ends: Instant, onEvent: (GymEvent) -> Unit) {
+internal fun RestScreen(state: GymUiState, active: ActiveWorkout, ends: Instant, onEvent: (GymEvent) -> Unit) {
     val colors = AwakenTheme.colors
     val total = active.workout.restTotalSec ?: 0
     val left = RestRules.remaining(ends, state.now)
@@ -328,54 +331,58 @@ private fun RestScreen(state: GymUiState, active: ActiveWorkout, ends: Instant, 
     val next = CoachedFlow.current(rows)
     val nextExercise = active.exercises.firstOrNull { it.position == next?.position }
     val nextSet = if (next != null) nextExercise?.setAt(next) else null
-    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-        HeaderIconButton(AwakenGlyphs.ChevronDown, lexString(R.string.gym_rest_minimise), { onEvent(GymEvent.MinimiseRest) })
-        Text(lexString(R.string.gym_rest_screen_title), style = AwakenTheme.type.section, color = colors.textPrimary)
-    }
-    Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(Spacing.md), modifier = Modifier.fillMaxWidth()) {
-        ProgressRing(
-            progress = if (total > 0) left.seconds.toFloat() / total else 0f,
-            description = lexString(R.string.gym_rest_ring_cd, formatElapsed(left), formatElapsed(Duration.ofSeconds(total.toLong()))),
-            color = colors.accent,
-        ) {
-            Text(formatElapsed(left), style = AwakenTheme.type.metricXL, color = colors.textPrimary)
-        }
-        val lessDescription = lexString(R.string.gym_rest_less_cd)
-        val moreDescription = lexString(R.string.gym_rest_more_cd)
-        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-            SecondaryButton(
-                text = lexString(R.string.gym_rest_less),
-                onClick = { onEvent(GymEvent.AdjustRest(-REST_STEP_SEC)) },
-                modifier = Modifier.semantics { contentDescription = lessDescription },
+    val remaining = formatElapsed(left)
+    SessionScreen(
+        stat = Stat.STR,
+        title = lexString(R.string.gym_rest_screen_title),
+        subtitle = null,
+        body = { diameter ->
+            SessionDial(
+                diameter = diameter,
+                fraction = if (total > 0) left.seconds.toFloat() / total else 0f,
+                numeral = remaining,
+                caption = lexString(R.string.gym_rest_of, formatElapsed(Duration.ofSeconds(total.toLong()))),
+                description = lexString(R.string.gym_rest_ring_cd, remaining, formatElapsed(Duration.ofSeconds(total.toLong()))),
             )
-            SecondaryButton(
-                text = lexString(R.string.gym_rest_more),
-                onClick = { onEvent(GymEvent.AdjustRest(REST_STEP_SEC)) },
-                modifier = Modifier.semantics { contentDescription = moreDescription },
-            )
-        }
-        if (elapsed >= minRest) {
-            PrimaryButton(text = lexString(R.string.gym_rest_skip), onClick = { onEvent(GymEvent.SkipRest) }, modifier = Modifier.fillMaxWidth())
-        } else {
-            // Skipping opens once the minimum rest has passed, so a set cannot be ticked seconds after the last.
-            Text(lexString(R.string.gym_rest_skip_in, minRest - elapsed), style = AwakenTheme.type.body, color = colors.textSecondary)
-        }
-        if (active.exercises.any { e -> e.sets.any { it.done } }) {
-            QuietButton(text = lexString(R.string.gym_rest_log_last), onClick = { onEvent(GymEvent.OpenLastSet) })
-        }
-    }
-    if (nextExercise != null && nextSet != null && next != null) {
-        val (number, count) = CoachedFlow.setNumber(rows, nextExercise.position, next.setIndex)
-        AwakenCard(reveal = false, modifier = Modifier.fillMaxWidth()) {
-            Text(lexString(R.string.gym_next_up), style = AwakenTheme.type.caption, color = colors.textSecondary)
-            Text(state.labels[nextExercise.exerciseId]?.name ?: nextExercise.name, style = AwakenTheme.type.windowTitle, color = colors.textPrimary)
-            Text(
-                lexString(R.string.gym_next_up_line, lexString(R.string.gym_set_of, number, count), setValueText(nextSet)),
-                style = AwakenTheme.type.caption,
-                color = colors.textSecondary,
-            )
-        }
-    }
+            val lessDescription = lexString(R.string.gym_rest_less_cd)
+            val moreDescription = lexString(R.string.gym_rest_more_cd)
+            Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+                FieldQuietButton(
+                    text = lexString(R.string.gym_rest_less),
+                    onClick = { onEvent(GymEvent.AdjustRest(-REST_STEP_SEC)) },
+                    modifier = Modifier.semantics { contentDescription = lessDescription },
+                )
+                FieldQuietButton(
+                    text = lexString(R.string.gym_rest_more),
+                    onClick = { onEvent(GymEvent.AdjustRest(REST_STEP_SEC)) },
+                    modifier = Modifier.semantics { contentDescription = moreDescription },
+                )
+            }
+            if (nextExercise != null && nextSet != null && next != null) {
+                val (number, count) = CoachedFlow.setNumber(rows, nextExercise.position, next.setIndex)
+                Text(lexString(R.string.gym_next_up), style = AwakenTheme.type.caption, color = colors.onFieldMuted)
+                Text(lexString(R.string.gym_set_of, number, count), style = AwakenTheme.type.title, color = colors.onField)
+                Text(
+                    (state.labels[nextExercise.exerciseId]?.name ?: nextExercise.name) + ", " + setValueText(nextSet),
+                    style = AwakenTheme.type.caption,
+                    color = colors.onFieldMuted,
+                    textAlign = TextAlign.Center,
+                )
+            }
+        },
+        actions = {
+            if (elapsed >= minRest) {
+                FieldPrimaryButton(text = lexString(R.string.gym_rest_skip), onClick = { onEvent(GymEvent.SkipRest) }, modifier = Modifier.fillMaxWidth())
+            } else {
+                // Skipping opens once the minimum rest has passed, so a set cannot be ticked seconds after the last.
+                Text(lexString(R.string.gym_rest_skip_in, minRest - elapsed), style = AwakenTheme.type.body, color = colors.onFieldMuted)
+            }
+            if (active.exercises.any { e -> e.sets.any { it.done } }) {
+                FieldQuietButton(text = lexString(R.string.gym_rest_log_last), onClick = { onEvent(GymEvent.OpenLastSet) })
+            }
+            FieldQuietButton(text = lexString(R.string.gym_rest_minimise), onClick = { onEvent(GymEvent.MinimiseRest) })
+        },
+    )
 }
 
 // List
