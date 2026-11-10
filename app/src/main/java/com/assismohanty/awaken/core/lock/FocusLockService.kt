@@ -7,6 +7,9 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.res.Configuration
+import android.media.AudioAttributes
+import android.media.AudioFocusRequest
+import android.media.AudioManager
 import android.view.WindowManager
 import android.view.accessibility.AccessibilityEvent
 import androidx.core.graphics.drawable.toBitmap
@@ -23,6 +26,7 @@ import com.assismohanty.awaken.engine.BlockDecision
 import com.assismohanty.awaken.engine.FocusLockRules
 import com.assismohanty.awaken.engine.GateMode
 import com.assismohanty.awaken.engine.GateRunMath
+import com.assismohanty.awaken.reelcounter.service.CounterRunner
 import dagger.hilt.android.AndroidEntryPoint
 import java.time.Duration
 import javax.inject.Inject
@@ -55,6 +59,8 @@ class FocusLockService : AccessibilityService() {
 
     @Inject lateinit var coverable: CoverableApps
 
+    @Inject lateinit var reelCounter: CounterRunner
+
     private var scope: CoroutineScope? = null
     private var overlay: BlockOverlay<OverlayModel>? = null
     private var tick: Job? = null
@@ -84,6 +90,8 @@ class FocusLockService : AccessibilityService() {
     private var blockedPackage: String? = null
     private var lastPackage: String? = null
     private var lastEventTime = 0L
+    private var audioFocus: AudioFocusRequest? = null
+    private var lastFront = 0L
     private val icons = HashMap<String, androidx.compose.ui.graphics.ImageBitmap?>()
 
     override fun onServiceConnected() {
@@ -194,6 +202,8 @@ class FocusLockService : AccessibilityService() {
 
     private fun cover(pkg: String) {
         blockedPackage = pkg
+        holdBehind(true)
+        bringAwakenToFront()
         refresh()
         if (tick == null) {
             tick = scope?.launch {
@@ -219,6 +229,40 @@ class FocusLockService : AccessibilityService() {
         tick?.cancel()
         tick = null
         overlay?.hide()
+        holdBehind(false)
+    }
+
+    /**
+     * The cover alone leaves the app under it running, so a reel keeps playing. AWAKEN takes audio focus (a video app pauses
+     * when it loses it) and Reel counter stops counting until the cover is gone. Same as the pause screen.
+     */
+    private fun holdBehind(on: Boolean) {
+        reelCounter.setHeld(on, owner = "focuslock")
+        val audio = getSystemService(AudioManager::class.java) ?: return
+        if (on) {
+            if (audioFocus != null) return
+            val request = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT)
+                .setAudioAttributes(AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_MEDIA).setContentType(AudioAttributes.CONTENT_TYPE_SPEECH).build())
+                .setOnAudioFocusChangeListener { }
+                .build()
+            if (audio.requestAudioFocus(request) == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) audioFocus = request
+        } else {
+            audioFocus?.let { audio.abandonAudioFocusRequest(it) }
+            audioFocus = null
+        }
+    }
+
+    /** AWAKEN's own window comes forward under the cover so the covered app stops (at most once a second). */
+    private fun bringAwakenToFront() {
+        val now = clock.now().toEpochMilli()
+        if (now - lastFront < 1_000) return
+        lastFront = now
+        runCatching {
+            startActivity(
+                Intent(this, MainActivity::class.java)
+                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP),
+            )
+        }.onFailure { Timber.w(it, "Could not bring AWAKEN to the front") }
     }
 
     /** Re-decides for the covered app and re-draws the cover with the clock as it is now. */
