@@ -503,9 +503,84 @@ val MIGRATION_30_31 = object : Migration(30, 31) {
     }
 }
 
+/**
+ * v31 -> v32 (Diet v2, docs/diet/PLAN.md section 3.8): every change is additive, so no diary row, custom food or profile is
+ * touched. New columns are nullable or carry the old behaviour as their default (loss pace Steady, preset Balanced, entry
+ * source Search). The four built-in meal slots use the ids the old `Meal` enum wrote, so `food_log.meal` needs no rewrite.
+ * The profile's weight becomes the plan weight and the first weigh-in.
+ */
+val MIGRATION_31_32 = object : Migration(31, 32) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE `custom_food` ADD COLUMN `brand` TEXT")
+        db.execSQL("ALTER TABLE `custom_food` ADD COLUMN `barcode` TEXT")
+        db.execSQL("ALTER TABLE `custom_food` ADD COLUMN `serving_grams` REAL")
+        db.execSQL("ALTER TABLE `custom_food` ADD COLUMN `updated_at` INTEGER NOT NULL DEFAULT 0")
+        db.execSQL("UPDATE `custom_food` SET `updated_at` = `created_at`")
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_custom_food_barcode` ON `custom_food` (`barcode`)")
+
+        db.execSQL("ALTER TABLE `food_log` ADD COLUMN `note` TEXT")
+        db.execSQL("ALTER TABLE `food_log` ADD COLUMN `portion_count` REAL")
+        db.execSQL("ALTER TABLE `food_log` ADD COLUMN `entry_source` TEXT NOT NULL DEFAULT 'SEARCH'")
+
+        db.execSQL("ALTER TABLE `nutrition_profile` ADD COLUMN `loss_pace` TEXT NOT NULL DEFAULT 'STEADY'")
+        db.execSQL("ALTER TABLE `nutrition_profile` ADD COLUMN `macro_preset` TEXT NOT NULL DEFAULT 'BALANCED'")
+        db.execSQL("ALTER TABLE `nutrition_profile` ADD COLUMN `protein_per_kg` REAL")
+        db.execSQL("ALTER TABLE `nutrition_profile` ADD COLUMN `split_protein_pct` INTEGER")
+        db.execSQL("ALTER TABLE `nutrition_profile` ADD COLUMN `split_carbs_pct` INTEGER")
+        db.execSQL("ALTER TABLE `nutrition_profile` ADD COLUMN `split_fat_pct` INTEGER")
+        db.execSQL("ALTER TABLE `nutrition_profile` ADD COLUMN `plan_weight_kg` REAL")
+        db.execSQL("ALTER TABLE `nutrition_profile` ADD COLUMN `trend_dismissed_on` TEXT")
+        db.execSQL("ALTER TABLE `nutrition_profile` ADD COLUMN `water_target_ml` INTEGER")
+        db.execSQL("UPDATE `nutrition_profile` SET `plan_weight_kg` = `weight_kg`")
+
+        db.execSQL("CREATE TABLE IF NOT EXISTS `meal_slot` (`id` TEXT NOT NULL, `name` TEXT, `position` INTEGER NOT NULL, `built_in` INTEGER NOT NULL, PRIMARY KEY(`id`))")
+        db.execSQL("INSERT INTO `meal_slot` (`id`, `name`, `position`, `built_in`) VALUES ('BREAKFAST', NULL, 0, 1), ('LUNCH', NULL, 1, 1), ('SNACK', NULL, 2, 1), ('DINNER', NULL, 3, 1)")
+        db.execSQL("CREATE TABLE IF NOT EXISTS `favourite_food` (`food_id` TEXT NOT NULL, `added_at` INTEGER NOT NULL, PRIMARY KEY(`food_id`))")
+        db.execSQL("CREATE TABLE IF NOT EXISTS `saved_meal` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `created_at` INTEGER NOT NULL, `updated_at` INTEGER NOT NULL, PRIMARY KEY(`id`))")
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS `saved_meal_item` (`id` TEXT NOT NULL, `saved_meal_id` TEXT NOT NULL, `position` INTEGER NOT NULL, `food_id` TEXT NOT NULL, " +
+                "`name` TEXT NOT NULL, `grams` REAL NOT NULL, `portion_label` TEXT, `nutrients_json` TEXT NOT NULL, PRIMARY KEY(`id`))",
+        )
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_saved_meal_item_saved_meal_id` ON `saved_meal_item` (`saved_meal_id`)")
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS `recipe` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `servings` REAL NOT NULL, `cooked_grams` REAL, `note` TEXT, " +
+                "`created_at` INTEGER NOT NULL, `updated_at` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        )
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS `recipe_ingredient` (`id` TEXT NOT NULL, `recipe_id` TEXT NOT NULL, `position` INTEGER NOT NULL, `food_id` TEXT NOT NULL, " +
+                "`name` TEXT NOT NULL, `grams` REAL NOT NULL, `nutrients_json` TEXT NOT NULL, PRIMARY KEY(`id`))",
+        )
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_recipe_ingredient_recipe_id` ON `recipe_ingredient` (`recipe_id`)")
+        db.execSQL("CREATE TABLE IF NOT EXISTS `water_log` (`id` TEXT NOT NULL, `game_date` TEXT NOT NULL, `ml` INTEGER NOT NULL, `logged_at` INTEGER NOT NULL, PRIMARY KEY(`id`))")
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_water_log_game_date` ON `water_log` (`game_date`)")
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS `weight_log` (`id` TEXT NOT NULL, `game_date` TEXT NOT NULL, `weight_kg` REAL NOT NULL, `logged_at` INTEGER NOT NULL, `note` TEXT, PRIMARY KEY(`id`))",
+        )
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_weight_log_game_date` ON `weight_log` (`game_date`)")
+        db.execSQL("CREATE TABLE IF NOT EXISTS `body_measure_log` (`id` TEXT NOT NULL, `game_date` TEXT NOT NULL, `kind` TEXT NOT NULL, `value_cm` REAL NOT NULL, PRIMARY KEY(`id`))")
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_body_measure_log_game_date` ON `body_measure_log` (`game_date`)")
+        db.execSQL("CREATE TABLE IF NOT EXISTS `fasting_session` (`id` TEXT NOT NULL, `started_at` INTEGER NOT NULL, `target_minutes` INTEGER NOT NULL, `ended_at` INTEGER, PRIMARY KEY(`id`))")
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS `meal_plan_entry` (`id` TEXT NOT NULL, `game_date` TEXT NOT NULL, `meal` TEXT NOT NULL, `food_id` TEXT NOT NULL, `name` TEXT NOT NULL, " +
+                "`grams` REAL NOT NULL, `portion_label` TEXT, `nutrients_json` TEXT NOT NULL, `logged` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        )
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_meal_plan_entry_game_date` ON `meal_plan_entry` (`game_date`)")
+        db.execSQL("CREATE TABLE IF NOT EXISTS `diary_note` (`game_date` TEXT NOT NULL, `text` TEXT NOT NULL, PRIMARY KEY(`game_date`))")
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS `scan_feedback` (`id` TEXT NOT NULL, `at` INTEGER NOT NULL, `kind` TEXT NOT NULL, `shown_json` TEXT NOT NULL, `chosen_food_id` TEXT, PRIMARY KEY(`id`))",
+        )
+
+        // The profile's weight is the first weigh-in (UTC date of the last save; the log is for the trend, not for the ledger).
+        db.execSQL(
+            "INSERT INTO `weight_log` (`id`, `game_date`, `weight_kg`, `logged_at`, `note`) " +
+                "SELECT 'seed:profile', date(`updated_at` / 1000, 'unixepoch'), `weight_kg`, `updated_at`, NULL FROM `nutrition_profile`",
+        )
+    }
+}
+
 /** Every migration, in order. The database builder and the migration test both use this list. */
 val ALL_MIGRATIONS: Array<Migration> = arrayOf(
     MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9,
     MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17,
-    MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21, MIGRATION_21_22, MIGRATION_22_23, MIGRATION_23_24, MIGRATION_24_25, MIGRATION_25_26, MIGRATION_26_27, MIGRATION_27_28, MIGRATION_28_29, MIGRATION_29_30, MIGRATION_30_31,
+    MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21, MIGRATION_21_22, MIGRATION_22_23, MIGRATION_23_24, MIGRATION_24_25, MIGRATION_25_26, MIGRATION_26_27, MIGRATION_27_28, MIGRATION_28_29, MIGRATION_29_30, MIGRATION_30_31, MIGRATION_31_32,
 )

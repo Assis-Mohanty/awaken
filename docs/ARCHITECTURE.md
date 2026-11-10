@@ -190,6 +190,14 @@ custom_food(id PK "custom:<uuid>", name, nutrients_json, portions_json, created_
 food_log(id PK, game_date, meal, food_id, name, grams REAL, portion_label NULL,
          nutrients_json, logged_at)                                -- per-100 g snapshot: the day never changes later
 nutrition_profile(id PK = 1, sex, birth_year, height_cm, weight_kg, activity, goal, overrides_json, updated_at)
+-- Diet v2 (schema v32, docs/diet/PLAN.md 3.8): still trackers, no foreign keys (parents and children are written together)
+custom_food += brand, barcode (13 digits, indexed), serving_grams, updated_at ; food_log += note, portion_count, entry_source
+nutrition_profile += loss_pace, macro_preset, protein_per_kg, split_protein_pct/carbs_pct/fat_pct, plan_weight_kg, trend_dismissed_on, water_target_ml
+meal_slot(id PK "BREAKFAST"|"LUNCH"|"SNACK"|"DINNER"|"custom:<uuid>", name NULL, position, built_in) ; favourite_food(food_id PK, added_at)
+saved_meal(id PK, name, created_at, updated_at) ; saved_meal_item(id PK "<meal>#<i>", saved_meal_id, position, food_id, name, grams, portion_label, nutrients_json)
+recipe(id PK "recipe:<uuid>", name, servings, cooked_grams NULL, note NULL, created_at, updated_at) ; recipe_ingredient(id PK, recipe_id, position, food_id, name, grams, nutrients_json)
+water_log(id PK, game_date, ml, logged_at) ; weight_log(id PK, game_date, weight_kg, logged_at, note) ; body_measure_log(id PK, game_date, kind, value_cm)
+fasting_session(id PK, started_at, target_minutes, ended_at NULL) ; meal_plan_entry(id PK, game_date, meal, food snapshot, logged) ; diary_note(game_date PK, text) ; scan_feedback(id PK, at, kind, shown_json, chosen_food_id NULL)
 ```
 
 `path_slot` holds the *validated, priced* blueprint. `quest_instance` for a Path quest is created from a slot on its game-day by `GenerateDirective`, with `path_slot_id` set; the priced fields are copied, never recomputed from model output.

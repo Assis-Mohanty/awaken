@@ -508,4 +508,102 @@ class GameDataPorterTest {
         assertThat(target.pathDao.currentMilestones(created.pathId)).isEqualTo(source.pathDao.currentMilestones(created.pathId))
         assertThat(tablesOf(target.porter.export())).isEqualTo(tablesOf(exported))
     }
+
+
+    // Diet v2 (schema v32)
+
+    private val dietV32Tables = setOf(
+        "meal_slot", "favourite_food", "saved_meal", "saved_meal_item", "recipe", "recipe_ingredient", "water_log", "weight_log",
+        "body_measure_log", "fasting_session", "meal_plan_entry", "diary_note", "scan_feedback",
+    )
+
+    private suspend fun seedDiet(graph: TestGraph) {
+        val day = java.time.LocalDate.of(2026, 11, 2)
+        val egg = com.assismohanty.awaken.core.data.catalog.Food("usda:1", "Egg", com.assismohanty.awaken.core.data.catalog.FoodSource.USDA_SR, com.assismohanty.awaken.engine.body.Nutrients(mapOf(com.assismohanty.awaken.engine.body.Nutrient.KCAL to 155.0)))
+        graph.db.dietDao().upsertProfile(
+            com.assismohanty.awaken.core.data.db.entity.NutritionProfileEntity(
+                sex = com.assismohanty.awaken.engine.body.Sex.MALE, birthYear = 1999, heightCm = 180.0, weightKg = 75.0,
+                activity = com.assismohanty.awaken.engine.body.ActivityLevel.MODERATE, goal = com.assismohanty.awaken.engine.body.WeightGoal.MAINTAIN,
+                overridesJson = "{}", updatedAt = graph.clock.now(),
+            ),
+        )
+        graph.diet.log(day, com.assismohanty.awaken.core.data.db.entity.Meal.BREAKFAST, egg, 100.0, null)
+    }
+
+    @Test
+    fun dietV2DataRoundTripsThroughExportAndImport() = runTest {
+        source.seedHunter()
+        seedDiet(source)
+        val day = java.time.LocalDate.of(2026, 11, 2)
+        source.foodLibrary.ensureBuiltInMeals()
+        source.foodLibrary.addMeal("Pre-workout")
+        source.foodLibrary.saveCustomFood(
+            com.assismohanty.awaken.core.domain.CustomFoodDraft(
+                name = "Protein bar", brand = "Acme", barcode = "036000291452",
+                per100 = com.assismohanty.awaken.engine.body.Nutrients(mapOf(com.assismohanty.awaken.engine.body.Nutrient.KCAL to 380.0)), servingGrams = 60.0,
+            ),
+        )
+        source.foodLibrary.toggleFavourite("usda:1")
+        source.bodyLog.logWeight(day, 74.5, "morning")
+        source.bodyLog.addWater(day, 250)
+        source.bodyLog.logMeasure(day, com.assismohanty.awaken.core.data.db.entity.MeasureKind.WAIST, 80.0)
+        source.bodyLog.setNote(day, "Felt good")
+        source.recipeBook.save(
+            com.assismohanty.awaken.core.domain.RecipeDraft(
+                name = "Egg bowl", servings = 2.0,
+                ingredients = listOf(com.assismohanty.awaken.core.domain.IngredientDraft("usda:1", "Egg", 200.0, com.assismohanty.awaken.engine.body.Nutrients(mapOf(com.assismohanty.awaken.engine.body.Nutrient.KCAL to 155.0)))),
+            ),
+        )
+        val exported = source.porter.export()
+
+        assertThat(tablesOf(exported).keys).containsAtLeastElementsIn(dietV32Tables)
+        assertThat(target.porter.import(exported)).isInstanceOf(ImportResult.Imported::class.java)
+        assertThat(tablesOf(target.porter.export())).isEqualTo(tablesOf(exported))
+        assertThat(target.db.foodLibraryDao().favouriteIds()).containsExactly("usda:1")
+        assertThat(target.foodLibrary.customFoodByBarcode("036000291452")?.name).isEqualTo("Protein bar")
+    }
+
+    @Test
+    fun aBackupFromBeforeDietV2StillImports() = runTest {
+        source.seedHunter()
+        seedDiet(source)
+        val current = source.porter.export()
+        val newColumns = mapOf(
+            "custom_food" to setOf("brand", "barcode", "serving_grams", "updated_at"),
+            "food_log" to setOf("note", "portion_count", "entry_source"),
+            "nutrition_profile" to setOf(
+                "loss_pace", "macro_preset", "protein_per_kg", "split_protein_pct", "split_carbs_pct", "split_fat_pct",
+                "plan_weight_kg", "trend_dismissed_on", "water_target_ml",
+            ),
+        )
+        // What a v31 app wrote: none of the new tables, none of the new columns.
+        val v31 = mutate(current) { root ->
+            root["schemaVersion"] = JsonPrimitive(31)
+            root["tables"] = JsonObject(
+                root.getValue("tables").jsonObject.filterKeys { it !in dietV32Tables }.mapValues { (table, rows) ->
+                    val dropped = newColumns[table]
+                    if (dropped == null) rows else JsonArray(rows.jsonArray.map { JsonObject(it.jsonObject.filterKeys { key -> key !in dropped }) })
+                },
+            )
+        }
+
+        assertThat(target.porter.import(v31)).isInstanceOf(ImportResult.Imported::class.java)
+        val row = target.db.dietDao().entriesOn(java.time.LocalDate.of(2026, 11, 2)).single()
+        assertThat(row.entrySource).isEqualTo(com.assismohanty.awaken.core.data.db.entity.EntrySource.SEARCH)
+        assertThat(target.db.dietDao().profile()?.lossPace).isEqualTo(com.assismohanty.awaken.engine.body.LossPace.STEADY)
+        assertThat(tablesOf(target.porter.export())).isEqualTo(tablesOf(current))
+    }
+
+    @Test
+    fun anUnknownDietEnumValueIsRejectedAndNothingChanges() = runTest {
+        source.seedHunter()
+        seedDiet(source)
+        val good = source.porter.export()
+
+        val badEntry = mutateTable(good, "food_log") { rows -> rows.map { JsonObject(it + ("entry_source" to JsonPrimitive("TELEPATHY"))) } }
+        val badPace = mutateTable(good, "nutrition_profile") { rows -> rows.map { JsonObject(it + ("loss_pace" to JsonPrimitive("WARP"))) } }
+
+        assertRejectedAndUntouched(badEntry, ImportProblem.InvalidRow("food_log"))
+        assertRejectedAndUntouched(badPace, ImportProblem.InvalidRow("nutrition_profile"))
+    }
 }

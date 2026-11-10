@@ -17,6 +17,14 @@ import com.assismohanty.awaken.engine.model.QuestType
 import com.assismohanty.awaken.engine.model.Rank
 import com.assismohanty.awaken.engine.model.SourceType
 import com.assismohanty.awaken.engine.model.Stat
+import com.assismohanty.awaken.core.data.db.entity.EntrySource
+import com.assismohanty.awaken.core.data.db.entity.MeasureKind
+import com.assismohanty.awaken.core.data.db.entity.ScanKind
+import com.assismohanty.awaken.engine.body.ActivityLevel
+import com.assismohanty.awaken.engine.body.LossPace
+import com.assismohanty.awaken.engine.body.MacroPreset
+import com.assismohanty.awaken.engine.body.Sex
+import com.assismohanty.awaken.engine.body.WeightGoal
 import com.assismohanty.awaken.engine.model.Verification
 import com.assismohanty.awaken.engine.model.VerificationSource
 import kotlinx.serialization.json.JsonNull
@@ -74,6 +82,16 @@ object ExportValidator {
             "status" to names(LockdownStatus.entries.toTypedArray()),
             "broken_reason" to names(LockdownBreak.entries.toTypedArray()),
         ),
+        "food_log" to mapOf("entry_source" to names(EntrySource.entries.toTypedArray())),
+        "nutrition_profile" to mapOf(
+            "sex" to names(Sex.entries.toTypedArray()),
+            "activity" to names(ActivityLevel.entries.toTypedArray()),
+            "goal" to names(WeightGoal.entries.toTypedArray()),
+            "loss_pace" to names(LossPace.entries.toTypedArray()),
+            "macro_preset" to names(MacroPreset.entries.toTypedArray()),
+        ),
+        "body_measure_log" to mapOf("kind" to names(MeasureKind.entries.toTypedArray())),
+        "scan_feedback" to mapOf("kind" to names(ScanKind.entries.toTypedArray())),
         "trial" to mapOf(
             "target_rank" to names(Rank.entries.toTypedArray()),
             "status" to names(RankRules.TrialStatus.entries.toTypedArray()),

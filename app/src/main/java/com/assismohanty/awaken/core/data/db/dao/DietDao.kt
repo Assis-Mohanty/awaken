@@ -5,6 +5,7 @@ import androidx.room.Query
 import androidx.room.Upsert
 import com.assismohanty.awaken.core.data.db.entity.CustomFoodEntity
 import com.assismohanty.awaken.core.data.db.entity.FoodLogEntity
+import com.assismohanty.awaken.core.data.db.entity.Meal
 import com.assismohanty.awaken.core.data.db.entity.NutritionProfileEntity
 import java.time.LocalDate
 import kotlinx.coroutines.flow.Flow
@@ -51,4 +52,24 @@ interface DietDao {
 
     @Query("DELETE FROM custom_food WHERE id = :id")
     suspend fun deleteCustomFood(id: String)
+
+    // Diet v2 additions
+
+    @Query("SELECT * FROM food_log WHERE game_date = :gameDate ORDER BY logged_at")
+    suspend fun entriesOn(gameDate: LocalDate): List<FoodLogEntity>
+
+    @Query("SELECT * FROM food_log WHERE game_date = :gameDate AND meal = :meal ORDER BY logged_at")
+    suspend fun entriesOn(gameDate: LocalDate, meal: Meal): List<FoodLogEntity>
+
+    @Upsert
+    suspend fun upsertLogs(rows: List<FoodLogEntity>)
+
+    /** How many diary rows each food has had since [since]; the "logged lately" signal for search ranking. */
+    @Query("SELECT food_id AS foodId, COUNT(*) AS uses FROM food_log WHERE game_date >= :since GROUP BY food_id")
+    suspend fun foodUseSince(since: LocalDate): List<FoodUse>
+
+    @Query("SELECT * FROM custom_food WHERE barcode = :barcode LIMIT 1")
+    suspend fun customFoodByBarcode(barcode: String): CustomFoodEntity?
 }
+
+data class FoodUse(val foodId: String, val uses: Int)

@@ -791,4 +791,66 @@ class MigrationTest {
             db.close()
         }
     }
+
+
+    /**
+     * v31 -> v32 (Diet v2, plan 3.8) is additive: the diary, a custom food and the Diet profile come through unchanged, new
+     * columns read their old-behaviour defaults, the four built-in meals exist in order, the profile weight becomes the plan
+     * weight and the first weigh-in, and the new tables are empty and usable.
+     */
+    @Test
+    fun v31To32KeepsTheDiaryAndTheProfileAndAddsTheDietTables() = runTest {
+        val path = createFromSchema(31)
+        SQLiteDatabase.openDatabase(path, null, SQLiteDatabase.OPEN_READWRITE).use { db ->
+            db.execSQL("INSERT INTO custom_food (id, name, nutrients_json, portions_json, created_at) VALUES ('custom:1', 'My dal', '{\"kcal\":120}', '[[\"1 bowl\",200]]', 1700000000000)")
+            db.execSQL(
+                "INSERT INTO food_log (id, game_date, meal, food_id, name, grams, portion_label, nutrients_json, logged_at) " +
+                    "VALUES ('l1', '2026-11-01', 'BREAKFAST', 'usda:1', 'Idli', 80.0, '2 idli', '{\"kcal\":128}', 1000), " +
+                    "('l2', '2026-11-01', 'DINNER', 'custom:1', 'My dal', 300.0, NULL, '{\"kcal\":120}', 2000)",
+            )
+            db.execSQL(
+                "INSERT INTO nutrition_profile (id, sex, birth_year, height_cm, weight_kg, activity, goal, overrides_json, updated_at) " +
+                    "VALUES (1, 'MALE', 1999, 175.0, 80.0, 'MODERATE', 'LOSE', '{\"kcal\":2200}', 1700000000000)",
+            )
+        }
+        val db = Room.databaseBuilder(context, AwakenDatabase::class.java, path)
+            .addMigrations(*ALL_MIGRATIONS)
+            .allowMainThreadQueries()
+            .build()
+        try {
+            val diet = db.dietDao()
+            val day = java.time.LocalDate.of(2026, 11, 1)
+            val rows = diet.entriesOn(day)
+            assertThat(rows.map { it.id }).containsExactly("l1", "l2").inOrder()
+            assertThat(rows.map { it.meal }).containsExactly(com.assismohanty.awaken.core.data.db.entity.Meal.BREAKFAST, com.assismohanty.awaken.core.data.db.entity.Meal.DINNER).inOrder()
+            assertThat(rows.map { it.grams }).containsExactly(80.0, 300.0).inOrder()
+            assertThat(rows.first().portionLabel).isEqualTo("2 idli")
+            assertThat(rows.map { it.nutrientsJson }).containsExactly("{\"kcal\":128}", "{\"kcal\":120}").inOrder()
+            assertThat(rows.map { it.entrySource }.toSet()).containsExactly(com.assismohanty.awaken.core.data.db.entity.EntrySource.SEARCH)
+            assertThat(rows.map { it.note }.toSet()).containsExactly(null as String?)
+
+            val food = diet.customFoods().single()
+            assertThat(food.name).isEqualTo("My dal")
+            assertThat(food.updatedAt).isEqualTo(food.createdAt)
+            assertThat(food.barcode).isNull()
+
+            val profile = diet.profile()!!
+            assertThat(profile.weightKg).isEqualTo(80.0)
+            assertThat(profile.overridesJson).isEqualTo("{\"kcal\":2200}")
+            assertThat(profile.lossPace).isEqualTo(com.assismohanty.awaken.engine.body.LossPace.STEADY)
+            assertThat(profile.macroPreset).isEqualTo(com.assismohanty.awaken.engine.body.MacroPreset.BALANCED)
+            assertThat(profile.planWeightKg).isEqualTo(80.0)
+            assertThat(profile.waterTargetMl).isNull()
+
+            assertThat(db.foodLibraryDao().mealSlots().map { it.id }).containsExactly("BREAKFAST", "LUNCH", "SNACK", "DINNER").inOrder()
+            val weights = db.bodyLogDao().weightsSince(java.time.LocalDate.of(2000, 1, 1))
+            assertThat(weights.map { it.weightKg }).containsExactly(80.0)
+            assertThat(db.foodLibraryDao().favouriteIds()).isEmpty()
+            assertThat(db.foodLibraryDao().recipes()).isEmpty()
+            assertThat(db.bodyLogDao().activeFast()).isNull()
+            assertThat(db.openHelper.readableDatabase.version).isEqualTo(AwakenDatabase.SCHEMA_VERSION)
+        } finally {
+            db.close()
+        }
+    }
 }

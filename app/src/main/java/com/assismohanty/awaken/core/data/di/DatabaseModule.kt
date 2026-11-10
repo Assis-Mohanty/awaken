@@ -23,6 +23,8 @@ object DatabaseModule {
             .build()
 
     @Provides fun provideHunterDao(db: AwakenDatabase) = db.hunterDao()
+    @Provides fun provideFoodLibraryDao(db: AwakenDatabase) = db.foodLibraryDao()
+    @Provides fun provideBodyLogDao(db: AwakenDatabase) = db.bodyLogDao()
     @Provides fun provideQuestDao(db: AwakenDatabase) = db.questDao()
     @Provides fun provideCompletionDao(db: AwakenDatabase) = db.completionDao()
     @Provides fun provideHabitDao(db: AwakenDatabase) = db.habitDao()

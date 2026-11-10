@@ -128,6 +128,18 @@ interface CatalogDao {
     @Query("SELECT * FROM food WHERE id = :id")
     suspend fun food(id: String): CatalogFoodEntity?
 
+    @Query("SELECT * FROM food WHERE id IN (:ids)")
+    suspend fun foods(ids: List<String>): List<CatalogFoodEntity>
+
+    /** Matches with the fields ranking needs, broadest first; ranking and the final cut happen in Kotlin (`FoodSearch.rank`). */
+    @Query(
+        "SELECT f.id AS id, f.name AS name, f.popularity AS popularity, f.tier AS tier, " +
+            "(SELECT group_concat(a.alias, ' | ') FROM alias a WHERE a.food_id = f.id) AS aliases " +
+            "FROM food f WHERE f.rowid IN (SELECT rowid FROM food_fts WHERE food_fts MATCH :match) " +
+            "ORDER BY f.popularity DESC, length(f.name), f.name LIMIT :limit",
+    )
+    suspend fun candidates(match: String, limit: Int): List<CatalogCandidate>
+
     @Query("SELECT * FROM portion WHERE food_id IN (:ids) ORDER BY food_id, position")
     suspend fun portions(ids: List<String>): List<CatalogPortionEntity>
 
@@ -140,3 +152,6 @@ interface CatalogDao {
     @Query("SELECT value FROM meta WHERE key = :key")
     suspend fun meta(key: String): String?
 }
+
+/** A search hit before ranking. [aliases] are joined with " | ". */
+data class CatalogCandidate(val id: String, val name: String, val popularity: Int, val tier: String, val aliases: String?)

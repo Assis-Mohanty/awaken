@@ -27,6 +27,7 @@ data class ExportDocument(
             "custom_food", "food_log", "nutrition_profile", "weekly_review", "focus_subject",
             "pomodoro_session", "focus_goal", "exercise_pref", "gym_settings", "week_slot", "day_override", "bedtime_rule", "quit_counter", "relapse", "quit_day", "program", "program_mark",
             "pause_event", "lockdown_session",
+            "meal_slot", "favourite_food", "saved_meal", "saved_meal_item", "recipe", "recipe_ingredient", "water_log", "weight_log", "body_measure_log", "fasting_session", "meal_plan_entry", "diary_note", "scan_feedback",
         )
 
         /** Rebuilt after import (balances from the ledger, Health from Health Connect), so never written to the file. */

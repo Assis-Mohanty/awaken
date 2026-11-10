@@ -273,6 +273,10 @@ class TestGraph(
     val finishWorkout = com.assismohanty.awaken.core.domain.FinishWorkoutUseCase(gym, db.gymDao(), db.hunterDao(), db.ledgerDao(), ledger, gymContent, transactions, clock)
     val deleteWorkout = com.assismohanty.awaken.core.domain.DeleteWorkoutUseCase(gym, db.ledgerDao(), ledger, transactions, clock)
     val diet = DietTracker(db.dietDao(), db.hunterDao(), foodCatalog, clock)
+    val recipeBook = com.assismohanty.awaken.core.domain.RecipeBook(db.foodLibraryDao(), transactions, clock)
+    val foodLibrary = com.assismohanty.awaken.core.domain.FoodLibrary(db.foodLibraryDao(), db.dietDao(), foodCatalog, recipeBook, transactions, clock)
+    val foodSearch = com.assismohanty.awaken.core.domain.FoodSearchUseCase(foodCatalog, db.dietDao(), db.foodLibraryDao(), recipeBook, foodLibrary)
+    val bodyLog = com.assismohanty.awaken.core.domain.BodyLog(db.bodyLogDao(), db.dietDao(), db.hunterDao(), transactions, clock)
 
     // AI Paths. `oracle` records calls, so tests can assert "no network request was made".
     val oracle = FakePathOracle()

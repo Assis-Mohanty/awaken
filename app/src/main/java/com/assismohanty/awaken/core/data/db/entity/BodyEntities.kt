@@ -5,6 +5,8 @@ import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
 import com.assismohanty.awaken.engine.body.ActivityLevel
+import com.assismohanty.awaken.engine.body.LossPace
+import com.assismohanty.awaken.engine.body.MacroPreset
 import com.assismohanty.awaken.engine.body.Sex
 import com.assismohanty.awaken.engine.body.WeightGoal
 import java.time.Instant
@@ -134,13 +136,19 @@ data class WorkoutSetEntity(
 )
 
 /** A food the hunter added. [nutrientsJson] is `{"kcal":250,…}` per 100 g; [portionsJson] is `[["1 bowl",180],…]`. */
-@Entity(tableName = "custom_food")
+@Entity(tableName = "custom_food", indices = [Index("barcode")])
 data class CustomFoodEntity(
     @PrimaryKey val id: String,
     val name: String,
     @ColumnInfo(name = "nutrients_json") val nutrientsJson: String,
     @ColumnInfo(name = "portions_json") val portionsJson: String,
     @ColumnInfo(name = "created_at") val createdAt: Instant,
+    val brand: String? = null,
+    /** A normalised 13-digit barcode (engine `Barcode.canonical`), so a scan finds the hunter's own food first. */
+    val barcode: String? = null,
+    /** One serving in grams, when the label gives one. */
+    @ColumnInfo(name = "serving_grams") val servingGrams: Double? = null,
+    @ColumnInfo(name = "updated_at", defaultValue = "0") val updatedAt: Instant = Instant.EPOCH,
 )
 
 enum class Meal { BREAKFAST, LUNCH, DINNER, SNACK }
@@ -160,6 +168,10 @@ data class FoodLogEntity(
     @ColumnInfo(name = "portion_label") val portionLabel: String?,
     @ColumnInfo(name = "nutrients_json") val nutrientsJson: String,
     @ColumnInfo(name = "logged_at") val loggedAt: Instant,
+    val note: String? = null,
+    /** How many servings the hunter picked ("2" katori); null when they typed grams. [grams] is always the truth. */
+    @ColumnInfo(name = "portion_count") val portionCount: Double? = null,
+    @ColumnInfo(name = "entry_source", defaultValue = "SEARCH") val entrySource: EntrySource = EntrySource.SEARCH,
 )
 
 /** The single Diet setup row (id 1). [overridesJson] maps nutrient keys to the hunter's own targets. */
@@ -174,6 +186,17 @@ data class NutritionProfileEntity(
     val goal: WeightGoal,
     @ColumnInfo(name = "overrides_json") val overridesJson: String,
     @ColumnInfo(name = "updated_at") val updatedAt: Instant,
+    @ColumnInfo(name = "loss_pace", defaultValue = "STEADY") val lossPace: LossPace = LossPace.STEADY,
+    @ColumnInfo(name = "macro_preset", defaultValue = "BALANCED") val macroPreset: MacroPreset = MacroPreset.BALANCED,
+    @ColumnInfo(name = "protein_per_kg") val proteinPerKg: Double? = null,
+    /** A custom split in whole percent; all three or none. */
+    @ColumnInfo(name = "split_protein_pct") val splitProteinPct: Int? = null,
+    @ColumnInfo(name = "split_carbs_pct") val splitCarbsPct: Int? = null,
+    @ColumnInfo(name = "split_fat_pct") val splitFatPct: Int? = null,
+    /** The weight today's targets were planned from; it moves only when the hunter accepts new targets (GD 20.2). Null = [weightKg]. */
+    @ColumnInfo(name = "plan_weight_kg") val planWeightKg: Double? = null,
+    @ColumnInfo(name = "trend_dismissed_on") val trendDismissedOn: LocalDate? = null,
+    @ColumnInfo(name = "water_target_ml") val waterTargetMl: Int? = null,
 ) {
     companion object {
         const val SINGLE_ID = 1

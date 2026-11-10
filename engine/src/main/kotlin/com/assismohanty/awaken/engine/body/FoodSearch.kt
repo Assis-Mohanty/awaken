@@ -23,4 +23,29 @@ object FoodSearch {
         return singular.replace("ph", "f").replace("w", "v").replace("aa", "a").replace("ee", "i").replace("oo", "u")
             .replace(aspirated, "\$1").replace("ah", "a").replace(doubled, "\$1")
     }
+
+    /** Orders already-matched candidates for [query]. [limit] cuts the list after ordering. */
+    fun rank(candidates: List<SearchCandidate>, query: String, signals: SearchSignals = SearchSignals(), limit: Int = Int.MAX_VALUE): List<SearchCandidate> {
+        val q = key(query)
+        val keyed = candidates.map { c -> Keyed(c, key(c.name), c.aliases.map(::key)) }
+        return keyed.sortedWith(
+            compareByDescending<Keyed> { it.candidate.id in signals.favourites }
+                .thenByDescending { signals.recentUse[it.candidate.id] ?: 0 }
+                .thenByDescending { q.isNotEmpty() && (it.nameKey == q || q in it.aliasKeys) }
+                .thenByDescending { q.isNotEmpty() && it.nameKey.startsWith(q) }
+                .thenByDescending { it.candidate.popularity }
+                .thenBy { it.candidate.tierRank }
+                .thenBy { it.nameKey.length }
+                .thenBy { it.nameKey }
+                .thenBy { it.candidate.id },
+        ).take(limit).map { it.candidate }
+    }
+
+    private class Keyed(val candidate: SearchCandidate, val nameKey: String, val aliasKeys: List<String>)
 }
+
+/** One search hit before ordering. [tierRank]: 0 curated, 1 derived, 2 estimated. */
+data class SearchCandidate(val id: String, val name: String, val aliases: List<String> = emptyList(), val popularity: Int = 0, val tierRank: Int = 0)
+
+/** What the hunter does with foods: favourites, and how often each was logged lately. */
+data class SearchSignals(val favourites: Set<String> = emptySet(), val recentUse: Map<String, Int> = emptyMap())

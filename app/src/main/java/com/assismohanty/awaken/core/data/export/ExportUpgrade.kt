@@ -20,6 +20,8 @@ object ExportUpgrade {
     private val GYM_V29_TABLES = listOf("week_slot", "day_override")
     private const val PAUSE_TABLE = "pause_event"
     private const val LOCKDOWN_TABLE = "lockdown_session"
+    /** v31 -> v32 (Diet v2): tables that did not exist before. */
+    private val DIET_V32_TABLES = listOf("meal_slot", "favourite_food", "saved_meal", "saved_meal_item", "recipe", "recipe_ingredient", "water_log", "weight_log", "body_measure_log", "fasting_session", "meal_plan_entry", "diary_note", "scan_feedback")
     private const val BEDTIME_TABLE = "bedtime_rule"
     private val QUIT_V23_TABLES = listOf("quit_counter", "relapse", "quit_day")
     private val LONG_ARC_V24_TABLES = listOf("dungeon", "program", "program_mark")
@@ -202,6 +204,14 @@ object ExportUpgrade {
             current = current.copy(
                 schemaVersion = 31,
                 tables = current.tables + (LOCKDOWN_TABLE to current.tables[LOCKDOWN_TABLE].orEmpty()),
+            )
+        }
+        // v31 -> v32 (Diet v2): the new tables did not exist, and every new column is nullable or has a default, so an older
+        // file simply leaves them out. The built-in meal slots are created by the app the first time it needs them.
+        if (current.app == ExportDocument.APP_ID && current.schemaVersion == 31) {
+            current = current.copy(
+                schemaVersion = 32,
+                tables = current.tables + DIET_V32_TABLES.filter { it !in current.tables }.associateWith { emptyList() },
             )
         }
         return current

@@ -49,7 +49,7 @@ data class DiaryDay(val gameDate: LocalDate, val meals: Map<Meal, List<DiaryEntr
 
 private fun FoodLogEntity.toEntry() = DiaryEntry(this, FoodCatalog.nutrientsFromJson(nutrientsJson).forGrams(grams))
 
-private fun CustomFoodEntity.toFood() =
+internal fun CustomFoodEntity.toFood() =
     Food(id, name, FoodSource.CUSTOM, FoodCatalog.nutrientsFromJson(nutrientsJson), FoodCatalog.portionsFromJson(portionsJson))
 
 /**
@@ -175,6 +175,7 @@ class DietTracker @Inject constructor(
             nutrientsJson = FoodCatalog.nutrientsToJson(per100),
             portionsJson = FoodCatalog.portionsToJson(portions.filter { it.grams > 0.0 && it.label.isNotBlank() }),
             createdAt = clock.now(),
+            updatedAt = clock.now(),
         )
         dietDao.upsertCustomFood(entity)
         return entity.toFood()

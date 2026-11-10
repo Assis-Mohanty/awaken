@@ -58,6 +58,21 @@ import com.assismohanty.awaken.core.data.db.entity.BedtimeRuleEntity
 import com.assismohanty.awaken.core.data.db.entity.QuitCounterEntity
 import com.assismohanty.awaken.core.data.db.entity.QuitDayEntity
 import com.assismohanty.awaken.core.data.db.entity.RelapseEntity
+import com.assismohanty.awaken.core.data.db.entity.MealSlotEntity
+import com.assismohanty.awaken.core.data.db.entity.FavouriteFoodEntity
+import com.assismohanty.awaken.core.data.db.entity.SavedMealEntity
+import com.assismohanty.awaken.core.data.db.entity.SavedMealItemEntity
+import com.assismohanty.awaken.core.data.db.entity.RecipeEntity
+import com.assismohanty.awaken.core.data.db.entity.RecipeIngredientEntity
+import com.assismohanty.awaken.core.data.db.entity.WaterLogEntity
+import com.assismohanty.awaken.core.data.db.entity.WeightLogEntity
+import com.assismohanty.awaken.core.data.db.entity.BodyMeasureLogEntity
+import com.assismohanty.awaken.core.data.db.entity.FastingSessionEntity
+import com.assismohanty.awaken.core.data.db.entity.MealPlanEntryEntity
+import com.assismohanty.awaken.core.data.db.entity.DiaryNoteEntity
+import com.assismohanty.awaken.core.data.db.entity.ScanFeedbackEntity
+import com.assismohanty.awaken.core.data.db.dao.BodyLogDao
+import com.assismohanty.awaken.core.data.db.dao.FoodLibraryDao
 import com.assismohanty.awaken.core.data.db.dao.QuitDao
 import com.assismohanty.awaken.core.data.db.dao.ProgramDao
 import com.assismohanty.awaken.core.data.db.entity.ProgramEntity
@@ -112,6 +127,19 @@ import com.assismohanty.awaken.core.data.db.entity.DayOverrideEntity
         FocusGoalEntity::class,
         PauseEventEntity::class,
         LockdownSessionEntity::class,
+        MealSlotEntity::class,
+        FavouriteFoodEntity::class,
+        SavedMealEntity::class,
+        SavedMealItemEntity::class,
+        RecipeEntity::class,
+        RecipeIngredientEntity::class,
+        WaterLogEntity::class,
+        WeightLogEntity::class,
+        BodyMeasureLogEntity::class,
+        FastingSessionEntity::class,
+        MealPlanEntryEntity::class,
+        DiaryNoteEntity::class,
+        ScanFeedbackEntity::class,
     ],
 )
 @TypeConverters(Converters::class)
@@ -130,6 +158,8 @@ abstract class AwakenDatabase : RoomDatabase() {
     abstract fun quitDao(): QuitDao
     abstract fun programDao(): ProgramDao
     abstract fun dietDao(): DietDao
+    abstract fun foodLibraryDao(): FoodLibraryDao
+    abstract fun bodyLogDao(): BodyLogDao
     abstract fun insightDao(): InsightDao
     abstract fun weeklyReviewDao(): WeeklyReviewDao
     abstract fun focusDao(): FocusDao
@@ -141,6 +171,6 @@ abstract class AwakenDatabase : RoomDatabase() {
         const val NAME = "awaken.db"
 
         /** Also the export format version: an export is only importable into the schema it was written from. */
-        const val SCHEMA_VERSION = 31
+        const val SCHEMA_VERSION = 32
     }
 }
