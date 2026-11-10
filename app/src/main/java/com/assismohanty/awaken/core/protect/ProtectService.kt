@@ -107,6 +107,7 @@ class ProtectService : Service() {
     private var lastPrefs: UiPrefs = UiPrefs()
     @Volatile private var shields = ShieldStatus(0, false)
     private var openedAllowedAt: Instant = Instant.EPOCH
+    private var mutedByUs = false
 
     /** The session screen drawn over everything: the state it shows, and the look it is drawn in. */
     private data class CoverShown(val ui: LockdownSessionUiState, val darkTheme: Boolean, val reduceMotion: Boolean)
@@ -379,6 +380,14 @@ class ProtectService : Service() {
     private fun holdBehind(on: Boolean) {
         reelCounter.setHeld(on)
         val audio = getSystemService(AudioManager::class.java) ?: return
+        // An app that ignores audio focus (a reel) keeps playing under the screen, so media is muted too; only what we muted is unmuted.
+        if (on && !mutedByUs && !audio.isStreamMute(AudioManager.STREAM_MUSIC)) {
+            audio.adjustStreamVolume(AudioManager.STREAM_MUSIC, AudioManager.ADJUST_MUTE, 0)
+            mutedByUs = true
+        } else if (!on && mutedByUs) {
+            audio.adjustStreamVolume(AudioManager.STREAM_MUSIC, AudioManager.ADJUST_UNMUTE, 0)
+            mutedByUs = false
+        }
         if (on) {
             if (audioFocus != null) return
             val request = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT)
