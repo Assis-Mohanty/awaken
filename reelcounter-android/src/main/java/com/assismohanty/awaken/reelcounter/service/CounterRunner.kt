@@ -163,7 +163,9 @@ class CounterRunner @Inject constructor(
         val out = tr.onSignal(raw)
         events += out.events
         reduceAndApply(events)
-        out.recheckAt?.let(::scheduleRecheck)
+        // A new reel settles after settleMillis; look again right then, so the count does not wait for the next probe.
+        val settleAt = if (out.events.any { it is CounterEvent.ItemChanged || it is CounterEvent.ScreenEntered }) raw.at.plusMillis(SETTLE_LOOK_MILLIS) else null
+        (out.recheckAt ?: settleAt)?.let(::scheduleRecheck)
         updateProbeLoop(tr)
     }
 
@@ -209,7 +211,8 @@ class CounterRunner @Inject constructor(
     }
 
     companion object {
-        const val PROBE_MILLIS = 500L
+        const val PROBE_MILLIS = 250L
+        const val SETTLE_LOOK_MILLIS = 380L
         const val HEARTBEAT_MILLIS = 5 * 60 * 1_000L
     }
 }
