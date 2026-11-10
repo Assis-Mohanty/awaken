@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="coming_soon_paths_title">Paths</string>
+    <string name="coming_soon_paths_line">Paths are coming soon. You will be able to say a goal and get a ladder of quests built for you. Everything else works as it is.</string>
+    <string name="coming_soon_reels_title">Reel counter</string>
+    <string name="coming_soon_reels_line">The reel counter is coming soon. It will count the short videos you watch and how long you spend on them.</string>
+    <string name="coming_soon_back">Go back</string>
+</resources>

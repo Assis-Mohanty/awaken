@@ -2,6 +2,9 @@ package com.assismohanty.awaken.navigation
 
 import com.assismohanty.awaken.core.designsystem.lexicon.lexString
 import com.assismohanty.awaken.core.domain.AiFeature
+import com.assismohanty.awaken.core.domain.StrictFeature
+import com.assismohanty.awaken.feature.comingsoon.ComingSoonEntry
+import com.assismohanty.awaken.feature.comingsoon.ComingSoonFeature
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -97,6 +100,12 @@ fun AwakenNavHost(
             modifier = modifier,
         )
     }
+}
+
+/** The Reel counter screens, or the Coming soon page while the accessibility features are switched off. */
+@Composable
+private fun ReelGated(navController: NavHostController, content: @Composable () -> Unit) {
+    if (StrictFeature.enabled) content() else ComingSoonEntry(ComingSoonFeature.REEL_COUNTER, onBack = { navController.popBackStack() })
 }
 
 @Composable
@@ -217,12 +226,20 @@ private fun MainScaffold(
                         onOpenQuest = { navController.navigate(QuestDetailRoute(it)) },
                     )
                 }
-                // AI Paths screens exist only in builds that have AI Paths (debug); the release build compiles them out of the graph.
-                if (AiFeature.enabled) {
-                    composable<PathsRoute> {
+                // A switched-off feature (AiFeature, StrictFeature) opens the Coming soon page instead of its screens.
+                composable<PathsRoute> {
+                    if (AiFeature.enabled) {
                         PathsEntry(onOpenPath = { navController.navigate(PathDetailRoute(it)) }, onBack = { navController.popBackStack() })
+                    } else {
+                        ComingSoonEntry(ComingSoonFeature.PATHS, onBack = { navController.popBackStack() })
                     }
-                    composable<PathDetailRoute> { PathDetailEntry(onBack = { navController.popBackStack() }) }
+                }
+                composable<PathDetailRoute> {
+                    if (AiFeature.enabled) {
+                        PathDetailEntry(onBack = { navController.popBackStack() })
+                    } else {
+                        ComingSoonEntry(ComingSoonFeature.PATHS, onBack = { navController.popBackStack() })
+                    }
                 }
                 composable<GatesRoute> {
                     GatesEntry(
@@ -256,7 +273,7 @@ private fun MainScaffold(
                         onOpenQuit = { navController.navigate(QuitRoute) { launchSingleTop = true } },
                         onOpenPrograms = { navController.navigate(ProgramsRoute) { launchSingleTop = true } },
                         onOpenHealth = { navController.navigate(HealthRoute) },
-                        onOpenPaths = if (AiFeature.enabled) {{ navController.navigate(PathsRoute) { launchSingleTop = true } }} else null,
+                        onOpenPaths = { navController.navigate(PathsRoute) { launchSingleTop = true } },
                         onOpenReview = { navController.navigate(ReviewRoute) { launchSingleTop = true } },
                     )
                 }
@@ -289,12 +306,12 @@ private fun MainScaffold(
                 composable<HealthRoute> { HealthEntry(onBack = { navController.popBackStack() }) }
                 composable<FocusLockSetupRoute> { FocusLockSetupEntry(onBack = { navController.popBackStack() }) }
                 composable<AllowedAppsRoute> { AllowedAppsEntry(onBack = { navController.popBackStack() }) }
-                composable<ReelCounterSetupRoute> { ReelCounterSetupEntry(onBack = { navController.popBackStack() }) }
-                composable<ReelLimitsRoute> { ReelLimitsEntry(onBack = { navController.popBackStack() }) }
-                composable<ReelStatsRoute> { ReelStatsEntry(onBack = { navController.popBackStack() }) }
+                composable<ReelCounterSetupRoute> { ReelGated(navController) { ReelCounterSetupEntry(onBack = { navController.popBackStack() }) } }
+                composable<ReelLimitsRoute> { ReelGated(navController) { ReelLimitsEntry(onBack = { navController.popBackStack() }) } }
+                composable<ReelStatsRoute> { ReelGated(navController) { ReelStatsEntry(onBack = { navController.popBackStack() }) } }
                 composable<NightsRoute> { NightsEntry(onBack = { navController.popBackStack() }) }
                 composable<FocusAccessRoute> { FocusAccessEntry(onBack = { navController.popBackStack() }) }
-                composable<ReelInspectorRoute> { ReelInspectorEntry(onBack = { navController.popBackStack() }) }
+                composable<ReelInspectorRoute> { ReelGated(navController) { ReelInspectorEntry(onBack = { navController.popBackStack() }) } }
                 composable<FocusReportRoute> { FocusReportEntry(onBack = { navController.popBackStack() }) }
                 composable<ScreenTimeRoute> {
                     ScreenTimeEntry(

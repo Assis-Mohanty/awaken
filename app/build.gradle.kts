@@ -86,10 +86,13 @@ android {
             buildConfigField("String", "ORACLE_DEBUG_KEY", localProperty("oracle.debugKey").asBuildConfigString())
             buildConfigField("long", "PLAY_CLOUD_PROJECT_NUMBER", (localProperty("oracle.cloudProjectNumber").ifEmpty { "0" }) + "L")
             buildConfigField("boolean", "AI_PATHS_ENABLED", "true")
+            buildConfigField("boolean", "STRICT_PLUS_ENABLED", "true")
         }
         release {
             // AI Paths is compiled out of release: no Oracle URL, key or project number is read into this build.
             buildConfigField("boolean", "AI_PATHS_ENABLED", "false")
+            // Reel Counter and Strict+ need the accessibility service, which src/release/AndroidManifest.xml removes.
+            buildConfigField("boolean", "STRICT_PLUS_ENABLED", "false")
             optimization {
                 enable = true
                 packageScope = setOf("androidx.**", "kotlin.**", "kotlinx.**")

@@ -4,4 +4,11 @@
 
     <!-- Release has no network use: AI Paths is compiled out. This also strips INTERNET if a library ever adds it. -->
     <uses-permission android:name="android.permission.INTERNET" tools:node="remove" />
+
+    <!-- The Play build ships no accessibility service (docs/protect/PLAN.md 4.0). To ship Strict+, delete this and flip STRICT_PLUS_ENABLED. -->
+    <application>
+        <service
+            android:name="com.assismohanty.awaken.reelcounter.service.ReelAccessibilityService"
+            tools:node="remove" />
+    </application>
 </manifest>
