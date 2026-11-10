@@ -3,6 +3,7 @@ package com.assismohanty.awaken.core.lock
 import android.content.Context
 import android.graphics.PixelFormat
 import android.os.Build
+import android.view.Gravity
 import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.View
@@ -114,6 +115,13 @@ class BlockOverlay<M : Any>(
         PixelFormat.OPAQUE,
     ).apply {
         if (fullScreen && Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
+        if (fullScreen && Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            // Some phones stop "match parent" short of the gesture bar and show the wallpaper there: ask for the whole display.
+            val bounds = windowManager.maximumWindowMetrics.bounds
+            width = bounds.width()
+            height = bounds.height()
+            gravity = Gravity.TOP or Gravity.START
+        }
     }
 
     /** Takes Back (and eats every touch) so nothing reaches the app underneath. */
