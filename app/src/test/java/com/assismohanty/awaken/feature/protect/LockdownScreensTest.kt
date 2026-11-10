@@ -14,7 +14,6 @@ import com.assismohanty.awaken.core.designsystem.theme.AwakenTheme
 import com.assismohanty.awaken.core.domain.ShieldStatus
 import com.assismohanty.awaken.engine.ExitCheck
 import com.google.common.truth.Truth.assertThat
-import java.time.Duration
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -40,8 +39,7 @@ class LockdownScreensTest {
     fun theSessionShowsTheClockTheEndTimeAndTheShields() {
         composeRule.setContent { AwakenTheme(reduceMotion = true) { LockdownSessionScreen(session(), {}, {}, {}) } }
         composeRule.onNodeWithContentDescription("18:42").assertExists()
-        composeRule.onNodeWithContentDescription("42").assertExists()
-        composeRule.onNodeWithContentDescription("11:06 AM").assertExists()
+        composeRule.onNodeWithText("11:06 AM").assertExists()
         composeRule.onNodeWithContentDescription("2 Lockdown shields").assertExists()
     }
 
@@ -155,16 +153,6 @@ class LockdownScreensTest {
         }
         composeRule.onNodeWithText("You can't leave early").performScrollTo().assertExists()
         composeRule.onNodeWithText("You have 3 Lockdown shields. Once a day, one lets you leave early.").performScrollTo().assertExists()
-    }
-
-    @Test
-    fun theBlockScreenOffersOnlyTheWayBackToTheSession() {
-        var back = 0
-        composeRule.setContent { AwakenTheme(reduceMotion = true) { LockdownBlockContent("Instagram", null, Duration.ofMinutes(18).plusSeconds(42), { back++ }) } }
-        composeRule.onNodeWithText("Lockdown · 18:42 left").assertExists()
-        composeRule.onNodeWithText("Instagram isn't available right now.").assertExists()
-        composeRule.onNodeWithText("Back to session").performClick()
-        assertThat(back).isEqualTo(1)
     }
 
     @Test

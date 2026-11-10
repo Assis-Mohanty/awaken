@@ -211,7 +211,6 @@
     <string name="lockdown_not_allowed_message">%1$s can\'t be allowed during a Lockdown.</string>
     <string name="lockdown_too_late_message">That is too long for what is left of today. Choose a shorter time.</string>
     <string name="lockdown_busy_message">Another focus session is already running.</string>
-    <string name="lockdown_seconds">Seconds</string>
     <string name="lockdown_ends">Ends</string>
     <plurals name="lockdown_shield_count_cd">
         <item quantity="one">%1$d Lockdown shield</item>
@@ -222,9 +221,6 @@
     <string name="lockdown_exit_uses">Leaving uses 1 of your %1$d shields. Once a day.</string>
     <string name="lockdown_exit_none">No shield. You can\'t leave until the time is up.</string>
     <string name="lockdown_exit_used">You already left a Lockdown today. You can\'t leave until the time is up.</string>
-    <string name="lockdown_block_left">Lockdown · %1$s left</string>
-    <string name="lockdown_block_unavailable">%1$s isn\'t available right now.</string>
-    <string name="lockdown_block_back">Back to session</string>
     <string name="lockdown_done_title">Lockdown complete</string>
     <string name="lockdown_done_body">You stayed with it for %1$d minutes. It counts as a focus session.</string>
     <string name="lockdown_broken_title">Lockdown ended early</string>

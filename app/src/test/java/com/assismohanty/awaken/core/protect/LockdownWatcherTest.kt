@@ -68,6 +68,14 @@ class LockdownWatcherTest {
     }
 
     @Test
+    fun withNoAppSeenYetTheSessionScreenIsUp() = runBlocking<Unit> {
+        graph.usage.foregroundRead = ForegroundRead.NoChange
+        watcher.poll(screen)
+        assertThat(screen.covers).hasSize(1)
+        assertThat(screen.covers.single().packageName).isNull()
+    }
+
+    @Test
     fun theHomeScreenAndSettingsAreCoveredToo() = runBlocking<Unit> {
         open(LAUNCHER)
         watcher.poll(screen)

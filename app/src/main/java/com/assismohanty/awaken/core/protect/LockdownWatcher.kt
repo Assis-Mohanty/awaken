@@ -14,7 +14,7 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 /** The block screen's content: which app is covered and how long is left (GD §19.2). */
-data class LockdownCover(val packageName: String, val remaining: Duration)
+data class LockdownCover(val packageName: String?, val remaining: Duration)
 
 /** The Lockdown block screen as the watcher sees it. The service draws it; a test records the calls. */
 interface LockdownScreen {
@@ -66,7 +66,8 @@ class LockdownWatcher @Inject constructor(
         }
         val pkg = top
         val decision = LockdownRules.decide(pkg, pkg != null && env.isCoverable(pkg), tick.session.allowedPackages, env.okFromPhone(), env.homePackages())
-        if (decision == BlockDecision.BLOCK && pkg != null) {
+        // Fail closed: with no app seen yet the session screen is up, and it comes down only for an app that may be open.
+        if (pkg == null || decision == BlockDecision.BLOCK) {
             covering = true
             screen.cover(LockdownCover(pkg, tick.remaining))
         } else {

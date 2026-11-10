@@ -49,6 +49,7 @@ class BlockOverlay<M : Any>(
     private val context: Context,
     private val windowType: Int,
     private val onBackKey: () -> Unit,
+    private val fullScreen: Boolean = false,
     private val content: @Composable (M) -> Unit,
 ) {
     private val windowManager: WindowManager = context.getSystemService(WindowManager::class.java)
@@ -108,10 +109,12 @@ class BlockOverlay<M : Any>(
         WindowManager.LayoutParams.MATCH_PARENT,
         WindowManager.LayoutParams.MATCH_PARENT,
         windowType,
-        // Focusable on purpose: only a focused window receives Back. Laid out inside the system bars so navigation, the status bar and biometric prompts stay reachable.
-        0,
+        // Focusable on purpose: only a focused window receives Back. Normally laid out inside the system bars so navigation, the status bar and biometric prompts stay reachable; a Lockdown draws edge to edge.
+        if (fullScreen) WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS else 0,
         PixelFormat.OPAQUE,
-    )
+    ).apply {
+        if (fullScreen && Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
+    }
 
     /** Takes Back (and eats every touch) so nothing reaches the app underneath. */
     private class BackInterceptingLayout(context: Context, private val onBack: () -> Unit) : FrameLayout(context) {

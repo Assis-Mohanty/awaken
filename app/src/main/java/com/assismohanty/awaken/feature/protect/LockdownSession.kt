@@ -236,12 +236,13 @@ fun LockdownSessionScreen(
             val title: @Composable () -> Unit = {
                 Text(lexString(R.string.lockdown_title), style = type.title, color = colors.textSecondary)
             }
+            // The time left fills the middle of the screen, with no card around it: nothing here is left empty.
             val clock: @Composable (Modifier) -> Unit = { m ->
-                AwakenCard(reveal = false, modifier = m.fillMaxWidth()) {
-                    FitText(lockdownClockText(state.remainingMs), type.metricXL, Modifier.weight(1f).fillMaxWidth())
+                Box(modifier = m.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                    FitText(lockdownClockText(state.remainingMs), type.metricXL, Modifier.fillMaxWidth())
                 }
             }
-            val tiles: @Composable (Modifier) -> Unit = { m -> Tiles(state, m) }
+            val facts: @Composable () -> Unit = { Facts(state) }
             val controls: @Composable () -> Unit = { Controls(state, onExit, onOpenApp, onCall) }
             if (sideways) {
                 Row(modifier = Modifier.fillMaxSize(), horizontalArrangement = Arrangement.spacedBy(Spacing.md)) {
@@ -249,16 +250,16 @@ fun LockdownSessionScreen(
                         title()
                         clock(Modifier.weight(1f))
                     }
-                    Column(modifier = Modifier.weight(1f).fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-                        tiles(Modifier.weight(1f))
+                    Column(modifier = Modifier.weight(1f).fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(Spacing.sm, Alignment.CenterVertically)) {
+                        facts()
                         controls()
                     }
                 }
             } else {
-                Column(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+                Column(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(Spacing.md)) {
                     Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) { title() }
-                    clock(Modifier.weight(CLOCK_WEIGHT))
-                    tiles(Modifier.weight(1f))
+                    clock(Modifier.weight(1f))
+                    facts()
                     controls()
                 }
             }
@@ -266,37 +267,25 @@ fun LockdownSessionScreen(
     }
 }
 
-/** The seconds, when it ends and the shields: a tall tile beside a column of two. */
+/** When it ends and how many shields are held: two small cards side by side. */
 @Composable
-private fun Tiles(state: LockdownSessionUiState, modifier: Modifier) {
+private fun Facts(state: LockdownSessionUiState) {
     val colors = AwakenTheme.colors
     val type = AwakenTheme.type
     val shieldDescription = lexPlural(R.plurals.lockdown_shield_count_cd, state.shields, state.shields)
-    Row(modifier = modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-        AwakenCard(reveal = false, modifier = Modifier.weight(1f).fillMaxHeight()) {
-            FitText("%02d".format((state.remainingMs / MS_PER_SECOND) % SECONDS_PER_MINUTE), type.metricXL, Modifier.weight(1f).fillMaxWidth())
-            Text(
-                lexString(R.string.lockdown_seconds).uppercase(),
-                style = type.caption,
-                color = colors.textSecondary,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth(),
-            )
+    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+        AwakenCard(reveal = false, modifier = Modifier.weight(1f)) {
+            Text(lexString(R.string.lockdown_ends).uppercase(), style = type.caption, color = colors.textSecondary)
+            Text(state.endsAtText, style = type.title, color = colors.textPrimary)
         }
-        Column(modifier = Modifier.weight(1f).fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-            AwakenCard(reveal = false, modifier = Modifier.weight(1f).fillMaxWidth()) {
-                Text(lexString(R.string.lockdown_ends).uppercase(), style = type.caption, color = colors.textSecondary)
-                FitText(state.endsAtText, type.metricXL, Modifier.weight(1f).fillMaxWidth())
-            }
-            AwakenCard(reveal = false, modifier = Modifier.weight(1f).fillMaxWidth()) {
-                Row(
-                    modifier = Modifier.weight(1f).fillMaxWidth().semantics(mergeDescendants = true) { contentDescription = shieldDescription },
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(Spacing.sm, Alignment.CenterHorizontally),
-                ) {
-                    Icon(AwakenGlyphs.Shield, contentDescription = null, tint = colors.accent, modifier = Modifier.size(AwakenTheme.dimens.icon))
-                    Text(state.shields.toString(), style = type.title, color = colors.textPrimary)
-                }
+        AwakenCard(reveal = false, modifier = Modifier.weight(1f)) {
+            Row(
+                modifier = Modifier.fillMaxWidth().semantics(mergeDescendants = true) { contentDescription = shieldDescription },
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(Spacing.sm, Alignment.CenterHorizontally),
+            ) {
+                Icon(AwakenGlyphs.Shield, contentDescription = null, tint = colors.accent, modifier = Modifier.size(AwakenTheme.dimens.icon))
+                Text(state.shields.toString(), style = type.title, color = colors.textPrimary)
             }
         }
     }
@@ -337,8 +326,6 @@ private fun Controls(state: LockdownSessionUiState, onExit: () -> Unit, onOpenAp
         )
     }
 }
-
-private const val CLOCK_WEIGHT = 1.5f
 
 /** How a Lockdown ended, until the hunter taps Done. */
 @Composable

@@ -20,14 +20,20 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.core.app.ServiceCompat
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.drawable.toBitmap
-import com.assismohanty.awaken.MainActivity
 import com.assismohanty.awaken.R
 import com.assismohanty.awaken.core.data.db.entity.LockdownSessionEntity
 import com.assismohanty.awaken.core.data.repo.UiPrefs
 import com.assismohanty.awaken.core.domain.LockdownController
 import com.assismohanty.awaken.core.domain.LockdownTick
-import com.assismohanty.awaken.feature.protect.LockdownBlockContent
+import com.assismohanty.awaken.core.domain.ShieldStatus
+import com.assismohanty.awaken.engine.LockdownRules
+import com.assismohanty.awaken.feature.protect.LockdownSessionScreen
+import com.assismohanty.awaken.feature.protect.LockdownSessionUiState
+import com.assismohanty.awaken.feature.protect.LockdownSlotUi
 import java.time.Duration
+import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
+import kotlinx.coroutines.flow.combine
 import com.assismohanty.awaken.core.data.clock.Clock
 import com.assismohanty.awaken.core.data.repo.LexiconSource
 import com.assismohanty.awaken.core.data.repo.PauseStore
@@ -84,6 +90,8 @@ class ProtectService : Service() {
 
     @Inject lateinit var lockdownController: LockdownController
 
+    @Inject lateinit var appIcons: AppIcons
+
     private var audioFocus: AudioFocusRequest? = null
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
@@ -96,14 +104,12 @@ class ProtectService : Service() {
     @Volatile private var lockdownSession: LockdownSessionEntity? = null
     private var lockdownOverlay: BlockOverlay<CoverShown>? = null
     private var postedFor: String? = null
-    private var lastSessionOpen: Instant? = null
     private var lastPrefs: UiPrefs = UiPrefs()
-    private var cachedPackage: String? = null
-    private var cachedLabel: String = ""
-    private var cachedIcon: ImageBitmap? = null
+    @Volatile private var shields = ShieldStatus(0, false)
+    private var openedAllowedAt: Instant = Instant.MIN
 
-    /** The block screen's content: what is covered, how long is left, and the look it is drawn in. */
-    private data class CoverShown(val label: String, val icon: ImageBitmap?, val remaining: Duration, val darkTheme: Boolean, val reduceMotion: Boolean)
+    /** The session screen drawn over everything: the state it shows, and the look it is drawn in. */
+    private data class CoverShown(val ui: LockdownSessionUiState, val darkTheme: Boolean, val reduceMotion: Boolean)
 
     /** The pause window's content: the screen state plus the look it is drawn in. */
     private data class Shown(val ui: PauseOverlayUiState, val darkTheme: Boolean, val reduceMotion: Boolean)
@@ -134,20 +140,10 @@ class ProtectService : Service() {
 
     private val lockdownScreen = object : LockdownScreen {
         override fun cover(cover: LockdownCover) {
+            // Just after the hunter opened an allowed app from the screen, the launcher is still the app in front: leave it be.
+            if (Duration.between(openedAllowedAt, clock.now()).toMillis() < OPEN_GRACE_MS) return
             holdBehind(true)
-            if (cachedPackage != cover.packageName) {
-                cachedPackage = cover.packageName
-                cachedLabel = labelOf(cover.packageName)
-                cachedIcon = runCatching { packageManager.getApplicationIcon(cover.packageName).toBitmap().asImageBitmap() }.getOrNull()
-            }
-            lockdownOverlay?.show(CoverShown(cachedLabel, cachedIcon, cover.remaining, isDark(lastPrefs.themeMode), lastPrefs.reduceMotion))
-            // Strict: whatever was opened, the session screen comes straight back (at most once a second).
-            val now = clock.now()
-            val last = lastSessionOpen
-            if (last == null || Duration.between(last, now).toMillis() >= REOPEN_MS) {
-                lastSessionOpen = now
-                openSession()
-            }
+            lockdownOverlay?.show(CoverShown(sessionUi(cover.remaining), isDark(lastPrefs.themeMode), lastPrefs.reduceMotion))
         }
 
         override fun uncover() {
@@ -166,12 +162,16 @@ class ProtectService : Service() {
                 PauseOverlayContent(model.ui, onNotNow = ::notNow, onContinue = ::continueIn, onIntention = ::pick)
             }
         }
-        lockdownOverlay = BlockOverlay<CoverShown>(this, WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY, onBackKey = ::openSession) { model ->
+        // The session screen is drawn edge to edge over whatever is in front, and Back does nothing.
+        lockdownOverlay = BlockOverlay<CoverShown>(this, WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY, onBackKey = {}, fullScreen = true) { model ->
             AwakenTheme(darkTheme = model.darkTheme, reduceMotion = model.reduceMotion) {
-                LockdownBlockContent(model.label, model.icon, model.remaining, onBackToSession = ::openSession)
+                LockdownSessionScreen(model.ui, onExit = ::leaveLockdown, onOpenApp = ::openAllowed, onCall = ::openDialer)
             }
         }
         scope.launch { uiPrefs.prefs.collect { lastPrefs = it } }
+        scope.launch {
+            combine(lockdownController.observeShields(), lockdownController.observeRunning()) { _, _ -> lockdownController.shieldStatus() }.collect { shields = it }
+        }
         scope.launch {
             lockdownController.observeRunning().collect { session ->
                 lockdownSession = session
@@ -264,8 +264,12 @@ class ProtectService : Service() {
                         continue
                     }
                 }
-                if (!inCall() && lockdownEnded(lockdownWatcher.poll(lockdownScreen))) lockdownUp = false
-                delay(FAST_MS)
+                if (inCall()) {
+                    lockdownScreen.uncover()
+                } else if (lockdownEnded(lockdownWatcher.poll(lockdownScreen))) {
+                    lockdownUp = false
+                }
+                delay(LOCKDOWN_MS)
                 continue
             }
             lockdownUp = false
@@ -300,10 +304,35 @@ class ProtectService : Service() {
         return true
     }
 
-    /** [Back to session]: AWAKEN's own session screen, which is never covered. */
-    private fun openSession() {
-        val open = Intent(this, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
-        runCatching { startActivity(open) }.onFailure { Timber.w(it, "Could not open the session from the block screen") }
+    /** What the session screen shows now; the same numbers as the in-app one ([LockdownHostViewModel]). */
+    private fun sessionUi(remaining: Duration): LockdownSessionUiState {
+        val session = lockdownSession
+        val chosen = session?.allowedPackages.orEmpty().sortedBy { labelOf(it).lowercase() }
+        return LockdownSessionUiState(
+            remainingMs = remaining.toMillis(),
+            endsAtText = ENDS_AT.format(clock.now().plus(remaining).atZone(clock.zone())),
+            slots = (0 until LockdownRules.MAX_APPS).map { i -> chosen.getOrNull(i)?.let { LockdownSlotUi(it, labelOf(it), appIcons.icon(it)) } ?: LockdownSlotUi(null, null, null) },
+            shields = shields.shields,
+            exit = shields.check,
+        )
+    }
+
+    /** An allowed app from a slot: the screen steps aside, the watcher brings it back when the hunter leaves that app. */
+    private fun openAllowed(packageName: String) {
+        val launch = packageManager.getLaunchIntentForPackage(packageName) ?: return
+        openedAllowedAt = clock.now()
+        lockdownScreen.uncover()
+        runCatching { startActivity(launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }.onFailure { Timber.w(it, "Could not open an allowed app") }
+    }
+
+    private fun openDialer() {
+        openedAllowedAt = clock.now()
+        lockdownScreen.uncover()
+        runCatching { startActivity(Intent(Intent.ACTION_DIAL).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }.onFailure { Timber.w(it, "Could not open the dialer") }
+    }
+
+    private fun leaveLockdown() {
+        scope.launch { lockdownController.leaveWithShield() }
     }
 
     private fun foreground(session: LockdownSessionEntity?) {
@@ -426,7 +455,11 @@ class ProtectService : Service() {
         /** After a failed look, wait this long before the next. */
         const val RETRY_MS = 1_000L
 
-        /** The session screen is brought back at most this often, so two quick opens do not fight. */
-        const val REOPEN_MS = 1_000L
+        /** After an allowed app is opened from the session screen, the screen waits this long before it can come back over it. */
+        const val OPEN_GRACE_MS = 2_500L
+
+        /** Lockdown looks at the usage log this often: a gap here is time an app can show uncovered. */
+        const val LOCKDOWN_MS = 250L
+        val ENDS_AT: DateTimeFormatter = DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT)
     }
 }
