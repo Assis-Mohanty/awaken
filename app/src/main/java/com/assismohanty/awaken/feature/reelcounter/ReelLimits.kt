@@ -74,13 +74,24 @@ class ReelLimitsViewModel @Inject constructor(private val settings: SettingsStor
 }
 
 @Composable
-fun ReelLimitsRoute(onBack: () -> Unit, modifier: Modifier = Modifier, viewModel: ReelLimitsViewModel = hiltViewModel()) {
+fun ReelLimitsRoute(
+    onBack: () -> Unit,
+    onOpenBlocking: () -> Unit,
+    modifier: Modifier = Modifier,
+    viewModel: ReelLimitsViewModel = hiltViewModel(),
+) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
-    ReelLimitsScreen(state = state, onEvent = viewModel::onEvent, onBack = onBack, modifier = modifier)
+    ReelLimitsScreen(state = state, onEvent = viewModel::onEvent, onBack = onBack, onOpenBlocking = onOpenBlocking, modifier = modifier)
 }
 
 @Composable
-fun ReelLimitsScreen(state: ReelLimitsUiState, onEvent: (ReelLimitsEvent) -> Unit, onBack: () -> Unit, modifier: Modifier = Modifier) {
+fun ReelLimitsScreen(
+    state: ReelLimitsUiState,
+    onEvent: (ReelLimitsEvent) -> Unit,
+    onBack: () -> Unit,
+    modifier: Modifier = Modifier,
+    onOpenBlocking: (() -> Unit)? = null,
+) {
     val colors = AwakenTheme.colors
     val type = AwakenTheme.type
     LargeTitleScaffold(
@@ -128,6 +139,7 @@ fun ReelLimitsScreen(state: ReelLimitsUiState, onEvent: (ReelLimitsEvent) -> Uni
             }
         }
         Text(lexString(R.string.reel_limits_note), style = type.caption, color = colors.textSecondary)
+        if (onOpenBlocking != null) SecondaryButton(lexString(R.string.reel_block_open), onOpenBlocking, Modifier.fillMaxWidth())
     }
 }
 

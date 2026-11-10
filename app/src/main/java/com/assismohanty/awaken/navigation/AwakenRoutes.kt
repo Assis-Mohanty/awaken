@@ -77,6 +77,10 @@ data object AllowedAppsRoute
 @Serializable
 data object ReelCounterSetupRoute
 
+/** Block short videos: consent, when, and which apps. */
+@Serializable
+data object ReelBlockingRoute
+
 /** Daily reel limits per app. */
 @Serializable
 data object ReelLimitsRoute
