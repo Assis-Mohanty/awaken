@@ -147,11 +147,12 @@ object NutritionMath {
 
     fun tdee(profile: BodyProfile): Double = bmr(profile) * profile.activity.factor
 
+    /** The lowest daily calorie target the app sets (Harvard Health 2024: 1,200 for women, 1,500 for men). */
+    fun floorKcal(sex: Sex): Int = if (sex == Sex.MALE) FLOOR_MALE else FLOOR_FEMALE
+
     /** TDEE plus the goal's delta, never below the sex's floor. */
-    fun calorieTarget(profile: BodyProfile): Int {
-        val floor = if (profile.sex == Sex.MALE) FLOOR_MALE else FLOOR_FEMALE
-        return (tdee(profile).roundToInt() + profile.goal.kcalDelta).coerceAtLeast(floor)
-    }
+    fun calorieTarget(profile: BodyProfile): Int =
+        (tdee(profile).roundToInt() + profile.goal.kcalDelta).coerceAtLeast(floorKcal(profile.sex))
 
     /**
      * Every default target, then [overrides] on top. Macros follow the effective calories, so overriding kcal alone

@@ -614,7 +614,7 @@ the Diary, Add food, Serving picker and Calculator. No mock is in this plan.
   FoodSearch.kt         key(), rank()
   Barcode.kt            check digits, UPC-E expansion, canonical form
   WeightTrend.kt        trend weight, recalculation prompt rule
-  WaterMath.kt, FastingRules.kt, DietReward.kt, DietReport.kt
+  WaterMath.kt, FastingRules.kt, DietReport.kt
 :app
   core/data/catalog/    CatalogDatabase (foods.db), PackagedDatabase (packaged.db), FoodCatalog becomes a thin wrapper
   core/data/db/         entities, DietDao split into DiaryDao, FoodLibraryDao, BodyLogDao; MIGRATION_31_32
@@ -640,7 +640,6 @@ FoodSearch.key(text): String ; FoodSearch.rank(candidates, query, signals): List
 Barcode.canonical(raw: String): String?                                    // null when the check digit fails
 WeightTrend.trend(entries, today): Double? ; WeightTrend.shouldPrompt(trend, planWeight, lastDismissed, today): Boolean
 NutrientCoverage.of(entries): Map<Nutrient, Double>                        // §7.4
-DietReward.decide(dayEntries, alreadyPaid, selfXpToday, targetsVisible): Int   // §9
 FastingRules.presets, FastingRules.state(session, now)
 DietReport.week(days, plan?): WeekReport
 ```
@@ -671,7 +670,6 @@ DietReport.week(days, plan?): WeekReport
 | Migration | 31 → 32 with real v31 data, totals identical |
 | Photo path | fake classifier → pick → portion → engine numbers; "not sure" branch; second item; nothing written to disk |
 | Barcode | check digits, UPC-E expansion, UPC-A to EAN-13, bad digit ignored; found, not found, custom food by barcode |
-| Reward | once per day, cap, hidden targets pay nothing, second trigger inserts nothing |
 | UI | Robolectric Compose tests per screen; new goldens named in each batch's commit |
 | Boundaries | existing `FeatureBoundaryTest`, `ScreenLayeringTest`, `LexiconResourcesTest` (plus the banned words of §7.3) |
 
@@ -685,7 +683,7 @@ F27 marked replaced · `ARCHITECTURE.md` §2 schema and §3.13 · `DESIGN_SYSTEM
 
 ---
 
-## 9. XP: "log your day" (PROPOSED, reverses "Diet mints no XP")
+## 9. XP: none (Q6 answered "no XP on food", 2026-11-10; the rows below are the dropped proposal)
 
 | Id | Rule |
 |---|---|
@@ -734,7 +732,7 @@ with only the named new goldens, commit, short summary, STOP. Unclear plan → `
 | **6** | Recipes, planner | |
 | **7** | Barcode: ZXing, CameraX, label form, pack lookup. Only after Q3 | 50-pack hit rate reported, not gated |
 | **8** | Photo path behind the flag, fake classifier, LiteRT loader, debug eval screen, `SCANNER_TEST.md`. No model | |
-| **9** | Reward wiring (if Q6), copy and guard audit, Play docs, `PHONE_TEST.md`, review pass | |
+| **9** | Copy and guard audit, Play docs, `PHONE_TEST.md`, review pass (no reward wiring: Q6 = no XP) | |
 
 ---
 
@@ -806,7 +804,7 @@ Barcode: 50-pack check (reported, not a gate).
 | **Q3** | Barcode lookup | (a) offline pack · (b) opt-in online, adds `INTERNET` to the Play build · (c) both | **(a)**. Nothing about `INTERNET` is planned until you say otherwise |
 | **Q4** | The ODbL needs the pack and its build script offered publicly | (a) a small public GitHub repo holding only `build-packaged.mjs` and the pack · (b) a public download link you host elsewhere · (c) no pack, manual label entry only | **(a)** |
 | **Q5** | IFCT and INDB | (a) send both emails, build without them · (b) do not ask, build without them · (c) wait for answers before Batch 1 | **(a)** |
-| **Q6** | "Log your day" reward, which reverses "Diet mints no XP" | (a) 20 XP VIT as §9 · (b) 10 XP · (c) no XP, Diet stays a pure tracker | **(a)**; (c) is the safest and costs nothing to choose |
+| **Q6 (answered: none)** | "Log your day" reward, which reverses "Diet mints no XP" | (a) 20 XP VIT as §9 · (b) 10 XP · (c) no XP, Diet stays a pure tracker | **(a)**; (c) is the safest and costs nothing to choose |
 | **Q7** | Fasting timer. The repo deliberately has no fasting rule in Programs or AI Paths | (a) v1, capped at 16 h, hidden by the guard · (b) later · (c) skip | **(a)**, with (b) if you would rather see the rest first |
 | **Q8** | Who checks the 300 Indian recipe rows | (a) the build drafts all 300, the script validates, you spot-check a random 30 and the piece weights · (b) you review all 300 · (c) start with 100 | **(a)** |
 | **Q9** | Photo model. No cleared dataset exists | (a) Batch 8 builds the path with the flag off; you collect photos over time; training is a later, separate task on a machine with Python · (b) drop the photo scanner · (c) train on a non-commercial dataset for your own phone only, never shipped | **(a)** |
@@ -837,5 +835,7 @@ Barcode: 50-pack check (reported, not a gate).
 - **213 Indian entries, not 300** (91 recipes, 122 overlays on USDA/CoFID rows). CoFID's South Asian coverage meant fewer recipes were needed, but categories are still thin (see `report.md`). The rest is a follow-up, not a blocker for Batch 2.
 - **`packaged.db` (barcode pack) is not built here.** It is only needed in Batch 7, and the ODbL offer (Q4) needs the public repo first.
 - **Atwater check counts fibre at 2 kcal/g** (ENGINE_DECISIONS 182) and **CoFID carbs include fibre** (181).
-- **Q6 (daily XP) stays unbuilt** until confirmed; GD 20.5 is marked unconfirmed.
+- **Q6 answered: no XP on food** (2026-11-10). GD 20.5 says so; the reward design (section 9) and `DietReward` are dropped.
 - Not yet verified (plan 4.2): Mifflin-St Jeor citation, activity multipliers, protein and macro ranges, 7,700 kcal/kg, water figures. Batch 2 reads them first-hand before the numbers go into code.
+
+**Batch 2 (2026-11-10), changes from sections 4.3 and 12 after reading the sources first-hand.** Verified: Mifflin-St Jeor (Europe PMC abstract), ISSN protein 1.4 to 2.0 g/kg, Harvard floor and 500 to 1,000 kcal range, CDC 1 to 2 lb a week. Not verifiable today (blocked or not on the page): AMDR ranges, 7,700 kcal/kg, a safe gain rate, EFSA water, the activity multipliers' origin. So dropped: the kg-a-week label (DG4), the +500 gain pace, the lower-carb preset, bounds on custom splits; High protein is 2.0 g/kg, not 2.2; protein per kg is 0.8 to 2.0 (0.8 unverified). Water, fasting, nutrient coverage and the report stay for Batch 5. New Daily Values for zinc, B12 and folate are added with the Nutrients screen in Batch 5 (adding them now would change the diary goldens).
