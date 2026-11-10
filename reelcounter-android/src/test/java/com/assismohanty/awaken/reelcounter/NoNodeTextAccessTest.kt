@@ -21,6 +21,7 @@ class NoNodeTextAccessTest {
     fun serviceInspectorAndOverlayCodeNeverReadsText() {
         val files = sources("src/main/java", "src/debug/java")
             .filter { f -> listOf("/service/", "/inspector/", "/overlay/").any { f.invariantSeparatorsPath.contains(it) } }
+            .filter { it.name != STUDY_TEXT_FILE }
         assertThat(files).isNotEmpty()
         val offenders = files.flatMap { file ->
             file.readLines().mapIndexedNotNull { i, line ->
@@ -28,5 +29,17 @@ class NoNodeTextAccessTest {
             }
         }
         assertThat(offenders).isEmpty()
+    }
+
+    /** Study mode's single, named exception: one read of one node's text, in one file. */
+    @Test
+    fun theOnlyTextReadIsTheStudyChannelName() {
+        val file = sources("src/main/java").single { it.name == STUDY_TEXT_FILE }
+        val reads = file.readLines().count { !it.trimStart().startsWith("import ") && !it.trimStart().startsWith("*") && forbidden.containsMatchIn(it) }
+        assertThat(reads).isEqualTo(1)
+    }
+
+    private companion object {
+        const val STUDY_TEXT_FILE = "StudyChannelText.kt"
     }
 }

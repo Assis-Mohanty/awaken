@@ -34,6 +34,7 @@ object DetectorConfigParser {
         config.apps.forEachIndexed { a, app ->
             if (!seen.add(app.app)) return "apps[$a]: duplicate app ${app.app}"
             if (app.screens.isEmpty()) return "apps[$a].screens: must not be empty"
+            checkIds(app.channelNameIds, "apps[$a].channelNameIds")?.let { return it }
             app.screens.forEachIndexed { s, rule ->
                 val at = "apps[$a].screens[$s]"
                 if (rule.containerIds.isEmpty()) return "$at.containerIds: must not be empty"

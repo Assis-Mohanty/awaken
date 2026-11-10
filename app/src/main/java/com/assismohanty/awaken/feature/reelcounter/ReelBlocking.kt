@@ -16,6 +16,7 @@ import com.assismohanty.awaken.core.designsystem.components.AwakenCard
 import com.assismohanty.awaken.core.designsystem.components.ChoiceChip
 import com.assismohanty.awaken.core.designsystem.components.LargeTitleScaffold
 import com.assismohanty.awaken.core.designsystem.components.PrimaryButton
+import com.assismohanty.awaken.core.designsystem.components.SecondaryButton
 import com.assismohanty.awaken.core.designsystem.lexicon.lexString
 import com.assismohanty.awaken.core.designsystem.preview.PhonePreviews
 import com.assismohanty.awaken.core.designsystem.theme.AwakenTheme
@@ -68,13 +69,24 @@ class ReelBlockingViewModel @Inject constructor(private val settings: SettingsSt
 }
 
 @Composable
-fun ReelBlockingRoute(onBack: () -> Unit, modifier: Modifier = Modifier, viewModel: ReelBlockingViewModel = hiltViewModel()) {
+fun ReelBlockingRoute(
+    onBack: () -> Unit,
+    onOpenStudy: () -> Unit,
+    modifier: Modifier = Modifier,
+    viewModel: ReelBlockingViewModel = hiltViewModel(),
+) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
-    ReelBlockingScreen(state = state, onEvent = viewModel::onEvent, onBack = onBack, modifier = modifier)
+    ReelBlockingScreen(state = state, onEvent = viewModel::onEvent, onBack = onBack, onOpenStudy = onOpenStudy, modifier = modifier)
 }
 
 @Composable
-fun ReelBlockingScreen(state: ReelBlockingUiState, onEvent: (ReelBlockingEvent) -> Unit, onBack: () -> Unit, modifier: Modifier = Modifier) {
+fun ReelBlockingScreen(
+    state: ReelBlockingUiState,
+    onEvent: (ReelBlockingEvent) -> Unit,
+    onBack: () -> Unit,
+    modifier: Modifier = Modifier,
+    onOpenStudy: (() -> Unit)? = null,
+) {
     val colors = AwakenTheme.colors
     val type = AwakenTheme.type
     LargeTitleScaffold(
@@ -120,6 +132,7 @@ fun ReelBlockingScreen(state: ReelBlockingUiState, onEvent: (ReelBlockingEvent) 
             }
         }
         Text(lexString(R.string.reel_block_note), style = type.caption, color = colors.textSecondary)
+        if (onOpenStudy != null) SecondaryButton(lexString(R.string.reel_study_open), onOpenStudy, Modifier.fillMaxWidth())
     }
 }
 

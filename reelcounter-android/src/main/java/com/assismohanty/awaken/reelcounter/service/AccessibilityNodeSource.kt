@@ -10,7 +10,8 @@ import com.assismohanty.awaken.reelcounter.core.model.NodeSource
 
 /**
  * Maps live accessibility nodes to text-free [NodeSnapshot]s.
- * Only ids, class names, bounds and flags are read: never node text or descriptions.
+ * Only ids, class names, bounds and flags are read. The one exception is [AccessibilityNodeSource.textOf], called by Study
+ * mode for a single verified channel-name id; that text is compared and dropped.
  */
 internal object NodeSnapshotMapping {
 
@@ -75,6 +76,8 @@ class AccessibilityNodeSource(
             runCatching { root.findAccessibilityNodeInfosByViewId(viewId) }.getOrDefault(emptyList())
                 .map(NodeSnapshotMapping::mapShallow)
         }
+
+    override fun textOf(viewId: String): String? = channelNameText(roots, viewId)
 
     override fun tree(maxDepth: Int, maxNodes: Int): NodeSnapshot? {
         if (roots.isEmpty()) return null

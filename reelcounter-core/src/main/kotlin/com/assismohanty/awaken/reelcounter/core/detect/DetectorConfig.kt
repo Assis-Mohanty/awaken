@@ -14,6 +14,10 @@ data class AppDetector(
     val structuralFallback: Boolean? = null,
     val screens: List<ScreenRule>,
     val note: String = "",
+    /** View ids of the one node that holds the channel name on a watch page (Study mode). Empty = Study mode cannot run here. */
+    val channelNameIds: List<String> = emptyList(),
+    /** The channel-name ids were checked on a real phone. Study mode acts only when this is true. */
+    val channelVerified: Boolean = false,
 ) {
     fun usesFallback(): Boolean = structuralFallback ?: !verified
 }

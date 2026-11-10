@@ -16,7 +16,9 @@
     {
       "app": "YOUTUBE",
       "verified": false,
-      "note": "UNVERIFIED placeholder ids",
+      "note": "UNVERIFIED placeholder ids; channelNameIds stays empty until the inspector finds a stable id for the watch-page channel name",
+      "channelNameIds": [],
+      "channelVerified": false,
       "screens": [
         {
           "containerIds": ["com.google.android.youtube:id/reel_recycler"],

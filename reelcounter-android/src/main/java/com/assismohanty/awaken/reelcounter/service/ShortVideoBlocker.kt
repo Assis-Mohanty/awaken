@@ -28,6 +28,12 @@ class ShortVideoBlocker @Inject constructor(
 
     private var state = BlockState()
 
+    val hasPerformer: Boolean get() = performer != null
+
+    fun perform(action: BlockAction) {
+        performer?.invoke(action)
+    }
+
     suspend fun onLook(screenApp: ShortVideoApp?, now: Instant) {
         val act = performer ?: return
         val mode = settings.blockMode.first()

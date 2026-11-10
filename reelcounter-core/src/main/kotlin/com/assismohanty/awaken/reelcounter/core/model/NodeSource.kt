@@ -9,6 +9,12 @@ interface NodeSource {
 
     /** Whole tree in pre-order, capped by depth and node count. Null if there is no window. */
     fun tree(maxDepth: Int = 40, maxNodes: Int = 400): NodeSnapshot?
+
+    /**
+     * The text of the first node with this view id: the one place any screen text is read (Study mode, channel name only).
+     * The caller compares it and drops it; it is never stored, logged or sent.
+     */
+    fun textOf(viewId: String): String? = null
 }
 
 /** In-memory [NodeSource] used by tests and the inspector. */

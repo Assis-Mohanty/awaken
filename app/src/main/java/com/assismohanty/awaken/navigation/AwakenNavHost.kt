@@ -60,6 +60,7 @@ import com.assismohanty.awaken.feature.protect.PauseStatsRoute as PauseStatsEntr
 import com.assismohanty.awaken.feature.reelcounter.ReelCounterSetupRoute as ReelCounterSetupEntry
 import com.assismohanty.awaken.feature.reelcounter.ReelBlockingRoute as ReelBlockingEntry
 import com.assismohanty.awaken.feature.reelcounter.ReelInspectorEntry
+import com.assismohanty.awaken.feature.reelcounter.ReelStudyRoute as ReelStudyEntry
 import com.assismohanty.awaken.feature.reelcounter.ReelLimitsRoute as ReelLimitsEntry
 import com.assismohanty.awaken.feature.reelcounter.ReelStatsRoute as ReelStatsEntry
 import com.assismohanty.awaken.feature.screentime.ScreenTimeRoute as ScreenTimeEntry
@@ -316,7 +317,15 @@ private fun MainScaffold(
                         )
                     }
                 }
-                composable<ReelBlockingRoute> { ReelGated(navController) { ReelBlockingEntry(onBack = { navController.popBackStack() }) } }
+                composable<ReelBlockingRoute> {
+                    ReelGated(navController) {
+                        ReelBlockingEntry(
+                            onBack = { navController.popBackStack() },
+                            onOpenStudy = { navController.navigate(ReelStudyRoute) { launchSingleTop = true } },
+                        )
+                    }
+                }
+                composable<ReelStudyRoute> { ReelGated(navController) { ReelStudyEntry(onBack = { navController.popBackStack() }) } }
                 composable<ReelStatsRoute> { ReelGated(navController) { ReelStatsEntry(onBack = { navController.popBackStack() }) } }
                 composable<NightsRoute> { NightsEntry(onBack = { navController.popBackStack() }) }
                 composable<FocusAccessRoute> { FocusAccessEntry(onBack = { navController.popBackStack() }) }

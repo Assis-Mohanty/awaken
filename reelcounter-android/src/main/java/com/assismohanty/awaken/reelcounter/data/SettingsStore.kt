@@ -67,6 +67,23 @@ class SettingsStore @Inject constructor(@ReelPrefs private val store: DataStore<
         ShortVideoApp.entries.filter { it.name in names }.toSet()
     }.distinctUntilChanged()
 
+    /** The hunter read the Study mode disclosure (it names the one thing read: the channel name on a watch page). */
+    val studyConsent: Flow<Boolean> = data.map { it[STUDY_CONSENT] ?: false }.distinctUntilChanged()
+
+    /** Study mode is on. The channel list cannot be edited while it is. */
+    val studyOn: Flow<Boolean> = data.map { it[STUDY_ON] ?: false }.distinctUntilChanged()
+
+    val studyChannels: Flow<Set<String>> = data.map { it[STUDY_CHANNELS].orEmpty() }.distinctUntilChanged()
+
+    suspend fun setStudyConsent(on: Boolean) = store.edit { it[STUDY_CONSENT] = on }
+
+    suspend fun setStudyOn(on: Boolean) = store.edit { it[STUDY_ON] = on }
+
+    /** Ignored while Study mode is on. */
+    suspend fun setStudyChannels(channels: Set<String>) = store.edit { prefs ->
+        if (prefs[STUDY_ON] != true) prefs[STUDY_CHANNELS] = channels
+    }
+
     suspend fun setBlockConsent(on: Boolean) = store.edit { it[BLOCK_CONSENT] = on }
 
     suspend fun setBlockMode(mode: BlockMode) = store.edit { it[BLOCK_MODE] = mode.name }
@@ -101,7 +118,10 @@ class SettingsStore @Inject constructor(@ReelPrefs private val store: DataStore<
         private val ENABLED = booleanPreferencesKey("reel_enabled")
         private val LAST_HEARTBEAT = longPreferencesKey("last_heartbeat_ms")
         private val INSPECTOR_ENABLED = booleanPreferencesKey("inspector_enabled")
-        private val BLOCK_CONSENT = booleanPreferencesKey("block_consent")
+        private val STUDY_CONSENT = booleanPreferencesKey("study_consent")
+        private val STUDY_ON = booleanPreferencesKey("study_on")
+        private val STUDY_CHANNELS = stringSetPreferencesKey("study_channels")
+        private val BLOCK_CONSENT =booleanPreferencesKey("block_consent")
         private val BLOCK_MODE = stringPreferencesKey("block_mode")
         private val BLOCK_APPS = stringSetPreferencesKey("block_apps")
 

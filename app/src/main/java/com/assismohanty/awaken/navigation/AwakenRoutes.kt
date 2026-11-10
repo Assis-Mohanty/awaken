@@ -81,6 +81,10 @@ data object ReelCounterSetupRoute
 @Serializable
 data object ReelBlockingRoute
 
+/** YouTube Study mode: the channel list. */
+@Serializable
+data object ReelStudyRoute
+
 /** Daily reel limits per app. */
 @Serializable
 data object ReelLimitsRoute

@@ -48,6 +48,7 @@ class CounterRunner @Inject constructor(
     private val clock: ReelClock,
     private val dayStart: ReelDayStart,
     private val blocker: ShortVideoBlocker,
+    private val studyGuard: StudyGuard,
     @CounterDispatcher private val dispatcher: CoroutineDispatcher,
 ) {
     private val machine = CounterMachine()
@@ -165,6 +166,8 @@ class CounterRunner @Inject constructor(
         events += out.events
         reduceAndApply(events)
         blocker.onLook(tr.activeApp, raw.at)
+        // Study mode looks only on probes: they carry the whole screen, and they run while YouTube is in front.
+        if (raw is RawSignal.Probe) studyGuard.onLook(tr.foregroundApp, raw.nodes, raw.at)
         // A new reel settles after settleMillis; look again right then, so the count does not wait for the next probe.
         val settleAt = if (out.events.any { it is CounterEvent.ItemChanged || it is CounterEvent.ScreenEntered }) raw.at.plusMillis(SETTLE_LOOK_MILLIS) else null
         (out.recheckAt ?: settleAt)?.let(::scheduleRecheck)
