@@ -4,7 +4,6 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.net.Uri
 import android.os.Build
 import android.provider.Settings
 import android.provider.Telephony
@@ -41,7 +40,7 @@ class AlwaysAllowed @Inject constructor(
     /** The keyboard as it is right now; the hunter can switch it at any time. */
     fun keyboard(): String? = inputMethod()
 
-    /** Every UPI handler on this phone, its default tap-to-pay app and the built-in payment list. Never watched, never covered. */
+    /** The phone's default tap-to-pay app and the built-in payment list. Never watched, never covered. */
     @Synchronized
     fun paymentApps(): Set<String> {
         refreshIfStale()
@@ -82,25 +81,11 @@ class AlwaysAllowed @Inject constructor(
                 defaultDialer()?.let(::add)
                 defaultSms()?.let(::add)
             }
-            cachedPayment = buildSet {
-                addAll(upiHandlers())
-                defaultTapToPay()?.let(::add)
-            }
+            // Not every upi://pay handler: WhatsApp and Amazon handle it too, and they must be covered.
+            cachedPayment = buildSet { defaultTapToPay()?.let(::add) }
             cachedAtMs = now
         }
     }
-
-    /** Every app that can open a `upi://pay` link: GPay, PhonePe, Paytm, BHIM and the banks' own apps. */
-    private fun upiHandlers(): Set<String> = runCatching {
-        val intent = Intent(Intent.ACTION_VIEW, Uri.parse("upi://pay"))
-        val infos = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            context.packageManager.queryIntentActivities(intent, PackageManager.ResolveInfoFlags.of(0))
-        } else {
-            @Suppress("DEPRECATION")
-            context.packageManager.queryIntentActivities(intent, 0)
-        }
-        infos.mapNotNull { it.activityInfo?.packageName }.toSet()
-    }.onFailure { Timber.w(it, "Could not list UPI apps") }.getOrDefault(emptySet())
 
     /** The app the phone uses for tap-to-pay; null without NFC. */
     private fun defaultTapToPay(): String? = runCatching {
