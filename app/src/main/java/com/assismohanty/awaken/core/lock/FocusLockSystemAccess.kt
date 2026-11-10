@@ -48,6 +48,12 @@ object FocusLockSettingsLauncher {
 
     fun openAppDetails(context: Context) = start(context, listOf(appDetails(context)))
 
+    /** "Appear on top" for AWAKEN (Pause draws its screen over other apps). */
+    fun openOverlayPermission(context: Context) = start(
+        context,
+        listOf(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.fromParts("package", context.packageName, null)), appDetails(context)),
+    )
+
     fun openUsageAccess(context: Context) = start(context, listOf(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS), appDetails(context)))
 
     private fun appDetails(context: Context) =

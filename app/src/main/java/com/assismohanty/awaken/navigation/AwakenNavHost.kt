@@ -50,6 +50,9 @@ import com.assismohanty.awaken.feature.focus.FocusReportRoute as FocusReportEntr
 import com.assismohanty.awaken.feature.focuslock.AllowedAppsRoute as AllowedAppsEntry
 import com.assismohanty.awaken.feature.focuslock.FocusLockSetupRoute as FocusLockSetupEntry
 import com.assismohanty.awaken.feature.focuslock.FocusAccessRoute as FocusAccessEntry
+import com.assismohanty.awaken.feature.protect.PauseAppsRoute as PauseAppsEntry
+import com.assismohanty.awaken.feature.protect.PauseSettingsRoute as PauseSettingsEntry
+import com.assismohanty.awaken.feature.protect.PauseStatsRoute as PauseStatsEntry
 import com.assismohanty.awaken.feature.reelcounter.ReelCounterSetupRoute as ReelCounterSetupEntry
 import com.assismohanty.awaken.feature.reelcounter.ReelInspectorEntry
 import com.assismohanty.awaken.feature.reelcounter.ReelLimitsRoute as ReelLimitsEntry
@@ -268,8 +271,18 @@ private fun MainScaffold(
                         onOpenReelStats = { navController.navigate(ReelStatsRoute) { launchSingleTop = true } },
                         onOpenFocusAccess = { navController.navigate(FocusAccessRoute) { launchSingleTop = true } },
                         onOpenReelInspector = { navController.navigate(ReelInspectorRoute) { launchSingleTop = true } },
+                        onOpenPause = { navController.navigate(PauseRoute) { launchSingleTop = true } },
                     )
                 }
+                composable<PauseRoute> {
+                    PauseSettingsEntry(
+                        onBack = { navController.popBackStack() },
+                        onOpenApps = { navController.navigate(PauseAppsRoute) { launchSingleTop = true } },
+                        onOpenStats = { navController.navigate(PauseStatsRoute) { launchSingleTop = true } },
+                    )
+                }
+                composable<PauseAppsRoute> { PauseAppsEntry(onBack = { navController.popBackStack() }) }
+                composable<PauseStatsRoute> { PauseStatsEntry(onBack = { navController.popBackStack() }) }
                 composable<HealthRoute> { HealthEntry(onBack = { navController.popBackStack() }) }
                 composable<FocusLockSetupRoute> { FocusLockSetupEntry(onBack = { navController.popBackStack() }) }
                 composable<AllowedAppsRoute> { AllowedAppsEntry(onBack = { navController.popBackStack() }) }

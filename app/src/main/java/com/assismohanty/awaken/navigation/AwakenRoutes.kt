@@ -113,3 +113,15 @@ data object ProgramsRoute
 /** Debug builds only: the onboarding flow on fresh answers, saving nothing, for someone who already has a profile. */
 @Serializable
 data object OnboardingPreviewRoute
+
+/** Pause: the switch, apps, length, hours and what Android must allow (GD 19.1), opened from Settings. */
+@Serializable
+data object PauseRoute
+
+/** The apps Pause covers. */
+@Serializable
+data object PauseAppsRoute
+
+/** Pause counts for the last 7 days. */
+@Serializable
+data object PauseStatsRoute

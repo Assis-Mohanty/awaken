@@ -2,6 +2,7 @@ package com.assismohanty.awaken.debug
 
 import com.assismohanty.awaken.core.data.usage.AndroidUsageGateway
 import com.assismohanty.awaken.core.data.usage.EventsRead
+import com.assismohanty.awaken.core.data.usage.ForegroundRead
 import com.assismohanty.awaken.core.data.usage.InstalledApp
 import com.assismohanty.awaken.core.data.usage.OpenedRead
 import com.assismohanty.awaken.core.data.usage.UsageGateway
@@ -42,6 +43,8 @@ class DebugUsageGateway @Inject constructor(
         if (simulated <= 0 || read !is OpenedRead.Opened) return read
         return OpenedRead.Opened(read.packages + SIM_PACKAGE)
     }
+
+    override suspend fun foreground(since: Instant, until: Instant): ForegroundRead = real.foreground(since, until)
 
     override suspend fun events(start: Instant, end: Instant): EventsRead = real.events(start, end)
 

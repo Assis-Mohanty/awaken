@@ -8,6 +8,7 @@ import androidx.work.WorkManager
 import com.assismohanty.awaken.core.data.clock.Clock
 import com.assismohanty.awaken.core.data.db.dao.HunterDao
 import com.assismohanty.awaken.core.data.di.ApplicationScope
+import com.assismohanty.awaken.core.protect.ProtectController
 import com.assismohanty.awaken.core.work.DayRolloverWorker
 import com.assismohanty.awaken.core.work.GateCoordinator
 import com.assismohanty.awaken.core.work.HealthSyncCoordinator
@@ -36,6 +37,8 @@ class AwakenApp : Application(), Configuration.Provider {
 
     @Inject lateinit var widgetUpdater: WidgetUpdater
 
+    @Inject lateinit var protectController: ProtectController
+
     @Inject @ApplicationScope
     lateinit var appScope: CoroutineScope
 
@@ -56,6 +59,9 @@ class AwakenApp : Application(), Configuration.Provider {
         // Screen Discipline checks: periodic while it is on, plus one on every foreground (ARCH §3.11).
         screenTimeCoordinator.start()
         ProcessLifecycleOwner.get().lifecycle.addObserver(screenTimeCoordinator)
+        // Pause (GD 19.1): starts or stops its service as the settings and permissions change, and on every foreground.
+        protectController.start()
+        ProcessLifecycleOwner.get().lifecycle.addObserver(protectController)
         // Keeps the home-screen widget in step with the game (ARCH §3.6).
         widgetUpdater.start()
         appScope.launch {

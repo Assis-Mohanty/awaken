@@ -13,6 +13,8 @@ import com.assismohanty.awaken.engine.GateRules
 import com.assismohanty.awaken.engine.GateTiming
 import com.assismohanty.awaken.engine.RankRules
 import com.assismohanty.awaken.engine.model.Difficulty
+import com.assismohanty.awaken.engine.PauseOutcome
+import com.assismohanty.awaken.engine.PauseRules
 import com.assismohanty.awaken.engine.PomodoroPhase
 import com.assismohanty.awaken.engine.PomodoroStatus
 import com.assismohanty.awaken.engine.model.GateRank
@@ -532,4 +534,19 @@ data class ProgramMarkEntity(
     @ColumnInfo(name = "program_id") val programId: String,
     @ColumnInfo(name = "game_date") val gameDate: LocalDate,
     val choice: ProgramBreakChoice,
+)
+
+/**
+ * One finished pause (GD §19.1, PZ9): the app, the game-day, how it ended and what the hunter said it was for. Display
+ * data only (it feeds the Pause stats and the cooldown), never a reward, and rows older than 8 game-days are deleted.
+ */
+@Entity(tableName = "pause_event", indices = [Index("game_day")])
+data class PauseEventEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    @ColumnInfo(name = "package_name") val packageName: String,
+    @ColumnInfo(name = "game_day") val gameDay: LocalDate,
+    @ColumnInfo(name = "occurred_at") val occurredAt: Instant,
+    val outcome: PauseOutcome,
+    @ColumnInfo(name = "delay_seconds") val delaySeconds: Int,
+    val intention: PauseRules.Intention? = null,
 )

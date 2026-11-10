@@ -7,12 +7,15 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.res.Configuration
+import android.view.WindowManager
 import android.view.accessibility.AccessibilityEvent
 import androidx.core.graphics.drawable.toBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import com.assismohanty.awaken.MainActivity
 import com.assismohanty.awaken.core.data.clock.Clock
 import com.assismohanty.awaken.core.data.repo.ThemeMode
+import com.assismohanty.awaken.core.designsystem.theme.AwakenTheme
+import com.assismohanty.awaken.feature.focuslock.FocusLockOverlayContent
 import com.assismohanty.awaken.core.work.ACTION_OPEN_GATES
 import com.assismohanty.awaken.core.work.GateCoordinator
 import com.assismohanty.awaken.engine.BlockDecision
@@ -53,7 +56,7 @@ class FocusLockService : AccessibilityService() {
     @Inject lateinit var coverable: CoverableApps
 
     private var scope: CoroutineScope? = null
-    private var overlay: BlockOverlay? = null
+    private var overlay: BlockOverlay<OverlayModel>? = null
     private var tick: Job? = null
     private var snapshot = LockSnapshot()
 
@@ -87,7 +90,18 @@ class FocusLockService : AccessibilityService() {
         super.onServiceConnected()
         val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
         scope = serviceScope
-        overlay = BlockOverlay(this, onBackToFocus = ::backToFocus, onEndAndOpen = ::endAndOpen, onBackKey = ::backKey)
+        overlay = BlockOverlay<OverlayModel>(this, WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY, onBackKey = ::backKey) { model ->
+            AwakenTheme(darkTheme = model.darkTheme) {
+                FocusLockOverlayContent(
+                    appLabel = model.appLabel,
+                    appIcon = model.appIcon,
+                    time = model.time,
+                    countsUp = model.countsUp,
+                    onBackToFocus = ::backToFocus,
+                    onEndAndOpen = ::endAndOpen,
+                )
+            }
+        }
         registerReceiver(screenOff, IntentFilter(Intent.ACTION_SCREEN_OFF))
         state.onServiceConnected()
         // The gate ending, pausing or being cleared uncovers the app at once, without waiting for another window event.

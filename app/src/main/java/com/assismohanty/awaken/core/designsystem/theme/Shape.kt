@@ -144,6 +144,9 @@ data class AwakenDimens(
     /** Diet calorie ring and its stroke. */
     val calorieRing: Dp = 148.dp,
     val calorieRingStroke: Dp = 10.dp,
+    /** The breathing ring on the pause screen (GD 19.1) and its stroke. */
+    val breathingRing: Dp = 200.dp,
+    val breathingRingStroke: Dp = 6.dp,
     /** The ring inside a half-width Today summary tile (screen time) and its stroke. */
     val tileRing: Dp = 104.dp,
     val tileRingStroke: Dp = 9.dp,

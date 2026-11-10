@@ -29,6 +29,11 @@ annotation class UiPrefsStore
 @Retention(AnnotationRetention.BINARY)
 annotation class LastFocusPrefs
 
+/** Pause settings: target apps, delay, cooldown, hours (GD §19.1). */
+@Qualifier
+@Retention(AnnotationRetention.BINARY)
+annotation class PausePrefs
+
 /** AI Paths consent and the random install ID (ARCH §4). */
 @Qualifier
 @Retention(AnnotationRetention.BINARY)
@@ -105,5 +110,15 @@ object DataStoreModule {
         @ApplicationScope scope: CoroutineScope,
     ): DataStore<Preferences> = PreferenceDataStoreFactory.create(scope = scope) {
         context.preferencesDataStoreFile("onboarding_draft")
+    }
+
+    @Provides
+    @Singleton
+    @PausePrefs
+    fun providePausePrefs(
+        @ApplicationContext context: Context,
+        @ApplicationScope scope: CoroutineScope,
+    ): DataStore<Preferences> = PreferenceDataStoreFactory.create(scope = scope) {
+        context.preferencesDataStoreFile("pause")
     }
 }

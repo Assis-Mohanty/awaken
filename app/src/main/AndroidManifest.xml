@@ -27,6 +27,11 @@
         android:name="android.permission.PACKAGE_USAGE_STATS"
         tools:ignore="ProtectedPermissions" />
 
+    <!-- Pause (GD 19.1): the pause screen is drawn over a chosen app, which needs "appear on top". Granted by the hunter in system settings. -->
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+    <!-- Pause starts again after a restart or an app update, if it is on. -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+
     <queries>
         <package android:name="com.google.android.apps.healthdata" />
         <!-- Launcher apps only, for the Screen Time list's names and icons (no QUERY_ALL_PACKAGES). -->
@@ -85,6 +90,25 @@
                 android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
                 android:value="Gym rest timer: counts down the rest between sets and sounds an alert when it ends, with the screen off" />
         </service>
+
+        <!-- Pause (GD 19.1). Runs only while Pause is on with an app chosen; Play Console asks for the special-use declaration below. -->
+        <service
+            android:name=".core.protect.ProtectService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Runs while the user has switched on Pause: notices when an app the user chose comes to the front so the app can show the user's own pause screen" />
+        </service>
+
+        <receiver
+            android:name=".core.protect.ProtectBootReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+        </receiver>
 
         <!-- Focus Lock (GD 8.2): window-change events only, package name only; scoped to AWAKEN while idle and never to payment apps (ED #149). Opt-in in Android Accessibility settings. -->
         <service

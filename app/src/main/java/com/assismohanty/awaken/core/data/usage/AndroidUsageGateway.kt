@@ -86,6 +86,19 @@ class AndroidUsageGateway @Inject constructor(
         if (seen == 0) OpenedRead.Unavailable else OpenedRead.Opened(opened)
     }
 
+    override suspend fun foreground(since: Instant, until: Instant): ForegroundRead = withContext(ioDispatcher) {
+        if (!hasAccess()) return@withContext ForegroundRead.NoAccess
+        val manager = context.getSystemService(UsageStatsManager::class.java) ?: return@withContext ForegroundRead.Unavailable
+        val events = manager.queryEvents(since.toEpochMilli(), until.toEpochMilli()) ?: return@withContext ForegroundRead.Unavailable
+        val event = UsageEvents.Event()
+        var top: String? = null
+        while (events.hasNextEvent()) {
+            events.getNextEvent(event)
+            top = TopTracker.next(top, event.eventType, event.packageName)
+        }
+        top?.let { ForegroundRead.Top(it) } ?: ForegroundRead.NoChange
+    }
+
     override suspend fun events(start: Instant, end: Instant): EventsRead = withContext(ioDispatcher) {
         if (!hasAccess()) return@withContext EventsRead.NoAccess
         if (!end.isAfter(start)) return@withContext EventsRead.Unavailable
@@ -155,6 +168,14 @@ class AndroidUsageGateway @Inject constructor(
         const val EVENT_KEYGUARD_SHOWN = 17
         const val EVENT_KEYGUARD_HIDDEN = 18
     }
+}
+
+/** Which app is in front after one more event: the last one that resumed (ACTIVITY_RESUMED, event type 1). */
+internal object TopTracker {
+    private const val RESUMED = 1
+
+    fun next(top: String?, eventType: Int, packageName: String?): String? =
+        if (eventType == RESUMED && !packageName.isNullOrBlank()) packageName else top
 }
 
 /**

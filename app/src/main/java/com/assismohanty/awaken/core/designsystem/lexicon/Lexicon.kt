@@ -40,6 +40,8 @@ class LexResources(private val resources: Resources) {
 
     fun getString(@StringRes id: Int, vararg formatArgs: Any): String = resources.getString(id, *formatArgs)
 
+    fun getStringArray(@androidx.annotation.ArrayRes id: Int): Array<String> = resources.getStringArray(id)
+
     fun getQuantityString(@PluralsRes id: Int, count: Int, vararg formatArgs: Any): String =
         resources.getQuantityString(id, count, *formatArgs)
 }

@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Pause (GD 19.1): a short breath before the apps you choose open. Plain words; no game terms. -->
+
+    <!-- Notification -->
+    <string name="protect_channel_name">Pause</string>
+    <string name="protect_channel_description">Shows while Pause is watching for the apps you chose.</string>
+    <string name="protect_notif_title">Pause is on</string>
+    <string name="protect_notif_body">AWAKEN notices when one of your chosen apps opens. Nothing is saved or sent anywhere.</string>
+    <string name="protect_notif_turn_off">Turn off</string>
+
+    <!-- The pause screen -->
+    <string name="pause_overlay_about">About to open %1$s</string>
+    <plurals name="pause_overlay_opens">
+        <item quantity="one">First time today</item>
+        <item quantity="other">Opened %1$d times today</item>
+    </plurals>
+    <string name="pause_overlay_not_now">Not now</string>
+    <string name="pause_overlay_continue">Continue to %1$s</string>
+    <string name="pause_overlay_seconds_left">%1$d seconds left</string>
+    <string name="pause_overlay_ready">Ready when you are</string>
+    <string name="pause_intention_title">What for?</string>
+    <string name="pause_intention_reply">Reply to someone</string>
+    <string name="pause_intention_look_up">Look something up</string>
+    <string name="pause_intention_post">Post something</string>
+    <string name="pause_intention_break">Take a break</string>
+    <string name="pause_intention_none">No reason</string>
+
+    <!-- Pause settings -->
+    <string name="pause_title">Pause</string>
+    <string name="pause_subtitle">A short breath before the apps you choose open.</string>
+    <string name="pause_switch_title">Pause chosen apps</string>
+    <string name="pause_switch_note">Shows a short pause before an app you chose opens. Pausing earns nothing and costs nothing.</string>
+    <string name="pause_apps_title">Apps</string>
+    <string name="pause_apps_none">No apps chosen yet</string>
+    <plurals name="pause_apps_count">
+        <item quantity="one">%1$d app chosen</item>
+        <item quantity="other">%1$d apps chosen</item>
+    </plurals>
+    <string name="pause_apps_open">Choose apps</string>
+    <string name="pause_delay_title">Pause length</string>
+    <string name="pause_delay_value">%1$d seconds</string>
+    <string name="pause_progressive_title">Longer each time</string>
+    <string name="pause_progressive_note">Adds 2 seconds each time you open the same app today, up to 15 seconds.</string>
+    <string name="pause_cooldown_title">Quiet time after you continue</string>
+    <string name="pause_cooldown_note">That app won\'t pause again for this long.</string>
+    <string name="pause_cooldown_value">%1$d min</string>
+    <string name="pause_require_tap_title">Tap to continue</string>
+    <string name="pause_require_tap_note">Wait for a tap instead of opening the app when the pause ends.</string>
+    <string name="pause_intention_setting_title">Ask what it\'s for</string>
+    <string name="pause_intention_setting_note">Shows a few choices on the pause screen. Your answers stay on this phone and only feed your stats.</string>
+    <string name="pause_hours_title">Only at certain times</string>
+    <string name="pause_hours_note">Pause stays off outside this window.</string>
+    <string name="pause_hours_from">From</string>
+    <string name="pause_hours_to">To</string>
+    <string name="pause_hours_label">%1$02d:00</string>
+    <string name="pause_day_mon">Mon</string>
+    <string name="pause_day_tue">Tue</string>
+    <string name="pause_day_wed">Wed</string>
+    <string name="pause_day_thu">Thu</string>
+    <string name="pause_day_fri">Fri</string>
+    <string name="pause_day_sat">Sat</string>
+    <string name="pause_day_sun">Sun</string>
+    <string name="pause_stats_open">See the last 7 days</string>
+    <string name="pause_setup_title">Before Pause can work</string>
+    <string name="pause_disclosure">Pause needs two permissions. Usage access lets AWAKEN see which app is open, so it knows when one of your chosen apps starts. Appear on top lets it show the pause screen over that app. AWAKEN reads the app\'s name only, keeps your pause counts on this phone, and sends nothing anywhere.</string>
+    <string name="pause_perm_usage">Usage access</string>
+    <string name="pause_perm_overlay">Appear on top</string>
+    <string name="pause_perm_notifications">Notifications</string>
+    <string name="pause_perm_popup">Pop-ups while other apps are open</string>
+    <string name="pause_perm_popup_note">Your phone may need this switched on in its own app settings, or the pause screen can\'t open from the background.</string>
+    <string name="pause_ready">Pause is watching.</string>
+    <string name="pause_not_ready">Pause starts once usage access and appearing on top are on, and at least one app is chosen.</string>
+
+    <!-- Choose apps -->
+    <string name="pause_apps_subtitle">Pick up to 12 apps. Phone, messages and payment apps can\'t be picked.</string>
+    <string name="pause_apps_search">Search apps</string>
+    <string name="pause_apps_suggested">Suggested</string>
+    <string name="pause_apps_all">All apps</string>
+    <string name="pause_apps_full">You have chosen 12 apps. Remove one to add another.</string>
+    <string name="pause_apps_empty">No apps found.</string>
+    <string name="pause_apps_locked">Can\'t be paused</string>
+
+    <!-- Stats -->
+    <string name="pause_stats_title">Pause, last 7 days</string>
+    <string name="pause_stats_subtitle">Counted on this phone only.</string>
+    <string name="pause_stats_empty">No pauses yet.</string>
+    <string name="pause_stats_total">%1$d pauses, %2$d times you chose Not now</string>
+    <string name="pause_stats_value">%1$d pauses</string>
+    <string name="pause_stats_cd">Pauses per app over the last 7 days</string>
+
+    <!-- The line bank (PZ10): reflective questions and plain observations. -->
+    <string name="pause_line_01">What did you come here for?</string>
+    <string name="pause_line_02">Is this the thing you meant to do?</string>
+    <string name="pause_line_03">One breath, then choose.</string>
+    <string name="pause_line_04">You can still go on. You can also stop.</string>
+    <string name="pause_line_05">What would you like to be doing in ten minutes?</string>
+    <string name="pause_line_06">Notice what you\'re reaching for.</string>
+    <string name="pause_line_07">Is this a choice, or a habit?</string>
+    <string name="pause_line_08">Take a slow breath in, and let it out.</string>
+    <string name="pause_line_09">What is the next small thing you want to finish?</string>
+    <string name="pause_line_10">You opened this on purpose. Check that it\'s still on purpose.</string>
+    <string name="pause_line_11">How are you feeling right now?</string>
+    <string name="pause_line_12">Who or what are you looking for?</string>
+    <string name="pause_line_13">A moment to decide is still your decision.</string>
+    <string name="pause_line_14">Is there something you\'ve been putting off?</string>
+    <string name="pause_line_15">You\'re in charge of this next minute.</string>
+    <string name="pause_line_16">Check your shoulders. Let them drop.</string>
+    <string name="pause_line_17">What would be a good use of the next few minutes?</string>
+    <string name="pause_line_18">Open it if it helps. Close it if it doesn\'t.</string>
+    <string name="pause_line_19">Where is your attention going?</string>
+    <string name="pause_line_20">Pause here. Then do what you meant to do.</string>
+    <string name="pause_line_21">You don\'t have to scroll to rest.</string>
+    <string name="pause_line_22">What are you hoping to find?</string>
+    <string name="pause_line_23">Take your time. The app will wait.</string>
+    <string name="pause_line_24">Is anyone waiting on you for something else?</string>
+    <string name="pause_line_25">A breath first.</string>
+    <string name="pause_line_26">Would a short walk help more?</string>
+    <string name="pause_line_27">What did you plan to do today?</string>
+    <string name="pause_line_28">Have a drink of water, then decide.</string>
+    <string name="pause_line_29">Still want to go in? That\'s fine.</string>
+    <string name="pause_line_30">Notice how your body feels right now.</string>
+    <string name="pause_line_31">How long do you want to spend here?</string>
+    <string name="pause_line_32">Set a number in your head before you start.</string>
+    <string name="pause_line_33">What needs your attention more than this?</string>
+    <string name="pause_line_34">Is this tired, bored or curious?</string>
+    <string name="pause_line_35">You can come back to this later.</string>
+    <string name="pause_line_36">One thing at a time.</string>
+    <string name="pause_line_37">Going in with a plan is different from drifting in.</string>
+    <string name="pause_line_38">What would you tell a friend in your place?</string>
+    <string name="pause_line_39">Pause. Look up. Then go on.</string>
+    <string name="pause_line_40">Is this where you want your next hour to go?</string>
+    <string-array name="pause_lines">
+        <item>@string/pause_line_01</item>
+        <item>@string/pause_line_02</item>
+        <item>@string/pause_line_03</item>
+        <item>@string/pause_line_04</item>
+        <item>@string/pause_line_05</item>
+        <item>@string/pause_line_06</item>
+        <item>@string/pause_line_07</item>
+        <item>@string/pause_line_08</item>
+        <item>@string/pause_line_09</item>
+        <item>@string/pause_line_10</item>
+        <item>@string/pause_line_11</item>
+        <item>@string/pause_line_12</item>
+        <item>@string/pause_line_13</item>
+        <item>@string/pause_line_14</item>
+        <item>@string/pause_line_15</item>
+        <item>@string/pause_line_16</item>
+        <item>@string/pause_line_17</item>
+        <item>@string/pause_line_18</item>
+        <item>@string/pause_line_19</item>
+        <item>@string/pause_line_20</item>
+        <item>@string/pause_line_21</item>
+        <item>@string/pause_line_22</item>
+        <item>@string/pause_line_23</item>
+        <item>@string/pause_line_24</item>
+        <item>@string/pause_line_25</item>
+        <item>@string/pause_line_26</item>
+        <item>@string/pause_line_27</item>
+        <item>@string/pause_line_28</item>
+        <item>@string/pause_line_29</item>
+        <item>@string/pause_line_30</item>
+        <item>@string/pause_line_31</item>
+        <item>@string/pause_line_32</item>
+        <item>@string/pause_line_33</item>
+        <item>@string/pause_line_34</item>
+        <item>@string/pause_line_35</item>
+        <item>@string/pause_line_36</item>
+        <item>@string/pause_line_37</item>
+        <item>@string/pause_line_38</item>
+        <item>@string/pause_line_39</item>
+        <item>@string/pause_line_40</item>
+    </string-array>
+
+    <!-- Entry on the Settings screen -->
+    <string name="pause_window_note">Pause the apps you open without thinking.</string>
+    <string name="pause_window_off">Off</string>
+    <string name="pause_window_open">Open Pause settings</string>
+</resources>

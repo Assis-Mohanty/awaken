@@ -106,6 +106,7 @@ fun SettingsRoute(
     onOpenReelStats: () -> Unit = {},
     onOpenFocusAccess: () -> Unit = {},
     onOpenReelInspector: () -> Unit = {},
+    onOpenPause: () -> Unit = {},
     onOpenDebug: () -> Unit = {},
     viewModel: SettingsViewModel = hiltViewModel(),
     archivedViewModel: ArchivedHabitsViewModel = hiltViewModel(),
@@ -141,6 +142,7 @@ fun SettingsRoute(
         onOpenScreenTime = onOpenScreenTime,
         focusWindow = {
             FocusLockWindowRoute(onOpenSetup = onOpenFocusSetup, onOpenAllowedApps = onOpenAllowedApps, onOpenScreenTime = onOpenScreenTime)
+            com.assismohanty.awaken.feature.protect.PauseWindowRoute(onOpen = onOpenPause)
             BedtimeSettingsRoute(onGrantAccess = { com.assismohanty.awaken.feature.screentime.openUsageAccessSettings(context) })
             ReelCounterWindowRoute(
                 onOpenSetup = onOpenReelSetup,

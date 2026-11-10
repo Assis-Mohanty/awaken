@@ -33,6 +33,21 @@ sealed interface OpenedRead {
 }
 
 /**
+ * What the foreground watcher learned from one look at the event log (Pause and Lockdown, GD §19). Only [Top] and
+ * [NoChange] are real; a missing permission or an unreadable log is never "nothing changed".
+ */
+sealed interface ForegroundRead {
+    data object NoAccess : ForegroundRead
+    data object Unavailable : ForegroundRead
+
+    /** No app came to the front in the window. */
+    data object NoChange : ForegroundRead
+
+    /** The app that most recently came to the front in the window. */
+    data class Top(val packageName: String) : ForegroundRead
+}
+
+/**
  * Device events for pickups and the night check (GD §16.10). Like [UsageRead], only [Tracked] is real data; a missing
  * permission or an unreadable log is never "no pickups".
  */
@@ -58,6 +73,9 @@ interface UsageGateway {
 
     /** The packages that came to the foreground during `[start, end)`. Package names only; nothing is stored. */
     suspend fun opened(start: Instant, end: Instant): OpenedRead
+
+    /** The app that most recently came to the front over `[since, until)`. Package name only; nothing is stored. */
+    suspend fun foreground(since: Instant, until: Instant): ForegroundRead
 
     /** Screen and keyguard events plus app visits over `[start, end)`. Times only; no package name leaves this read. */
     suspend fun events(start: Instant, end: Instant): EventsRead

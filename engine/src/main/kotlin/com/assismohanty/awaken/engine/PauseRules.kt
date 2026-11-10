@@ -22,6 +22,9 @@ sealed interface PauseVariant {
     data object Intention : PauseVariant
 }
 
+/** How a pause ended (GD §19.1 PZ3, PZ4): the app opened, or the hunter chose Not now. */
+enum class PauseOutcome { CONTINUED, NOT_NOW }
+
 /** What to show for one pause. [n] is the 1-based count of pauses of that app this game-day, this one included. */
 data class PausePlan(val n: Int, val variants: List<PauseVariant>)
 
@@ -46,6 +49,22 @@ data class PauseHours(val start: LocalTime, val end: LocalTime, val days: Set<Da
             time < end -> day.minus(1) in days
             else -> false
         }
+    }
+
+    /**
+     * The first moment after [from] that a window opens, or null when no weekday is selected. A window that is already
+     * open at [from] is not returned (the caller checks [contains] first). All-day windows open at midnight.
+     */
+    fun nextStart(from: Instant, zone: ZoneId): Instant? {
+        val opens = if (start == end) LocalTime.MIDNIGHT else start
+        val today = from.atZone(zone).toLocalDate()
+        for (offset in 0L..7L) {
+            val date = today.plusDays(offset)
+            if (date.dayOfWeek !in days) continue
+            val at = date.atTime(opens).atZone(zone).toInstant()
+            if (at.isAfter(from)) return at
+        }
+        return null
     }
 }
 
@@ -82,6 +101,28 @@ object PauseRules {
 
     val DELAY_CHOICES: List<Int> = listOf(3, 5, 10)
     val COOLDOWN_CHOICES: List<Int> = listOf(1, 5, 10, 15)
+
+    /**
+     * Windows that appear over an app without being a new app: system UI, the permission dialogs of the usual phone
+     * makers, the share sheet, Google Play services. The app adds this phone's keyboard and AWAKEN itself at runtime.
+     * Not verified on every phone (docs/protect/PLAN.md §3.3); a name missing here only means one extra pause.
+     */
+    val TRANSIENT_WINDOWS: Set<String> = setOf(
+        "android",
+        "com.android.systemui",
+        "com.google.android.permissioncontroller",
+        "com.android.permissioncontroller",
+        "com.android.intentresolver",
+        "com.google.android.gms",
+        "com.lbe.security.miui",
+        "com.miui.securitycenter",
+        "com.coloros.securitypermission",
+        "com.oplus.securitypermission",
+        "com.coloros.safecenter",
+        "com.oneplus.security",
+        "com.vivo.permissionmanager",
+        "com.iqoo.secure",
+    )
 
     /** The fixed "What for?" chips, in order (PZ7). */
     enum class Intention { REPLY, LOOK_UP, POST, BREAK, NO_REASON }

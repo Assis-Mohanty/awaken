@@ -149,6 +149,18 @@ class PauseRulesTest {
     }
 
     @Test
+    fun `the next start is the next selected day's opening, never one already passed`() {
+        val hours = PauseHours(LocalTime.of(9, 0), LocalTime.of(18, 0), setOf(DayOfWeek.MONDAY, DayOfWeek.WEDNESDAY))
+        // Monday 10:00 is inside today's window, so the next opening is Wednesday 09:00.
+        assertThat(hours.nextStart(at("10:00:00"), zone)).isEqualTo(Instant.parse("2026-11-11T09:00:00Z"))
+        // Monday 08:00 is before it opens.
+        assertThat(hours.nextStart(at("08:00:00"), zone)).isEqualTo(at("09:00:00"))
+        // Wednesday 10:00 wraps to next Monday.
+        assertThat(hours.nextStart(Instant.parse("2026-11-11T10:00:00Z"), zone)).isEqualTo(Instant.parse("2026-11-16T09:00:00Z"))
+        assertThat(PauseHours(LocalTime.of(9, 0), LocalTime.of(18, 0), emptySet()).nextStart(at("10:00:00"), zone)).isNull()
+    }
+
+    @Test
     fun `the hours are read in the hunter's zone`() {
         val hours = PauseHours(LocalTime.of(9, 0), LocalTime.of(18, 0), DayOfWeek.entries.toSet())
         val cfg = config.copy(hours = hours)

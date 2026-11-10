@@ -38,6 +38,9 @@ class AlwaysAllowed @Inject constructor(
         return inputMethod()?.let { fixed + it } ?: fixed
     }
 
+    /** The keyboard as it is right now; the hunter can switch it at any time. */
+    fun keyboard(): String? = inputMethod()
+
     /** Every UPI handler on this phone, its default tap-to-pay app and the built-in payment list. Never watched, never covered. */
     @Synchronized
     fun paymentApps(): Set<String> {

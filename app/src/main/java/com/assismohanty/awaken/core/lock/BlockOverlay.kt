@@ -26,8 +26,7 @@ import androidx.savedstate.SavedStateRegistry
 import androidx.savedstate.SavedStateRegistryController
 import androidx.savedstate.SavedStateRegistryOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
-import com.assismohanty.awaken.core.designsystem.theme.AwakenTheme
-import com.assismohanty.awaken.feature.focuslock.FocusLockOverlayContent
+import androidx.compose.runtime.Composable
 import java.time.Duration
 import timber.log.Timber
 
@@ -41,24 +40,25 @@ data class OverlayModel(
 )
 
 /**
- * The full-screen cover Focus Lock draws over a blocked app (GD 8.2). It is an accessibility overlay window added by the
- * service itself, so it needs no "draw over other apps" permission. It consumes every touch and turns Back into
- * [onBackKey]. [show] while it is already up only updates what it says; the window is never added twice.
+ * A full-screen cover drawn over another app: Focus Lock's block screen (GD 8.2) and Pause's pause screen (GD §19.1).
+ * [windowType] is `TYPE_ACCESSIBILITY_OVERLAY` for Focus Lock's own service (no permission needed) and
+ * `TYPE_APPLICATION_OVERLAY` for the Pause watcher (needs "display over other apps"). It consumes every touch and turns
+ * Back into [onBackKey]. [show] while it is already up only updates what it says; the window is never added twice.
  */
-class BlockOverlay(
+class BlockOverlay<M : Any>(
     private val context: Context,
-    private val onBackToFocus: () -> Unit,
-    private val onEndAndOpen: () -> Unit,
+    private val windowType: Int,
     private val onBackKey: () -> Unit,
+    private val content: @Composable (M) -> Unit,
 ) {
     private val windowManager: WindowManager = context.getSystemService(WindowManager::class.java)
     private var root: View? = null
     private var owner: OverlayOwner? = null
-    private var model by mutableStateOf<OverlayModel?>(null)
+    private var model by mutableStateOf<M?>(null)
 
     val isShowing: Boolean get() = root != null
 
-    fun show(next: OverlayModel) {
+    fun show(next: M) {
         model = next
         if (root != null) return
         val lifecycleOwner = OverlayOwner()
@@ -73,18 +73,7 @@ class BlockOverlay(
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
             setContent {
                 val current = model
-                if (current != null) {
-                    AwakenTheme(darkTheme = current.darkTheme) {
-                        FocusLockOverlayContent(
-                            appLabel = current.appLabel,
-                            appIcon = current.appIcon,
-                            time = current.time,
-                            countsUp = current.countsUp,
-                            onBackToFocus = onBackToFocus,
-                            onEndAndOpen = onEndAndOpen,
-                        )
-                    }
-                }
+                if (current != null) content(current)
             }
         }
         layout.addView(compose, ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
@@ -92,7 +81,7 @@ class BlockOverlay(
             windowManager.addView(layout, layoutParams())
         } catch (e: RuntimeException) {
             // The window can be refused (service tearing down, display gone): the lock simply does not cover this time.
-            Timber.w(e, "Focus Lock cover could not be added")
+            Timber.w(e, "The cover could not be added")
             lifecycleOwner.destroy()
             return
         }
@@ -109,7 +98,7 @@ class BlockOverlay(
         try {
             windowManager.removeViewImmediate(view)
         } catch (e: RuntimeException) {
-            Timber.w(e, "Focus Lock cover could not be removed")
+            Timber.w(e, "The cover could not be removed")
         }
         owner?.destroy()
         owner = null
@@ -118,7 +107,7 @@ class BlockOverlay(
     private fun layoutParams(): WindowManager.LayoutParams = WindowManager.LayoutParams(
         WindowManager.LayoutParams.MATCH_PARENT,
         WindowManager.LayoutParams.MATCH_PARENT,
-        WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
+        windowType,
         // Focusable on purpose: only a focused window receives Back. Laid out inside the system bars so navigation, the status bar and biometric prompts stay reachable.
         0,
         PixelFormat.OPAQUE,

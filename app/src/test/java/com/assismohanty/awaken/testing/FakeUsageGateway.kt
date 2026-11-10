@@ -1,6 +1,7 @@
 package com.assismohanty.awaken.testing
 
 import com.assismohanty.awaken.core.data.usage.EventsRead
+import com.assismohanty.awaken.core.data.usage.ForegroundRead
 import com.assismohanty.awaken.core.data.usage.InstalledApp
 import com.assismohanty.awaken.core.data.usage.OpenedRead
 import com.assismohanty.awaken.core.data.usage.UsageGateway
@@ -47,6 +48,11 @@ class FakeUsageGateway(
         !readable -> OpenedRead.Unavailable
         else -> OpenedRead.Opened(opened.toSet())
     }
+
+    /** What the foreground watcher sees next; a test sets it. */
+    var foregroundRead: ForegroundRead = ForegroundRead.NoChange
+
+    override suspend fun foreground(since: Instant, until: Instant): ForegroundRead = if (!access) ForegroundRead.NoAccess else foregroundRead
 
     override suspend fun events(start: Instant, end: Instant): EventsRead = when {
         !access -> EventsRead.NoAccess
