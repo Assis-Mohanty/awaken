@@ -48,7 +48,7 @@ private fun set(
 )
 
 private val labels = mapOf(
-    "bench" to ExerciseLabel("Bench press", "Barbell · medium grip", 2.5),
+    "bench" to ExerciseLabel("Bench press", "Barbell · medium grip", 2.5, barbell = true),
     "incline" to ExerciseLabel("Incline dumbbell press", null, 2.5),
     "pushdown" to ExerciseLabel("Triceps pushdown", null, 5.0),
     "skull" to ExerciseLabel("Skullcrusher", "EZ bar", 2.5),

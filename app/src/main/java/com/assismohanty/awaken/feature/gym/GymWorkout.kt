@@ -15,6 +15,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import com.assismohanty.awaken.R
+import com.assismohanty.awaken.engine.body.PlateUnit
+import com.assismohanty.awaken.engine.body.PlateSetup
+import com.assismohanty.awaken.engine.body.PlatePlan
+import com.assismohanty.awaken.engine.body.PlateMath
+import com.assismohanty.awaken.core.designsystem.components.PlateDiagram
 import com.assismohanty.awaken.engine.model.Stat
 import com.assismohanty.awaken.core.designsystem.components.SessionScreen
 import com.assismohanty.awaken.core.designsystem.components.SessionDial
@@ -218,19 +223,43 @@ private fun CoachedWorkout(state: GymUiState, active: ActiveWorkout, onEvent: (G
         Text(setLine(active, exercise, number, total, cursor), style = AwakenTheme.type.label, color = colors.accent)
         targetLine(set)?.let { Text(it, style = AwakenTheme.type.caption, color = colors.textSecondary) }
     }
-    val muscles = set.primaryMuscles.mapNotNull(Muscle::fromKey).associateWith { 1f } +
-        set.secondaryMuscles.mapNotNull(Muscle::fromKey).filter { it.key !in set.primaryMuscles }.associateWith { HELPER_INTENSITY }
-    BodyMap(
-        intensity = muscles,
-        description = lexString(R.string.cd_gym_exercise_map, set.primaryMuscles.mapNotNull(Muscle::fromKey).map { lexString(it.nameRes()) }.joinToString()),
-        figureHeight = AwakenTheme.dimens.bodyMapHeight * MAP_SHARE,
-    )
+    if (label?.barbell == true && !set.timed()) {
+        BarbellPlates(set.weightKg, state.prefs.setup(PlateUnit.KG))
+    } else {
+        val muscles = set.primaryMuscles.mapNotNull(Muscle::fromKey).associateWith { 1f } +
+            set.secondaryMuscles.mapNotNull(Muscle::fromKey).filter { it.key !in set.primaryMuscles }.associateWith { HELPER_INTENSITY }
+        BodyMap(
+            intensity = muscles,
+            description = lexString(R.string.cd_gym_exercise_map, set.primaryMuscles.mapNotNull(Muscle::fromKey).map { lexString(it.nameRes()) }.joinToString()),
+            figureHeight = AwakenTheme.dimens.bodyMapHeight * MAP_SHARE,
+        )
+    }
     TargetNumbers(set, label?.stepKg ?: DEFAULT_STEP_KG, onEvent)
     Text(lastTimeText(state.previous[exercise.exerciseId].orEmpty()), style = AwakenTheme.type.body, color = colors.textSecondary)
     state.hints[exercise.exerciseId]?.let { ProgressionHint(tryText(it)) }
     DoneLines(exercise, state.prSetIds, onEvent)
     CompleteButton(set, exercise, state.now, onEvent)
     QuietButton(text = lexString(R.string.gym_add_exercise), onClick = { onEvent(GymEvent.OpenPicker) }, modifier = Modifier.fillMaxWidth())
+}
+
+/** The bar for the weight in the set: the plates on each end and "Bar 20 kg + 25 kg a side" under it. */
+@Composable
+private fun BarbellPlates(weightKg: Double, setup: PlateSetup) {
+    val perSide = when (val plan = PlateMath.plan(weightKg, setup)) {
+        is PlatePlan.Exact -> plan.perSide
+        is PlatePlan.Short -> plan.perSide
+        is PlatePlan.BelowBar -> emptyList()
+    }
+    val labels = perSide.map { formatNumber(it) }
+    val line = if (labels.isEmpty()) {
+        lexString(R.string.gym_plates_empty_bar)
+    } else {
+        lexString(R.string.gym_bar_line, formatNumber(setup.barWeight), labels.joinToString(" + "))
+    }
+    Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(Spacing.xs), modifier = Modifier.fillMaxWidth()) {
+        PlateDiagram(platesPerSide = perSide, labels = labels, description = line)
+        Text(line, style = AwakenTheme.type.caption, color = AwakenTheme.colors.textSecondary)
+    }
 }
 
 @Composable

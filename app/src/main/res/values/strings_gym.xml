@@ -37,6 +37,7 @@
     <string name="gym_notice_routine_saved">Routine saved.</string>
 
     <!-- Active session -->
+    <string name="gym_bar_line">Bar %1$s kg + %2$s kg a side</string>
     <string name="gym_session_sub">%1$s · exercise %2$d of %3$d</string>
     <string name="gym_summary_reward">Reward</string>
     <string name="gym_summary_full_sets">Full sets</string>

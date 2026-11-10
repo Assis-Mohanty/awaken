@@ -142,7 +142,8 @@ enum class PadField { WEIGHT, REPS, HOLD }
 data class NumberPadUi(val setId: String, val field: PadField)
 
 /** How an exercise of the running workout is shown: a clean name, its grip or setup, and how far the stepper moves (GD §18.2). */
-data class ExerciseLabel(val name: String, val variant: String?, val stepKg: Double)
+/** [barbell] exercises show the plates for the weight on the bar. */
+data class ExerciseLabel(val name: String, val variant: String?, val stepKg: Double, val barbell: Boolean = false)
 
 data class ExerciseChoice(val id: String, val name: String, val variant: String?)
 
@@ -524,7 +525,7 @@ class GymViewModel @Inject constructor(
             val info = infos[e.exerciseId]
             val own = gym.progression(e.exerciseId, info?.primary.orEmpty()).takeIf { it.customIncrement }?.incrementKg
             val step = own ?: info?.let { StepIncrement.step(it.equipment, PlateUnit.KG, prefs.kg) } ?: StepIncrement.step(Equipment.OTHER, PlateUnit.KG, prefs.kg)
-            e.exerciseId to ExerciseLabel(info?.name ?: e.name, info?.variant, step)
+            e.exerciseId to ExerciseLabel(info?.name ?: e.name, info?.variant, step, barbell = info?.equipment == Equipment.BARBELL)
         }
     }
 
