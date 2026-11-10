@@ -10,6 +10,7 @@ import android.view.WindowManager
 import android.view.accessibility.AccessibilityEvent
 import androidx.core.content.ContextCompat
 import com.assismohanty.awaken.reelcounter.core.ShortVideoApp
+import com.assismohanty.awaken.reelcounter.core.block.BlockAction
 import com.assismohanty.awaken.reelcounter.core.detect.RawSignal
 import com.assismohanty.awaken.reelcounter.core.model.Bounds
 import com.assismohanty.awaken.reelcounter.core.time.ReelClock
@@ -42,6 +43,7 @@ class ReelAccessibilityService : AccessibilityService() {
     @Inject lateinit var overlay: OverlayController
     @Inject lateinit var inspector: InspectorHooks
     @Inject lateinit var settings: SettingsStore
+    @Inject lateinit var blocker: ShortVideoBlocker
 
     private var scope: CoroutineScope? = null
     private var adapter: EventAdapter? = null
@@ -92,6 +94,9 @@ class ReelAccessibilityService : AccessibilityService() {
                 override fun snooze(app: ShortVideoApp) = runner.submitSnooze(app)
             },
         )
+        blocker.performer = { action ->
+            performGlobalAction(if (action == BlockAction.HOME) GLOBAL_ACTION_HOME else GLOBAL_ACTION_BACK)
+        }
         adapter = EventAdapter(clock) { pkg -> AccessibilityNodeSource(this, pkg, screenBounds()) }
         runner.start { at -> probe(at) }
         registerScreenReceiver()
@@ -99,6 +104,7 @@ class ReelAccessibilityService : AccessibilityService() {
 
     private fun stopCounting() {
         if (adapter == null) return
+        blocker.performer = null
         receiver?.let { runCatching { unregisterReceiver(it) } }
         receiver = null
         runner.stop()

@@ -47,6 +47,7 @@ class CounterRunner @Inject constructor(
     private val applier: EffectApplier,
     private val clock: ReelClock,
     private val dayStart: ReelDayStart,
+    private val blocker: ShortVideoBlocker,
     @CounterDispatcher private val dispatcher: CoroutineDispatcher,
 ) {
     private val machine = CounterMachine()
@@ -163,6 +164,7 @@ class CounterRunner @Inject constructor(
         val out = tr.onSignal(raw)
         events += out.events
         reduceAndApply(events)
+        blocker.onLook(tr.activeApp, raw.at)
         // A new reel settles after settleMillis; look again right then, so the count does not wait for the next probe.
         val settleAt = if (out.events.any { it is CounterEvent.ItemChanged || it is CounterEvent.ScreenEntered }) raw.at.plusMillis(SETTLE_LOOK_MILLIS) else null
         (out.recheckAt ?: settleAt)?.let(::scheduleRecheck)

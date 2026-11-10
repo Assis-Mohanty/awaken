@@ -1,7 +1,9 @@
 package com.assismohanty.awaken.core.reelcounter
 
 import com.assismohanty.awaken.core.data.clock.Clock
+import com.assismohanty.awaken.core.data.db.dao.GateRunDao
 import com.assismohanty.awaken.core.data.db.dao.HunterDao
+import com.assismohanty.awaken.reelcounter.data.ReelSessionGate
 import com.assismohanty.awaken.engine.GameDay
 import com.assismohanty.awaken.reelcounter.core.time.ReelClock
 import com.assismohanty.awaken.reelcounter.data.ReelDayStart
@@ -29,6 +31,12 @@ object ReelHostModule {
     fun reelClock(clock: Clock): ReelClock = object : ReelClock {
         override fun now(): Instant = clock.now()
         override fun zone(): ZoneId = clock.zone()
+    }
+
+    @Provides
+    @Singleton
+    fun reelSessionGate(gateRunDao: GateRunDao): ReelSessionGate = object : ReelSessionGate {
+        override val sessionRunning = gateRunDao.observeRunning().map { it != null }.distinctUntilChanged()
     }
 
     @Provides

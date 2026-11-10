@@ -7,6 +7,9 @@ import com.assismohanty.awaken.reelcounter.core.detect.RawSignal
 import com.assismohanty.awaken.reelcounter.core.time.FixedReelClock
 import com.assismohanty.awaken.reelcounter.data.DetectorRepository
 import com.assismohanty.awaken.reelcounter.data.ReelRepository
+import com.assismohanty.awaken.reelcounter.data.ReelSessionGate
+import com.assismohanty.awaken.reelcounter.service.ShortVideoBlocker
+import kotlinx.coroutines.flow.flowOf
 import com.assismohanty.awaken.reelcounter.data.SettingsStore
 import com.assismohanty.awaken.reelcounter.data.db.ReelDatabase
 import com.assismohanty.awaken.reelcounter.service.CounterRunner
@@ -53,7 +56,11 @@ class CounterRunnerTest {
         val dispatcher = StandardTestDispatcher(testScheduler)
         val repo = ReelRepository(db, dispatcher)
         val settings = SettingsStore(newDataStore(dispatcher, java.io.File(folder.root, "s${stores++}.preferences_pb")))
-        return CounterRunner(repo, settings, DetectorRepository(context), EffectApplier(repo, overlay), clock, FixedDayStart, dispatcher)
+        val detectors = DetectorRepository(context)
+        val blocker = ShortVideoBlocker(settings, detectors, object : ReelSessionGate {
+            override val sessionRunning = flowOf(true)
+        })
+        return CounterRunner(repo, settings, detectors, EffectApplier(repo, overlay), clock, FixedDayStart, blocker, dispatcher)
     }
 
     private fun at(ms: Long): Instant = T0.plusMillis(ms)

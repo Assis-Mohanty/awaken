@@ -9,6 +9,7 @@ import androidx.datastore.preferences.core.floatPreferencesKey
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.core.stringSetPreferencesKey
 import com.assismohanty.awaken.reelcounter.core.ShortVideoApp
 import com.assismohanty.awaken.reelcounter.di.ReelPrefs
 import kotlinx.coroutines.flow.Flow
@@ -21,6 +22,9 @@ import javax.inject.Singleton
 
 /** Where the counter bubble sits across the screen. [CENTER] (top middle) is the default. */
 enum class BubbleEdge { START, CENTER, END }
+
+/** When short-video blocking is on: never, only while a focus session or Lockdown runs, or always. */
+enum class BlockMode { OFF, SESSIONS, ALWAYS }
 
 @Singleton
 class SettingsStore @Inject constructor(@ReelPrefs private val store: DataStore<Preferences>) {
@@ -50,6 +54,25 @@ class SettingsStore @Inject constructor(@ReelPrefs private val store: DataStore<
     val inspectorEnabled: Flow<Boolean> = data.map { it[INSPECTOR_ENABLED] ?: false }.distinctUntilChanged()
 
 
+    /** The hunter read the Strict+ disclosure and agreed. Blocking does nothing without it. Off by default. */
+    val blockConsent: Flow<Boolean> = data.map { it[BLOCK_CONSENT] ?: false }.distinctUntilChanged()
+
+    val blockMode: Flow<BlockMode> = data.map {
+        BlockMode.entries.firstOrNull { mode -> mode.name == it[BLOCK_MODE] } ?: BlockMode.OFF
+    }.distinctUntilChanged()
+
+    /** The apps whose short-video screens are blocked. */
+    val blockApps: Flow<Set<ShortVideoApp>> = data.map { prefs ->
+        val names = prefs[BLOCK_APPS].orEmpty()
+        ShortVideoApp.entries.filter { it.name in names }.toSet()
+    }.distinctUntilChanged()
+
+    suspend fun setBlockConsent(on: Boolean) = store.edit { it[BLOCK_CONSENT] = on }
+
+    suspend fun setBlockMode(mode: BlockMode) = store.edit { it[BLOCK_MODE] = mode.name }
+
+    suspend fun setBlockApps(apps: Set<ShortVideoApp>) = store.edit { prefs -> prefs[BLOCK_APPS] = apps.map { it.name }.toSet() }
+
     /** Null removes the limit (off). */
     suspend fun setLimit(app: ShortVideoApp, limit: Int?) = store.edit {
         if (limit == null) it.remove(limitKey(app)) else it[limitKey(app)] = limit
@@ -78,6 +101,9 @@ class SettingsStore @Inject constructor(@ReelPrefs private val store: DataStore<
         private val ENABLED = booleanPreferencesKey("reel_enabled")
         private val LAST_HEARTBEAT = longPreferencesKey("last_heartbeat_ms")
         private val INSPECTOR_ENABLED = booleanPreferencesKey("inspector_enabled")
+        private val BLOCK_CONSENT = booleanPreferencesKey("block_consent")
+        private val BLOCK_MODE = stringPreferencesKey("block_mode")
+        private val BLOCK_APPS = stringSetPreferencesKey("block_apps")
 
         private fun limitKey(app: ShortVideoApp) = intPreferencesKey("limit_${app.name}")
     }
