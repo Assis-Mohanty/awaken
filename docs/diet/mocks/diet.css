@@ -1,0 +1,24 @@
+/* Diet v2 mocks: only what the Plates set lacks. Plain tokens, no new colours. */
+.plates .ringrow{display:flex;align-items:center;gap:18px;margin:14px 0 4px}
+.plates .ringrow .ring-in b{font:650 28px/1 var(--disp);letter-spacing:-.025em}.plates .ringrow .ring-in small{font-size:12.5px;color:var(--ink2)}
+.plates .ringrow ul{flex:1;display:grid;gap:8px;font-size:14px;color:var(--ink2)}.plates .ringrow ul b{color:var(--ink);font-weight:650}
+.plates .tabrow{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin:2px -20px 0;padding:0 20px}.plates .tabrow::-webkit-scrollbar{display:none}
+.plates .tabrow .chip{flex:none}
+.plates .srow{display:flex;gap:8px;align-items:stretch}.plates .srow .fld{flex:1}.plates .srow .st3{width:48px;display:grid;place-items:center;background:var(--s2);border-radius:18px}
+.plates .res li{min-height:60px}.plates .res small{display:block;font-size:13px;color:var(--ink2);font-weight:400}
+.plates .tag{font-size:12px;color:var(--ink2);background:var(--s2);border-radius:10px;padding:2px 8px;margin-left:6px;font-weight:500}
+.plates .water{display:flex;align-items:center;gap:12px;background:var(--s1);border-radius:22px;box-shadow:var(--shadow);padding:6px 8px 6px 18px;margin-top:8px;min-height:60px}.plates .water span{flex:1;font-weight:600}.plates .water small{display:block;font-weight:400;font-size:13px;color:var(--ink2)}
+.plates .water button{height:48px;padding:0 16px;border-radius:24px;background:var(--s2);font-weight:600;display:flex;align-items:center;gap:6px}
+.plates .over{color:var(--ink);font-weight:650}
+.plates .est{display:inline-block;font-size:12.5px;background:var(--s2);border-radius:10px;padding:3px 9px;color:var(--ink2);margin-top:4px}
+.plates .qty{display:flex;align-items:center;gap:10px}.plates .qty .fld{flex:1}
+.plates .stepper{display:flex;align-items:center;justify-content:center;gap:18px;margin:6px 0}.plates .stepper .num{font-size:44px}
+.plates .stepper button{width:56px;height:56px;border-radius:28px;background:var(--bg);display:grid;place-items:center}
+.plates .unit{display:flex;gap:6px;flex-wrap:wrap}
+.plates .kvs .kv{display:flex;justify-content:space-between;min-height:44px;align-items:center}
+.plates .kvs .kv+.kv{box-shadow:inset 0 1px 0 var(--line)}
+.plates .step{font-size:13px;color:var(--ink2);margin-top:2px}
+.plates .pace{display:grid;gap:3px;margin-top:10px}
+.plates .pace button{display:flex;justify-content:space-between;align-items:center;min-height:56px;padding:0 16px;border-radius:18px;background:var(--s1);box-shadow:var(--shadow);text-align:left}
+.plates .pace button.on{background:var(--pri);color:var(--onpri)}.plates .pace small{display:block;font-size:13px;opacity:.75}
+.plates .mute2{color:var(--ink2);font-size:14px}
