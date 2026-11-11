@@ -331,7 +331,7 @@ fun AmountContent(form: AmountForm, slots: List<MealSlot>, onEvent: (DietEvent) 
         }
     }
     PrimaryButton(
-        text = lexString(when { form.mode == SearchMode.RECIPE -> R.string.diet_amount_add_ingredient; form.mode == SearchMode.PLAN -> R.string.diet_amount_add_plan; form.editingRowId != null -> R.string.diet_amount_save; else -> R.string.diet_amount_add }),
+        text = lexString(when { form.mode == SearchMode.RECIPE -> R.string.diet_amount_add_ingredient; form.mode == SearchMode.PLAN && form.editingPlanId == null -> R.string.diet_amount_add_plan; form.editingPlanId != null -> R.string.diet_amount_save; form.editingRowId != null -> R.string.diet_amount_save; else -> R.string.diet_amount_add }),
         onClick = { onEvent(DietEvent.ConfirmAmount) },
         enabled = form.valid,
         modifier = Modifier.fillMaxWidth(),
@@ -977,7 +977,7 @@ fun PlanContent(date: java.time.LocalDate, today: java.time.LocalDate, planned: 
             rows.forEach { row ->
                 val kcal = com.assismohanty.awaken.core.data.catalog.FoodCatalog.nutrientsFromJson(row.nutrientsJson).forGrams(row.grams)[Nutrient.KCAL]
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Column(modifier = Modifier.weight(1f)) {
+                    Column(modifier = Modifier.weight(1f).then(if (row.logged) Modifier else Modifier.clickable(onClickLabel = lexString(R.string.diet_entry_edit, row.name)) { onEvent(DietEvent.EditPlanned(row)) })) {
                         Text(row.name, style = AwakenTheme.type.label, color = colors.textPrimary)
                         Text(lexString(R.string.diet_entry_meta, row.portionLabel ?: lexString(R.string.diet_entry_grams, formatAmount(row.grams)), formatAmount(kcal)), style = AwakenTheme.type.caption, color = colors.textSecondary)
                     }
@@ -1025,4 +1025,49 @@ private fun PlanPreview() {
     AwakenTheme(reduceMotion = true) {
         Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) { PlanContent(today, today, rows, previewDietState().slots, onEvent = {}) }
     }
+}
+
+private val previewDal = IngredientDraft("usda:1", "Lentils, raw", 200.0, Nutrients(mapOf(Nutrient.KCAL to 352.0, Nutrient.PROTEIN to 24.6, Nutrient.CARBS to 63.4, Nutrient.FAT to 1.1)))
+private val previewOil = IngredientDraft("usda:2", "Oil, vegetable", 20.0, Nutrients(mapOf(Nutrient.KCAL to 884.0, Nutrient.PROTEIN to 0.0, Nutrient.CARBS to 0.0, Nutrient.FAT to 100.0)))
+
+@PhonePreviews
+@Composable
+private fun RecipesListPreview() {
+    val now = java.time.Instant.EPOCH
+    AwakenTheme(reduceMotion = true) {
+        Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+            RecipesContent(listOf(RecipeEntity("recipe:1", "Dal tadka", 4.0, 900.0, null, now, now), RecipeEntity("recipe:2", "Veg pulao", 3.0, null, null, now, now)), onEvent = {})
+        }
+    }
+}
+
+@PhonePreviews
+@Composable
+private fun RecipeEditorEmptyPreview() {
+    AwakenTheme(reduceMotion = true) { Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) { RecipeEditorContent(RecipeForm(), onEvent = {}) } }
+}
+
+@PhonePreviews
+@Composable
+private fun RecipeScaledPreview() {
+    val scaled = RecipeForm(name = "Dal tadka", servings = 4.0, cookedGrams = 900.0, ingredients = listOf(previewDal, previewOil)).scaledTo(8.0)
+    AwakenTheme(reduceMotion = true) { Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) { RecipeEditorContent(scaled, onEvent = {}) } }
+}
+
+@PhonePreviews
+@Composable
+private fun PlanEmptyPreview() {
+    val today = java.time.LocalDate.of(2026, 10, 27)
+    AwakenTheme(reduceMotion = true) { Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) { PlanContent(today.plusDays(1), today, emptyList(), previewDietState().slots, onEvent = {}) } }
+}
+
+@PhonePreviews
+@Composable
+private fun PlanPlannedPreview() {
+    val today = java.time.LocalDate.of(2026, 10, 27)
+    val rows = listOf(
+        MealPlanEntryEntity("1", today.plusDays(1), "BREAKFAST", "usda:1", "Idli", 120.0, "3 pieces", """{"kcal":128.0}""", logged = false),
+        MealPlanEntryEntity("2", today.plusDays(1), "DINNER", "usda:2", "Dal tadka", 150.0, null, """{"kcal":120.0}""", logged = false),
+    )
+    AwakenTheme(reduceMotion = true) { Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) { PlanContent(today.plusDays(1), today, rows, previewDietState().slots, onEvent = {}) } }
 }

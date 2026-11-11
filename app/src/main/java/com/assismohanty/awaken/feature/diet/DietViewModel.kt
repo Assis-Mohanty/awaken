@@ -8,6 +8,7 @@ import com.assismohanty.awaken.core.data.catalog.Portion
 import com.assismohanty.awaken.core.data.db.entity.FoodLogEntity
 import com.assismohanty.awaken.core.data.db.entity.EntrySource
 import com.assismohanty.awaken.core.data.repo.MealReminderStore
+import com.assismohanty.awaken.core.data.catalog.FoodCatalog
 import com.assismohanty.awaken.core.data.db.entity.MealPlanEntryEntity
 import com.assismohanty.awaken.core.data.db.entity.RecipeEntity
 import com.assismohanty.awaken.core.domain.BodyLog
@@ -174,6 +175,8 @@ data class AmountForm(
     val mode: SearchMode = SearchMode.DIARY,
     /** Set when editing an existing diary row. */
     val editingRowId: String? = null,
+    /** Set when changing a planned food. */
+    val editingPlanId: String? = null,
 ) {
     val totalGrams: Double get() = portion?.let { it.grams * count } ?: grams
     val amounts: Nutrients get() = food.per100.forGrams(totalGrams)
@@ -291,6 +294,7 @@ sealed interface DietEvent {
 
     data class PlanDay(val date: LocalDate) : DietEvent
     data object AddToPlan : DietEvent
+    data class EditPlanned(val entry: MealPlanEntryEntity) : DietEvent
     data class LogPlanned(val id: String, val date: LocalDate) : DietEvent
     data class RemovePlanned(val id: String) : DietEvent
     data class LogWeight(val kg: Double) : DietEvent
@@ -563,7 +567,12 @@ class DietViewModel @Inject constructor(
                 }
                 if (form.mode == SearchMode.PLAN) {
                     val date = flow.value.planDate ?: return@launch
-                    bodyLog.plan(flow.value.today ?: diet.today(), date, form.meal, form.food, form.totalGrams, form.portionLabel)
+                    val planId = form.editingPlanId
+                    if (planId != null) {
+                        bodyLog.updatePlanned(planId, form.meal, form.totalGrams, form.portionLabel)
+                    } else {
+                        bodyLog.plan(flow.value.today ?: diet.today(), date, form.meal, form.food, form.totalGrams, form.portionLabel)
+                    }
                     flow.update { it.copy(amount = null, search = null) }
                     return@launch
                 }
@@ -605,6 +614,24 @@ class DietViewModel @Inject constructor(
             DietEvent.AddToPlan -> {
                 flow.update { it.copy(search = FoodSearch("BREAKFAST", SearchMode.PLAN)) }
                 refreshSearch()
+            }
+            is DietEvent.EditPlanned -> viewModelScope.launch {
+                val entry = event.entry
+                if (entry.logged) return@launch
+                val per100 = FoodCatalog.nutrientsFromJson(entry.nutrientsJson)
+                val portions = diet.portionsOf(entry.foodId)
+                val portion = portions.firstOrNull { entry.portionLabel?.endsWith(it.label) == true }
+                val form = AmountForm(
+                    food = Food(entry.foodId, entry.name, FoodSource.CUSTOM, per100, portions),
+                    meal = entry.meal,
+                    portions = portions,
+                    portion = portion,
+                    count = portion?.let { entry.grams / it.grams } ?: 1.0,
+                    grams = entry.grams,
+                    mode = SearchMode.PLAN,
+                    editingPlanId = entry.id,
+                )
+                flow.update { it.copy(amount = form) }
             }
             is DietEvent.LogPlanned -> viewModelScope.launch { bodyLog.logPlanned(event.id, event.date) }
             is DietEvent.RemovePlanned -> viewModelScope.launch { bodyLog.removePlanned(event.id) }

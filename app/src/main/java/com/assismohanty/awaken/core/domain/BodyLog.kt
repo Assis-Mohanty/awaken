@@ -170,6 +170,13 @@ class BodyLog @Inject constructor(
 
     suspend fun removePlanned(id: String) = dao.deletePlanEntry(id)
 
+    /** Changes the amount and meal of a planned food that is not logged yet. False when it is gone or already logged. */
+    suspend fun updatePlanned(id: String, meal: String, grams: Double, portionLabel: String?): Boolean {
+        val entry = dao.planEntry(id)?.takeIf { !it.logged && grams > 0.0 } ?: return false
+        dao.upsertPlanEntry(entry.copy(meal = meal, grams = grams.coerceAtMost(DietTracker.MAX_GRAMS), portionLabel = portionLabel))
+        return true
+    }
+
     /** "Log it": copies a planned food into the diary on [date] and marks the plan done, in one transaction. */
     suspend fun logPlanned(id: String, date: LocalDate): Boolean = transactions.run {
         val entry = dao.planEntry(id) ?: return@run false

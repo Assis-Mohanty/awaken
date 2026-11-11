@@ -106,6 +106,33 @@ class DietRecipePlanTest {
     }
 
     @Test
+    fun aPlannedAmountCanBeChangedUntilItIsLogged() = runBlocking<Unit> {
+        val vm = viewModel()
+        vm.until { !it.loading }
+        val idli = graph.diet.search("idli").first()
+        vm.onEvent(DietEvent.OpenPanel(Panel.PLAN))
+        vm.until { it.planDate == today }
+        vm.onEvent(DietEvent.AddToPlan)
+        vm.until { it.search?.mode == SearchMode.PLAN }
+        vm.onEvent(DietEvent.PickFood(idli))
+        vm.until { it.amount != null }
+        vm.onEvent(DietEvent.ConfirmAmount)
+        val planned = vm.until { it.planned.size == 1 }.planned.single()
+
+        vm.onEvent(DietEvent.EditPlanned(planned))
+        assertThat(vm.until { it.amount?.editingPlanId == planned.id }.amount?.grams).isEqualTo(planned.grams)
+        vm.onEvent(DietEvent.AmountChanged { it.copy(portion = null, grams = 250.0) })
+        vm.onEvent(DietEvent.ConfirmAmount)
+        val changed = vm.until { it.planned.singleOrNull()?.grams == 250.0 }.planned.single()
+        assertThat(changed.id).isEqualTo(planned.id)
+
+        vm.onEvent(DietEvent.LogPlanned(planned.id, today))
+        vm.until { it.planned.singleOrNull()?.logged == true }
+        assertThat(graph.bodyLog.updatePlanned(planned.id, "LUNCH", 10.0, null)).isFalse()
+        assertThat(vm.uiState.value.planned.single().grams).isEqualTo(250.0)
+    }
+
+    @Test
     fun thePlanStopsFourteenDaysAhead() = runBlocking<Unit> {
         val vm = viewModel()
         vm.until { !it.loading }
