@@ -15,6 +15,12 @@ Food and nutrient data
   Licence: https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/ (see OGL_v3.txt).
   This app is not endorsed by the UK Government.
 
+  Packaged foods (barcode scanner): contains information from Open Food Facts (https://world.openfoodfacts.org), which is made
+  available under the Open Database License (ODbL) 1.0, with individual contents under the Database Contents License 1.0.
+  (c) Open Food Facts contributors. Licence texts: see ODbL_Open_Food_Facts.txt. The subset of products in this app and the
+  script that builds it are available at https://github.com/Assis-Mohanty/awaken-packaged-foods . Values come from product
+  labels entered by volunteers and may be wrong. Product photos are not used. Not endorsed by Open Food Facts.
+
   Indian dishes marked "Estimate" are calculated by AWAKEN from its own recipes and the ingredient data above.
   Home cooking varies, so treat them as a guide. Values are for information only, not medical advice.
 
