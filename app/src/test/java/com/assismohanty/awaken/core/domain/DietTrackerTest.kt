@@ -4,6 +4,8 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.assismohanty.awaken.core.data.catalog.Portion
 import com.assismohanty.awaken.core.data.db.entity.Meal
 import com.assismohanty.awaken.engine.body.ActivityLevel
+import com.assismohanty.awaken.engine.body.GoalSettings
+import com.assismohanty.awaken.engine.body.LossPace
 import com.assismohanty.awaken.engine.body.Nutrient
 import com.assismohanty.awaken.engine.body.Nutrients
 import com.assismohanty.awaken.engine.body.Sex
@@ -44,6 +46,30 @@ class DietTrackerTest {
         assertThat(plan.plan.kcal).isEqualTo(2_000)
         assertThat(plan.setup.weightKg).isEqualTo(82.0)
         assertThat(plan.overrides).containsExactly(Nutrient.KCAL, 2_000.0)
+    }
+
+    @Test
+    fun paceChangesTheLossTargetAndAFastPaceIsCappedAtAQuarterOfMaintenance() = runTest {
+        // Maintenance is 2,749 kcal (vector 46); a quarter of it rounds down to 687.
+        diet.saveSetup(setup.copy(goal = WeightGoal.LOSE, settings = GoalSettings(lossPace = LossPace.GENTLE)))
+        assertThat(diet.observePlan().first()?.plan?.kcal).isEqualTo(2_499)
+
+        diet.saveSetup(setup.copy(goal = WeightGoal.LOSE, settings = GoalSettings(lossPace = LossPace.FASTER)))
+        val plan = checkNotNull(diet.observePlan().first())
+        assertThat(plan.plan.kcal).isEqualTo(2_062)
+        assertThat(plan.goal?.capped).isTrue()
+    }
+
+    @Test
+    fun theGuardHidesTargetsForAYoungOrUnderweightProfileButKeepsThePlan() = runTest {
+        diet.saveSetup(setup)
+        assertThat(diet.observePlan().first()?.targetsVisible).isTrue()
+
+        diet.saveSetup(setup.copy(weightKg = 50.0)) // BMI 16.3
+        assertThat(diet.observePlan().first()?.targetsVisible).isFalse()
+
+        diet.saveSetup(setup.copy(birthYear = 2010))
+        assertThat(diet.observePlan().first()?.targetsVisible).isFalse()
     }
 
     @Test

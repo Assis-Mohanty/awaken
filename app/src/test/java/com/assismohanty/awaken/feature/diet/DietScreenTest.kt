@@ -49,14 +49,18 @@ class DietScreenTest {
         }
 
         // GD §13 vector 46 on the test clock (2026-10-18): 25 y, 175 cm, 80 kg, moderate, maintain → 2,749 kcal.
-        waitForText("What is your goal?")
-        composeRule.onNodeWithText("Maintain weight").performScrollTo().performClick()
+        waitForText("Step 1 of 3")
         composeRule.onNodeWithText("Male").performScrollTo().performClick()
         composeRule.onNodeWithContentDescription("Birth year").performScrollTo().performTextInput("2001")
         composeRule.onNodeWithContentDescription("Height").performScrollTo().performTextInput("175")
         composeRule.onNodeWithContentDescription("Weight").performScrollTo().performTextInput("80")
         composeRule.onNodeWithText("Moderate", substring = true).performScrollTo().performClick()
-        
+        composeRule.onNodeWithText("Next").performScrollTo().performClick()
+
+        waitForText("Step 2 of 3")
+        composeRule.onNodeWithText("Maintain weight").performScrollTo().performClick()
+        composeRule.onNodeWithText("Next").performScrollTo().performClick()
+
         waitForText("2,749 kcal / day")
         composeRule.onNodeWithText("Save budget").performScrollTo().performClick()
 

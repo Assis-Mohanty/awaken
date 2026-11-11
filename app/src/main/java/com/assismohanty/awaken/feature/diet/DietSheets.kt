@@ -36,6 +36,8 @@ import com.assismohanty.awaken.R
 import com.assismohanty.awaken.core.data.catalog.Food
 import com.assismohanty.awaken.core.data.catalog.FoodSource
 import com.assismohanty.awaken.core.data.catalog.Portion
+import com.assismohanty.awaken.core.data.db.entity.MeasureKind
+import com.assismohanty.awaken.core.data.db.entity.WeightLogEntity
 import com.assismohanty.awaken.core.domain.CustomFoodDraft
 import com.assismohanty.awaken.core.domain.CustomFoodResult
 import com.assismohanty.awaken.core.domain.MealSlot
@@ -548,5 +550,69 @@ private fun AmountPreview() {
 private fun TargetsPreview() {
     AwakenTheme(reduceMotion = true) {
         Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) { TargetsContent(checkNotNull(previewDietState().plan), onEvent = {}) }
+    }
+}
+
+// Weight and measurements
+
+@Composable
+fun WeightSheet(weights: List<WeightLogEntity>, onEvent: (DietEvent) -> Unit) {
+    DietSheet(onDismiss = { onEvent(DietEvent.CloseWeight) }) { WeightContent(weights, onEvent) }
+}
+
+@Composable
+fun WeightContent(weights: List<WeightLogEntity>, onEvent: (DietEvent) -> Unit) {
+    val colors = AwakenTheme.colors
+    var kg by remember { mutableStateOf(0.0) }
+    var kind by rememberSaveable { mutableStateOf(MeasureKind.WAIST) }
+    var cm by remember { mutableStateOf(0.0) }
+    SheetTitle(lexString(R.string.diet_weight_title))
+    LabeledRow(R.string.diet_weight_hint) {
+        NumberField(value = kg, onValueChange = { kg = it }, description = lexString(R.string.diet_weight_hint), suffix = lexString(R.string.diet_unit_kg))
+    }
+    PrimaryButton(text = lexString(R.string.diet_weight_save), onClick = { onEvent(DietEvent.LogWeight(kg)) }, enabled = kg > 0.0, modifier = Modifier.fillMaxWidth())
+    if (weights.isEmpty()) Text(lexString(R.string.diet_weight_empty), style = AwakenTheme.type.body, color = colors.textSecondary)
+    weights.take(WEIGHT_ROWS).forEachIndexed { i, w ->
+        if (i > 0) HorizontalDivider(color = colors.divider, thickness = AwakenTheme.dimens.hairline)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(w.gameDate.toString(), style = AwakenTheme.type.caption, color = colors.textSecondary, modifier = Modifier.weight(1f))
+            Text(lexString(R.string.diet_weight_row, formatAmount(w.weightKg)), style = AwakenTheme.type.label, color = colors.textPrimary)
+            QuietButton(text = lexString(R.string.cd_diet_weight_delete, w.gameDate.toString()), onClick = { onEvent(DietEvent.DeleteWeight(w.id)) })
+        }
+    }
+    Text(lexString(R.string.diet_measure_title), style = AwakenTheme.type.label, color = colors.accent)
+    FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.xs), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+        MeasureKind.entries.forEach { k -> ChoiceChip(text = lexString(k.nameRes()), selected = kind == k, onClick = { kind = k }) }
+    }
+    LabeledRow(kind.nameRes()) {
+        NumberField(value = cm, onValueChange = { cm = it }, description = lexString(kind.nameRes()), key = kind, suffix = lexString(R.string.diet_unit_cm))
+    }
+    SecondaryButton(text = lexString(R.string.diet_measure_save), onClick = { onEvent(DietEvent.LogMeasure(kind, cm)) }, enabled = cm > 0.0, modifier = Modifier.fillMaxWidth())
+}
+
+@StringRes
+private fun MeasureKind.nameRes(): Int = when (this) {
+    MeasureKind.WAIST -> R.string.diet_measure_waist
+    MeasureKind.HIP -> R.string.diet_measure_hip
+    MeasureKind.CHEST -> R.string.diet_measure_chest
+    MeasureKind.ARM -> R.string.diet_measure_arm
+    MeasureKind.THIGH -> R.string.diet_measure_thigh
+}
+
+private const val WEIGHT_ROWS = 10
+
+@PhonePreviews
+@Composable
+private fun WeightPreview() {
+    AwakenTheme(reduceMotion = true) {
+        Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+            WeightContent(
+                listOf(
+                    WeightLogEntity("1", java.time.LocalDate.of(2026, 10, 27), 80.4, java.time.Instant.EPOCH, null),
+                    WeightLogEntity("2", java.time.LocalDate.of(2026, 10, 20), 81.0, java.time.Instant.EPOCH, null),
+                ),
+                onEvent = {},
+            )
+        }
     }
 }

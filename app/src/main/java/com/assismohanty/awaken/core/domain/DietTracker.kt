@@ -16,6 +16,12 @@ import com.assismohanty.awaken.core.data.db.entity.NutritionProfileEntity
 import com.assismohanty.awaken.engine.GameDay
 import com.assismohanty.awaken.engine.body.ActivityLevel
 import com.assismohanty.awaken.engine.body.BodyProfile
+import com.assismohanty.awaken.engine.body.DietGuard
+import com.assismohanty.awaken.engine.body.GoalCalculator
+import com.assismohanty.awaken.engine.body.GoalPlan
+import com.assismohanty.awaken.engine.body.GoalSettings
+import com.assismohanty.awaken.engine.body.Hydration
+import com.assismohanty.awaken.engine.body.MacroSplit
 import com.assismohanty.awaken.engine.body.Nutrient
 import com.assismohanty.awaken.engine.body.NutritionMath
 import com.assismohanty.awaken.engine.body.NutritionPlan
@@ -37,10 +43,22 @@ data class DietSetup(
     val weightKg: Double,
     val activity: ActivityLevel,
     val goal: WeightGoal,
+    /** Pace and macro split (GD 20.1); the defaults give the GD 13.1 plan. */
+    val settings: GoalSettings = GoalSettings(),
 )
 
-/** Setup plus the engine's plan for it on a given day. */
-data class DietPlan(val setup: DietSetup, val overrides: Map<Nutrient, Double>, val plan: NutritionPlan)
+/**
+ * Setup plus the engine's plan for it on a given day. [targetsVisible] is false when the guard hides calorie targets (GD 20.2).
+ * [goal] says whether the pace was capped, the floor applied or the split did not fit.
+ */
+data class DietPlan(
+    val setup: DietSetup,
+    val overrides: Map<Nutrient, Double>,
+    val plan: NutritionPlan,
+    val goal: GoalPlan? = null,
+    val targetsVisible: Boolean = true,
+    val waterTargetMl: Int = Hydration.defaultTargetMl(setup.sex),
+)
 
 /** One diary row with its amounts for the logged grams. */
 data class DiaryEntry(val row: FoodLogEntity, val amounts: Nutrients)
@@ -71,13 +89,26 @@ class DietTracker @Inject constructor(
     fun observePlan(): Flow<DietPlan?> = dietDao.observeProfile().map { it?.let { profile -> planFor(profile, today()) } }
 
     private fun planFor(profile: NutritionProfileEntity, today: LocalDate): DietPlan {
-        val setup = DietSetup(profile.sex, profile.birthYear, profile.heightCm, profile.weightKg, profile.activity, profile.goal)
+        val setup = DietSetup(profile.sex, profile.birthYear, profile.heightCm, profile.weightKg, profile.activity, profile.goal, settingsOf(profile))
         val overrides = overridesFromJson(profile.overridesJson)
-        return DietPlan(setup, overrides, NutritionMath.plan(setup.toBody(today), overrides))
+        // Targets come from the plan weight, so a noisy scale never moves them (GD 20.2).
+        val goal = GoalCalculator.plan(setup.toBody(today).copy(weightKg = (profile.planWeightKg ?: profile.weightKg).coerceIn(NutritionMath.WEIGHT_KG_RANGE)), setup.settings, overrides)
+        return DietPlan(
+            setup, overrides, goal.plan, goal,
+            targetsVisible = DietGuard.targetsVisible(profile.birthYear, today, profile.heightCm, profile.weightKg),
+            waterTargetMl = Hydration.targetMl(profile.sex, profile.waterTargetMl),
+        )
     }
 
     /** Engine plan for an unsaved form, for the live preview while setting up. */
-    fun preview(setup: DietSetup, today: LocalDate): NutritionPlan = NutritionMath.plan(setup.toBody(today))
+    fun preview(setup: DietSetup, today: LocalDate): GoalPlan = GoalCalculator.plan(setup.toBody(today), setup.settings)
+
+    private fun settingsOf(profile: NutritionProfileEntity) = GoalSettings(
+        lossPace = profile.lossPace,
+        preset = profile.macroPreset,
+        proteinPerKg = profile.proteinPerKg,
+        split = profile.splitProteinPct?.let { p -> profile.splitCarbsPct?.let { c -> profile.splitFatPct?.let { f -> MacroSplit.of(p, c, f) } } },
+    )
 
     private fun DietSetup.toBody(today: LocalDate) = BodyProfile(
         sex = sex,
@@ -90,9 +121,20 @@ class DietTracker @Inject constructor(
 
     /** Saves the setup, keeping any target overrides already set. */
     suspend fun saveSetup(setup: DietSetup) {
-        val overrides = dietDao.profile()?.overridesJson ?: EMPTY_JSON_OBJECT
+        val existing = dietDao.profile()
+        val overrides = existing?.overridesJson ?: EMPTY_JSON_OBJECT
         dietDao.upsertProfile(
             NutritionProfileEntity(
+                lossPace = setup.settings.lossPace,
+                macroPreset = setup.settings.preset,
+                proteinPerKg = setup.settings.proteinPerKg,
+                splitProteinPct = setup.settings.split?.proteinPct,
+                splitCarbsPct = setup.settings.split?.carbsPct,
+                splitFatPct = setup.settings.split?.fatPct,
+                waterTargetMl = existing?.waterTargetMl,
+                // Setting up again starts a fresh plan from the weight just entered.
+                planWeightKg = null,
+                trendDismissedOn = null,
                 sex = setup.sex,
                 birthYear = setup.birthYear,
                 heightCm = setup.heightCm.coerceIn(NutritionMath.HEIGHT_CM_RANGE),

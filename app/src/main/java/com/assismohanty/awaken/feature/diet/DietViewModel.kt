@@ -23,7 +23,15 @@ import kotlinx.coroutines.flow.first
 import com.assismohanty.awaken.engine.body.ActivityLevel
 import com.assismohanty.awaken.engine.body.Nutrient
 import com.assismohanty.awaken.engine.body.NutritionMath
-import com.assismohanty.awaken.engine.body.NutritionPlan
+import com.assismohanty.awaken.engine.body.GoalPlan
+import com.assismohanty.awaken.engine.body.GoalSettings
+import com.assismohanty.awaken.engine.body.Hydration
+import com.assismohanty.awaken.engine.body.LossPace
+import com.assismohanty.awaken.engine.body.MacroPreset
+import com.assismohanty.awaken.engine.body.MacroSplit
+import com.assismohanty.awaken.core.data.db.entity.MeasureKind
+import com.assismohanty.awaken.core.data.db.entity.WeightLogEntity
+import com.assismohanty.awaken.core.domain.TrendOffer
 import com.assismohanty.awaken.engine.body.Nutrients
 import com.assismohanty.awaken.engine.body.Sex
 import com.assismohanty.awaken.engine.body.WeightGoal
@@ -51,15 +59,33 @@ data class SetupForm(
     val heightCm: Double = 0.0,
     val weightKg: Double = 0.0,
     val activity: ActivityLevel? = null,
+    /** 1 about you, 2 goal and pace, 3 your numbers. */
+    val step: Int = 1,
+    val lossPace: LossPace = LossPace.STEADY,
+    val preset: MacroPreset = MacroPreset.BALANCED,
+    val proteinPct: Int = 0,
+    val carbsPct: Int = 0,
+    val fatPct: Int = 0,
     /** Engine plan for the form as it stands, once it is complete. */
-    val preview: NutritionPlan? = null,
+    val preview: GoalPlan? = null,
     val editing: Boolean = false,
 ) {
+    /** Step 1 is complete: the answers the maintenance number needs. */
+    fun aboutYouDone(today: LocalDate): Boolean {
+        val age = NutritionMath.ageOn(birthYear, today)
+        return sex != null && activity != null && age in NutritionMath.AGE_RANGE && heightCm in NutritionMath.HEIGHT_CM_RANGE && weightKg in NutritionMath.WEIGHT_KG_RANGE
+    }
+
+    /** A custom split only counts when the three percentages add to 100. */
+    val customSplit: MacroSplit? get() = MacroSplit.of(proteinPct, carbsPct, fatPct)
+
     fun toSetup(today: LocalDate): DietSetup? {
         val age = NutritionMath.ageOn(birthYear, today)
         if (goal == null || sex == null || activity == null) return null
         if (age !in NutritionMath.AGE_RANGE || heightCm !in NutritionMath.HEIGHT_CM_RANGE || weightKg !in NutritionMath.WEIGHT_KG_RANGE) return null
-        return DietSetup(sex, birthYear, heightCm, weightKg, activity, goal)
+        if (preset == MacroPreset.CUSTOM && customSplit == null) return null
+        val settings = GoalSettings(lossPace = lossPace, preset = preset, split = customSplit.takeIf { preset == MacroPreset.CUSTOM })
+        return DietSetup(sex, birthYear, heightCm, weightKg, activity, goal, settings)
     }
 }
 
@@ -119,7 +145,11 @@ data class DietFlow(
     val amount: AmountForm? = null,
     val targets: Boolean = false,
     val prompt: Prompt? = null,
+    val weightSheet: Boolean = false,
 )
+
+/** What the trackers around the diary show for the viewed day. */
+data class Trackers(val waterMl: Int = 0, val weights: List<WeightLogEntity> = emptyList(), val offer: TrendOffer? = null)
 
 data class DietUiState(
     val loading: Boolean = true,
@@ -131,6 +161,10 @@ data class DietUiState(
     val savedMeals: List<SavedMealSummary> = emptyList(),
     val note: String? = null,
     val prompt: Prompt? = null,
+    val offer: TrendOffer? = null,
+    val waterMl: Int = 0,
+    val weights: List<WeightLogEntity> = emptyList(),
+    val weightSheet: Boolean = false,
     val setup: SetupForm? = null,
     val search: FoodSearch? = null,
     val amount: AmountForm? = null,
@@ -147,6 +181,17 @@ sealed interface DietEvent {
     /** Applied to the form as it is now, so quick successive edits never overwrite each other. */
     data class SetupChanged(val change: (SetupForm) -> SetupForm) : DietEvent
     data object SaveProfile : DietEvent
+    data object SetupNext : DietEvent
+    data object SetupBack : DietEvent
+
+    data class AddWater(val ml: Int) : DietEvent
+    data object AcceptTrend : DietEvent
+    data object DismissTrend : DietEvent
+    data object OpenWeight : DietEvent
+    data object CloseWeight : DietEvent
+    data class LogWeight(val kg: Double) : DietEvent
+    data class DeleteWeight(val id: String) : DietEvent
+    data class LogMeasure(val kind: MeasureKind, val cm: Double) : DietEvent
 
     data class OpenSearch(val meal: String) : DietEvent
     data object CloseSearch : DietEvent
@@ -199,8 +244,17 @@ class DietViewModel @Inject constructor(
         flow.map { it.date }.distinctUntilChanged().flatMapLatest { date ->
             date?.let { d -> combine(diet.observeDay(d), bodyLog.observeNote(d)) { day, note -> day to note?.text } } ?: flowOf(null)
         },
+        flow.map { it.date }.distinctUntilChanged().flatMapLatest { date ->
+            if (date == null) {
+                flowOf(Trackers())
+            } else {
+                combine(bodyLog.observeWaterMl(date), bodyLog.observeWeights(date.minusDays(WEIGHT_DAYS)), diet.observePlan()) { water, weights, _ ->
+                    Trackers(water, weights.sortedByDescending { it.loggedAt }, bodyLog.trendOffer(flow.value.today ?: date))
+                }
+            }
+        },
         flow,
-    ) { plan, library, dayAndNote, f ->
+    ) { plan, library, dayAndNote, trackers, f ->
         val (slots, saved) = library
         DietUiState(
             loading = f.date == null,
@@ -212,6 +266,10 @@ class DietViewModel @Inject constructor(
             savedMeals = saved,
             note = dayAndNote?.second,
             prompt = f.prompt,
+            offer = trackers.offer,
+            waterMl = trackers.waterMl,
+            weights = trackers.weights,
+            weightSheet = f.weightSheet,
             setup = f.setup ?: if (plan == null) SetupForm() else null,
             search = f.search,
             amount = f.amount,
@@ -234,10 +292,26 @@ class DietViewModel @Inject constructor(
 
             DietEvent.EditProfile -> {
                 val setup = uiState.value.plan?.setup ?: return
-                val form = SetupForm(setup.goal, setup.sex, setup.birthYear, setup.heightCm, setup.weightKg, setup.activity, editing = true)
+                val s = setup.settings
+                val form = SetupForm(
+                    setup.goal, setup.sex, setup.birthYear, setup.heightCm, setup.weightKg, setup.activity,
+                    lossPace = s.lossPace, preset = s.preset, proteinPct = s.split?.proteinPct ?: 0, carbsPct = s.split?.carbsPct ?: 0, fatPct = s.split?.fatPct ?: 0,
+                    editing = true,
+                )
                 flow.update { it.copy(setup = withPreview(form), targets = false) }
             }
             DietEvent.CancelProfile -> flow.update { it.copy(setup = null) }
+            DietEvent.SetupNext -> flow.update { f -> f.setup?.let { form -> f.copy(setup = withPreview(form.copy(step = (form.step + 1).coerceAtMost(LAST_STEP)))) } ?: f }
+            DietEvent.SetupBack -> flow.update { f -> f.setup?.let { form -> f.copy(setup = withPreview(form.copy(step = (form.step - 1).coerceAtLeast(1)))) } ?: f }
+
+            is DietEvent.AddWater -> viewModelScope.launch { bodyLog.addWater(flow.value.today ?: diet.today(), event.ml) }
+            DietEvent.AcceptTrend -> viewModelScope.launch { uiState.value.offer?.let { bodyLog.acceptTrend(it) } }
+            DietEvent.DismissTrend -> viewModelScope.launch { bodyLog.dismissTrend(flow.value.today ?: diet.today()) }
+            DietEvent.OpenWeight -> flow.update { it.copy(weightSheet = true) }
+            DietEvent.CloseWeight -> flow.update { it.copy(weightSheet = false) }
+            is DietEvent.LogWeight -> viewModelScope.launch { bodyLog.logWeight(flow.value.today ?: diet.today(), event.kg) }
+            is DietEvent.DeleteWeight -> viewModelScope.launch { bodyLog.deleteWeight(event.id) }
+            is DietEvent.LogMeasure -> viewModelScope.launch { bodyLog.logMeasure(flow.value.today ?: diet.today(), event.kind, event.cm) }
             is DietEvent.SetupChanged -> flow.update { f -> f.copy(setup = withPreview(event.change(f.setup ?: SetupForm()))) }
             DietEvent.SaveProfile -> viewModelScope.launch {
                 val setup = flow.value.setup?.toSetup(today()) ?: return@launch
@@ -376,6 +450,8 @@ class DietViewModel @Inject constructor(
     private companion object {
         const val STOP_TIMEOUT_MS = 5_000L
         const val FALLBACK_MEAL = "SNACK"
+        const val LAST_STEP = 3
+        const val WEIGHT_DAYS = 90L
 
         /** A quick add keeps its numbers per 100 g and logs exactly 100 g, so the row shows what was typed. */
         const val QUICK_GRAMS = 100.0

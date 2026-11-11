@@ -59,6 +59,10 @@ import com.assismohanty.awaken.core.domain.DietSetup
 import com.assismohanty.awaken.core.domain.MealSlot
 import com.assismohanty.awaken.engine.body.ActivityLevel
 import com.assismohanty.awaken.engine.body.BodyProfile
+import com.assismohanty.awaken.engine.body.Hydration
+import com.assismohanty.awaken.engine.body.LossPace
+import com.assismohanty.awaken.core.domain.TrendOffer
+import com.assismohanty.awaken.engine.body.MacroPreset
 import com.assismohanty.awaken.engine.body.Nutrient
 import com.assismohanty.awaken.engine.body.NutritionMath
 import com.assismohanty.awaken.engine.body.Nutrients
@@ -88,7 +92,7 @@ fun DietScreen(state: DietUiState, onEvent: (DietEvent) -> Unit, modifier: Modif
         title = lexString(R.string.diet_title),
         modifier = modifier,
         actions = {
-            if (state.setup == null && state.plan != null) {
+            if (state.setup == null && state.plan?.targetsVisible == true) {
                 HeaderIconButton(AwakenGlyphs.Settings, lexString(R.string.cd_diet_targets), { onEvent(DietEvent.OpenTargets) })
             }
         },
@@ -109,6 +113,7 @@ fun DietScreen(state: DietUiState, onEvent: (DietEvent) -> Unit, modifier: Modif
     state.prompt?.let { PromptSheet(it, state.note, onEvent) }
     state.amount?.let { AmountSheet(it, state.slots, onEvent) }
     if (state.targets) state.plan?.let { TargetsSheet(it, onEvent) }
+    if (state.weightSheet) WeightSheet(state.weights, onEvent)
 }
 
 // Setup
@@ -119,71 +124,113 @@ private fun SetupWindow(form: SetupForm, canCancel: Boolean, onEvent: (DietEvent
     val type = AwakenTheme.type
     val change: ((SetupForm) -> SetupForm) -> Unit = { onEvent(DietEvent.SetupChanged(it)) }
     SystemWindow(title = lexString(R.string.diet_window_setup), accent = colors.accent, reveal = false) {
-        Text(lexString(R.string.diet_setup_intro), style = type.body, color = colors.textSecondary)
-        Question(R.string.diet_setup_goal)
-        WeightGoal.entries.forEach { goal ->
-            ChoiceChip(text = lexString(goal.nameRes()), selected = form.goal == goal, onClick = { change { it.copy(goal = goal) } }, modifier = Modifier.fillMaxWidth())
+        Text(lexString(R.string.diet_setup_step, form.step), style = type.caption, color = colors.textSecondary)
+        when (form.step) {
+            1 -> AboutYouStep(form, change)
+            2 -> GoalStep(form, change)
+            else -> NumbersStep(form, change)
         }
-        Question(R.string.diet_setup_sex)
-        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
-            Sex.entries.forEach { sex ->
-                ChoiceChip(text = lexString(sex.nameRes()), selected = form.sex == sex, onClick = { change { it.copy(sex = sex) } }, modifier = Modifier.weight(1f))
-            }
+        Text(lexString(R.string.diet_estimate_disclaimer), style = type.caption, color = colors.textMuted)
+        val ready = when (form.step) {
+            1 -> form.sex != null && form.activity != null && form.birthYear > 0 && form.heightCm > 0.0 && form.weightKg > 0.0
+            2 -> form.goal != null
+            else -> form.preview != null
         }
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.md), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
-            LabeledNumber(R.string.diet_setup_birth_year) {
-                NumberField(
-                    value = form.birthYear.toDouble(),
-                    onValueChange = { change { f -> f.copy(birthYear = it.toInt()) } },
-                    description = lexString(R.string.diet_setup_birth_year),
-                    decimals = false,
-                )
-            }
-            LabeledNumber(R.string.diet_setup_height) {
-                NumberField(
-                    value = form.heightCm,
-                    onValueChange = { change { f -> f.copy(heightCm = it) } },
-                    description = lexString(R.string.diet_setup_height),
-                    suffix = lexString(R.string.diet_unit_cm),
-                )
-            }
-            LabeledNumber(R.string.diet_setup_weight) {
-                NumberField(
-                    value = form.weightKg,
-                    onValueChange = { change { f -> f.copy(weightKg = it) } },
-                    description = lexString(R.string.diet_setup_weight),
-                    suffix = lexString(R.string.diet_unit_kg),
-                )
-            }
-        }
-        Question(R.string.diet_setup_activity)
-        ActivityLevel.entries.forEach { level ->
-            ChoiceChip(text = lexString(level.nameRes()), selected = form.activity == level, onClick = { change { it.copy(activity = level) } }, modifier = Modifier.fillMaxWidth())
-        }
-        val preview = form.preview
-        if (preview == null) {
-            Text(lexString(R.string.diet_setup_incomplete), style = type.caption, color = colors.textSecondary)
+        if (form.step < LAST_SETUP_STEP) {
+            PrimaryButton(text = lexString(R.string.diet_setup_next), onClick = { onEvent(DietEvent.SetupNext) }, enabled = ready, modifier = Modifier.fillMaxWidth())
         } else {
-            Text(lexString(R.string.diet_setup_budget, formatCount(preview.kcal)), style = type.numeric, color = colors.textPrimary)
-            Text(lexString(R.string.diet_setup_preview, formatCount(preview.bmr), formatCount(preview.tdee)), style = type.caption, color = colors.textSecondary)
-            Text(
-                lexString(
-                    R.string.diet_setup_macros,
-                    formatAmount(preview.targets[Nutrient.PROTEIN]?.amount ?: 0.0),
-                    formatAmount(preview.targets[Nutrient.CARBS]?.amount ?: 0.0),
-                    formatAmount(preview.targets[Nutrient.FAT]?.amount ?: 0.0),
-                ),
-                style = type.caption,
-                color = colors.textSecondary,
-            )
+            PrimaryButton(text = lexString(R.string.diet_setup_save), onClick = { onEvent(DietEvent.SaveProfile) }, enabled = ready, modifier = Modifier.fillMaxWidth())
         }
-        PrimaryButton(
-            text = lexString(R.string.diet_setup_save),
-            onClick = { onEvent(DietEvent.SaveProfile) },
-            enabled = preview != null,
-            modifier = Modifier.fillMaxWidth(),
-        )
+        if (form.step > 1) QuietButton(text = lexString(R.string.diet_setup_back), onClick = { onEvent(DietEvent.SetupBack) })
         if (canCancel) QuietButton(text = lexString(R.string.action_cancel), onClick = { onEvent(DietEvent.CancelProfile) })
+    }
+}
+
+private const val LAST_SETUP_STEP = 3
+
+@Composable
+private fun AboutYouStep(form: SetupForm, change: ((SetupForm) -> SetupForm) -> Unit) {
+    Text(lexString(R.string.diet_setup_intro), style = AwakenTheme.type.body, color = AwakenTheme.colors.textSecondary)
+    Question(R.string.diet_setup_sex)
+    Row(horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+        Sex.entries.forEach { sex ->
+            ChoiceChip(text = lexString(sex.nameRes()), selected = form.sex == sex, onClick = { change { it.copy(sex = sex) } }, modifier = Modifier.weight(1f))
+        }
+    }
+    FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.md), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+        LabeledNumber(R.string.diet_setup_birth_year) {
+            NumberField(value = form.birthYear.toDouble(), onValueChange = { change { f -> f.copy(birthYear = it.toInt()) } }, description = lexString(R.string.diet_setup_birth_year), decimals = false)
+        }
+        LabeledNumber(R.string.diet_setup_height) {
+            NumberField(value = form.heightCm, onValueChange = { change { f -> f.copy(heightCm = it) } }, description = lexString(R.string.diet_setup_height), suffix = lexString(R.string.diet_unit_cm))
+        }
+        LabeledNumber(R.string.diet_setup_weight) {
+            NumberField(value = form.weightKg, onValueChange = { change { f -> f.copy(weightKg = it) } }, description = lexString(R.string.diet_setup_weight), suffix = lexString(R.string.diet_unit_kg))
+        }
+    }
+    Question(R.string.diet_setup_activity)
+    ActivityLevel.entries.forEach { level ->
+        ChoiceChip(text = lexString(level.nameRes()), selected = form.activity == level, onClick = { change { it.copy(activity = level) } }, modifier = Modifier.fillMaxWidth())
+    }
+}
+
+@Composable
+private fun GoalStep(form: SetupForm, change: ((SetupForm) -> SetupForm) -> Unit) {
+    Question(R.string.diet_setup_goal)
+    WeightGoal.entries.forEach { goal ->
+        ChoiceChip(text = lexString(goal.nameRes()), selected = form.goal == goal, onClick = { change { it.copy(goal = goal) } }, modifier = Modifier.fillMaxWidth())
+    }
+    if (form.goal == WeightGoal.LOSE) {
+        Question(R.string.diet_setup_pace)
+        LossPace.entries.forEach { pace ->
+            ChoiceChip(text = lexString(pace.nameRes()), selected = form.lossPace == pace, onClick = { change { it.copy(lossPace = pace) } }, modifier = Modifier.fillMaxWidth())
+        }
+        Text(lexString(R.string.diet_pace_note), style = AwakenTheme.type.caption, color = AwakenTheme.colors.textSecondary)
+    }
+}
+
+@Composable
+private fun NumbersStep(form: SetupForm, change: ((SetupForm) -> SetupForm) -> Unit) {
+    val colors = AwakenTheme.colors
+    val type = AwakenTheme.type
+    val preview = form.preview
+    if (preview == null) {
+        Text(lexString(if (form.preset == MacroPreset.CUSTOM && form.customSplit == null) R.string.diet_split_not_100 else R.string.diet_setup_incomplete), style = type.caption, color = colors.textSecondary)
+    } else {
+        val plan = preview.plan
+        Text(lexString(R.string.diet_setup_budget, formatCount(plan.kcal)), style = type.numeric, color = colors.textPrimary)
+        Text(lexString(R.string.diet_setup_preview, formatCount(plan.bmr), formatCount(plan.tdee)), style = type.caption, color = colors.textSecondary)
+        Text(
+            lexString(
+                R.string.diet_setup_macros,
+                formatAmount(plan.targets[Nutrient.PROTEIN]?.amount ?: 0.0),
+                formatAmount(plan.targets[Nutrient.CARBS]?.amount ?: 0.0),
+                formatAmount(plan.targets[Nutrient.FAT]?.amount ?: 0.0),
+            ),
+            style = type.caption,
+            color = colors.textSecondary,
+        )
+        if (preview.atFloor) Text(lexString(R.string.diet_floor_note), style = type.caption, color = colors.textPrimary)
+        if (!preview.splitFits) Text(lexString(R.string.diet_split_no_fit), style = type.caption, color = colors.textPrimary)
+    }
+    Question(R.string.diet_split_title)
+    Row(horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+        MacroPreset.entries.forEach { preset ->
+            ChoiceChip(text = lexString(preset.nameRes()), selected = form.preset == preset, onClick = { change { it.copy(preset = preset) } }, modifier = Modifier.weight(1f))
+        }
+    }
+    if (form.preset == MacroPreset.CUSTOM) {
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.md), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+            LabeledNumber(R.string.diet_split_protein_pct) {
+                NumberField(value = form.proteinPct.toDouble(), onValueChange = { change { f -> f.copy(proteinPct = it.toInt()) } }, description = lexString(R.string.diet_split_protein_pct), decimals = false)
+            }
+            LabeledNumber(R.string.diet_split_carbs_pct) {
+                NumberField(value = form.carbsPct.toDouble(), onValueChange = { change { f -> f.copy(carbsPct = it.toInt()) } }, description = lexString(R.string.diet_split_carbs_pct), decimals = false)
+            }
+            LabeledNumber(R.string.diet_split_fat_pct) {
+                NumberField(value = form.fatPct.toDouble(), onValueChange = { change { f -> f.copy(fatPct = it.toInt()) } }, description = lexString(R.string.diet_split_fat_pct), decimals = false)
+            }
+        }
     }
 }
 
@@ -215,6 +262,7 @@ private fun Diary(state: DietUiState, plan: DietPlan, onEvent: (DietEvent) -> Un
             .defaultMinSize(minHeight = AwakenTheme.dimens.touchTarget)
             .clickable { onEvent(DietEvent.OpenPrompt(Prompt.Note)) },
     )
+    if (plan.targetsVisible) state.offer?.let { TrendCard(it, onEvent) }
     BudgetHero(plan, day.totals, Modifier.staggeredEntrance(0))
     state.slots.forEachIndexed { i, slot ->
         MealWindow(slot, state.slots, day.meals[slot.id].orEmpty(), state.isToday, onEvent, Modifier.staggeredEntrance(1 + i))
@@ -225,8 +273,39 @@ private fun Diary(state: DietUiState, plan: DietPlan, onEvent: (DietEvent) -> Un
     if (state.slots.size < FoodLibrary.MAX_MEALS) {
         SecondaryButton(text = lexString(R.string.diet_new_meal_add), onClick = { onEvent(DietEvent.OpenPrompt(Prompt.NewMeal)) }, modifier = Modifier.fillMaxWidth())
     }
+    WaterRow(state.waterMl, plan.waterTargetMl, onEvent)
+    SecondaryButton(text = lexString(R.string.diet_weight_button), onClick = { onEvent(DietEvent.OpenWeight) }, modifier = Modifier.fillMaxWidth())
     NutrientsWindow(plan, day.totals)
 }
+
+@Composable
+private fun TrendCard(offer: TrendOffer, onEvent: (DietEvent) -> Unit) {
+    val colors = AwakenTheme.colors
+    SystemWindow(title = lexString(R.string.diet_offer_title), accent = colors.accent, reveal = false) {
+        Text(lexString(R.string.diet_offer_body, formatAmount(offer.trendKg), formatAmount(offer.planWeightKg)), style = AwakenTheme.type.body, color = colors.textSecondary)
+        PrimaryButton(text = lexString(R.string.diet_offer_accept), onClick = { onEvent(DietEvent.AcceptTrend) }, modifier = Modifier.fillMaxWidth())
+        QuietButton(text = lexString(R.string.diet_offer_dismiss), onClick = { onEvent(DietEvent.DismissTrend) })
+    }
+}
+
+@Composable
+private fun WaterRow(ml: Int, targetMl: Int, onEvent: (DietEvent) -> Unit) {
+    val colors = AwakenTheme.colors
+    SystemWindow(title = lexString(R.string.diet_water_title), accent = colors.accent, reveal = false) {
+        Text(lexString(R.string.diet_water_line, formatCount(ml), formatCount(targetMl)), style = AwakenTheme.type.label, color = colors.textPrimary)
+        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+            WATER_STEPS_ML.forEach { step ->
+                SecondaryButton(
+                    text = lexString(R.string.diet_water_add, step),
+                    onClick = { onEvent(DietEvent.AddWater(step)) },
+                    modifier = Modifier.weight(1f),
+                )
+            }
+        }
+    }
+}
+
+private val WATER_STEPS_ML = listOf(Hydration.GLASS_ML, Hydration.GLASS_ML * 2)
 
 @Composable
 private fun DateStepper(date: LocalDate, isToday: Boolean, onEvent: (DietEvent) -> Unit) {
@@ -255,6 +334,10 @@ private val MACROS = listOf(Nutrient.PROTEIN, Nutrient.CARBS, Nutrient.FAT, Nutr
 /** The day's number: calories left (or over), the bar to the goal, eaten against goal, then the four macros in a grid. */
 @Composable
 private fun BudgetHero(plan: DietPlan, totals: Nutrients, modifier: Modifier = Modifier) {
+    if (!plan.targetsVisible) {
+        HiddenTargetsHero(totals, modifier)
+        return
+    }
     val colors = AwakenTheme.colors
     val type = AwakenTheme.type
     val goal = plan.plan.kcal
@@ -280,6 +363,21 @@ private fun BudgetHero(plan: DietPlan, totals: Nutrients, modifier: Modifier = M
                         NutrientLine(nutrient, totals[nutrient], plan.plan.targets[nutrient]?.amount, TargetKind.GOAL)
                     }
                 }
+            }
+        }
+    }
+}
+
+/** What the day shows when the guard hides targets: only what was eaten, and one neutral line (GD 20.2). */
+@Composable
+private fun HiddenTargetsHero(totals: Nutrients, modifier: Modifier = Modifier) {
+    val colors = AwakenTheme.colors
+    Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+        BigValue(formatCount(totals[Nutrient.KCAL].roundToInt()), lexString(R.string.diet_eaten_unit), large = true)
+        Text(lexString(R.string.diet_targets_off), style = AwakenTheme.type.body, color = colors.textSecondary)
+        MACROS.chunked(2).forEach { pair ->
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Spacing.lg)) {
+                pair.forEach { nutrient -> Column(modifier = Modifier.weight(1f)) { NutrientLine(nutrient, totals[nutrient], null, TargetKind.GOAL) } }
             }
         }
     }
@@ -387,6 +485,20 @@ internal fun Meal.nameRes(): Int = when (this) {
 }
 
 @StringRes
+private fun LossPace.nameRes(): Int = when (this) {
+    LossPace.GENTLE -> R.string.diet_pace_gentle
+    LossPace.STEADY -> R.string.diet_pace_steady
+    LossPace.FASTER -> R.string.diet_pace_faster
+}
+
+@StringRes
+private fun MacroPreset.nameRes(): Int = when (this) {
+    MacroPreset.BALANCED -> R.string.diet_split_balanced
+    MacroPreset.HIGH_PROTEIN -> R.string.diet_split_high_protein
+    MacroPreset.CUSTOM -> R.string.diet_split_custom
+}
+
+@StringRes
 private fun WeightGoal.nameRes(): Int = when (this) {
     WeightGoal.LOSE -> R.string.diet_goal_lose
     WeightGoal.MAINTAIN -> R.string.diet_goal_maintain
@@ -420,11 +532,11 @@ private const val AMOUNT_DECIMALS_BELOW = 10.0
 
 // Previews
 
-internal fun previewDietState(setup: Boolean = false): DietUiState {
+internal fun previewDietState(setup: Boolean = false, hidden: Boolean = false, offer: Boolean = false): DietUiState {
     val dietSetup = DietSetup(Sex.MALE, 1998, 175.0, 80.0, ActivityLevel.MODERATE, WeightGoal.MAINTAIN)
     val date = LocalDate.of(2026, 10, 27)
     val body = BodyProfile(dietSetup.sex, age = 28, dietSetup.heightCm, dietSetup.weightKg, dietSetup.activity, dietSetup.goal)
-    val plan = DietPlan(dietSetup, emptyMap(), NutritionMath.plan(body))
+    val plan = DietPlan(dietSetup, emptyMap(), NutritionMath.plan(body), targetsVisible = !hidden)
     fun row(id: String, meal: Meal, name: String, grams: Double, label: String?, per100: Nutrients) = DiaryEntry(
         FoodLogEntity(id, date, meal.name, "usda:$id", name, grams, label, "{}", Instant.EPOCH),
         per100.forGrams(grams),
@@ -439,6 +551,8 @@ internal fun previewDietState(setup: Boolean = false): DietUiState {
     )
     return DietUiState(
         loading = false,
+        offer = if (offer) TrendOffer(78.4, 80.0) else null,
+        waterMl = 750,
         date = date,
         isToday = true,
         plan = plan,
@@ -460,3 +574,14 @@ private fun DietSetupPreview() {
     AwakenTheme(reduceMotion = true) { DietScreen(previewDietState(setup = true), onEvent = {}) }
 }
 
+@PhonePreviews
+@Composable
+private fun DietHiddenTargetsPreview() {
+    AwakenTheme(reduceMotion = true) { DietScreen(previewDietState(hidden = true), onEvent = {}) }
+}
+
+@PhonePreviews
+@Composable
+private fun DietOfferPreview() {
+    AwakenTheme(reduceMotion = true) { DietScreen(previewDietState(offer = true), onEvent = {}) }
+}
