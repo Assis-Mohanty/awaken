@@ -160,7 +160,7 @@
     <string name="diet_custom_salt_note">Salt is turned into sodium for you. Leave sodium empty to use it.</string>
     <string name="diet_label_photo_button">Photograph the nutrition table</string>
     <string name="diet_label_photo_title">Read a nutrition table</string>
-    <string name="diet_label_photo_tip">Fill the frame with the nutrition table. Hold the phone flat, in good light, with no glare. The photo is read on the phone and is never saved or sent.</string>
+    <string name="diet_label_photo_tip">Fill the frame with the nutrition table. Tap the table on the screen to focus, then hold the phone steady and flat, in good light, with no glare. The photo is read on the phone and is never saved or sent.</string>
     <string name="diet_label_photo_take">Take photo</string>
     <string name="diet_label_photo_reading">Reading the label…</string>
     <string name="diet_label_photo_failed_nothing">No text could be read. Try again with more light, closer, and the table filling the frame.</string>

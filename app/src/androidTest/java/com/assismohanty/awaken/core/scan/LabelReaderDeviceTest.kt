@@ -67,6 +67,20 @@ class LabelReaderDeviceTest {
     }
 
     @Test
+    fun aBlurryPhotoOfACurvedJarIsReadWithTheRightPer100GramNumbers() {
+        // A crop of a real screenshot of the camera preview of a curved peanut butter jar: tilted, partly out of focus, g read as 9.
+        val (words, took) = read("real-jar-table.png")
+        val label = requireNotNull(NutritionLabelParser.parse(words)) { "no table found in: " + words.joinToString(" ") { it.text } }
+        Log.i("LabelReaderDevice", "real jar parsed ${label.per100} unsure=${label.unsure} serving=${label.servingGrams} in $took ms")
+        assertEquals(628.0, label.per100.getValue(Nutrient.KCAL), 0.01)
+        assertEquals(28.0, label.per100.getValue(Nutrient.PROTEIN), 0.01)
+        assertEquals(17.5, label.per100.getValue(Nutrient.CARBS), 0.01)
+        assertEquals(49.6, label.per100.getValue(Nutrient.FAT), 0.01)
+        assertEquals(13.7, label.per100.getValue(Nutrient.SAT_FAT), 0.01)
+        assertTrue("a per-32 g number was used as per 100 g", label.per100.values.none { it == 9.0 || it == 15.8 })
+    }
+
+    @Test
     fun aLabelWithMissingCellsNeverBorrowsTheServingColumn() {
         val label = requireNotNull(NutritionLabelParser.parse(read("label-a.png").first))
         Log.i("LabelReaderDevice", "label-a parsed ${label.per100} unsure=${label.unsure}")

@@ -101,6 +101,76 @@ class NutritionLabelParserTest {
     }
 
     @Test
+    fun aBlurryPhotoOfACurvedJarGivesThePer100GramColumnNotThePer32GramColumn() {
+        // Real output (sparse-text pass) on a screenshot of the camera preview of a curved peanut butter jar: the heading reads
+        // "PER 32g  PER 100g", the names of the Energy, Protein and Carbohydrates rows were not read, and many "g" came out as 9.
+        val label = parse(fixture("real-jar-sparse"))
+
+        assertThat(label.servingGrams).isEqualTo(32.0)
+        assertThat(label.perServingOnly).isFalse()
+        assertThat(label.at(Nutrient.KCAL)).isEqualTo(628.0)
+        assertThat(label.at(Nutrient.PROTEIN)).isEqualTo(28.0)
+        assertThat(label.at(Nutrient.CARBS)).isEqualTo(17.5)
+        assertThat(label.at(Nutrient.SUGARS)).isEqualTo(8.0)
+        assertThat(label.at(Nutrient.FIBER)).isEqualTo(8.5)
+        assertThat(label.at(Nutrient.FAT)).isEqualTo(49.6)
+        assertThat(label.at(Nutrient.SAT_FAT)).isEqualTo(13.7)
+        assertThat(label.at(Nutrient.MONO_FAT)).isEqualTo(24.9)
+        // None of the per-32 g numbers (9.0 protein, 15.8 fat, 2.6 sugar) leaked in.
+        assertThat(label.per100.values).containsNoneOf(9.0, 15.8, 2.6, 2.7)
+        // What was guessed from the order of the rows, or repaired, is marked.
+        assertThat(label.unsure).containsAtLeast(Nutrient.KCAL, Nutrient.PROTEIN, Nutrient.CARBS)
+    }
+
+    @Test
+    fun theReadingTheOwnerPhoneActuallyMadeOfThatJarGivesEveryFatCorrectly() {
+        // Real reading on the phone: "Foy Unsaturated Fats" (polyunsaturated), "Leureted Fats" (saturated), "PER 2g" for "PER 32g".
+        val label = parse(fixture("real-jar-device"))
+
+        assertThat(label.at(Nutrient.KCAL)).isEqualTo(628.0)
+        assertThat(label.at(Nutrient.PROTEIN)).isEqualTo(28.0)
+        assertThat(label.at(Nutrient.CARBS)).isEqualTo(17.5)
+        assertThat(label.at(Nutrient.SUGARS)).isEqualTo(8.0)
+        assertThat(label.at(Nutrient.FIBER)).isEqualTo(8.5)
+        assertThat(label.at(Nutrient.FAT)).isEqualTo(49.6)
+        assertThat(label.at(Nutrient.SAT_FAT)).isEqualTo(13.7)
+        assertThat(label.at(Nutrient.POLY_FAT)).isEqualTo(10.8)
+        assertThat(label.at(Nutrient.MONO_FAT)).isEqualTo(24.9)
+        // "PER 2g" is not a serving size; nothing is scaled from it.
+        assertThat(label.servingGrams).isNull()
+        assertThat(label.perServingOnly).isFalse()
+        // The saturated fat row was found by its place, not its name, so it is marked.
+        assertThat(label.unsure).contains(Nutrient.SAT_FAT)
+    }
+
+    @Test
+    fun aMisspeltRowNameStillCountsButAShortWordIsNotGuessed() {
+        val label = parse(
+            table(
+                listOf("Enargy", "480", "kcal"), listOf("Proteln", "7.0", "g"), listOf("Carbohydrates", "64.0", "g"), listOf("Fat", "21.0", "g"),
+                listOf("Seturated", "Fats", "10.0", "g"), listOf("Fast", "99.0", "g"),
+            ),
+        )
+        assertThat(label.at(Nutrient.KCAL)).isEqualTo(480.0)
+        assertThat(label.at(Nutrient.PROTEIN)).isEqualTo(7.0)
+        assertThat(label.at(Nutrient.SAT_FAT)).isEqualTo(10.0)
+        assertThat(label.at(Nutrient.FAT)).isEqualTo(21.0) // "Fast" is not fat
+    }
+
+    @Test
+    fun anUnsaturatedFatIsNotTakenForSaturatedFat() {
+        val label = parse(
+            table(
+                listOf("Energy", "480", "kcal"), listOf("Protein", "7.0", "g"), listOf("Carbohydrates", "64.0", "g"), listOf("Total", "Fat", "21.0", "g"),
+                listOf("Saturated", "Fat", "10.0", "g"), listOf("Poly", "Unsaturated", "Fats", "3.0", "g"), listOf("Mono", "Unsaturated", "Fats", "8.0", "g"),
+            ),
+        )
+        assertThat(label.at(Nutrient.SAT_FAT)).isEqualTo(10.0)
+        assertThat(label.at(Nutrient.POLY_FAT)).isEqualTo(3.0)
+        assertThat(label.at(Nutrient.MONO_FAT)).isEqualTo(8.0)
+    }
+
+    @Test
     fun aCleanTwoColumnTableGivesEveryPer100GramValue() {
         val label = parse(cleanTable())
 

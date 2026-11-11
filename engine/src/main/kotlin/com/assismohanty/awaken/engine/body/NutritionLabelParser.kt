@@ -37,7 +37,7 @@ data class ParsedLabel(
 object NutritionLabelParser {
     private val NUMBER = Regex("""^<?(\d+(?:\.\d+)?)(kcal|kj|cal|mg|mcg|µg|μg|ug|g)?$""")
     private val UNIT = Regex("""^(kcal|kj|cal|mg|mcg|µg|μg|ug|g|gm|grams?)$""")
-    private val SLIPPED_G = Regex("""^\d+\.\d9$""")
+    private val PER_GRAMS = Regex("""per(\d+(?:\.\d+)?)(?:g|gm|gram|grams)""")
     private val UNIT_HINT = Regex("""\(\s*(kcal|kj|mg|mcg|µg|μg|ug|g)\s*\)""")
     private val SERVE_WORDS = setOf("serve", "serving", "servings", "portion", "pack", "piece", "slice", "biscuit")
     private val BRACKET_GRAMS = Regex("""\(\s*(\d+(?:\.\d+)?)\s*(?:g|gm|grams?)\s*\)""")
@@ -50,34 +50,77 @@ object NutritionLabelParser {
     private const val ALMOST = 0.01
     private const val HEADING_WORDS = 6
     private const val WHOLE_NUMBER_FROM = 10.0
+    private const val PER_100_GRAMS = 100.0
+
+    /** No pack lists a serving this small under a heading; "PER 2g" is a misread "PER 32g", so it is not believed. */
+    private const val MIN_HEADING_SERVING_GRAMS = 5.0
+    private const val UNNAMED_LABEL_MAX = 4
+    private const val MANGLED_WORD = 5
+    private const val MID_WORD = 6
+    private const val LONG_WORD = 10
 
     private enum class ColumnKind { PER_100, PER_SERVE }
 
-    private data class Column(val kind: ColumnKind, val centerX: Double)
+    private data class Column(val kind: ColumnKind, val centerX: Double, val grams: Double? = null)
 
     private data class Item(val value: Double, val unit: String?, val centerX: Double, val confidence: Int, val decimals: Int, val slipped: Boolean) {
         val hadDecimal: Boolean get() = decimals > 0
     }
 
-    private data class Row(val words: List<OcrWord>)
+    private data class Row(val words: List<OcrWord>) {
+        val centerY: Double get() = words.map { it.centerY }.average()
+    }
+
+    /** A row of numbers whose name the reader missed. */
+    private data class Unnamed(val y: Double, val items: List<Item>)
 
     /** Which nutrient a row's name is about, most specific first, or null when it is something else. */
     private fun nutrientOf(label: String): Nutrient? = when {
         "added" in label -> null
-        "saturate" in label || "sat." in label || "sat fat" in label -> Nutrient.SAT_FAT
-        "trans" in label -> Nutrient.TRANS_FAT
-        "monounsat" in label || ("mono" in label && "fat" in label) -> Nutrient.MONO_FAT
-        "polyunsat" in label || ("poly" in label && "fat" in label) -> Nutrient.POLY_FAT
-        "cholesterol" in label -> Nutrient.CHOLESTEROL
-        "energy" in label || "calorie" in label || "kcal" in label -> Nutrient.KCAL
-        "protein" in label -> Nutrient.PROTEIN
-        "carbohydrate" in label || "carbs" in label -> Nutrient.CARBS
-        "sugar" in label -> Nutrient.SUGARS
-        "fibre" in label || "fiber" in label -> Nutrient.FIBER
-        "sodium" in label -> Nutrient.SODIUM
-        "salt" in label -> Nutrient.SODIUM
-        "fat" in label -> Nutrient.FAT
+        // Unsaturated fats come before saturated: "unsaturated" contains "saturated". When the word "unsaturated" is there but the
+        // kind was misread, it is the polyunsaturated row (the monounsaturated one is the one whose name survives more often).
+        "unsaturated" in label || "unsat" in label -> if (has(label, "mono")) Nutrient.MONO_FAT else Nutrient.POLY_FAT
+        has(label, "poly") || has(label, "polyunsaturated") -> Nutrient.POLY_FAT
+        has(label, "mono") || has(label, "monounsaturated") -> Nutrient.MONO_FAT
+        has(label, "saturated") || has(label, "saturates") || "sat." in label || "sat fat" in label -> Nutrient.SAT_FAT
+        has(label, "trans") -> Nutrient.TRANS_FAT
+        has(label, "cholesterol") -> Nutrient.CHOLESTEROL
+        has(label, "energy") || has(label, "calories") || has(label, "calorie") || "kcal" in label -> Nutrient.KCAL
+        has(label, "protein") -> Nutrient.PROTEIN
+        has(label, "carbohydrate") || has(label, "carbohydrates") || has(label, "carbs") -> Nutrient.CARBS
+        has(label, "sugar") || has(label, "sugars") -> Nutrient.SUGARS
+        has(label, "fibre") || has(label, "fiber") -> Nutrient.FIBER
+        has(label, "sodium") -> Nutrient.SODIUM
+        has(label, "salt") -> Nutrient.SODIUM
+        has(label, "fat") || has(label, "fats") -> Nutrient.FAT
         else -> null
+    }
+
+    /**
+     * A word of the row's name matches [keyword], allowing for a misread letter in a longer word ("seturated", "proteln"). Short
+     * words must match exactly, so "fat" is not found in "fast"; the keyword may also be inside a longer word ("carbohydrates").
+     */
+    private fun has(label: String, keyword: String): Boolean {
+        val allowed = when {
+            keyword.length >= LONG_WORD -> 2
+            keyword.length >= MID_WORD -> 1
+            else -> 0
+        }
+        return label.split(' ').any { word -> keyword in word || (allowed > 0 && abs(word.length - keyword.length) <= allowed && distance(word, keyword) <= allowed) }
+    }
+
+    /** Edit distance between two short words (insert, delete or change one letter at a time). */
+    private fun distance(a: String, b: String): Int {
+        var previous = IntArray(b.length + 1) { it }
+        for (i in 1..a.length) {
+            val current = IntArray(b.length + 1)
+            current[0] = i
+            for (j in 1..b.length) {
+                current[j] = minOf(previous[j] + 1, current[j - 1] + 1, previous[j - 1] + if (a[i - 1] == b[j - 1]) 0 else 1)
+            }
+            previous = current
+        }
+        return previous[b.length]
     }
 
     fun parse(words: List<OcrWord>): ParsedLabel? {
@@ -86,19 +129,32 @@ object NutritionLabelParser {
         val rows = rowsOf(cleaned)
 
         val columns = rows.flatMap { columnsIn(it) }.distinctBy { it.kind }
-        val servingGrams = servingGramsFrom(rows)
+        val servingGrams = servingGramsFrom(rows) ?: columns.firstOrNull { it.kind == ColumnKind.PER_SERVE }?.grams
+        val headerBottom = rows.filter { columnsIn(it).isNotEmpty() }.maxOfOrNull { r -> r.words.maxOf { it.bottom }.toDouble() }
         val perServingOnly = columns.none { it.kind == ColumnKind.PER_100 } && columns.any { it.kind == ColumnKind.PER_SERVE } && servingGrams != null
 
         val found = linkedMapOf<Nutrient, Double>()
         val sure = linkedMapOf<Nutrient, Int>()
         val tokens = linkedMapOf<Nutrient, Item>()
         var salt: Pair<Double, Item>? = null
+        val unnamed = mutableListOf<Unnamed>()
+        val namedAt = mutableListOf<Double>()
+        val guessed = mutableSetOf<Nutrient>()
         for (row in rows) {
             val label = labelOf(row)
-            if (label.isBlank() || "per" in label.split(' ')) continue
-            val nutrient = nutrientOf(label) ?: continue
+            if ("per" in label.split(' ')) continue
             val items = itemsOf(row)
             if (items.isEmpty()) continue
+            var nutrient = nutrientOf(label)
+            // The row after "Total Fat" whose name has "Fats" and one more word the reader mangled ("Leureted Fats") is saturated fat.
+            val mangledSaturated = nutrient == Nutrient.FAT && Nutrient.FAT in found && Nutrient.SAT_FAT !in found &&
+                label.split(' ').any { it.length >= MANGLED_WORD && !has(it, "fats") && !has(it, "total") }
+            if (mangledSaturated) nutrient = Nutrient.SAT_FAT
+            if (nutrient == null) {
+                // Numbers with no readable name (or only a scrap of one) under the headings: kept for the order rule below.
+                if (label.length <= UNNAMED_LABEL_MAX && headerBottom != null && row.centerY > headerBottom) unnamed += Unnamed(row.centerY, items)
+                continue
+            }
             val hint = UNIT_HINT.find(label)?.groupValues?.get(1)
             val isSalt = nutrient == Nutrient.SODIUM && "salt" in label && "sodium" !in label
             val item = (if (nutrient == Nutrient.KCAL) energyItem(items, columns, hint) else columnItem(items, columns, perServingOnly)) ?: continue
@@ -110,8 +166,11 @@ object NutritionLabelParser {
                 found[nutrient] = scaled
                 sure[nutrient] = item.confidence
                 if (nutrient != Nutrient.KCAL) tokens[nutrient] = item // calories are never printed with decimals, so they say nothing about the label
+                if (nutrient != Nutrient.KCAL) namedAt += row.centerY
+                if (mangledSaturated) guessed += nutrient
             }
         }
+        val inferred = inferUnnamed(unnamed, namedAt.minOrNull(), found, sure, tokens, columns, perServingOnly, servingGrams) + guessed
         val saltFallback = salt
         if (Nutrient.SODIUM !in found && saltFallback != null) {
             found[Nutrient.SODIUM] = saltFallback.first
@@ -134,6 +193,7 @@ object NutritionLabelParser {
         val unsure = buildSet {
             sure.forEach { (n, confidence) -> if (confidence < UNSURE_BELOW) add(n) }
             addAll(changed)
+            addAll(inferred)
             // On a label that prints decimals, a whole number of ten or more is probably "1.0" with its point lost.
             val printsDecimals = tokens.values.count { it.hadDecimal } * 2 >= tokens.size
             if (printsDecimals) {
@@ -142,6 +202,55 @@ object NutritionLabelParser {
             }
         }
         return ParsedLabel(values, servingGrams, perServingOnly, unsure)
+    }
+
+    /**
+     * The reader often misses the bold names of the first rows (Energy, Protein, Carbohydrates) while reading their numbers. Rows of
+     * numbers with no name, above the first named row, are the standard order: a calorie figure (it carries kcal or kJ), then protein,
+     * then carbohydrate. Protein and carbohydrate are only taken when exactly two such rows are left and, if fat is known, the
+     * calories agree with them. Whatever is inferred is returned so it can be marked "check this one".
+     */
+    private fun inferUnnamed(
+        unnamed: List<Unnamed>,
+        firstNamedAt: Double?,
+        found: MutableMap<Nutrient, Double>,
+        sure: MutableMap<Nutrient, Int>,
+        tokens: MutableMap<Nutrient, Item>,
+        columns: List<Column>,
+        perServingOnly: Boolean,
+        servingGrams: Double?,
+    ): Set<Nutrient> {
+        val rowsAbove = unnamed.filter { firstNamedAt == null || it.y < firstNamedAt }.sortedBy { it.y }.toMutableList()
+        val inferred = mutableSetOf<Nutrient>()
+        if (Nutrient.KCAL !in found) {
+            val energyRow = rowsAbove.firstOrNull { row -> row.items.any { it.unit == "kcal" || it.unit == "cal" || it.unit == "kj" } }
+            val energy = energyRow?.let { energyItem(it.items, columns, null) }
+            if (energyRow != null && energy != null) {
+                found[Nutrient.KCAL] = if (perServingOnly && servingGrams != null) energy.value * Nutrients.PER_GRAMS / servingGrams else energy.value
+                sure[Nutrient.KCAL] = energy.confidence
+                rowsAbove.remove(energyRow)
+                inferred += Nutrient.KCAL
+            }
+        }
+        if (Nutrient.PROTEIN !in found && Nutrient.CARBS !in found && rowsAbove.size == 2) {
+            val trial = found.toMutableMap()
+            val picked = mutableMapOf<Nutrient, Item>()
+            for ((nutrient, row) in listOf(Nutrient.PROTEIN, Nutrient.CARBS).zip(rowsAbove)) {
+                val item = columnItem(row.items, columns, perServingOnly) ?: continue
+                val value = toStoredUnit(nutrient, item, null, false)
+                trial[nutrient] = if (perServingOnly && servingGrams != null) value * Nutrients.PER_GRAMS / servingGrams else value
+                picked[nutrient] = item
+            }
+            // With fat known, the guess must make the calories agree (after the usual slips are undone); otherwise it is dropped.
+            val repaired = repairSlips(trial, tokens + picked, perServingOnly).values
+            val fatKnown = Nutrient.FAT in found && Nutrient.KCAL in found
+            if (picked.size == 2 && (!fatKnown || caloriesAgree(repaired))) {
+                found += picked.keys.associateWith { trial.getValue(it) }
+                picked.forEach { (n, item) -> sure[n] = item.confidence; tokens[n] = item }
+                inferred += picked.keys
+            }
+        }
+        return inferred
     }
 
     // ---- words to rows and columns
@@ -173,12 +282,14 @@ object NutritionLabelParser {
             if (!isPer) continue
             val span = listOf(word) + w.subList(i + 1, minOf(i + HEADING_WORDS, w.size)).takeWhile { it.text != "per" && !it.text.startsWith("per") }
             val text = span.joinToString("") { it.text }
+            // "Per 32 g" (any amount but 100) is the serving column, and it names the serving size.
+            val grams = PER_GRAMS.find(text)?.groupValues?.get(1)?.toDoubleOrNull()?.takeIf { it != PER_100_GRAMS }
             val kind = when {
                 "per100" in text -> ColumnKind.PER_100
-                SERVE_WORDS.any { "per$it" in text } -> ColumnKind.PER_SERVE
+                SERVE_WORDS.any { "per$it" in text } || grams != null -> ColumnKind.PER_SERVE
                 else -> null
             } ?: continue
-            result += Column(kind, (span.first().left + span.last().right) / 2.0)
+            result += Column(kind, (span.first().left + span.last().right) / 2.0, grams?.takeIf { it >= MIN_HEADING_SERVING_GRAMS })
         }
         return result
     }
@@ -222,10 +333,16 @@ object NutritionLabelParser {
                 i++
             }
             val number = m.groupValues[1]
-            items += Item(number.toDouble(), unit, (start + right) / 2.0, conf, number.substringAfter('.', "").length, unit == null && SLIPPED_G.matches(number))
+            items += Item(number.toDouble(), unit, (start + right) / 2.0, conf, number.substringAfter('.', "").length, unit == null && isSlipped(number))
             i++
         }
         return items
+    }
+
+    /** "64.09" is "64.0 g" with the g read as a nine, and "13.796" is "13.7 g" with the g read as 96: a stray digit after one decimal. */
+    private fun isSlipped(number: String): Boolean {
+        val decimals = number.substringAfter('.', "").length
+        return decimals >= 3 || (decimals == 2 && number.last() == '9')
     }
 
     /** The item under the per-100 g column (or the only column); a missing cell is null, never another column's number. */
@@ -276,6 +393,16 @@ object NutritionLabelParser {
 
     // ---- repairing the usual slips
 
+    /** Calories match the macros (the engine's source-data check) and the macros do not add past 100 g. */
+    private fun caloriesAgree(values: Map<Nutrient, Double>): Boolean {
+        val macros = listOf(Nutrient.PROTEIN, Nutrient.CARBS, Nutrient.FAT)
+        if (macros.any { it !in values } || Nutrient.KCAL !in values) return false
+        return Atwater.check(Nutrients(values), ownRow = false) == AtwaterResult.OK && macros.sumOf { values.getValue(it) } <= LabelPlausibility.MACRO_SUM_LIMIT
+    }
+
+    /** A label prints one decimal everywhere when several of its numbers have exactly one (or look like one with the g misread). */
+    private fun printsOneDecimal(tokens: Map<Nutrient, Item>): Boolean = tokens.values.count { it.decimals == 1 || it.slipped } >= 2
+
     private data class Repaired(val values: Map<Nutrient, Double>, val changed: Set<Nutrient>)
 
     /**
@@ -285,15 +412,14 @@ object NutritionLabelParser {
      */
     private fun repairSlips(original: Map<Nutrient, Double>, tokens: Map<Nutrient, Item>, perServingOnly: Boolean): Repaired {
         // On a label that prints one decimal everywhere, a second decimal ending in 9 is the unit g misread, not a real digit.
-        val oneDecimalLabel = tokens.values.count { it.decimals == 1 } >= 2
+        val oneDecimalLabel = printsOneDecimal(tokens)
         val slipFixed = if (oneDecimalLabel) tokens.filter { (_, t) -> t.slipped }.keys.filter { it in original } else emptyList()
         val found = original + slipFixed.associateWith { floor(original.getValue(it) * 10.0) / 10.0 }
         val kcal = found[Nutrient.KCAL]
         val macros = listOf(Nutrient.PROTEIN, Nutrient.CARBS, Nutrient.FAT)
         if (kcal == null || macros.any { it !in found } || perServingOnly) return Repaired(found, slipFixed.toSet())
 
-        fun agrees(values: Map<Nutrient, Double>): Boolean =
-            Atwater.check(Nutrients(values), ownRow = false) == AtwaterResult.OK && macros.sumOf { values.getValue(it) } <= LabelPlausibility.MACRO_SUM_LIMIT
+        fun agrees(values: Map<Nutrient, Double>): Boolean = caloriesAgree(values)
         if (agrees(found)) return Repaired(found, slipFixed.toSet())
 
         fun options(n: Nutrient): List<Double> {
