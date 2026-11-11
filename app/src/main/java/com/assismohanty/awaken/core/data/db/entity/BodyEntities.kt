@@ -161,7 +161,8 @@ enum class Meal { BREAKFAST, LUNCH, DINNER, SNACK }
 data class FoodLogEntity(
     @PrimaryKey val id: String,
     @ColumnInfo(name = "game_date") val gameDate: LocalDate,
-    val meal: Meal,
+    /** A `meal_slot` id: BREAKFAST, LUNCH, SNACK, DINNER or `custom:<uuid>`. */
+    val meal: String,
     @ColumnInfo(name = "food_id") val foodId: String,
     val name: String,
     val grams: Double,

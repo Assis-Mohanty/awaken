@@ -6,6 +6,8 @@ import com.assismohanty.awaken.core.designsystem.charts.ChartSpec
 import androidx.annotation.StringRes
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.defaultMinSize
+import com.assismohanty.awaken.core.domain.FoodLibrary
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
@@ -54,6 +56,7 @@ import com.assismohanty.awaken.core.domain.DiaryDay
 import com.assismohanty.awaken.core.domain.DiaryEntry
 import com.assismohanty.awaken.core.domain.DietPlan
 import com.assismohanty.awaken.core.domain.DietSetup
+import com.assismohanty.awaken.core.domain.MealSlot
 import com.assismohanty.awaken.engine.body.ActivityLevel
 import com.assismohanty.awaken.engine.body.BodyProfile
 import com.assismohanty.awaken.engine.body.Nutrient
@@ -102,8 +105,9 @@ fun DietScreen(state: DietUiState, onEvent: (DietEvent) -> Unit, modifier: Modif
         }
         Text(lexString(R.string.diet_tracker_note), style = AwakenTheme.type.caption, color = colors.textMuted)
     }
-    state.search?.let { FoodSearchSheet(it, onEvent) }
-    state.amount?.let { AmountSheet(it, onEvent) }
+    state.search?.let { FoodSearchSheet(it, state.slots, state.savedMeals, onEvent) }
+    state.prompt?.let { PromptSheet(it, state.note, onEvent) }
+    state.amount?.let { AmountSheet(it, state.slots, onEvent) }
     if (state.targets) state.plan?.let { TargetsSheet(it, onEvent) }
 }
 
@@ -202,9 +206,24 @@ private fun LabeledNumber(@StringRes label: Int, field: @Composable () -> Unit) 
 private fun Diary(state: DietUiState, plan: DietPlan, onEvent: (DietEvent) -> Unit) {
     val day = state.day ?: DiaryDay(state.date, emptyMap(), Nutrients())
     DateStepper(state.date, state.isToday, onEvent)
+    Text(
+        state.note ?: lexString(R.string.diet_note_add),
+        style = AwakenTheme.type.caption,
+        color = if (state.note == null) AwakenTheme.colors.textMuted else AwakenTheme.colors.textSecondary,
+        modifier = Modifier
+            .fillMaxWidth()
+            .defaultMinSize(minHeight = AwakenTheme.dimens.touchTarget)
+            .clickable { onEvent(DietEvent.OpenPrompt(Prompt.Note)) },
+    )
     BudgetHero(plan, day.totals, Modifier.staggeredEntrance(0))
-    Meal.entries.forEachIndexed { i, meal ->
-        MealWindow(meal, day.meals[meal].orEmpty(), onEvent, Modifier.staggeredEntrance(1 + i))
+    state.slots.forEachIndexed { i, slot ->
+        MealWindow(slot, state.slots, day.meals[slot.id].orEmpty(), state.isToday, onEvent, Modifier.staggeredEntrance(1 + i))
+    }
+    if (!state.isToday && day.meals.isNotEmpty()) {
+        SecondaryButton(text = lexString(R.string.diet_copy_day), onClick = { onEvent(DietEvent.CopyToToday(null)) }, modifier = Modifier.fillMaxWidth())
+    }
+    if (state.slots.size < FoodLibrary.MAX_MEALS) {
+        SecondaryButton(text = lexString(R.string.diet_new_meal_add), onClick = { onEvent(DietEvent.OpenPrompt(Prompt.NewMeal)) }, modifier = Modifier.fillMaxWidth())
     }
     NutrientsWindow(plan, day.totals)
 }
@@ -293,23 +312,28 @@ private fun NutrientLine(nutrient: Nutrient, amount: Double, target: Double?, ki
 }
 
 @Composable
-private fun MealWindow(meal: Meal, entries: List<DiaryEntry>, onEvent: (DietEvent) -> Unit, modifier: Modifier = Modifier) {
+private fun MealWindow(slot: MealSlot, slots: List<MealSlot>, entries: List<DiaryEntry>, isToday: Boolean, onEvent: (DietEvent) -> Unit, modifier: Modifier = Modifier) {
     val colors = AwakenTheme.colors
     val kcal = entries.sumOf { it.amounts[Nutrient.KCAL] }.roundToInt()
     SystemWindow(
-        title = lexString(meal.nameRes()),
+        title = mealLabel(slot.id, slots),
         accent = colors.accent,
         modifier = modifier,
         reveal = false,
         headerTrailing = {
             Text(lexString(R.string.diet_meal_kcal, formatCount(kcal)), style = AwakenTheme.type.label, color = colors.textSecondary)
-            HeaderIconButton(AwakenGlyphs.Plus, lexString(R.string.cd_diet_add_to_meal, lexString(meal.nameRes())), { onEvent(DietEvent.OpenSearch(meal)) })
+            HeaderIconButton(AwakenGlyphs.Plus, lexString(R.string.cd_diet_add_to_meal, mealLabel(slot.id, slots)), { onEvent(DietEvent.OpenSearch(slot.id)) })
         },
     ) {
         if (entries.isEmpty()) Text(lexString(R.string.diet_meal_empty), style = AwakenTheme.type.caption, color = colors.textMuted)
         entries.forEach { entry ->
             EntryRow(entry.row, entry.amounts, onEvent)
         }
+        if (entries.isNotEmpty()) {
+            QuietButton(text = lexString(R.string.diet_save_meal_action), onClick = { onEvent(DietEvent.OpenPrompt(Prompt.SaveMeal(slot.id))) })
+            if (!isToday) QuietButton(text = lexString(R.string.diet_copy_meal), onClick = { onEvent(DietEvent.CopyToToday(slot.id)) })
+        }
+        if (!slot.builtIn) QuietButton(text = lexString(R.string.diet_remove_meal), onClick = { onEvent(DietEvent.DeleteMeal(slot.id)) })
     }
 }
 
@@ -346,6 +370,13 @@ private fun NutrientsWindow(plan: DietPlan, totals: Nutrients) {
 }
 
 // Labels and formatting
+
+/** A meal's own name, or the app's word for a built-in one. */
+@Composable
+internal fun mealLabel(id: String, slots: List<MealSlot>): String {
+    slots.firstOrNull { it.id == id }?.name?.let { return it }
+    return Meal.entries.firstOrNull { it.name == id }?.let { lexString(it.nameRes()) } ?: id
+}
 
 @StringRes
 internal fun Meal.nameRes(): Int = when (this) {
@@ -395,7 +426,7 @@ internal fun previewDietState(setup: Boolean = false): DietUiState {
     val body = BodyProfile(dietSetup.sex, age = 28, dietSetup.heightCm, dietSetup.weightKg, dietSetup.activity, dietSetup.goal)
     val plan = DietPlan(dietSetup, emptyMap(), NutritionMath.plan(body))
     fun row(id: String, meal: Meal, name: String, grams: Double, label: String?, per100: Nutrients) = DiaryEntry(
-        FoodLogEntity(id, date, meal, "usda:$id", name, grams, label, "{}", Instant.EPOCH),
+        FoodLogEntity(id, date, meal.name, "usda:$id", name, grams, label, "{}", Instant.EPOCH),
         per100.forGrams(grams),
     )
     val paneer = Nutrients(mapOf(Nutrient.KCAL to 299.0, Nutrient.PROTEIN to 15.9, Nutrient.CARBS to 22.5, Nutrient.FAT to 15.5, Nutrient.SODIUM to 185.0, Nutrient.CALCIUM to 597.0))
@@ -412,6 +443,7 @@ internal fun previewDietState(setup: Boolean = false): DietUiState {
         isToday = true,
         plan = plan,
         day = DiaryDay(date, entries.groupBy { it.row.meal }, Nutrients.sum(entries.map { it.amounts })),
+        slots = listOf(Meal.BREAKFAST, Meal.LUNCH, Meal.SNACK, Meal.DINNER).mapIndexed { i, m -> MealSlot(m.name, null, i, builtIn = true) },
         setup = if (setup) SetupForm(goal = WeightGoal.LOSE, sex = Sex.FEMALE, birthYear = 1999, heightCm = 162.0, weightKg = 64.0, activity = ActivityLevel.LIGHT) else null,
     )
 }

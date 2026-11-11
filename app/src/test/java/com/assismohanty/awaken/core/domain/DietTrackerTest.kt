@@ -51,16 +51,16 @@ class DietTrackerTest {
         val paneer = diet.search("paneer").first { it.name == "Cheese, paneer" }
         val kcalPer100 = paneer.per100[Nutrient.KCAL]
 
-        diet.log(today, Meal.LUNCH, paneer, grams = 150.0, portionLabel = null)
+        diet.log(today, Meal.LUNCH.name, paneer, grams = 150.0, portionLabel = null)
         val day = diet.observeDay(today).first()
 
-        assertThat(day.meals.keys).containsExactly(Meal.LUNCH)
+        assertThat(day.meals.keys).containsExactly(Meal.LUNCH.name)
         assertThat(day.totals[Nutrient.KCAL]).isWithin(1e-9).of(kcalPer100 * 1.5)
 
-        val entry = day.meals.getValue(Meal.LUNCH).single()
-        diet.updateLog(entry.row.id, grams = 100.0, meal = Meal.DINNER, portionLabel = null)
+        val entry = day.meals.getValue(Meal.LUNCH.name).single()
+        diet.updateLog(entry.row.id, grams = 100.0, meal = Meal.DINNER.name, portionLabel = null)
         val edited = diet.observeDay(today).first()
-        assertThat(edited.meals.keys).containsExactly(Meal.DINNER)
+        assertThat(edited.meals.keys).containsExactly(Meal.DINNER.name)
         assertThat(edited.totals[Nutrient.KCAL]).isWithin(1e-9).of(kcalPer100)
 
         diet.deleteLog(entry.row.id)
@@ -71,7 +71,7 @@ class DietTrackerTest {
     @Test
     fun aBlankSearchListsRecentFoods() = runTest {
         val idli = diet.search("idli").first()
-        diet.log(today, Meal.BREAKFAST, idli, grams = 76.0, portionLabel = "2 × 1 item")
+        diet.log(today, Meal.BREAKFAST.name, idli, grams = 76.0, portionLabel = "2 × 1 item")
 
         assertThat(diet.search("").map { it.id }).containsExactly(idli.id)
     }
@@ -87,7 +87,7 @@ class DietTrackerTest {
         assertThat(diet.search("paneer").first().id).isEqualTo(shake.id)
         assertThat(diet.portionsOf(shake.id)).containsExactly(Portion("1 glass", 300.0))
 
-        diet.log(today, Meal.SNACK, shake, grams = 300.0, portionLabel = "1 glass")
+        diet.log(today, Meal.SNACK.name, shake, grams = 300.0, portionLabel = "1 glass")
         diet.deleteCustomFood(shake.id)
 
         assertThat(diet.observeDay(today).first().totals[Nutrient.PROTEIN]).isWithin(1e-9).of(45.0)

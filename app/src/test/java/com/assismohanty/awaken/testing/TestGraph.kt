@@ -274,7 +274,7 @@ class TestGraph(
     val deleteWorkout = com.assismohanty.awaken.core.domain.DeleteWorkoutUseCase(gym, db.ledgerDao(), ledger, transactions, clock)
     val diet = DietTracker(db.dietDao(), db.hunterDao(), foodCatalog, clock)
     val recipeBook = com.assismohanty.awaken.core.domain.RecipeBook(db.foodLibraryDao(), transactions, clock)
-    val foodLibrary = com.assismohanty.awaken.core.domain.FoodLibrary(db.foodLibraryDao(), db.dietDao(), foodCatalog, recipeBook, transactions, clock)
+    val foodLibrary = com.assismohanty.awaken.core.domain.FoodLibrary(db.foodLibraryDao(), db.dietDao(), db.bodyLogDao(), foodCatalog, recipeBook, transactions, clock)
     val foodSearch = com.assismohanty.awaken.core.domain.FoodSearchUseCase(foodCatalog, db.dietDao(), db.foodLibraryDao(), recipeBook, foodLibrary)
     val bodyLog = com.assismohanty.awaken.core.domain.BodyLog(db.bodyLogDao(), db.dietDao(), db.hunterDao(), transactions, clock)
 

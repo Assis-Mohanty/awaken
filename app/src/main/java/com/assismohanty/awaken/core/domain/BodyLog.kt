@@ -11,7 +11,6 @@ import com.assismohanty.awaken.core.data.db.entity.DiaryNoteEntity
 import com.assismohanty.awaken.core.data.db.entity.EntrySource
 import com.assismohanty.awaken.core.data.db.entity.FastingSessionEntity
 import com.assismohanty.awaken.core.data.db.entity.FoodLogEntity
-import com.assismohanty.awaken.core.data.db.entity.Meal
 import com.assismohanty.awaken.core.data.db.entity.MealPlanEntryEntity
 import com.assismohanty.awaken.core.data.db.entity.MeasureKind
 import com.assismohanty.awaken.core.data.db.entity.WaterLogEntity
@@ -148,11 +147,11 @@ class BodyLog @Inject constructor(
     fun observePlanBetween(from: LocalDate, to: LocalDate): Flow<List<MealPlanEntryEntity>> = dao.observePlanBetween(from, to)
 
     /** Plans [grams] of [food] for [meal] on [date]; null when [date] is not between [today] and [MAX_PLAN_DAYS] days ahead. */
-    suspend fun plan(today: LocalDate, date: LocalDate, meal: Meal, food: Food, grams: Double, portionLabel: String?): String? {
+    suspend fun plan(today: LocalDate, date: LocalDate, meal: String, food: Food, grams: Double, portionLabel: String?): String? {
         if (date.isBefore(today) || date.isAfter(today.plusDays(MAX_PLAN_DAYS)) || grams <= 0.0) return null
         val id = UUID.randomUUID().toString()
         dao.upsertPlanEntry(
-            MealPlanEntryEntity(id, date, meal.name, food.id, food.name, grams.coerceAtMost(DietTracker.MAX_GRAMS), portionLabel, FoodCatalog.nutrientsToJson(food.per100), logged = false),
+            MealPlanEntryEntity(id, date, meal, food.id, food.name, grams.coerceAtMost(DietTracker.MAX_GRAMS), portionLabel, FoodCatalog.nutrientsToJson(food.per100), logged = false),
         )
         return id
     }
@@ -162,10 +161,9 @@ class BodyLog @Inject constructor(
     /** "Log it": copies a planned food into the diary on [date] and marks the plan done, in one transaction. */
     suspend fun logPlanned(id: String, date: LocalDate): Boolean = transactions.run {
         val entry = dao.planEntry(id) ?: return@run false
-        val meal = Meal.entries.firstOrNull { it.name == entry.meal } ?: return@run false
         dietDao.upsertLog(
             FoodLogEntity(
-                id = UUID.randomUUID().toString(), gameDate = date, meal = meal, foodId = entry.foodId, name = entry.name, grams = entry.grams,
+                id = UUID.randomUUID().toString(), gameDate = date, meal = entry.meal, foodId = entry.foodId, name = entry.name, grams = entry.grams,
                 portionLabel = entry.portionLabel, nutrientsJson = entry.nutrientsJson, loggedAt = clock.now(), entrySource = EntrySource.PLAN,
             ),
         )

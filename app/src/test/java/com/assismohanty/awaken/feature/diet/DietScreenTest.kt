@@ -40,7 +40,7 @@ class DietScreenTest {
 
     @Test
     fun setupThenLogAFood() {
-        val viewModel = DietViewModel(graph.diet, graph.foodSearch)
+        val viewModel = DietViewModel(graph.diet, graph.foodSearch, graph.foodLibrary, graph.bodyLog)
         composeRule.setContent {
             AwakenTheme(reduceMotion = true) {
                 val state by viewModel.uiState.collectAsState()

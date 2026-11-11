@@ -39,6 +39,10 @@ data class Food(
     val source: FoodSource,
     val per100: Nutrients,
     val portions: List<Portion> = emptyList(),
+    /** Calories per 100 g across home-cooking spread, when the catalog has one (GD 20.3). */
+    val kcalRange: ClosedFloatingPointRange<Double>? = null,
+    /** A different dish stands in for this one, so the numbers are a guess. */
+    val estimated: Boolean = false,
 )
 
 /**
@@ -112,6 +116,8 @@ class FoodCatalog @Inject constructor(
             },
             per100 = Nutrients(nutrientsFromJson(nutrientsJson).values + known),
             portions = portions.map { Portion(it.label, it.grams) },
+            kcalRange = if (kcalLow != null && kcalHigh != null) kcalLow..kcalHigh else null,
+            estimated = tier == "ESTIMATED",
         )
     }
 

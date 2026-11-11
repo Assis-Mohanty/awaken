@@ -5,7 +5,6 @@ import androidx.room.Query
 import androidx.room.Upsert
 import com.assismohanty.awaken.core.data.db.entity.CustomFoodEntity
 import com.assismohanty.awaken.core.data.db.entity.FoodLogEntity
-import com.assismohanty.awaken.core.data.db.entity.Meal
 import com.assismohanty.awaken.core.data.db.entity.NutritionProfileEntity
 import java.time.LocalDate
 import kotlinx.coroutines.flow.Flow
@@ -59,7 +58,11 @@ interface DietDao {
     suspend fun entriesOn(gameDate: LocalDate): List<FoodLogEntity>
 
     @Query("SELECT * FROM food_log WHERE game_date = :gameDate AND meal = :meal ORDER BY logged_at")
-    suspend fun entriesOn(gameDate: LocalDate, meal: Meal): List<FoodLogEntity>
+    suspend fun entriesOn(gameDate: LocalDate, meal: String): List<FoodLogEntity>
+
+    /** Moves every diary row of one meal slot to another (when the hunter removes a meal of their own). Diary rows are not ledger rows. */
+    @Query("UPDATE food_log SET meal = :to WHERE meal = :from")
+    suspend fun moveMeal(from: String, to: String)
 
     @Upsert
     suspend fun upsertLogs(rows: List<FoodLogEntity>)

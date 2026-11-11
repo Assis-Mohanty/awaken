@@ -822,7 +822,7 @@ class MigrationTest {
             val day = java.time.LocalDate.of(2026, 11, 1)
             val rows = diet.entriesOn(day)
             assertThat(rows.map { it.id }).containsExactly("l1", "l2").inOrder()
-            assertThat(rows.map { it.meal }).containsExactly(com.assismohanty.awaken.core.data.db.entity.Meal.BREAKFAST, com.assismohanty.awaken.core.data.db.entity.Meal.DINNER).inOrder()
+            assertThat(rows.map { it.meal }).containsExactly(com.assismohanty.awaken.core.data.db.entity.Meal.BREAKFAST.name, com.assismohanty.awaken.core.data.db.entity.Meal.DINNER.name).inOrder()
             assertThat(rows.map { it.grams }).containsExactly(80.0, 300.0).inOrder()
             assertThat(rows.first().portionLabel).isEqualTo("2 idli")
             assertThat(rows.map { it.nutrientsJson }).containsExactly("{\"kcal\":128}", "{\"kcal\":120}").inOrder()

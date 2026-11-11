@@ -4,6 +4,7 @@ import com.assismohanty.awaken.core.data.catalog.Food
 import com.assismohanty.awaken.core.data.catalog.FoodCatalog
 import com.assismohanty.awaken.core.data.catalog.Portion
 import com.assismohanty.awaken.core.data.clock.Clock
+import com.assismohanty.awaken.core.data.db.dao.BodyLogDao
 import com.assismohanty.awaken.core.data.db.dao.DietDao
 import com.assismohanty.awaken.core.data.db.dao.FoodLibraryDao
 import com.assismohanty.awaken.core.data.db.entity.CustomFoodEntity
@@ -58,6 +59,7 @@ data class SavedMealSummary(val id: String, val name: String, val items: Int, va
 class FoodLibrary @Inject constructor(
     private val dao: FoodLibraryDao,
     private val dietDao: DietDao,
+    private val bodyLogDao: BodyLogDao,
     private val catalog: FoodCatalog,
     private val recipes: RecipeBook,
     private val transactions: TransactionRunner,
@@ -95,8 +97,15 @@ class FoodLibrary @Inject constructor(
         dao.mealSlots().firstOrNull { it.id == id }?.let { dao.upsertMealSlot(it.copy(name = clean)) }
     }
 
-    /** Deletes one of the hunter's own meals; the built-in four stay. True when something was deleted. */
-    suspend fun deleteMeal(id: String): Boolean = dao.deleteCustomMealSlot(id) > 0
+    /** Deletes one of the hunter's own meals; the built-in four stay. Its diary and plan rows move to Snack so none is lost. True when something was deleted. */
+    suspend fun deleteMeal(id: String): Boolean = transactions.run {
+        val deleted = dao.deleteCustomMealSlot(id) > 0
+        if (deleted) {
+            dietDao.moveMeal(id, Meal.SNACK.name)
+            bodyLogDao.movePlannedMeal(id, Meal.SNACK.name)
+        }
+        deleted
+    }
 
     // Favourites
 
@@ -176,7 +185,7 @@ class FoodLibrary @Inject constructor(
     }
 
     /** Adds every item of a saved meal to [meal] on [date]; returns how many rows were added. */
-    suspend fun addSavedMealToDiary(id: String, date: LocalDate, meal: Meal): Int {
+    suspend fun addSavedMealToDiary(id: String, date: LocalDate, meal: String): Int {
         val items = dao.savedMealItems(id)
         val now = clock.now()
         dietDao.upsertLogs(
@@ -193,7 +202,7 @@ class FoodLibrary @Inject constructor(
     // Copying what was eaten
 
     /** Copies the rows of [fromMeal] (all meals when null) on [from] to [to], into [toMeal] (their own meal when null). Returns the count. */
-    suspend fun copyEntries(from: LocalDate, fromMeal: Meal?, to: LocalDate, toMeal: Meal? = fromMeal): Int {
+    suspend fun copyEntries(from: LocalDate, fromMeal: String?, to: LocalDate, toMeal: String? = fromMeal): Int {
         val rows = if (fromMeal == null) dietDao.entriesOn(from) else dietDao.entriesOn(from, fromMeal)
         val now = clock.now()
         dietDao.upsertLogs(rows.mapIndexed { i, r -> r.copy(id = UUID.randomUUID().toString(), gameDate = to, meal = toMeal ?: r.meal, loggedAt = now.plusMillis(i.toLong())) })

@@ -527,7 +527,7 @@ class GameDataPorterTest {
                 overridesJson = "{}", updatedAt = graph.clock.now(),
             ),
         )
-        graph.diet.log(day, com.assismohanty.awaken.core.data.db.entity.Meal.BREAKFAST, egg, 100.0, null)
+        graph.diet.log(day, com.assismohanty.awaken.core.data.db.entity.Meal.BREAKFAST.name, egg, 100.0, null)
     }
 
     @Test

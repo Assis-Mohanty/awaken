@@ -10,8 +10,8 @@ import com.assismohanty.awaken.core.data.clock.gameDate
 import com.assismohanty.awaken.core.data.db.dao.DietDao
 import com.assismohanty.awaken.core.data.db.dao.HunterDao
 import com.assismohanty.awaken.core.data.db.entity.CustomFoodEntity
+import com.assismohanty.awaken.core.data.db.entity.EntrySource
 import com.assismohanty.awaken.core.data.db.entity.FoodLogEntity
-import com.assismohanty.awaken.core.data.db.entity.Meal
 import com.assismohanty.awaken.core.data.db.entity.NutritionProfileEntity
 import com.assismohanty.awaken.engine.GameDay
 import com.assismohanty.awaken.engine.body.ActivityLevel
@@ -45,7 +45,7 @@ data class DietPlan(val setup: DietSetup, val overrides: Map<Nutrient, Double>, 
 /** One diary row with its amounts for the logged grams. */
 data class DiaryEntry(val row: FoodLogEntity, val amounts: Nutrients)
 
-data class DiaryDay(val gameDate: LocalDate, val meals: Map<Meal, List<DiaryEntry>>, val totals: Nutrients)
+data class DiaryDay(val gameDate: LocalDate, val meals: Map<String, List<DiaryEntry>>, val totals: Nutrients)
 
 private fun FoodLogEntity.toEntry() = DiaryEntry(this, FoodCatalog.nutrientsFromJson(nutrientsJson).forGrams(grams))
 
@@ -119,7 +119,7 @@ class DietTracker @Inject constructor(
         DiaryDay(gameDate, entries.groupBy { it.row.meal }, Nutrients.sum(entries.map { it.amounts }))
     }
 
-    suspend fun log(gameDate: LocalDate, meal: Meal, food: Food, grams: Double, portionLabel: String?) {
+    suspend fun log(gameDate: LocalDate, meal: String, food: Food, grams: Double, portionLabel: String?, source: EntrySource = EntrySource.SEARCH) {
         dietDao.upsertLog(
             FoodLogEntity(
                 id = UUID.randomUUID().toString(),
@@ -131,14 +131,17 @@ class DietTracker @Inject constructor(
                 portionLabel = portionLabel,
                 nutrientsJson = FoodCatalog.nutrientsToJson(food.per100),
                 loggedAt = clock.now(),
+                entrySource = source,
             ),
         )
     }
 
-    suspend fun updateLog(id: String, grams: Double, meal: Meal, portionLabel: String?) {
+    suspend fun updateLog(id: String, grams: Double, meal: String, portionLabel: String?) {
         val row = dietDao.logRow(id) ?: return
         dietDao.upsertLog(row.copy(grams = grams.coerceIn(MIN_GRAMS, MAX_GRAMS), meal = meal, portionLabel = portionLabel))
     }
+
+    suspend fun entriesOn(gameDate: LocalDate, meal: String): List<FoodLogEntity> = dietDao.entriesOn(gameDate, meal)
 
     suspend fun deleteLog(id: String) = dietDao.deleteLog(id)
 

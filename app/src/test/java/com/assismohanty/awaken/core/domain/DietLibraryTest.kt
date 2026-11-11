@@ -37,7 +37,7 @@ class DietLibraryTest {
     private fun food(id: String, name: String, kcal: Double = 100.0) =
         Food(id, name, FoodSource.USDA_SR, Nutrients(mapOf(Nutrient.KCAL to kcal)), listOf(Portion("1 piece", 50.0)))
 
-    private suspend fun eat(food: Food, date: LocalDate = today, meal: Meal = Meal.LUNCH, grams: Double = 100.0) =
+    private suspend fun eat(food: Food, date: LocalDate = today, meal: String = Meal.LUNCH.name, grams: Double = 100.0) =
         graph.diet.log(date, meal, food, grams, null)
 
     // Search
@@ -115,6 +115,18 @@ class DietLibraryTest {
     }
 
     @Test
+    fun removingAMealMovesItsRowsToSnackSoNothingIsLost() = runTest {
+        library.ensureBuiltInMeals()
+        val custom = checkNotNull(library.addMeal("Pre-workout"))
+        eat(food("usda:9", "Banana", 90.0), meal = custom.id)
+
+        assertThat(library.deleteMeal(custom.id)).isTrue()
+
+        val rows = graph.db.dietDao().entriesOn(today)
+        assertThat(rows.map { it.meal }).containsExactly(Meal.SNACK.name)
+    }
+
+    @Test
     fun builtInMealsCanBeRenamedButNotDeleted() = runTest {
         library.ensureBuiltInMeals()
         val custom = checkNotNull(library.addMeal("Pre-workout"))
@@ -157,13 +169,13 @@ class DietLibraryTest {
 
     @Test
     fun aSavedMealIsReAddedInOneStepAndCopiesKeepTheNumbers() = runTest {
-        eat(food("usda:1", "Egg", 155.0), grams = 100.0, meal = Meal.BREAKFAST)
-        eat(food("usda:2", "Toast", 265.0), grams = 60.0, meal = Meal.BREAKFAST)
-        val rows = graph.db.dietDao().entriesOn(today, Meal.BREAKFAST)
+        eat(food("usda:1", "Egg", 155.0), grams = 100.0, meal = Meal.BREAKFAST.name)
+        eat(food("usda:2", "Toast", 265.0), grams = 60.0, meal = Meal.BREAKFAST.name)
+        val rows = graph.db.dietDao().entriesOn(today, Meal.BREAKFAST.name)
 
         val id = checkNotNull(library.saveMeal("Usual breakfast", rows))
         val tomorrow = today.plusDays(1)
-        assertThat(library.addSavedMealToDiary(id, tomorrow, Meal.BREAKFAST)).isEqualTo(2)
+        assertThat(library.addSavedMealToDiary(id, tomorrow, Meal.BREAKFAST.name)).isEqualTo(2)
 
         val added = graph.db.dietDao().entriesOn(tomorrow)
         assertThat(added.map { it.name }).containsExactly("Egg", "Toast").inOrder()
@@ -171,9 +183,9 @@ class DietLibraryTest {
         assertThat(added.map { it.grams }).containsExactly(100.0, 60.0).inOrder()
         assertThat(library.observeSavedMeals().first().single().items).isEqualTo(2)
 
-        val copied = library.copyEntries(today, null, today.plusDays(2), Meal.SNACK)
+        val copied = library.copyEntries(today, null, today.plusDays(2), Meal.SNACK.name)
         assertThat(copied).isEqualTo(2)
-        assertThat(graph.db.dietDao().entriesOn(today.plusDays(2), Meal.SNACK).map { it.grams }).containsExactly(100.0, 60.0).inOrder()
+        assertThat(graph.db.dietDao().entriesOn(today.plusDays(2), Meal.SNACK.name).map { it.grams }).containsExactly(100.0, 60.0).inOrder()
         assertThat(graph.db.dietDao().entriesOn(today).map { it.id }.toSet()).hasSize(2) // the source day is untouched
 
         library.deleteSavedMeal(id)
@@ -304,15 +316,15 @@ class DietLibraryTest {
     fun aPlannedFoodIsLoggedWhenItsTimeComes() = runTest {
         val dal = food("usda:5", "Dal", 116.0)
 
-        assertThat(body.plan(today, today.minusDays(1), Meal.LUNCH, dal, 150.0, null)).isNull()
-        assertThat(body.plan(today, today.plusDays(15), Meal.LUNCH, dal, 150.0, null)).isNull()
-        assertThat(body.plan(today, today.plusDays(1), Meal.LUNCH, dal, 0.0, null)).isNull()
-        val id = checkNotNull(body.plan(today, today.plusDays(1), Meal.DINNER, dal, 150.0, "1 katori"))
+        assertThat(body.plan(today, today.minusDays(1), Meal.LUNCH.name, dal, 150.0, null)).isNull()
+        assertThat(body.plan(today, today.plusDays(15), Meal.LUNCH.name, dal, 150.0, null)).isNull()
+        assertThat(body.plan(today, today.plusDays(1), Meal.LUNCH.name, dal, 0.0, null)).isNull()
+        val id = checkNotNull(body.plan(today, today.plusDays(1), Meal.DINNER.name, dal, 150.0, "1 katori"))
 
         assertThat(body.logPlanned(id, today.plusDays(1))).isTrue()
 
         val row = graph.db.dietDao().entriesOn(today.plusDays(1)).single()
-        assertThat(row.meal).isEqualTo(Meal.DINNER)
+        assertThat(row.meal).isEqualTo(Meal.DINNER.name)
         assertThat(row.entrySource).isEqualTo(EntrySource.PLAN)
         assertThat(row.portionLabel).isEqualTo("1 katori")
         assertThat(body.observePlan(today.plusDays(1)).first().single().logged).isTrue()

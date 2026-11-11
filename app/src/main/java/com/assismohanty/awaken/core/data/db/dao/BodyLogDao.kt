@@ -84,6 +84,9 @@ interface BodyLogDao {
 
     // Meal plan
 
+    @Query("UPDATE meal_plan_entry SET meal = :to WHERE meal = :from")
+    suspend fun movePlannedMeal(from: String, to: String)
+
     @Query("SELECT * FROM meal_plan_entry WHERE game_date = :gameDate ORDER BY meal, name")
     fun observePlan(gameDate: LocalDate): Flow<List<MealPlanEntryEntity>>
 
