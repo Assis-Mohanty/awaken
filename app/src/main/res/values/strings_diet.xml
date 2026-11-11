@@ -60,6 +60,17 @@
     <string name="diet_offer_body">Your 7-day trend is %1$s kg, and your targets were set at %2$s kg. Want new targets?</string>
     <string name="diet_offer_accept">Update targets</string>
     <string name="diet_offer_dismiss">Not now</string>
+    <string name="diet_reminder_text">Time to log %1$s?</string>
+    <string name="diet_reminder_channel">Meal reminders</string>
+    <string name="diet_fast_channel">Fasting timer</string>
+    <string name="diet_fast_notice">Your fasting target is reached. End the fast whenever you like.</string>
+    <string name="diet_reminders_button">Reminders</string>
+    <string name="diet_reminders_title">Meal reminders</string>
+    <string name="diet_reminders_intro">Up to four, one for each meal. They are off until you switch them on, and they stay quiet when a meal already has food in it.</string>
+    <string name="diet_reminders_limit">Four meals already have a reminder. Switch one off to add another.</string>
+    <string name="diet_reminder_time">Change time</string>
+    <string name="diet_reminder_time_title">Reminder time</string>
+    <string name="diet_reminder_on">%1$s reminder</string>
     <string name="diet_eaten_unit">kcal eaten</string>
     <string name="diet_nutrients_button">Nutrients</string>
     <string name="diet_nutrients_title">Nutrients today</string>

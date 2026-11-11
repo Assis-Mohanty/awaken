@@ -21,6 +21,7 @@ class ReminderCoordinator @Inject constructor(
     private val hunterDao: HunterDao,
     private val scheduler: ReminderScheduler,
     private val habitReminders: HabitReminderScheduling,
+    private val dietReminders: com.assismohanty.awaken.core.domain.DietReminderScheduling,
     @ApplicationScope private val scope: CoroutineScope,
 ) {
     fun start() {
@@ -32,6 +33,17 @@ class ReminderCoordinator @Inject constructor(
                 throw e
             } catch (e: Exception) {
                 Timber.e(e, "Scheduling habit reminders failed")
+            }
+        }
+        // Meal reminders and the end of a running fast come back after an update or a reboot the same way.
+        scope.launch {
+            try {
+                dietReminders.rearmMeals()
+                dietReminders.rearmFast()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Timber.e(e, "Scheduling diet reminders failed")
             }
         }
         scope.launch {

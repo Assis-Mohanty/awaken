@@ -282,6 +282,24 @@ class DietLibraryTest {
     }
 
     @Test
+    fun mealRemindersAreOffUntilSetAndStopAtFour() = runTest {
+        val store = graph.mealReminders
+        assertThat(store.reminders.first()).isEmpty()
+
+        assertThat(store.set("BREAKFAST", 8 * 60)).isTrue()
+        assertThat(store.set("LUNCH", 13 * 60)).isTrue()
+        assertThat(store.set("SNACK", 16 * 60)).isTrue()
+        assertThat(store.set("DINNER", 20 * 60)).isTrue()
+        assertThat(store.set("custom:1", 9 * 60)).isFalse()
+        assertThat(store.set("LUNCH", 12 * 60 + 30)).isTrue()
+        assertThat(store.set("LUNCH", 24 * 60)).isFalse()
+        assertThat(store.reminders.first()).containsEntry("LUNCH", 12 * 60 + 30)
+
+        assertThat(store.set("BREAKFAST", null)).isTrue()
+        assertThat(store.reminders.first().keys).containsExactly("LUNCH", "SNACK", "DINNER")
+    }
+
+    @Test
     fun theTrendOffersNewTargetsAtOneKiloAndStaysQuietOtherwise() = runTest {
         graph.seedHunter()
         graph.diet.saveSetup(setup)

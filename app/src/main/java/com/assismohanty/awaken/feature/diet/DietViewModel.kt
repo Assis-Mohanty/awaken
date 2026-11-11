@@ -7,7 +7,9 @@ import com.assismohanty.awaken.core.data.catalog.FoodSource
 import com.assismohanty.awaken.core.data.catalog.Portion
 import com.assismohanty.awaken.core.data.db.entity.FoodLogEntity
 import com.assismohanty.awaken.core.data.db.entity.EntrySource
+import com.assismohanty.awaken.core.data.repo.MealReminderStore
 import com.assismohanty.awaken.core.domain.BodyLog
+import com.assismohanty.awaken.core.domain.DietReminderScheduling
 import com.assismohanty.awaken.core.domain.CustomFoodDraft
 import com.assismohanty.awaken.core.domain.CustomFoodResult
 import com.assismohanty.awaken.core.domain.MealSlot
@@ -161,7 +163,7 @@ data class DietFlow(
 )
 
 /** The panels that open over the diary. */
-enum class Panel { WEIGHT, NUTRIENTS, REPORT, FASTING, WATER }
+enum class Panel { WEIGHT, NUTRIENTS, REPORT, FASTING, WATER, REMINDERS }
 
 /** A fast as the sheet shows it: the stored session and where it stands now. */
 data class FastView(val session: FastingSessionEntity? = null, val state: FastState = FastState.Idle)
@@ -192,6 +194,8 @@ data class DietUiState(
     val report: WeekReport? = null,
     val trendKg: Double? = null,
     val fast: FastView = FastView(),
+    /** Meal id to reminder minutes after midnight. */
+    val reminders: Map<String, Int> = emptyMap(),
     /** Share of the day's calories from foods with a value, per nutrient (null when nothing is logged). */
     val coverage: Map<Nutrient, Double?> = emptyMap(),
     val setup: SetupForm? = null,
@@ -222,6 +226,7 @@ sealed interface DietEvent {
     data object EndFast : DietEvent
     data class SetWaterTarget(val ml: Int?) : DietEvent
     data object UndoWater : DietEvent
+    data class SetReminder(val mealId: String, val minutes: Int?) : DietEvent
     data class LogWeight(val kg: Double) : DietEvent
     data class DeleteWeight(val id: String) : DietEvent
     data class LogMeasure(val kind: MeasureKind, val cm: Double) : DietEvent
@@ -267,13 +272,15 @@ class DietViewModel @Inject constructor(
     private val foodSearch: FoodSearchUseCase,
     private val foodLibrary: FoodLibrary,
     private val bodyLog: BodyLog,
+    private val mealReminders: MealReminderStore,
+    private val reminders: DietReminderScheduling,
 ) : ViewModel() {
 
     private val flow = MutableStateFlow(DietFlow())
 
     val uiState: StateFlow<DietUiState> = combine(
         diet.observePlan(),
-        combine(foodLibrary.observeMealSlots(), foodLibrary.observeSavedMeals()) { slots, saved -> slots to saved },
+        combine(foodLibrary.observeMealSlots(), foodLibrary.observeSavedMeals(), mealReminders.reminders) { slots, saved, times -> Triple(slots, saved, times) },
         flow.map { it.date }.distinctUntilChanged().flatMapLatest { date ->
             date?.let { d -> combine(diet.observeDay(d), bodyLog.observeNote(d)) { day, note -> day to note?.text } } ?: flowOf(null)
         },
@@ -292,7 +299,7 @@ class DietViewModel @Inject constructor(
         },
         flow,
     ) { plan, library, dayAndNote, trackers, f ->
-        val (slots, saved) = library
+        val (slots, saved, times) = library
         DietUiState(
             loading = f.date == null,
             date = f.date ?: LocalDate.MIN,
@@ -301,6 +308,7 @@ class DietViewModel @Inject constructor(
             day = dayAndNote?.first,
             slots = slots,
             savedMeals = saved,
+            reminders = times,
             note = dayAndNote?.second,
             prompt = f.prompt,
             offer = trackers.offer,
@@ -357,11 +365,20 @@ class DietViewModel @Inject constructor(
                 }
             }
             DietEvent.ClosePanel -> flow.update { it.copy(panel = null) }
-            is DietEvent.StartFast -> viewModelScope.launch { bodyLog.startFast(event.targetMinutes) }
-            DietEvent.EndFast -> viewModelScope.launch { bodyLog.endFast() }
+            is DietEvent.StartFast -> viewModelScope.launch {
+                bodyLog.startFast(event.targetMinutes)
+                reminders.rearmFast()
+            }
+            DietEvent.EndFast -> viewModelScope.launch {
+                bodyLog.endFast()
+                reminders.rearmFast()
+            }
             is DietEvent.SetWaterTarget -> viewModelScope.launch {
                 bodyLog.setWaterTarget(event.ml)
                 flow.update { it.copy(panel = null) }
+            }
+            is DietEvent.SetReminder -> viewModelScope.launch {
+                if (mealReminders.set(event.mealId, event.minutes)) reminders.rearmMeals()
             }
             DietEvent.UndoWater -> viewModelScope.launch { bodyLog.lastWaterId(flow.value.today ?: diet.today())?.let { bodyLog.removeWater(it) } }
             is DietEvent.LogWeight -> viewModelScope.launch { bodyLog.logWeight(flow.value.today ?: diet.today(), event.kg) }

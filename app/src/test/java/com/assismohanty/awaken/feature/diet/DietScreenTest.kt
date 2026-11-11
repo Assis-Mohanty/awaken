@@ -13,6 +13,7 @@ import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.assismohanty.awaken.core.designsystem.theme.AwakenTheme
 import com.assismohanty.awaken.engine.body.Nutrient
+import com.assismohanty.awaken.testing.NoDietReminders
 import com.assismohanty.awaken.testing.TestGraph
 import com.google.common.truth.Truth.assertThat
 import java.time.LocalDate
@@ -40,7 +41,7 @@ class DietScreenTest {
 
     @Test
     fun setupThenLogAFood() {
-        val viewModel = DietViewModel(graph.diet, graph.foodSearch, graph.foodLibrary, graph.bodyLog)
+        val viewModel = DietViewModel(graph.diet, graph.foodSearch, graph.foodLibrary, graph.bodyLog, graph.mealReminders, NoDietReminders)
         composeRule.setContent {
             AwakenTheme(reduceMotion = true) {
                 val state by viewModel.uiState.collectAsState()

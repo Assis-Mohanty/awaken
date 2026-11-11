@@ -28,6 +28,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.ImeAction
@@ -39,6 +40,11 @@ import com.assismohanty.awaken.core.data.catalog.Portion
 import com.assismohanty.awaken.core.data.db.entity.MeasureKind
 import com.assismohanty.awaken.core.data.db.entity.WeightLogEntity
 import com.assismohanty.awaken.core.domain.CustomFoodDraft
+import androidx.compose.material3.Switch
+import androidx.compose.material3.TimeInput
+import androidx.compose.material3.rememberTimePickerState
+import com.assismohanty.awaken.core.designsystem.components.SystemWindow
+import com.assismohanty.awaken.engine.body.MealReminderRules
 import com.assismohanty.awaken.core.designsystem.charts.Chart
 import com.assismohanty.awaken.core.designsystem.charts.ChartSpec
 import com.assismohanty.awaken.engine.body.FastState
@@ -772,6 +778,75 @@ private fun FastingPreview() {
     AwakenTheme(reduceMotion = true) {
         Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
             FastingContent(FastView(), onEvent = {})
+        }
+    }
+}
+
+// Meal reminders
+
+@Composable
+fun RemindersSheet(slots: List<MealSlot>, reminders: Map<String, Int>, onEvent: (DietEvent) -> Unit) {
+    DietSheet(onDismiss = { onEvent(DietEvent.ClosePanel) }) { RemindersContent(slots, reminders, onEvent) }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun RemindersContent(slots: List<MealSlot>, reminders: Map<String, Int>, onEvent: (DietEvent) -> Unit) {
+    val colors = AwakenTheme.colors
+    var picking by remember { mutableStateOf<String?>(null) }
+    SheetTitle(lexString(R.string.diet_reminders_title))
+    Text(lexString(R.string.diet_reminders_intro), style = AwakenTheme.type.body, color = colors.textSecondary)
+    val full = reminders.size >= MealReminderRules.MAX_REMINDERS
+    slots.forEach { slot ->
+        val minutes = reminders[slot.id]
+        val label = mealLabel(slot.id, slots)
+        val switchLabel = lexString(R.string.diet_reminder_on, label)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(label, style = AwakenTheme.type.label, color = colors.textPrimary)
+                if (minutes != null) {
+                    QuietButton(text = timeLabel(minutes) + " · " + lexString(R.string.diet_reminder_time), onClick = { picking = slot.id })
+                }
+            }
+            Switch(
+                checked = minutes != null,
+                enabled = minutes != null || !full,
+                onCheckedChange = { on -> onEvent(DietEvent.SetReminder(slot.id, if (on) MealReminderRules.defaultMinutes(slot.id) else null)) },
+                modifier = Modifier.semantics { contentDescription = switchLabel },
+            )
+        }
+    }
+    if (full) Text(lexString(R.string.diet_reminders_limit), style = AwakenTheme.type.caption, color = colors.textMuted)
+    picking?.let { id ->
+        val state = rememberTimePickerState(initialHour = (reminders[id] ?: 0) / MINUTES_PER_HOUR, initialMinute = (reminders[id] ?: 0) % MINUTES_PER_HOUR, is24Hour = android.text.format.DateFormat.is24HourFormat(androidx.compose.ui.platform.LocalContext.current))
+        androidx.compose.ui.window.Dialog(onDismissRequest = { picking = null }) {
+            SystemWindow(title = lexString(R.string.diet_reminder_time_title), accent = colors.accent) {
+                TimeInput(state = state, modifier = Modifier.align(Alignment.CenterHorizontally))
+                Row(horizontalArrangement = Arrangement.spacedBy(Spacing.xs), modifier = Modifier.fillMaxWidth()) {
+                    QuietButton(text = lexString(R.string.action_cancel), onClick = { picking = null })
+                    PrimaryButton(
+                        text = lexString(R.string.action_done),
+                        onClick = { onEvent(DietEvent.SetReminder(id, state.hour * MINUTES_PER_HOUR + state.minute)); picking = null },
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun timeLabel(minutes: Int): String =
+    java.time.LocalTime.ofSecondOfDay(minutes * SECONDS_PER_MINUTE).format(java.time.format.DateTimeFormatter.ofLocalizedTime(java.time.format.FormatStyle.SHORT))
+
+private const val SECONDS_PER_MINUTE = 60L
+
+@PhonePreviews
+@Composable
+private fun RemindersPreview() {
+    AwakenTheme(reduceMotion = true) {
+        Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+            RemindersContent(previewDietState().slots, mapOf("LUNCH" to 13 * 60, "DINNER" to 20 * 60), onEvent = {})
         }
     }
 }
