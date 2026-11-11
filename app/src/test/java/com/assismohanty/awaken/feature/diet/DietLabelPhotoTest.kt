@@ -105,19 +105,22 @@ class DietLabelPhotoTest {
 
         reader.words = null
         vm.onEvent(DietEvent.LabelPhotoTaken(photo()))
-        assertThat(vm.until { it.labelPhoto is LabelPhotoState.Failed }.labelPhoto).isEqualTo(LabelPhotoState.Failed(LabelPhotoState.Reason.UNAVAILABLE))
+        assertThat((vm.until { it.labelPhoto is LabelPhotoState.Failed }.labelPhoto as LabelPhotoState.Failed).reason).isEqualTo(LabelPhotoState.Reason.UNAVAILABLE)
 
         vm.onEvent(DietEvent.LabelPhotoRetry)
         vm.until { it.labelPhoto == LabelPhotoState.Capturing }
         reader.words = emptyList()
         vm.onEvent(DietEvent.LabelPhotoTaken(photo()))
-        assertThat(vm.until { it.labelPhoto is LabelPhotoState.Failed }.labelPhoto).isEqualTo(LabelPhotoState.Failed(LabelPhotoState.Reason.NOTHING_READ))
+        assertThat((vm.until { it.labelPhoto is LabelPhotoState.Failed }.labelPhoto as LabelPhotoState.Failed).reason).isEqualTo(LabelPhotoState.Reason.NOTHING_READ)
 
         vm.onEvent(DietEvent.LabelPhotoRetry)
         vm.until { it.labelPhoto == LabelPhotoState.Capturing }
         reader.words = listOf(OcrWord("Best", 10, 10, 60, 30, 90), OcrWord("before", 70, 10, 130, 30, 90))
         vm.onEvent(DietEvent.LabelPhotoTaken(photo()))
-        assertThat(vm.until { it.labelPhoto is LabelPhotoState.Failed }.labelPhoto).isEqualTo(LabelPhotoState.Failed(LabelPhotoState.Reason.NOT_A_TABLE))
+        val notATable = vm.until { it.labelPhoto is LabelPhotoState.Failed }.labelPhoto as LabelPhotoState.Failed
+        assertThat(notATable.reason).isEqualTo(LabelPhotoState.Reason.NOT_A_TABLE)
+        // What the reader found is kept so a failed read can be understood.
+        assertThat(notATable.seen).isEqualTo("Best before")
         assertThat(vm.uiState.value.search?.prefill).isNull()
 
         vm.onEvent(DietEvent.LabelPhotoTaken(null))
@@ -189,6 +192,16 @@ class DietLabelPhotoTest {
         composeRule.onNodeWithText("never saved or sent", substring = true).assertExists()
         composeRule.onNodeWithText("Take photo").performClick()
         assertThat(events.single()).isEqualTo(DietEvent.LabelPhotoTaken(null))
+    }
+
+    @Test
+    fun aFailedReadShowsWhatTheReaderSaw() {
+        composeRule.setContent {
+            AwakenTheme(reduceMotion = true) {
+                LabelPhotoScreen(LabelPhotoState.Failed(LabelPhotoState.Reason.NOT_A_TABLE, "Best before 12 months"), CameraAccess.READY, camera = { ScanFrame(it) }, onTakePhoto = {}, onAskPermission = {}, onOpenSettings = {}, onEvent = {})
+            }
+        }
+        composeRule.onNodeWithText("What the reader saw: Best before 12 months").assertExists()
     }
 
     @Test

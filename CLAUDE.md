@@ -67,7 +67,11 @@ Proxy (`/proxy`): TypeScript on Cloudflare Workers · zod · Wrangler · Vitest.
 ./gradlew :app:recordRoborazziDebug     # re-record golden screenshots of every @Preview (deliberate visual changes only)
 ./gradlew :app:verifyRoborazziDebug     # compare against the committed goldens
 node tools/catalog/build-catalog.mjs <sr_dir> <fndds_dir> <cofid_dir>   # rebuild assets/nutrition/foods.db (see tools/catalog/README.md)
-./gradlew :app:connectedDebugAndroidTest   # instrumented (needs device/emulator)
+./gradlew :app:connectedDebugAndroidTest   # instrumented (needs device/emulator). WARNING: it UNINSTALLS the app afterwards, which deletes its data. On a phone with data you want, do instead:
+#   ./gradlew :app:assembleDebug :app:assembleDebugAndroidTest
+#   adb install -r -t app/build/outputs/apk/debug/app-debug.apk && adb install -r -t app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
+#   adb shell am instrument -w -e class <test class> com.assismohanty.awaken.test/androidx.test.runner.AndroidJUnitRunner
+#   adb uninstall com.assismohanty.awaken.test        # the test package only
 ./gradlew :app:assembleDebug           # debug APK -> app/build/outputs/apk/debug/
 ./gradlew :app:bundleRelease           # signed AAB for Play (needs keystore.properties)
 ./gradlew lint

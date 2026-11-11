@@ -40,27 +40,33 @@ fun LabelCamera(shutter: LabelShutter, modifier: Modifier = Modifier) {
     DisposableEffect(lifecycleOwner, controller) {
         controller.bindToLifecycle(lifecycleOwner)
         shutter.take = { callback ->
-            controller.takePicture(
-                ContextCompat.getMainExecutor(context),
-                object : ImageCapture.OnImageCapturedCallback() {
-                    override fun onCaptureSuccess(image: ImageProxy) {
-                        val photo = try {
-                            image.toBitmap().upright(image.imageInfo.rotationDegrees)
-                        } catch (e: RuntimeException) {
-                            Timber.w(e, "The photo could not be read")
-                            null
-                        } finally {
-                            image.close()
+            try {
+                controller.takePicture(
+                    ContextCompat.getMainExecutor(context),
+                    object : ImageCapture.OnImageCapturedCallback() {
+                        override fun onCaptureSuccess(image: ImageProxy) {
+                            val photo = try {
+                                image.toBitmap().upright(image.imageInfo.rotationDegrees)
+                            } catch (e: RuntimeException) {
+                                Timber.w(e, "The photo could not be read")
+                                null
+                            } finally {
+                                image.close()
+                            }
+                            callback(photo)
                         }
-                        callback(photo)
-                    }
 
-                    override fun onError(exception: ImageCaptureException) {
-                        Timber.w(exception, "The camera could not take the photo")
-                        callback(null)
-                    }
-                },
-            )
+                        override fun onError(exception: ImageCaptureException) {
+                            Timber.w(exception, "The camera could not take the photo")
+                            callback(null)
+                        }
+                    },
+                )
+            } catch (e: IllegalStateException) {
+                // Tapped before the camera finished starting: the caller is told there is no photo, and the hunter can try again.
+                Timber.w(e, "The camera was not ready")
+                callback(null)
+            }
         }
         onDispose {
             shutter.take = { it(null) }

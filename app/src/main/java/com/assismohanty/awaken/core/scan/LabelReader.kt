@@ -38,10 +38,11 @@ class TesseractLabelReader @Inject constructor(
     @IoDispatcher private val ioDispatcher: CoroutineDispatcher,
 ) : LabelReader {
     private val lock = Mutex()
+    private val languageData = OcrLanguageData(context)
 
     override suspend fun read(photo: Bitmap): List<OcrWord>? = lock.withLock {
         withContext(ioDispatcher) {
-            val dataDir = prepareLanguageData() ?: return@withContext null
+            val dataDir = languageData.ensure() ?: return@withContext null
             val engine = TessBaseAPI()
             val prepared = scaledForReading(photo)
             try {
@@ -66,26 +67,14 @@ class TesseractLabelReader @Inject constructor(
             } catch (e: RuntimeException) {
                 Timber.w(e, "Reading the label failed")
                 null
+            } catch (e: UnsatisfiedLinkError) {
+                // The native reading code could not be loaded on this phone: report it, do not crash.
+                Timber.w(e, "The reading engine could not be loaded")
+                null
             } finally {
                 engine.recycle()
                 if (prepared !== photo) prepared.recycle()
             }
-        }
-    }
-
-    /** Copies the language data out of the app on first use (and again if the app ships a different file). Null if it can not be copied. */
-    private fun prepareLanguageData(): File? {
-        val tessdata = File(File(context.filesDir, "ocr"), "tessdata").apply { mkdirs() }
-        val target = File(tessdata, "$LANGUAGE.traineddata")
-        return try {
-            val shipped = context.assets.openFd("tessdata/$LANGUAGE.traineddata").use { it.length }
-            if (!target.exists() || target.length() != shipped) {
-                context.assets.open("tessdata/$LANGUAGE.traineddata").use { input -> target.outputStream().use { input.copyTo(it) } }
-            }
-            tessdata.parentFile
-        } catch (e: java.io.IOException) {
-            Timber.w(e, "The language data could not be prepared")
-            null
         }
     }
 
@@ -99,7 +88,7 @@ class TesseractLabelReader @Inject constructor(
 
     private companion object {
         const val LANGUAGE = "eng"
-        const val MAX_SIDE = 2_000
+        const val MAX_SIDE = 2_400
     }
 }
 

@@ -166,6 +166,8 @@
     <string name="diet_label_photo_failed_nothing">No text could be read. Try again with more light, closer, and the table filling the frame.</string>
     <string name="diet_label_photo_failed_table">Text was read, but no nutrition table was found. Try again with just the table in the frame.</string>
     <string name="diet_label_photo_failed_unavailable">The reader could not start on this phone. You can still type the label in by hand.</string>
+    <string name="diet_label_photo_seen">What the reader saw: %1$s</string>
+    <string name="diet_label_photo_reading_wait">This can take up to ten seconds.</string>
     <string name="diet_label_photo_retry">Try again</string>
     <string name="diet_label_photo_close">Close</string>
     <string name="diet_form_from_photo">Read from your photo. Check every number against the pack before you save.</string>

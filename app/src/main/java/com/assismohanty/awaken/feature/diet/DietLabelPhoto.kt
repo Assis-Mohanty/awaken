@@ -73,9 +73,13 @@ fun LabelPhotoScreen(
                                 Text(lexString(R.string.diet_label_photo_tip), style = AwakenTheme.type.body, color = colors.textSecondary)
                                 PrimaryButton(text = lexString(R.string.diet_label_photo_take), onClick = onTakePhoto, modifier = Modifier.fillMaxWidth())
                             }
-                            LabelPhotoState.Reading -> Text(lexString(R.string.diet_label_photo_reading), style = AwakenTheme.type.body, color = colors.textSecondary)
+                            LabelPhotoState.Reading -> {
+                                Text(lexString(R.string.diet_label_photo_reading), style = AwakenTheme.type.body, color = colors.textPrimary)
+                                Text(lexString(R.string.diet_label_photo_reading_wait), style = AwakenTheme.type.caption, color = colors.textSecondary)
+                            }
                             is LabelPhotoState.Failed -> {
                                 Text(lexString(failureText(state.reason)), style = AwakenTheme.type.body, color = colors.textPrimary)
+                                if (state.seen.isNotBlank()) Text(lexString(R.string.diet_label_photo_seen, state.seen), style = AwakenTheme.type.caption, color = colors.textMuted)
                                 PrimaryButton(text = lexString(R.string.diet_label_photo_retry), onClick = { onEvent(DietEvent.LabelPhotoRetry) }, modifier = Modifier.fillMaxWidth())
                             }
                         }

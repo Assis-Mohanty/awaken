@@ -148,7 +148,8 @@ sealed interface ScanState {
 sealed interface LabelPhotoState {
     data object Capturing : LabelPhotoState
     data object Reading : LabelPhotoState
-    data class Failed(val reason: Reason) : LabelPhotoState
+    /** [seen] is the text the reader found, so a failed read can be understood; empty when nothing was read. */
+    data class Failed(val reason: Reason, val seen: String = "") : LabelPhotoState
     enum class Reason { NOTHING_READ, NOT_A_TABLE, UNAVAILABLE }
 }
 
@@ -842,7 +843,8 @@ class DietViewModel @Inject constructor(
         }
         val parsed = if (outcome == null) NutritionLabelParser.parse(words.orEmpty()) else null
         if (outcome != null || parsed == null) {
-            flow.update { it.copy(labelPhoto = LabelPhotoState.Failed(outcome ?: LabelPhotoState.Reason.NOT_A_TABLE)) }
+            val seen = words.orEmpty().joinToString(" ") { it.text }.take(SEEN_CHARS)
+            flow.update { it.copy(labelPhoto = LabelPhotoState.Failed(outcome ?: LabelPhotoState.Reason.NOT_A_TABLE, seen)) }
             return
         }
         val values = parsed.per100
@@ -881,6 +883,7 @@ class DietViewModel @Inject constructor(
         const val STOP_TIMEOUT_MS = 5_000L
         const val FALLBACK_MEAL = "SNACK"
         const val LAST_STEP = 3
+        const val SEEN_CHARS = 300
         const val FAST_TICK_MS = 60_000L
         const val WEIGHT_DAYS = 90L
 
