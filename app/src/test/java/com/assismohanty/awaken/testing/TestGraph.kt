@@ -215,9 +215,7 @@ class TestGraph(
 
     /** A fresh DataStore file per graph, so notices never leak between tests. */
     private val noticeScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
-    val mealReminders = com.assismohanty.awaken.core.data.repo.MealReminderStore(
-        PreferenceDataStoreFactory.create(scope = noticeScope) { File(context.filesDir, "meal-reminders-${UUID.randomUUID()}.preferences_pb") },
-    )
+    val mealReminders = com.assismohanty.awaken.core.data.repo.MealReminderStore(db.foodLibraryDao())
     val notices = NoticeStore(
         PreferenceDataStoreFactory.create(scope = noticeScope) { File(context.filesDir, "notices-${UUID.randomUUID()}.preferences_pb") },
     )

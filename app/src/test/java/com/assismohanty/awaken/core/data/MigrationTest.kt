@@ -794,6 +794,39 @@ class MigrationTest {
 
 
     /**
+     * v32 -> v33 is additive: a diary row comes through unchanged with "not an estimate" and no calorie range, and the new
+     * meal reminder table exists, empty and usable.
+     */
+    @Test
+    fun v32To33KeepsTheDiaryAndAddsTheReminderTable() = runTest {
+        val path = createFromSchema(32)
+        SQLiteDatabase.openDatabase(path, null, SQLiteDatabase.OPEN_READWRITE).use { db ->
+            db.execSQL(
+                "INSERT INTO food_log (id, game_date, meal, food_id, name, grams, portion_label, nutrients_json, logged_at, entry_source) " +
+                    "VALUES ('l1', '2026-11-01', 'LUNCH', 'usda:1', 'Dal', 150.0, NULL, '{\"kcal\":120}', 1000, 'SEARCH')",
+            )
+        }
+        val db = Room.databaseBuilder(context, AwakenDatabase::class.java, path)
+            .addMigrations(*ALL_MIGRATIONS)
+            .allowMainThreadQueries()
+            .build()
+        try {
+            val row = db.dietDao().entriesOn(java.time.LocalDate.of(2026, 11, 1)).single()
+            assertThat(row.name).isEqualTo("Dal")
+            assertThat(row.grams).isEqualTo(150.0)
+            assertThat(row.estimated).isFalse()
+            assertThat(row.kcalLowPer100).isNull()
+            assertThat(row.kcalHighPer100).isNull()
+
+            assertThat(db.foodLibraryDao().mealReminders()).isEmpty()
+            db.foodLibraryDao().upsertMealReminder(com.assismohanty.awaken.core.data.db.entity.MealReminderEntity("LUNCH", 13 * 60))
+            assertThat(db.foodLibraryDao().mealReminders().single().minutes).isEqualTo(13 * 60)
+        } finally {
+            db.close()
+        }
+    }
+
+    /**
      * v31 -> v32 (Diet v2, plan 3.8) is additive: the diary, a custom food and the Diet profile come through unchanged, new
      * columns read their old-behaviour defaults, the four built-in meals exist in order, the profile weight becomes the plan
      * weight and the first weigh-in, and the new tables are empty and usable.

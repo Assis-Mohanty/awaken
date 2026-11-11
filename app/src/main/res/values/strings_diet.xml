@@ -184,6 +184,7 @@
     <string name="diet_meal_empty">Nothing logged.</string>
     <string name="diet_add_food">Add food</string>
     <string name="diet_entry_meta">%1$s · %2$s kcal</string>
+    <string name="diet_entry_meta_range">%1$s · %2$s</string>
     <string name="diet_entry_grams">%1$s g</string>
     <string name="diet_entry_edit">Edit %1$s</string>
     <string name="diet_window_nutrients">Nutrients</string>

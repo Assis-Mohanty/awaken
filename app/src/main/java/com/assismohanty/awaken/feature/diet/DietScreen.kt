@@ -40,6 +40,7 @@ import com.assismohanty.awaken.core.data.db.entity.Meal
 import com.assismohanty.awaken.core.designsystem.components.AwakenGlyphs
 import com.assismohanty.awaken.core.designsystem.components.ChoiceChip
 import com.assismohanty.awaken.core.designsystem.components.NumberField
+import com.assismohanty.awaken.core.designsystem.components.Pill
 import com.assismohanty.awaken.core.designsystem.components.PrimaryButton
 import com.assismohanty.awaken.core.designsystem.components.QuietButton
 import com.assismohanty.awaken.core.designsystem.components.SecondaryButton
@@ -470,15 +471,21 @@ private fun MealWindow(slot: MealSlot, slots: List<MealSlot>, entries: List<Diar
 private fun EntryRow(row: FoodLogEntity, amounts: Nutrients, onEvent: (DietEvent) -> Unit) {
     val colors = AwakenTheme.colors
     val amount = row.portionLabel ?: lexString(R.string.diet_entry_grams, formatAmount(row.grams))
+    val low = row.kcalLowPer100
+    val high = row.kcalHighPer100
+    val kcalText = if (low != null && high != null) lexString(R.string.diet_kcal_range, formatAmount(low * row.grams / PER_100), formatAmount(high * row.grams / PER_100)) else null
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClickLabel = lexString(R.string.diet_entry_edit, row.name)) { onEvent(DietEvent.EditEntry(row)) }
             .padding(vertical = Spacing.sm),
     ) {
-        Text(row.name, style = AwakenTheme.type.label, color = colors.textPrimary, maxLines = 2)
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+            Text(row.name, style = AwakenTheme.type.label, color = colors.textPrimary, maxLines = 2, modifier = Modifier.weight(1f, fill = false))
+            if (row.estimated) Pill(text = lexString(R.string.diet_estimate_chip), color = colors.textSecondary)
+        }
         Text(
-            lexString(R.string.diet_entry_meta, amount, formatCount(amounts[Nutrient.KCAL].roundToInt())),
+            if (kcalText != null) lexString(R.string.diet_entry_meta_range, amount, kcalText) else lexString(R.string.diet_entry_meta, amount, formatCount(amounts[Nutrient.KCAL].roundToInt())),
             style = AwakenTheme.type.caption,
             color = colors.textSecondary,
         )
@@ -547,6 +554,7 @@ private fun formatDate(date: LocalDate): String =
     DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).withLocale(currentLocale()).format(date)
 
 private const val AMOUNT_DECIMALS_BELOW = 10.0
+private const val PER_100 = 100.0
 
 // Previews
 

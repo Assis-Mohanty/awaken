@@ -22,6 +22,7 @@ object ExportUpgrade {
     private const val LOCKDOWN_TABLE = "lockdown_session"
     /** v31 -> v32 (Diet v2): tables that did not exist before. */
     private val DIET_V32_TABLES = listOf("meal_slot", "favourite_food", "saved_meal", "saved_meal_item", "recipe", "recipe_ingredient", "water_log", "weight_log", "body_measure_log", "fasting_session", "meal_plan_entry", "diary_note", "scan_feedback")
+    private const val MEAL_REMINDER_TABLE = "meal_reminder"
     private const val BEDTIME_TABLE = "bedtime_rule"
     private val QUIT_V23_TABLES = listOf("quit_counter", "relapse", "quit_day")
     private val LONG_ARC_V24_TABLES = listOf("dungeon", "program", "program_mark")
@@ -212,6 +213,13 @@ object ExportUpgrade {
             current = current.copy(
                 schemaVersion = 32,
                 tables = current.tables + DIET_V32_TABLES.filter { it !in current.tables }.associateWith { emptyList() },
+            )
+        }
+        // v32 -> v33: the reminder table did not exist, and the new food_log columns have defaults (not an estimate, no range).
+        if (current.app == ExportDocument.APP_ID && current.schemaVersion == 32) {
+            current = current.copy(
+                schemaVersion = 33,
+                tables = current.tables + (MEAL_REMINDER_TABLE to current.tables[MEAL_REMINDER_TABLE].orEmpty()),
             )
         }
         return current

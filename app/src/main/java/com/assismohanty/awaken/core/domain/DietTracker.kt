@@ -175,6 +175,9 @@ class DietTracker @Inject constructor(
                 nutrientsJson = FoodCatalog.nutrientsToJson(food.per100),
                 loggedAt = clock.now(),
                 entrySource = source,
+                estimated = food.estimated,
+                kcalLowPer100 = food.kcalRange?.start,
+                kcalHighPer100 = food.kcalRange?.endInclusive,
             ),
         )
     }
@@ -202,6 +205,8 @@ class DietTracker @Inject constructor(
         name = row.name,
         source = if (row.foodId.startsWith(CUSTOM_PREFIX)) FoodSource.CUSTOM else FoodSource.USDA_SR,
         per100 = FoodCatalog.nutrientsFromJson(row.nutrientsJson),
+        kcalRange = if (row.kcalLowPer100 != null && row.kcalHighPer100 != null) row.kcalLowPer100..row.kcalHighPer100 else null,
+        estimated = row.estimated,
     )
 
     /** Portions for a logged food: from the catalog or custom food when it still exists. */

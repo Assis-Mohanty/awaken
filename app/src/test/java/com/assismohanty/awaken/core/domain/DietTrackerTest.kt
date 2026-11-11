@@ -73,6 +73,21 @@ class DietTrackerTest {
     }
 
     @Test
+    fun anEstimatedFoodKeepsItsFlagAndCalorieRangeOnTheDiaryRow() = runTest {
+        val dal = Food("cofid:dal", "Dal", FoodSource.AWAKEN, Nutrients(mapOf(Nutrient.KCAL to 120.0)), kcalRange = 100.0..150.0, estimated = true)
+        diet.log(today, Meal.LUNCH.name, dal, grams = 200.0, portionLabel = null)
+
+        val row = diet.observeDay(today).first().meals.getValue(Meal.LUNCH.name).single().row
+        assertThat(row.estimated).isTrue()
+        assertThat(row.kcalLowPer100).isEqualTo(100.0)
+        assertThat(row.kcalHighPer100).isEqualTo(150.0)
+
+        val rebuilt = diet.foodOf(row)
+        assertThat(rebuilt.estimated).isTrue()
+        assertThat(rebuilt.kcalRange).isEqualTo(100.0..150.0)
+    }
+
+    @Test
     fun loggingGramsAddsUpTheDay() = runTest {
         val paneer = diet.search("paneer").first { it.name == "Cheese, paneer" }
         val kcalPer100 = paneer.per100[Nutrient.KCAL]

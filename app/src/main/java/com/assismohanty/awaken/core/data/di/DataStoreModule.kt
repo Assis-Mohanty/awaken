@@ -44,11 +44,6 @@ annotation class AiPrefsStore
 @Retention(AnnotationRetention.BINARY)
 annotation class ScreenTimeAlertPrefs
 
-/** Meal reminder times, by meal id (GD 20.4). */
-@Qualifier
-@Retention(AnnotationRetention.BINARY)
-annotation class MealReminderPrefs
-
 /** The onboarding quiz draft, so the flow resumes after the app is killed (docs/onboarding/PLAN.md §3.2). Not backed up. */
 @Qualifier
 @Retention(AnnotationRetention.BINARY)
@@ -105,16 +100,6 @@ object DataStoreModule {
         @ApplicationScope scope: CoroutineScope,
     ): DataStore<Preferences> = PreferenceDataStoreFactory.create(scope = scope) {
         context.preferencesDataStoreFile("screen_time_alerts")
-    }
-
-    @Provides
-    @Singleton
-    @MealReminderPrefs
-    fun provideMealReminderPrefs(
-        @ApplicationContext context: Context,
-        @ApplicationScope scope: CoroutineScope,
-    ): DataStore<Preferences> = PreferenceDataStoreFactory.create(scope = scope) {
-        context.preferencesDataStoreFile("meal_reminders")
     }
 
     @Provides

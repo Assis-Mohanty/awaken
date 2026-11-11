@@ -58,6 +58,7 @@ import com.assismohanty.awaken.core.data.db.entity.BedtimeRuleEntity
 import com.assismohanty.awaken.core.data.db.entity.QuitCounterEntity
 import com.assismohanty.awaken.core.data.db.entity.QuitDayEntity
 import com.assismohanty.awaken.core.data.db.entity.RelapseEntity
+import com.assismohanty.awaken.core.data.db.entity.MealReminderEntity
 import com.assismohanty.awaken.core.data.db.entity.MealSlotEntity
 import com.assismohanty.awaken.core.data.db.entity.FavouriteFoodEntity
 import com.assismohanty.awaken.core.data.db.entity.SavedMealEntity
@@ -139,6 +140,7 @@ import com.assismohanty.awaken.core.data.db.entity.DayOverrideEntity
         FastingSessionEntity::class,
         MealPlanEntryEntity::class,
         DiaryNoteEntity::class,
+        MealReminderEntity::class,
         ScanFeedbackEntity::class,
     ],
 )
@@ -171,6 +173,6 @@ abstract class AwakenDatabase : RoomDatabase() {
         const val NAME = "awaken.db"
 
         /** Also the export format version: an export is only importable into the schema it was written from. */
-        const val SCHEMA_VERSION = 32
+        const val SCHEMA_VERSION = 33
     }
 }

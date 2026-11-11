@@ -173,6 +173,11 @@ data class FoodLogEntity(
     /** How many servings the hunter picked ("2" katori); null when they typed grams. [grams] is always the truth. */
     @ColumnInfo(name = "portion_count") val portionCount: Double? = null,
     @ColumnInfo(name = "entry_source", defaultValue = "SEARCH") val entrySource: EntrySource = EntrySource.SEARCH,
+    /** The food was a stand-in for another dish, so the numbers are a guess (GD 20.3). Snapshot of what the hunter saw. */
+    @ColumnInfo(name = "estimated", defaultValue = "0") val estimated: Boolean = false,
+    /** The food's calorie spread per 100 g when it had one; null otherwise. */
+    @ColumnInfo(name = "kcal_low") val kcalLowPer100: Double? = null,
+    @ColumnInfo(name = "kcal_high") val kcalHighPer100: Double? = null,
 )
 
 /** The single Diet setup row (id 1). [overridesJson] maps nutrient keys to the hunter's own targets. */

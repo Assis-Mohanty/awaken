@@ -13,6 +13,7 @@ import com.assismohanty.awaken.engine.model.LedgerKind
 import com.assismohanty.awaken.engine.model.Stat
 import com.assismohanty.awaken.testing.TestGraph
 import com.google.common.truth.Truth.assertThat
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
@@ -592,6 +593,51 @@ class GameDataPorterTest {
         assertThat(row.entrySource).isEqualTo(com.assismohanty.awaken.core.data.db.entity.EntrySource.SEARCH)
         assertThat(target.db.dietDao().profile()?.lossPace).isEqualTo(com.assismohanty.awaken.engine.body.LossPace.STEADY)
         assertThat(tablesOf(target.porter.export())).isEqualTo(tablesOf(current))
+    }
+
+    @Test
+    fun mealRemindersAndEstimatedRowsRoundTrip() = runTest {
+        source.seedHunter()
+        val day = java.time.LocalDate.of(2026, 11, 2)
+        val dal = com.assismohanty.awaken.core.data.catalog.Food(
+            "cofid:dal", "Dal", com.assismohanty.awaken.core.data.catalog.FoodSource.AWAKEN,
+            com.assismohanty.awaken.engine.body.Nutrients(mapOf(com.assismohanty.awaken.engine.body.Nutrient.KCAL to 120.0)),
+            kcalRange = 100.0..150.0, estimated = true,
+        )
+        source.diet.log(day, com.assismohanty.awaken.core.data.db.entity.Meal.LUNCH.name, dal, 200.0, null)
+        source.mealReminders.set("LUNCH", 13 * 60)
+        source.mealReminders.set("DINNER", 20 * 60)
+        val exported = source.porter.export()
+
+        assertThat(target.porter.import(exported)).isInstanceOf(ImportResult.Imported::class.java)
+
+        assertThat(target.mealReminders.reminders.first()).containsExactly("LUNCH", 13 * 60, "DINNER", 20 * 60)
+        val row = target.db.dietDao().entriesOn(day).single()
+        assertThat(row.estimated).isTrue()
+        assertThat(row.kcalLowPer100).isEqualTo(100.0)
+        assertThat(row.kcalHighPer100).isEqualTo(150.0)
+        assertThat(tablesOf(target.porter.export())).isEqualTo(tablesOf(exported))
+    }
+
+    @Test
+    fun aV32BackupStillImportsWithoutRemindersOrEstimateColumns() = runTest {
+        source.seedHunter()
+        seedDiet(source)
+        val current = source.porter.export()
+        val v32 = mutate(current) { root ->
+            root["schemaVersion"] = JsonPrimitive(32)
+            root["tables"] = JsonObject(
+                root.getValue("tables").jsonObject.filterKeys { it != "meal_reminder" }.mapValues { (table, rows) ->
+                    if (table != "food_log") rows else JsonArray(rows.jsonArray.map { JsonObject(it.jsonObject.filterKeys { key -> key !in setOf("estimated", "kcal_low", "kcal_high") }) })
+                },
+            )
+        }
+
+        assertThat(target.porter.import(v32)).isInstanceOf(ImportResult.Imported::class.java)
+        val row = target.db.dietDao().entriesOn(java.time.LocalDate.of(2026, 11, 2)).single()
+        assertThat(row.estimated).isFalse()
+        assertThat(row.kcalLowPer100).isNull()
+        assertThat(target.mealReminders.reminders.first()).isEmpty()
     }
 
     @Test

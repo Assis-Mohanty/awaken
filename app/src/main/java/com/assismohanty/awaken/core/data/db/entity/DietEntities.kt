@@ -30,6 +30,13 @@ data class MealSlotEntity(
     @ColumnInfo(name = "built_in") val builtIn: Boolean,
 )
 
+/** One meal's reminder time, in minutes after local midnight. A meal without a row has no reminder (GD 20.4). */
+@Entity(tableName = "meal_reminder")
+data class MealReminderEntity(
+    @PrimaryKey @ColumnInfo(name = "meal_id") val mealId: String,
+    val minutes: Int,
+)
+
 @Entity(tableName = "favourite_food")
 data class FavouriteFoodEntity(
     @PrimaryKey @ColumnInfo(name = "food_id") val foodId: String,

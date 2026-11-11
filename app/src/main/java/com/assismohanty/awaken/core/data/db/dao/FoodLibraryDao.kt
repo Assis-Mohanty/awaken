@@ -6,6 +6,7 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Upsert
 import com.assismohanty.awaken.core.data.db.entity.FavouriteFoodEntity
+import com.assismohanty.awaken.core.data.db.entity.MealReminderEntity
 import com.assismohanty.awaken.core.data.db.entity.MealSlotEntity
 import com.assismohanty.awaken.core.data.db.entity.RecipeEntity
 import com.assismohanty.awaken.core.data.db.entity.RecipeIngredientEntity
@@ -30,6 +31,20 @@ interface FoodLibraryDao {
     /** Only custom meals can be deleted; the four built-in slots stay. */
     @Query("DELETE FROM meal_slot WHERE id = :id AND built_in = 0")
     suspend fun deleteCustomMealSlot(id: String): Int
+
+    // Meal reminders
+
+    @Query("SELECT * FROM meal_reminder")
+    fun observeMealReminders(): Flow<List<MealReminderEntity>>
+
+    @Query("SELECT * FROM meal_reminder")
+    suspend fun mealReminders(): List<MealReminderEntity>
+
+    @Upsert
+    suspend fun upsertMealReminder(reminder: MealReminderEntity)
+
+    @Query("DELETE FROM meal_reminder WHERE meal_id = :mealId")
+    suspend fun deleteMealReminder(mealId: String)
 
     // Favourites
 
