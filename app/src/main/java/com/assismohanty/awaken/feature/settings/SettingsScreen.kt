@@ -66,6 +66,7 @@ import com.assismohanty.awaken.debug.DebugEntry
 import com.assismohanty.awaken.core.data.health.HealthStatus
 import com.assismohanty.awaken.core.audio.ChimeChoice
 import com.assismohanty.awaken.core.data.repo.ThemeMode
+import com.assismohanty.awaken.engine.body.HeightUnit
 import com.assismohanty.awaken.engine.body.WeightUnit
 import com.assismohanty.awaken.core.designsystem.components.ChoiceChip
 import com.assismohanty.awaken.core.designsystem.components.DayChips
@@ -663,6 +664,16 @@ private fun DietSettingsWindow(state: DietSettingsUiState, onEvent: (DietSetting
                     text = lexString(if (unit == WeightUnit.LB) R.string.settings_diet_unit_lb else R.string.settings_diet_unit_kg),
                     selected = state.weightUnit == unit,
                     onClick = { onEvent(DietSettingsEvent.SetUnit(unit)) },
+                    modifier = Modifier.weight(1f),
+                )
+            }
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+            HeightUnit.entries.forEach { unit ->
+                ChoiceChip(
+                    text = lexString(if (unit == HeightUnit.FT_IN) R.string.settings_diet_height_ftin else R.string.settings_diet_height_cm),
+                    selected = state.heightUnit == unit,
+                    onClick = { onEvent(DietSettingsEvent.SetHeightUnit(unit)) },
                     modifier = Modifier.weight(1f),
                 )
             }

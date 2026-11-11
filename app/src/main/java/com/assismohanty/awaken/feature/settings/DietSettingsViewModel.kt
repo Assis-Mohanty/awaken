@@ -8,6 +8,7 @@ import com.assismohanty.awaken.core.domain.DietReminderScheduling
 import com.assismohanty.awaken.core.domain.FoodLibrary
 import com.assismohanty.awaken.core.domain.MealSlot
 import com.assismohanty.awaken.core.work.NotificationAccess
+import com.assismohanty.awaken.engine.body.HeightUnit
 import com.assismohanty.awaken.engine.body.WeightUnit
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -25,6 +26,7 @@ data class DietSettingsUiState(
     /** Meal id to reminder minutes after midnight. */
     val reminders: Map<String, Int> = emptyMap(),
     val weightUnit: WeightUnit = WeightUnit.KG,
+    val heightUnit: HeightUnit = HeightUnit.CM,
     /** A reminder is set but the system blocks notifications, so it can not reach the hunter. */
     val notificationsBlocked: Boolean = false,
 )
@@ -32,6 +34,7 @@ data class DietSettingsUiState(
 sealed interface DietSettingsEvent {
     data class SetReminder(val mealId: String, val minutes: Int?) : DietSettingsEvent
     data class SetUnit(val unit: WeightUnit) : DietSettingsEvent
+    data class SetHeightUnit(val unit: HeightUnit) : DietSettingsEvent
     data object Resumed : DietSettingsEvent
 }
 
@@ -50,10 +53,10 @@ class DietSettingsViewModel @Inject constructor(
     val uiState: StateFlow<DietSettingsUiState> = combine(
         foodLibrary.observeMealSlots(),
         store.reminders,
-        uiPrefs.prefs.map { it.weightUnit },
+        uiPrefs.prefs.map { it.weightUnit to it.heightUnit },
         blocked,
-    ) { slots, reminders, unit, isBlocked ->
-        DietSettingsUiState(slots, reminders, unit, notificationsBlocked = isBlocked && reminders.isNotEmpty())
+    ) { slots, reminders, units, isBlocked ->
+        DietSettingsUiState(slots, reminders, units.first, units.second, notificationsBlocked = isBlocked && reminders.isNotEmpty())
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), DietSettingsUiState())
 
     fun onEvent(event: DietSettingsEvent) {
@@ -62,6 +65,7 @@ class DietSettingsViewModel @Inject constructor(
                 if (store.set(event.mealId, event.minutes)) scheduler.rearmMeals()
             }
             is DietSettingsEvent.SetUnit -> viewModelScope.launch { uiPrefs.setWeightUnit(event.unit) }
+            is DietSettingsEvent.SetHeightUnit -> viewModelScope.launch { uiPrefs.setHeightUnit(event.unit) }
             DietSettingsEvent.Resumed -> blocked.update { !access.isGranted() }
         }
     }

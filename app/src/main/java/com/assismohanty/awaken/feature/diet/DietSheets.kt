@@ -55,6 +55,7 @@ import com.assismohanty.awaken.engine.body.FastState
 import com.assismohanty.awaken.engine.body.FastingRules
 import com.assismohanty.awaken.engine.body.NutrientCoverage
 import com.assismohanty.awaken.engine.body.TargetKind
+import com.assismohanty.awaken.engine.body.HeightUnit
 import com.assismohanty.awaken.engine.body.WeekReport
 import com.assismohanty.awaken.engine.body.WeightUnit
 import com.assismohanty.awaken.core.domain.CustomFoodResult
@@ -599,12 +600,12 @@ private fun TargetsPreview() {
 // Weight and measurements
 
 @Composable
-fun WeightSheet(weights: List<WeightLogEntity>, trendKg: Double?, unit: WeightUnit, onEvent: (DietEvent) -> Unit) {
-    DietSheet(onDismiss = { onEvent(DietEvent.ClosePanel) }) { WeightContent(weights, trendKg, unit, onEvent) }
+fun WeightSheet(weights: List<WeightLogEntity>, trendKg: Double?, unit: WeightUnit, heightUnit: HeightUnit, onEvent: (DietEvent) -> Unit) {
+    DietSheet(onDismiss = { onEvent(DietEvent.ClosePanel) }) { WeightContent(weights, trendKg, unit, heightUnit, onEvent) }
 }
 
 @Composable
-fun WeightContent(weights: List<WeightLogEntity>, trendKg: Double?, unit: WeightUnit, onEvent: (DietEvent) -> Unit) {
+fun WeightContent(weights: List<WeightLogEntity>, trendKg: Double?, unit: WeightUnit, heightUnit: HeightUnit, onEvent: (DietEvent) -> Unit) {
     val colors = AwakenTheme.colors
     var typed by remember { mutableStateOf(0.0) }
     val unitLabel = lexString(unit.symbolRes())
@@ -643,9 +644,9 @@ fun WeightContent(weights: List<WeightLogEntity>, trendKg: Double?, unit: Weight
         MeasureKind.entries.forEach { k -> ChoiceChip(text = lexString(k.nameRes()), selected = kind == k, onClick = { kind = k }) }
     }
     LabeledRow(kind.nameRes()) {
-        NumberField(value = cm, onValueChange = { cm = it }, description = lexString(kind.nameRes()), key = kind, suffix = lexString(R.string.diet_unit_cm))
+        NumberField(value = cm, onValueChange = { cm = it }, description = lexString(kind.nameRes()), key = kind to heightUnit, suffix = lexString(if (heightUnit == HeightUnit.FT_IN) R.string.diet_unit_in else R.string.diet_unit_cm))
     }
-    SecondaryButton(text = lexString(R.string.diet_measure_save), onClick = { onEvent(DietEvent.LogMeasure(kind, cm)) }, enabled = cm > 0.0, modifier = Modifier.fillMaxWidth())
+    SecondaryButton(text = lexString(R.string.diet_measure_save), onClick = { onEvent(DietEvent.LogMeasure(kind, heightUnit.lengthToCm(cm))) }, enabled = cm > 0.0, modifier = Modifier.fillMaxWidth())
 }
 
 @StringRes
@@ -671,6 +672,7 @@ private fun WeightPreview() {
                 ),
                 trendKg = 80.7,
                 unit = WeightUnit.KG,
+                heightUnit = HeightUnit.CM,
                 onEvent = {},
             )
         }

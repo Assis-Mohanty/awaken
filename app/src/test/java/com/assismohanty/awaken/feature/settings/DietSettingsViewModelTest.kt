@@ -49,8 +49,9 @@ class DietSettingsViewModelTest {
 
         vm.onEvent(DietSettingsEvent.SetReminder("LUNCH", 13 * 60))
         vm.onEvent(DietSettingsEvent.SetUnit(WeightUnit.LB))
+        vm.onEvent(DietSettingsEvent.SetHeightUnit(com.assismohanty.awaken.engine.body.HeightUnit.FT_IN))
 
-        val state = withTimeout(5_000) { vm.uiState.first { it.reminders.isNotEmpty() && it.weightUnit == WeightUnit.LB } }
+        val state = withTimeout(5_000) { vm.uiState.first { it.reminders.isNotEmpty() && it.weightUnit == WeightUnit.LB && it.heightUnit == com.assismohanty.awaken.engine.body.HeightUnit.FT_IN } }
         assertThat(state.reminders).containsExactly("LUNCH", 13 * 60)
         assertThat(viewModel().uiState.let { withTimeout(5_000) { it.first { s -> s.weightUnit == WeightUnit.LB } } }.reminders).containsKey("LUNCH")
     }

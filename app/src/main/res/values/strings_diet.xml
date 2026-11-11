@@ -25,6 +25,10 @@
     <string name="diet_unit_cm">cm</string>
     <string name="diet_unit_kg">kg</string>
     <string name="diet_unit_lb">lb</string>
+    <string name="diet_unit_in">in</string>
+    <string name="diet_setup_height_ft">Height, feet</string>
+    <string name="diet_setup_height_in">Height, inches</string>
+    <string name="diet_unit_ft">ft</string>
     <string name="nutrient_unit_ml">ml</string>
     <string name="diet_setup_activity">How active are you?</string>
     <string name="diet_activity_sedentary">Sedentary · desk job, little exercise</string>

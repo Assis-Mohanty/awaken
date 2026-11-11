@@ -10,6 +10,7 @@ import androidx.datastore.preferences.core.stringSetPreferencesKey
 import com.assismohanty.awaken.core.audio.ChimeChoice
 import com.assismohanty.awaken.core.data.di.UiPrefsStore
 import com.assismohanty.awaken.engine.TimeBlocks
+import com.assismohanty.awaken.engine.body.HeightUnit
 import com.assismohanty.awaken.engine.body.WeightUnit
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -43,6 +44,8 @@ data class UiPrefs(
     val lockdownSeenId: String = "",
     /** How Diet shows weights; stored weights are always kilograms. */
     val weightUnit: WeightUnit = WeightUnit.KG,
+    /** How Diet shows heights and body measurements; stored lengths are always centimetres. */
+    val heightUnit: HeightUnit = HeightUnit.CM,
 ) {
     val blockBounds: TimeBlocks.Bounds get() = TimeBlocks.Bounds.safe(morningEndHour, dayEndHour)
 }
@@ -62,6 +65,7 @@ class UiPrefsRepository @Inject constructor(@UiPrefsStore private val store: Dat
             morningEndHour = it[MORNING_END] ?: TimeBlocks.DEFAULT_MORNING_END,
             dayEndHour = it[DAY_END] ?: TimeBlocks.DEFAULT_DAY_END,
             lockdownSeenId = it[LOCKDOWN_SEEN].orEmpty(),
+            heightUnit = it[HEIGHT_UNIT]?.let { name -> HeightUnit.entries.firstOrNull { unit -> unit.name == name } } ?: HeightUnit.CM,
             weightUnit = it[WEIGHT_UNIT]?.let { name -> WeightUnit.entries.firstOrNull { unit -> unit.name == name } } ?: WeightUnit.KG,
         )
     }
@@ -99,6 +103,10 @@ class UiPrefsRepository @Inject constructor(@UiPrefsStore private val store: Dat
         store.edit { it[MORNING_END] = hour }
     }
 
+    suspend fun setHeightUnit(unit: HeightUnit) {
+        store.edit { it[HEIGHT_UNIT] = unit.name }
+    }
+
     suspend fun setWeightUnit(unit: WeightUnit) {
         store.edit { it[WEIGHT_UNIT] = unit.name }
     }
@@ -124,5 +132,6 @@ class UiPrefsRepository @Inject constructor(@UiPrefsStore private val store: Dat
         val DAY_END = intPreferencesKey("day_end_hour")
         val LOCKDOWN_SEEN = stringPreferencesKey("lockdown_seen_id")
         val WEIGHT_UNIT = stringPreferencesKey("weight_unit")
+        val HEIGHT_UNIT = stringPreferencesKey("height_unit")
     }
 }

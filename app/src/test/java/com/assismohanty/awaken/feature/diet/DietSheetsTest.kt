@@ -92,12 +92,22 @@ class DietSheetsTest {
 
     @Test
     fun weightInPoundsIsStoredInKilograms() {
-        show { WeightContent(emptyList(), null, WeightUnit.LB) { events += it } }
+        show { WeightContent(emptyList(), null, WeightUnit.LB, com.assismohanty.awaken.engine.body.HeightUnit.CM) { events += it } }
         composeRule.onNodeWithContentDescription("Weight").performScrollTo().performTextInput("176.37")
         composeRule.onNodeWithText("Log weight").performScrollTo().performClick()
 
         val log = events.single() as DietEvent.LogWeight
         assertThat(log.kg).isWithin(0.01).of(80.0)
+    }
+
+    @Test
+    fun aMeasurementInInchesIsStoredInCentimetres() {
+        show { WeightContent(emptyList(), null, WeightUnit.KG, com.assismohanty.awaken.engine.body.HeightUnit.FT_IN) { events += it } }
+        composeRule.onNodeWithContentDescription("Waist").performScrollTo().performTextInput("31.5")
+        composeRule.onNodeWithText("Log measurement").performScrollTo().performClick()
+
+        val log = events.single() as DietEvent.LogMeasure
+        assertThat(log.cm).isWithin(0.01).of(80.01)
     }
 
     @Test

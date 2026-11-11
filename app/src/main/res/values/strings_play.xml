@@ -311,10 +311,12 @@
     <string name="settings_window_diet">Diet</string>
     <string name="settings_value_diet">Meal reminders, units, food data</string>
     <string name="settings_diet_reminders_title">Meal reminders</string>
-    <string name="settings_diet_units_title">Weight unit</string>
+    <string name="settings_diet_units_title">Units</string>
+    <string name="settings_diet_height_cm">Centimetres</string>
+    <string name="settings_diet_height_ftin">Feet and inches</string>
     <string name="settings_diet_unit_kg">Kilograms</string>
     <string name="settings_diet_unit_lb">Pounds</string>
-    <string name="settings_diet_unit_note">Weights are stored in kilograms. This only changes what you see and type. Height stays in centimetres.</string>
+    <string name="settings_diet_unit_note">Weights are stored in kilograms and lengths in centimetres. A unit only changes what you see and type.</string>
     <string name="settings_diet_food_data">Food data</string>
     <string name="settings_diet_food_data_note">Where the food numbers come from</string>
     <string name="settings_name_label">Your name</string>

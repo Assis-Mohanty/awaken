@@ -8,6 +8,7 @@ import com.assismohanty.awaken.core.data.catalog.Portion
 import com.assismohanty.awaken.core.data.db.entity.FoodLogEntity
 import com.assismohanty.awaken.core.data.db.entity.EntrySource
 import com.assismohanty.awaken.core.data.repo.UiPrefsRepository
+import com.assismohanty.awaken.engine.body.HeightUnit
 import com.assismohanty.awaken.engine.body.WeightUnit
 import com.assismohanty.awaken.core.data.catalog.FoodCatalog
 import com.assismohanty.awaken.core.data.db.entity.MealPlanEntryEntity
@@ -233,7 +234,7 @@ data class Trackers(
 )
 
 /** What the library flows hand the screen state together. */
-private data class Library(val slots: List<MealSlot>, val saved: List<SavedMealSummary>, val unit: WeightUnit, val recipes: List<RecipeEntity>)
+private data class Library(val slots: List<MealSlot>, val saved: List<SavedMealSummary>, val units: Pair<WeightUnit, HeightUnit>, val recipes: List<RecipeEntity>)
 
 data class DietUiState(
     val loading: Boolean = true,
@@ -253,6 +254,7 @@ data class DietUiState(
     val trendKg: Double? = null,
     val fast: FastView = FastView(),
     val weightUnit: WeightUnit = WeightUnit.KG,
+    val heightUnit: HeightUnit = HeightUnit.CM,
     val recipes: List<RecipeEntity> = emptyList(),
     val recipeForm: RecipeForm? = null,
     val planDate: LocalDate? = null,
@@ -362,7 +364,7 @@ class DietViewModel @Inject constructor(
 
     val uiState: StateFlow<DietUiState> = combine(
         diet.observePlan(),
-        combine(foodLibrary.observeMealSlots(), foodLibrary.observeSavedMeals(), uiPrefs.prefs.map { it.weightUnit }.distinctUntilChanged(), recipeBook.observeRecipes()) { slots, saved, unit, recipes -> Library(slots, saved, unit, recipes) },
+        combine(foodLibrary.observeMealSlots(), foodLibrary.observeSavedMeals(), uiPrefs.prefs.map { it.weightUnit to it.heightUnit }.distinctUntilChanged(), recipeBook.observeRecipes()) { slots, saved, unit, recipes -> Library(slots, saved, unit, recipes) },
         flow.map { it.date }.distinctUntilChanged().flatMapLatest { date ->
             date?.let { d -> combine(diet.observeDay(d), bodyLog.observeNote(d)) { day, note -> day to note?.text } } ?: flowOf(null)
         },
@@ -384,7 +386,7 @@ class DietViewModel @Inject constructor(
         },
         flow,
     ) { plan, library, dayAndNote, trackers, f ->
-        val (slots, saved, unit, recipes) = library
+        val (slots, saved, units, recipes) = library
         DietUiState(
             loading = f.date == null,
             date = f.date ?: LocalDate.MIN,
@@ -393,7 +395,8 @@ class DietViewModel @Inject constructor(
             day = dayAndNote?.first,
             slots = slots,
             savedMeals = saved,
-            weightUnit = unit,
+            weightUnit = units.first,
+            heightUnit = units.second,
             recipes = recipes,
             recipeForm = f.recipeForm,
             planDate = f.planDate,

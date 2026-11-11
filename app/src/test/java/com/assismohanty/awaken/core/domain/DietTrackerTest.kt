@@ -7,6 +7,8 @@ import com.assismohanty.awaken.engine.body.ActivityLevel
 import com.assismohanty.awaken.engine.body.GoalSettings
 import com.assismohanty.awaken.engine.body.LossPace
 import com.assismohanty.awaken.engine.body.Nutrient
+import com.assismohanty.awaken.core.data.catalog.Food
+import com.assismohanty.awaken.core.data.catalog.FoodSource
 import com.assismohanty.awaken.engine.body.Nutrients
 import com.assismohanty.awaken.engine.body.Sex
 import com.assismohanty.awaken.engine.body.WeightGoal

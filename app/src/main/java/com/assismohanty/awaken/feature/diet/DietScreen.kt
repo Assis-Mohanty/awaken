@@ -60,6 +60,7 @@ import com.assismohanty.awaken.core.domain.DietSetup
 import com.assismohanty.awaken.core.domain.MealSlot
 import com.assismohanty.awaken.engine.body.ActivityLevel
 import com.assismohanty.awaken.engine.body.BodyProfile
+import com.assismohanty.awaken.engine.body.HeightUnit
 import com.assismohanty.awaken.engine.body.Hydration
 import com.assismohanty.awaken.engine.body.WeightUnit
 import com.assismohanty.awaken.engine.body.LossPace
@@ -106,7 +107,7 @@ fun DietScreen(state: DietUiState, onEvent: (DietEvent) -> Unit, modifier: Modif
         val setup = state.setup
         val plan = state.plan
         when {
-            setup != null -> SetupWindow(setup, canCancel = plan != null, unit = state.weightUnit, onEvent = onEvent)
+            setup != null -> SetupWindow(setup, canCancel = plan != null, unit = state.weightUnit, heightUnit = state.heightUnit, onEvent = onEvent)
             plan != null -> Diary(state, plan, onEvent)
         }
         Text(lexString(R.string.diet_tracker_note), style = AwakenTheme.type.caption, color = colors.textMuted)
@@ -117,7 +118,7 @@ fun DietScreen(state: DietUiState, onEvent: (DietEvent) -> Unit, modifier: Modif
     state.amount?.let { AmountSheet(it, state.slots, onEvent) }
     if (state.targets) state.plan?.let { TargetsSheet(it, onEvent) }
     when (state.panel) {
-        Panel.WEIGHT -> WeightSheet(state.weights, state.trendKg, state.weightUnit, onEvent)
+        Panel.WEIGHT -> WeightSheet(state.weights, state.trendKg, state.weightUnit, state.heightUnit, onEvent)
         Panel.NUTRIENTS -> state.plan?.let { NutrientsSheet(it, state.day?.totals ?: Nutrients(), state.coverage, onEvent) }
         Panel.REPORT -> ReportSheet(state.report, state.plan, onEvent)
         Panel.FASTING -> FastingSheet(state.fast, onEvent)
@@ -131,14 +132,14 @@ fun DietScreen(state: DietUiState, onEvent: (DietEvent) -> Unit, modifier: Modif
 // Setup
 
 @Composable
-private fun SetupWindow(form: SetupForm, canCancel: Boolean, unit: WeightUnit, onEvent: (DietEvent) -> Unit) {
+private fun SetupWindow(form: SetupForm, canCancel: Boolean, unit: WeightUnit, heightUnit: HeightUnit, onEvent: (DietEvent) -> Unit) {
     val colors = AwakenTheme.colors
     val type = AwakenTheme.type
     val change: ((SetupForm) -> SetupForm) -> Unit = { onEvent(DietEvent.SetupChanged(it)) }
     SystemWindow(title = lexString(R.string.diet_window_setup), accent = colors.accent, reveal = false) {
         Text(lexString(R.string.diet_setup_step, form.step), style = type.caption, color = colors.textSecondary)
         when (form.step) {
-            1 -> AboutYouStep(form, unit, change)
+            1 -> AboutYouStep(form, unit, heightUnit, change)
             2 -> GoalStep(form, change)
             else -> NumbersStep(form, change)
         }
@@ -161,7 +162,7 @@ private fun SetupWindow(form: SetupForm, canCancel: Boolean, unit: WeightUnit, o
 private const val LAST_SETUP_STEP = 3
 
 @Composable
-private fun AboutYouStep(form: SetupForm, unit: WeightUnit, change: ((SetupForm) -> SetupForm) -> Unit) {
+private fun AboutYouStep(form: SetupForm, unit: WeightUnit, heightUnit: HeightUnit, change: ((SetupForm) -> SetupForm) -> Unit) {
     Text(lexString(R.string.diet_setup_intro), style = AwakenTheme.type.body, color = AwakenTheme.colors.textSecondary)
     Question(R.string.diet_setup_sex)
     Row(horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
@@ -173,8 +174,24 @@ private fun AboutYouStep(form: SetupForm, unit: WeightUnit, change: ((SetupForm)
         LabeledNumber(R.string.diet_setup_birth_year) {
             NumberField(value = form.birthYear.toDouble(), onValueChange = { change { f -> f.copy(birthYear = it.toInt()) } }, description = lexString(R.string.diet_setup_birth_year), decimals = false)
         }
-        LabeledNumber(R.string.diet_setup_height) {
-            NumberField(value = form.heightCm, onValueChange = { change { f -> f.copy(heightCm = it) } }, description = lexString(R.string.diet_setup_height), suffix = lexString(R.string.diet_unit_cm))
+        if (heightUnit == HeightUnit.FT_IN) {
+            val (feet, inches) = HeightUnit.feetInches(form.heightCm)
+            LabeledNumber(R.string.diet_setup_height_ft) {
+                NumberField(
+                    value = feet.toDouble(), onValueChange = { v -> change { f -> f.copy(heightCm = HeightUnit.cmOf(v.toInt(), HeightUnit.feetInches(f.heightCm).second)) } },
+                    description = lexString(R.string.diet_setup_height_ft), decimals = false, key = heightUnit, suffix = lexString(R.string.diet_unit_ft),
+                )
+            }
+            LabeledNumber(R.string.diet_setup_height_in) {
+                NumberField(
+                    value = inches, onValueChange = { v -> change { f -> f.copy(heightCm = HeightUnit.cmOf(HeightUnit.feetInches(f.heightCm).first, v)) } },
+                    description = lexString(R.string.diet_setup_height_in), key = heightUnit, suffix = lexString(R.string.diet_unit_in),
+                )
+            }
+        } else {
+            LabeledNumber(R.string.diet_setup_height) {
+                NumberField(value = form.heightCm, onValueChange = { change { f -> f.copy(heightCm = it) } }, description = lexString(R.string.diet_setup_height), key = heightUnit, suffix = lexString(R.string.diet_unit_cm))
+            }
         }
         LabeledNumber(R.string.diet_setup_weight) {
             NumberField(value = unit.fromKg(form.weightKg), onValueChange = { change { f -> f.copy(weightKg = unit.toKg(it)) } }, description = lexString(R.string.diet_setup_weight), key = unit, suffix = lexString(unit.symbolRes()))
