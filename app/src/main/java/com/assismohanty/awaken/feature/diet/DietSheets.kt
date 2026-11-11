@@ -103,10 +103,20 @@ fun FoodSearchContent(search: FoodSearch, onEvent: (DietEvent) -> Unit) {
         modifier = Modifier.fillMaxWidth(),
     )
     val blank = search.query.isBlank()
-    if (blank) Text(lexString(R.string.diet_search_recent), style = AwakenTheme.type.label, color = colors.textSecondary)
+    if (blank) {
+        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+            ChoiceChip(text = lexString(R.string.diet_search_recent), selected = search.tab == SearchTab.RECENT, onClick = { onEvent(DietEvent.PickTab(SearchTab.RECENT)) })
+            ChoiceChip(text = lexString(R.string.diet_search_favourites), selected = search.tab == SearchTab.FAVOURITES, onClick = { onEvent(DietEvent.PickTab(SearchTab.FAVOURITES)) })
+        }
+    }
     if (search.results.isEmpty()) {
+        val empty = when {
+            !blank -> R.string.diet_search_empty
+            search.tab == SearchTab.FAVOURITES -> R.string.diet_search_favourites_empty
+            else -> R.string.diet_search_recent_empty
+        }
         Text(
-            lexString(if (blank) R.string.diet_search_recent_empty else R.string.diet_search_empty),
+            lexString(empty),
             style = AwakenTheme.type.body,
             color = colors.textSecondary,
         )

@@ -242,19 +242,17 @@ private fun BudgetHero(plan: DietPlan, totals: Nutrients, modifier: Modifier = M
     val eaten = totals[Nutrient.KCAL].roundToInt()
     val remaining = goal - eaten
     val over = remaining < 0
-    val barDescription = lexString(R.string.cd_diet_ring, formatCount(eaten), formatCount(goal))
+    val ringDescription = lexString(R.string.cd_diet_ring, formatCount(eaten), formatCount(goal))
     Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
-        BigValue(formatCount(abs(remaining)), lexString(if (over) R.string.diet_kcal_over_unit else R.string.diet_kcal_left), large = true)
-        Chart(
-            ChartSpec.Progress(
-                progress = if (goal > 0) eaten.toFloat() / goal else 0f,
-                color = if (over) colors.critical else colors.accent,
-            ),
-            modifier = Modifier.semantics { contentDescription = barDescription },
-        )
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Text(lexString(R.string.diet_eaten_line, formatCount(eaten)), style = type.caption, color = colors.textSecondary)
-            Text(lexString(R.string.diet_goal_line, formatCount(goal)), style = type.caption, color = colors.textSecondary)
+        // Over target stays neutral: the words say it, the colour never scolds (plan 7.3).
+        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.lg)) {
+            Chart(ChartSpec.Ring(progress = if (goal > 0) (eaten.toFloat() / goal).coerceAtMost(1f) else 0f, description = ringDescription, color = colors.accent)) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(formatCount(eaten), style = type.numeric, color = colors.textPrimary)
+                    Text(lexString(R.string.diet_goal_line, formatCount(goal)), style = type.caption, color = colors.textSecondary)
+                }
+            }
+            BigValue(formatCount(abs(remaining)), lexString(if (over) R.string.diet_kcal_over_unit else R.string.diet_kcal_left))
         }
         MACROS.chunked(2).forEach { pair ->
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Spacing.lg)) {

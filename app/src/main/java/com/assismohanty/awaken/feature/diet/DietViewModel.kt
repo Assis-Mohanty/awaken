@@ -10,6 +10,7 @@ import com.assismohanty.awaken.core.domain.DiaryDay
 import com.assismohanty.awaken.core.domain.DietPlan
 import com.assismohanty.awaken.core.domain.DietSetup
 import com.assismohanty.awaken.core.domain.DietTracker
+import com.assismohanty.awaken.core.domain.FoodSearchUseCase
 import com.assismohanty.awaken.engine.body.ActivityLevel
 import com.assismohanty.awaken.engine.body.Nutrient
 import com.assismohanty.awaken.engine.body.NutritionMath
@@ -53,9 +54,13 @@ data class SetupForm(
     }
 }
 
+/** What a blank search shows: what was logged lately, or the starred foods. */
+enum class SearchTab { RECENT, FAVOURITES }
+
 data class FoodSearch(
     val meal: Meal,
     val query: String = "",
+    val tab: SearchTab = SearchTab.RECENT,
     val results: List<Food> = emptyList(),
     val showCustomForm: Boolean = false,
 )
@@ -118,6 +123,7 @@ sealed interface DietEvent {
     data class OpenSearch(val meal: Meal) : DietEvent
     data object CloseSearch : DietEvent
     data class Query(val text: String) : DietEvent
+    data class PickTab(val tab: SearchTab) : DietEvent
     data class PickFood(val food: Food) : DietEvent
     data object OpenCustomFood : DietEvent
     data object CloseCustomFood : DietEvent
@@ -136,7 +142,10 @@ sealed interface DietEvent {
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
-class DietViewModel @Inject constructor(private val diet: DietTracker) : ViewModel() {
+class DietViewModel @Inject constructor(
+    private val diet: DietTracker,
+    private val foodSearch: FoodSearchUseCase,
+) : ViewModel() {
 
     private val flow = MutableStateFlow(DietFlow())
 
@@ -191,6 +200,10 @@ class DietViewModel @Inject constructor(private val diet: DietTracker) : ViewMod
             DietEvent.CloseSearch -> flow.update { it.copy(search = null) }
             is DietEvent.Query -> {
                 flow.update { f -> f.copy(search = f.search?.copy(query = event.text)) }
+                refreshSearch()
+            }
+            is DietEvent.PickTab -> {
+                flow.update { f -> f.copy(search = f.search?.copy(tab = event.tab)) }
                 refreshSearch()
             }
             is DietEvent.PickFood -> viewModelScope.launch {
@@ -257,8 +270,12 @@ class DietViewModel @Inject constructor(private val diet: DietTracker) : ViewMod
     private fun refreshSearch() {
         viewModelScope.launch {
             val search = flow.value.search ?: return@launch
-            val results = diet.search(search.query)
-            flow.update { f -> if (f.search?.query == search.query) f.copy(search = f.search.copy(results = results)) else f }
+            val results = when {
+                search.query.isNotBlank() -> foodSearch.search(search.query, today())
+                search.tab == SearchTab.FAVOURITES -> foodSearch.favourites()
+                else -> foodSearch.recent()
+            }
+            flow.update { f -> if (f.search?.query == search.query && f.search.tab == search.tab) f.copy(search = f.search.copy(results = results)) else f }
         }
     }
 

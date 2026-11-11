@@ -64,6 +64,8 @@
     <string name="diet_search_title">Add to %1$s</string>
     <string name="diet_search_hint">Search foods (paneer, roti, eggs…)</string>
     <string name="diet_search_recent">Recent</string>
+    <string name="diet_search_favourites">Favourites</string>
+    <string name="diet_search_favourites_empty">Foods you star show up here.</string>
     <string name="diet_search_recent_empty">Foods you log show up here for one-tap re-adding.</string>
     <string name="diet_search_empty">No foods match. Try a simpler word, or create your own.</string>
     <string name="diet_search_per100">%1$s kcal · P %2$s · C %3$s · F %4$s per 100 g</string>
