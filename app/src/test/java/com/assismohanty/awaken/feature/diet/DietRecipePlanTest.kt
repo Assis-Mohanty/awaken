@@ -1,6 +1,8 @@
 package com.assismohanty.awaken.feature.diet
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.assismohanty.awaken.core.domain.LoadHealthOverviewUseCase
+import com.assismohanty.awaken.testing.FakePhoneStepsGateway
 import com.assismohanty.awaken.testing.NoDietReminders
 import com.assismohanty.awaken.testing.TestGraph
 import com.google.common.truth.Truth.assertThat
@@ -35,7 +37,7 @@ class DietRecipePlanTest {
         graph.close()
     }
 
-    private fun viewModel() = DietViewModel(graph.diet, graph.foodSearch, graph.foodLibrary, graph.bodyLog, graph.mealReminders, NoDietReminders, graph.recipeBook)
+    private fun viewModel() = DietViewModel(graph.diet, graph.foodSearch, graph.foodLibrary, graph.bodyLog, graph.uiPrefs, NoDietReminders, graph.recipeBook, LoadHealthOverviewUseCase(graph.db.hunterDao(), graph.health, FakePhoneStepsGateway(), graph.clock))
 
     private suspend fun DietViewModel.until(condition: (DietUiState) -> Boolean): DietUiState = withTimeout(TIMEOUT_MS) { uiState.first(condition) }
 

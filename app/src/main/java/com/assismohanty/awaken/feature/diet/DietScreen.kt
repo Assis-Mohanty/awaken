@@ -60,6 +60,7 @@ import com.assismohanty.awaken.core.domain.MealSlot
 import com.assismohanty.awaken.engine.body.ActivityLevel
 import com.assismohanty.awaken.engine.body.BodyProfile
 import com.assismohanty.awaken.engine.body.Hydration
+import com.assismohanty.awaken.engine.body.WeightUnit
 import com.assismohanty.awaken.engine.body.LossPace
 import com.assismohanty.awaken.core.domain.TrendOffer
 import com.assismohanty.awaken.engine.body.MacroPreset
@@ -104,7 +105,7 @@ fun DietScreen(state: DietUiState, onEvent: (DietEvent) -> Unit, modifier: Modif
         val setup = state.setup
         val plan = state.plan
         when {
-            setup != null -> SetupWindow(setup, canCancel = plan != null, onEvent = onEvent)
+            setup != null -> SetupWindow(setup, canCancel = plan != null, unit = state.weightUnit, onEvent = onEvent)
             plan != null -> Diary(state, plan, onEvent)
         }
         Text(lexString(R.string.diet_tracker_note), style = AwakenTheme.type.caption, color = colors.textMuted)
@@ -115,12 +116,11 @@ fun DietScreen(state: DietUiState, onEvent: (DietEvent) -> Unit, modifier: Modif
     state.amount?.let { AmountSheet(it, state.slots, onEvent) }
     if (state.targets) state.plan?.let { TargetsSheet(it, onEvent) }
     when (state.panel) {
-        Panel.WEIGHT -> WeightSheet(state.weights, state.trendKg, onEvent)
+        Panel.WEIGHT -> WeightSheet(state.weights, state.trendKg, state.weightUnit, onEvent)
         Panel.NUTRIENTS -> state.plan?.let { NutrientsSheet(it, state.day?.totals ?: Nutrients(), state.coverage, onEvent) }
         Panel.REPORT -> ReportSheet(state.report, state.plan, onEvent)
         Panel.FASTING -> FastingSheet(state.fast, onEvent)
         Panel.WATER -> state.plan?.let { WaterTargetSheet(it.waterTargetMl, onEvent) }
-        Panel.REMINDERS -> RemindersSheet(state.slots, state.reminders, onEvent)
         Panel.RECIPES -> RecipesSheet(state.recipes, onEvent)
         Panel.PLAN -> state.planDate?.let { PlanSheet(it, state.today ?: it, state.planned, state.slots, onEvent) }
         null -> Unit
@@ -130,14 +130,14 @@ fun DietScreen(state: DietUiState, onEvent: (DietEvent) -> Unit, modifier: Modif
 // Setup
 
 @Composable
-private fun SetupWindow(form: SetupForm, canCancel: Boolean, onEvent: (DietEvent) -> Unit) {
+private fun SetupWindow(form: SetupForm, canCancel: Boolean, unit: WeightUnit, onEvent: (DietEvent) -> Unit) {
     val colors = AwakenTheme.colors
     val type = AwakenTheme.type
     val change: ((SetupForm) -> SetupForm) -> Unit = { onEvent(DietEvent.SetupChanged(it)) }
     SystemWindow(title = lexString(R.string.diet_window_setup), accent = colors.accent, reveal = false) {
         Text(lexString(R.string.diet_setup_step, form.step), style = type.caption, color = colors.textSecondary)
         when (form.step) {
-            1 -> AboutYouStep(form, change)
+            1 -> AboutYouStep(form, unit, change)
             2 -> GoalStep(form, change)
             else -> NumbersStep(form, change)
         }
@@ -160,7 +160,7 @@ private fun SetupWindow(form: SetupForm, canCancel: Boolean, onEvent: (DietEvent
 private const val LAST_SETUP_STEP = 3
 
 @Composable
-private fun AboutYouStep(form: SetupForm, change: ((SetupForm) -> SetupForm) -> Unit) {
+private fun AboutYouStep(form: SetupForm, unit: WeightUnit, change: ((SetupForm) -> SetupForm) -> Unit) {
     Text(lexString(R.string.diet_setup_intro), style = AwakenTheme.type.body, color = AwakenTheme.colors.textSecondary)
     Question(R.string.diet_setup_sex)
     Row(horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
@@ -176,7 +176,7 @@ private fun AboutYouStep(form: SetupForm, change: ((SetupForm) -> SetupForm) -> 
             NumberField(value = form.heightCm, onValueChange = { change { f -> f.copy(heightCm = it) } }, description = lexString(R.string.diet_setup_height), suffix = lexString(R.string.diet_unit_cm))
         }
         LabeledNumber(R.string.diet_setup_weight) {
-            NumberField(value = form.weightKg, onValueChange = { change { f -> f.copy(weightKg = it) } }, description = lexString(R.string.diet_setup_weight), suffix = lexString(R.string.diet_unit_kg))
+            NumberField(value = unit.fromKg(form.weightKg), onValueChange = { change { f -> f.copy(weightKg = unit.toKg(it)) } }, description = lexString(R.string.diet_setup_weight), key = unit, suffix = lexString(unit.symbolRes()))
         }
     }
     Question(R.string.diet_setup_activity)
@@ -230,6 +230,12 @@ private fun NumbersStep(form: SetupForm, change: ((SetupForm) -> SetupForm) -> U
             ChoiceChip(text = lexString(preset.nameRes()), selected = form.preset == preset, onClick = { change { it.copy(preset = preset) } }, modifier = Modifier.weight(1f))
         }
     }
+    if (form.preset != MacroPreset.CUSTOM) {
+        LabeledNumber(R.string.diet_split_protein_kg) {
+            NumberField(value = form.proteinPerKg, onValueChange = { change { f -> f.copy(proteinPerKg = it) } }, description = lexString(R.string.diet_split_protein_kg))
+        }
+        Text(lexString(R.string.diet_split_protein_kg_note), style = AwakenTheme.type.caption, color = colors.textMuted)
+    }
     if (form.preset == MacroPreset.CUSTOM) {
         FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.md), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
             LabeledNumber(R.string.diet_split_protein_pct) {
@@ -273,8 +279,9 @@ private fun Diary(state: DietUiState, plan: DietPlan, onEvent: (DietEvent) -> Un
             .defaultMinSize(minHeight = AwakenTheme.dimens.touchTarget)
             .clickable { onEvent(DietEvent.OpenPrompt(Prompt.Note)) },
     )
-    if (plan.targetsVisible) state.offer?.let { TrendCard(it, onEvent) }
+    if (plan.targetsVisible) state.offer?.let { TrendCard(it, state.weightUnit, onEvent) }
     BudgetHero(plan, day.totals, Modifier.staggeredEntrance(0))
+    if (state.isToday) state.activeKcal?.let { Text(lexString(R.string.diet_active_kcal, formatCount(it)), style = AwakenTheme.type.caption, color = AwakenTheme.colors.textSecondary) }
     state.slots.forEachIndexed { i, slot ->
         MealWindow(slot, state.slots, day.meals[slot.id].orEmpty(), state.isToday, onEvent, Modifier.staggeredEntrance(1 + i))
     }
@@ -290,17 +297,16 @@ private fun Diary(state: DietUiState, plan: DietPlan, onEvent: (DietEvent) -> Un
         SecondaryButton(text = lexString(R.string.diet_nutrients_button), onClick = { onEvent(DietEvent.OpenPanel(Panel.NUTRIENTS)) })
         SecondaryButton(text = lexString(R.string.diet_recipes_button), onClick = { onEvent(DietEvent.OpenPanel(Panel.RECIPES)) })
         SecondaryButton(text = lexString(R.string.diet_plan_button), onClick = { onEvent(DietEvent.OpenPanel(Panel.PLAN)) })
-        SecondaryButton(text = lexString(R.string.diet_reminders_button), onClick = { onEvent(DietEvent.OpenPanel(Panel.REMINDERS)) })
         SecondaryButton(text = lexString(R.string.diet_report_button), onClick = { onEvent(DietEvent.OpenPanel(Panel.REPORT)) })
         if (plan.targetsVisible) SecondaryButton(text = lexString(R.string.diet_fast_button), onClick = { onEvent(DietEvent.OpenPanel(Panel.FASTING)) })
     }
 }
 
 @Composable
-private fun TrendCard(offer: TrendOffer, onEvent: (DietEvent) -> Unit) {
+private fun TrendCard(offer: TrendOffer, unit: WeightUnit, onEvent: (DietEvent) -> Unit) {
     val colors = AwakenTheme.colors
     SystemWindow(title = lexString(R.string.diet_offer_title), accent = colors.accent, reveal = false) {
-        Text(lexString(R.string.diet_offer_body, formatAmount(offer.trendKg), formatAmount(offer.planWeightKg)), style = AwakenTheme.type.body, color = colors.textSecondary)
+        Text(lexString(R.string.diet_offer_body, formatAmount(unit.fromKg(offer.trendKg)), formatAmount(unit.fromKg(offer.planWeightKg)), lexString(unit.symbolRes())), style = AwakenTheme.type.body, color = colors.textSecondary)
         PrimaryButton(text = lexString(R.string.diet_offer_accept), onClick = { onEvent(DietEvent.AcceptTrend) }, modifier = Modifier.fillMaxWidth())
         QuietButton(text = lexString(R.string.diet_offer_dismiss), onClick = { onEvent(DietEvent.DismissTrend) })
     }
@@ -321,6 +327,7 @@ private fun WaterRow(ml: Int, targetMl: Int, onEvent: (DietEvent) -> Unit) {
             }
         }
         Row {
+            QuietButton(text = lexString(R.string.diet_water_other), onClick = { onEvent(DietEvent.OpenPrompt(Prompt.Water)) })
             QuietButton(text = lexString(R.string.diet_water_undo), onClick = { onEvent(DietEvent.UndoWater) }, enabled = ml > 0)
             QuietButton(text = lexString(R.string.diet_water_target_button), onClick = { onEvent(DietEvent.OpenPanel(Panel.WATER)) })
         }
@@ -435,6 +442,7 @@ private fun NutrientLine(nutrient: Nutrient, amount: Double, target: Double?, ki
 private fun MealWindow(slot: MealSlot, slots: List<MealSlot>, entries: List<DiaryEntry>, isToday: Boolean, onEvent: (DietEvent) -> Unit, modifier: Modifier = Modifier) {
     val colors = AwakenTheme.colors
     val kcal = entries.sumOf { it.amounts[Nutrient.KCAL] }.roundToInt()
+    val currentName = mealLabel(slot.id, slots)
     SystemWindow(
         title = mealLabel(slot.id, slots),
         accent = colors.accent,
@@ -453,6 +461,7 @@ private fun MealWindow(slot: MealSlot, slots: List<MealSlot>, entries: List<Diar
             QuietButton(text = lexString(R.string.diet_save_meal_action), onClick = { onEvent(DietEvent.OpenPrompt(Prompt.SaveMeal(slot.id))) })
             if (!isToday) QuietButton(text = lexString(R.string.diet_copy_meal), onClick = { onEvent(DietEvent.CopyToToday(slot.id)) })
         }
+        QuietButton(text = lexString(R.string.diet_rename_meal), onClick = { onEvent(DietEvent.OpenPrompt(Prompt.RenameMeal(slot.id, currentName))) })
         if (!slot.builtIn) QuietButton(text = lexString(R.string.diet_remove_meal), onClick = { onEvent(DietEvent.DeleteMeal(slot.id)) })
     }
 }

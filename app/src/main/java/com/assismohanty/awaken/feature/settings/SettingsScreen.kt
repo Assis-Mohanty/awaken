@@ -66,6 +66,7 @@ import com.assismohanty.awaken.debug.DebugEntry
 import com.assismohanty.awaken.core.data.health.HealthStatus
 import com.assismohanty.awaken.core.audio.ChimeChoice
 import com.assismohanty.awaken.core.data.repo.ThemeMode
+import com.assismohanty.awaken.engine.body.WeightUnit
 import com.assismohanty.awaken.core.designsystem.components.ChoiceChip
 import com.assismohanty.awaken.core.designsystem.components.DayChips
 import androidx.compose.ui.platform.LocalLocale
@@ -110,7 +111,9 @@ fun SettingsRoute(
     onOpenDebug: () -> Unit = {},
     viewModel: SettingsViewModel = hiltViewModel(),
     archivedViewModel: ArchivedHabitsViewModel = hiltViewModel(),
+    dietViewModel: DietSettingsViewModel = hiltViewModel(),
 ) {
+    val dietState by dietViewModel.uiState.collectAsStateWithLifecycle()
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val archived by archivedViewModel.archived.collectAsStateWithLifecycle()
     val exportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument(BACKUP_MIME)) { uri ->
@@ -122,6 +125,7 @@ fun SettingsRoute(
     val context = LocalContext.current
     LifecycleResumeEffect(viewModel) {
         viewModel.onEvent(SettingsEvent.Resumed)
+        dietViewModel.onEvent(DietSettingsEvent.Resumed)
         onPauseOrDispose { }
     }
     HealthActionEffect(
@@ -133,6 +137,8 @@ fun SettingsRoute(
     SettingsScreen(
         state = state,
         onEvent = viewModel::onEvent,
+        dietState = dietState,
+        onDietEvent = dietViewModel::onEvent,
         onBack = onBack,
         onExport = { exportLauncher.launch(viewModel.backupFileName()) },
         // Backups are plain JSON, but file managers label them inconsistently, so any type may be picked.
@@ -184,6 +190,8 @@ internal fun SettingsScreen(
     onRestoreHabit: (habitId: String) -> Unit = {},
     showAiPaths: Boolean = true,
     initialSection: SettingsSection? = null,
+    dietState: DietSettingsUiState = DietSettingsUiState(),
+    onDietEvent: (DietSettingsEvent) -> Unit = {},
 ) {
     // The menu is the first screen; each row opens its section in place, and back returns to the menu (design/IA.md section 5).
     var section by rememberSaveable { mutableStateOf(initialSection) }
@@ -206,6 +214,7 @@ internal fun SettingsScreen(
                 SettingsSection.WIDGETS -> WidgetsWindow()
                 SettingsSection.PHONE_FOCUS -> PhoneFocusSection(onOpenScreenTime, focusWindow)
                 SettingsSection.ARCHIVED -> ArchivedHabitsWindow(archivedHabits, onRestoreHabit)
+                SettingsSection.DIET -> DietSettingsWindow(dietState, onDietEvent, onOpenNotificationSettings)
                 SettingsSection.DATA -> {
                     DataWindow(state, onExport, onImport, onOpenPrivacy)
                     if (showAiPaths) AiPathsWindow(state, onEvent)
@@ -240,6 +249,7 @@ internal enum class SettingsSection(val titleRes: Int, val icon: ImageVector) {
     HEALTH(R.string.settings_window_health_training, AwakenGlyphs.Vitality),
     APPEARANCE(R.string.settings_window_appearance, AwakenGlyphs.Contrast),
     WIDGETS(R.string.settings_window_widgets, AwakenGlyphs.Grid),
+    DIET(R.string.settings_window_diet, AwakenGlyphs.Bowl),
     DATA(R.string.settings_window_data, AwakenGlyphs.Database),
     PHONE_FOCUS(R.string.settings_window_phone_focus, AwakenGlyphs.Phone),
     ARCHIVED(R.string.settings_window_habits, AwakenGlyphs.Calendar),
@@ -261,6 +271,7 @@ private fun SettingsMenu(state: SettingsUiState, archivedCount: Int, showAiPaths
         SettingsSection.HEALTH to lexString(if (state.healthConnected) R.string.settings_value_health_on else R.string.settings_value_health_off),
         SettingsSection.APPEARANCE to lexString(state.themeMode.labelRes()),
         SettingsSection.WIDGETS to lexString(R.string.settings_value_widgets),
+        SettingsSection.DIET to lexString(R.string.settings_value_diet),
         SettingsSection.DATA to lexString(if (showAiPaths) R.string.settings_value_data_ai else R.string.settings_value_data),
         SettingsSection.PHONE_FOCUS to lexString(R.string.settings_value_phone),
         SettingsSection.ARCHIVED to lexString(R.string.settings_value_archived, archivedCount),
@@ -632,6 +643,37 @@ private fun DataWindow(state: SettingsUiState, onExport: () -> Unit, onImport: (
         if (licences) LicencesSheet(onDismiss = { licences = false })
         Text(lexString(R.string.settings_about, version), style = AwakenTheme.type.caption, color = colors.textMuted)
     }
+}
+
+/** Settings, Diet: meal reminders, the weight unit, and where the food numbers come from. */
+@Composable
+private fun DietSettingsWindow(state: DietSettingsUiState, onEvent: (DietSettingsEvent) -> Unit, onOpenNotificationSettings: () -> Unit) {
+    val colors = AwakenTheme.colors
+    SystemWindow(title = lexString(R.string.settings_diet_reminders_title), accent = accent(), reveal = false) {
+        com.assismohanty.awaken.feature.diet.RemindersContent(state.slots, state.reminders, onSet = { id, minutes -> onEvent(DietSettingsEvent.SetReminder(id, minutes)) })
+        if (state.notificationsBlocked) {
+            Text(lexString(R.string.settings_notifications_blocked), style = AwakenTheme.type.caption, color = colors.textPrimary)
+            SecondaryButton(text = lexString(R.string.action_open_notification_settings), onClick = onOpenNotificationSettings, modifier = Modifier.fillMaxWidth())
+        }
+    }
+    SystemWindow(title = lexString(R.string.settings_diet_units_title), accent = accent(), reveal = false) {
+        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+            WeightUnit.entries.forEach { unit ->
+                ChoiceChip(
+                    text = lexString(if (unit == WeightUnit.LB) R.string.settings_diet_unit_lb else R.string.settings_diet_unit_kg),
+                    selected = state.weightUnit == unit,
+                    onClick = { onEvent(DietSettingsEvent.SetUnit(unit)) },
+                    modifier = Modifier.weight(1f),
+                )
+            }
+        }
+        Text(lexString(R.string.settings_diet_unit_note), style = AwakenTheme.type.caption, color = colors.textSecondary)
+    }
+    var licences by rememberSaveable { mutableStateOf(false) }
+    SystemWindow(title = lexString(R.string.settings_diet_food_data), accent = accent(), reveal = false) {
+        DataRow(AwakenGlyphs.Info, lexString(R.string.settings_diet_food_data), lexString(R.string.settings_diet_food_data_note), { licences = true })
+    }
+    if (licences) LicencesSheet(onDismiss = { licences = false })
 }
 
 private fun ChimeChoice.labelRes(): Int = when (this) {

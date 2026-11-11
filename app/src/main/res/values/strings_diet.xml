@@ -24,6 +24,7 @@
     <string name="diet_setup_weight">Weight</string>
     <string name="diet_unit_cm">cm</string>
     <string name="diet_unit_kg">kg</string>
+    <string name="diet_unit_lb">lb</string>
     <string name="nutrient_unit_ml">ml</string>
     <string name="diet_setup_activity">How active are you?</string>
     <string name="diet_activity_sedentary">Sedentary · desk job, little exercise</string>
@@ -57,15 +58,13 @@
     <string name="diet_estimate_disclaimer">This is an estimate for general information, not medical advice. Talk to a doctor or dietitian before changing how you eat, especially if you are pregnant, under 18, or have a health condition.</string>
     <string name="diet_targets_off">Targets are off for your profile. You can still log what you eat.</string>
     <string name="diet_offer_title">Your weight has moved</string>
-    <string name="diet_offer_body">Your 7-day trend is %1$s kg, and your targets were set at %2$s kg. Want new targets?</string>
+    <string name="diet_offer_body">Your 7-day trend is %1$s %3$s, and your targets were set at %2$s %3$s. Want new targets?</string>
     <string name="diet_offer_accept">Update targets</string>
     <string name="diet_offer_dismiss">Not now</string>
     <string name="diet_reminder_text">Time to log %1$s?</string>
     <string name="diet_reminder_channel">Meal reminders</string>
     <string name="diet_fast_channel">Fasting timer</string>
     <string name="diet_fast_notice">Your fasting target is reached. End the fast whenever you like.</string>
-    <string name="diet_reminders_button">Reminders</string>
-    <string name="diet_reminders_title">Meal reminders</string>
     <string name="diet_reminders_intro">Up to four, one for each meal. They are off until you switch them on, and they stay quiet when a meal already has food in it.</string>
     <string name="diet_reminders_limit">Four meals already have a reminder. Switch one off to add another.</string>
     <string name="diet_reminder_time">Change time</string>
@@ -107,6 +106,20 @@
     <string name="diet_plan_total">%1$s kcal planned</string>
     <string name="cd_diet_plan_remove">Remove %1$s from the plan</string>
     <string name="cd_diet_plan_log">Log %1$s</string>
+    <string name="diet_rename_meal">Rename meal</string>
+    <string name="diet_rename_title">Rename meal</string>
+    <string name="diet_water_other">Other amount</string>
+    <string name="diet_water_other_title">Add water</string>
+    <string name="diet_water_other_save">Add</string>
+    <string name="diet_estimate_chip">Estimate</string>
+    <string name="diet_search_per100_range">%1$s · P %2$s · C %3$s · F %4$s per 100 g</string>
+    <string name="diet_split_protein_kg">Protein per kg (optional)</string>
+    <string name="diet_split_protein_kg_note">Leave it at 0 to use the preset. Between 0.8 and 2.0.</string>
+    <string name="diet_amount_all_nutrients">All nutrients</string>
+    <string name="diet_amount_hide_nutrients">Hide nutrients</string>
+    <string name="diet_amount_nutrient_row">%1$s %2$s</string>
+    <string name="diet_active_kcal">Active today: %1$s kcal from Health Connect</string>
+    <string name="diet_weight_chart_cd">Weight from %1$s %3$s to %2$s %3$s over %4$d weigh-ins</string>
     <string name="diet_eaten_unit">kcal eaten</string>
     <string name="diet_nutrients_button">Nutrients</string>
     <string name="diet_nutrients_title">Nutrients today</string>
@@ -143,8 +156,8 @@
     <string name="diet_weight_hint">Weight</string>
     <string name="diet_weight_save">Log weight</string>
     <string name="diet_weight_empty">Your weigh-ins show up here.</string>
-    <string name="diet_weight_trend">7-day trend: %1$s kg</string>
-    <string name="diet_weight_row">%1$s kg</string>
+    <string name="diet_weight_trend">7-day trend: %1$s %2$s</string>
+    <string name="diet_weight_row">%1$s %2$s</string>
     <string name="cd_diet_weight_delete">Delete weigh-in %1$s</string>
     <string name="diet_measure_title">Measurements</string>
     <string name="diet_measure_waist">Waist</string>
@@ -263,6 +276,7 @@
     <string name="diet_custom_portion_label">Serving name (e.g. 1 bowl)</string>
     <string name="diet_custom_portion_grams">Serving weight</string>
     <string name="diet_custom_save">Create and add</string>
+    <string name="cd_diet_quick_value">%1$s, in %2$s</string>
     <string name="cd_diet_custom_value">%1$s per 100 grams, in %2$s</string>
 
     <string name="nutrient_kcal">Calories</string>
