@@ -41,6 +41,12 @@ test('salt stands in for a missing sodium, and kilojoules for missing kilocalori
   assert.equal(product.kcal, 479.9); // 2008 kJ / 4.184
 });
 
+test('an Indian 890 barcode counts as sold in India even without the country tag', () => {
+  const indian = toProduct(row({ code: '8906120107181', countries_tags: 'en:world' }));
+  assert.equal(indian.product.barcode, '8906120107181');
+  assert.equal(toProduct(row({ code: '5901234123457', countries_tags: 'en:world' })).drop, 'not sold in India');
+});
+
 test('products are dropped for the right reason', () => {
   assert.equal(toProduct(row({ countries_tags: 'en:france' })).drop, 'not sold in India');
   assert.equal(toProduct(row({ code: '5901234123458' })).drop, 'barcode not valid');

@@ -142,6 +142,15 @@
     <string name="diet_scan_macros">%1$s kcal · P %2$s · C %3$s · F %4$s</string>
     <string name="diet_scan_from_pack">From the packaged-food list. Labels can be wrong, so check it against the pack.</string>
     <string name="diet_scan_not_found">This one is not in the list yet. Add it from the label? Next time it will be found.</string>
+    <string name="diet_scan_online_ask_title">Look it up online?</string>
+    <string name="diet_scan_online_ask">The phone does not know this product. It can ask Open Food Facts, a free food database. Only the barcode number is sent, nothing else. You can turn this off in Settings.</string>
+    <string name="diet_scan_online_allow">Look it up online</string>
+    <string name="diet_scan_online_not_now">Not now</string>
+    <string name="diet_scan_declined">Not found on the phone. Online lookup is off; you can turn it on in Settings, Diet. Or add it from the label.</string>
+    <string name="diet_scan_not_listed">It is not in Open Food Facts either. Add it from the label? Next time it will be found.</string>
+    <string name="diet_scan_unusable">Open Food Facts lists this product, but without numbers that can be trusted. Add it from the label?</string>
+    <string name="diet_scan_unreachable">Could not reach Open Food Facts. Check your connection and scan again, or add it from the label.</string>
+    <string name="diet_scan_from_online">From Open Food Facts, where volunteers enter the numbers. Check them against the pack. Adding it saves it to My foods, so the next scan works without a connection.</string>
     <string name="diet_scan_code">Code %1$s</string>
     <string name="diet_scan_from_label">Add it from the label</string>
     <string name="diet_custom_energy_unit">Energy in</string>

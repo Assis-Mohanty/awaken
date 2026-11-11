@@ -16,6 +16,8 @@ import com.assismohanty.awaken.core.data.catalog.FoodSource
 import com.assismohanty.awaken.core.data.catalog.Portion
 import com.assismohanty.awaken.core.designsystem.components.ScanFrame
 import com.assismohanty.awaken.core.designsystem.theme.AwakenTheme
+import com.assismohanty.awaken.core.domain.FoodOrigin
+import com.assismohanty.awaken.core.domain.OnlineStatus
 import com.assismohanty.awaken.engine.body.Nutrient
 import com.assismohanty.awaken.engine.body.Nutrients
 import com.google.common.truth.Truth.assertThat
@@ -70,7 +72,7 @@ class DietScannerScreenTest {
 
     @Test
     fun aFoundProductShowsPer100GramsAndPerServingAndAddsInOneTap() {
-        screen(ScanState.Found(food, fromPack = true))
+        screen(ScanState.Found(food, FoodOrigin.PACK))
         composeRule.onNodeWithText("Digestive biscuits (Acme)").assertExists()
         composeRule.onNodeWithText("480 kcal · P 7.0 · C 64 · F 21").assertExists()
         composeRule.onNodeWithText("Per serving, 30 g").assertExists()
@@ -80,8 +82,32 @@ class DietScannerScreenTest {
     }
 
     @Test
+    fun theHunterIsAskedBeforeAnythingGoesOnline() {
+        screen(ScanState.NotFound("5901234123457", OnlineStatus.NEEDS_CONSENT))
+        composeRule.onNodeWithText("Look it up online?").assertExists()
+        composeRule.onNodeWithText("Only the barcode number is sent, nothing else.", substring = true).assertExists()
+        composeRule.onNodeWithText("Look it up online").performClick()
+        composeRule.onNodeWithText("Not now").performClick()
+        assertThat(events).containsExactly(DietEvent.ScanAllowOnline, DietEvent.ScanDeclineOnline).inOrder()
+    }
+
+    @Test
+    fun eachOnlineOutcomeHasItsOwnPlainMessageAndTheLabelFormIsAlwaysOffered() {
+        screen(ScanState.NotFound("5901234123457", OnlineStatus.UNREACHABLE))
+        composeRule.onNodeWithText("Could not reach Open Food Facts.", substring = true).assertExists()
+        composeRule.onNodeWithText("Add it from the label").assertExists()
+    }
+
+    @Test
+    fun anOnlineProductSaysWhereItCameFromAndThatAddingKeepsIt() {
+        screen(ScanState.Found(food, FoodOrigin.ONLINE))
+        composeRule.onNodeWithText("From Open Food Facts, where volunteers enter the numbers.", substring = true).assertExists()
+        composeRule.onNodeWithText("saves it to My foods", substring = true).assertExists()
+    }
+
+    @Test
     fun aMissOffersTheLabelFormAndScanningAgain() {
-        screen(ScanState.NotFound("5901234123457"))
+        screen(ScanState.NotFound("5901234123457", OnlineStatus.NOT_LISTED))
         composeRule.onNodeWithText("Code 5901234123457").assertExists()
         composeRule.onNodeWithText("Add it from the label").performClick()
         composeRule.onNodeWithText("Scan again").performClick()

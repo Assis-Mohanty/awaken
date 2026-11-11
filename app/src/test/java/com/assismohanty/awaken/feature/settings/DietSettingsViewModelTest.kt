@@ -57,6 +57,20 @@ class DietSettingsViewModelTest {
     }
 
     @Test
+    fun onlineLookupIsOffUntilTheHunterTurnsItOnAndCanBeTurnedOffAgain() = runBlocking<Unit> {
+        val vm = viewModel()
+        assertThat(withTimeout(5_000) { vm.uiState.first { it.slots.isNotEmpty() } }.onlineLookup).isFalse()
+
+        vm.onEvent(DietSettingsEvent.SetOnlineLookup(true))
+        withTimeout(5_000) { vm.uiState.first { it.onlineLookup } }
+        assertThat(graph.uiPrefs.prefs.first().onlineFoodLookup).isTrue()
+
+        vm.onEvent(DietSettingsEvent.SetOnlineLookup(false))
+        withTimeout(5_000) { vm.uiState.first { !it.onlineLookup } }
+        assertThat(graph.uiPrefs.prefs.first().onlineFoodLookup).isFalse()
+    }
+
+    @Test
     fun aFifthReminderIsRefused() = runBlocking<Unit> {
         val vm = viewModel()
         withTimeout(5_000) { vm.uiState.first { it.slots.isNotEmpty() } }

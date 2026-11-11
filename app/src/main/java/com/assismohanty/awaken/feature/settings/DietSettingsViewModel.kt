@@ -27,6 +27,7 @@ data class DietSettingsUiState(
     val reminders: Map<String, Int> = emptyMap(),
     val weightUnit: WeightUnit = WeightUnit.KG,
     val heightUnit: HeightUnit = HeightUnit.CM,
+    val onlineLookup: Boolean = false,
     /** A reminder is set but the system blocks notifications, so it can not reach the hunter. */
     val notificationsBlocked: Boolean = false,
 )
@@ -35,6 +36,7 @@ sealed interface DietSettingsEvent {
     data class SetReminder(val mealId: String, val minutes: Int?) : DietSettingsEvent
     data class SetUnit(val unit: WeightUnit) : DietSettingsEvent
     data class SetHeightUnit(val unit: HeightUnit) : DietSettingsEvent
+    data class SetOnlineLookup(val allowed: Boolean) : DietSettingsEvent
     data object Resumed : DietSettingsEvent
 }
 
@@ -53,10 +55,10 @@ class DietSettingsViewModel @Inject constructor(
     val uiState: StateFlow<DietSettingsUiState> = combine(
         foodLibrary.observeMealSlots(),
         store.reminders,
-        uiPrefs.prefs.map { it.weightUnit to it.heightUnit },
+        uiPrefs.prefs.map { Triple(it.weightUnit, it.heightUnit, it.onlineFoodLookup == true) },
         blocked,
-    ) { slots, reminders, units, isBlocked ->
-        DietSettingsUiState(slots, reminders, units.first, units.second, notificationsBlocked = isBlocked && reminders.isNotEmpty())
+    ) { slots, reminders, prefs, isBlocked ->
+        DietSettingsUiState(slots, reminders, prefs.first, prefs.second, onlineLookup = prefs.third, notificationsBlocked = isBlocked && reminders.isNotEmpty())
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), DietSettingsUiState())
 
     fun onEvent(event: DietSettingsEvent) {
@@ -65,6 +67,7 @@ class DietSettingsViewModel @Inject constructor(
                 if (store.set(event.mealId, event.minutes)) scheduler.rearmMeals()
             }
             is DietSettingsEvent.SetUnit -> viewModelScope.launch { uiPrefs.setWeightUnit(event.unit) }
+            is DietSettingsEvent.SetOnlineLookup -> viewModelScope.launch { uiPrefs.setOnlineFoodLookup(event.allowed) }
             is DietSettingsEvent.SetHeightUnit -> viewModelScope.launch { uiPrefs.setHeightUnit(event.unit) }
             DietSettingsEvent.Resumed -> blocked.update { !access.isGranted() }
         }

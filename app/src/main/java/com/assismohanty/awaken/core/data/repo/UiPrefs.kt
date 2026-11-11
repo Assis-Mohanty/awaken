@@ -46,6 +46,8 @@ data class UiPrefs(
     val weightUnit: WeightUnit = WeightUnit.KG,
     /** How Diet shows heights and body measurements; stored lengths are always centimetres. */
     val heightUnit: HeightUnit = HeightUnit.CM,
+    /** Look a scanned barcode up online when the phone does not know it. Null until the hunter is asked; the answer is theirs to change. */
+    val onlineFoodLookup: Boolean? = null,
 ) {
     val blockBounds: TimeBlocks.Bounds get() = TimeBlocks.Bounds.safe(morningEndHour, dayEndHour)
 }
@@ -65,6 +67,7 @@ class UiPrefsRepository @Inject constructor(@UiPrefsStore private val store: Dat
             morningEndHour = it[MORNING_END] ?: TimeBlocks.DEFAULT_MORNING_END,
             dayEndHour = it[DAY_END] ?: TimeBlocks.DEFAULT_DAY_END,
             lockdownSeenId = it[LOCKDOWN_SEEN].orEmpty(),
+            onlineFoodLookup = it[ONLINE_FOOD_LOOKUP],
             heightUnit = it[HEIGHT_UNIT]?.let { name -> HeightUnit.entries.firstOrNull { unit -> unit.name == name } } ?: HeightUnit.CM,
             weightUnit = it[WEIGHT_UNIT]?.let { name -> WeightUnit.entries.firstOrNull { unit -> unit.name == name } } ?: WeightUnit.KG,
         )
@@ -103,6 +106,10 @@ class UiPrefsRepository @Inject constructor(@UiPrefsStore private val store: Dat
         store.edit { it[MORNING_END] = hour }
     }
 
+    suspend fun setOnlineFoodLookup(allowed: Boolean) {
+        store.edit { it[ONLINE_FOOD_LOOKUP] = allowed }
+    }
+
     suspend fun setHeightUnit(unit: HeightUnit) {
         store.edit { it[HEIGHT_UNIT] = unit.name }
     }
@@ -133,5 +140,6 @@ class UiPrefsRepository @Inject constructor(@UiPrefsStore private val store: Dat
         val LOCKDOWN_SEEN = stringPreferencesKey("lockdown_seen_id")
         val WEIGHT_UNIT = stringPreferencesKey("weight_unit")
         val HEIGHT_UNIT = stringPreferencesKey("height_unit")
+        val ONLINE_FOOD_LOOKUP = booleanPreferencesKey("online_food_lookup")
     }
 }

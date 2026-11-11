@@ -7,7 +7,7 @@
 // Output: a SQLite file whose schema is exactly the Room schema in schema.json (AWAKEN's `PackagedDatabase`, version 1), so the
 // app can copy it in as an asset. Needs Node 22.5+ (node:sqlite). Streams the file, so it does not need much memory.
 //
-// What is kept: products sold in India with a valid barcode, a name, and calories, protein, carbohydrate and fat per 100 g.
+// What is kept: products sold in India (tagged so, or with an Indian 890 barcode) with a valid barcode, a name, and calories, protein, carbohydrate and fat per 100 g.
 // Everything else is dropped and counted in report.md. Data comes from volunteers and can be wrong; the app says so.
 //
 // Licence: the data is (c) Open Food Facts contributors, under the Open Database License (ODbL) 1.0; the individual contents
@@ -65,7 +65,11 @@ const round1 = (n) => (n === null ? null : Math.round(n * 10) / 10);
 
 /** One CSV row (an object of column name to text) to a pack row, or the reason it was dropped. */
 export function toProduct(row) {
-  if (!(row[COLUMNS.countries] ?? '').split(',').includes('en:india')) return { drop: 'not sold in India' };
+  // Sold in India: tagged so, or an Indian barcode. GS1 India issues the 890 prefix, and many Indian products were added
+  // without a country tag, so the tag alone would miss them.
+  const taggedIndia = (row[COLUMNS.countries] ?? '').split(',').includes('en:india');
+  const indianBarcode = /^890\d{10}$/.test((row[COLUMNS.code] ?? '').trim());
+  if (!taggedIndia && !indianBarcode) return { drop: 'not sold in India' };
   const barcode = canonicalBarcode(row[COLUMNS.code]);
   if (!barcode) return { drop: 'barcode not valid' };
   const name = (row[COLUMNS.name] ?? '').replace(/[\u0000-\u001f]/g, ' ').replace(/\s+/g, ' ').trim();
@@ -93,7 +97,8 @@ export function toProduct(row) {
   if (satFat !== null && (satFat < 0 || satFat > fat + PART_TOLERANCE)) satFat = null;
 
   const expected = 4 * protein + 4 * (carbs - (fiber ?? 0)) + 2 * (fiber ?? 0) + 9 * fat;
-  if (Math.abs(kcal - expected) > Math.max(ATWATER.kcal, ATWATER.pct * expected)) return { drop: 'calories do not match the macros' };
+  // Same rule as AWAKEN's engine (`LabelPlausibility`): the tolerance is measured against the label's own calories.
+  if (Math.abs(kcal - expected) > Math.max(ATWATER.kcal, ATWATER.pct * kcal)) return { drop: 'calories do not match the macros' };
 
   let sodiumMg = num(row[COLUMNS.sodiumG]);
   if (sodiumMg === null) {
@@ -202,7 +207,7 @@ export async function build({ input, out, schema: schemaPath, report }) {
     ...[...drops.entries()].sort((a, b) => b[1] - a[1]).map(([reason, n]) => `- ${reason}: ${n.toLocaleString('en')}`),
     '',
     'Limits used: calories at most 900 per 100 g; each macro at most 100 g; protein + carbs + fat at most 105 g;',
-    'calories within max(20 kcal, 20 %) of 4 x protein + 4 x (carbs - fibre) + 2 x fibre + 9 x fat.',
+    'calories within max(20 kcal, 20 % of the label calories) of 4 x protein + 4 x (carbs - fibre) + 2 x fibre + 9 x fat.',
     '',
   ].join('\n');
   fs.writeFileSync(report, md);

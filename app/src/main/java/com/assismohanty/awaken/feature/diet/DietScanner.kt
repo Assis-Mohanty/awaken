@@ -45,6 +45,8 @@ import com.assismohanty.awaken.core.designsystem.lexicon.lexString
 import com.assismohanty.awaken.core.designsystem.preview.PhonePreviews
 import com.assismohanty.awaken.core.designsystem.theme.AwakenTheme
 import com.assismohanty.awaken.core.designsystem.theme.Spacing
+import com.assismohanty.awaken.core.domain.FoodOrigin
+import com.assismohanty.awaken.core.domain.OnlineStatus
 import com.assismohanty.awaken.core.scan.BarcodeDecoder
 import com.assismohanty.awaken.engine.body.Nutrient
 import com.assismohanty.awaken.engine.body.Nutrients
@@ -143,18 +145,37 @@ private fun ScanResultPanel(scan: ScanState, onEvent: (DietEvent) -> Unit) {
             }
             is ScanState.Found -> {
                 FoundCard(scan.food)
-                if (scan.fromPack) Text(lexString(R.string.diet_scan_from_pack), style = AwakenTheme.type.caption, color = colors.textMuted)
+                when (scan.origin) {
+                    FoodOrigin.PACK -> Text(lexString(R.string.diet_scan_from_pack), style = AwakenTheme.type.caption, color = colors.textMuted)
+                    FoodOrigin.ONLINE -> Text(lexString(R.string.diet_scan_from_online), style = AwakenTheme.type.caption, color = colors.textMuted)
+                    FoodOrigin.OWN -> Unit
+                }
                 PrimaryButton(text = lexString(R.string.diet_scan_add), onClick = { onEvent(DietEvent.ScanAccept) }, modifier = Modifier.fillMaxWidth())
                 QuietButton(text = lexString(R.string.diet_scan_again), onClick = { onEvent(DietEvent.ScanAgain) })
             }
             is ScanState.NotFound -> {
                 Text(lexString(R.string.diet_scan_code, scan.barcode), style = AwakenTheme.type.caption, color = colors.textMuted)
-                Text(lexString(R.string.diet_scan_not_found), style = AwakenTheme.type.body, color = colors.textPrimary)
-                PrimaryButton(text = lexString(R.string.diet_scan_from_label), onClick = { onEvent(DietEvent.ScanCreate) }, modifier = Modifier.fillMaxWidth())
-                QuietButton(text = lexString(R.string.diet_scan_again), onClick = { onEvent(DietEvent.ScanAgain) })
+                if (scan.online == OnlineStatus.NEEDS_CONSENT) {
+                    Text(lexString(R.string.diet_scan_online_ask_title), style = AwakenTheme.type.title, color = colors.textPrimary, modifier = Modifier.semantics { heading() })
+                    Text(lexString(R.string.diet_scan_online_ask), style = AwakenTheme.type.body, color = colors.textPrimary)
+                    PrimaryButton(text = lexString(R.string.diet_scan_online_allow), onClick = { onEvent(DietEvent.ScanAllowOnline) }, modifier = Modifier.fillMaxWidth())
+                    SecondaryButton(text = lexString(R.string.diet_scan_online_not_now), onClick = { onEvent(DietEvent.ScanDeclineOnline) }, modifier = Modifier.fillMaxWidth())
+                } else {
+                    Text(lexString(notFoundText(scan.online)), style = AwakenTheme.type.body, color = colors.textPrimary)
+                    PrimaryButton(text = lexString(R.string.diet_scan_from_label), onClick = { onEvent(DietEvent.ScanCreate) }, modifier = Modifier.fillMaxWidth())
+                    QuietButton(text = lexString(R.string.diet_scan_again), onClick = { onEvent(DietEvent.ScanAgain) })
+                }
             }
         }
     }
+}
+
+private fun notFoundText(status: OnlineStatus): Int = when (status) {
+    OnlineStatus.DECLINED -> R.string.diet_scan_declined
+    OnlineStatus.NOT_LISTED -> R.string.diet_scan_not_listed
+    OnlineStatus.UNUSABLE -> R.string.diet_scan_unusable
+    OnlineStatus.UNREACHABLE -> R.string.diet_scan_unreachable
+    OnlineStatus.NEEDS_CONSENT -> R.string.diet_scan_not_found
 }
 
 /** The product, per 100 g and, when the label gave a serving, per serving side by side. */
@@ -201,11 +222,11 @@ private fun ScannerPreview(scan: ScanState, access: CameraAccess = CameraAccess.
 
 @PhonePreviews
 @Composable
-private fun ScannerFoundPreview() = ScannerPreview(ScanState.Found(previewFood, fromPack = true))
+private fun ScannerFoundPreview() = ScannerPreview(ScanState.Found(previewFood, FoodOrigin.PACK))
 
 @PhonePreviews
 @Composable
-private fun ScannerNotFoundPreview() = ScannerPreview(ScanState.NotFound("5901234123457"))
+private fun ScannerNotFoundPreview() = ScannerPreview(ScanState.NotFound("5901234123457", OnlineStatus.NOT_LISTED))
 
 @PhonePreviews
 @Composable
@@ -222,3 +243,15 @@ private fun ScannerDeniedPreview() = ScannerPreview(ScanState.Scanning, CameraAc
 @PhonePreviews
 @Composable
 private fun ScannerNoCameraPreview() = ScannerPreview(ScanState.Scanning, CameraAccess.NO_CAMERA)
+
+@PhonePreviews
+@Composable
+private fun ScannerOnlineAskPreview() = ScannerPreview(ScanState.NotFound("5901234123457", OnlineStatus.NEEDS_CONSENT))
+
+@PhonePreviews
+@Composable
+private fun ScannerOnlineFoundPreview() = ScannerPreview(ScanState.Found(previewFood, FoodOrigin.ONLINE))
+
+@PhonePreviews
+@Composable
+private fun ScannerUnreachablePreview() = ScannerPreview(ScanState.NotFound("5901234123457", OnlineStatus.UNREACHABLE))

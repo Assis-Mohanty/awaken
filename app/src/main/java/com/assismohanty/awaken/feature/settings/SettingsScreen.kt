@@ -680,6 +680,14 @@ private fun DietSettingsWindow(state: DietSettingsUiState, onEvent: (DietSetting
         }
         Text(lexString(R.string.settings_diet_unit_note), style = AwakenTheme.type.caption, color = colors.textSecondary)
     }
+    SystemWindow(title = lexString(R.string.settings_diet_online_title), accent = accent(), reveal = false) {
+        SwitchRow(
+            title = lexString(R.string.settings_diet_online_switch),
+            note = lexString(R.string.settings_diet_online_note),
+            checked = state.onlineLookup,
+            onChange = { onEvent(DietSettingsEvent.SetOnlineLookup(it)) },
+        )
+    }
     var licences by rememberSaveable { mutableStateOf(false) }
     SystemWindow(title = lexString(R.string.settings_diet_food_data), accent = accent(), reveal = false) {
         DataRow(AwakenGlyphs.Info, lexString(R.string.settings_diet_food_data), lexString(R.string.settings_diet_food_data_note), { licences = true })

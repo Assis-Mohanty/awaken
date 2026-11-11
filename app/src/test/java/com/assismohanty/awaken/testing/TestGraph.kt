@@ -277,7 +277,8 @@ class TestGraph(
     val recipeBook = com.assismohanty.awaken.core.domain.RecipeBook(db.foodLibraryDao(), transactions, clock)
     val foodLibrary = com.assismohanty.awaken.core.domain.FoodLibrary(db.foodLibraryDao(), db.dietDao(), db.bodyLogDao(), foodCatalog, recipeBook, transactions, clock)
     val packagedCatalog = com.assismohanty.awaken.core.data.catalog.PackagedCatalog(context, Dispatchers.Unconfined)
-    val lookUpBarcode = com.assismohanty.awaken.core.domain.LookUpBarcodeUseCase(foodLibrary, packagedCatalog)
+    val onlineFood = FakeOnlineFoodSource()
+    val lookUpBarcode = com.assismohanty.awaken.core.domain.LookUpBarcodeUseCase(foodLibrary, packagedCatalog, onlineFood, uiPrefs)
     val foodSearch = com.assismohanty.awaken.core.domain.FoodSearchUseCase(foodCatalog, db.dietDao(), db.foodLibraryDao(), recipeBook, foodLibrary)
     val bodyLog = com.assismohanty.awaken.core.domain.BodyLog(db.bodyLogDao(), db.dietDao(), db.hunterDao(), transactions, clock)
 

@@ -11,6 +11,9 @@
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.VIBRATE" />
 
+    <!-- Open Food Facts product lookup (docs/diet/PLAN.md section 6.2, ENGINE_DECISIONS 204): only after the hunter switches it on, and only the barcode number is sent. HTTPS only (network_security_config). -->
+    <uses-permission android:name="android.permission.INTERNET" />
+
     <!-- Diet barcode scanner (docs/diet/PLAN.md section 6): asked for the first time the hunter taps Scan. Frames are decoded on the phone and never stored or sent. -->
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-feature android:name="android.hardware.camera" android:required="false" />

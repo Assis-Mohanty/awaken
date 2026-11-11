@@ -2,8 +2,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <!-- Release has no network use: AI Paths is compiled out. This also strips INTERNET if a library ever adds it. -->
-    <uses-permission android:name="android.permission.INTERNET" tools:node="remove" />
+    <!-- AI Paths is compiled out of release, so the Path Oracle never runs here. INTERNET stays (declared in the main manifest) for one
+         thing only: the optional Open Food Facts barcode lookup, ENGINE_DECISIONS 204. -->
 
     <!-- The Play build ships no accessibility service (docs/protect/PLAN.md 4.0). To ship Strict+, delete this and flip STRICT_PLUS_ENABLED. -->
     <application>

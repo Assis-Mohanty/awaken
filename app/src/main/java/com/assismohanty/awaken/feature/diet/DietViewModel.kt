@@ -14,7 +14,10 @@ import com.assismohanty.awaken.core.data.catalog.FoodCatalog
 import com.assismohanty.awaken.core.data.db.entity.MealPlanEntryEntity
 import com.assismohanty.awaken.core.data.db.entity.RecipeEntity
 import com.assismohanty.awaken.core.domain.BodyLog
+import com.assismohanty.awaken.core.data.food.OpenFoodFactsClient
 import com.assismohanty.awaken.core.domain.BarcodeResult
+import com.assismohanty.awaken.core.domain.FoodOrigin
+import com.assismohanty.awaken.core.domain.OnlineStatus
 import com.assismohanty.awaken.core.domain.HealthOverviewResult
 import com.assismohanty.awaken.core.domain.LookUpBarcodeUseCase
 import com.assismohanty.awaken.core.scan.ScannedCode
@@ -133,8 +136,8 @@ sealed interface ScanState {
     data object Scanning : ScanState
     data object Looking : ScanState
     data object Invalid : ScanState
-    data class Found(val food: Food, val fromPack: Boolean) : ScanState
-    data class NotFound(val barcode: String) : ScanState
+    data class Found(val food: Food, val origin: FoodOrigin) : ScanState
+    data class NotFound(val barcode: String, val online: OnlineStatus) : ScanState
 }
 
 /** A recipe being built. Numbers come from `:engine` [RecipeMath]; nothing is computed here. */
@@ -329,6 +332,8 @@ sealed interface DietEvent {
     data object ScanAgain : DietEvent
     data object ScanAccept : DietEvent
     data object ScanCreate : DietEvent
+    data object ScanAllowOnline : DietEvent
+    data object ScanDeclineOnline : DietEvent
     data class EditPlanned(val entry: MealPlanEntryEntity) : DietEvent
     data class LogPlanned(val id: String, val date: LocalDate) : DietEvent
     data class RemovePlanned(val id: String) : DietEvent
@@ -642,15 +647,32 @@ class DietViewModel @Inject constructor(
                 flow.update { f -> if (f.scan == ScanState.Scanning) { taken = true; f.copy(scan = ScanState.Looking) } else f }
                 if (taken) viewModelScope.launch {
                     val next = when (val result = lookUpBarcode(event.code)) {
-                        is BarcodeResult.Found -> ScanState.Found(result.food, result.fromPack)
-                        is BarcodeResult.NotFound -> ScanState.NotFound(result.barcode)
+                        is BarcodeResult.Found -> ScanState.Found(result.food, result.origin)
+                        is BarcodeResult.NotFound -> ScanState.NotFound(result.barcode, result.online)
                         BarcodeResult.Invalid -> ScanState.Invalid
                     }
                     flow.update { f -> if (f.scan == ScanState.Looking) f.copy(scan = next) else f }
                 }
             }
+            DietEvent.ScanAllowOnline -> viewModelScope.launch {
+                val missed = flow.value.scan as? ScanState.NotFound ?: return@launch
+                uiPrefs.setOnlineFoodLookup(true)
+                flow.update { it.copy(scan = ScanState.Looking) }
+                val next = when (val result = lookUpBarcode.online(missed.barcode)) {
+                    is BarcodeResult.Found -> ScanState.Found(result.food, result.origin)
+                    is BarcodeResult.NotFound -> ScanState.NotFound(result.barcode, result.online)
+                    BarcodeResult.Invalid -> ScanState.Invalid
+                }
+                flow.update { f -> if (f.scan == ScanState.Looking) f.copy(scan = next) else f }
+            }
+            DietEvent.ScanDeclineOnline -> viewModelScope.launch {
+                uiPrefs.setOnlineFoodLookup(false)
+                flow.update { f -> (f.scan as? ScanState.NotFound)?.let { f.copy(scan = it.copy(online = OnlineStatus.DECLINED)) } ?: f }
+            }
             DietEvent.ScanAccept -> viewModelScope.launch {
-                val found = flow.value.scan as? ScanState.Found ?: return@launch
+                val scanned = flow.value.scan as? ScanState.Found ?: return@launch
+                // A product found online is kept in My foods once accepted, so the next scan finds it with no connection.
+                val found = if (scanned.origin == FoodOrigin.ONLINE) savedCopy(scanned) ?: return@launch else scanned
                 val search = flow.value.search
                 val portions = found.food.portions.ifEmpty { diet.portionsOf(found.food.id) }
                 val favourite = found.food.id in foodLibrary.observeFavouriteIds().first()
@@ -755,6 +777,14 @@ class DietViewModel @Inject constructor(
 
     private fun withPreview(form: SetupForm): SetupForm =
         form.copy(preview = form.toSetup(today())?.let { diet.preview(it, today()) })
+
+    private suspend fun savedCopy(found: ScanState.Found): ScanState.Found? {
+        val draft = CustomFoodDraft(
+            name = found.food.name, barcode = found.food.id.removePrefix(OpenFoodFactsClient.ID_PREFIX), per100 = found.food.per100,
+            portions = found.food.portions, servingGrams = found.food.portions.firstOrNull()?.grams,
+        )
+        return (foodLibrary.saveCustomFood(draft) as? CustomFoodResult.Saved)?.let { found.copy(food = it.food) }
+    }
 
     private fun refreshSearch() {
         viewModelScope.launch {

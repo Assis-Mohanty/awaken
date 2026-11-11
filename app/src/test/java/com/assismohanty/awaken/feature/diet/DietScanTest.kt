@@ -4,6 +4,11 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.assismohanty.awaken.core.data.catalog.Portion
 import com.assismohanty.awaken.core.data.db.entity.EntrySource
 import com.assismohanty.awaken.core.domain.CustomFoodDraft
+import com.assismohanty.awaken.core.data.catalog.Food
+import com.assismohanty.awaken.core.data.catalog.FoodSource
+import com.assismohanty.awaken.core.data.food.OnlineLookup
+import com.assismohanty.awaken.core.domain.FoodOrigin
+import com.assismohanty.awaken.core.domain.OnlineStatus
 import com.assismohanty.awaken.core.domain.LoadHealthOverviewUseCase
 import com.assismohanty.awaken.core.scan.ScannedCode
 import com.assismohanty.awaken.engine.body.Nutrient
@@ -67,7 +72,7 @@ class DietScanTest {
         vm.onEvent(DietEvent.BarcodeRead(ScannedCode("036000291452", upcE = false)))
         val found = vm.until { it.scan is ScanState.Found }.scan as ScanState.Found
         assertThat(found.food.name).isEqualTo("Protein bar")
-        assertThat(found.fromPack).isFalse()
+        assertThat(found.origin).isEqualTo(FoodOrigin.OWN)
 
         vm.onEvent(DietEvent.ScanAccept)
         val amount = vm.until { it.amount != null && it.scan == null }.amount!!
@@ -115,6 +120,73 @@ class DietScanTest {
         vm.until { it.scan == ScanState.Scanning }
         vm.onEvent(DietEvent.CloseScanner)
         assertThat(vm.until { it.scan == null }.scan).isNull()
+    }
+
+    @Test
+    fun agreeingToOnlineLookupFindsTheProductAndAcceptingKeepsItForOfflineUse() = runBlocking<Unit> {
+        graph.onlineFood.answer = OnlineLookup.Found(
+            Food("off:5901234123457", "Digestives (Acme)", FoodSource.CUSTOM, Nutrients(mapOf(Nutrient.KCAL to 480.0)), listOf(Portion("1 serving", 30.0))),
+        )
+        val vm = viewModel()
+        vm.until { !it.loading }
+        vm.onEvent(DietEvent.OpenSearch("SNACK"))
+        vm.onEvent(DietEvent.OpenScanner)
+        vm.onEvent(DietEvent.BarcodeRead(ScannedCode("5901234123457", upcE = false)))
+
+        // Not asked yet: nothing has gone online, and the hunter is offered the choice.
+        assertThat((vm.until { it.scan is ScanState.NotFound }.scan as ScanState.NotFound).online).isEqualTo(OnlineStatus.NEEDS_CONSENT)
+        assertThat(graph.onlineFood.asked).isEmpty()
+
+        vm.onEvent(DietEvent.ScanAllowOnline)
+        val found = vm.until { it.scan is ScanState.Found }.scan as ScanState.Found
+        assertThat(found.origin).isEqualTo(FoodOrigin.ONLINE)
+        assertThat(graph.onlineFood.asked).containsExactly("5901234123457")
+        assertThat(graph.uiPrefs.prefs.first().onlineFoodLookup).isTrue()
+
+        vm.onEvent(DietEvent.ScanAccept)
+        val amount = vm.until { it.amount != null && it.scan == null }.amount!!
+        assertThat(amount.food.id).startsWith("custom:")
+        assertThat(amount.food.name).isEqualTo("Digestives (Acme)")
+        assertThat(amount.source).isEqualTo(EntrySource.BARCODE)
+
+        // Saved to My foods under its barcode: found next time without asking online again.
+        val again = graph.lookUpBarcode(ScannedCode("5901234123457", upcE = false)) as com.assismohanty.awaken.core.domain.BarcodeResult.Found
+        assertThat(again.origin).isEqualTo(FoodOrigin.OWN)
+        assertThat(graph.onlineFood.asked).hasSize(1)
+    }
+
+    @Test
+    fun decliningOnlineLookupIsRememberedAndNothingIsSent() = runBlocking<Unit> {
+        val vm = viewModel()
+        vm.until { !it.loading }
+        vm.onEvent(DietEvent.OpenScanner)
+        vm.onEvent(DietEvent.BarcodeRead(ScannedCode("5901234123457", upcE = false)))
+        vm.until { it.scan is ScanState.NotFound }
+
+        vm.onEvent(DietEvent.ScanDeclineOnline)
+        assertThat((vm.until { (it.scan as? ScanState.NotFound)?.online == OnlineStatus.DECLINED }.scan as ScanState.NotFound).barcode).isEqualTo("5901234123457")
+        assertThat(graph.uiPrefs.prefs.first().onlineFoodLookup).isFalse()
+
+        vm.onEvent(DietEvent.ScanAgain)
+        vm.until { it.scan == ScanState.Scanning }
+        vm.onEvent(DietEvent.BarcodeRead(ScannedCode("5901234123457", upcE = false)))
+        assertThat((vm.until { it.scan is ScanState.NotFound }.scan as ScanState.NotFound).online).isEqualTo(OnlineStatus.DECLINED)
+        assertThat(graph.onlineFood.asked).isEmpty()
+    }
+
+    @Test
+    fun noConnectionSaysSoAndTheLabelFormIsStillOffered() = runBlocking<Unit> {
+        graph.uiPrefs.setOnlineFoodLookup(true)
+        graph.onlineFood.answer = OnlineLookup.Unreachable
+        val vm = viewModel()
+        vm.until { !it.loading }
+        vm.onEvent(DietEvent.OpenSearch("LUNCH"))
+        vm.onEvent(DietEvent.OpenScanner)
+        vm.onEvent(DietEvent.BarcodeRead(ScannedCode("5901234123457", upcE = false)))
+
+        assertThat((vm.until { it.scan is ScanState.NotFound }.scan as ScanState.NotFound).online).isEqualTo(OnlineStatus.UNREACHABLE)
+        vm.onEvent(DietEvent.ScanCreate)
+        assertThat(vm.until { it.search?.showCustomForm == true }.search?.prefillBarcode).isEqualTo("5901234123457")
     }
 
     private companion object {

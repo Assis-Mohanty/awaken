@@ -41,13 +41,9 @@ class HealthConnectManifestTest {
             "android.permission.health.READ_ACTIVE_CALORIES_BURNED",
             "android.permission.health.READ_HEART_RATE",
         )
-        // Phase 15: INTERNET is declared for the Path Oracle only (CLAUDE.md invariant 8), and no other sensitive permission.
-        // INTERNET is declared for the Path Oracle only, and only in builds that have AI Paths (debug).
-        if (com.assismohanty.awaken.BuildConfig.AI_PATHS_ENABLED) {
-            assertThat(requested.toList()).contains("android.permission.INTERNET")
-        } else {
-            assertThat(requested.toList()).doesNotContain("android.permission.INTERNET")
-        }
+        // INTERNET is declared in every build for the opt-in Open Food Facts barcode lookup (CLAUDE.md invariant 8, ENGINE_DECISIONS 204);
+        // the Path Oracle itself still only exists in builds that have AI Paths.
+        assertThat(requested.toList()).contains("android.permission.INTERNET")
         // The Diet barcode scanner (docs/diet/PLAN.md section 6) is the one use of the camera: it is declared, and the policy says so.
         assertThat(requested.toList()).contains("android.permission.CAMERA")
         assertThat(requested.toList()).containsNoneOf(
@@ -60,6 +56,13 @@ class HealthConnectManifestTest {
     fun thePolicyNamesExactlyWhatIsRead() {
         composeRule.setContent { AwakenTheme { PrivacyPolicyScreen(onClose = {}) } }
         composeRule.onNodeWithText("Steps, Exercise sessions and Sleep sessions", substring = true).assertIsDisplayed()
+    }
+
+    @Test
+    fun thePolicySaysOnlyTheBarcodeNumberIsSentAndOnlyWhenAllowed() {
+        composeRule.setContent { AwakenTheme { PrivacyPolicyScreen(onClose = {}) } }
+        composeRule.onNodeWithText("sends that barcode number, and nothing else", substring = true).assertExists()
+        composeRule.onNodeWithText("Online food lookup (optional)", substring = true).assertExists()
     }
 
     @Test

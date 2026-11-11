@@ -19,7 +19,7 @@ these files:
 
 ## What is in the pack
 
-Products that Open Food Facts lists as sold in India and that have **all** of: a valid barcode (EAN-13, UPC-A or EAN-8, stored
+Products that Open Food Facts lists as sold in India (tagged so, or carrying an Indian `890` barcode, since many Indian products were added without the tag) and that have **all** of: a valid barcode (EAN-13, UPC-A or EAN-8, stored
 as 13 digits), a name, and calories, protein, carbohydrate and fat per 100 g. A product is dropped when its numbers cannot
 be right: calories above 900, a macro above 100 g, protein + carbohydrate + fat above 105 g, or calories more than
 max(20 kcal, 20 %) away from what the macros add up to. Store-internal codes (starting with 2) are dropped. `report.md`
