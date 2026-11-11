@@ -17,6 +17,7 @@ import com.assismohanty.awaken.core.data.db.entity.WaterLogEntity
 import com.assismohanty.awaken.core.data.db.entity.WeightLogEntity
 import com.assismohanty.awaken.core.data.repo.TransactionRunner
 import com.assismohanty.awaken.engine.body.DietGuard
+import com.assismohanty.awaken.engine.body.Hydration
 import com.assismohanty.awaken.engine.body.NutritionMath
 import com.assismohanty.awaken.engine.body.WeighIn
 import com.assismohanty.awaken.engine.body.WeightTrend
@@ -41,6 +42,9 @@ class BodyLog @Inject constructor(
     private val transactions: TransactionRunner,
     private val clock: Clock,
 ) {
+    /** The injected clock's now, so screens never read the system time (CLAUDE.md invariant 6). */
+    fun now(): java.time.Instant = clock.now()
+
     // Water
 
     fun observeWaterMl(date: LocalDate): Flow<Int> = dao.observeWaterMl(date)
@@ -54,6 +58,14 @@ class BodyLog @Inject constructor(
     }
 
     suspend fun removeWater(id: String) = dao.deleteWater(id)
+
+    /** Sets the daily water target, kept within [Hydration.TARGET_RANGE_ML]. A blank (null) goes back to the default. */
+    suspend fun setWaterTarget(ml: Int?) {
+        dietDao.profile()?.let { dietDao.upsertProfile(it.copy(waterTargetMl = ml?.coerceIn(Hydration.TARGET_RANGE_ML), updatedAt = clock.now())) }
+    }
+
+    /** The newest water row of [date], for undoing a mis-tap; null when none. */
+    suspend fun lastWaterId(date: LocalDate): String? = dao.lastWaterId(date)
 
     // Weight
 

@@ -126,6 +126,9 @@ object NutritionMath {
         Nutrient.VITAMIN_A to NutrientTarget(900.0, TargetKind.GOAL),
         Nutrient.VITAMIN_C to NutrientTarget(90.0, TargetKind.GOAL),
         Nutrient.VITAMIN_D to NutrientTarget(20.0, TargetKind.GOAL),
+        Nutrient.ZINC to NutrientTarget(11.0, TargetKind.GOAL),
+        Nutrient.VITAMIN_B12 to NutrientTarget(2.4, TargetKind.GOAL),
+        Nutrient.FOLATE to NutrientTarget(400.0, TargetKind.GOAL),
     )
 
     /** Which way each nutrient's target points when the hunter sets one that has no default. */

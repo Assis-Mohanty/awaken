@@ -16,6 +16,7 @@ import com.assismohanty.awaken.core.data.db.entity.NutritionProfileEntity
 import com.assismohanty.awaken.engine.GameDay
 import com.assismohanty.awaken.engine.body.ActivityLevel
 import com.assismohanty.awaken.engine.body.BodyProfile
+import com.assismohanty.awaken.engine.body.DayTotals
 import com.assismohanty.awaken.engine.body.DietGuard
 import com.assismohanty.awaken.engine.body.GoalCalculator
 import com.assismohanty.awaken.engine.body.GoalPlan
@@ -183,6 +184,14 @@ class DietTracker @Inject constructor(
         dietDao.upsertLog(row.copy(grams = grams.coerceIn(MIN_GRAMS, MAX_GRAMS), meal = meal, portionLabel = portionLabel))
     }
 
+    /** The seven days ending on [end], oldest first, for the weekly report. */
+    suspend fun week(end: LocalDate): List<DayTotals> = (WEEK_DAYS - 1 downTo 0L).map { back ->
+        val date = end.minusDays(back)
+        val rows = dietDao.entriesOn(date)
+        val totals = Nutrients.sum(rows.map { it.toEntry().amounts })
+        DayTotals(date, rows.size, totals[Nutrient.KCAL], totals[Nutrient.PROTEIN], totals[Nutrient.CARBS], totals[Nutrient.FAT])
+    }
+
     suspend fun entriesOn(gameDate: LocalDate, meal: String): List<FoodLogEntity> = dietDao.entriesOn(gameDate, meal)
 
     suspend fun deleteLog(id: String) = dietDao.deleteLog(id)
@@ -230,6 +239,7 @@ class DietTracker @Inject constructor(
 
     companion object {
         const val CUSTOM_PREFIX = "custom:"
+        const val WEEK_DAYS = 7L
         const val RECENT_LIMIT = 20
         // Input sanity (not game numbers).
         const val MIN_GRAMS = 0.1

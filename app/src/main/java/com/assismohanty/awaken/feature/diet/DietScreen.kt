@@ -113,7 +113,14 @@ fun DietScreen(state: DietUiState, onEvent: (DietEvent) -> Unit, modifier: Modif
     state.prompt?.let { PromptSheet(it, state.note, onEvent) }
     state.amount?.let { AmountSheet(it, state.slots, onEvent) }
     if (state.targets) state.plan?.let { TargetsSheet(it, onEvent) }
-    if (state.weightSheet) WeightSheet(state.weights, onEvent)
+    when (state.panel) {
+        Panel.WEIGHT -> WeightSheet(state.weights, state.trendKg, onEvent)
+        Panel.NUTRIENTS -> state.plan?.let { NutrientsSheet(it, state.day?.totals ?: Nutrients(), state.coverage, onEvent) }
+        Panel.REPORT -> ReportSheet(state.report, state.plan, onEvent)
+        Panel.FASTING -> FastingSheet(state.fast, onEvent)
+        Panel.WATER -> state.plan?.let { WaterTargetSheet(it.waterTargetMl, onEvent) }
+        null -> Unit
+    }
 }
 
 // Setup
@@ -274,8 +281,12 @@ private fun Diary(state: DietUiState, plan: DietPlan, onEvent: (DietEvent) -> Un
         SecondaryButton(text = lexString(R.string.diet_new_meal_add), onClick = { onEvent(DietEvent.OpenPrompt(Prompt.NewMeal)) }, modifier = Modifier.fillMaxWidth())
     }
     WaterRow(state.waterMl, plan.waterTargetMl, onEvent)
-    SecondaryButton(text = lexString(R.string.diet_weight_button), onClick = { onEvent(DietEvent.OpenWeight) }, modifier = Modifier.fillMaxWidth())
-    NutrientsWindow(plan, day.totals)
+    FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.xs), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+        SecondaryButton(text = lexString(R.string.diet_weight_button), onClick = { onEvent(DietEvent.OpenPanel(Panel.WEIGHT)) })
+        SecondaryButton(text = lexString(R.string.diet_nutrients_button), onClick = { onEvent(DietEvent.OpenPanel(Panel.NUTRIENTS)) })
+        SecondaryButton(text = lexString(R.string.diet_report_button), onClick = { onEvent(DietEvent.OpenPanel(Panel.REPORT)) })
+        if (plan.targetsVisible) SecondaryButton(text = lexString(R.string.diet_fast_button), onClick = { onEvent(DietEvent.OpenPanel(Panel.FASTING)) })
+    }
 }
 
 @Composable
@@ -301,6 +312,10 @@ private fun WaterRow(ml: Int, targetMl: Int, onEvent: (DietEvent) -> Unit) {
                     modifier = Modifier.weight(1f),
                 )
             }
+        }
+        Row {
+            QuietButton(text = lexString(R.string.diet_water_undo), onClick = { onEvent(DietEvent.UndoWater) }, enabled = ml > 0)
+            QuietButton(text = lexString(R.string.diet_water_target_button), onClick = { onEvent(DietEvent.OpenPanel(Panel.WATER)) })
         }
     }
 }
@@ -451,19 +466,6 @@ private fun EntryRow(row: FoodLogEntity, amounts: Nutrients, onEvent: (DietEvent
             style = AwakenTheme.type.caption,
             color = colors.textSecondary,
         )
-    }
-}
-
-/** Nutrients that have a target, plus any without one that the day actually contains. */
-@Composable
-private fun NutrientsWindow(plan: DietPlan, totals: Nutrients) {
-    val colors = AwakenTheme.colors
-    val shown = Nutrient.entries.filter { it != Nutrient.KCAL && it !in MACROS && (it in plan.plan.targets || totals[it] > 0.0) }
-    SystemWindow(title = lexString(R.string.diet_window_nutrients), accent = colors.accent, reveal = false) {
-        shown.forEach { nutrient ->
-            val target = plan.plan.targets[nutrient]
-            NutrientLine(nutrient, totals[nutrient], target?.amount, target?.kind ?: NutritionMath.kindOf(nutrient))
-        }
     }
 }
 

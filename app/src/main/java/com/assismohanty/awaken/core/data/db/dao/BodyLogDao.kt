@@ -28,6 +28,9 @@ interface BodyLogDao {
     @Upsert
     suspend fun upsertWater(row: WaterLogEntity)
 
+    @Query("SELECT id FROM water_log WHERE game_date = :gameDate ORDER BY logged_at DESC LIMIT 1")
+    suspend fun lastWaterId(gameDate: LocalDate): String?
+
     @Query("DELETE FROM water_log WHERE id = :id")
     suspend fun deleteWater(id: String)
 

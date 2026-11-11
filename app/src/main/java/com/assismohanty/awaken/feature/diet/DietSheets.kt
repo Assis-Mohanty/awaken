@@ -39,6 +39,13 @@ import com.assismohanty.awaken.core.data.catalog.Portion
 import com.assismohanty.awaken.core.data.db.entity.MeasureKind
 import com.assismohanty.awaken.core.data.db.entity.WeightLogEntity
 import com.assismohanty.awaken.core.domain.CustomFoodDraft
+import com.assismohanty.awaken.core.designsystem.charts.Chart
+import com.assismohanty.awaken.core.designsystem.charts.ChartSpec
+import com.assismohanty.awaken.engine.body.FastState
+import com.assismohanty.awaken.engine.body.FastingRules
+import com.assismohanty.awaken.engine.body.NutrientCoverage
+import com.assismohanty.awaken.engine.body.TargetKind
+import com.assismohanty.awaken.engine.body.WeekReport
 import com.assismohanty.awaken.core.domain.CustomFoodResult
 import com.assismohanty.awaken.core.domain.MealSlot
 import com.assismohanty.awaken.core.domain.SavedMealSummary
@@ -556,12 +563,12 @@ private fun TargetsPreview() {
 // Weight and measurements
 
 @Composable
-fun WeightSheet(weights: List<WeightLogEntity>, onEvent: (DietEvent) -> Unit) {
-    DietSheet(onDismiss = { onEvent(DietEvent.CloseWeight) }) { WeightContent(weights, onEvent) }
+fun WeightSheet(weights: List<WeightLogEntity>, trendKg: Double?, onEvent: (DietEvent) -> Unit) {
+    DietSheet(onDismiss = { onEvent(DietEvent.ClosePanel) }) { WeightContent(weights, trendKg, onEvent) }
 }
 
 @Composable
-fun WeightContent(weights: List<WeightLogEntity>, onEvent: (DietEvent) -> Unit) {
+fun WeightContent(weights: List<WeightLogEntity>, trendKg: Double?, onEvent: (DietEvent) -> Unit) {
     val colors = AwakenTheme.colors
     var kg by remember { mutableStateOf(0.0) }
     var kind by rememberSaveable { mutableStateOf(MeasureKind.WAIST) }
@@ -571,6 +578,7 @@ fun WeightContent(weights: List<WeightLogEntity>, onEvent: (DietEvent) -> Unit) 
         NumberField(value = kg, onValueChange = { kg = it }, description = lexString(R.string.diet_weight_hint), suffix = lexString(R.string.diet_unit_kg))
     }
     PrimaryButton(text = lexString(R.string.diet_weight_save), onClick = { onEvent(DietEvent.LogWeight(kg)) }, enabled = kg > 0.0, modifier = Modifier.fillMaxWidth())
+    trendKg?.let { Text(lexString(R.string.diet_weight_trend, formatAmount(it)), style = AwakenTheme.type.label, color = colors.textPrimary) }
     if (weights.isEmpty()) Text(lexString(R.string.diet_weight_empty), style = AwakenTheme.type.body, color = colors.textSecondary)
     weights.take(WEIGHT_ROWS).forEachIndexed { i, w ->
         if (i > 0) HorizontalDivider(color = colors.divider, thickness = AwakenTheme.dimens.hairline)
@@ -607,12 +615,163 @@ private fun WeightPreview() {
     AwakenTheme(reduceMotion = true) {
         Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
             WeightContent(
-                listOf(
+                weights = listOf(
                     WeightLogEntity("1", java.time.LocalDate.of(2026, 10, 27), 80.4, java.time.Instant.EPOCH, null),
                     WeightLogEntity("2", java.time.LocalDate.of(2026, 10, 20), 81.0, java.time.Instant.EPOCH, null),
                 ),
+                trendKg = 80.7,
                 onEvent = {},
             )
+        }
+    }
+}
+
+// Nutrients, weekly report, fasting, water target
+
+@Composable
+fun NutrientsSheet(plan: DietPlan, totals: Nutrients, coverage: Map<Nutrient, Double?>, onEvent: (DietEvent) -> Unit) {
+    DietSheet(onDismiss = { onEvent(DietEvent.ClosePanel) }) { NutrientsContent(plan, totals, coverage) }
+}
+
+private val MACRO_SET = setOf(Nutrient.KCAL, Nutrient.PROTEIN, Nutrient.CARBS, Nutrient.FAT)
+
+/** Every nutrient with a reference value, or that the day has. A nutrient with patchy data shows "Partial data" and no bar. */
+@Composable
+fun NutrientsContent(plan: DietPlan, totals: Nutrients, coverage: Map<Nutrient, Double?>) {
+    val colors = AwakenTheme.colors
+    SheetTitle(lexString(R.string.diet_nutrients_title))
+    val shown = Nutrient.entries.filter { it !in MACRO_SET && (it in plan.plan.targets || totals[it] > 0.0) }
+    if (coverage.values.all { it == null }) Text(lexString(R.string.diet_nutrients_empty), style = AwakenTheme.type.body, color = colors.textSecondary)
+    shown.forEach { nutrient ->
+        val unit = lexString(nutrient.unit.symbolRes())
+        val target = plan.plan.targets[nutrient]
+        val partial = NutrientCoverage.isPartial(coverage[nutrient])
+        val over = !partial && target?.kind == TargetKind.LIMIT && totals[nutrient] > target.amount
+        Column(verticalArrangement = Arrangement.spacedBy(Spacing.xxs)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(lexString(nutrient.nameRes()), style = AwakenTheme.type.label, color = colors.textPrimary, modifier = Modifier.weight(1f))
+                if (partial) Pill(text = lexString(R.string.diet_nutrients_partial), color = colors.textSecondary)
+                Text(
+                    if (target != null) lexString(R.string.diet_amount_of_target, formatAmount(totals[nutrient]), formatAmount(target.amount), unit) else lexString(R.string.diet_amount_only, formatAmount(totals[nutrient]), unit),
+                    style = AwakenTheme.type.caption,
+                    color = colors.textSecondary,
+                )
+            }
+            if (!partial && target != null && target.amount > 0.0) {
+                Chart(ChartSpec.Progress(progress = (totals[nutrient] / target.amount).toFloat(), color = if (over) colors.critical else colors.accent))
+            }
+        }
+    }
+    if (shown.any { NutrientCoverage.isPartial(coverage[it]) }) Text(lexString(R.string.diet_nutrients_partial_note), style = AwakenTheme.type.caption, color = colors.textMuted)
+}
+
+@Composable
+fun ReportSheet(report: WeekReport?, plan: DietPlan?, onEvent: (DietEvent) -> Unit) {
+    DietSheet(onDismiss = { onEvent(DietEvent.ClosePanel) }) { ReportContent(report, plan) }
+}
+
+@Composable
+fun ReportContent(report: WeekReport?, plan: DietPlan?) {
+    val colors = AwakenTheme.colors
+    SheetTitle(lexString(R.string.diet_report_title))
+    if (report == null || report.daysLogged == 0) {
+        Text(lexString(R.string.diet_report_empty), style = AwakenTheme.type.body, color = colors.textSecondary)
+    } else {
+        Text(lexString(R.string.diet_report_days, report.daysLogged), style = AwakenTheme.type.label, color = colors.textPrimary)
+        val avg = formatAmount(report.avgKcal ?: 0.0)
+        // With targets off (GD 20.2) the report shows what was eaten and never sets it against a target.
+        if (plan?.targetsVisible == true) {
+            Text(lexString(R.string.diet_report_avg_target, avg, formatAmount(plan.plan.kcal.toDouble())), style = AwakenTheme.type.body, color = colors.textSecondary)
+        } else {
+            Text(lexString(R.string.diet_report_avg, avg), style = AwakenTheme.type.body, color = colors.textSecondary)
+        }
+        Text(
+            lexString(R.string.diet_report_macros, formatAmount(report.avgProtein ?: 0.0), formatAmount(report.avgCarbs ?: 0.0), formatAmount(report.avgFat ?: 0.0)),
+            style = AwakenTheme.type.body,
+            color = colors.textSecondary,
+        )
+        if (report.loggingStreak > 1) Text(lexString(R.string.diet_report_streak, report.loggingStreak), style = AwakenTheme.type.caption, color = colors.textMuted)
+    }
+    Text(lexString(R.string.diet_estimate_disclaimer), style = AwakenTheme.type.caption, color = colors.textMuted)
+}
+
+@Composable
+fun FastingSheet(fast: FastView, onEvent: (DietEvent) -> Unit) {
+    DietSheet(onDismiss = { onEvent(DietEvent.ClosePanel) }) { FastingContent(fast, onEvent) }
+}
+
+@Composable
+fun FastingContent(fast: FastView, onEvent: (DietEvent) -> Unit) {
+    val colors = AwakenTheme.colors
+    var hours by rememberSaveable { mutableIntStateOf(FastingRules.PRESET_HOURS.first()) }
+    SheetTitle(lexString(R.string.diet_fast_title))
+    when (val state = fast.state) {
+        FastState.Idle -> {
+            Text(lexString(R.string.diet_fast_intro), style = AwakenTheme.type.body, color = colors.textSecondary)
+            Row(horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+                FastingRules.PRESET_HOURS.forEach { h ->
+                    ChoiceChip(text = lexString(R.string.diet_fast_preset, h), selected = hours == h, onClick = { hours = h })
+                }
+            }
+            PrimaryButton(text = lexString(R.string.diet_fast_start), onClick = { onEvent(DietEvent.StartFast(hours * MINUTES_PER_HOUR)) }, modifier = Modifier.fillMaxWidth())
+        }
+        is FastState.Running -> {
+            Text(lexString(R.string.diet_fast_running, durationText(state.elapsed), durationText(state.remaining)), style = AwakenTheme.type.body, color = colors.textPrimary)
+            SecondaryButton(text = lexString(R.string.diet_fast_end), onClick = { onEvent(DietEvent.EndFast) }, modifier = Modifier.fillMaxWidth())
+        }
+        is FastState.Reached -> {
+            Text(lexString(R.string.diet_fast_reached, durationText(state.elapsed)), style = AwakenTheme.type.body, color = colors.textPrimary)
+            PrimaryButton(text = lexString(R.string.diet_fast_end), onClick = { onEvent(DietEvent.EndFast) }, modifier = Modifier.fillMaxWidth())
+        }
+    }
+}
+
+@Composable
+private fun durationText(duration: java.time.Duration): String =
+    lexString(R.string.diet_duration, duration.toHours().toInt(), (duration.toMinutes() % MINUTES_PER_HOUR).toInt())
+
+private const val MINUTES_PER_HOUR = 60
+
+@Composable
+fun WaterTargetSheet(currentMl: Int, onEvent: (DietEvent) -> Unit) {
+    DietSheet(onDismiss = { onEvent(DietEvent.ClosePanel) }) {
+        var ml by remember { mutableStateOf(currentMl.toDouble()) }
+        SheetTitle(lexString(R.string.diet_water_target_title))
+        LabeledRow(R.string.diet_water_target_title) {
+            NumberField(value = ml, onValueChange = { ml = it }, description = lexString(R.string.diet_water_target_title), decimals = false, suffix = lexString(R.string.nutrient_unit_ml))
+        }
+        PrimaryButton(text = lexString(R.string.diet_water_target_save), onClick = { onEvent(DietEvent.SetWaterTarget(ml.toInt())) }, enabled = ml > 0.0, modifier = Modifier.fillMaxWidth())
+        QuietButton(text = lexString(R.string.diet_water_target_default), onClick = { onEvent(DietEvent.SetWaterTarget(null)) })
+    }
+}
+
+@PhonePreviews
+@Composable
+private fun NutrientsPreview() {
+    val state = previewDietState()
+    AwakenTheme(reduceMotion = true) {
+        Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+            NutrientsContent(checkNotNull(state.plan), state.day?.totals ?: Nutrients(), mapOf(Nutrient.IRON to 0.5, Nutrient.SODIUM to 1.0, Nutrient.CALCIUM to 1.0, Nutrient.FIBER to 1.0))
+        }
+    }
+}
+
+@PhonePreviews
+@Composable
+private fun ReportPreview() {
+    AwakenTheme(reduceMotion = true) {
+        Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+            ReportContent(WeekReport(5, 2_050.0, 98.0, 240.0, 66.0, 3), previewDietState().plan)
+        }
+    }
+}
+
+@PhonePreviews
+@Composable
+private fun FastingPreview() {
+    AwakenTheme(reduceMotion = true) {
+        Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+            FastingContent(FastView(), onEvent = {})
         }
     }
 }

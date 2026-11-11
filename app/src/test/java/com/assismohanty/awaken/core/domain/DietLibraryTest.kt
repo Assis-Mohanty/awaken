@@ -254,6 +254,34 @@ class DietLibraryTest {
     }
 
     @Test
+    fun theWeekCountsEntriesPerDayAndTheWaterTargetIsKeptInRange() = runTest {
+        graph.seedHunter()
+        graph.diet.saveSetup(setup)
+        eat(food("usda:1", "Egg", 155.0), date = today, grams = 100.0)
+        eat(food("usda:2", "Toast", 265.0), date = today.minusDays(2), grams = 100.0)
+
+        val week = graph.diet.week(today)
+        assertThat(week).hasSize(7)
+        assertThat(week.last().date).isEqualTo(today)
+        assertThat(week.map { it.entries }).containsExactly(0, 0, 0, 0, 1, 0, 1).inOrder()
+        assertThat(week.last().kcal).isWithin(1e-9).of(155.0)
+
+        body.setWaterTarget(100)
+        assertThat(graph.db.dietDao().profile()?.waterTargetMl).isEqualTo(500)
+        body.setWaterTarget(null)
+        assertThat(graph.db.dietDao().profile()?.waterTargetMl).isNull()
+    }
+
+    @Test
+    fun onlyPresetFastsStartAndOnlyOneRunsAtATime() = runTest {
+        assertThat(body.startFast(18 * 60)).isNull()
+        val first = checkNotNull(body.startFast(16 * 60))
+        assertThat(checkNotNull(body.startFast(12 * 60)).id).isEqualTo(first.id)
+        body.endFast()
+        assertThat(body.observeActiveFast().first()).isNull()
+    }
+
+    @Test
     fun theTrendOffersNewTargetsAtOneKiloAndStaysQuietOtherwise() = runTest {
         graph.seedHunter()
         graph.diet.saveSetup(setup)

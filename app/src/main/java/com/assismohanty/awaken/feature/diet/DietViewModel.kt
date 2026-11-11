@@ -32,6 +32,15 @@ import com.assismohanty.awaken.engine.body.MacroSplit
 import com.assismohanty.awaken.core.data.db.entity.MeasureKind
 import com.assismohanty.awaken.core.data.db.entity.WeightLogEntity
 import com.assismohanty.awaken.core.domain.TrendOffer
+import com.assismohanty.awaken.core.data.db.entity.FastingSessionEntity
+import com.assismohanty.awaken.engine.body.DietReport
+import com.assismohanty.awaken.engine.body.FastState
+import com.assismohanty.awaken.engine.body.FastingRules
+import com.assismohanty.awaken.engine.body.NutrientCoverage
+import com.assismohanty.awaken.engine.body.WeekReport
+import com.assismohanty.awaken.engine.body.WeighIn
+import com.assismohanty.awaken.engine.body.WeightTrend
+import kotlinx.coroutines.delay
 import com.assismohanty.awaken.engine.body.Nutrients
 import com.assismohanty.awaken.engine.body.Sex
 import com.assismohanty.awaken.engine.body.WeightGoal
@@ -44,7 +53,9 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
@@ -145,11 +156,24 @@ data class DietFlow(
     val amount: AmountForm? = null,
     val targets: Boolean = false,
     val prompt: Prompt? = null,
-    val weightSheet: Boolean = false,
+    val panel: Panel? = null,
+    val report: WeekReport? = null,
 )
 
+/** The panels that open over the diary. */
+enum class Panel { WEIGHT, NUTRIENTS, REPORT, FASTING, WATER }
+
+/** A fast as the sheet shows it: the stored session and where it stands now. */
+data class FastView(val session: FastingSessionEntity? = null, val state: FastState = FastState.Idle)
+
 /** What the trackers around the diary show for the viewed day. */
-data class Trackers(val waterMl: Int = 0, val weights: List<WeightLogEntity> = emptyList(), val offer: TrendOffer? = null)
+data class Trackers(
+    val waterMl: Int = 0,
+    val weights: List<WeightLogEntity> = emptyList(),
+    val offer: TrendOffer? = null,
+    val trendKg: Double? = null,
+    val fast: FastView = FastView(),
+)
 
 data class DietUiState(
     val loading: Boolean = true,
@@ -164,7 +188,12 @@ data class DietUiState(
     val offer: TrendOffer? = null,
     val waterMl: Int = 0,
     val weights: List<WeightLogEntity> = emptyList(),
-    val weightSheet: Boolean = false,
+    val panel: Panel? = null,
+    val report: WeekReport? = null,
+    val trendKg: Double? = null,
+    val fast: FastView = FastView(),
+    /** Share of the day's calories from foods with a value, per nutrient (null when nothing is logged). */
+    val coverage: Map<Nutrient, Double?> = emptyMap(),
     val setup: SetupForm? = null,
     val search: FoodSearch? = null,
     val amount: AmountForm? = null,
@@ -187,8 +216,12 @@ sealed interface DietEvent {
     data class AddWater(val ml: Int) : DietEvent
     data object AcceptTrend : DietEvent
     data object DismissTrend : DietEvent
-    data object OpenWeight : DietEvent
-    data object CloseWeight : DietEvent
+    data class OpenPanel(val panel: Panel) : DietEvent
+    data object ClosePanel : DietEvent
+    data class StartFast(val targetMinutes: Int) : DietEvent
+    data object EndFast : DietEvent
+    data class SetWaterTarget(val ml: Int?) : DietEvent
+    data object UndoWater : DietEvent
     data class LogWeight(val kg: Double) : DietEvent
     data class DeleteWeight(val id: String) : DietEvent
     data class LogMeasure(val kind: MeasureKind, val cm: Double) : DietEvent
@@ -248,8 +281,12 @@ class DietViewModel @Inject constructor(
             if (date == null) {
                 flowOf(Trackers())
             } else {
-                combine(bodyLog.observeWaterMl(date), bodyLog.observeWeights(date.minusDays(WEIGHT_DAYS)), diet.observePlan()) { water, weights, _ ->
-                    Trackers(water, weights.sortedByDescending { it.loggedAt }, bodyLog.trendOffer(flow.value.today ?: date))
+                combine(bodyLog.observeWaterMl(date), bodyLog.observeWeights(date.minusDays(WEIGHT_DAYS)), diet.observePlan(), fastView()) { water, weights, _, fast ->
+                    val today = flow.value.today ?: date
+                    Trackers(
+                        water, weights.sortedByDescending { it.loggedAt }, bodyLog.trendOffer(today),
+                        WeightTrend.trend(weights.map { WeighIn(it.gameDate, it.weightKg) }, today), fast,
+                    )
                 }
             }
         },
@@ -269,7 +306,11 @@ class DietViewModel @Inject constructor(
             offer = trackers.offer,
             waterMl = trackers.waterMl,
             weights = trackers.weights,
-            weightSheet = f.weightSheet,
+            panel = f.panel,
+            report = f.report,
+            trendKg = trackers.trendKg,
+            fast = trackers.fast,
+            coverage = dayAndNote?.first?.let { coverageOf(it) }.orEmpty(),
             setup = f.setup ?: if (plan == null) SetupForm() else null,
             search = f.search,
             amount = f.amount,
@@ -307,8 +348,22 @@ class DietViewModel @Inject constructor(
             is DietEvent.AddWater -> viewModelScope.launch { bodyLog.addWater(flow.value.today ?: diet.today(), event.ml) }
             DietEvent.AcceptTrend -> viewModelScope.launch { uiState.value.offer?.let { bodyLog.acceptTrend(it) } }
             DietEvent.DismissTrend -> viewModelScope.launch { bodyLog.dismissTrend(flow.value.today ?: diet.today()) }
-            DietEvent.OpenWeight -> flow.update { it.copy(weightSheet = true) }
-            DietEvent.CloseWeight -> flow.update { it.copy(weightSheet = false) }
+            is DietEvent.OpenPanel -> {
+                flow.update { it.copy(panel = event.panel) }
+                if (event.panel == Panel.REPORT) viewModelScope.launch {
+                    val end = flow.value.today ?: diet.today()
+                    val report = DietReport.week(diet.week(end))
+                    flow.update { f -> f.copy(report = report) }
+                }
+            }
+            DietEvent.ClosePanel -> flow.update { it.copy(panel = null) }
+            is DietEvent.StartFast -> viewModelScope.launch { bodyLog.startFast(event.targetMinutes) }
+            DietEvent.EndFast -> viewModelScope.launch { bodyLog.endFast() }
+            is DietEvent.SetWaterTarget -> viewModelScope.launch {
+                bodyLog.setWaterTarget(event.ml)
+                flow.update { it.copy(panel = null) }
+            }
+            DietEvent.UndoWater -> viewModelScope.launch { bodyLog.lastWaterId(flow.value.today ?: diet.today())?.let { bodyLog.removeWater(it) } }
             is DietEvent.LogWeight -> viewModelScope.launch { bodyLog.logWeight(flow.value.today ?: diet.today(), event.kg) }
             is DietEvent.DeleteWeight -> viewModelScope.launch { bodyLog.deleteWeight(event.id) }
             is DietEvent.LogMeasure -> viewModelScope.launch { bodyLog.logMeasure(flow.value.today ?: diet.today(), event.kind, event.cm) }
@@ -432,6 +487,25 @@ class DietViewModel @Inject constructor(
 
     private fun today(): LocalDate = flow.value.today ?: LocalDate.MIN
 
+    /** The running fast, re-read every minute so the elapsed time moves; idle when none runs. */
+    private fun fastView(): Flow<FastView> = bodyLog.observeActiveFast().flatMapLatest { session ->
+        if (session == null) {
+            flowOf(FastView())
+        } else {
+            flow {
+                while (true) {
+                    emit(FastView(session, FastingRules.state(session.startedAt, session.targetMinutes, bodyLog.now())))
+                    delay(FAST_TICK_MS)
+                }
+            }
+        }
+    }
+
+    private fun coverageOf(day: DiaryDay): Map<Nutrient, Double?> {
+        val rows = day.meals.values.flatten().map { it.amounts }
+        return Nutrient.entries.associateWith { NutrientCoverage.share(rows, it) }
+    }
+
     private fun withPreview(form: SetupForm): SetupForm =
         form.copy(preview = form.toSetup(today())?.let { diet.preview(it, today()) })
 
@@ -451,6 +525,7 @@ class DietViewModel @Inject constructor(
         const val STOP_TIMEOUT_MS = 5_000L
         const val FALLBACK_MEAL = "SNACK"
         const val LAST_STEP = 3
+        const val FAST_TICK_MS = 60_000L
         const val WEIGHT_DAYS = 90L
 
         /** A quick add keeps its numbers per 100 g and logs exactly 100 g, so the row shows what was typed. */
