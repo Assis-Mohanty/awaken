@@ -11,6 +11,10 @@
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.VIBRATE" />
 
+    <!-- Diet barcode scanner (docs/diet/PLAN.md section 6): asked for the first time the hunter taps Scan. Frames are decoded on the phone and never stored or sent. -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
+
     <!-- Health Connect (ARCH §3.4): read-only. Core: steps, exercise, sleep. Optional: distance, active calories, heart rate. No background-read permission. -->
     <uses-permission android:name="android.permission.health.READ_STEPS" />
     <uses-permission android:name="android.permission.health.READ_EXERCISE" />

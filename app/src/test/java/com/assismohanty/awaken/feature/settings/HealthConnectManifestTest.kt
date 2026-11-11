@@ -48,9 +48,11 @@ class HealthConnectManifestTest {
         } else {
             assertThat(requested.toList()).doesNotContain("android.permission.INTERNET")
         }
+        // The Diet barcode scanner (docs/diet/PLAN.md section 6) is the one use of the camera: it is declared, and the policy says so.
+        assertThat(requested.toList()).contains("android.permission.CAMERA")
         assertThat(requested.toList()).containsNoneOf(
             "android.permission.ACCESS_FINE_LOCATION", "android.permission.ACCESS_COARSE_LOCATION",
-            "android.permission.READ_CONTACTS", "android.permission.RECORD_AUDIO", "android.permission.CAMERA",
+            "android.permission.READ_CONTACTS", "android.permission.RECORD_AUDIO",
         )
     }
 
@@ -58,5 +60,11 @@ class HealthConnectManifestTest {
     fun thePolicyNamesExactlyWhatIsRead() {
         composeRule.setContent { AwakenTheme { PrivacyPolicyScreen(onClose = {}) } }
         composeRule.onNodeWithText("Steps, Exercise sessions and Sleep sessions", substring = true).assertIsDisplayed()
+    }
+
+    @Test
+    fun thePolicyMentionsTheCameraAndSaysNothingIsSaved() {
+        composeRule.setContent { AwakenTheme { PrivacyPolicyScreen(onClose = {}) } }
+        composeRule.onNodeWithText("No picture or video is saved or sent anywhere", substring = true).assertExists()
     }
 }

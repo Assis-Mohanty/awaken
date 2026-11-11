@@ -14,7 +14,10 @@ import com.assismohanty.awaken.core.data.catalog.FoodCatalog
 import com.assismohanty.awaken.core.data.db.entity.MealPlanEntryEntity
 import com.assismohanty.awaken.core.data.db.entity.RecipeEntity
 import com.assismohanty.awaken.core.domain.BodyLog
+import com.assismohanty.awaken.core.domain.BarcodeResult
 import com.assismohanty.awaken.core.domain.HealthOverviewResult
+import com.assismohanty.awaken.core.domain.LookUpBarcodeUseCase
+import com.assismohanty.awaken.core.scan.ScannedCode
 import com.assismohanty.awaken.core.domain.IngredientDraft
 import com.assismohanty.awaken.core.domain.LoadHealthOverviewUseCase
 import kotlin.math.roundToInt
@@ -125,6 +128,15 @@ enum class SearchTab { RECENT, FAVOURITES, MEALS, RECIPES }
 /** What a food search is for: the diary, an ingredient of the recipe being built, or the meal plan. */
 enum class SearchMode { DIARY, RECIPE, PLAN }
 
+/** Where a barcode scan stands. [Looking] while a code is being looked up, so a second read of it is ignored. */
+sealed interface ScanState {
+    data object Scanning : ScanState
+    data object Looking : ScanState
+    data object Invalid : ScanState
+    data class Found(val food: Food, val fromPack: Boolean) : ScanState
+    data class NotFound(val barcode: String) : ScanState
+}
+
 /** A recipe being built. Numbers come from `:engine` [RecipeMath]; nothing is computed here. */
 data class RecipeForm(
     val id: String? = null,
@@ -170,6 +182,8 @@ data class FoodSearch(
     val showCustomForm: Boolean = false,
     /** Why the last custom food was refused. */
     val customError: CustomFoodResult.Reason? = null,
+    /** A scanned code the form starts with ("add it from the label"). */
+    val prefillBarcode: String? = null,
 )
 
 /** How much of a food: grams, or a count of one of its household portions. */
@@ -182,6 +196,7 @@ data class AmountForm(
     val grams: Double = DEFAULT_GRAMS,
     val favourite: Boolean = false,
     val mode: SearchMode = SearchMode.DIARY,
+    val source: EntrySource = EntrySource.SEARCH,
     /** Set when editing an existing diary row. */
     val editingRowId: String? = null,
     /** Set when changing a planned food. */
@@ -215,6 +230,7 @@ data class DietFlow(
     /** The day the meal plan shows. */
     val planDate: LocalDate? = null,
     val activeKcal: Int? = null,
+    val scan: ScanState? = null,
 )
 
 /** The panels that open over the diary. */
@@ -262,6 +278,7 @@ data class DietUiState(
     val today: LocalDate? = null,
     /** Today's active calories from Health Connect, or null when it is off or has none. Display only. */
     val activeKcal: Int? = null,
+    val scan: ScanState? = null,
     /** Share of the day's calories from foods with a value, per nutrient (null when nothing is logged). */
     val coverage: Map<Nutrient, Double?> = emptyMap(),
     val setup: SetupForm? = null,
@@ -305,6 +322,13 @@ sealed interface DietEvent {
 
     data class PlanDay(val date: LocalDate) : DietEvent
     data object AddToPlan : DietEvent
+
+    data object OpenScanner : DietEvent
+    data object CloseScanner : DietEvent
+    data class BarcodeRead(val code: ScannedCode) : DietEvent
+    data object ScanAgain : DietEvent
+    data object ScanAccept : DietEvent
+    data object ScanCreate : DietEvent
     data class EditPlanned(val entry: MealPlanEntryEntity) : DietEvent
     data class LogPlanned(val id: String, val date: LocalDate) : DietEvent
     data class RemovePlanned(val id: String) : DietEvent
@@ -358,6 +382,7 @@ class DietViewModel @Inject constructor(
     private val reminders: DietReminderScheduling,
     private val recipeBook: RecipeBook,
     private val loadHealth: LoadHealthOverviewUseCase,
+    private val lookUpBarcode: LookUpBarcodeUseCase,
 ) : ViewModel() {
 
     private val flow = MutableStateFlow(DietFlow())
@@ -403,6 +428,7 @@ class DietViewModel @Inject constructor(
             planned = trackers.planned,
             today = f.today,
             activeKcal = f.activeKcal,
+            scan = f.scan,
             note = dayAndNote?.second,
             prompt = f.prompt,
             offer = trackers.offer,
@@ -603,9 +629,41 @@ class DietViewModel @Inject constructor(
                 if (editing != null) {
                     diet.updateLog(editing, form.totalGrams, form.meal, form.portionLabel)
                 } else {
-                    diet.log(flow.value.date ?: diet.today(), form.meal, form.food, form.totalGrams, form.portionLabel)
+                    diet.log(flow.value.date ?: diet.today(), form.meal, form.food, form.totalGrams, form.portionLabel, form.source)
                 }
                 flow.update { it.copy(amount = null, search = null) }
+            }
+            DietEvent.OpenScanner -> flow.update { it.copy(scan = ScanState.Scanning) }
+            DietEvent.CloseScanner -> flow.update { it.copy(scan = null) }
+            DietEvent.ScanAgain -> flow.update { it.copy(scan = ScanState.Scanning) }
+            is DietEvent.BarcodeRead -> {
+                // Frames keep arriving while a code is looked up: only the first read of a scan counts.
+                var taken = false
+                flow.update { f -> if (f.scan == ScanState.Scanning) { taken = true; f.copy(scan = ScanState.Looking) } else f }
+                if (taken) viewModelScope.launch {
+                    val next = when (val result = lookUpBarcode(event.code)) {
+                        is BarcodeResult.Found -> ScanState.Found(result.food, result.fromPack)
+                        is BarcodeResult.NotFound -> ScanState.NotFound(result.barcode)
+                        BarcodeResult.Invalid -> ScanState.Invalid
+                    }
+                    flow.update { f -> if (f.scan == ScanState.Looking) f.copy(scan = next) else f }
+                }
+            }
+            DietEvent.ScanAccept -> viewModelScope.launch {
+                val found = flow.value.scan as? ScanState.Found ?: return@launch
+                val search = flow.value.search
+                val portions = found.food.portions.ifEmpty { diet.portionsOf(found.food.id) }
+                val favourite = found.food.id in foodLibrary.observeFavouriteIds().first()
+                val form = AmountForm(
+                    food = found.food, meal = search?.meal ?: FALLBACK_MEAL, portions = portions,
+                    // The label serving is preselected when there is one, else 100 g.
+                    portion = portions.firstOrNull(), favourite = favourite, mode = search?.mode ?: SearchMode.DIARY, source = EntrySource.BARCODE,
+                )
+                flow.update { it.copy(scan = null, amount = form) }
+            }
+            is DietEvent.ScanCreate -> flow.update { f ->
+                val code = (f.scan as? ScanState.NotFound)?.barcode
+                f.copy(scan = null, search = (f.search ?: FoodSearch(FALLBACK_MEAL)).copy(showCustomForm = true, prefillBarcode = code))
             }
             DietEvent.NewRecipe -> flow.update { it.copy(recipeForm = RecipeForm()) }
             is DietEvent.EditRecipe -> viewModelScope.launch {

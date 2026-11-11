@@ -56,6 +56,7 @@ import com.assismohanty.awaken.engine.body.FastingRules
 import com.assismohanty.awaken.engine.body.NutrientCoverage
 import com.assismohanty.awaken.engine.body.TargetKind
 import com.assismohanty.awaken.engine.body.HeightUnit
+import com.assismohanty.awaken.engine.body.LabelMath
 import com.assismohanty.awaken.engine.body.WeekReport
 import com.assismohanty.awaken.engine.body.WeightUnit
 import com.assismohanty.awaken.core.domain.CustomFoodResult
@@ -115,7 +116,7 @@ fun FoodSearchContent(search: FoodSearch, slots: List<MealSlot>, savedMeals: Lis
     val colors = AwakenTheme.colors
     SheetTitle(lexString(R.string.diet_search_title, mealLabel(search.meal, slots)))
     if (search.showCustomForm) {
-        CustomFoodForm(search.customError, onEvent)
+        CustomFoodForm(search.customError, search.prefillBarcode, onEvent)
         return
     }
     OutlinedTextField(
@@ -127,6 +128,7 @@ fun FoodSearchContent(search: FoodSearch, slots: List<MealSlot>, savedMeals: Lis
         colors = awakenTextFieldColors(),
         modifier = Modifier.fillMaxWidth(),
     )
+    SecondaryButton(text = lexString(R.string.diet_scan_button), onClick = { onEvent(DietEvent.OpenScanner) }, modifier = Modifier.fillMaxWidth())
     val blank = search.query.isBlank()
     if (blank) {
         Row(horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
@@ -434,14 +436,16 @@ private val CUSTOM_FIELDS = listOf(
 )
 
 @Composable
-private fun CustomFoodForm(error: CustomFoodResult.Reason?, onEvent: (DietEvent) -> Unit) {
+private fun CustomFoodForm(error: CustomFoodResult.Reason?, prefillBarcode: String?, onEvent: (DietEvent) -> Unit) {
     val colors = AwakenTheme.colors
     var name by rememberSaveable { mutableStateOf("") }
     var values by remember { mutableStateOf(emptyMap<Nutrient, Double>()) }
     var portionLabel by rememberSaveable { mutableStateOf("") }
     var portionGrams by remember { mutableStateOf(0.0) }
     var brand by rememberSaveable { mutableStateOf("") }
-    var barcode by rememberSaveable { mutableStateOf("") }
+    var barcode by rememberSaveable { mutableStateOf(prefillBarcode.orEmpty()) }
+    var kilojoules by rememberSaveable { mutableStateOf(false) }
+    var salt by remember { mutableStateOf(0.0) }
     var perServing by rememberSaveable { mutableStateOf(false) }
     var servingGrams by remember { mutableStateOf(0.0) }
     val servingLabel = lexString(R.string.diet_custom_serving_label)
@@ -482,18 +486,27 @@ private fun CustomFoodForm(error: CustomFoodResult.Reason?, onEvent: (DietEvent)
         }
     }
     Text(lexString(if (perServing) R.string.diet_custom_mode_serving else R.string.diet_custom_per100), style = AwakenTheme.type.label, color = colors.accent)
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+        Text(lexString(R.string.diet_custom_energy_unit), style = AwakenTheme.type.label, color = colors.textPrimary)
+        ChoiceChip(text = lexString(R.string.diet_custom_energy_kcal), selected = !kilojoules, onClick = { kilojoules = false })
+        ChoiceChip(text = lexString(R.string.diet_custom_energy_kj), selected = kilojoules, onClick = { kilojoules = true })
+    }
     CUSTOM_FIELDS.forEach { nutrient ->
-        val unit = lexString(nutrient.unit.symbolRes())
+        val unit = if (nutrient == Nutrient.KCAL && kilojoules) lexString(R.string.diet_custom_energy_kj) else lexString(nutrient.unit.symbolRes())
         LabeledRow(nutrient.nameRes()) {
             NumberField(
                 value = values[nutrient] ?: 0.0,
                 onValueChange = { v -> values = if (v > 0.0) values + (nutrient to v) else values - nutrient },
                 description = lexString(R.string.cd_diet_custom_value, lexString(nutrient.nameRes()), unit),
-                key = nutrient,
+                key = nutrient to unit,
                 suffix = unit,
             )
         }
     }
+    LabeledRow(R.string.diet_custom_salt) {
+        NumberField(value = salt, onValueChange = { salt = it }, description = lexString(R.string.diet_custom_salt), suffix = lexString(R.string.nutrient_unit_g))
+    }
+    Text(lexString(R.string.diet_custom_salt_note), style = AwakenTheme.type.caption, color = colors.textMuted)
     Text(lexString(R.string.diet_custom_portion), style = AwakenTheme.type.label, color = colors.accent)
     OutlinedTextField(
         value = portionLabel,
@@ -516,8 +529,14 @@ private fun CustomFoodForm(error: CustomFoodResult.Reason?, onEvent: (DietEvent)
         onClick = {
             val portion = if (portionLabel.isNotBlank() && portionGrams > 0.0) Portion(portionLabel.trim(), portionGrams) else null
             // A label gives numbers per serving; the library stores everything per 100 g.
-            val scale = if (perServing && servingGrams > 0.0) 100.0 / servingGrams else 1.0
-            val per100 = Nutrients(values.mapValues { it.value * scale } + (Nutrient.KCAL to (values[Nutrient.KCAL] ?: 0.0) * scale))
+            // Energy typed in kJ and salt typed instead of sodium are turned into kcal and sodium first (LabelMath).
+            val label = buildMap {
+                putAll(values)
+                values[Nutrient.KCAL]?.let { put(Nutrient.KCAL, if (kilojoules) LabelMath.kcalFromKj(it) else it) }
+                if (salt > 0.0 && Nutrient.SODIUM !in values) put(Nutrient.SODIUM, LabelMath.sodiumMgFromSalt(salt))
+            }
+            val toPer100: (Double) -> Double = { v -> if (perServing) LabelMath.per100(v, servingGrams) ?: v else v }
+            val per100 = Nutrients(label.mapValues { toPer100(it.value) } + (Nutrient.KCAL to toPer100(label[Nutrient.KCAL] ?: 0.0)))
             val serving = servingGrams.takeIf { perServing && it > 0.0 }
             onEvent(
                 DietEvent.CreateCustomFood(

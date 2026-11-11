@@ -57,6 +57,7 @@ fun PrivacyPolicyScreen(onClose: () -> Unit, modifier: Modifier = Modifier) {
         R.string.privacy_phone_steps,
         R.string.privacy_insights,
         R.string.privacy_screen_time,
+        R.string.privacy_camera,
         R.string.privacy_backups,
         R.string.privacy_children,
         R.string.privacy_changes,

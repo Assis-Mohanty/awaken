@@ -113,6 +113,7 @@ fun DietScreen(state: DietUiState, onEvent: (DietEvent) -> Unit, modifier: Modif
         Text(lexString(R.string.diet_tracker_note), style = AwakenTheme.type.caption, color = colors.textMuted)
     }
     state.recipeForm?.let { RecipeEditorSheet(it, onEvent) }
+    state.scan?.let { ScannerHost(it, onEvent) }
     state.search?.let { FoodSearchSheet(it, state.slots, state.savedMeals, onEvent) }
     state.prompt?.let { PromptSheet(it, state.note, onEvent) }
     state.amount?.let { AmountSheet(it, state.slots, onEvent) }
