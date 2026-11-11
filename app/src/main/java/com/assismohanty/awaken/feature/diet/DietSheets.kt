@@ -40,6 +40,10 @@ import com.assismohanty.awaken.core.data.catalog.Portion
 import com.assismohanty.awaken.core.data.db.entity.MeasureKind
 import com.assismohanty.awaken.core.data.db.entity.WeightLogEntity
 import com.assismohanty.awaken.core.domain.CustomFoodDraft
+import com.assismohanty.awaken.core.data.db.entity.MealPlanEntryEntity
+import com.assismohanty.awaken.core.data.db.entity.RecipeEntity
+import com.assismohanty.awaken.core.domain.IngredientDraft
+import com.assismohanty.awaken.core.domain.RecipeSaveResult
 import androidx.compose.material3.Switch
 import androidx.compose.material3.TimeInput
 import androidx.compose.material3.rememberTimePickerState
@@ -126,7 +130,8 @@ fun FoodSearchContent(search: FoodSearch, slots: List<MealSlot>, savedMeals: Lis
         Row(horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
             ChoiceChip(text = lexString(R.string.diet_search_recent), selected = search.tab == SearchTab.RECENT, onClick = { onEvent(DietEvent.PickTab(SearchTab.RECENT)) })
             ChoiceChip(text = lexString(R.string.diet_search_favourites), selected = search.tab == SearchTab.FAVOURITES, onClick = { onEvent(DietEvent.PickTab(SearchTab.FAVOURITES)) })
-            ChoiceChip(text = lexString(R.string.diet_search_meals), selected = search.tab == SearchTab.MEALS, onClick = { onEvent(DietEvent.PickTab(SearchTab.MEALS)) })
+            if (search.mode == SearchMode.DIARY) ChoiceChip(text = lexString(R.string.diet_search_meals), selected = search.tab == SearchTab.MEALS, onClick = { onEvent(DietEvent.PickTab(SearchTab.MEALS)) })
+            ChoiceChip(text = lexString(R.string.diet_search_recipes), selected = search.tab == SearchTab.RECIPES, onClick = { onEvent(DietEvent.PickTab(SearchTab.RECIPES)) })
         }
     }
     if (blank && search.tab == SearchTab.MEALS) {
@@ -135,6 +140,7 @@ fun FoodSearchContent(search: FoodSearch, slots: List<MealSlot>, savedMeals: Lis
         val empty = when {
             !blank -> R.string.diet_search_empty
             search.tab == SearchTab.FAVOURITES -> R.string.diet_search_favourites_empty
+            search.tab == SearchTab.RECIPES -> R.string.diet_search_recipes_empty
             else -> R.string.diet_search_recent_empty
         }
         Text(
@@ -149,7 +155,7 @@ fun FoodSearchContent(search: FoodSearch, slots: List<MealSlot>, savedMeals: Lis
     }
     if (!blank && search.results.isEmpty()) Text(lexString(R.string.diet_search_none_title), style = AwakenTheme.type.label, color = colors.textPrimary)
     SecondaryButton(text = lexString(R.string.diet_custom_create), onClick = { onEvent(DietEvent.OpenCustomFood) }, modifier = Modifier.fillMaxWidth())
-    SecondaryButton(text = lexString(R.string.diet_quick_add), onClick = { onEvent(DietEvent.OpenPrompt(Prompt.QuickAdd(search.meal))) }, modifier = Modifier.fillMaxWidth())
+    if (search.mode == SearchMode.DIARY) SecondaryButton(text = lexString(R.string.diet_quick_add), onClick = { onEvent(DietEvent.OpenPrompt(Prompt.QuickAdd(search.meal))) }, modifier = Modifier.fillMaxWidth())
 }
 
 @Composable
@@ -313,19 +319,19 @@ fun AmountContent(form: AmountForm, slots: List<MealSlot>, onEvent: (DietEvent) 
         color = colors.accent,
     )
     if (form.food.estimated) Pill(text = lexString(R.string.diet_estimate_tag), color = colors.textSecondary)
-    SecondaryButton(
+    if (form.mode != SearchMode.RECIPE) SecondaryButton(
         text = lexString(if (form.favourite) R.string.diet_favourite_remove else R.string.diet_favourite_add),
         onClick = { onEvent(DietEvent.ToggleFavourite) },
         modifier = Modifier.fillMaxWidth(),
     )
-    Text(lexString(R.string.diet_amount_meal), style = AwakenTheme.type.label, color = colors.textSecondary)
-    FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.xs), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+    if (form.mode != SearchMode.RECIPE) Text(lexString(R.string.diet_amount_meal), style = AwakenTheme.type.label, color = colors.textSecondary)
+    if (form.mode != SearchMode.RECIPE) FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.xs), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
         slots.forEach { slot ->
             ChoiceChip(text = mealLabel(slot.id, slots), selected = form.meal == slot.id, onClick = { change { it.copy(meal = slot.id) } })
         }
     }
     PrimaryButton(
-        text = lexString(if (form.editingRowId != null) R.string.diet_amount_save else R.string.diet_amount_add),
+        text = lexString(when { form.mode == SearchMode.RECIPE -> R.string.diet_amount_add_ingredient; form.mode == SearchMode.PLAN -> R.string.diet_amount_add_plan; form.editingRowId != null -> R.string.diet_amount_save; else -> R.string.diet_amount_add }),
         onClick = { onEvent(DietEvent.ConfirmAmount) },
         enabled = form.valid,
         modifier = Modifier.fillMaxWidth(),
@@ -848,5 +854,175 @@ private fun RemindersPreview() {
         Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
             RemindersContent(previewDietState().slots, mapOf("LUNCH" to 13 * 60, "DINNER" to 20 * 60), onEvent = {})
         }
+    }
+}
+
+// Recipes
+
+@Composable
+fun RecipesSheet(recipes: List<RecipeEntity>, onEvent: (DietEvent) -> Unit) {
+    DietSheet(onDismiss = { onEvent(DietEvent.ClosePanel) }) { RecipesContent(recipes, onEvent) }
+}
+
+@Composable
+fun RecipesContent(recipes: List<RecipeEntity>, onEvent: (DietEvent) -> Unit) {
+    val colors = AwakenTheme.colors
+    SheetTitle(lexString(R.string.diet_recipes_title))
+    if (recipes.isEmpty()) Text(lexString(R.string.diet_recipes_empty), style = AwakenTheme.type.body, color = colors.textSecondary)
+    recipes.forEachIndexed { i, recipe ->
+        if (i > 0) HorizontalDivider(color = colors.divider, thickness = AwakenTheme.dimens.hairline)
+        Column(
+            modifier = Modifier.fillMaxWidth().clickable { onEvent(DietEvent.EditRecipe(recipe.id)) }.padding(vertical = Spacing.xs),
+        ) {
+            Text(recipe.name, style = AwakenTheme.type.label, color = colors.textPrimary)
+            Text(lexString(R.string.diet_recipe_servings) + ": " + formatAmount(recipe.servings), style = AwakenTheme.type.caption, color = colors.textSecondary)
+        }
+    }
+    PrimaryButton(text = lexString(R.string.diet_recipe_new), onClick = { onEvent(DietEvent.NewRecipe) }, modifier = Modifier.fillMaxWidth())
+}
+
+@Composable
+fun RecipeEditorSheet(form: RecipeForm, onEvent: (DietEvent) -> Unit) {
+    DietSheet(onDismiss = { onEvent(DietEvent.CloseRecipe) }) { RecipeEditorContent(form, onEvent) }
+}
+
+@Composable
+fun RecipeEditorContent(form: RecipeForm, onEvent: (DietEvent) -> Unit) {
+    val colors = AwakenTheme.colors
+    val change: ((RecipeForm) -> RecipeForm) -> Unit = { onEvent(DietEvent.RecipeChanged(it)) }
+    var scaleTo by remember(form.id) { mutableStateOf(form.servings) }
+    SheetTitle(lexString(R.string.diet_recipe_new))
+    OutlinedTextField(
+        value = form.name,
+        onValueChange = { v -> change { it.copy(name = v.take(MAX_NAME)) } },
+        label = { Text(lexString(R.string.diet_recipe_name)) },
+        singleLine = true,
+        keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
+        colors = awakenTextFieldColors(),
+        modifier = Modifier.fillMaxWidth(),
+    )
+    LabeledRow(R.string.diet_recipe_servings) {
+        NumberField(value = form.servings, onValueChange = { v -> change { it.copy(servings = v) } }, description = lexString(R.string.diet_recipe_servings), key = "servings")
+    }
+    LabeledRow(R.string.diet_recipe_cooked) {
+        NumberField(value = form.cookedGrams, onValueChange = { v -> change { it.copy(cookedGrams = v) } }, description = lexString(R.string.diet_recipe_cooked), key = "cooked", suffix = lexString(R.string.nutrient_unit_g))
+    }
+    Text(lexString(R.string.diet_recipe_cooked_note), style = AwakenTheme.type.caption, color = colors.textMuted)
+    Text(lexString(R.string.diet_recipe_ingredients), style = AwakenTheme.type.label, color = colors.accent)
+    if (form.ingredients.isEmpty()) Text(lexString(R.string.diet_recipe_no_ingredients), style = AwakenTheme.type.body, color = colors.textSecondary)
+    form.ingredients.forEachIndexed { i, ingredient ->
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(lexString(R.string.diet_recipe_ingredient_row, ingredient.name, formatAmount(ingredient.grams)), style = AwakenTheme.type.body, color = colors.textPrimary, modifier = Modifier.weight(1f))
+            QuietButton(text = lexString(R.string.cd_diet_recipe_remove_ingredient, ingredient.name), onClick = { onEvent(DietEvent.RemoveIngredient(i)) })
+        }
+    }
+    SecondaryButton(text = lexString(R.string.diet_recipe_add_ingredient), onClick = { onEvent(DietEvent.AddIngredient) }, modifier = Modifier.fillMaxWidth())
+    form.perServing?.let { n ->
+        Text(
+            lexString(R.string.diet_recipe_per_serving, formatAmount(n[Nutrient.KCAL]), formatAmount(n[Nutrient.PROTEIN]), formatAmount(n[Nutrient.CARBS]), formatAmount(n[Nutrient.FAT])),
+            style = AwakenTheme.type.numericSmall,
+            color = colors.accent,
+        )
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+            NumberField(value = scaleTo, onValueChange = { scaleTo = it }, description = lexString(R.string.diet_recipe_scale), key = "scale")
+            SecondaryButton(text = lexString(R.string.diet_recipe_scale_action), onClick = { onEvent(DietEvent.ScaleRecipe(scaleTo)) }, enabled = scaleTo > 0.0)
+        }
+        Text(lexString(R.string.diet_recipe_scale_note), style = AwakenTheme.type.caption, color = colors.textMuted)
+    }
+    form.error?.let {
+        Text(
+            lexString(
+                when (it) {
+                    RecipeSaveResult.NeedsName -> R.string.diet_recipe_error_name
+                    RecipeSaveResult.NeedsIngredients -> R.string.diet_recipe_error_ingredients
+                    else -> R.string.diet_recipe_error_servings
+                },
+            ),
+            style = AwakenTheme.type.caption,
+            color = colors.textPrimary,
+        )
+    }
+    PrimaryButton(text = lexString(R.string.diet_recipe_save), onClick = { onEvent(DietEvent.SaveRecipe) }, modifier = Modifier.fillMaxWidth())
+    form.id?.let { QuietButton(text = lexString(R.string.diet_recipe_delete), onClick = { onEvent(DietEvent.DeleteRecipe(it)) }) }
+}
+
+// Meal plan
+
+@Composable
+fun PlanSheet(date: java.time.LocalDate, today: java.time.LocalDate, planned: List<MealPlanEntryEntity>, slots: List<MealSlot>, onEvent: (DietEvent) -> Unit) {
+    DietSheet(onDismiss = { onEvent(DietEvent.ClosePanel) }) { PlanContent(date, today, planned, slots, onEvent) }
+}
+
+@Composable
+fun PlanContent(date: java.time.LocalDate, today: java.time.LocalDate, planned: List<MealPlanEntryEntity>, slots: List<MealSlot>, onEvent: (DietEvent) -> Unit) {
+    val colors = AwakenTheme.colors
+    SheetTitle(lexString(R.string.diet_plan_title))
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        androidx.compose.material3.IconButton(onClick = { onEvent(DietEvent.PlanDay(date.minusDays(1))) }, enabled = date.isAfter(today)) {
+            androidx.compose.material3.Icon(com.assismohanty.awaken.core.designsystem.components.AwakenGlyphs.ChevronLeft, contentDescription = lexString(R.string.cd_diet_previous_day), tint = colors.textPrimary)
+        }
+        Text(
+            java.time.format.DateTimeFormatter.ofLocalizedDate(java.time.format.FormatStyle.MEDIUM).withLocale(com.assismohanty.awaken.core.designsystem.components.currentLocale()).format(date),
+            style = AwakenTheme.type.title, color = colors.textPrimary, modifier = Modifier.weight(1f), textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+        )
+        androidx.compose.material3.IconButton(onClick = { onEvent(DietEvent.PlanDay(date.plusDays(1))) }, enabled = date.isBefore(today.plusDays(com.assismohanty.awaken.core.domain.BodyLog.MAX_PLAN_DAYS))) {
+            androidx.compose.material3.Icon(com.assismohanty.awaken.core.designsystem.components.AwakenGlyphs.ChevronRight, contentDescription = lexString(R.string.cd_diet_next_day), tint = colors.textPrimary)
+        }
+    }
+    if (planned.isEmpty()) Text(lexString(R.string.diet_plan_empty), style = AwakenTheme.type.body, color = colors.textSecondary)
+    slots.forEach { slot ->
+        val rows = planned.filter { it.meal == slot.id }
+        if (rows.isNotEmpty()) {
+            Text(mealLabel(slot.id, slots), style = AwakenTheme.type.label, color = colors.accent)
+            rows.forEach { row ->
+                val kcal = com.assismohanty.awaken.core.data.catalog.FoodCatalog.nutrientsFromJson(row.nutrientsJson).forGrams(row.grams)[Nutrient.KCAL]
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(row.name, style = AwakenTheme.type.label, color = colors.textPrimary)
+                        Text(lexString(R.string.diet_entry_meta, row.portionLabel ?: lexString(R.string.diet_entry_grams, formatAmount(row.grams)), formatAmount(kcal)), style = AwakenTheme.type.caption, color = colors.textSecondary)
+                    }
+                    if (row.logged) {
+                        Text(lexString(R.string.diet_plan_logged), style = AwakenTheme.type.caption, color = colors.textSecondary)
+                    } else {
+                        if (!date.isAfter(today)) QuietButton(text = lexString(R.string.diet_plan_log), onClick = { onEvent(DietEvent.LogPlanned(row.id, date)) })
+                        QuietButton(text = lexString(R.string.cd_diet_plan_remove, row.name), onClick = { onEvent(DietEvent.RemovePlanned(row.id)) })
+                    }
+                }
+            }
+        }
+    }
+    if (planned.isNotEmpty()) {
+        val total = planned.sumOf { com.assismohanty.awaken.core.data.catalog.FoodCatalog.nutrientsFromJson(it.nutrientsJson).forGrams(it.grams)[Nutrient.KCAL] }
+        Text(lexString(R.string.diet_plan_total, formatAmount(total)), style = AwakenTheme.type.caption, color = colors.textMuted)
+    }
+    PrimaryButton(text = lexString(R.string.diet_plan_add), onClick = { onEvent(DietEvent.AddToPlan) }, modifier = Modifier.fillMaxWidth())
+}
+
+@PhonePreviews
+@Composable
+private fun RecipesEmptyPreview() {
+    AwakenTheme(reduceMotion = true) { Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) { RecipesContent(emptyList(), onEvent = {}) } }
+}
+
+@PhonePreviews
+@Composable
+private fun RecipeEditorPreview() {
+    val dal = IngredientDraft("usda:1", "Lentils, raw", 200.0, Nutrients(mapOf(Nutrient.KCAL to 352.0, Nutrient.PROTEIN to 24.6, Nutrient.CARBS to 63.4, Nutrient.FAT to 1.1)))
+    val oil = IngredientDraft("usda:2", "Oil, vegetable", 20.0, Nutrients(mapOf(Nutrient.KCAL to 884.0, Nutrient.PROTEIN to 0.0, Nutrient.CARBS to 0.0, Nutrient.FAT to 100.0)))
+    AwakenTheme(reduceMotion = true) {
+        Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) { RecipeEditorContent(RecipeForm(name = "Dal tadka", servings = 4.0, cookedGrams = 900.0, ingredients = listOf(dal, oil)), onEvent = {}) }
+    }
+}
+
+@PhonePreviews
+@Composable
+private fun PlanPreview() {
+    val today = java.time.LocalDate.of(2026, 10, 27)
+    val rows = listOf(
+        MealPlanEntryEntity("1", today, "BREAKFAST", "usda:1", "Idli", 120.0, "3 pieces", """{"kcal":128.0}""", logged = true),
+        MealPlanEntryEntity("2", today, "LUNCH", "usda:2", "Dal tadka", 150.0, null, """{"kcal":120.0}""", logged = false),
+    )
+    AwakenTheme(reduceMotion = true) {
+        Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) { PlanContent(today, today, rows, previewDietState().slots, onEvent = {}) }
     }
 }

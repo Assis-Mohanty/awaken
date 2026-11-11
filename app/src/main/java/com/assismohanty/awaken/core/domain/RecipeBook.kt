@@ -38,6 +38,8 @@ data class RecipeDetail(
     val note: String?,
     val recipe: Recipe,
     val ingredientNames: List<String>,
+    /** The ingredients as they were added, so the editor can change them. */
+    val ingredients: List<IngredientDraft> = emptyList(),
 ) {
     val perServing: Nutrients get() = RecipeMath.perServing(recipe)
     val per100: Nutrients get() = RecipeMath.per100Cooked(recipe)
@@ -97,6 +99,7 @@ class RecipeBook @Inject constructor(
             note = entity.note,
             recipe = Recipe(rows.map { RecipeIngredient(FoodCatalog.nutrientsFromJson(it.nutrientsJson), it.grams) }, entity.servings, entity.cookedGrams),
             ingredientNames = rows.map { it.name },
+            ingredients = rows.map { IngredientDraft(it.foodId, it.name, it.grams, FoodCatalog.nutrientsFromJson(it.nutrientsJson)) },
         )
     }
 

@@ -109,6 +109,7 @@ fun DietScreen(state: DietUiState, onEvent: (DietEvent) -> Unit, modifier: Modif
         }
         Text(lexString(R.string.diet_tracker_note), style = AwakenTheme.type.caption, color = colors.textMuted)
     }
+    state.recipeForm?.let { RecipeEditorSheet(it, onEvent) }
     state.search?.let { FoodSearchSheet(it, state.slots, state.savedMeals, onEvent) }
     state.prompt?.let { PromptSheet(it, state.note, onEvent) }
     state.amount?.let { AmountSheet(it, state.slots, onEvent) }
@@ -120,6 +121,8 @@ fun DietScreen(state: DietUiState, onEvent: (DietEvent) -> Unit, modifier: Modif
         Panel.FASTING -> FastingSheet(state.fast, onEvent)
         Panel.WATER -> state.plan?.let { WaterTargetSheet(it.waterTargetMl, onEvent) }
         Panel.REMINDERS -> RemindersSheet(state.slots, state.reminders, onEvent)
+        Panel.RECIPES -> RecipesSheet(state.recipes, onEvent)
+        Panel.PLAN -> state.planDate?.let { PlanSheet(it, state.today ?: it, state.planned, state.slots, onEvent) }
         null -> Unit
     }
 }
@@ -285,6 +288,8 @@ private fun Diary(state: DietUiState, plan: DietPlan, onEvent: (DietEvent) -> Un
     FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.xs), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
         SecondaryButton(text = lexString(R.string.diet_weight_button), onClick = { onEvent(DietEvent.OpenPanel(Panel.WEIGHT)) })
         SecondaryButton(text = lexString(R.string.diet_nutrients_button), onClick = { onEvent(DietEvent.OpenPanel(Panel.NUTRIENTS)) })
+        SecondaryButton(text = lexString(R.string.diet_recipes_button), onClick = { onEvent(DietEvent.OpenPanel(Panel.RECIPES)) })
+        SecondaryButton(text = lexString(R.string.diet_plan_button), onClick = { onEvent(DietEvent.OpenPanel(Panel.PLAN)) })
         SecondaryButton(text = lexString(R.string.diet_reminders_button), onClick = { onEvent(DietEvent.OpenPanel(Panel.REMINDERS)) })
         SecondaryButton(text = lexString(R.string.diet_report_button), onClick = { onEvent(DietEvent.OpenPanel(Panel.REPORT)) })
         if (plan.targetsVisible) SecondaryButton(text = lexString(R.string.diet_fast_button), onClick = { onEvent(DietEvent.OpenPanel(Panel.FASTING)) })

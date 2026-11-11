@@ -8,7 +8,16 @@ import com.assismohanty.awaken.core.data.catalog.Portion
 import com.assismohanty.awaken.core.data.db.entity.FoodLogEntity
 import com.assismohanty.awaken.core.data.db.entity.EntrySource
 import com.assismohanty.awaken.core.data.repo.MealReminderStore
+import com.assismohanty.awaken.core.data.db.entity.MealPlanEntryEntity
+import com.assismohanty.awaken.core.data.db.entity.RecipeEntity
 import com.assismohanty.awaken.core.domain.BodyLog
+import com.assismohanty.awaken.core.domain.IngredientDraft
+import com.assismohanty.awaken.core.domain.RecipeBook
+import com.assismohanty.awaken.core.domain.RecipeDraft
+import com.assismohanty.awaken.core.domain.RecipeSaveResult
+import com.assismohanty.awaken.engine.body.Recipe
+import com.assismohanty.awaken.engine.body.RecipeIngredient
+import com.assismohanty.awaken.engine.body.RecipeMath
 import com.assismohanty.awaken.core.domain.DietReminderScheduling
 import com.assismohanty.awaken.core.domain.CustomFoodDraft
 import com.assismohanty.awaken.core.domain.CustomFoodResult
@@ -103,7 +112,35 @@ data class SetupForm(
 }
 
 /** What a blank search shows: what was logged lately, or the starred foods. */
-enum class SearchTab { RECENT, FAVOURITES, MEALS }
+enum class SearchTab { RECENT, FAVOURITES, MEALS, RECIPES }
+
+/** What a food search is for: the diary, an ingredient of the recipe being built, or the meal plan. */
+enum class SearchMode { DIARY, RECIPE, PLAN }
+
+/** A recipe being built. Numbers come from `:engine` [RecipeMath]; nothing is computed here. */
+data class RecipeForm(
+    val id: String? = null,
+    val name: String = "",
+    val servings: Double = 1.0,
+    /** 0 means not set: the raw total is used. */
+    val cookedGrams: Double = 0.0,
+    val ingredients: List<IngredientDraft> = emptyList(),
+    val error: RecipeSaveResult? = null,
+) {
+    private val recipe: Recipe?
+        get() = if (ingredients.isEmpty() || servings <= 0.0) null else Recipe(ingredients.map { RecipeIngredient(it.per100, it.grams) }, servings, cookedGrams.takeIf { it > 0.0 })
+
+    /** One serving's nutrients, or null until there is an ingredient and a serving count. */
+    val perServing: Nutrients? get() = recipe?.let(RecipeMath::perServing)
+
+    /** The same dish for [newServings]: every ingredient and the cooked weight scale, one serving stays the same. */
+    fun scaledTo(newServings: Double): RecipeForm {
+        val current = recipe ?: return this
+        if (newServings <= 0.0) return this
+        val scaled = current.scaled(newServings / servings)
+        return copy(servings = newServings, cookedGrams = scaled.cookedGrams ?: 0.0, ingredients = ingredients.zip(scaled.ingredients) { draft, ingredient -> draft.copy(grams = ingredient.grams) })
+    }
+}
 
 /** A small input sheet over the diary. */
 sealed interface Prompt {
@@ -116,6 +153,7 @@ sealed interface Prompt {
 data class FoodSearch(
     /** A meal slot id. */
     val meal: String,
+    val mode: SearchMode = SearchMode.DIARY,
     val query: String = "",
     val tab: SearchTab = SearchTab.RECENT,
     val results: List<Food> = emptyList(),
@@ -133,6 +171,7 @@ data class AmountForm(
     val count: Double = 1.0,
     val grams: Double = DEFAULT_GRAMS,
     val favourite: Boolean = false,
+    val mode: SearchMode = SearchMode.DIARY,
     /** Set when editing an existing diary row. */
     val editingRowId: String? = null,
 ) {
@@ -160,10 +199,13 @@ data class DietFlow(
     val prompt: Prompt? = null,
     val panel: Panel? = null,
     val report: WeekReport? = null,
+    val recipeForm: RecipeForm? = null,
+    /** The day the meal plan shows. */
+    val planDate: LocalDate? = null,
 )
 
 /** The panels that open over the diary. */
-enum class Panel { WEIGHT, NUTRIENTS, REPORT, FASTING, WATER, REMINDERS }
+enum class Panel { WEIGHT, NUTRIENTS, REPORT, FASTING, WATER, REMINDERS, RECIPES, PLAN }
 
 /** A fast as the sheet shows it: the stored session and where it stands now. */
 data class FastView(val session: FastingSessionEntity? = null, val state: FastState = FastState.Idle)
@@ -175,7 +217,11 @@ data class Trackers(
     val offer: TrendOffer? = null,
     val trendKg: Double? = null,
     val fast: FastView = FastView(),
+    val planned: List<MealPlanEntryEntity> = emptyList(),
 )
+
+/** What the library flows hand the screen state together. */
+private data class Library(val slots: List<MealSlot>, val saved: List<SavedMealSummary>, val times: Map<String, Int>, val recipes: List<RecipeEntity>)
 
 data class DietUiState(
     val loading: Boolean = true,
@@ -196,6 +242,11 @@ data class DietUiState(
     val fast: FastView = FastView(),
     /** Meal id to reminder minutes after midnight. */
     val reminders: Map<String, Int> = emptyMap(),
+    val recipes: List<RecipeEntity> = emptyList(),
+    val recipeForm: RecipeForm? = null,
+    val planDate: LocalDate? = null,
+    val planned: List<MealPlanEntryEntity> = emptyList(),
+    val today: LocalDate? = null,
     /** Share of the day's calories from foods with a value, per nutrient (null when nothing is logged). */
     val coverage: Map<Nutrient, Double?> = emptyMap(),
     val setup: SetupForm? = null,
@@ -227,6 +278,21 @@ sealed interface DietEvent {
     data class SetWaterTarget(val ml: Int?) : DietEvent
     data object UndoWater : DietEvent
     data class SetReminder(val mealId: String, val minutes: Int?) : DietEvent
+
+    data object NewRecipe : DietEvent
+    data class EditRecipe(val id: String) : DietEvent
+    data class RecipeChanged(val change: (RecipeForm) -> RecipeForm) : DietEvent
+    data object AddIngredient : DietEvent
+    data class RemoveIngredient(val index: Int) : DietEvent
+    data class ScaleRecipe(val servings: Double) : DietEvent
+    data object SaveRecipe : DietEvent
+    data class DeleteRecipe(val id: String) : DietEvent
+    data object CloseRecipe : DietEvent
+
+    data class PlanDay(val date: LocalDate) : DietEvent
+    data object AddToPlan : DietEvent
+    data class LogPlanned(val id: String, val date: LocalDate) : DietEvent
+    data class RemovePlanned(val id: String) : DietEvent
     data class LogWeight(val kg: Double) : DietEvent
     data class DeleteWeight(val id: String) : DietEvent
     data class LogMeasure(val kind: MeasureKind, val cm: Double) : DietEvent
@@ -274,32 +340,36 @@ class DietViewModel @Inject constructor(
     private val bodyLog: BodyLog,
     private val mealReminders: MealReminderStore,
     private val reminders: DietReminderScheduling,
+    private val recipeBook: RecipeBook,
 ) : ViewModel() {
 
     private val flow = MutableStateFlow(DietFlow())
 
     val uiState: StateFlow<DietUiState> = combine(
         diet.observePlan(),
-        combine(foodLibrary.observeMealSlots(), foodLibrary.observeSavedMeals(), mealReminders.reminders) { slots, saved, times -> Triple(slots, saved, times) },
+        combine(foodLibrary.observeMealSlots(), foodLibrary.observeSavedMeals(), mealReminders.reminders, recipeBook.observeRecipes()) { slots, saved, times, recipes -> Library(slots, saved, times, recipes) },
         flow.map { it.date }.distinctUntilChanged().flatMapLatest { date ->
             date?.let { d -> combine(diet.observeDay(d), bodyLog.observeNote(d)) { day, note -> day to note?.text } } ?: flowOf(null)
         },
-        flow.map { it.date }.distinctUntilChanged().flatMapLatest { date ->
+        flow.map { it.date to it.planDate }.distinctUntilChanged().flatMapLatest { (date, planDate) ->
             if (date == null) {
                 flowOf(Trackers())
             } else {
-                combine(bodyLog.observeWaterMl(date), bodyLog.observeWeights(date.minusDays(WEIGHT_DAYS)), diet.observePlan(), fastView()) { water, weights, _, fast ->
+                combine(
+                    bodyLog.observeWaterMl(date), bodyLog.observeWeights(date.minusDays(WEIGHT_DAYS)), diet.observePlan(), fastView(),
+                    planDate?.let(bodyLog::observePlan) ?: flowOf(emptyList()),
+                ) { water, weights, _, fast, planned ->
                     val today = flow.value.today ?: date
                     Trackers(
                         water, weights.sortedByDescending { it.loggedAt }, bodyLog.trendOffer(today),
-                        WeightTrend.trend(weights.map { WeighIn(it.gameDate, it.weightKg) }, today), fast,
+                        WeightTrend.trend(weights.map { WeighIn(it.gameDate, it.weightKg) }, today), fast, planned,
                     )
                 }
             }
         },
         flow,
     ) { plan, library, dayAndNote, trackers, f ->
-        val (slots, saved, times) = library
+        val (slots, saved, times, recipes) = library
         DietUiState(
             loading = f.date == null,
             date = f.date ?: LocalDate.MIN,
@@ -309,6 +379,11 @@ class DietViewModel @Inject constructor(
             slots = slots,
             savedMeals = saved,
             reminders = times,
+            recipes = recipes,
+            recipeForm = f.recipeForm,
+            planDate = f.planDate,
+            planned = trackers.planned,
+            today = f.today,
             note = dayAndNote?.second,
             prompt = f.prompt,
             offer = trackers.offer,
@@ -357,7 +432,7 @@ class DietViewModel @Inject constructor(
             DietEvent.AcceptTrend -> viewModelScope.launch { uiState.value.offer?.let { bodyLog.acceptTrend(it) } }
             DietEvent.DismissTrend -> viewModelScope.launch { bodyLog.dismissTrend(flow.value.today ?: diet.today()) }
             is DietEvent.OpenPanel -> {
-                flow.update { it.copy(panel = event.panel) }
+                flow.update { f -> f.copy(panel = event.panel, planDate = if (event.panel == Panel.PLAN) f.planDate ?: f.today else f.planDate) }
                 if (event.panel == Panel.REPORT) viewModelScope.launch {
                     val end = flow.value.today ?: diet.today()
                     val report = DietReport.week(diet.week(end))
@@ -408,7 +483,7 @@ class DietViewModel @Inject constructor(
                 val meal = flow.value.search?.meal ?: FALLBACK_MEAL
                 val portions = event.food.portions.ifEmpty { diet.portionsOf(event.food.id) }
                 val favourite = event.food.id in foodLibrary.observeFavouriteIds().first()
-                flow.update { it.copy(amount = AmountForm(event.food, meal, portions, favourite = favourite)) }
+                flow.update { it.copy(amount = AmountForm(event.food, meal, portions, favourite = favourite, mode = flow.value.search?.mode ?: SearchMode.DIARY)) }
             }
             DietEvent.OpenCustomFood -> flow.update { f -> f.copy(search = f.search?.copy(showCustomForm = true)) }
             DietEvent.CloseCustomFood -> flow.update { f -> f.copy(search = f.search?.copy(showCustomForm = false)) }
@@ -417,7 +492,7 @@ class DietViewModel @Inject constructor(
                     is CustomFoodResult.Invalid -> flow.update { f -> f.copy(search = f.search?.copy(customError = result.reason)) }
                     is CustomFoodResult.Saved -> {
                         val meal = flow.value.search?.meal ?: FALLBACK_MEAL
-                        flow.update { f -> f.copy(search = f.search?.copy(showCustomForm = false, customError = null), amount = AmountForm(result.food, meal, result.food.portions)) }
+                        flow.update { f -> f.copy(search = f.search?.copy(showCustomForm = false, customError = null), amount = AmountForm(result.food, meal, result.food.portions, mode = flow.value.search?.mode ?: SearchMode.DIARY)) }
                     }
                 }
             }
@@ -481,6 +556,17 @@ class DietViewModel @Inject constructor(
                 val form = flow.value.amount ?: return@launch
                 if (!form.valid) return@launch
                 val editing = form.editingRowId
+                if (form.mode == SearchMode.RECIPE) {
+                    val ingredient = IngredientDraft(form.food.id, form.food.name, form.totalGrams, form.food.per100)
+                    flow.update { f -> f.copy(recipeForm = f.recipeForm?.copy(ingredients = f.recipeForm.ingredients + ingredient, error = null), amount = null, search = null) }
+                    return@launch
+                }
+                if (form.mode == SearchMode.PLAN) {
+                    val date = flow.value.planDate ?: return@launch
+                    bodyLog.plan(flow.value.today ?: diet.today(), date, form.meal, form.food, form.totalGrams, form.portionLabel)
+                    flow.update { it.copy(amount = null, search = null) }
+                    return@launch
+                }
                 if (editing != null) {
                     diet.updateLog(editing, form.totalGrams, form.meal, form.portionLabel)
                 } else {
@@ -488,6 +574,41 @@ class DietViewModel @Inject constructor(
                 }
                 flow.update { it.copy(amount = null, search = null) }
             }
+            DietEvent.NewRecipe -> flow.update { it.copy(recipeForm = RecipeForm()) }
+            is DietEvent.EditRecipe -> viewModelScope.launch {
+                val detail = recipeBook.detail(event.id) ?: return@launch
+                val form = RecipeForm(detail.id, detail.name, detail.recipe.servings, detail.recipe.cookedGrams ?: 0.0, detail.ingredients)
+                flow.update { it.copy(recipeForm = form) }
+            }
+            is DietEvent.RecipeChanged -> flow.update { f -> f.copy(recipeForm = f.recipeForm?.let(event.change)) }
+            DietEvent.AddIngredient -> {
+                flow.update { it.copy(search = FoodSearch(FALLBACK_MEAL, SearchMode.RECIPE)) }
+                refreshSearch()
+            }
+            is DietEvent.RemoveIngredient -> flow.update { f -> f.copy(recipeForm = f.recipeForm?.let { r -> r.copy(ingredients = r.ingredients.filterIndexed { i, _ -> i != event.index }) }) }
+            is DietEvent.ScaleRecipe -> flow.update { f -> f.copy(recipeForm = f.recipeForm?.scaledTo(event.servings)) }
+            DietEvent.SaveRecipe -> viewModelScope.launch {
+                val form = flow.value.recipeForm ?: return@launch
+                val result = recipeBook.save(RecipeDraft(form.id, form.name, form.servings, form.cookedGrams.takeIf { it > 0.0 }, null, form.ingredients))
+                flow.update { f -> f.copy(recipeForm = if (result is RecipeSaveResult.Saved) null else f.recipeForm?.copy(error = result)) }
+            }
+            is DietEvent.DeleteRecipe -> viewModelScope.launch {
+                recipeBook.delete(event.id)
+                flow.update { it.copy(recipeForm = null) }
+            }
+            DietEvent.CloseRecipe -> flow.update { it.copy(recipeForm = null) }
+
+            is DietEvent.PlanDay -> flow.update { f ->
+                val today = f.today ?: event.date
+                f.copy(planDate = event.date.coerceIn(today, today.plusDays(BodyLog.MAX_PLAN_DAYS)))
+            }
+            DietEvent.AddToPlan -> {
+                flow.update { it.copy(search = FoodSearch("BREAKFAST", SearchMode.PLAN)) }
+                refreshSearch()
+            }
+            is DietEvent.LogPlanned -> viewModelScope.launch { bodyLog.logPlanned(event.id, event.date) }
+            is DietEvent.RemovePlanned -> viewModelScope.launch { bodyLog.removePlanned(event.id) }
+
             DietEvent.DeleteEntry -> viewModelScope.launch {
                 flow.value.amount?.editingRowId?.let { diet.deleteLog(it) }
                 flow.update { it.copy(amount = null) }
@@ -532,6 +653,7 @@ class DietViewModel @Inject constructor(
             val results = when {
                 search.query.isNotBlank() -> foodSearch.search(search.query, today())
                 search.tab == SearchTab.FAVOURITES -> foodSearch.favourites()
+                search.tab == SearchTab.RECIPES -> recipeBook.allFoods()
                 else -> foodSearch.recent()
             }
             flow.update { f -> if (f.search?.query == search.query && f.search.tab == search.tab) f.copy(search = f.search.copy(results = results)) else f }
