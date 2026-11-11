@@ -48,6 +48,8 @@ espressoCore = "3.7.0"
 # Barcode scanner (Diet v2, docs/diet/PLAN.md section 6): ZXing decodes on the phone, CameraX only feeds it frames. No network, no Google services.
 camerax = "1.6.2"
 zxing = "3.5.4"
+# Offline text reading for the nutrition-label photo (Tesseract, Apache 2.0). Only on JitPack; settings.gradle.kts limits that repository to this group.
+tesseract4android = "4.9.0"
 
 [libraries]
 # AndroidX core
@@ -64,6 +66,7 @@ androidx-camera-camera2 = { group = "androidx.camera", name = "camera-camera2", 
 androidx-camera-lifecycle = { group = "androidx.camera", name = "camera-lifecycle", version.ref = "camerax" }
 androidx-camera-view = { group = "androidx.camera", name = "camera-view", version.ref = "camerax" }
 zxing-core = { group = "com.google.zxing", name = "core", version.ref = "zxing" }
+tesseract4android = { group = "cz.adaptech.tesseract4android", name = "tesseract4android", version.ref = "tesseract4android" }
 
 # Compose (versions from BOM)
 androidx-compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "composeBom" }

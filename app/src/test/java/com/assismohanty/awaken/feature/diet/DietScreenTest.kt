@@ -43,7 +43,7 @@ class DietScreenTest {
 
     @Test
     fun setupThenLogAFood() {
-        val viewModel = DietViewModel(graph.diet, graph.foodSearch, graph.foodLibrary, graph.bodyLog, graph.uiPrefs, NoDietReminders, graph.recipeBook, LoadHealthOverviewUseCase(graph.db.hunterDao(), graph.health, FakePhoneStepsGateway(), graph.clock), graph.lookUpBarcode)
+        val viewModel = DietViewModel(graph.diet, graph.foodSearch, graph.foodLibrary, graph.bodyLog, graph.uiPrefs, NoDietReminders, graph.recipeBook, LoadHealthOverviewUseCase(graph.db.hunterDao(), graph.health, FakePhoneStepsGateway(), graph.clock), graph.lookUpBarcode, com.assismohanty.awaken.testing.FakeLabelReader())
         composeRule.setContent {
             AwakenTheme(reduceMotion = true) {
                 val state by viewModel.uiState.collectAsState()

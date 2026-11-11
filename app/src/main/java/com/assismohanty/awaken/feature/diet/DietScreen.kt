@@ -114,6 +114,7 @@ fun DietScreen(state: DietUiState, onEvent: (DietEvent) -> Unit, modifier: Modif
     }
     state.recipeForm?.let { RecipeEditorSheet(it, onEvent) }
     state.scan?.let { ScannerHost(it, onEvent) }
+    state.labelPhoto?.let { LabelPhotoHost(it, onEvent) }
     state.search?.let { FoodSearchSheet(it, state.slots, state.savedMeals, onEvent) }
     state.prompt?.let { PromptSheet(it, state.note, onEvent) }
     state.amount?.let { AmountSheet(it, state.slots, onEvent) }

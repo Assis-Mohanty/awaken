@@ -54,9 +54,9 @@ import com.assismohanty.awaken.engine.body.Nutrients
 /** What the phone allows the scanner to do. */
 enum class CameraAccess { NO_CAMERA, ASK, DENIED, READY }
 
-/** The scanner over the diary: asks for the camera once, then reads codes from the live preview (Diet v2 plan section 6). */
+/** Whether the camera can be used, with the two ways out when it can not: ask for the permission, or open the phone settings. */
 @Composable
-fun ScannerHost(scan: ScanState, onEvent: (DietEvent) -> Unit) {
+fun rememberCameraAccess(): Triple<CameraAccess, () -> Unit, () -> Unit> {
     val context = LocalContext.current
     val hasCamera = remember { context.packageManager.hasSystemFeature(PackageManager.FEATURE_CAMERA_ANY) }
     var granted by remember { mutableStateOf(ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) }
@@ -65,16 +65,23 @@ fun ScannerHost(scan: ScanState, onEvent: (DietEvent) -> Unit) {
         granted = ok
         asked = true
     }
-    val decoder = remember { BarcodeDecoder() }
-    val haptic = LocalHapticFeedback.current
-    LaunchedEffect(scan) {
-        if (scan is ScanState.Found || scan is ScanState.NotFound) haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-    }
     val access = when {
         !hasCamera -> CameraAccess.NO_CAMERA
         granted -> CameraAccess.READY
         asked -> CameraAccess.DENIED
         else -> CameraAccess.ASK
+    }
+    return Triple(access, { launcher.launch(Manifest.permission.CAMERA) }, { openAppSettings(context) })
+}
+
+/** The scanner over the diary: asks for the camera once, then reads codes from the live preview (Diet v2 plan section 6). */
+@Composable
+fun ScannerHost(scan: ScanState, onEvent: (DietEvent) -> Unit) {
+    val (access, askPermission, openSettings) = rememberCameraAccess()
+    val decoder = remember { BarcodeDecoder() }
+    val haptic = LocalHapticFeedback.current
+    LaunchedEffect(scan) {
+        if (scan is ScanState.Found || scan is ScanState.NotFound) haptic.performHapticFeedback(HapticFeedbackType.LongPress)
     }
     Dialog(onDismissRequest = { onEvent(DietEvent.CloseScanner) }, properties = DialogProperties(usePlatformDefaultWidth = false, dismissOnClickOutside = false)) {
         BarcodeScannerScreen(
@@ -83,8 +90,8 @@ fun ScannerHost(scan: ScanState, onEvent: (DietEvent) -> Unit) {
             viewfinder = { modifier ->
                 ScanViewfinder(onFrame = { luma, w, h -> decoder.decode(luma, w, h)?.let { onEvent(DietEvent.BarcodeRead(it)) } }, modifier = modifier)
             },
-            onAskPermission = { launcher.launch(Manifest.permission.CAMERA) },
-            onOpenSettings = { openAppSettings(context) },
+            onAskPermission = askPermission,
+            onOpenSettings = openSettings,
             onEvent = onEvent,
         )
     }
@@ -162,7 +169,8 @@ private fun ScanResultPanel(scan: ScanState, onEvent: (DietEvent) -> Unit) {
                     SecondaryButton(text = lexString(R.string.diet_scan_online_not_now), onClick = { onEvent(DietEvent.ScanDeclineOnline) }, modifier = Modifier.fillMaxWidth())
                 } else {
                     Text(lexString(notFoundText(scan.online)), style = AwakenTheme.type.body, color = colors.textPrimary)
-                    PrimaryButton(text = lexString(R.string.diet_scan_from_label), onClick = { onEvent(DietEvent.ScanCreate) }, modifier = Modifier.fillMaxWidth())
+                    PrimaryButton(text = lexString(R.string.diet_label_photo_button), onClick = { onEvent(DietEvent.ScanLabelPhoto) }, modifier = Modifier.fillMaxWidth())
+                    SecondaryButton(text = lexString(R.string.diet_scan_from_label), onClick = { onEvent(DietEvent.ScanCreate) }, modifier = Modifier.fillMaxWidth())
                     QuietButton(text = lexString(R.string.diet_scan_again), onClick = { onEvent(DietEvent.ScanAgain) })
                 }
             }

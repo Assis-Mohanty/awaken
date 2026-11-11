@@ -24,6 +24,10 @@ Food and nutrient data
   Indian dishes marked "Estimate" are calculated by AWAKEN from its own recipes and the ingredient data above.
   Home cooking varies, so treat them as a guide. Values are for information only, not medical advice.
 
+Nutrition-label reading
+  Tesseract OCR (Apache License 2.0) with the English language data "tessdata_fast", through Tesseract4Android, reads a photo
+  of a nutrition table on the phone. The photo is never saved or sent. Licence texts: see Apache2_Tesseract_OCR.txt.
+
 Strength benchmarks
   OpenPowerlifting - https://www.openpowerlifting.org - https://gitlab.com/openpowerlifting/opl-data
   Data released to the public domain (copyright waived). Used offline as percentile tables (bulk file 2026-11-07).

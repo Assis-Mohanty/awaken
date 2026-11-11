@@ -15,7 +15,11 @@ import com.assismohanty.awaken.core.data.db.entity.MealPlanEntryEntity
 import com.assismohanty.awaken.core.data.db.entity.RecipeEntity
 import com.assismohanty.awaken.core.domain.BodyLog
 import com.assismohanty.awaken.core.data.food.OpenFoodFactsClient
+import android.graphics.Bitmap
 import com.assismohanty.awaken.core.domain.BarcodeResult
+import com.assismohanty.awaken.core.scan.LabelReader
+import com.assismohanty.awaken.engine.body.LabelPlausibility
+import com.assismohanty.awaken.engine.body.NutritionLabelParser
 import com.assismohanty.awaken.core.domain.FoodOrigin
 import com.assismohanty.awaken.core.domain.OnlineStatus
 import com.assismohanty.awaken.core.domain.HealthOverviewResult
@@ -140,6 +144,28 @@ sealed interface ScanState {
     data class NotFound(val barcode: String, val online: OnlineStatus) : ScanState
 }
 
+/** Where reading a photographed nutrition table stands. */
+sealed interface LabelPhotoState {
+    data object Capturing : LabelPhotoState
+    data object Reading : LabelPhotoState
+    data class Failed(val reason: Reason) : LabelPhotoState
+    enum class Reason { NOTHING_READ, NOT_A_TABLE, UNAVAILABLE }
+}
+
+/** What a photographed table filled in for the label form. The hunter checks every number against the pack. */
+data class LabelPrefill(
+    /** Per 100 g: calories, grams, and milligrams for minerals. */
+    val per100: Map<Nutrient, Double>,
+    val servingGrams: Double?,
+    /** Numbers the reader was unsure of, or had to repair. */
+    val unsure: Set<Nutrient>,
+    /** The pack listed only a serving, so the numbers are scaled from it. */
+    val perServingOnly: Boolean,
+    /** Calories, macros and the other values are consistent with each other (`LabelPlausibility`). */
+    val numbersAddUp: Boolean,
+    val complete: Boolean,
+)
+
 /** A recipe being built. Numbers come from `:engine` [RecipeMath]; nothing is computed here. */
 data class RecipeForm(
     val id: String? = null,
@@ -187,6 +213,8 @@ data class FoodSearch(
     val customError: CustomFoodResult.Reason? = null,
     /** A scanned code the form starts with ("add it from the label"). */
     val prefillBarcode: String? = null,
+    /** Numbers read from a photographed nutrition table. */
+    val prefill: LabelPrefill? = null,
 )
 
 /** How much of a food: grams, or a count of one of its household portions. */
@@ -234,6 +262,7 @@ data class DietFlow(
     val planDate: LocalDate? = null,
     val activeKcal: Int? = null,
     val scan: ScanState? = null,
+    val labelPhoto: LabelPhotoState? = null,
 )
 
 /** The panels that open over the diary. */
@@ -282,6 +311,7 @@ data class DietUiState(
     /** Today's active calories from Health Connect, or null when it is off or has none. Display only. */
     val activeKcal: Int? = null,
     val scan: ScanState? = null,
+    val labelPhoto: LabelPhotoState? = null,
     /** Share of the day's calories from foods with a value, per nutrient (null when nothing is logged). */
     val coverage: Map<Nutrient, Double?> = emptyMap(),
     val setup: SetupForm? = null,
@@ -332,6 +362,11 @@ sealed interface DietEvent {
     data object ScanAgain : DietEvent
     data object ScanAccept : DietEvent
     data object ScanCreate : DietEvent
+    data object OpenLabelPhoto : DietEvent
+    data object ScanLabelPhoto : DietEvent
+    data object CloseLabelPhoto : DietEvent
+    data object LabelPhotoRetry : DietEvent
+    data class LabelPhotoTaken(val photo: Bitmap?) : DietEvent
     data object ScanAllowOnline : DietEvent
     data object ScanDeclineOnline : DietEvent
     data class EditPlanned(val entry: MealPlanEntryEntity) : DietEvent
@@ -388,6 +423,7 @@ class DietViewModel @Inject constructor(
     private val recipeBook: RecipeBook,
     private val loadHealth: LoadHealthOverviewUseCase,
     private val lookUpBarcode: LookUpBarcodeUseCase,
+    private val labelReader: LabelReader,
 ) : ViewModel() {
 
     private val flow = MutableStateFlow(DietFlow())
@@ -434,6 +470,7 @@ class DietViewModel @Inject constructor(
             today = f.today,
             activeKcal = f.activeKcal,
             scan = f.scan,
+            labelPhoto = f.labelPhoto,
             note = dayAndNote?.second,
             prompt = f.prompt,
             offer = trackers.offer,
@@ -654,6 +691,14 @@ class DietViewModel @Inject constructor(
                     flow.update { f -> if (f.scan == ScanState.Looking) f.copy(scan = next) else f }
                 }
             }
+            DietEvent.OpenLabelPhoto -> flow.update { it.copy(labelPhoto = LabelPhotoState.Capturing, search = it.search ?: FoodSearch(FALLBACK_MEAL)) }
+            DietEvent.ScanLabelPhoto -> flow.update { f ->
+                val code = (f.scan as? ScanState.NotFound)?.barcode
+                f.copy(scan = null, labelPhoto = LabelPhotoState.Capturing, search = (f.search ?: FoodSearch(FALLBACK_MEAL)).copy(prefillBarcode = code))
+            }
+            DietEvent.CloseLabelPhoto -> flow.update { it.copy(labelPhoto = null) }
+            DietEvent.LabelPhotoRetry -> flow.update { it.copy(labelPhoto = LabelPhotoState.Capturing) }
+            is DietEvent.LabelPhotoTaken -> viewModelScope.launch { readLabelPhoto(event.photo) }
             DietEvent.ScanAllowOnline -> viewModelScope.launch {
                 val missed = flow.value.scan as? ScanState.NotFound ?: return@launch
                 uiPrefs.setOnlineFoodLookup(true)
@@ -777,6 +822,39 @@ class DietViewModel @Inject constructor(
 
     private fun withPreview(form: SetupForm): SetupForm =
         form.copy(preview = form.toSetup(today())?.let { diet.preview(it, today()) })
+
+    /** Reads a photographed table into the label form, or says why it could not. The photo is released as soon as it was read. */
+    private suspend fun readLabelPhoto(photo: Bitmap?) {
+        if (photo == null) {
+            flow.update { it.copy(labelPhoto = LabelPhotoState.Failed(LabelPhotoState.Reason.NOTHING_READ)) }
+            return
+        }
+        flow.update { it.copy(labelPhoto = LabelPhotoState.Reading) }
+        val words = try {
+            labelReader.read(photo)
+        } finally {
+            photo.recycle()
+        }
+        val outcome: LabelPhotoState.Reason? = when {
+            words == null -> LabelPhotoState.Reason.UNAVAILABLE
+            words.isEmpty() -> LabelPhotoState.Reason.NOTHING_READ
+            else -> null
+        }
+        val parsed = if (outcome == null) NutritionLabelParser.parse(words.orEmpty()) else null
+        if (outcome != null || parsed == null) {
+            flow.update { it.copy(labelPhoto = LabelPhotoState.Failed(outcome ?: LabelPhotoState.Reason.NOT_A_TABLE)) }
+            return
+        }
+        val values = parsed.per100
+        val verdict = LabelPlausibility.check(
+            LabelPlausibility.Label(
+                kcal = values[Nutrient.KCAL], protein = values[Nutrient.PROTEIN], carbs = values[Nutrient.CARBS], fat = values[Nutrient.FAT],
+                sugars = values[Nutrient.SUGARS], satFat = values[Nutrient.SAT_FAT], fiber = values[Nutrient.FIBER], sodiumMg = values[Nutrient.SODIUM],
+            ),
+        )
+        val prefill = LabelPrefill(values, parsed.servingGrams, parsed.unsure, parsed.perServingOnly, verdict is LabelPlausibility.Verdict.Accepted, parsed.isComplete)
+        flow.update { f -> f.copy(labelPhoto = null, search = (f.search ?: FoodSearch(FALLBACK_MEAL)).copy(showCustomForm = true, prefill = prefill)) }
+    }
 
     private suspend fun savedCopy(found: ScanState.Found): ScanState.Found? {
         val draft = CustomFoodDraft(

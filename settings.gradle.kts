@@ -19,6 +19,12 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
+        // Tesseract4Android (offline text reading for the nutrition-label photo) is published only on JitPack. This repository is
+        // allowed to supply that one group and nothing else, so no other dependency can come from it.
+        exclusiveContent {
+            forRepository { maven { url = uri("https://jitpack.io") } }
+            filter { includeGroup("cz.adaptech.tesseract4android") }
+        }
     }
 }
 

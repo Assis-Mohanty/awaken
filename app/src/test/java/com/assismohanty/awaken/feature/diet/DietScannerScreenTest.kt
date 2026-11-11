@@ -109,9 +109,10 @@ class DietScannerScreenTest {
     fun aMissOffersTheLabelFormAndScanningAgain() {
         screen(ScanState.NotFound("5901234123457", OnlineStatus.NOT_LISTED))
         composeRule.onNodeWithText("Code 5901234123457").assertExists()
+        composeRule.onNodeWithText("Photograph the nutrition table").performClick()
         composeRule.onNodeWithText("Add it from the label").performClick()
         composeRule.onNodeWithText("Scan again").performClick()
-        assertThat(events).containsExactly(DietEvent.ScanCreate, DietEvent.ScanAgain).inOrder()
+        assertThat(events).containsExactly(DietEvent.ScanLabelPhoto, DietEvent.ScanCreate, DietEvent.ScanAgain).inOrder()
     }
 
     @Test

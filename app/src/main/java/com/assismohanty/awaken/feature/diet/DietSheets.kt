@@ -116,7 +116,7 @@ fun FoodSearchContent(search: FoodSearch, slots: List<MealSlot>, savedMeals: Lis
     val colors = AwakenTheme.colors
     SheetTitle(lexString(R.string.diet_search_title, mealLabel(search.meal, slots)))
     if (search.showCustomForm) {
-        CustomFoodForm(search.customError, search.prefillBarcode, onEvent)
+        CustomFoodForm(search.customError, search.prefillBarcode, search.prefill, onEvent)
         return
     }
     OutlinedTextField(
@@ -159,6 +159,7 @@ fun FoodSearchContent(search: FoodSearch, slots: List<MealSlot>, savedMeals: Lis
     }
     if (!blank && search.results.isEmpty()) Text(lexString(R.string.diet_search_none_title), style = AwakenTheme.type.label, color = colors.textPrimary)
     SecondaryButton(text = lexString(R.string.diet_custom_create), onClick = { onEvent(DietEvent.OpenCustomFood) }, modifier = Modifier.fillMaxWidth())
+    if (!blank && search.results.isEmpty()) SecondaryButton(text = lexString(R.string.diet_label_photo_button), onClick = { onEvent(DietEvent.OpenLabelPhoto) }, modifier = Modifier.fillMaxWidth())
     if (search.mode == SearchMode.DIARY) SecondaryButton(text = lexString(R.string.diet_quick_add), onClick = { onEvent(DietEvent.OpenPrompt(Prompt.QuickAdd(search.meal))) }, modifier = Modifier.fillMaxWidth())
 }
 
@@ -436,12 +437,13 @@ private val CUSTOM_FIELDS = listOf(
 )
 
 @Composable
-private fun CustomFoodForm(error: CustomFoodResult.Reason?, prefillBarcode: String?, onEvent: (DietEvent) -> Unit) {
+private fun CustomFoodForm(error: CustomFoodResult.Reason?, prefillBarcode: String?, prefill: LabelPrefill?, onEvent: (DietEvent) -> Unit) {
     val colors = AwakenTheme.colors
     var name by rememberSaveable { mutableStateOf("") }
-    var values by remember { mutableStateOf(emptyMap<Nutrient, Double>()) }
-    var portionLabel by rememberSaveable { mutableStateOf("") }
-    var portionGrams by remember { mutableStateOf(0.0) }
+    var values by remember(prefill) { mutableStateOf(prefill?.per100?.filterKeys { it in CUSTOM_FIELDS }.orEmpty()) }
+    val servingLabelText = lexString(R.string.diet_custom_serving_label)
+    var portionLabel by rememberSaveable(prefill) { mutableStateOf(if (prefill?.servingGrams != null) servingLabelText else "") }
+    var portionGrams by remember(prefill) { mutableStateOf(prefill?.servingGrams ?: 0.0) }
     var brand by rememberSaveable { mutableStateOf("") }
     var barcode by rememberSaveable { mutableStateOf(prefillBarcode.orEmpty()) }
     var kilojoules by rememberSaveable { mutableStateOf(false) }
@@ -450,6 +452,12 @@ private fun CustomFoodForm(error: CustomFoodResult.Reason?, prefillBarcode: Stri
     var servingGrams by remember { mutableStateOf(0.0) }
     val servingLabel = lexString(R.string.diet_custom_serving_label)
     Text(lexString(R.string.diet_custom_title), style = AwakenTheme.type.title, color = colors.textPrimary)
+    if (prefill != null) {
+        Text(lexString(R.string.diet_form_from_photo), style = AwakenTheme.type.body, color = colors.textPrimary)
+        if (prefill.perServingOnly) Text(lexString(R.string.diet_form_per_serving_scaled), style = AwakenTheme.type.caption, color = colors.textPrimary)
+        if (!prefill.numbersAddUp) Text(lexString(R.string.diet_form_not_adding_up), style = AwakenTheme.type.caption, color = colors.textPrimary)
+        if (!prefill.complete) Text(lexString(R.string.diet_form_incomplete), style = AwakenTheme.type.caption, color = colors.textPrimary)
+    }
     OutlinedTextField(
         value = name,
         onValueChange = { name = it.take(MAX_NAME) },
@@ -502,6 +510,7 @@ private fun CustomFoodForm(error: CustomFoodResult.Reason?, prefillBarcode: Stri
                 suffix = unit,
             )
         }
+        if (prefill != null && nutrient in prefill.unsure) Text(lexString(R.string.diet_form_check), style = AwakenTheme.type.caption, color = colors.accent)
     }
     LabeledRow(R.string.diet_custom_salt) {
         NumberField(value = salt, onValueChange = { salt = it }, description = lexString(R.string.diet_custom_salt), suffix = lexString(R.string.nutrient_unit_g))

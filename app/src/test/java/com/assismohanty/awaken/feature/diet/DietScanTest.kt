@@ -51,6 +51,7 @@ class DietScanTest {
     private fun viewModel() = DietViewModel(
         graph.diet, graph.foodSearch, graph.foodLibrary, graph.bodyLog, graph.uiPrefs, NoDietReminders, graph.recipeBook,
         LoadHealthOverviewUseCase(graph.db.hunterDao(), graph.health, FakePhoneStepsGateway(), graph.clock), graph.lookUpBarcode,
+        com.assismohanty.awaken.testing.FakeLabelReader(),
     )
 
     private suspend fun DietViewModel.until(condition: (DietUiState) -> Boolean): DietUiState = withTimeout(TIMEOUT_MS) { uiState.first(condition) }
