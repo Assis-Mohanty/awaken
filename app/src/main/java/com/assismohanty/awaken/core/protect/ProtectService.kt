@@ -65,7 +65,16 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 import timber.log.Timber
+
+/**
+ * Waits for the screen to be on and unlocked. [active] follows three broadcasts; one can be missed, so the state is read
+ * again with [read] every [recheckMs] instead of waiting for a broadcast that may never come.
+ */
+internal suspend fun awaitActive(active: MutableStateFlow<Boolean>, recheckMs: Long, read: () -> Boolean) {
+    while (withTimeoutOrNull(recheckMs) { active.first { it } } == null) active.value = read()
+}
 
 /**
  * Pause's foreground service (GD §19.1). It exists only while there is something to watch: Pause on, an app chosen, both
@@ -144,8 +153,6 @@ class ProtectService : Service() {
         override fun show(request: PauseRequest) {
             holdBehind(true)
             pausedPackage = request.packageName
-            // The overlay alone leaves the app running (a reel keeps playing and nothing can mute it), so AWAKEN comes to the front under it.
-            bringAwakenToFront()
             scope.launch { present(request) }
         }
 
@@ -165,10 +172,15 @@ class ProtectService : Service() {
         override fun cover(cover: LockdownCover) {
             // Just after the hunter opened an allowed app from the screen, the launcher is still the app in front: leave it be.
             if (Duration.between(openedAllowedAt, clock.now()).toMillis() < OPEN_GRACE_MS) return
+            // A cover that failed to appear holds nothing; the watcher asks for it again on its next look.
+            if (lockdownOverlay?.show(CoverShown(sessionUi(cover.remaining), isDark(lastPrefs.themeMode), lastPrefs.reduceMotion)) != true) {
+                Timber.w("The Lockdown screen could not be shown")
+                holdBehind(false, "lockdown")
+                return
+            }
             holdBehind(true, "lockdown")
             // Same as Pause: the overlay alone leaves the app playing, so AWAKEN's own session screen comes forward and the app stops.
             if (cover.packageName != null && cover.packageName != packageName) bringAwakenToFront()
-            lockdownOverlay?.show(CoverShown(sessionUi(cover.remaining), isDark(lastPrefs.themeMode), lastPrefs.reduceMotion))
         }
 
         override fun uncover() {
@@ -179,11 +191,16 @@ class ProtectService : Service() {
 
     private val focusScreen = object : FocusLockScreen {
         override fun cover(cover: FocusCover) {
+            focusBlocked = cover.packageName
+            // A cover that failed to appear holds nothing; the watcher asks for it again on its next look.
+            if (focusOverlay?.show(FocusShown(cover, labelOf(cover.packageName), appIcons.icon(cover.packageName), isDark(lastPrefs.themeMode), lastPrefs.reduceMotion)) != true) {
+                Timber.w("The Focus Lock cover could not be shown")
+                holdBehind(false, "focus")
+                return
+            }
             holdBehind(true, "focus")
             // Same as Pause: the cover alone leaves the app playing, so AWAKEN comes forward under it and the app stops.
             if (cover.packageName != packageName) bringAwakenToFront()
-            focusBlocked = cover.packageName
-            focusOverlay?.show(FocusShown(cover, labelOf(cover.packageName), appIcons.icon(cover.packageName), isDark(lastPrefs.themeMode), lastPrefs.reduceMotion))
         }
 
         override fun uncover() {
@@ -197,7 +214,6 @@ class ProtectService : Service() {
 
     override fun onCreate() {
         super.onCreate()
-        controller.onServiceChanged(true)
         overlay = BlockOverlay<Shown>(this, WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY, onBackKey = ::notNow) { model ->
             AwakenTheme(darkTheme = model.darkTheme, reduceMotion = model.reduceMotion) {
                 PauseOverlayContent(model.ui, onNotNow = ::notNow, onContinue = ::continueIn, onIntention = ::pick)
@@ -258,9 +274,11 @@ class ProtectService : Service() {
         val started = runCatching { foreground(lockdownSession) }
         if (started.isFailure) {
             Timber.w(started.exceptionOrNull(), "Pause could not go to the foreground")
+            notifications.notStarted()
             stopSelf()
             return START_NOT_STICKY
         }
+        controller.onServiceChanged(true)
         if (intent?.action == ACTION_TURN_OFF) {
             scope.launch {
                 store.setEnabled(false)
@@ -319,7 +337,7 @@ class ProtectService : Service() {
                 watcher.onScreenOff(screen)
                 lockdownWatcher.onScreenOff(lockdownScreen)
                 focusWatcher.onScreenOff(focusScreen)
-                active.first { it }
+                awaitActive(active, SCREEN_RECHECK_MS, ::isActive)
                 continue
             }
             val now = clock.now()
@@ -346,8 +364,10 @@ class ProtectService : Service() {
             val focusRunning = focusWatcher.sessionRunning()
             if (focusRunning || focusWatcher.isCovering) {
                 if (focusWatcher.poll(focusScreen) == PollResult.NoAccess) {
+                    // The loop never ends while the service lives: the controller stops the service if access is really gone.
                     controller.refresh()
-                    return
+                    delay(STEADY_MS)
+                    continue
                 }
             }
             if (inCall()) {
@@ -356,7 +376,8 @@ class ProtectService : Service() {
                 when (val result = watcher.poll(screen)) {
                     PollResult.NoAccess -> {
                         controller.refresh()
-                        return
+                        delay(STEADY_MS)
+                        continue
                     }
                     is PollResult.Ok -> if (result.changed) fastUntil = now.plusMillis(FAST_WINDOW_MS)
                 }
@@ -447,7 +468,14 @@ class ProtectService : Service() {
         )
         val next = Shown(ui, isDark(prefs.themeMode), prefs.reduceMotion)
         shown = next
-        overlay?.show(next)
+        if (overlay?.show(next) == true) {
+            // The overlay alone leaves the app running (a reel keeps playing and nothing can mute it), so AWAKEN comes to the front under it.
+            bringAwakenToFront()
+        } else {
+            // Nothing covers the app: clear the pause so the hold is let go and the next open is judged afresh.
+            Timber.w("The pause screen could not be shown")
+            watcher.dismiss(screen)
+        }
     }
 
     /**
@@ -587,6 +615,9 @@ class ProtectService : Service() {
 
         /** AWAKEN is brought to the front under a cover at most this often, so two quick opens do not fight. */
         const val REOPEN_MS = 1_000L
+
+        /** While the screen is off, the screen state is read again this often in case a broadcast was missed. */
+        const val SCREEN_RECHECK_MS = 5_000L
 
         /** Lockdown looks at the usage log this often: a gap here is time an app can show uncovered. */
         const val LOCKDOWN_MS = 250L

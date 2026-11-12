@@ -5,9 +5,9 @@ import java.time.ZoneId
 import javax.inject.Inject
 import javax.inject.Singleton
 
-/** Production [Clock] backed by the device wall clock and current time zone. */
+/** Production [Clock] backed by the device wall clock and current time zone; also the [WallClock] in every build. */
 @Singleton
-class SystemClock @Inject constructor() : Clock {
+class SystemClock @Inject constructor() : Clock, WallClock {
     override fun now(): Instant = Instant.now()
 
     // Read on every call so a time-zone change while the app runs is picked up.

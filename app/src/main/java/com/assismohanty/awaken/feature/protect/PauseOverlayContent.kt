@@ -1,8 +1,5 @@
 package com.assismohanty.awaken.feature.protect
 
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.animate
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -23,6 +20,7 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.withFrameMillis
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ImageBitmap
@@ -42,6 +40,7 @@ import com.assismohanty.awaken.core.designsystem.theme.AwakenTheme
 import com.assismohanty.awaken.core.designsystem.theme.Spacing
 import com.assismohanty.awaken.engine.PauseRules
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 /**
  * What the pause screen shows (GD §19.1). [seconds] is how long the screen takes to fill, [line] the one line from the
@@ -78,14 +77,23 @@ fun PauseOverlayContent(
     var done by remember(state.seconds) { mutableStateOf(state.seconds <= 0) }
     LaunchedEffect(state.seconds, state.requireTap, reduceMotion) {
         if (state.seconds > 0) {
-            if (reduceMotion) {
-                for (second in 1..state.seconds) {
-                    delay(ONE_SECOND_MS)
-                    progress = second / state.seconds.toFloat()
+            val totalMs = state.seconds * ONE_SECOND_MS
+            // The fill is only a picture of the clock. It runs on frame times, not an animation, so the phone's animation
+            // scale (0 under "remove animations") cannot end the countdown early; the countdown itself is the delay below.
+            val fill = launch {
+                if (reduceMotion) {
+                    for (second in 1..state.seconds) {
+                        delay(ONE_SECOND_MS)
+                        progress = second / state.seconds.toFloat()
+                    }
+                } else {
+                    val start = withFrameMillis { it }
+                    while (true) progress = ((withFrameMillis { it } - start) / totalMs.toFloat()).coerceAtMost(1f)
                 }
-            } else {
-                animate(0f, 1f, animationSpec = tween(state.seconds * ONE_SECOND_MS.toInt(), easing = LinearEasing)) { value, _ -> progress = value }
             }
+            delay(totalMs)
+            fill.cancel()
+            progress = 1f
         }
         done = true
         if (!state.requireTap) onContinue()

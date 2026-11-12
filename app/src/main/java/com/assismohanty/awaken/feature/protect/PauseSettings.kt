@@ -40,7 +40,9 @@ import com.assismohanty.awaken.core.designsystem.preview.PhonePreviews
 import com.assismohanty.awaken.core.designsystem.theme.AwakenTheme
 import com.assismohanty.awaken.core.designsystem.theme.Spacing
 import com.assismohanty.awaken.core.lock.FocusLockSettingsLauncher
+import com.assismohanty.awaken.core.protect.ProtectServiceStatus
 import com.assismohanty.awaken.core.protect.ProtectSystemAccess
+import com.assismohanty.awaken.core.protect.stalled
 import com.assismohanty.awaken.engine.OemFamily
 import com.assismohanty.awaken.engine.PauseConfig
 import com.assismohanty.awaken.engine.PauseRules
@@ -63,11 +65,18 @@ data class PauseSettingsUiState(
     val notifications: Boolean = false,
     val batteryUnrestricted: Boolean = false,
     val oem: OemFamily = OemFamily.OTHER,
+    /** The watching service should be running but Android has not let it start. */
+    val serviceStalled: Boolean = false,
 ) {
     val permissionsReady: Boolean get() = usageAccess && appearOnTop
 
-    /** Pause is on, an app is chosen and Android allows it: the service is running. */
-    val watching: Boolean get() = settings.config.enabled && settings.config.targets.isNotEmpty() && permissionsReady
+    private val setUp: Boolean get() = settings.config.enabled && settings.config.targets.isNotEmpty() && permissionsReady
+
+    /** Pause is on, an app is chosen, Android allows it, and the service is not stuck. */
+    val watching: Boolean get() = setUp && !serviceStalled
+
+    /** Everything is set up, yet the service is not running: say so instead of "watching". */
+    val notRunning: Boolean get() = setUp && serviceStalled
 }
 
 sealed interface PauseSettingsEvent {
@@ -98,11 +107,12 @@ data class PauseSystemActions(
 class PauseSettingsViewModel @Inject constructor(
     private val store: PauseStore,
     private val access: ProtectSystemAccess,
+    private val service: ProtectServiceStatus,
 ) : ViewModel() {
     private val system = MutableStateFlow(readSystem())
 
-    val uiState: StateFlow<PauseSettingsUiState> = combine(store.settings, system) { settings, checks ->
-        PauseSettingsUiState(settings, checks.usage, checks.overlay, checks.notifications, checks.battery, checks.oem)
+    val uiState: StateFlow<PauseSettingsUiState> = combine(store.settings, system, service.running, service.wanted) { settings, checks, _, _ ->
+        PauseSettingsUiState(settings, checks.usage, checks.overlay, checks.notifications, checks.battery, checks.oem, service.stalled)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), PauseSettingsUiState())
 
     fun onEvent(event: PauseSettingsEvent) {
@@ -204,9 +214,19 @@ fun PauseSettingsScreen(
             SystemWindow(title = null, accent = colors.accent, reveal = false) {
                 SwitchRow(R.string.pause_switch_title, R.string.pause_switch_note, config.enabled) { onEvent(PauseSettingsEvent.SetEnabled(it)) }
                 Text(
-                    lexString(if (state.watching) R.string.pause_ready else R.string.pause_not_ready),
+                    lexString(
+                        when {
+                            state.watching -> R.string.pause_ready
+                            state.notRunning -> R.string.pause_not_running
+                            else -> R.string.pause_not_ready
+                        },
+                    ),
                     style = type.caption,
-                    color = if (state.watching) colors.positive else colors.textSecondary,
+                    color = when {
+                        state.watching -> colors.positive
+                        state.notRunning -> colors.critical
+                        else -> colors.textSecondary
+                    },
                 )
             }
             SystemWindow(title = lexString(R.string.pause_setup_title), accent = colors.accent, reveal = false) {

@@ -104,6 +104,31 @@ class ProtectNotifications @Inject constructor(
         if (granted) NotificationManagerCompat.from(context).notify(ENDED_ID, notification)
     }
 
+    /**
+     * Android refused to start the watching service from the background. Opening AWAKEN lets the next check start it, so
+     * the notice does just that. One notice: posting again replaces it, and [clearNotStarted] takes it away once it runs.
+     */
+    fun notStarted() {
+        ensureChannel()
+        val resources = words.resources(context)
+        val notification = NotificationCompat.Builder(context, CHANNEL_ID)
+            .setSmallIcon(R.drawable.ic_stat_awaken)
+            .setContentTitle(resources.getString(R.string.protect_not_started_title))
+            .setContentText(resources.getString(R.string.protect_not_started_body))
+            .setContentIntent(openApp())
+            .setAutoCancel(true)
+            .setOnlyAlertOnce(true)
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .build()
+        val granted = Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
+            ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
+        if (granted) NotificationManagerCompat.from(context).notify(NOT_STARTED_ID, notification)
+    }
+
+    fun clearNotStarted() {
+        NotificationManagerCompat.from(context).cancel(NOT_STARTED_ID)
+    }
+
     private fun openApp(): PendingIntent = PendingIntent.getActivity(
         context,
         0,
@@ -122,5 +147,6 @@ class ProtectNotifications @Inject constructor(
         const val CHANNEL_ID = "protect"
         const val NOTIFICATION_ID = 806
         private const val ENDED_ID = 807
+        private const val NOT_STARTED_ID = 808
     }
 }

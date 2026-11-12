@@ -3,6 +3,7 @@ package com.assismohanty.awaken.core.protect
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.assismohanty.awaken.core.data.clock.WallClock
 import com.assismohanty.awaken.core.data.usage.ForegroundRead
 import com.assismohanty.awaken.core.data.usage.ResumedApp
 import com.assismohanty.awaken.core.lock.FocusLockDecider
@@ -13,6 +14,7 @@ import com.assismohanty.awaken.engine.model.GateRank
 import com.assismohanty.awaken.engine.model.Stat
 import com.assismohanty.awaken.testing.TestGraph
 import com.google.common.truth.Truth.assertThat
+import java.time.Duration
 import java.time.Instant
 import kotlinx.coroutines.runBlocking
 import org.junit.After
@@ -36,7 +38,10 @@ class FocusLockWatcherTest {
         override fun alwaysAllowed() = emptySet<String>()
         override fun transientWindows() = setOf(context.packageName, KEYBOARD)
     }
-    private val watcher = FocusLockWatcher(graph.usage, decider, graph.clock, apps, context)
+    /** How far the game clock runs ahead of the real one (debug time travel, or the wall clock moving back). */
+    private var ahead: Duration = Duration.ZERO
+    private val wall = WallClock { graph.clock.instant.minus(ahead) }
+    private val watcher = FocusLockWatcher(graph.usage, decider, graph.clock, apps, context, wall)
     private val screen = object : FocusLockScreen {
         val covers = mutableListOf<FocusCover>()
         var uncovers = 0
@@ -112,6 +117,55 @@ class FocusLockWatcherTest {
         watcher.poll(screen)
         assertThat(screen.covers).hasSize(1)
         assertThat(watcher.isCovering).isFalse()
+    }
+
+    @Test
+    fun aBlockedAppStillInFrontAfterLeavingTheCoverIsCoveredAgainAfterTheGrace() = runBlocking<Unit> {
+        open("com.whatsapp")
+        watcher.poll(screen)
+        // Back to focus, but the phone refused to go home: no new event, the app is still in front.
+        watcher.dismissed(screen)
+        graph.usage.foregroundRead = ForegroundRead.NoChange
+        watcher.poll(screen)
+        assertThat(screen.covers).hasSize(1)
+        graph.clock.advance(Duration.ofSeconds(3))
+        watcher.poll(screen)
+        assertThat(screen.covers).hasSize(2)
+        assertThat(watcher.isCovering).isTrue()
+    }
+
+    @Test
+    fun afterLeavingTheCoverAnotherAppThenTheBlockedAppCoversAgain() = runBlocking<Unit> {
+        open("com.whatsapp")
+        watcher.poll(screen)
+        watcher.dismissed(screen)
+        open("com.example.notes")
+        watcher.poll(screen)
+        open("com.whatsapp")
+        watcher.poll(screen)
+        assertThat(screen.covers).hasSize(2)
+        assertThat(watcher.isCovering).isTrue()
+    }
+
+    @Test
+    fun withTheGameClockThreeDaysAheadTheLogIsStillReadInRealTime() = runBlocking<Unit> {
+        ahead = Duration.ofDays(3)
+        val at = wall.now().plusMillis(++tick)
+        graph.usage.foregroundRead = ForegroundRead.Resumed(listOf(ResumedApp("com.whatsapp", at)))
+        watcher.poll(screen)
+        val (since, until) = graph.usage.foregroundWindows.last()
+        assertThat(since).isLessThan(at)
+        assertThat(until).isLessThan(graph.clock.instant)
+    }
+
+    @Test
+    fun aWallClockMovingBackDoesNotHideTheNextApp() = runBlocking<Unit> {
+        open("com.example.notes")
+        watcher.poll(screen)
+        ahead = Duration.ofHours(1)
+        graph.usage.foregroundRead = ForegroundRead.Resumed(listOf(ResumedApp("com.whatsapp", wall.now().plusMillis(++tick))))
+        watcher.poll(screen)
+        assertThat(screen.covers.single().packageName).isEqualTo("com.whatsapp")
     }
 
     @Test

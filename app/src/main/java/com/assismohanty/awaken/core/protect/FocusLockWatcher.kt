@@ -1,6 +1,7 @@
 package com.assismohanty.awaken.core.protect
 
 import com.assismohanty.awaken.core.data.clock.Clock
+import com.assismohanty.awaken.core.data.clock.WallClock
 import com.assismohanty.awaken.core.data.usage.ForegroundRead
 import com.assismohanty.awaken.core.data.usage.UsageGateway
 import com.assismohanty.awaken.core.lock.FocusLockDecider
@@ -37,6 +38,7 @@ class FocusLockWatcher @Inject constructor(
     private val clock: Clock,
     private val apps: ProtectApps,
     @ApplicationContext context: Context,
+    private val wall: WallClock,
 ) {
     private val ownPackage = context.packageName
 
@@ -46,6 +48,10 @@ class FocusLockWatcher @Inject constructor(
     private var top: String? = null
     private var lastQuery: Instant? = null
     private var seenUntil: Instant? = null
+
+    // The app the hunter just left the cover of on purpose, and when; it is not covered again until the grace runs out.
+    private var dismissedPackage: String? = null
+    private var dismissedAt: Instant = Instant.MIN
 
     var isCovering: Boolean = false
         private set
@@ -59,19 +65,24 @@ class FocusLockWatcher @Inject constructor(
             reset(screen)
             return PollResult.Ok(changed = false)
         }
-        // The first look reaches back far enough to find the app that is in front right now.
-        val since = lastQuery?.minusMillis(OVERLAP_MS) ?: now.minusMillis(FIRST_WINDOW_MS)
-        lastQuery = now
+        // The usage log runs on real time; debug time travel only shifts [clock]. The first look reaches back far enough
+        // to find the app that is in front right now.
+        val wallNow = wall.now()
+        val since = querySince(lastQuery, wallNow, FIRST_WINDOW_MS)
+        lastQuery = wallNow
         var changed = false
-        when (val read = usage.foreground(since, now)) {
+        when (val read = usage.foreground(since, wallNow)) {
             ForegroundRead.NoAccess -> return PollResult.NoAccess
             is ForegroundRead.Resumed -> {
                 val transient = apps.transientWindows() - ownPackage
+                seenUntil = freshSeen(seenUntil, read.apps)
                 for (app in read.apps) {
                     if (seenUntil?.let { !app.at.isAfter(it) } == true) continue
                     seenUntil = app.at
                     if (app.packageName in transient) continue
                     if (app.packageName != top) changed = true
+                    // Another app came to the front: the app left on purpose is judged afresh from now on.
+                    if (app.packageName != dismissedPackage) dismissedPackage = null
                     top = app.packageName
                 }
             }
@@ -81,6 +92,8 @@ class FocusLockWatcher @Inject constructor(
         when {
             // AWAKEN in front: not covered, and a cover that is up stays (the covered app was sent behind AWAKEN).
             pkg == ownPackage -> Unit
+            // Just left on purpose: give the home screen or AWAKEN a moment to come up before judging that app again.
+            pkg != null && pkg == dismissedPackage && Duration.between(dismissedAt, now).toMillis() < DISMISS_GRACE_MS -> uncover(screen)
             pkg != null && state.decide(pkg, snapshot, now) == BlockDecision.BLOCK -> {
                 isCovering = true
                 val stopwatch = run.mode == GateMode.STOPWATCH
@@ -92,9 +105,13 @@ class FocusLockWatcher @Inject constructor(
         return PollResult.Ok(changed)
     }
 
-    /** The hunter left the cover on purpose (Back to focus, the Back key): do not cover the same app again from stale events. */
+    /**
+     * The hunter left the cover on purpose (Back to focus, the Back key). [top] is kept: if going home was blocked and the
+     * app is still in front after [DISMISS_GRACE_MS], the next look covers it again.
+     */
     fun dismissed(screen: FocusLockScreen) {
-        top = null
+        dismissedPackage = top
+        dismissedAt = clock.now()
         uncover(screen)
     }
 
@@ -104,6 +121,8 @@ class FocusLockWatcher @Inject constructor(
     private fun reset(screen: FocusLockScreen) {
         top = null
         lastQuery = null
+        seenUntil = null
+        dismissedPackage = null
         uncover(screen)
     }
 
@@ -114,7 +133,9 @@ class FocusLockWatcher @Inject constructor(
     }
 
     private companion object {
-        const val OVERLAP_MS = 1_000L
         const val FIRST_WINDOW_MS = 10 * 60 * 1_000L
+
+        /** Same as the Lockdown screen's wait after opening an allowed app: long enough for home or AWAKEN to come up. */
+        const val DISMISS_GRACE_MS = 2_500L
     }
 }

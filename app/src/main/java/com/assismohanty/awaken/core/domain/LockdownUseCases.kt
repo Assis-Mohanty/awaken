@@ -2,6 +2,7 @@ package com.assismohanty.awaken.core.domain
 
 import com.assismohanty.awaken.core.data.clock.Clock
 import com.assismohanty.awaken.core.data.clock.DeviceUptime
+import com.assismohanty.awaken.core.data.clock.WallClock
 import com.assismohanty.awaken.core.data.clock.gameDate
 import com.assismohanty.awaken.core.data.db.dao.HunterDao
 import com.assismohanty.awaken.core.data.db.dao.LockdownDao
@@ -156,6 +157,7 @@ class LockdownController @Inject constructor(
     private val transactions: TransactionRunner,
     private val uptime: DeviceUptime,
     private val clock: Clock,
+    private val wall: WallClock,
 ) {
     private var lastBeatElapsedMs: Long? = null
     private var lastPermissionCheckMs: Long? = null
@@ -291,7 +293,9 @@ class LockdownController @Inject constructor(
 
     /** What the usage log showed while the watcher was down: only allowed apps, another app, or nothing readable (fail closed). */
     private suspend fun gapLog(session: LockdownSessionEntity, from: Instant, to: Instant): GapLog {
-        val read = usage.opened(from, to) as? OpenedRead.Opened ?: return GapLog.UNREADABLE
+        // [from] and [to] are game-clock times; the usage log runs on real time, so shift by debug time travel (zero in release).
+        val shift = Duration.between(wall.now(), clock.now())
+        val read = usage.opened(from.minus(shift), to.minus(shift)) as? OpenedRead.Opened ?: return GapLog.UNREADABLE
         val ok = env.okFromPhone()
         val homes = env.homePackages()
         val others = read.packages.any {

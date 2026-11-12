@@ -7,7 +7,11 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.assismohanty.awaken.core.data.repo.PauseStore
 import com.assismohanty.awaken.core.lock.AlwaysAllowed
 import com.assismohanty.awaken.core.lock.FocusLockSystemAccess
+import com.assismohanty.awaken.core.protect.ProtectServiceStatus
 import com.assismohanty.awaken.core.protect.ProtectSystemAccess
+import com.assismohanty.awaken.core.data.repo.PauseSettings
+import com.assismohanty.awaken.engine.PauseConfig
+import kotlinx.coroutines.flow.MutableStateFlow
 import com.assismohanty.awaken.engine.PauseRules
 import com.assismohanty.awaken.testing.FakeUsageGateway
 import com.assismohanty.awaken.testing.TestGraph
@@ -51,7 +55,12 @@ class PauseViewModelsTest {
         graph.close()
     }
 
-    private fun settingsVm() = PauseSettingsViewModel(store, ProtectSystemAccess(context, graph.usage, FocusLockSystemAccess(context, graph.usage)))
+    private val service = object : ProtectServiceStatus {
+        override val running = MutableStateFlow(false)
+        override val wanted = MutableStateFlow(false)
+    }
+
+    private fun settingsVm() = PauseSettingsViewModel(store, ProtectSystemAccess(context, graph.usage, FocusLockSystemAccess(context, graph.usage)), service)
 
     private fun appsVm() = PauseAppsViewModel(store, graph.usage, AlwaysAllowed(context, graph.uptime))
 
@@ -90,6 +99,24 @@ class PauseViewModelsTest {
         val state = withTimeout(5_000) { vm.uiState.first { it.settings.config.targets.isNotEmpty() } }
         assertThat(state.usageAccess).isFalse()
         assertThat(state.watching).isFalse()
+    }
+
+    @Test
+    fun aServiceThatShouldRunButDoesNotIsReportedAsStalled() = runBlocking<Unit> {
+        val vm = settingsVm()
+        service.wanted.value = true
+        assertThat(withTimeout(5_000) { vm.uiState.first { it.serviceStalled } }.serviceStalled).isTrue()
+        service.running.value = true
+        assertThat(withTimeout(5_000) { vm.uiState.first { !it.serviceStalled } }.serviceStalled).isFalse()
+    }
+
+    @Test
+    fun withEverythingSetUpButNoServicePauseSaysItIsNotRunningInsteadOfWatching() {
+        val settings = PauseSettings(PauseConfig(enabled = true, targets = setOf(FakeUsageGateway.INSTAGRAM)))
+        val stalled = PauseSettingsUiState(settings, usageAccess = true, appearOnTop = true, serviceStalled = true)
+        assertThat(stalled.watching).isFalse()
+        assertThat(stalled.notRunning).isTrue()
+        assertThat(stalled.copy(serviceStalled = false).watching).isTrue()
     }
 
     @Test

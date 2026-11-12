@@ -1,6 +1,8 @@
 package com.assismohanty.awaken.core.protect
 
 import com.assismohanty.awaken.core.data.clock.Clock
+import com.assismohanty.awaken.core.data.clock.WallClock
+import com.assismohanty.awaken.core.data.usage.ResumedApp
 import com.assismohanty.awaken.core.data.clock.gameDate
 import com.assismohanty.awaken.core.data.db.dao.HunterDao
 import com.assismohanty.awaken.core.data.db.dao.PauseDao
@@ -62,6 +64,25 @@ sealed interface PollResult {
     data object NoAccess : PollResult
 }
 
+/** Each look reaches back a little over the last one so no event falls in the gap. */
+internal const val QUERY_OVERLAP_MS = 1_000L
+
+/** An event this much older than the newest one already handled means the wall clock moved back. */
+internal const val STALE_SEEN_MS = 5_000L
+
+/**
+ * Where a usage-log look starts, in wall-clock time: just before the last look, or [firstWindowMs] back on the first one
+ * and after the wall clock moved back past the last look (a window that starts in the future would never see anything).
+ */
+internal fun querySince(lastQuery: Instant?, now: Instant, firstWindowMs: Long): Instant =
+    lastQuery?.takeIf { !it.isAfter(now) }?.minusMillis(QUERY_OVERLAP_MS) ?: now.minusMillis(firstWindowMs)
+
+/** The newest event already handled, unless the log's newest event is well before it (the wall clock moved back). */
+internal fun freshSeen(seenUntil: Instant?, apps: List<ResumedApp>): Instant? {
+    val newest = apps.lastOrNull()?.at ?: return seenUntil
+    return seenUntil?.takeIf { !newest.isBefore(it.minusMillis(STALE_SEEN_MS)) }
+}
+
 /**
  * The Pause decision loop body (GD §19.1), without any Android window code. One [poll] looks at the event log once,
  * decides with [PauseRules] and tells the [PauseScreen]. The service owns the loop, the screen state and the timing.
@@ -78,6 +99,7 @@ class PauseWatcher @Inject constructor(
     private val apps: ProtectApps,
     private val coverage: LockCoverage,
     @IoDispatcher private val io: CoroutineDispatcher,
+    private val wall: WallClock,
 ) {
     private var top: String? = null
     private var previous: String? = null
@@ -92,13 +114,16 @@ class PauseWatcher @Inject constructor(
     /** Looks once. The first look only covers the last few seconds, so a service start does not replay old opens. */
     suspend fun poll(screen: PauseScreen): PollResult {
         val now = clock.now()
-        val since = lastQuery?.minusMillis(OVERLAP_MS) ?: now.minusMillis(FIRST_WINDOW_MS)
-        lastQuery = now
-        return when (val read = usage.foreground(since, now)) {
+        // The usage log runs on real time; debug time travel only shifts [clock].
+        val wallNow = wall.now()
+        val since = querySince(lastQuery, wallNow, FIRST_WINDOW_MS)
+        lastQuery = wallNow
+        return when (val read = usage.foreground(since, wallNow)) {
             ForegroundRead.NoAccess -> PollResult.NoAccess
             ForegroundRead.Unavailable, ForegroundRead.NoChange -> PollResult.Ok(changed = false)
             is ForegroundRead.Resumed -> {
                 var changed = false
+                seenUntil = freshSeen(seenUntil, read.apps)
                 // The window overlaps the last look a little, so skip what was already handled; take the rest in order.
                 for (app in read.apps) {
                     if (seenUntil?.let { !app.at.isAfter(it) } == true) continue
@@ -116,6 +141,7 @@ class PauseWatcher @Inject constructor(
         top = null
         previous = null
         lastQuery = null
+        seenUntil = null
         dismiss(screen)
     }
 
@@ -204,7 +230,6 @@ class PauseWatcher @Inject constructor(
     }
 
     private companion object {
-        const val OVERLAP_MS = 1_000L
         const val FIRST_WINDOW_MS = 3_000L
     }
 }

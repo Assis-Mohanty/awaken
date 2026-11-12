@@ -28,8 +28,23 @@ import javax.inject.Singleton
 import java.util.concurrent.TimeUnit
 import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import timber.log.Timber
+
+/** Whether the Protect service is really up, for settings screens that must not say "watching" from permissions alone. */
+interface ProtectServiceStatus {
+    /** The service is in the foreground and watching. */
+    val running: StateFlow<Boolean>
+
+    /** The last check decided the service should be running (Pause hours open, a Lockdown or a covered focus session). */
+    val wanted: StateFlow<Boolean>
+}
+
+/** It should run but does not: Android refused to start it, so the settings say so instead of "watching". */
+val ProtectServiceStatus.stalled: Boolean get() = wanted.value && !running.value
 
 /**
  * Decides whether the Pause service should be running right now and starts or stops it (GD §19.1). It runs only while
@@ -46,11 +61,16 @@ class ProtectController @Inject constructor(
     private val access: ProtectSystemAccess,
     private val focusState: FocusLockState,
     private val clock: Clock,
+    private val notifications: ProtectNotifications,
     @ApplicationScope private val scope: CoroutineScope,
-) : DefaultLifecycleObserver {
+) : DefaultLifecycleObserver, ProtectServiceStatus {
 
-    @Volatile
-    private var serviceRunning = false
+    private val runningState = MutableStateFlow(false)
+    private val wantedState = MutableStateFlow(false)
+    override val running: StateFlow<Boolean> = runningState.asStateFlow()
+    override val wanted: StateFlow<Boolean> = wantedState.asStateFlow()
+
+    private val serviceRunning: Boolean get() = runningState.value
 
     fun start() {
         scope.launch { store.settings.collect { refresh(it) } }
@@ -62,9 +82,13 @@ class ProtectController @Inject constructor(
         scope.launch { refresh() }
     }
 
-    /** The service reports itself, so [refresh] only starts it when it is not running and stops it when it is. */
+    /**
+     * The service reports itself: true once it is in the foreground, false when it goes. [refresh] only starts it when it
+     * is not running and stops it when it is.
+     */
     fun onServiceChanged(running: Boolean) {
-        serviceRunning = running
+        runningState.value = running
+        if (running) notifications.clearNotStarted()
     }
 
     suspend fun refresh(settings: PauseSettings? = null) {
@@ -73,6 +97,7 @@ class ProtectController @Inject constructor(
             if (lockdownDao.running() != null) {
                 cancelWake()
                 scheduleWatchdog()
+                wantedState.value = true
                 if (!serviceRunning) startService()
                 return
             }
@@ -80,12 +105,14 @@ class ProtectController @Inject constructor(
             focusState.refreshAccess()
             if (access.ready() && focusState.sessionRunning(clock.now())) {
                 cancelWake()
+                wantedState.value = true
                 if (!serviceRunning) startService()
                 return
             }
             val current = settings ?: store.current()
             val config = current.config
             if (!(config.enabled && config.targets.isNotEmpty() && access.ready())) {
+                wantedState.value = false
                 stop()
                 cancelWake()
                 return
@@ -94,8 +121,10 @@ class ProtectController @Inject constructor(
             val hours = config.hours
             if (hours == null || hours.contains(now, clock.zone())) {
                 cancelWake()
+                wantedState.value = true
                 if (!serviceRunning) startService()
             } else {
+                wantedState.value = false
                 stop()
                 hours.nextStart(now, clock.zone())?.let { scheduleWake(Duration.between(now, it)) } ?: cancelWake()
             }
@@ -107,13 +136,19 @@ class ProtectController @Inject constructor(
     }
 
     private fun startService() {
-        // Android may refuse a background start (no overlay exemption yet, battery limits): the next refresh tries again.
+        // Android may refuse a background start (no overlay exemption yet, battery limits): the next refresh tries again, and
+        // a notice asks the hunter to open AWAKEN, because a start from the front is always allowed.
         runCatching { ContextCompat.startForegroundService(context, Intent(context, ProtectService::class.java)) }
-            .onFailure { Timber.w(it, "Pause service could not be started") }
+            .onFailure {
+                Timber.w(it, "Pause service could not be started")
+                notifications.notStarted()
+            }
     }
 
     private fun stop() {
-        if (serviceRunning) context.stopService(Intent(context, ProtectService::class.java))
+        // Also while it is still starting (not yet in the foreground); stopping a service that is not there does nothing.
+        context.stopService(Intent(context, ProtectService::class.java))
+        notifications.clearNotStarted()
     }
 
     private fun scheduleWake(delay: Duration) {

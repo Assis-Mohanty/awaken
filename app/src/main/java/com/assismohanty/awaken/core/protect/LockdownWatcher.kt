@@ -1,6 +1,6 @@
 package com.assismohanty.awaken.core.protect
 
-import com.assismohanty.awaken.core.data.clock.Clock
+import com.assismohanty.awaken.core.data.clock.WallClock
 import com.assismohanty.awaken.core.data.usage.ForegroundRead
 import com.assismohanty.awaken.core.data.usage.UsageGateway
 import com.assismohanty.awaken.core.domain.LockdownController
@@ -32,7 +32,7 @@ class LockdownWatcher @Inject constructor(
     private val usage: UsageGateway,
     private val controller: LockdownController,
     private val env: LockdownEnvironment,
-    private val clock: Clock,
+    private val wall: WallClock,
 ) {
     private var top: String? = null
     private var lastQuery: Instant? = null
@@ -52,12 +52,14 @@ class LockdownWatcher @Inject constructor(
             uncover(screen)
             return tick
         }
-        val now = clock.now()
+        // The usage log runs on real time; debug time travel only shifts the game clock.
+        val now = wall.now()
         // The first look reaches back far enough to find the app that is in front right now.
-        val since = lastQuery?.minusMillis(OVERLAP_MS) ?: now.minusMillis(FIRST_WINDOW_MS)
+        val since = querySince(lastQuery, now, FIRST_WINDOW_MS)
         lastQuery = now
         val read = usage.foreground(since, now)
         if (read is ForegroundRead.Resumed) {
+            seenUntil = freshSeen(seenUntil, read.apps)
             val newest = read.apps.lastOrNull { app -> seenUntil?.let { app.at.isAfter(it) } != false }
             if (newest != null) {
                 seenUntil = newest.at
@@ -80,6 +82,7 @@ class LockdownWatcher @Inject constructor(
     fun onScreenOff(screen: LockdownScreen) {
         top = null
         lastQuery = null
+        seenUntil = null
         uncover(screen)
     }
 
@@ -90,7 +93,6 @@ class LockdownWatcher @Inject constructor(
     }
 
     private companion object {
-        const val OVERLAP_MS = 1_000L
         const val FIRST_WINDOW_MS = 10 * 60 * 1_000L
     }
 }

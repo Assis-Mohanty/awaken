@@ -10,6 +10,8 @@
     <string name="protect_notif_turn_off">Turn off</string>
     <string name="focus_lock_notif_title">Focus session in progress</string>
     <string name="focus_lock_notif_body">AWAKEN covers other apps until the session ends. Nothing is saved or sent anywhere.</string>
+    <string name="protect_not_started_title">AWAKEN can\'t watch right now</string>
+    <string name="protect_not_started_body">Your phone stopped it from starting in the background. Open AWAKEN to start it again.</string>
 
     <!-- The pause screen -->
     <string name="pause_overlay_about">About to open %1$s</string>
@@ -72,6 +74,7 @@
     <string name="pause_perm_popup">Pop-ups while other apps are open</string>
     <string name="pause_perm_popup_note">Your phone may need this switched on in its own app settings, or the pause screen can\'t open from the background.</string>
     <string name="pause_ready">Pause is watching.</string>
+    <string name="pause_not_running">Pause is set up but not running. Open AWAKEN again, or check that battery limits are off.</string>
     <string name="pause_not_ready">Pause starts once usage access and appearing on top are on, and at least one app is chosen.</string>
 
     <!-- Choose apps -->

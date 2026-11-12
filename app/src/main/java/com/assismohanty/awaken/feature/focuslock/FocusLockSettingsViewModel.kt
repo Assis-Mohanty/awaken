@@ -6,6 +6,8 @@ import com.assismohanty.awaken.core.data.repo.UiPrefsRepository
 import com.assismohanty.awaken.core.data.usage.UsageGateway
 import com.assismohanty.awaken.core.domain.FocusLockStatus
 import com.assismohanty.awaken.core.lock.FocusLockSystemAccess
+import com.assismohanty.awaken.core.protect.ProtectServiceStatus
+import com.assismohanty.awaken.core.protect.stalled
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -40,15 +42,17 @@ class FocusLockSettingsViewModel @Inject constructor(
     private val access: FocusLockSystemAccess,
     private val usage: UsageGateway,
     status: FocusLockStatus,
+    service: ProtectServiceStatus,
 ) : ViewModel() {
     private val system = MutableStateFlow(SystemChecks())
 
     val uiState: StateFlow<FocusLockSettingsUiState> =
-        combine(prefs.prefs, status.serviceConnected, system) { p, running, checks ->
+        combine(prefs.prefs, status.serviceConnected, system, service.running, service.wanted) { p, connected, checks, _, _ ->
             FocusLockSettingsUiState(
                 enabled = p.focusLock,
                 permissionsReady = checks.permissions,
-                serviceRunning = running,
+                // Permissions alone are not "running": a session whose service Android refused to start is not covered.
+                serviceRunning = connected && !service.stalled,
                 batteryUnrestricted = checks.battery,
                 usageAccess = checks.usage,
                 allowedCount = p.allowedApps.size,

@@ -60,9 +60,10 @@ class BlockOverlay<M : Any>(
 
     val isShowing: Boolean get() = root != null
 
-    fun show(next: M) {
+    /** Shows [next], or updates what an open cover says. False when Android refused the window, so nothing covers. */
+    fun show(next: M): Boolean {
         model = next
-        if (root != null) return
+        if (root != null) return true
         val lifecycleOwner = OverlayOwner()
         val layout = BackInterceptingLayout(context, onBackKey).apply {
             isFocusable = true
@@ -85,12 +86,14 @@ class BlockOverlay<M : Any>(
             // The window can be refused (service tearing down, display gone): the lock simply does not cover this time.
             Timber.w(e, "The cover could not be added")
             lifecycleOwner.destroy()
-            return
+            model = null
+            return false
         }
         root = layout
         owner = lifecycleOwner
         lifecycleOwner.resume()
         layout.requestFocus()
+        return true
     }
 
     fun hide() {

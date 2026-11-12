@@ -1,6 +1,7 @@
 package com.assismohanty.awaken.core.protect
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.assismohanty.awaken.core.data.clock.WallClock
 import com.assismohanty.awaken.core.data.usage.ForegroundRead
 import com.assismohanty.awaken.core.data.usage.ResumedApp
 import com.assismohanty.awaken.core.domain.LockdownController
@@ -33,8 +34,11 @@ class LockdownWatcherTest {
         override fun isCoverable(packageName: String) = packageName in coverable
     }
     private val dao = graph.db.lockdownDao()
-    private val controller = LockdownController(dao, graph.gateRuns, graph.usage, env, graph.ledger, graph.db.hunterDao(), graph.transactions, graph.uptime, graph.clock)
-    private val watcher = LockdownWatcher(graph.usage, controller, env, graph.clock)
+    /** How far the game clock runs ahead of the real one (debug time travel, or the wall clock moving back). */
+    private var ahead: Duration = Duration.ZERO
+    private val wall = WallClock { graph.clock.instant.minus(ahead) }
+    private val controller = LockdownController(dao, graph.gateRuns, graph.usage, env, graph.ledger, graph.db.hunterDao(), graph.transactions, graph.uptime, graph.clock, wall)
+    private val watcher = LockdownWatcher(graph.usage, controller, env, wall)
     private val start = StartLockdownUseCase(graph.startGate, dao, graph.usage, graph.distractingApps, env, graph.transactions, graph.uptime, graph.clock)
     private val screen = object : LockdownScreen {
         val covers = mutableListOf<LockdownCover>()
@@ -56,6 +60,27 @@ class LockdownWatcherTest {
 
     private fun open(pkg: String) {
         graph.usage.foregroundRead = ForegroundRead.Resumed(listOf(ResumedApp(pkg, graph.clock.instant.plusMillis(++tick))))
+    }
+
+    @Test
+    fun withTheGameClockThreeDaysAheadTheLogIsStillReadInRealTime() = runBlocking<Unit> {
+        ahead = Duration.ofDays(3)
+        val at = wall.now().plusMillis(++tick)
+        graph.usage.foregroundRead = ForegroundRead.Resumed(listOf(ResumedApp("com.whatsapp", at)))
+        watcher.poll(screen)
+        val (since, until) = graph.usage.foregroundWindows.last()
+        assertThat(since).isLessThan(at)
+        assertThat(until).isLessThan(graph.clock.instant)
+    }
+
+    @Test
+    fun aWallClockMovingBackDoesNotHideTheNextApp() = runBlocking<Unit> {
+        open("com.whatsapp")
+        watcher.poll(screen)
+        ahead = Duration.ofHours(1)
+        graph.usage.foregroundRead = ForegroundRead.Resumed(listOf(ResumedApp(FakeUsageGateway.DOCS, wall.now().plusMillis(++tick))))
+        watcher.poll(screen)
+        assertThat(screen.uncovers).isEqualTo(1)
     }
 
     @Test

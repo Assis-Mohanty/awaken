@@ -21,6 +21,9 @@ import kotlinx.coroutines.flow.first
 @InstallIn(SingletonComponent::class)
 object ProtectModule {
     @Provides
+    fun provideProtectServiceStatus(controller: ProtectController): ProtectServiceStatus = controller
+
+    @Provides
     @Singleton
     fun provideLockCoverage(state: FocusLockState): LockCoverage = LockCoverage { pkg: String, now: Instant ->
         state.isActive() && state.decide(pkg, state.snapshot.first(), now) == BlockDecision.BLOCK

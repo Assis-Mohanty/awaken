@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.assismohanty.awaken.core.data.clock.WallClock
 import com.assismohanty.awaken.core.data.repo.PauseStore
 import com.assismohanty.awaken.core.data.usage.ForegroundRead
 import com.assismohanty.awaken.core.data.usage.ResumedApp
@@ -39,7 +40,10 @@ class PauseWatcherTest {
         override fun alwaysAllowed() = setOf(LAUNCHER)
         override fun transientWindows() = setOf(KEYBOARD)
     }
-    private val watcher = PauseWatcher(graph.usage, store, graph.db.pauseDao(), graph.db.hunterDao(), graph.clock, apps, { _, _ -> covering }, Dispatchers.Unconfined)
+    /** How far the game clock runs ahead of the real one (debug time travel, or the wall clock moving back). */
+    private var ahead: Duration = Duration.ZERO
+    private val wall = WallClock { graph.clock.instant.minus(ahead) }
+    private val watcher = PauseWatcher(graph.usage, store, graph.db.pauseDao(), graph.db.hunterDao(), graph.clock, apps, { _, _ -> covering }, Dispatchers.Unconfined, wall)
 
     private class RecordingScreen : PauseScreen {
         val shown = mutableListOf<PauseRequest>()
@@ -72,6 +76,30 @@ class PauseWatcherTest {
     }
 
     private fun rows() = runBlocking { graph.db.pauseDao().countOn(INSTAGRAM, graph.clock.instant.atZone(graph.clock.zone()).toLocalDate()) }
+
+    @Test
+    fun withTheGameClockThreeDaysAheadTheLogIsStillReadInRealTime() {
+        chooseInstagram()
+        ahead = Duration.ofDays(3)
+        val at = wall.now().plusMillis(++tick)
+        graph.usage.foregroundRead = ForegroundRead.Resumed(listOf(ResumedApp(LAUNCHER, at)))
+        runBlocking { watcher.poll(screen) }
+        val (since, until) = graph.usage.foregroundWindows.last()
+        assertThat(since).isLessThan(at)
+        assertThat(until).isAtLeast(wall.now())
+        assertThat(until).isLessThan(graph.clock.instant)
+    }
+
+    @Test
+    fun aWallClockMovingBackDoesNotHideTheNextOpen() {
+        chooseInstagram()
+        on(LAUNCHER)
+        // The phone's clock is set back an hour: new events now carry earlier times than the ones already handled.
+        ahead = Duration.ofHours(1)
+        graph.usage.foregroundRead = ForegroundRead.Resumed(listOf(ResumedApp(INSTAGRAM, wall.now().plusMillis(++tick))))
+        runBlocking { watcher.poll(screen) }
+        assertThat(screen.shown.single().packageName).isEqualTo(INSTAGRAM)
+    }
 
     @Test
     fun aChosenAppOpenedFromTheLauncherIsPausedForTheBaseDelay() {

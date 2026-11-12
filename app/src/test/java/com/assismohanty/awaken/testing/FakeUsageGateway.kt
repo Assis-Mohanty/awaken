@@ -43,16 +43,26 @@ class FakeUsageGateway(
         else -> UsageRead.Tracked(minutes.filterValues { it > 0 }.mapValues { it.value * 60_000L })
     }
 
-    override suspend fun opened(start: Instant, end: Instant): OpenedRead = when {
-        !access -> OpenedRead.NoAccess
-        !readable -> OpenedRead.Unavailable
-        else -> OpenedRead.Opened(opened.toSet())
+    /** Every `[start, end)` window [opened] and [foreground] were asked about, newest last. */
+    val openedWindows: MutableList<Pair<Instant, Instant>> = mutableListOf()
+    val foregroundWindows: MutableList<Pair<Instant, Instant>> = mutableListOf()
+
+    override suspend fun opened(start: Instant, end: Instant): OpenedRead {
+        openedWindows += start to end
+        return when {
+            !access -> OpenedRead.NoAccess
+            !readable -> OpenedRead.Unavailable
+            else -> OpenedRead.Opened(opened.toSet())
+        }
     }
 
     /** What the foreground watcher sees next; a test sets it. */
     var foregroundRead: ForegroundRead = ForegroundRead.NoChange
 
-    override suspend fun foreground(since: Instant, until: Instant): ForegroundRead = if (!access) ForegroundRead.NoAccess else foregroundRead
+    override suspend fun foreground(since: Instant, until: Instant): ForegroundRead {
+        foregroundWindows += since to until
+        return if (!access) ForegroundRead.NoAccess else foregroundRead
+    }
 
     override suspend fun events(start: Instant, end: Instant): EventsRead = when {
         !access -> EventsRead.NoAccess

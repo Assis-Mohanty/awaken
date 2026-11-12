@@ -1,6 +1,7 @@
 package com.assismohanty.awaken.core.domain
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.assismohanty.awaken.core.data.clock.WallClock
 import com.assismohanty.awaken.core.data.db.entity.GateRunStatus
 import com.assismohanty.awaken.core.data.db.entity.LedgerEntryEntity
 import com.assismohanty.awaken.core.data.usage.OpenedRead
@@ -42,7 +43,10 @@ class LockdownUseCasesTest {
         override fun isCoverable(packageName: String) = packageName in coverable
     }
     private val start = StartLockdownUseCase(graph.startGate, dao, graph.usage, graph.distractingApps, env, graph.transactions, graph.uptime, graph.clock)
-    private val controller = LockdownController(dao, graph.gateRuns, graph.usage, env, graph.ledger, graph.db.hunterDao(), graph.transactions, graph.uptime, graph.clock)
+    /** How far the game clock runs ahead of the real one (debug time travel). */
+    private var ahead: Duration = Duration.ZERO
+    private val wall = WallClock { graph.clock.instant.minus(ahead) }
+    private val controller = LockdownController(dao, graph.gateRuns, graph.usage, env, graph.ledger, graph.db.hunterDao(), graph.transactions, graph.uptime, graph.clock, wall)
 
     @Before
     fun setUp() = runBlocking { graph.seedHunter() }
@@ -283,6 +287,17 @@ class LockdownUseCasesTest {
         graph.usage.opened.add(launcher)
         val broken = controller.onWatcherStart() as LockdownTick.Broken
         assertThat(broken.reason).isEqualTo(LockdownBreak.UNCOVERED)
+    }
+
+    @Test
+    fun withTheGameClockThreeDaysAheadTheGapIsReadFromTheLogInRealTime() = runBlocking<Unit> {
+        ahead = Duration.ofDays(3)
+        startOk(30)
+        val gapStart = wall.now()
+        graph.clock.advance(Duration.ofMinutes(5))
+        graph.usage.opened.add(FakeUsageGateway.DOCS)
+        controller.onWatcherStart()
+        assertThat(graph.usage.openedWindows.last()).isEqualTo(gapStart to wall.now())
     }
 
     @Test
