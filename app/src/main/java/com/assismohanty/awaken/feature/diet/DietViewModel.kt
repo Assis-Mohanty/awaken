@@ -18,6 +18,8 @@ import com.assismohanty.awaken.core.data.food.OpenFoodFactsClient
 import android.graphics.Bitmap
 import com.assismohanty.awaken.core.domain.BarcodeResult
 import com.assismohanty.awaken.core.scan.LabelReader
+import com.assismohanty.awaken.core.domain.DishScanResult
+import com.assismohanty.awaken.core.domain.ScanDishUseCase
 import com.assismohanty.awaken.engine.body.LabelPlausibility
 import com.assismohanty.awaken.engine.body.NutritionLabelParser
 import com.assismohanty.awaken.core.domain.FoodOrigin
@@ -153,6 +155,16 @@ sealed interface LabelPhotoState {
     enum class Reason { NOTHING_READ, NOT_A_TABLE, UNAVAILABLE }
 }
 
+/** Where a photo of a meal stands (photo food scanner, plan 5.1). The photo itself is never kept, only what it suggested. */
+sealed interface DishPhotoState {
+    data object Capturing : DishPhotoState
+    data object Looking : DishPhotoState
+    /** [added] counts the foods already logged from this photo, so the sheet offers "Add another from this photo". */
+    data class Suggested(val foods: List<Food>, val added: Int = 0) : DishPhotoState
+    data object Unsure : DishPhotoState
+    data object Failed : DishPhotoState
+}
+
 /** What a photographed table filled in for the label form. The hunter checks every number against the pack. */
 data class LabelPrefill(
     /** Per 100 g: calories, grams, and milligrams for minerals. */
@@ -264,6 +276,9 @@ data class DietFlow(
     val activeKcal: Int? = null,
     val scan: ScanState? = null,
     val labelPhoto: LabelPhotoState? = null,
+    val dishPhoto: DishPhotoState? = null,
+    /** Whether the Photo button is offered (the build flag and a model in the app). */
+    val photoScan: Boolean = false,
 )
 
 /** The panels that open over the diary. */
@@ -313,6 +328,8 @@ data class DietUiState(
     val activeKcal: Int? = null,
     val scan: ScanState? = null,
     val labelPhoto: LabelPhotoState? = null,
+    val dishPhoto: DishPhotoState? = null,
+    val photoScan: Boolean = false,
     /** Share of the day's calories from foods with a value, per nutrient (null when nothing is logged). */
     val coverage: Map<Nutrient, Double?> = emptyMap(),
     val setup: SetupForm? = null,
@@ -368,6 +385,15 @@ sealed interface DietEvent {
     data object CloseLabelPhoto : DietEvent
     data object LabelPhotoRetry : DietEvent
     data class LabelPhotoTaken(val photo: Bitmap?) : DietEvent
+    data object OpenDishPhoto : DietEvent
+    data object CloseDishPhoto : DietEvent
+    data object DishPhotoRetry : DietEvent
+    data class DishPhotoTaken(val photo: Bitmap?) : DietEvent
+    /** A photo chosen with the system photo picker; null when the picker was closed. */
+    data class DishPhotoPicked(val uri: android.net.Uri?) : DietEvent
+    /** [index] into the suggestions, best first. */
+    data class PickDish(val index: Int) : DietEvent
+    data object NoneOfThese : DietEvent
     data object ScanAllowOnline : DietEvent
     data object ScanDeclineOnline : DietEvent
     data class EditPlanned(val entry: MealPlanEntryEntity) : DietEvent
@@ -425,6 +451,7 @@ class DietViewModel @Inject constructor(
     private val loadHealth: LoadHealthOverviewUseCase,
     private val lookUpBarcode: LookUpBarcodeUseCase,
     private val labelReader: LabelReader,
+    private val scanDish: ScanDishUseCase,
 ) : ViewModel() {
 
     private val flow = MutableStateFlow(DietFlow())
@@ -472,6 +499,8 @@ class DietViewModel @Inject constructor(
             activeKcal = f.activeKcal,
             scan = f.scan,
             labelPhoto = f.labelPhoto,
+            dishPhoto = f.dishPhoto,
+            photoScan = f.photoScan,
             note = dayAndNote?.second,
             prompt = f.prompt,
             offer = trackers.offer,
@@ -498,6 +527,10 @@ class DietViewModel @Inject constructor(
             val overview = (loadHealth() as? HealthOverviewResult.Ready)?.overview
             val kcal = overview?.takeIf { it.canCalories }?.today?.activeKcal?.roundToInt()
             flow.update { it.copy(activeKcal = kcal) }
+        }
+        viewModelScope.launch {
+            val photoScan = scanDish.available()
+            flow.update { it.copy(photoScan = photoScan) }
         }
     }
 
@@ -674,7 +707,15 @@ class DietViewModel @Inject constructor(
                 } else {
                     diet.log(flow.value.date ?: diet.today(), form.meal, form.food, form.totalGrams, form.portionLabel, form.source)
                 }
-                flow.update { it.copy(amount = null, search = null) }
+                // A food from a photo keeps the photo's other suggestions open for the next item on the plate.
+                val fromPhoto = form.source == EntrySource.PHOTO && flow.value.dishPhoto is DishPhotoState.Suggested
+                flow.update { f ->
+                    if (fromPhoto) {
+                        f.copy(amount = null, dishPhoto = (f.dishPhoto as? DishPhotoState.Suggested)?.let { it.copy(added = it.added + 1) })
+                    } else {
+                        f.copy(amount = null, search = null)
+                    }
+                }
             }
             DietEvent.OpenScanner -> flow.update { it.copy(scan = ScanState.Scanning) }
             DietEvent.CloseScanner -> flow.update { it.copy(scan = null) }
@@ -700,6 +741,41 @@ class DietViewModel @Inject constructor(
             DietEvent.CloseLabelPhoto -> flow.update { it.copy(labelPhoto = null) }
             DietEvent.LabelPhotoRetry -> flow.update { it.copy(labelPhoto = LabelPhotoState.Capturing) }
             is DietEvent.LabelPhotoTaken -> viewModelScope.launch { readLabelPhoto(event.photo) }
+            DietEvent.OpenDishPhoto -> flow.update { it.copy(dishPhoto = DishPhotoState.Capturing, search = it.search ?: FoodSearch(FALLBACK_MEAL)) }
+            DietEvent.CloseDishPhoto -> flow.update { f ->
+                // Done after logging from the photo goes back to the diary; closing before that returns to the search.
+                val added = (f.dishPhoto as? DishPhotoState.Suggested)?.added ?: 0
+                f.copy(dishPhoto = null, search = if (added > 0) null else f.search)
+            }
+            DietEvent.DishPhotoRetry -> flow.update { it.copy(dishPhoto = DishPhotoState.Capturing) }
+            is DietEvent.DishPhotoTaken -> viewModelScope.launch {
+                val photo = event.photo
+                if (photo == null) {
+                    flow.update { it.copy(dishPhoto = DishPhotoState.Failed) }
+                } else {
+                    flow.update { it.copy(dishPhoto = DishPhotoState.Looking) }
+                    showDishResult(scanDish.scan(photo))
+                }
+            }
+            is DietEvent.DishPhotoPicked -> viewModelScope.launch {
+                val uri = event.uri ?: return@launch
+                flow.update { it.copy(dishPhoto = DishPhotoState.Looking) }
+                showDishResult(scanDish.scan(uri))
+            }
+            is DietEvent.PickDish -> viewModelScope.launch {
+                val suggested = flow.value.dishPhoto as? DishPhotoState.Suggested ?: return@launch
+                val food = suggested.foods.getOrNull(event.index) ?: return@launch
+                bodyLog.recordPhotoScan(suggested.foods.map { it.id }, food.id)
+                val portions = food.portions.ifEmpty { diet.portionsOf(food.id) }
+                val favourite = food.id in foodLibrary.observeFavouriteIds().first()
+                val meal = flow.value.search?.meal ?: FALLBACK_MEAL
+                flow.update { it.copy(amount = AmountForm(food, meal, portions, favourite = favourite, source = EntrySource.PHOTO)) }
+            }
+            DietEvent.NoneOfThese -> viewModelScope.launch {
+                val shown = (flow.value.dishPhoto as? DishPhotoState.Suggested)?.foods?.map { it.id }.orEmpty()
+                bodyLog.recordPhotoScan(shown, null)
+                flow.update { it.copy(dishPhoto = null, search = it.search ?: FoodSearch(FALLBACK_MEAL)) }
+            }
             DietEvent.ScanAllowOnline -> viewModelScope.launch {
                 val missed = flow.value.scan as? ScanState.NotFound ?: return@launch
                 uiPrefs.setOnlineFoodLookup(true)
@@ -825,6 +901,15 @@ class DietViewModel @Inject constructor(
         form.copy(preview = form.toSetup(today())?.let { diet.preview(it, today()) })
 
     /** Reads a photographed table into the label form, or says why it could not. The photo is released as soon as it was read. */
+    private suspend fun showDishResult(result: DishScanResult) {
+        val next = when (result) {
+            is DishScanResult.Suggested -> DishPhotoState.Suggested(result.foods)
+            DishScanResult.Unsure -> DishPhotoState.Unsure.also { bodyLog.recordPhotoScan(emptyList(), null) }
+            DishScanResult.Failed -> DishPhotoState.Failed
+        }
+        flow.update { f -> if (f.dishPhoto == DishPhotoState.Looking) f.copy(dishPhoto = next) else f }
+    }
+
     private suspend fun readLabelPhoto(photo: Bitmap?) {
         if (photo == null) {
             flow.update { it.copy(labelPhoto = LabelPhotoState.Failed(LabelPhotoState.Reason.NOTHING_READ)) }

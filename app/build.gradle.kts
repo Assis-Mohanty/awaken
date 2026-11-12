@@ -65,6 +65,8 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        // The photo food scanner stays off in every build until a model passes the go / no-go test (GD 20.6, docs/diet/SCANNER_TEST.md).
+        buildConfigField("boolean", "DIET_PHOTO_SCAN_ENABLED", "false")
     }
 
     signingConfigs {
@@ -161,6 +163,7 @@ dependencies {
     implementation(libs.androidx.camera.view)
     implementation(libs.zxing.core)
     implementation(libs.tesseract4android)
+    implementation(libs.litert)
     implementation(libs.androidx.core.splashscreen)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.lifecycle.runtime.compose)

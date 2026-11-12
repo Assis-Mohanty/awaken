@@ -50,6 +50,8 @@ camerax = "1.6.2"
 zxing = "3.5.4"
 # Offline text reading for the nutrition-label photo (Tesseract, Apache 2.0). Only on JitPack; settings.gradle.kts limits that repository to this group.
 tesseract4android = "4.9.0"
+# Photo food scanner (Diet Batch 8, plan 5.2): LiteRT interpreter, standalone, no Play services. Ships with the feature switched off.
+litert = "1.4.2"
 
 [libraries]
 # AndroidX core
@@ -67,6 +69,7 @@ androidx-camera-lifecycle = { group = "androidx.camera", name = "camera-lifecycl
 androidx-camera-view = { group = "androidx.camera", name = "camera-view", version.ref = "camerax" }
 zxing-core = { group = "com.google.zxing", name = "core", version.ref = "zxing" }
 tesseract4android = { group = "cz.adaptech.tesseract4android", name = "tesseract4android", version.ref = "tesseract4android" }
+litert = { group = "com.google.ai.edge.litert", name = "litert", version.ref = "litert" }
 
 # Compose (versions from BOM)
 androidx-compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "composeBom" }

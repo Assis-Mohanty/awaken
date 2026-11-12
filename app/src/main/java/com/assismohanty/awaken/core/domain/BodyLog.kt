@@ -13,6 +13,8 @@ import com.assismohanty.awaken.core.data.db.entity.FastingSessionEntity
 import com.assismohanty.awaken.core.data.db.entity.FoodLogEntity
 import com.assismohanty.awaken.core.data.db.entity.MealPlanEntryEntity
 import com.assismohanty.awaken.core.data.db.entity.MeasureKind
+import com.assismohanty.awaken.core.data.db.entity.ScanFeedbackEntity
+import com.assismohanty.awaken.core.data.db.entity.ScanKind
 import com.assismohanty.awaken.core.data.db.entity.WaterLogEntity
 import com.assismohanty.awaken.core.data.db.entity.WeightLogEntity
 import com.assismohanty.awaken.core.data.repo.TransactionRunner
@@ -26,6 +28,8 @@ import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.flow.Flow
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonPrimitive
 
 /** The trend and the weight it was planned from, when the gap is big enough to offer new targets (GD 20.2). */
 data class TrendOffer(val trendKg: Double, val planWeightKg: Double)
@@ -189,6 +193,16 @@ class BodyLog @Inject constructor(
         dao.upsertPlanEntry(entry.copy(logged = true))
         true
     }
+
+    // Scanner feedback: one row per photo scan outcome, never sent anywhere (plan 5.1; ENGINE_DECISIONS #206).
+
+    /** [shown] is the food ids the hunter was offered, best first; [chosen] is the one picked, or null for "None of these". */
+    suspend fun recordPhotoScan(shown: List<String>, chosen: String?) {
+        dao.upsertFeedback(ScanFeedbackEntity(UUID.randomUUID().toString(), clock.now(), ScanKind.PHOTO, JsonArray(shown.map(::JsonPrimitive)).toString(), chosen))
+    }
+
+    /** Photo scans so far and how many of them ended on a suggested food. */
+    suspend fun photoScanTally(): Pair<Int, Int> = dao.feedbackCount(ScanKind.PHOTO) to dao.feedbackHits(ScanKind.PHOTO)
 
     companion object {
         // Input sanity, not game numbers.

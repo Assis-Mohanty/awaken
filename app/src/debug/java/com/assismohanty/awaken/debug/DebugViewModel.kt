@@ -89,6 +89,7 @@ sealed interface DebugEvent {
     data object GrantLevel : DebugEvent
     data object ScreenshotMode : DebugEvent
     data object WipeData : DebugEvent
+    data object RunScannerTest : DebugEvent
     data class Begin(val questInstanceId: String) : DebugEvent
     data class Complete(val questInstanceId: String) : DebugEvent
     data class Undo(val questInstanceId: String) : DebugEvent
@@ -118,6 +119,7 @@ class DebugViewModel @Inject constructor(
     private val revokeAiConsent: RevokeAiConsentUseCase,
     private val createPath: CreatePathUseCase,
     private val demoSeeder: DemoSeeder,
+    private val scannerTest: ScannerTestRunner,
     aiPrefs: AiPrefsRepository,
     private val db: AwakenDatabase,
     @IoDispatcher private val ioDispatcher: CoroutineDispatcher,
@@ -290,6 +292,7 @@ class DebugViewModel @Inject constructor(
             settings.reset()
             "All data wiped."
         }
+        DebugEvent.RunScannerTest -> scannerTest.run()
         is DebugEvent.Begin -> "Begin: ${startQuest(event.questInstanceId)}"
         is DebugEvent.Complete -> completeQuest(event.questInstanceId).toString()
         is DebugEvent.Undo -> undoCompletion(event.questInstanceId).toString()

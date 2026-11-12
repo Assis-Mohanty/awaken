@@ -281,6 +281,8 @@ class TestGraph(
     val lookUpBarcode = com.assismohanty.awaken.core.domain.LookUpBarcodeUseCase(foodLibrary, packagedCatalog, onlineFood, uiPrefs)
     val foodSearch = com.assismohanty.awaken.core.domain.FoodSearchUseCase(foodCatalog, db.dietDao(), db.foodLibraryDao(), recipeBook, foodLibrary)
     val bodyLog = com.assismohanty.awaken.core.domain.BodyLog(db.bodyLogDao(), db.dietDao(), db.hunterDao(), transactions, clock)
+    val dishClassifier = FakeDishClassifier()
+    val scanDish = com.assismohanty.awaken.core.domain.ScanDishUseCase(dishClassifier, foodCatalog, com.assismohanty.awaken.core.scan.PhotoLoader(context, Dispatchers.Unconfined))
 
     // AI Paths. `oracle` records calls, so tests can assert "no network request was made".
     val oracle = FakePathOracle()

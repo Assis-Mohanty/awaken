@@ -115,7 +115,9 @@ fun DietScreen(state: DietUiState, onEvent: (DietEvent) -> Unit, modifier: Modif
     state.recipeForm?.let { RecipeEditorSheet(it, onEvent) }
     state.scan?.let { ScannerHost(it, onEvent) }
     state.labelPhoto?.let { LabelPhotoHost(it, onEvent) }
-    state.search?.let { FoodSearchSheet(it, state.slots, state.savedMeals, onEvent) }
+    state.search?.let { FoodSearchSheet(it, state.slots, state.savedMeals, state.photoScan, onEvent) }
+    // Hidden while a picked food's amount is set; it comes back for the next item on the plate.
+    state.dishPhoto?.takeIf { state.amount == null }?.let { DishPhotoHost(it, onEvent) }
     state.prompt?.let { PromptSheet(it, state.note, onEvent) }
     state.amount?.let { AmountSheet(it, state.slots, onEvent) }
     if (state.targets) state.plan?.let { TargetsSheet(it, onEvent) }

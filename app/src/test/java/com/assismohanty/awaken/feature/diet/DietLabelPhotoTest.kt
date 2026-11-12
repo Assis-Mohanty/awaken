@@ -58,7 +58,7 @@ class DietLabelPhotoTest {
 
     private fun viewModel() = DietViewModel(
         graph.diet, graph.foodSearch, graph.foodLibrary, graph.bodyLog, graph.uiPrefs, NoDietReminders, graph.recipeBook,
-        LoadHealthOverviewUseCase(graph.db.hunterDao(), graph.health, FakePhoneStepsGateway(), graph.clock), graph.lookUpBarcode, reader,
+        LoadHealthOverviewUseCase(graph.db.hunterDao(), graph.health, FakePhoneStepsGateway(), graph.clock), graph.lookUpBarcode, reader, graph.scanDish,
     )
 
     private suspend fun DietViewModel.until(condition: (DietUiState) -> Boolean): DietUiState = withTimeout(5_000) { uiState.first(condition) }

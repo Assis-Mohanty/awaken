@@ -107,12 +107,12 @@ private fun SheetTitle(text: String) {
 // Search
 
 @Composable
-fun FoodSearchSheet(search: FoodSearch, slots: List<MealSlot>, savedMeals: List<SavedMealSummary>, onEvent: (DietEvent) -> Unit) {
-    DietSheet(onDismiss = { onEvent(DietEvent.CloseSearch) }) { FoodSearchContent(search, slots, savedMeals, onEvent) }
+fun FoodSearchSheet(search: FoodSearch, slots: List<MealSlot>, savedMeals: List<SavedMealSummary>, photoScan: Boolean = false, onEvent: (DietEvent) -> Unit) {
+    DietSheet(onDismiss = { onEvent(DietEvent.CloseSearch) }) { FoodSearchContent(search, slots, savedMeals, photoScan, onEvent) }
 }
 
 @Composable
-fun FoodSearchContent(search: FoodSearch, slots: List<MealSlot>, savedMeals: List<SavedMealSummary>, onEvent: (DietEvent) -> Unit) {
+fun FoodSearchContent(search: FoodSearch, slots: List<MealSlot>, savedMeals: List<SavedMealSummary>, photoScan: Boolean = false, onEvent: (DietEvent) -> Unit) {
     val colors = AwakenTheme.colors
     SheetTitle(lexString(R.string.diet_search_title, mealLabel(search.meal, slots)))
     if (search.showCustomForm) {
@@ -129,6 +129,8 @@ fun FoodSearchContent(search: FoodSearch, slots: List<MealSlot>, savedMeals: Lis
         modifier = Modifier.fillMaxWidth(),
     )
     SecondaryButton(text = lexString(R.string.diet_scan_button), onClick = { onEvent(DietEvent.OpenScanner) }, modifier = Modifier.fillMaxWidth())
+    // Hidden unless the build flag is on and a model ships (DietScanFeature, GD 20.6).
+    if (photoScan && search.mode == SearchMode.DIARY) SecondaryButton(text = lexString(R.string.diet_dish_photo_button), onClick = { onEvent(DietEvent.OpenDishPhoto) }, modifier = Modifier.fillMaxWidth())
     val blank = search.query.isBlank()
     if (blank) {
         Row(horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
@@ -251,7 +253,7 @@ private val QUICK_FIELDS = listOf(Nutrient.KCAL, Nutrient.PROTEIN, Nutrient.CARB
 private const val MAX_NOTE = 500
 
 @Composable
-private fun FoodRow(food: Food, onClick: () -> Unit) {
+internal fun FoodRow(food: Food, onClick: () -> Unit) {
     val colors = AwakenTheme.colors
     val per100 = food.per100
     Column(

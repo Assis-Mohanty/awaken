@@ -35,6 +35,7 @@
     <string name="debug_health_sync">Sync Health now</string>
     <string name="debug_grant_level">+1 level</string>
     <string name="debug_wipe">Wipe data</string>
+    <string name="debug_scanner_test">Photo scanner test (go / no-go)</string>
     <string name="debug_oracle_use_real">Oracle: fake (tap for real)</string>
     <string name="debug_oracle_use_fake">Oracle: real (tap for fake)</string>
     <string name="debug_oracle_failure">Force Oracle failure: %1$s</string>
