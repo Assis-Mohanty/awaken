@@ -12,6 +12,7 @@ const val IG_PKG = "com.instagram.android"
 const val YT_PKG = "com.google.android.youtube"
 const val SNAP_PKG = "com.snapchat.android"
 const val IG_PAGER = "com.instagram.android:id/pager"
+const val IG_REEL = "com.instagram.android:id/clips_item_overlay_component"
 const val YT_LIST = "com.google.android.youtube:id/list"
 const val SNAP_CONTAINER = "com.snapchat.android:id/spotlight"
 

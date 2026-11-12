@@ -6,7 +6,12 @@ import com.assismohanty.awaken.reelcounter.core.model.NodeSource
 import java.time.Duration
 import java.time.Instant
 
-data class TrackerConfig(val contentThrottleMillis: Long = 300, val childSwapWindowMillis: Long = 1_000)
+data class TrackerConfig(
+    val contentThrottleMillis: Long = 300,
+    val childSwapWindowMillis: Long = 1_000,
+    /** A look that misses the reel while its app stays in front (a swipe in flight) ends the visit only after this long. */
+    val missLeaveMillis: Long = 1_000,
+)
 
 data class TrackerOutput(val events: List<CounterEvent>, val recheckAt: Instant? = null)
 
@@ -25,7 +30,11 @@ class ScreenTracker(
     var foregroundApp: ShortVideoApp? = null
         private set
 
+    /** The reel screen is active and was matched by the latest look (not inside a tolerated miss). */
+    val reelOnScreen: ShortVideoApp? get() = activeApp.takeIf { missSince == null }
+
     private var lastEvalAt: Instant? = null
+    private var missSince: Instant? = null
     private val trackers = mutableMapOf<ShortVideoApp, ItemPositionTracker>()
 
     fun replaceDetector(detector: ScreenDetector) {
@@ -55,8 +64,10 @@ class ScreenTracker(
                     evaluate(signal.packageName, signal.nodes, signal.at, events)
                 }
                 if (app != null && activeApp == app) {
-                    tracker(app).onScroll(signal.scroll, signal.at)?.let {
-                        events += CounterEvent.ItemChanged(app, it, signal.at)
+                    val t = tracker(app)
+                    val adopting = t.adopting
+                    t.onScroll(signal.scroll, signal.at)?.let {
+                        events += if (adopting) CounterEvent.ItemAdopted(app, it, signal.at) else CounterEvent.ItemChanged(app, it, signal.at)
                     }
                 }
             }
@@ -92,16 +103,19 @@ class ScreenTracker(
         val app = activeApp ?: return
         events += CounterEvent.ScreenLeft(app, at)
         activeApp = null
+        missSince = null
     }
 
     private fun evaluate(pkg: String?, nodes: NodeSource?, at: Instant, events: MutableList<CounterEvent>) {
         lastEvalAt = at
         when (val d = detector.detect(pkg, nodes)) {
             is Detection.ShortVideo -> {
+                missSince = null
                 val t = tracker(d.app)
                 t.setRule(d.rule)
                 if (activeApp != d.app) {
                     activeApp = d.app
+                    t.startVisit()
                     if (d.rule.signal == ItemSignal.CHILD_SWAP) {
                         t.resetSignature()
                         t.onChildSignature(d.childSignature, at)
@@ -111,7 +125,16 @@ class ScreenTracker(
                     t.onChildSignature(d.childSignature, at)?.let { events += CounterEvent.ItemChanged(d.app, it, at) }
                 }
             }
-            Detection.NotShortVideo -> leave(at, events)
+            Detection.NotShortVideo -> {
+                val app = activeApp
+                if (app != null && ShortVideoApp.fromPackage(pkg) == app) {
+                    // Keep the visit (and the pre-swipe reel's identity) through a short miss; leave once it lasts.
+                    val since = missSince ?: at.also { missSince = it }
+                    if (Duration.between(since, at).toMillis() >= config.missLeaveMillis) leave(at, events)
+                } else {
+                    leave(at, events)
+                }
+            }
         }
     }
 }

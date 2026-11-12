@@ -15,7 +15,10 @@ import com.assismohanty.awaken.reelcounter.data.ReelDayStart
 import com.assismohanty.awaken.reelcounter.data.ReelRepository
 import com.assismohanty.awaken.reelcounter.data.SettingsStore
 import com.assismohanty.awaken.reelcounter.di.CounterDispatcher
+import android.util.Log
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
@@ -72,7 +75,7 @@ class CounterRunner @Inject constructor(
     /** Safe to call again after the service reconnects: the previous run is stopped first. */
     fun start(probe: (Instant) -> RawSignal.Probe) {
         stop()
-        val s = CoroutineScope(SupervisorJob() + dispatcher)
+        val s = CoroutineScope(SupervisorJob() + dispatcher + CoroutineExceptionHandler { _, e -> Log.e(TAG, "Counting job failed", e) })
         scope = s
         probeFactory = probe
         ready = s.launch {
@@ -92,7 +95,7 @@ class CounterRunner @Inject constructor(
                 .launchIn(this)
             detectors.config.onEach { tracker?.replaceDetector(ScreenDetector(it.config)) }.launchIn(this)
             while (isActive) {
-                settings.setLastHeartbeat(clock.now().toEpochMilli())
+                guarded("heartbeat") { settings.setLastHeartbeat(clock.now().toEpochMilli()) }
                 delay(HEARTBEAT_MILLIS)
             }
         }
@@ -155,7 +158,9 @@ class CounterRunner @Inject constructor(
         if (_state.value != null) reduceAndApply(listOf(event))
     }
 
-    private suspend fun handle(raw: RawSignal) {
+    private suspend fun handle(raw: RawSignal) = guarded("look") { look(raw) }
+
+    private suspend fun look(raw: RawSignal) {
         if (held && raw !is RawSignal.ScreenOff) return
         val current = _state.value ?: return
         val tr = tracker ?: return
@@ -165,7 +170,7 @@ class CounterRunner @Inject constructor(
         val out = tr.onSignal(raw)
         events += out.events
         reduceAndApply(events)
-        blocker.onLook(tr.activeApp, raw.at)
+        blocker.onLook(tr.reelOnScreen, raw.at)
         // Study mode looks only on probes: they carry the whole screen, and they run while YouTube is in front.
         if (raw is RawSignal.Probe) studyGuard.onLook(tr.foregroundApp, raw.nodes, raw.at)
         // A new reel settles after settleMillis; look again right then, so the count does not wait for the next probe.
@@ -174,8 +179,8 @@ class CounterRunner @Inject constructor(
         updateProbeLoop(tr)
     }
 
-    private suspend fun reduceAndApply(events: List<CounterEvent>) {
-        var state = _state.value ?: return
+    private suspend fun reduceAndApply(events: List<CounterEvent>) = guarded("apply") {
+        var state = _state.value ?: return@guarded
         val effects = mutableListOf<CounterEffect>()
         for (event in events) {
             val tr = machine.reduce(state, event)
@@ -184,6 +189,17 @@ class CounterRunner @Inject constructor(
         }
         _state.value = state
         applier.apply(effects, state)
+    }
+
+    /** One failed look or write is logged and dropped; it must never end the counting (or the process). */
+    private suspend fun guarded(what: String, block: suspend () -> Unit) {
+        try {
+            block()
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Log.e(TAG, "Reel counter $what failed", e)
+        }
     }
 
     private fun scheduleRecheck(at: Instant) {
@@ -204,7 +220,7 @@ class CounterRunner @Inject constructor(
             if (probeJob?.isActive != true) {
                 probeJob = s.launch {
                     while (isActive) {
-                        delay(PROBE_MILLIS)
+                        delay(probeMillis(tr.activeApp))
                         val factory = probeFactory ?: break
                         lock.withLock { handle(factory(clock.now())) }
                     }
@@ -216,7 +232,12 @@ class CounterRunner @Inject constructor(
     }
 
     companion object {
+        private const val TAG = "ReelCounter"
         const val PROBE_MILLIS = 250L
+        const val IDLE_PROBE_MILLIS = 1_000L
+
+        /** Look fast while a reel screen is matched; slower while its app is in front on any other screen. */
+        fun probeMillis(activeApp: ShortVideoApp?): Long = if (activeApp != null) PROBE_MILLIS else IDLE_PROBE_MILLIS
         const val SETTLE_LOOK_MILLIS = 380L
         const val HEARTBEAT_MILLIS = 5 * 60 * 1_000L
     }

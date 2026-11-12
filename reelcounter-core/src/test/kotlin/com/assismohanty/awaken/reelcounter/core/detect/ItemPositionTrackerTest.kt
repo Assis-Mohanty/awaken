@@ -89,4 +89,23 @@ class ItemPositionTrackerTest {
         assertThat(t.index).isEqualTo(0)
         assertThat(t.onChildSignature("b", t0.plusMillis(200))).isNull()
     }
+
+    @Test
+    fun childSwapTreatsAnUnsetDeltaAsForward() {
+        val t = tracker(swapRule)
+        t.onChildSignature("a", t0)
+        t.onChildSignature("b", t0.plusMillis(100))
+        // Android reports -1 when a view never set the delta.
+        t.onScroll(scroll(SNAP_CONTAINER, -1, -1, dy = -1), t0.plusMillis(200))
+        assertThat(t.onChildSignature("c", t0.plusMillis(300))).isEqualTo(2)
+    }
+
+    @Test
+    fun childSwapIgnoresAScrollFromAnotherView() {
+        val t = tracker(rule(SNAP_CONTAINER, ItemSignal.CHILD_SWAP, sources = listOf(SNAP_CONTAINER)))
+        t.onChildSignature("a", t0)
+        t.onChildSignature("b", t0.plusMillis(100))
+        t.onScroll(scroll("com.snapchat.android:id/comments", -1, -1, dy = -500), t0.plusMillis(200))
+        assertThat(t.onChildSignature("c", t0.plusMillis(300))).isEqualTo(2)
+    }
 }

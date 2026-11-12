@@ -18,6 +18,8 @@ class CounterMachine(private val config: CounterConfig = CounterConfig()) {
             is CounterEvent.ScreenEntered -> enter(s, event, fx)
             is CounterEvent.ItemChanged ->
                 if (s.active?.app == event.app) setItem(s, event.app, event.index, event.at) else s
+            is CounterEvent.ItemAdopted ->
+                if (s.active?.app == event.app) adopt(s, event.app, event.index, event.at) else s
             is CounterEvent.ScreenLeft ->
                 if (s.active?.app == event.app) {
                     fx += CounterEffect.BubbleChanged(null)
@@ -106,7 +108,10 @@ class CounterMachine(private val config: CounterConfig = CounterConfig()) {
         val existing = t.sessions[e.app]
         val leftAt = existing?.leftAt
         val resume = existing != null && (leftAt == null || millis(leftAt, e.at) <= config.resumeGraceMillis)
-        val session = if (existing != null && resume) {
+        val session = if (existing != null && resume && e.index < existing.highestCounted) {
+            // The numbering went backwards (a restart renumbers from 0): a new session seeded at this video, never a resume.
+            seeded(e.index, e.at)
+        } else if (existing != null && resume) {
             existing.copy(leftAt = null)
         } else {
             Session(id = e.at.toEpochMilli(), highestCounted = -1, currentIndex = -1, pending = null, leftAt = null)
@@ -119,6 +124,24 @@ class CounterMachine(private val config: CounterConfig = CounterConfig()) {
         fx += CounterEffect.BubbleChanged(e.app)
         return t
     }
+
+    /**
+     * The app's own index for the video that was on screen when the visit began. It never counts by itself: that video
+     * was counted (or resumed) on entry. One step back is a swipe back; anything lower means the list was renumbered.
+     */
+    private fun adopt(s: CounterState, app: ShortVideoApp, index: Int, at: Instant): CounterState {
+        val session = s.sessions[app] ?: return s
+        val pending = session.pending
+        val next = when {
+            index < session.currentIndex - 1 -> seeded(index, at)
+            pending != null -> session.copy(pending = pending.copy(index = index))
+            else -> session.copy(currentIndex = index, highestCounted = maxOf(session.highestCounted, index))
+        }
+        return s.copy(sessions = s.sessions + (app to next))
+    }
+
+    private fun seeded(index: Int, at: Instant) =
+        Session(id = at.toEpochMilli(), highestCounted = index, currentIndex = index, pending = null, leftAt = null)
 
     private fun snooze(s: CounterState, app: ShortVideoApp, fx: MutableList<CounterEffect>): CounterState {
         val appState = s.apps.getValue(app)

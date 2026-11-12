@@ -4,12 +4,16 @@ import com.assismohanty.awaken.reelcounter.core.ShortVideoApp.INSTAGRAM as IG
 import com.assismohanty.awaken.reelcounter.core.ShortVideoApp.SNAPCHAT as SNAP
 import com.assismohanty.awaken.reelcounter.core.ShortVideoApp.YOUTUBE as YT
 import com.assismohanty.awaken.reelcounter.core.count.CounterEvent
+import com.assismohanty.awaken.reelcounter.core.count.CounterMachine
+import com.assismohanty.awaken.reelcounter.core.count.CounterState
+import com.assismohanty.awaken.reelcounter.core.model.Bounds
 import com.assismohanty.awaken.reelcounter.core.model.ScrollSignal
 import com.google.common.truth.Truth.assertThat
 import org.junit.jupiter.api.Test
 import java.time.Instant
 
 class ScreenTrackerTest {
+    private val launcherPkg = "com.android.launcher"
     private val t0 = Instant.parse("2026-11-01T10:00:00Z")
     private fun at(ms: Long) = t0.plusMillis(ms)
 
@@ -48,7 +52,7 @@ class ScreenTrackerTest {
     fun windowStateChangeAwayEmitsScreenLeft() {
         val t = tracker()
         t.enterIg()
-        t.onSignal(RawSignal.WindowStateChanged(IG_PKG, plainScreen(IG_PKG), at(1_000)))
+        t.onSignal(RawSignal.WindowStateChanged(launcherPkg, plainScreen(launcherPkg), at(1_000)))
             .assertEvents(CounterEvent.ScreenLeft(IG, at(1_000)))
     }
 
@@ -65,7 +69,7 @@ class ScreenTrackerTest {
     fun contentChangeAfter300msEvaluates() {
         val t = tracker()
         t.enterIg()
-        t.onSignal(RawSignal.WindowContentChanged(IG_PKG, plainScreen(IG_PKG), at(300)))
+        t.onSignal(RawSignal.WindowContentChanged(launcherPkg, plainScreen(launcherPkg), at(300)))
             .assertEvents(CounterEvent.ScreenLeft(IG, at(300)))
     }
 
@@ -73,7 +77,7 @@ class ScreenTrackerTest {
     fun windowStateChangeIsNeverThrottled() {
         val t = tracker()
         t.enterIg()
-        t.onSignal(RawSignal.WindowStateChanged(IG_PKG, plainScreen(IG_PKG), at(10)))
+        t.onSignal(RawSignal.WindowStateChanged(launcherPkg, plainScreen(launcherPkg), at(10)))
             .assertEvents(CounterEvent.ScreenLeft(IG, at(10)))
     }
 
@@ -162,8 +166,84 @@ class ScreenTrackerTest {
         val t = tracker()
         t.enterIg()
         t.onSignal(RawSignal.ViewScrolled(IG_PKG, scroll(IG_PAGER, 4, 4), igPagerScreen(), at(1_000)))
-        t.onSignal(RawSignal.WindowStateChanged(IG_PKG, plainScreen(IG_PKG), at(2_000)))
+        t.onSignal(RawSignal.WindowStateChanged(launcherPkg, plainScreen(launcherPkg), at(2_000)))
         t.onSignal(RawSignal.WindowStateChanged(IG_PKG, igPagerScreen(), at(3_000)))
             .assertEvents(CounterEvent.ScreenEntered(IG, at(3_000), 4))
+    }
+
+    // An Instagram-like reel: the container is the item, so its own key tells reels apart.
+    private val reelConfig = detectorConfig(
+        appDetector(IG, true, ScreenRule(listOf(IG_REEL), signal = ItemSignal.CHILD_SWAP, itemIsContainer = true)),
+        appDetector(YT, true, rule(YT_LIST, ItemSignal.SCROLL_INDEX, sources = listOf(YT_LIST))),
+    )
+
+    private fun reel(key: String) = source(node("root", children = listOf(node(key, id = IG_REEL))), IG_PKG)
+
+    /** Mid-swipe: two reels at about half the screen each, so neither reaches the coverage rule. */
+    private fun midSwipe() = source(
+        node(
+            "root",
+            children = listOf(
+                node("a", id = IG_REEL, bounds = Bounds(0, -1200, 1080, 1200)),
+                node("b", id = IG_REEL, bounds = Bounds(0, 1200, 1080, 3600)),
+            ),
+        ),
+        IG_PKG,
+    )
+
+    @Test
+    fun aMissedLookMidSwipeKeepsTheVisitAndTheNextReelCountsOnce() {
+        val t = ScreenTracker(ScreenDetector(reelConfig))
+        val events = mutableListOf<CounterEvent>()
+        events += t.onSignal(RawSignal.WindowStateChanged(IG_PKG, reel("a"), at(0))).events
+        val miss = t.onSignal(RawSignal.WindowContentChanged(IG_PKG, midSwipe(), at(400)))
+        assertThat(miss.events).isEmpty()
+        assertThat(t.activeApp).isEqualTo(IG)
+        assertThat(t.reelOnScreen).isNull()
+        val next = t.onSignal(RawSignal.WindowContentChanged(IG_PKG, reel("b"), at(800)))
+        next.assertEvents(CounterEvent.ItemChanged(IG, 1, at(800)))
+        events += next.events
+        events += t.onSignal(RawSignal.Probe(IG_PKG, reel("b"), at(1_500))).events
+
+        val machine = CounterMachine()
+        var state = CounterState.initial(java.time.LocalDate.of(2026, 11, 1), emptyMap(), emptyMap(), emptyMap())
+        for (e in events) state = machine.reduce(state, e).state
+        // Reel A on entry, reel B once.
+        assertThat(state.countToday(IG)).isEqualTo(2)
+    }
+
+    @Test
+    fun aMissThatLastsLeavesTheScreen() {
+        val t = ScreenTracker(ScreenDetector(reelConfig))
+        t.onSignal(RawSignal.WindowStateChanged(IG_PKG, reel("a"), at(0)))
+        t.onSignal(RawSignal.Probe(IG_PKG, plainScreen(IG_PKG), at(1_000))).assertEvents(CounterEvent.Tick(at(1_000)))
+        t.onSignal(RawSignal.Probe(IG_PKG, plainScreen(IG_PKG), at(2_000)))
+            .assertEvents(CounterEvent.ScreenLeft(IG, at(2_000)), CounterEvent.Tick(at(2_000)))
+    }
+
+    @Test
+    fun anotherAppInFrontLeavesAtOnceEvenDuringAMiss() {
+        val t = ScreenTracker(ScreenDetector(reelConfig))
+        t.onSignal(RawSignal.WindowStateChanged(IG_PKG, reel("a"), at(0)))
+        t.onSignal(RawSignal.WindowContentChanged(IG_PKG, midSwipe(), at(400)))
+        t.onSignal(RawSignal.WindowStateChanged(launcherPkg, plainScreen(launcherPkg), at(500)))
+            .assertEvents(CounterEvent.ScreenLeft(IG, at(500)))
+    }
+
+    @Test
+    fun aScrollIndexListAdoptsItsFirstIndexOnReEntry() {
+        val t = ScreenTracker(ScreenDetector(reelConfig))
+        t.onSignal(RawSignal.WindowStateChanged(YT_PKG, ytScreen(), at(0)))
+        t.onSignal(RawSignal.ViewScrolled(YT_PKG, scroll(YT_LIST, 40, 40), ytScreen(), at(500)))
+            .assertEvents(CounterEvent.ItemAdopted(YT, 40, at(500)))
+        t.onSignal(RawSignal.ViewScrolled(YT_PKG, scroll(YT_LIST, 41, 41), ytScreen(), at(1_000)))
+            .assertEvents(CounterEvent.ItemChanged(YT, 41, at(1_000)))
+        t.onSignal(RawSignal.WindowStateChanged(launcherPkg, plainScreen(launcherPkg), at(2_000)))
+        t.onSignal(RawSignal.WindowStateChanged(YT_PKG, ytScreen(), at(3_000)))
+        // YouTube's list restarted at 0: the old 41 must not stick.
+        t.onSignal(RawSignal.ViewScrolled(YT_PKG, scroll(YT_LIST, 0, 0), ytScreen(), at(3_500)))
+            .assertEvents(CounterEvent.ItemAdopted(YT, 0, at(3_500)))
+        t.onSignal(RawSignal.ViewScrolled(YT_PKG, scroll(YT_LIST, 1, 1), ytScreen(), at(4_000)))
+            .assertEvents(CounterEvent.ItemChanged(YT, 1, at(4_000)))
     }
 }

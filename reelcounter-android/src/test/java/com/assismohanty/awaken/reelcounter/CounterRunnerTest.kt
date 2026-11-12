@@ -66,6 +66,9 @@ class CounterRunnerTest {
         return CounterRunner(repo, settings, detectors, EffectApplier(repo, overlay), clock, FixedDayStart, blocker, study, dispatcher)
     }
 
+    // Leaving means another app in front: the same app on a non-reel screen is a tolerated miss.
+    private val launcherPkg = "com.android.launcher"
+
     private fun at(ms: Long): Instant = T0.plusMillis(ms)
 
     private fun CounterRunner.started(): CounterRunner {
@@ -93,7 +96,7 @@ class CounterRunnerTest {
         val r = runner().started()
         runCurrent()
         r.submitSignal(RawSignal.WindowStateChanged(IG_PKG, pagerScreen(), at(0)))
-        r.submitSignal(RawSignal.WindowStateChanged(IG_PKG, plainScreen(), at(2_000)))
+        r.submitSignal(RawSignal.WindowStateChanged(launcherPkg, plainScreen(launcherPkg), at(2_000)))
         runCurrent()
         assertThat(overlay.calls.last()).isEqualTo("hideAll")
         assertThat(r.state.value?.active).isNull()
@@ -136,7 +139,7 @@ class CounterRunnerTest {
         runCurrent()
         assertThat(db.dao().day(day1.toString()).single().seconds).isEqualTo(15)
 
-        r.submitSignal(RawSignal.WindowStateChanged(IG_PKG, plainScreen(), at(18_500)))
+        r.submitSignal(RawSignal.WindowStateChanged(launcherPkg, plainScreen(launcherPkg), at(18_500)))
         runCurrent()
         assertThat(db.dao().day(day1.toString()).single().seconds).isEqualTo(18)
         r.stop()

@@ -9,6 +9,8 @@ sealed interface CounterEvent {
 
     data class ScreenEntered(val app: ShortVideoApp, override val at: Instant, val index: Int) : CounterEvent
     data class ItemChanged(val app: ShortVideoApp, val index: Int, override val at: Instant) : CounterEvent
+    /** The app's own index for the video on screen, first seen after the visit began (a scroll-index list). */
+    data class ItemAdopted(val app: ShortVideoApp, val index: Int, override val at: Instant) : CounterEvent
     data class ScreenLeft(val app: ShortVideoApp, override val at: Instant) : CounterEvent
     data class Tick(override val at: Instant) : CounterEvent
     data class DayRolled(val newDay: LocalDate, override val at: Instant) : CounterEvent

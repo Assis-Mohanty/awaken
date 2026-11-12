@@ -359,7 +359,11 @@ class ProtectService : Service() {
                 delay(LOCKDOWN_MS)
                 continue
             }
-            lockdownUp = false
+            if (lockdownUp) {
+                // The Lockdown ended between looks (the shield, or another caller): take its cover down and release its hold.
+                lockdownWatcher.onScreenOff(lockdownScreen)
+                lockdownUp = false
+            }
             // A Focus Lock cover looks fast too: a covered app must not linger. It never waits for a call (the dialer is never covered).
             val focusRunning = focusWatcher.sessionRunning()
             if (focusRunning || focusWatcher.isCovering) {
