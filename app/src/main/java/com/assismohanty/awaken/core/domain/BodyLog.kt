@@ -45,6 +45,7 @@ class BodyLog @Inject constructor(
     private val hunterDao: HunterDao,
     private val transactions: TransactionRunner,
     private val clock: Clock,
+    private val catalog: FoodCatalog,
 ) {
     /** The injected clock's now, so screens never read the system time (CLAUDE.md invariant 6). */
     fun now(): java.time.Instant = clock.now()
@@ -182,16 +183,23 @@ class BodyLog @Inject constructor(
     }
 
     /** "Log it": copies a planned food into the diary on [date] and marks the plan done, in one transaction. */
-    suspend fun logPlanned(id: String, date: LocalDate): Boolean = transactions.run {
-        val entry = dao.planEntry(id) ?: return@run false
+    suspend fun logPlanned(id: String, date: LocalDate): Boolean {
+        // A plan entry keeps no Estimate tag; it is a property of the catalog food, read before the transaction (another database).
+        val food = dao.planEntry(id)?.let { catalog.byId(it.foodId) }
+        return transactions.run { logPlannedRow(id, date, food) }
+    }
+
+    private suspend fun logPlannedRow(id: String, date: LocalDate, food: Food?): Boolean {
+        val entry = dao.planEntry(id) ?: return false
         dietDao.upsertLog(
             FoodLogEntity(
                 id = UUID.randomUUID().toString(), gameDate = date, meal = entry.meal, foodId = entry.foodId, name = entry.name, grams = entry.grams,
                 portionLabel = entry.portionLabel, nutrientsJson = entry.nutrientsJson, loggedAt = clock.now(), entrySource = EntrySource.PLAN,
+                estimated = food?.id == entry.foodId && food.estimated, kcalLowPer100 = food?.kcalRange?.start, kcalHighPer100 = food?.kcalRange?.endInclusive,
             ),
         )
         dao.upsertPlanEntry(entry.copy(logged = true))
-        true
+        return true
     }
 
     // Scanner feedback: one row per photo scan outcome, never sent anywhere (plan 5.1; ENGINE_DECISIONS #206).

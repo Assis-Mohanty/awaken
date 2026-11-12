@@ -193,6 +193,30 @@ class DietLibraryTest {
         assertThat(library.saveMeal("Nothing", emptyList())).isNull()
     }
 
+    @Test
+    fun rowsFromASavedMealOrAPlanKeepTheCatalogsEstimateTag() = runTest {
+        // Dal makhani is an ESTIMATED row in foods.db: a different dish stands in, so the diary must say so.
+        val dal = checkNotNull(graph.foodCatalog.byId("cofid:15-737"))
+        assertThat(dal.estimated).isTrue()
+        eat(dal, meal = Meal.DINNER.name)
+        eat(food("usda:1", "Egg"), meal = Meal.DINNER.name)
+        val saved = checkNotNull(library.saveMeal("Dinner", graph.db.dietDao().entriesOn(today, Meal.DINNER.name)))
+
+        val tomorrow = today.plusDays(1)
+        library.addSavedMealToDiary(saved, tomorrow, Meal.DINNER.name)
+        val fromMeal = graph.db.dietDao().entriesOn(tomorrow).associateBy { it.foodId }
+        assertThat(fromMeal.getValue(dal.id).estimated).isTrue()
+        assertThat(fromMeal.getValue(dal.id).kcalLowPer100).isEqualTo(dal.kcalRange?.start)
+        assertThat(fromMeal.getValue("usda:1").estimated).isFalse()
+
+        val planned = checkNotNull(body.plan(today, today.plusDays(2), Meal.LUNCH.name, dal, 150.0, null))
+        assertThat(body.logPlanned(planned, today.plusDays(2))).isTrue()
+        val fromPlan = graph.db.dietDao().entriesOn(today.plusDays(2)).single()
+        assertThat(fromPlan.entrySource).isEqualTo(EntrySource.PLAN)
+        assertThat(fromPlan.estimated).isTrue()
+        assertThat(fromPlan.kcalHighPer100).isEqualTo(dal.kcalRange?.endInclusive)
+    }
+
     // Recipes
 
     @Test

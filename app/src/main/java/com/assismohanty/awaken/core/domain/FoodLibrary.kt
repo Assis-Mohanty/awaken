@@ -187,12 +187,16 @@ class FoodLibrary @Inject constructor(
     /** Adds every item of a saved meal to [meal] on [date]; returns how many rows were added. */
     suspend fun addSavedMealToDiary(id: String, date: LocalDate, meal: String): Int {
         val items = dao.savedMealItems(id)
+        // A saved item keeps no Estimate tag; it is a property of the catalog food, so it is read back from there.
+        val catalogFoods = catalog.byIds(items.map { it.foodId }.distinct()).associateBy { it.id }
         val now = clock.now()
         dietDao.upsertLogs(
             items.mapIndexed { i, it ->
+                val food = catalogFoods[it.foodId]
                 FoodLogEntity(
                     id = UUID.randomUUID().toString(), gameDate = date, meal = meal, foodId = it.foodId, name = it.name, grams = it.grams,
                     portionLabel = it.portionLabel, nutrientsJson = it.nutrientsJson, loggedAt = now.plusMillis(i.toLong()), entrySource = EntrySource.MEAL,
+                    estimated = food?.estimated == true, kcalLowPer100 = food?.kcalRange?.start, kcalHighPer100 = food?.kcalRange?.endInclusive,
                 )
             },
         )
