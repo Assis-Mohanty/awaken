@@ -110,7 +110,7 @@
     <string name="diet_plan_total">%1$s kcal planned</string>
     <string name="cd_diet_plan_remove">Remove %1$s from the plan</string>
     <string name="cd_diet_plan_log">Log %1$s</string>
-    <string name="diet_rename_meal">Rename meal</string>
+    <string name="diet_rename_meal_cd">Rename %1$s</string>
     <string name="diet_rename_title">Rename meal</string>
     <string name="diet_water_other">Other amount</string>
     <string name="diet_water_other_title">Add water</string>

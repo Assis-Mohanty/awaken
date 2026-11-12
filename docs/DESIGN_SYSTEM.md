@@ -79,7 +79,8 @@ Sentence case everywhere. No truncation at 200 % font scale: text wraps, rows gr
 - **Buttons:** pills, 52dp tall.
   - Primary: solid primary ink with page-coloured text. Destructive uses negative.
   - Secondary: the pressed-card colour.
-  - Quiet: ink text.
+  - Quiet: a compact 48dp pill in the pressed-card colour with a semibold label. **Text with no container is never tappable** (2026-11-12: plain ink text looked the same as headings, so the hunter could not tell Gym settings, Other amount or Water target were buttons).
+  - Edit-in-place (rename a meal): a 16dp pencil glyph beside the name, inside a 48dp invisible touch target, never a labelled button.
 - **Chips:** 24dp pills, ink text on a 15 % wash of their accent.
 - **Choice chips:** 44dp. Selected is solid ink with a check.
 - **XP bar:** an 8dp pill, divider track, solid gold fill.

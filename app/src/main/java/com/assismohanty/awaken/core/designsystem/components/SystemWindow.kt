@@ -56,6 +56,8 @@ fun AwakenCard(
     /** Gap between children; list cards pass [Spacing.zero] because rows carry their own padding. */
     spacing: Dp = Spacing.sm,
     headerTrailing: (@Composable RowScope.() -> Unit)? = null,
+    /** Sits right after the title, not at the row's end (a small edit icon); [headerTrailing] stays at the end. */
+    titleTrailing: (@Composable RowScope.() -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val colors = AwakenTheme.colors
@@ -89,7 +91,19 @@ fun AwakenCard(
     ) {
         if (title != null || headerTrailing != null) {
             Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                if (title != null) {
+                if (title != null && titleTrailing != null) {
+                    Row(modifier = Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = title,
+                            style = AwakenTheme.type.windowTitle,
+                            color = colors.textPrimary,
+                            modifier = Modifier
+                                .weight(1f, fill = false)
+                                .semantics { heading() },
+                        )
+                        titleTrailing.invoke(this)
+                    }
+                } else if (title != null) {
                     Text(
                         text = title,
                         style = AwakenTheme.type.windowTitle,
@@ -114,8 +128,9 @@ fun SystemWindow(
     modifier: Modifier = Modifier,
     reveal: Boolean = true,
     headerTrailing: (@Composable RowScope.() -> Unit)? = null,
+    titleTrailing: (@Composable RowScope.() -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit,
-) = AwakenCard(modifier = modifier, title = title, accent = accent, reveal = reveal, headerTrailing = headerTrailing, content = content)
+) = AwakenCard(modifier = modifier, title = title, accent = accent, reveal = reveal, headerTrailing = headerTrailing, titleTrailing = titleTrailing, content = content)
 
 private const val MIN_REVEAL_ALPHA = 0.001f
 private val CARD_ELEVATION = 6.dp

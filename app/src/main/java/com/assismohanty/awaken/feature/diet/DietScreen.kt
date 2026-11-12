@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -470,6 +471,12 @@ private fun MealWindow(slot: MealSlot, slots: List<MealSlot>, entries: List<Diar
         accent = colors.accent,
         modifier = modifier,
         reveal = false,
+        titleTrailing = {
+            // A small edit icon beside the name; the 48dp touch target around it is invisible.
+            IconButton(onClick = { onEvent(DietEvent.OpenPrompt(Prompt.RenameMeal(slot.id, currentName))) }, modifier = Modifier.size(AwakenTheme.dimens.touchTarget)) {
+                Icon(AwakenGlyphs.Pencil, contentDescription = lexString(R.string.diet_rename_meal_cd, currentName), tint = colors.textSecondary, modifier = Modifier.size(AwakenTheme.dimens.iconSmall))
+            }
+        },
         headerTrailing = {
             Text(lexString(R.string.diet_meal_kcal, formatCount(kcal)), style = AwakenTheme.type.label, color = colors.textSecondary)
             HeaderIconButton(AwakenGlyphs.Plus, lexString(R.string.cd_diet_add_to_meal, mealLabel(slot.id, slots)), { onEvent(DietEvent.OpenSearch(slot.id)) })
@@ -483,7 +490,6 @@ private fun MealWindow(slot: MealSlot, slots: List<MealSlot>, entries: List<Diar
             QuietButton(text = lexString(R.string.diet_save_meal_action), onClick = { onEvent(DietEvent.OpenPrompt(Prompt.SaveMeal(slot.id))) })
             if (!isToday) QuietButton(text = lexString(R.string.diet_copy_meal), onClick = { onEvent(DietEvent.CopyToToday(slot.id)) })
         }
-        QuietButton(text = lexString(R.string.diet_rename_meal), onClick = { onEvent(DietEvent.OpenPrompt(Prompt.RenameMeal(slot.id, currentName))) })
         if (!slot.builtIn) QuietButton(text = lexString(R.string.diet_remove_meal), onClick = { onEvent(DietEvent.DeleteMeal(slot.id)) })
     }
 }

@@ -121,15 +121,16 @@ private fun RestDayCard(canSwap: Boolean, past: Boolean, onEvent: (GymEvent) -> 
 @Composable
 private fun WorkoutDayCard(routine: RoutineDetail, canStart: Boolean, canSwap: Boolean, onEvent: (GymEvent) -> Unit) {
     val colors = AwakenTheme.colors
+    val name = routineTitle(routine.name)
     AwakenCard(reveal = false, modifier = Modifier.fillMaxWidth()) {
-        Text(routine.name, style = AwakenTheme.type.windowTitle, color = colors.textPrimary)
+        Text(name, style = AwakenTheme.type.windowTitle, color = colors.textPrimary)
         Text(routineMeta(routine), style = AwakenTheme.type.caption, color = colors.textSecondary)
         if (routine.warmup.isNotEmpty()) ExerciseSection(R.string.gym_section_warmup, routine.warmup, routine, startOpen = false)
         if (routine.work.isNotEmpty()) ExerciseSection(R.string.gym_section_workout, routine.work, routine, startOpen = true)
         Row(horizontalArrangement = Arrangement.spacedBy(Spacing.xs), modifier = Modifier.fillMaxWidth()) {
             SecondaryButton(text = lexString(R.string.gym_edit), onClick = { onEvent(GymEvent.OpenEditor(routine.id)) }, modifier = Modifier.weight(1f))
             if (canStart) {
-                PrimaryButton(text = lexString(R.string.gym_start), onClick = { onEvent(GymEvent.StartRoutine(routine.id, routine.name)) }, modifier = Modifier.weight(1f))
+                PrimaryButton(text = lexString(R.string.gym_start), onClick = { onEvent(GymEvent.StartRoutine(routine.id, name)) }, modifier = Modifier.weight(1f))
             }
         }
         if (canSwap) QuietButton(text = lexString(R.string.gym_day_swap), onClick = { onEvent(GymEvent.SwapWithToday) })
@@ -259,6 +260,10 @@ internal fun PlansSection(home: GymHomeUi, onEvent: (GymEvent) -> Unit, modifier
 
 // My routines
 
+/** A routine saved with no name (New routine, then back out of the editor) still needs something to read and to tap. */
+@Composable
+internal fun routineTitle(name: String): String = name.ifBlank { lexString(R.string.gym_routine_untitled) }
+
 @Composable
 internal fun MyRoutinesSection(home: GymHomeUi, onEvent: (GymEvent) -> Unit, modifier: Modifier = Modifier) {
     val colors = AwakenTheme.colors
@@ -268,13 +273,14 @@ internal fun MyRoutinesSection(home: GymHomeUi, onEvent: (GymEvent) -> Unit, mod
             if (home.routines.isEmpty()) Text(lexString(R.string.gym_routines_empty), style = AwakenTheme.type.body, color = colors.textSecondary)
             home.routines.forEach { routine ->
                 val days = if (routine.weekdays.isEmpty()) lexString(R.string.gym_routine_none) else routine.weekdays.sorted().map { weekdayShort(it) }.joinToString(", ")
-                val menu = lexString(R.string.gym_routine_menu_cd, routine.name)
+                val name = routineTitle(routine.name)
+                val menu = lexString(R.string.gym_routine_menu_cd, name)
                 ListRow(
-                    title = routine.name,
+                    title = name,
                     secondary = lexString(R.string.gym_plan_meta, days, lexPlural(R.plurals.gym_exercises_count, routine.work.size, routine.work.size)),
                     onClick = { onEvent(GymEvent.OpenEditor(routine.id)) },
                     trailing = {
-                        SecondaryButton(text = lexString(R.string.gym_start), onClick = { onEvent(GymEvent.StartRoutine(routine.id, routine.name)) })
+                        SecondaryButton(text = lexString(R.string.gym_start), onClick = { onEvent(GymEvent.StartRoutine(routine.id, name)) })
                         IconButton(onClick = { onEvent(GymEvent.OpenRoutineMenu(routine.id)) }, modifier = Modifier.size(AwakenTheme.dimens.touchTarget)) {
                             Icon(AwakenGlyphs.More, contentDescription = menu, tint = colors.textSecondary)
                         }

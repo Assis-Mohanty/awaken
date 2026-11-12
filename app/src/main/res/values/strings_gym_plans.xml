@@ -74,6 +74,7 @@
     <!-- My routines -->
     <string name="gym_routines_title">My routines</string>
     <string name="gym_routine_none">Not on a day yet</string>
+    <string name="gym_routine_untitled">Untitled routine</string>
     <string name="gym_routine_menu_cd">More for %1$s</string>
     <string name="gym_routine_edit">Edit</string>
     <string name="gym_routine_duplicate">Duplicate</string>

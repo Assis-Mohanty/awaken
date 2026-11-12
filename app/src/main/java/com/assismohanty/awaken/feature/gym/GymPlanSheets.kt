@@ -95,8 +95,9 @@ internal fun PlanDetailContent(detail: PlanDetailUi, onEvent: (GymEvent) -> Unit
 @Composable
 internal fun RoutineMenuSheet(routine: RoutineDetail, canMoveUp: Boolean, canMoveDown: Boolean, onEvent: (GymEvent) -> Unit) {
     val colors = AwakenTheme.colors
-    val copyName = lexString(R.string.gym_routine_copy_name, routine.name)
-    AwakenBottomSheet(onDismiss = { onEvent(GymEvent.CloseRoutineMenu) }, title = routine.name) {
+    val name = routineTitle(routine.name)
+    val copyName = lexString(R.string.gym_routine_copy_name, name)
+    AwakenBottomSheet(onDismiss = { onEvent(GymEvent.CloseRoutineMenu) }, title = name) {
         ListRow(title = lexString(R.string.gym_routine_edit), icon = AwakenGlyphs.Pencil, onClick = { onEvent(GymEvent.OpenEditor(routine.id)) })
         ListRow(title = lexString(R.string.gym_routine_assign), icon = AwakenGlyphs.Calendar, onClick = { onEvent(GymEvent.OpenAssign(routine.id)) })
         ListRow(title = lexString(R.string.gym_routine_duplicate), icon = AwakenGlyphs.Plus, onClick = { onEvent(GymEvent.DuplicateRoutine(routine.id, copyName)) })

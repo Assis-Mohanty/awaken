@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -82,19 +81,30 @@ fun SecondaryButton(
     }
 }
 
-/** Low-emphasis action: ink text, no container. */
+/**
+ * Low-emphasis action: a compact pill (48dp, the touch minimum) in the pressed-card colour with a semibold label. It always has a
+ * container, so it never reads as a heading or a line of text; text with no container is not tappable anywhere in the app.
+ */
 @Composable
 fun QuietButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true) {
+    val colors = AwakenTheme.colors
     val interaction = remember { MutableInteractionSource() }
-    TextButton(
+    Button(
         onClick = onClick,
         enabled = enabled,
         interactionSource = interaction,
         shape = AwakenTheme.shapes.button,
-        colors = ButtonDefaults.textButtonColors(contentColor = AwakenTheme.colors.textPrimary, disabledContentColor = AwakenTheme.colors.textMuted),
+        contentPadding = PaddingValues(horizontal = Spacing.md, vertical = Spacing.xs),
+        colors = ButtonDefaults.buttonColors(
+            containerColor = colors.surfaceOverlay,
+            contentColor = colors.textPrimary,
+            disabledContainerColor = colors.surfaceOverlay,
+            disabledContentColor = colors.textMuted,
+        ),
+        elevation = null,
         modifier = modifier.pressScale(interaction).defaultMinSize(minHeight = AwakenTheme.dimens.touchTarget),
     ) {
-        Text(text = text, style = AwakenTheme.type.title)
+        Text(text = text, style = AwakenTheme.type.label, textAlign = TextAlign.Center)
     }
 }
 
