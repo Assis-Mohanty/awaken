@@ -34,7 +34,7 @@ Ask testers to **open the app on several days**, not just install it.
   - [ ] Target audience: 18+ (avoids Families policy obligations; set 13+ only if you're ready for those requirements)
   - [ ] Data safety (see §4)
   - [ ] AI-generated content: confirm the in-app "Report this quest" flow works without leaving the app, and that the prompt content rules exclude restricted content (Play's AI-Generated Content policy; re-read the current policy page before submitting)
-  - [ ] **Health apps declaration**: select Activity & fitness / Sleep; justify each Health Connect data type (§5)
+  - [ ] **Health apps declaration**: select Activity & fitness / Sleep, and **Nutrition and weight management** (Diet: "Tools for tracking dietary intake, planning meals, managing diets, and supporting weight loss or weight management goals."); justify each Health Connect data type (§5)
   - [ ] Government app: No; Financial features: No
 - [ ] Store listing (§3), graphics (§6)
 - [ ] Internal testing release (sanity-check install from Play) → Closed testing release with tester list + feedback email
@@ -71,6 +71,13 @@ HARD, NEVER CRUEL
 • Miss a day and the Penalty Zone gives you a comeback quest — not a wipe.
 • Plan rest days. Use Streak Shields. Your progress is never deleted.
 
+TRACK WHAT YOU EAT
+• A food diary with an offline database of over 16,000 foods, Indian dishes included.
+• Scan a barcode, or photograph the nutrition table on a pack, and check the numbers before you save.
+• Calorie and macro targets worked out from your age, height, weight and activity. They are estimates.
+• Water, weight, body measurements, recipes, a meal planner and fasting timer.
+• Diet is a tracker only: it never pays XP, so what you eat never becomes a score.
+
 GROW EVERY STAT
 • Strength, Intelligence, Willpower, Vitality, Charisma — watch your stat pentagon grow.
 • Rank Trials to earn promotion. 30 achievements and titles. Story chapters unlock as you rise.
@@ -79,7 +86,16 @@ GROW EVERY STAT
 PRIVATE BY DESIGN
 • No account. Works offline. Your progress stays on your phone.
 • AI Paths are optional. Only your goal and quest results are sent to write your quests, and our server keeps none of it.
+• Online food lookup is optional and off until you allow it: only the barcode number is sent, to Open Food Facts.
+
+Barcode scanning and reading a nutrition table need a rear camera; one with autofocus works best.
+
+AWAKEN is not a medical device and does not diagnose, treat, cure, or prevent any medical condition. Consult a healthcare professional for medical advice, diagnosis, or treatment.
+
+Food data: USDA FoodData Central, UK CoFID (Open Government Licence v3.0), Open Food Facts (ODbL).
 ```
+
+**Diet copy rules (plan 10):** never promise a weight change, and never use "burn", "detox", "doctor recommended" or an accuracy claim for the scanners. The barcode and label readers fill a form you check; the photo food scanner, when it ships, "suggests dishes for you to confirm".
 
 **Category:** Health & Fitness (primary competitor set) — alternative: Productivity. Pick Health & Fitness if Health Connect verification is in the build.
 **Tags:** Habit tracker, Fitness, Productivity, Motivation.
@@ -87,7 +103,15 @@ PRIVATE BY DESIGN
 
 ## 4. Data safety form (v1 — offline game + opt-in AI Paths)
 
-> **Release build for the Play listing (release prep, 2026-11-03):** AI Paths is compiled out. No `INTERNET` permission, no Play Integrity, no install ID. Nothing leaves the device, so §4 can be answered "No data collected" for this release; the rows below apply again only when AI Paths ships in a release build (see BACKLOG).
+> **Release build for the Play listing (updated 2026-11-12):** AI Paths is compiled out: no Play Integrity, no install ID, no Path requests. But since 2026-11-11 **every build declares `INTERNET`** for the opt-in Open Food Facts barcode lookup (ENGINE_DECISIONS #204), so the release is **no longer "No data collected"**. Fill the form with the one row below; the AI Paths table further down applies again only when AI Paths ships in a release build (see BACKLOG).
+>
+> | Data type (Play category) | Collected? | Shared? | Ephemeral? | Required/optional | Purpose |
+> |---|---|---|---|---|---|
+> | App activity → **In-app search history** (the barcode number of a scanned product, only when it is not on the phone) | Yes, sent from the phone to Open Food Facts | **Draft: No**: the user turns the lookup on and each request follows their own scan, which Play exempts as a user-initiated transfer the user expects. Re-read the current exemption wording; if in doubt answer Yes (Open Food Facts) | **Draft: No**: we keep nothing, but Open Food Facts runs its own servers and logs | Optional (off until allowed) | App functionality |
+>
+> - Encrypted in transit: **Yes** (HTTPS only to `world.openfoodfacts.org`, cleartext disabled).
+> - Open Food Facts sees the phone's IP address, as any website does; the privacy policy says so.
+> - Everything else stays as in the app: Diet, body data, camera images, health data and screen time never leave the device. The camera is a normal runtime permission and needs no declaration; no `READ_MEDIA_IMAGES` is requested (the photo food scanner, built but off, uses the system photo picker).
 
 Because AI Paths send user-entered text off the device, the answer is no longer "No data collected". Draft answers below; **re-read Play's current Data safety definitions when you fill the form** and make the answers match what the app actually does.
 
@@ -111,9 +135,11 @@ Re-do this form whenever you add sync, analytics, or crash SDKs, or change what 
 - **Exercise sessions (read):** "Used to verify workout quests (e.g., 30 minutes of exercise) on-device."
 - **Sleep sessions (read):** "Used to verify the user's opt-in sleep-duration quest (e.g., 7 hours) on-device."
 - **Distance (read, optional):** "Used to verify the user's opt-in distance quests (e.g., 4 km on foot) and to show distance in the app, on-device. Not shared or uploaded."
-- **Active calories burned (read, optional):** "Used to verify the user's opt-in active-calorie quests and to show workout summaries, on-device. Not shared or uploaded."
+- **Active calories burned (read, optional):** "Used to verify the user's opt-in active-calorie quests and to show workout summaries, on-device, and shown beside the user's daily calorie budget in Diet (display only; it is not added to the budget). Not shared or uploaded."
 - **Heart rate (read, optional):** "Shown on workout summaries and used on-device to reject workouts where the heart rate never rose. It does not change rewards. Not shared or uploaded."
 Request nothing else. The privacy policy link shown inside Health Connect must be the same as the Play listing's.
+
+**Nutrition and weight management (Diet, no Health Connect permission):** "AWAKEN includes an optional food diary: the user logs foods, water, weight and body measurements, and the app suggests calorie and macro targets from the age, sex, height, weight, activity level and goal the user enters (Mifflin-St Jeor, with a safety floor). All of it is stored and processed on the device only and never uploaded. Targets are labelled as estimates and the app is not a medical device." Diet writes nothing to Health Connect.
 
 **v1.1 additions (GD §14; no new permission, a new on-device use of the same data).** Append to the matching lines above when v1.1 ships:
 - **Steps:** "…and, on-device only, to show the user personal patterns (for example, how many quests they complete on days with 7,000+ steps) and monthly/yearly summaries of their own activity."
