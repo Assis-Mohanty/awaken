@@ -5,6 +5,9 @@ on only when a model passes this test. The limits are GAME_DESIGN 20.6; the reas
 
 ## 1. What you need
 
+**Status 2026-11-12:** a first model (FoodBD, ENGINE_DECISIONS 207) is already in `app/src/debug/assets/scanner/`, so a debug build can run
+this test today. It is not in the release assets: it moves there only after it passes. The steps below are for any new model.
+
 - A model: `app/src/main/assets/scanner/dishes.tflite` (EfficientNet-Lite0, int8, 224 x 224 is the plan; any image
   classifier with one input `[1, h, w, 3]` and one output of label scores works).
 - Its labels: `app/src/main/assets/scanner/labels.json`, the labels in the model's output order and each label's foods

@@ -19,3 +19,11 @@ Never commit images, zips or weights from there. Only the finished, licence-clea
 3. `map_classes.py`: list FoodBD's classes and suggest catalog foods for each; a human edits the result into `labels.json`.
 4. Train, export to int8 TFLite, copy to `assets/scanner/`.
 5. Run the go / no-go test in `docs/diet/SCANNER_TEST.md` on 200 of your own meals. The flag flips only if it passes.
+
+## Status (2026-11-12)
+
+Run 1 trained and exported (see `docs/ENGINE_DECISIONS.md` 207): EfficientNet-Lite0, 30 epochs (about 5 minutes on an RTX 2060 SUPER), float16
+TFLite 6.9 MB. Files: `train.py` (training), `map_classes.py` (suggest catalog foods), `class_foods.json` (the reviewed mapping),
+`make_labels.py` (writes `labels.json` and checks every id). Export used a second environment (`env-export`: torch 2.4, TensorFlow 2.21,
+`onnx2tf`) because Google's PyTorch to TFLite converters are Linux-only; on Windows run `onnx2tf` with `PYTHONUTF8=1` and a local
+`calibration_image_sample_data_20x128x128x3_float32.npy` in the working folder (it otherwise tries to download one and fails).
