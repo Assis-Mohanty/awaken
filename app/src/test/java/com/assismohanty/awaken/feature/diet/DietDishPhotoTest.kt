@@ -59,11 +59,12 @@ class DietDishPhotoTest {
     }
 
     @Test
-    fun thePhotoButtonStaysHiddenWhileTheFlagIsOff() = runBlocking<Unit> {
-        val state = viewModel().until { !it.loading }
-        // DIET_PHOTO_SCAN_ENABLED is false in every build, even with a model present.
-        assertThat(graph.dishClassifier.available()).isTrue()
-        assertThat(state.photoScan).isFalse()
+    fun thePhotoButtonNeedsBothTheFlagAndAModel() = runBlocking<Unit> {
+        // The flag is on in debug builds and off in release; either way a build with no model never shows the button.
+        graph.dishClassifier.hasModel = false
+        assertThat(viewModel().until { !it.loading }.photoScan).isFalse()
+        graph.dishClassifier.hasModel = true
+        assertThat(viewModel().until { !it.loading }.photoScan).isEqualTo(com.assismohanty.awaken.BuildConfig.DIET_PHOTO_SCAN_ENABLED)
     }
 
     @Test

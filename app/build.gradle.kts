@@ -65,7 +65,7 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        // The photo food scanner stays off in every build until a model passes the go / no-go test (GD 20.6, docs/diet/SCANNER_TEST.md).
+        // The photo food scanner is off here (so in release) until a model passes the go / no-go test (GD 20.6, docs/diet/SCANNER_TEST.md); the debug build type turns it on for testing.
         buildConfigField("boolean", "DIET_PHOTO_SCAN_ENABLED", "false")
     }
 
@@ -89,6 +89,8 @@ android {
             buildConfigField("long", "PLAY_CLOUD_PROJECT_NUMBER", (localProperty("oracle.cloudProjectNumber").ifEmpty { "0" }) + "L")
             buildConfigField("boolean", "AI_PATHS_ENABLED", "true")
             buildConfigField("boolean", "STRICT_PLUS_ENABLED", "true")
+            // Debug builds only, so the owner can try the first model (tools/scanner). Release keeps the default (false) until it passes SCANNER_TEST.md.
+            buildConfigField("boolean", "DIET_PHOTO_SCAN_ENABLED", "true")
         }
         release {
             // AI Paths is compiled out of release: no Oracle URL, key or project number is read into this build.
