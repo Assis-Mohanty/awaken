@@ -292,6 +292,16 @@ object AwakenGlyphs {
         }
     }
 
+    /** "Hide for a while": an open eye struck through. */
+    val EyeOff: ImageVector by lazy {
+        line("EyeOff") {
+            moveTo(2.75f, 12f); curveTo(4.9f, 8.1f, 8.2f, 6f, 12f, 6f); curveTo(15.8f, 6f, 19.1f, 8.1f, 21.25f, 12f)
+            curveTo(19.1f, 15.9f, 15.8f, 18f, 12f, 18f); curveTo(8.2f, 18f, 4.9f, 15.9f, 2.75f, 12f); close()
+            circle(12f, 12f, 2.75f)
+            moveTo(4f, 4f); lineTo(20f, 20f)
+        }
+    }
+
     val Lock: ImageVector by lazy {
         line("Lock") {
             roundRect(5f, 10.5f, 14f, 10f, 2.5f)
@@ -388,7 +398,7 @@ object AwakenGlyphs {
             Shield, Portal, Coin, VerifiedSeal, Hourglass, Check, Gate,
             Star, Close, Plus, Info,
             ChevronLeft, ChevronDown, ChevronRight, Repeat, Contrast, Grid, Database, ArrowLeft, ArrowUp, ArrowDown, Search, Pencil,
-            Trash, Lock, Calendar, Timer, Drop, Phone, Call, Sunrise, Sun, Moon, Clock,
+            Trash, Lock, Calendar, Timer, Drop, Phone, Call, Sunrise, Sun, Moon, Clock, EyeOff,
         )
     }
 

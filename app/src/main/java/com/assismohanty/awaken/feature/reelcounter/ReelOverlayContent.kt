@@ -2,6 +2,7 @@ package com.assismohanty.awaken.feature.reelcounter
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -13,6 +14,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import com.assismohanty.awaken.R
 import com.assismohanty.awaken.core.designsystem.components.AwakenCard
+import com.assismohanty.awaken.core.designsystem.components.AwakenGlyphs
+import com.assismohanty.awaken.core.designsystem.components.HeaderIconButton
 import com.assismohanty.awaken.core.designsystem.components.BigValue
 import com.assismohanty.awaken.core.designsystem.components.ScreenBackground
 import com.assismohanty.awaken.core.designsystem.components.PrimaryButton
@@ -28,9 +31,12 @@ import com.assismohanty.awaken.reelcounter.core.ShortVideoApp
 /** One line of the bubble's panel: an app, how many reels and how many minutes today. */
 data class ReelPanelRow(val app: ShortVideoApp, val count: Int, val minutes: Long)
 
-/** The card that opens when the bubble is tapped. Tapping it closes it. */
+/**
+ * The card that opens when the bubble is tapped. Tapping it closes it. While under the daily limit it offers
+ * [onHide] (null hides the button): the bubble steps away for a few minutes. At the limit the nudge takes over instead.
+ */
 @Composable
-fun ReelPanelContent(rows: List<ReelPanelRow>, onClose: () -> Unit, modifier: Modifier = Modifier) {
+fun ReelPanelContent(rows: List<ReelPanelRow>, onClose: () -> Unit, modifier: Modifier = Modifier, onHide: (() -> Unit)? = null) {
     val colors = AwakenTheme.colors
     val type = AwakenTheme.type
     AwakenCard(modifier = modifier, reveal = false, onClick = onClose) {
@@ -42,7 +48,19 @@ fun ReelPanelContent(rows: List<ReelPanelRow>, onClose: () -> Unit, modifier: Mo
                 ValueRow(label = lexString(it.app.labelRes()), value = lexString(R.string.reel_panel_row, it.count, it.minutes))
             }
         }
+        if (onHide != null) {
+            val label = lexString(R.string.reel_panel_hide, ReelOverlayTiming.HIDE_MINUTES)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                HeaderIconButton(AwakenGlyphs.EyeOff, label, onHide)
+                Text(label, style = type.body, color = colors.textSecondary)
+            }
+        }
     }
+}
+
+/** How long "hide" keeps the bubble away. */
+object ReelOverlayTiming {
+    const val HIDE_MINUTES = 5
 }
 
 /**
@@ -114,6 +132,7 @@ private fun ReelPanelPreview() {
         ReelPanelContent(
             rows = listOf(ReelPanelRow(ShortVideoApp.INSTAGRAM, 23, 41), ReelPanelRow(ShortVideoApp.YOUTUBE, 9, 12)),
             onClose = {},
+            onHide = {},
         )
     }
 }

@@ -51,6 +51,7 @@
     <string name="reel_panel_title">Today</string>
     <string name="reel_panel_row">%1$d reels, %2$d min</string>
     <string name="reel_panel_empty">Nothing yet today</string>
+    <string name="reel_panel_hide">Hide for %1$d minutes</string>
     <plurals name="reel_nudge_count">
         <item quantity="one">%1$d reel today</item>
         <item quantity="other">%1$d reels today</item>

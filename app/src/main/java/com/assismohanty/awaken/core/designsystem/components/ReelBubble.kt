@@ -1,5 +1,11 @@
 package com.assismohanty.awaken.core.designsystem.components
 
+import com.assismohanty.awaken.R
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.foundation.Image
+import androidx.annotation.DrawableRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -29,25 +35,51 @@ private const val MAX_SHOWN = 999
 
 /** The bubble's fixed footprint, which the overlay window needs for dragging and snapping. */
 object ReelBubbleSize {
-    val Width = 100.dp
-    val Height = 48.dp
-}
-
-/** How the frosted glass is built: a see-through tint, a top-lit sheen and a light-catching rim, per theme. */
-private object Glass {
-    const val TINT_DARK = 0.46f
-    const val TINT_LIGHT = 0.58f
-    const val SHEEN_TOP_DARK = 0.20f
-    const val SHEEN_TOP_LIGHT = 0.60f
-    const val SHEEN_BOTTOM = 0.03f
+    val Width = 88.dp
+    val Height = 40.dp
 }
 
 /**
- * The Reel Counter bubble that floats over short-video screens, top middle by default: a frosted-glass pill with today's
- * reel count. The rim turns critical once a daily limit is reached ([over]).
+ * The candle on the bubble melts as a daily limit gets close: eight pictures, from fresh (0) to burnt out (7).
+ * With no limit set it stays fresh; at or past the limit it is burnt out; in between it steps evenly.
+ */
+object ReelMascot {
+    const val PHASES = 8
+
+    fun phase(count: Int, limit: Int?): Int {
+        if (limit == null || limit <= 0) return 0
+        if (count >= limit) return PHASES - 1
+        return (count.coerceAtLeast(0) * (PHASES - 1) / limit).coerceIn(0, PHASES - 2)
+    }
+
+    @DrawableRes
+    internal fun drawable(phase: Int): Int = PICTURES[phase.coerceIn(0, PHASES - 1)]
+
+    private val PICTURES = intArrayOf(
+        R.drawable.reel_mascot_1, R.drawable.reel_mascot_2, R.drawable.reel_mascot_3, R.drawable.reel_mascot_4,
+        R.drawable.reel_mascot_5, R.drawable.reel_mascot_6, R.drawable.reel_mascot_7, R.drawable.reel_mascot_8,
+    )
+}
+
+/** The glass is close to solid so the count stays readable over any video: a strong tint, a faint sheen, a firm rim. */
+private object Glass {
+    const val TINT_DARK = 0.86f
+    const val TINT_LIGHT = 0.92f
+    const val SHEEN_TOP_DARK = 0.10f
+    const val SHEEN_TOP_LIGHT = 0.35f
+    const val SHEEN_BOTTOM = 0.02f
+}
+
+private val MASCOT_WIDTH = 20.dp
+private val MASCOT_HEIGHT = 34.dp
+
+/**
+ * The Reel Counter bubble that floats over short-video screens, top middle by default: a nearly solid pill with the
+ * candle mascot on the left (melting as [phase] rises, see [ReelMascot]) and today's reel count, bold, on the right.
+ * The rim turns critical once a daily limit is reached ([over]).
  */
 @Composable
-fun ReelBubble(count: Int, over: Boolean, modifier: Modifier = Modifier) {
+fun ReelBubble(count: Int, over: Boolean, modifier: Modifier = Modifier, phase: Int = 0) {
     val colors = AwakenTheme.colors
     val shape = AwakenTheme.shapes.pill
     val light = colors.surfaceOverlay.luminance() > 0.5f
@@ -58,24 +90,29 @@ fun ReelBubble(count: Int, over: Boolean, modifier: Modifier = Modifier) {
     )
     val rim: Brush = when {
         over -> SolidColor(colors.critical)
-        light -> Brush.linearGradient(listOf(Color.White.copy(alpha = 0.95f), Color.Black.copy(alpha = 0.07f), Color.White.copy(alpha = 0.6f)))
-        else -> Brush.linearGradient(listOf(Color.White.copy(alpha = 0.55f), Color.White.copy(alpha = 0.06f), Color.White.copy(alpha = 0.26f)))
+        light -> SolidColor(Color.Black.copy(alpha = 0.12f))
+        else -> SolidColor(Color.White.copy(alpha = 0.22f))
     }
-    val rimWidth = if (over) AwakenTheme.dimens.accentWidth else AwakenTheme.dimens.hairline
     Row(
         modifier = modifier
             .size(ReelBubbleSize.Width, ReelBubbleSize.Height)
             .clip(shape)
             .background(tint)
             .background(sheen)
-            .border(rimWidth, rim, shape)
-            .padding(horizontal = Spacing.xs),
+            .border(AwakenTheme.dimens.accentWidth, rim, shape)
+            .padding(start = Spacing.xs, end = Spacing.sm),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
+        Image(
+            painter = painterResource(ReelMascot.drawable(phase)),
+            contentDescription = null,
+            contentScale = ContentScale.Fit,
+            modifier = Modifier.size(MASCOT_WIDTH, MASCOT_HEIGHT),
+        )
+        Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.CenterEnd) {
             BasicText(
                 text = if (count > MAX_SHOWN) "$MAX_SHOWN+" else count.toString(),
-                style = AwakenTheme.type.numericSmall.copy(color = colors.textPrimary),
+                style = AwakenTheme.type.numeric.copy(color = colors.textPrimary, fontWeight = FontWeight.Bold),
                 maxLines = 1,
                 modifier = Modifier.clearAndSetSemantics { },
             )
@@ -101,7 +138,7 @@ private fun ReelBubblePreview() {
             Row(horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
                 ReelBubble(count = 7, over = false)
                 ReelBubble(count = 23, over = false)
-                ReelBubble(count = 57, over = true)
+                ReelBubble(count = 57, over = true, phase = ReelMascot.PHASES - 1)
             }
         }
     }
@@ -110,12 +147,14 @@ private fun ReelBubblePreview() {
 @ComponentPreview
 @Composable
 private fun ReelBubbleLadderPreview() {
+    // A limit of 70: the candle melts a step every 10 reels and burns out at the limit.
     AwakenTheme(reduceMotion = true) {
         GlassBackdrop {
             Column(verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
-                listOf(listOf(0, 12, 30), listOf(55, 90, 1_204)).forEach { counts ->
+                // Three per row: four do not fit the preview width, and a squeezed pill would hide its count.
+                listOf(listOf(0, 10, 20), listOf(30, 40, 50), listOf(60, 70, 1_204)).forEach { counts ->
                     Row(horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
-                        counts.forEach { ReelBubble(count = it, over = false) }
+                        counts.forEach { ReelBubble(count = it, over = it >= 70, phase = ReelMascot.phase(it, 70)) }
                     }
                 }
             }

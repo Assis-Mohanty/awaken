@@ -21,8 +21,10 @@ import com.assismohanty.awaken.core.data.repo.UiPrefs
 import com.assismohanty.awaken.core.data.repo.UiPrefsRepository
 import com.assismohanty.awaken.core.designsystem.components.ReelBubble
 import com.assismohanty.awaken.core.designsystem.components.ReelBubbleSize
+import com.assismohanty.awaken.core.designsystem.components.ReelMascot
 import com.assismohanty.awaken.core.designsystem.theme.AwakenTheme
 import com.assismohanty.awaken.feature.reelcounter.ReelNudgeContent
+import com.assismohanty.awaken.feature.reelcounter.ReelOverlayTiming
 import com.assismohanty.awaken.feature.reelcounter.ReelPanelContent
 import com.assismohanty.awaken.feature.reelcounter.ReelPanelRow
 import com.assismohanty.awaken.reelcounter.core.ShortVideoApp
@@ -48,6 +50,8 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
+import java.time.Duration
+import java.time.Instant
 import java.time.LocalTime
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -92,6 +96,10 @@ class ReelOverlayWindows @Inject constructor(
     private var bubbleParams: WindowManager.LayoutParams? = null
     private var panelJob: Job? = null
     private var dragging = false
+
+    /** "Hide for 5 minutes" from the panel: the bubble stays away until then. The limit nudge is never hidden. */
+    private var hiddenUntil: Instant? = null
+    private var hideJob: Job? = null
 
     override fun attach(service: AccessibilityService, actions: ReelOverlayActions) {
         this.service = service
@@ -203,9 +211,23 @@ class ReelOverlayWindows @Inject constructor(
 
     private fun usableBottom(): Int = (service?.resources?.displayMetrics?.heightPixels ?: 0) - px(BOTTOM_INSET)
 
+    private fun hidden(): Boolean = hiddenUntil?.isAfter(clock.now()) == true
+
+    private fun hideForAWhile() {
+        closeBubbleAndPanel()
+        val minutes = Duration.ofMinutes(ReelOverlayTiming.HIDE_MINUTES.toLong())
+        hiddenUntil = clock.now().plus(minutes)
+        hideJob?.cancel()
+        hideJob = scope?.launch {
+            delay(minutes.toMillis())
+            hiddenUntil = null
+            if (bubble != null && bubbleEnabled) ensureBubbleWindow()
+        }
+    }
+
     private fun ensureBubbleWindow() {
         val host = bubbleHost ?: return
-        if (host.isShown) return
+        if (host.isShown || hidden()) return
         val margin = px(EDGE_MARGIN)
         val params = WindowManager.LayoutParams(
             WindowManager.LayoutParams.WRAP_CONTENT,
@@ -228,6 +250,7 @@ class ReelOverlayWindows @Inject constructor(
                     ReelBubble(
                         count = total,
                         over = current.allowance != null && current.count >= current.allowance,
+                        phase = ReelMascot.phase(current.count, current.allowance),
                         modifier = Modifier.bubbleGestures(),
                     )
                 }
@@ -331,7 +354,14 @@ class ReelOverlayWindows @Inject constructor(
             delay(PANEL_AUTO_CLOSE_MILLIS)
             closePanel()
         }
-        host.show(params) { Themed { ReelPanelContent(rows = panelRows, onClose = { closePanel() }) } }
+        host.show(params) {
+            Themed {
+                // Hiding is offered only under the limit; at the limit the nudge (and its "5 more") is what shows.
+                val current = bubble
+                val underLimit = current != null && (current.allowance == null || current.count < current.allowance)
+                ReelPanelContent(rows = panelRows, onClose = { closePanel() }, onHide = if (underLimit) ({ hideForAWhile() }) else null)
+            }
+        }
     }
 
     private fun closePanel() {

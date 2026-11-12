@@ -81,6 +81,7 @@ Sentence case everywhere. No truncation at 200 % font scale: text wraps, rows gr
   - Secondary: the pressed-card colour.
   - Quiet: a compact 48dp pill in the pressed-card colour with a semibold label. **Text with no container is never tappable** (2026-11-12: plain ink text looked the same as headings, so the hunter could not tell Gym settings, Other amount or Water target were buttons).
   - Edit-in-place (rename a meal): a 16dp pencil glyph beside the name, inside a 48dp invisible touch target, never a labelled button.
+- **Reel Counter bubble** (`ReelBubble`, 88 x 40dp, owner brief 2026-11-12): a near-solid pill (tint 0.86 dark / 0.92 light) with a firm rim, the candle mascot on the left and today's count bold on the right. The mascot has eight pictures (`res/drawable-nodpi/reel_mascot_1..8`, one shared crop so the candle shrinks in place) chosen by `ReelMascot.phase`: fresh with no limit, an even step towards the limit, burnt out at it. Tapping opens the panel, which offers an eye-with-slash "Hide for 5 minutes" only while under the limit; at the limit the nudge with its two "5 more" snoozes takes over as before.
 - **Chips:** 24dp pills, ink text on a 15 % wash of their accent.
 - **Choice chips:** 44dp. Selected is solid ink with a check.
 - **XP bar:** an 8dp pill, divider track, solid gold fill.
