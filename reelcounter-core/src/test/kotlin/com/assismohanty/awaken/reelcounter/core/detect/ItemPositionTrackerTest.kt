@@ -90,6 +90,43 @@ class ItemPositionTrackerTest {
         assertThat(t.onChildSignature("b", t0.plusMillis(200))).isNull()
     }
 
+    private fun pages(vararg p: Pair<String, Int>) = p.map { PageHint(it.first, it.second) }
+
+    /** A YouTube-like list: one full page at a time, the next one rises from below or the previous comes down from above. */
+    @Test
+    fun childSwapReadsTheDirectionFromWhichPageIsOnTop() {
+        val t = tracker(swapRule)
+        t.onChildSignature("a", t0)
+        // Forward: our page (a) is the upper one, the next (b) rises from below.
+        t.onPages(pages("a" to -500, "b" to 1700), t0.plusMillis(100))
+        assertThat(t.onChildSignature("b", t0.plusMillis(300))).isEqualTo(1)
+        t.onPages(pages("b" to -300, "c" to 1900), t0.plusMillis(1_000))
+        assertThat(t.onChildSignature("c", t0.plusMillis(1_200))).isEqualTo(2)
+        // Back: our page (c) is the lower one, the previous (b) comes down from above.
+        t.onPages(pages("b" to -1800, "c" to 400), t0.plusMillis(2_000))
+        assertThat(t.onChildSignature("b", t0.plusMillis(2_200))).isEqualTo(1)
+    }
+
+    @Test
+    fun childSwapDirectionIgnoresScrollAmountsThatDisagree() {
+        val t = tracker(swapRule)
+        t.onChildSignature("a", t0)
+        // The app reported a large negative step for a forward swipe: the page positions win.
+        t.onScroll(scroll(SNAP_CONTAINER, -1, -1, dy = -1004), t0.plusMillis(50))
+        t.onPages(pages("a" to -400, "b" to 1800), t0.plusMillis(100))
+        assertThat(t.onChildSignature("b", t0.plusMillis(300))).isEqualTo(1)
+    }
+
+    @Test
+    fun childSwapDirectionIsOnlyTrustedForAMoment() {
+        val t = tracker(swapRule)
+        t.onChildSignature("a", t0)
+        // A peek that snapped back, then much later a swipe whose pages were never seen: forward, the safe default.
+        t.onPages(pages("a" to -400, "b" to 1800), t0.plusMillis(100))
+        t.onPages(pages("b" to -1800, "a" to 400), t0.plusMillis(200))
+        assertThat(t.onChildSignature("c", t0.plusMillis(5_000))).isEqualTo(1)
+    }
+
     @Test
     fun childSwapTreatsAnUnsetDeltaAsForward() {
         val t = tracker(swapRule)

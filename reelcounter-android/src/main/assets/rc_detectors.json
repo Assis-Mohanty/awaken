@@ -16,13 +16,13 @@
     {
       "app": "YOUTUBE",
       "verified": false,
-      "note": "UNVERIFIED placeholder ids; channelNameIds stays empty until the inspector finds a stable id for the watch-page channel name",
+      "note": "UNVERIFIED on a phone. reel_recycler and CHILD_SWAP checked on YouTube 21.18 (Android 17 emulator, 2026-11-12): one page child, two during a swipe, no scroll index. Not yet checked on a phone, so verified stays false. channelNameIds stays empty until the inspector finds a stable id for the watch-page channel name",
       "channelNameIds": [],
       "channelVerified": false,
       "screens": [
         {
           "containerIds": ["com.google.android.youtube:id/reel_recycler"],
-          "signal": "SCROLL_INDEX",
+          "signal": "CHILD_SWAP",
           "signalSourceIds": ["com.google.android.youtube:id/reel_recycler"]
         }
       ]

@@ -230,6 +230,63 @@ class ScreenTrackerTest {
             .assertEvents(CounterEvent.ScreenLeft(IG, at(500)))
     }
 
+    // YouTube Shorts as recorded on a phone: reel_recycler holds one full page, and two while a swipe is under way. The app sends
+    // no usable scroll index, and the same page view can come back a few swipes later.
+    private val ytRecycler = "com.google.android.youtube:id/reel_recycler"
+    private val ytConfig = detectorConfig(appDetector(YT, true, rule(ytRecycler, ItemSignal.CHILD_SWAP, sources = listOf(ytRecycler))))
+
+    private fun ytPage(key: String, top: Int) = node(key, bounds = Bounds(0, top, 1080, top + 2148))
+
+    private fun ytScreen(vararg pages: com.assismohanty.awaken.reelcounter.core.model.NodeSnapshot) =
+        source(node("root", children = listOf(node("r", id = ytRecycler, bounds = Bounds(0, 63, 1080, 2211), children = pages.toList()))), YT_PKG)
+
+    @Test
+    fun youTubeShortsCountsEachNewVideoOnceWhateverTheDirection() {
+        val t = ScreenTracker(ScreenDetector(ytConfig))
+        val machine = CounterMachine()
+        var state = CounterState.initial(java.time.LocalDate.of(2026, 11, 1), emptyMap(), emptyMap(), emptyMap())
+        fun feed(ms: Long, vararg pages: com.assismohanty.awaken.reelcounter.core.model.NodeSnapshot) {
+            val signal = if (ms == 0L) RawSignal.WindowStateChanged(YT_PKG, ytScreen(*pages), at(ms)) else RawSignal.Probe(YT_PKG, ytScreen(*pages), at(ms))
+            for (e in t.onSignal(signal).events) state = machine.reduce(state, e).state
+        }
+        fun settle(ms: Long, key: String) { feed(ms, ytPage(key, 63)); feed(ms + 500, ytPage(key, 63)) }
+
+        feed(0, ytPage("a", 63)); settle(600, "a")
+        assertThat(state.countToday(YT)).isEqualTo(1)
+        // Forward to b: a is the upper page while b rises from below.
+        feed(2_000, ytPage("a", -500), ytPage("b", 1700)); settle(2_400, "b")
+        assertThat(state.countToday(YT)).isEqualTo(2)
+        // Back to a: b is the lower page while a comes down from above. a was already counted.
+        feed(4_000, ytPage("a", -1800), ytPage("b", 400)); settle(4_400, "a")
+        assertThat(state.countToday(YT)).isEqualTo(2)
+        // Forward to b again: already counted.
+        feed(6_000, ytPage("a", -400), ytPage("b", 1800)); settle(6_400, "b")
+        assertThat(state.countToday(YT)).isEqualTo(2)
+        // Forward to a new video (the page view `a` is reused for it): counted once.
+        feed(8_000, ytPage("b", -300), ytPage("a", 1900)); settle(8_400, "a")
+        assertThat(state.countToday(YT)).isEqualTo(3)
+    }
+
+    @Test
+    fun aSwipeBackSeenOnlyThroughItsScrollEventsIsStillBack() {
+        val t = ScreenTracker(ScreenDetector(ytConfig))
+        val machine = CounterMachine()
+        var state = CounterState.initial(java.time.LocalDate.of(2026, 11, 1), emptyMap(), emptyMap(), emptyMap())
+        fun apply(signal: RawSignal) { for (e in t.onSignal(signal).events) state = machine.reduce(state, e).state }
+        fun look(ms: Long, vararg pages: com.assismohanty.awaken.reelcounter.core.model.NodeSnapshot) = apply(RawSignal.Probe(YT_PKG, ytScreen(*pages), at(ms)))
+        fun scrolled(ms: Long, vararg pages: com.assismohanty.awaken.reelcounter.core.model.NodeSnapshot) =
+            apply(RawSignal.ViewScrolled(YT_PKG, scroll("com.google.android.youtube:id/reel_player_underlay", -1, -1), ytScreen(*pages), at(ms)))
+
+        apply(RawSignal.WindowStateChanged(YT_PKG, ytScreen(ytPage("a", 63)), at(0)))
+        look(600, ytPage("a", 63)); look(1_100, ytPage("a", 63))
+        // Forward to b, then back to a: each time only a scroll event saw both pages; the timed looks saw one page only.
+        scrolled(2_000, ytPage("a", -600), ytPage("b", 1500)); look(2_300, ytPage("b", 63)); look(2_800, ytPage("b", 63))
+        scrolled(4_000, ytPage("a", -1500), ytPage("b", 600)); look(4_300, ytPage("a", 63)); look(4_800, ytPage("a", 63))
+        scrolled(6_000, ytPage("a", -600), ytPage("b", 1500)); look(6_300, ytPage("b", 63)); look(6_800, ytPage("b", 63))
+        // a, b counted once each; going back to a and forward to b again counts nothing.
+        assertThat(state.countToday(YT)).isEqualTo(2)
+    }
+
     @Test
     fun aScrollIndexListAdoptsItsFirstIndexOnReEntry() {
         val t = ScreenTracker(ScreenDetector(reelConfig))

@@ -65,6 +65,9 @@ class ScreenTracker(
                 }
                 if (app != null && activeApp == app) {
                     val t = tracker(app)
+                    // Scrolls arrive while the swipe is moving, with both pages on screen: the surest moment to see which way
+                    // it goes. A look on a timer can miss that moment entirely, and then a swipe back would read as forward.
+                    if (t.childSwap) (detector.detect(signal.packageName, signal.nodes) as? Detection.ShortVideo)?.let { t.onPages(it.pages, signal.at) }
                     val adopting = t.adopting
                     t.onScroll(signal.scroll, signal.at)?.let {
                         events += if (adopting) CounterEvent.ItemAdopted(app, it, signal.at) else CounterEvent.ItemChanged(app, it, signal.at)
@@ -122,6 +125,7 @@ class ScreenTracker(
                     }
                     events += CounterEvent.ScreenEntered(d.app, at, t.index)
                 } else if (d.rule.signal == ItemSignal.CHILD_SWAP) {
+                    t.onPages(d.pages, at)
                     t.onChildSignature(d.childSignature, at)?.let { events += CounterEvent.ItemChanged(d.app, it, at) }
                 }
             }

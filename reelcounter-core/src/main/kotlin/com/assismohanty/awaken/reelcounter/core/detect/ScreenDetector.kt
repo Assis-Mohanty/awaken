@@ -5,6 +5,9 @@ import com.assismohanty.awaken.reelcounter.core.model.Bounds
 import com.assismohanty.awaken.reelcounter.core.model.NodeSnapshot
 import com.assismohanty.awaken.reelcounter.core.model.NodeSource
 
+/** A page of a child-swap list that is on screen right now: its identity and where its top edge sits. */
+data class PageHint(val key: String, val top: Int)
+
 sealed interface Detection {
     data object NotShortVideo : Detection
     data class ShortVideo(
@@ -12,6 +15,8 @@ sealed interface Detection {
         val rule: ScreenRule,
         val viaFallback: Boolean,
         val childSignature: String?,
+        /** The pages visible in the list. Two of them mean a swipe is under way, and which one is on top says which way. */
+        val pages: List<PageHint> = emptyList(),
     ) : Detection
 }
 
@@ -32,7 +37,8 @@ class ScreenDetector(config: DetectorConfig) {
                         val child = n.children.firstOrNull {
                             it.visibleToUser && it.bounds.coverage(screen) >= rule.minCoverage
                         }
-                        return Detection.ShortVideo(app, rule, viaFallback = false, childSignature = if (rule.itemIsContainer) n.key else child?.key)
+                        val pages = if (rule.itemIsContainer) emptyList() else n.children.filter { it.visibleToUser }.map { PageHint(it.key, it.bounds.top) }
+                        return Detection.ShortVideo(app, rule, viaFallback = false, childSignature = if (rule.itemIsContainer) n.key else child?.key, pages = pages)
                     }
                 }
             }
